@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
+import com.google.common.cache.Cache;
 import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 
@@ -41,6 +43,8 @@ import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.isArrayOrO
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final Gson SERIALIZER = new Gson();
+
+    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -68,6 +72,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                 json,
                 path
         };
+
         return new JsonQueryFunction(operands, wrapperBehavior, onEmpty, onError);
     }
 
@@ -87,18 +92,17 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         final String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        final String path = (String) operands[1].eval(row, context);
-
-        if (isNullOrEmpty(path)) {
-            return onErrorResponse(onError, QueryException.error("JSON_QUERY path expression is empty"));
-        }
-
         if (isNullOrEmpty(json)) {
             return onEmptyResponse(onEmpty);
         }
 
+        final String path = (String) operands[1].eval(row, context);
+        if (isNullOrEmpty(path)) {
+            return onErrorResponse(onError, QueryException.error("JSON_QUERY path expression is empty"));
+        }
+
         try {
-            return wrap(execute(json, path, wrapperBehavior));
+            return wrap(execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile), wrapperBehavior));
         } catch (Exception exception) {
              return onErrorResponse(onError, exception);
         }
@@ -136,7 +140,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         return new HazelcastJsonValue(json);
     }
 
-    private String execute(final String json, final String path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
+    private String execute(final String json, final JsonPath path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
         final Object result = JsonPathUtil.read(json, path);
         final String serializedResult = SERIALIZER.toJson(result);
 

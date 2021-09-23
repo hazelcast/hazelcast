@@ -29,7 +29,7 @@ import com.hazelcast.jet.sql.impl.validate.literal.Literal;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastParseJsonFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -244,7 +244,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         // TODO: replace with correct function instance based on nullability of the original expression type?
         if (literal != null && SqlTypeName.OTHER.equals(to.getSqlTypeName())
                 && HazelcastJsonType.FAMILY.equals(to.getFamily())) {
-            return getRexBuilder().makeCall(HazelcastParseJsonFunction.INSTANCE, convertedOperand);
+            return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
 
         // Delegate to Apache Calcite.

@@ -526,8 +526,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void test_PARSE_JSON() {
-        check(sql("PARSE_JSON(?) || PARSE_JSON(?)"), "[1]", "[1]");
+    public void test_JSON_PARSE() {
+        check(sql("JSON_PARSE(?) || JSON_PARSE(?)"), "[1]", "[1]");
     }
 
     @Test

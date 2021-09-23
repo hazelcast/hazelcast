@@ -27,11 +27,11 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class HazelcastParseJsonFunction extends HazelcastFunction {
-    public static final HazelcastParseJsonFunction INSTANCE = new HazelcastParseJsonFunction();
-    public HazelcastParseJsonFunction() {
+public class HazelcastJsonParseFunction extends HazelcastFunction {
+    public static final HazelcastJsonParseFunction INSTANCE = new HazelcastJsonParseFunction();
+    public HazelcastJsonParseFunction() {
         super(
-                "PARSE_JSON",
+                "JSON_PARSE",
                 SqlKind.OTHER_FUNCTION,
                 opBinding -> HazelcastJsonType.create(false),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),

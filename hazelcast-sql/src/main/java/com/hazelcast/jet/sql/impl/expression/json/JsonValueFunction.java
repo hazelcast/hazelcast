@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
+import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 
 import java.io.IOException;
@@ -38,6 +40,8 @@ import java.util.Objects;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
+    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
 
@@ -86,24 +90,25 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
+        // needed for further checks, can be a dynamic expression, therefore can not be inlined as part of function args
+        final Object defaultOnEmpty = operands[2].eval(row, context);
+        final Object defaultOnError = operands[3].eval(row, context);
+
         final Object operand0 = operands[0].eval(row, context);
         final String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        final String path = (String) operands[1].eval(row, context);
-        final Object defaultOnEmpty = operands[2].eval(row, context);
-        final Object defaultOnError = operands[3].eval(row, context);
-
-        if (isNullOrEmpty(path)) {
-            return onErrorResponse(onError, QueryException.error("JSON_VALUE path expression is empty"), defaultOnError);
-        }
-
         if (isNullOrEmpty(json)) {
             return onEmptyResponse(onEmpty, defaultOnEmpty);
         }
 
+        final String path = (String) operands[1].eval(row, context);
+        if (isNullOrEmpty(path)) {
+            return onErrorResponse(onError, QueryException.error("JSON_VALUE path expression is empty"), defaultOnError);
+        }
+
         try {
-            return execute(json, path);
+            return execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile));
         } catch (Exception exception) {
             return onErrorResponse(onError, exception, defaultOnError);
         }
@@ -133,7 +138,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
     }
 
-    private T execute(final String json, final String path) {
+    private T execute(final String json, final JsonPath path) {
         final Object result = JsonPathUtil.read(json, path);
         if (JsonPathUtil.isArrayOrObject(result)) {
             throw QueryException.error("Result of JSON_VALUE can not be array or object");

@@ -25,16 +25,16 @@ import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class ParseJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class JsonParseFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
 
-    public ParseJsonFunction() { }
+    public JsonParseFunction() { }
 
-    private ParseJsonFunction(Expression<?> operand) {
+    private JsonParseFunction(Expression<?> operand) {
         super(operand, QueryDataType.JSON);
     }
 
-    public static ParseJsonFunction create(Expression<?> operand) {
-        return new ParseJsonFunction(operand);
+    public static JsonParseFunction create(Expression<?> operand) {
+        return new JsonParseFunction(operand);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class ParseJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.PARSE_JSON;
+        return JetSqlSerializerHook.JSON_PARSE;
     }
 
     @Override

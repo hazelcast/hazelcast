@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -25,22 +27,37 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.spi.cache.CacheProvider;
-import com.jayway.jsonpath.spi.cache.LRUCache;
+import com.jayway.jsonpath.spi.cache.NOOPCache;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 
 public final class JsonPathUtil {
-    private static final int CACHE_ENTRIES = 1000;
+    private static final long CACHE_SIZE = 50L;
     private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
             .jsonProvider(new GsonJsonProvider())
             .build());
 
     static {
-        CacheProvider.setCache(new LRUCache(CACHE_ENTRIES));
+        // default Cache is LRU, but we don't want it, because cache is implemented per-JSONPath-based-function
+        CacheProvider.setCache(new NOOPCache());
     }
 
     private JsonPathUtil() { }
 
-    public static Object read(String json, String path) {
+    public static Cache<String, JsonPath> makePathCache() {
+        return CacheBuilder.newBuilder()
+                .maximumSize(CACHE_SIZE)
+                .build();
+    }
+
+    public static JsonPath compile(String path) {
+        return JsonPath.compile(path);
+    }
+
+    public static Object read(String json, String pathString) {
+        return read(json, compile(pathString));
+    }
+
+    public static Object read(String json, JsonPath path) {
         final JsonElement result = CONTEXT.parse(json).read(path);
         if (result.isJsonArray() || result.isJsonObject()) {
             return result;

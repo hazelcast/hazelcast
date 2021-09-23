@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
-import com.hazelcast.jet.sql.impl.expression.json.ParseJsonFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
@@ -438,8 +438,8 @@ public final class RexToExpression {
                             .getSymbol();
 
                     return JsonQueryFunction.create(operands[0], operands[1], wrapperBehavior, onEmpty, onError);
-                } else if (function == HazelcastSqlOperatorTable.PARSE_JSON) {
-                    return ParseJsonFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.JSON_PARSE) {
+                    return JsonParseFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
                     final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
                     final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
