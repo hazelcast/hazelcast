@@ -204,7 +204,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Records.copyMetadataFrom(record, existingRecord);
         expirySystem.add(dataKey, expiryMetadata.getTtl(),
                 expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
-                now, expiryMetadata.getLastUpdateTime());
+                now, existingRecord);
         mutationObserver.onReplicationPutRecord(dataKey, existingRecord, indexesMustBePopulated);
 
         updateStatsOnPut(false, now);
@@ -933,7 +933,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
         storage.put(key, record);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        expirySystem.add(key, ttl, maxIdle, expiryTime, now, record);
 
         if (entryEventType == EntryEventType.LOADED) {
             mutationObserver.onLoadRecord(key, record, backup);
@@ -960,7 +960,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         storage.updateRecordValue(key, record, newValue);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        expirySystem.add(key, ttl, maxIdle, expiryTime, now, record);
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
