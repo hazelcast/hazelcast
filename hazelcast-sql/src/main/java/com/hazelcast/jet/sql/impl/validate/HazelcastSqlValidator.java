@@ -247,13 +247,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             case LEFT:
                 join.getRight().accept(joinChecker);
                 if (containsStreamingSource(join.getRight())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSide());
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
             case RIGHT:
                 join.getLeft().accept(joinChecker);
                 if (containsStreamingSource(join.getLeft())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSide());
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
             default:

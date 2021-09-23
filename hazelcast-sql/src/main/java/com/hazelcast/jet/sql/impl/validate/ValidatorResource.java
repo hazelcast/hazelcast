@@ -53,7 +53,7 @@ public interface ValidatorResource {
     ExInst<SqlValidatorException> streamingSortingNotSupported();
 
     @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
-    ExInst<SqlValidatorException> streamingSourceInWrongSide();
+    ExInst<SqlValidatorException> streamingSourceOnWrongSide();
 
     static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
         return originalMessage + " If you want to use the IMap named '" + identifier + "', execute this command first: "
