@@ -106,7 +106,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
         SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
 
-        // Comparisons predicates
+        // Comparison predicates
         SUPPORTED_KINDS.add(SqlKind.EQUALS);
         SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
         SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
@@ -193,6 +193,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NOT_LIKE);
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);

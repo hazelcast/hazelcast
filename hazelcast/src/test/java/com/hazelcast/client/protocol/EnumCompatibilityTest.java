@@ -40,7 +40,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.jet.impl.TerminationMode;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.sql.SqlColumnType;
@@ -132,42 +132,42 @@ public class EnumCompatibilityTest {
     }
 
     @Test
-    public void testFieldType() {
+    public void testFieldKind() {
         // Used in FieldDescriptorCodec
-        Map<FieldType, Integer> mappings = new HashMap<>();
-        mappings.put(FieldType.PORTABLE, 0);
-        mappings.put(FieldType.BYTE, 1);
-        mappings.put(FieldType.BOOLEAN, 2);
-        mappings.put(FieldType.CHAR, 3);
-        mappings.put(FieldType.SHORT, 4);
-        mappings.put(FieldType.INT, 5);
-        mappings.put(FieldType.LONG, 6);
-        mappings.put(FieldType.FLOAT, 7);
-        mappings.put(FieldType.DOUBLE, 8);
-        mappings.put(FieldType.UTF, 9);
-        mappings.put(FieldType.PORTABLE_ARRAY, 10);
-        mappings.put(FieldType.BYTE_ARRAY, 11);
-        mappings.put(FieldType.BOOLEAN_ARRAY, 12);
-        mappings.put(FieldType.CHAR_ARRAY, 13);
-        mappings.put(FieldType.SHORT_ARRAY, 14);
-        mappings.put(FieldType.INT_ARRAY, 15);
-        mappings.put(FieldType.LONG_ARRAY, 16);
-        mappings.put(FieldType.FLOAT_ARRAY, 17);
-        mappings.put(FieldType.DOUBLE_ARRAY, 18);
-        mappings.put(FieldType.UTF_ARRAY, 19);
-        mappings.put(FieldType.DECIMAL, 20);
-        mappings.put(FieldType.DECIMAL_ARRAY, 21);
-        mappings.put(FieldType.TIME, 22);
-        mappings.put(FieldType.TIME_ARRAY, 23);
-        mappings.put(FieldType.DATE, 24);
-        mappings.put(FieldType.DATE_ARRAY, 25);
-        mappings.put(FieldType.TIMESTAMP, 26);
-        mappings.put(FieldType.TIMESTAMP_ARRAY, 27);
-        mappings.put(FieldType.TIMESTAMP_WITH_TIMEZONE, 28);
-        mappings.put(FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, 29);
-        mappings.put(FieldType.COMPOSED, 30);
-        mappings.put(FieldType.COMPOSED_ARRAY, 31);
-        verifyCompatibility(FieldType.values(), (fieldType -> (int) fieldType.getId()), mappings);
+        Map<FieldKind, Integer> mappings = new HashMap<>();
+        mappings.put(FieldKind.BOOLEAN, 0);
+        mappings.put(FieldKind.BOOLEAN_ARRAY, 1);
+        mappings.put(FieldKind.BYTE, 2);
+        mappings.put(FieldKind.BYTE_ARRAY, 3);
+        mappings.put(FieldKind.CHAR, 4);
+        mappings.put(FieldKind.CHAR_ARRAY, 5);
+        mappings.put(FieldKind.SHORT, 6);
+        mappings.put(FieldKind.SHORT_ARRAY, 7);
+        mappings.put(FieldKind.INT, 8);
+        mappings.put(FieldKind.INT_ARRAY, 9);
+        mappings.put(FieldKind.LONG, 10);
+        mappings.put(FieldKind.LONG_ARRAY, 11);
+        mappings.put(FieldKind.FLOAT, 12);
+        mappings.put(FieldKind.FLOAT_ARRAY, 13);
+        mappings.put(FieldKind.DOUBLE, 14);
+        mappings.put(FieldKind.DOUBLE_ARRAY, 15);
+        mappings.put(FieldKind.STRING, 16);
+        mappings.put(FieldKind.STRING_ARRAY, 17);
+        mappings.put(FieldKind.DECIMAL, 18);
+        mappings.put(FieldKind.DECIMAL_ARRAY, 19);
+        mappings.put(FieldKind.TIME, 20);
+        mappings.put(FieldKind.TIME_ARRAY, 21);
+        mappings.put(FieldKind.DATE, 22);
+        mappings.put(FieldKind.DATE_ARRAY, 23);
+        mappings.put(FieldKind.TIMESTAMP, 24);
+        mappings.put(FieldKind.TIMESTAMP_ARRAY, 25);
+        mappings.put(FieldKind.TIMESTAMP_WITH_TIMEZONE, 26);
+        mappings.put(FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY, 27);
+        mappings.put(FieldKind.COMPACT, 28);
+        mappings.put(FieldKind.COMPACT_ARRAY, 29);
+        mappings.put(FieldKind.PORTABLE, 30);
+        mappings.put(FieldKind.PORTABLE_ARRAY, 31);
+        verifyCompatibility(FieldKind.values(), FieldKind::getId, mappings);
     }
 
     @Test

@@ -38,7 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.23.0</calcite.version>
+        <calcite.version>1.27.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
@@ -138,8 +138,8 @@
                 <version>2.4</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
                         <id>javacc</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>javacc</goal>
                         </goals>
@@ -227,6 +227,7 @@
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
+                                    <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
                                     <include>net.minidev:json-smart</include>
                                     <include>com.google.code.gson:gson</include>
@@ -252,16 +253,12 @@
                                     </excludes>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.jayway</pattern>
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.calcite</pattern>
-                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
@@ -270,6 +267,14 @@
                                 <relocation>
                                     <pattern>org.codehaus</pattern>
                                     <shadedPattern>${relocation.root}.org.codehaus</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.esri.core.geometry</pattern>
+                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.slf4</pattern>
@@ -305,6 +310,8 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <!-- TODO: Remove when Calcite is released with the bug fixed -->
+                                        <exclude>org/apache/calcite/linq4j/tree/ConstantExpression.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -318,11 +325,9 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <artifact>com.jayway.jsonpath:json-path</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
-                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -332,13 +337,21 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
+                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>com.google.guava:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -390,12 +403,12 @@
             <version>${calcite.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.esri.geometry</groupId>
-                    <artifactId>esri-geometry-api</artifactId>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

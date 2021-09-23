@@ -17,46 +17,38 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
-import com.hazelcast.jet.sql.impl.validate.operand.NamedOperandCheckerProgram;
-import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operand.OperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operand.OperandCheckerProgram;
-import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.SqlTableFunction;
+import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
-import java.util.Arrays;
-import java.util.List;
+import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference.wrap;
 
-import static java.util.stream.Collectors.toList;
+public abstract class JetTableFunction extends SqlFunction implements SqlTableFunction {
 
-public abstract class JetTableFunction extends HazelcastFunction {
-
+    private final SqlReturnTypeInference returnTypeInference;
     private final SqlConnector connector;
-    private final List<String> parameterNames;
-    private final OperandChecker[] checkers;
 
     protected JetTableFunction(
             String name,
-            List<JetTableFunctionParameter> parameters,
+            SqlOperandMetadata operandMetadata,
             SqlReturnTypeInference returnTypeInference,
-            SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
         super(
                 name,
                 SqlKind.OTHER_FUNCTION,
-                returnTypeInference,
-                operandTypeInference,
+                ReturnTypes.CURSOR,
+                operandMetadata.typeInference(),
+                operandMetadata,
                 SqlFunctionCategory.USER_DEFINED_TABLE_SPECIFIC_FUNCTION
         );
 
+        this.returnTypeInference = wrap(returnTypeInference);
         this.connector = connector;
-        this.parameterNames = parameters.stream().map(JetTableFunctionParameter::name).collect(toList());
-        this.checkers = parameters.stream().map(JetTableFunctionParameter::checker).toArray(OperandChecker[]::new);
     }
 
     public final boolean isStream() {
@@ -64,17 +56,7 @@ public abstract class JetTableFunction extends HazelcastFunction {
     }
 
     @Override
-    public final List<String> getParamNames() {
-        return parameterNames;
-    }
-
-    @Override
-    protected final boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        if (ValidationUtil.hasAssignment(binding.getCall())) {
-            return new NamedOperandCheckerProgram(checkers).check(binding, throwOnFailure);
-        } else {
-            OperandChecker[] checkers = Arrays.copyOfRange(this.checkers, 0, binding.getOperandCount());
-            return new OperandCheckerProgram(checkers).check(binding, throwOnFailure);
-        }
+    public final SqlReturnTypeInference getRowTypeInference() {
+        return returnTypeInference;
     }
 }

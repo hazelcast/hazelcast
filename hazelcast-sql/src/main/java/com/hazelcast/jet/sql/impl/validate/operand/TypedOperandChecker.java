@@ -43,9 +43,9 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker DECIMAL = new TypedOperandChecker(SqlTypeName.DECIMAL);
     public static final TypedOperandChecker REAL = new TypedOperandChecker(SqlTypeName.REAL);
     public static final TypedOperandChecker DOUBLE = new TypedOperandChecker(SqlTypeName.DOUBLE);
-    public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
-    public static final TypedOperandChecker TIMESTAMP_WITH_LOCAL_TIME_ZONE =
+    public static final TypedOperandChecker TIMESTAMP_WITH_TIME_ZONE =
             new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
+    public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
     public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
     public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE);
     public static final TypedOperandChecker JSON_NULLABLE = new TypedOperandChecker(HazelcastJsonType.TYPE_NULLABLE);

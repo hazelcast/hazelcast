@@ -16,12 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -36,148 +33,78 @@ public enum RecordReaderWriter {
 
     DATA_RECORD_WITH_STATS_READER_WRITER(TypeId.DATA_RECORD_WITH_STATS_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
-                         ExpiryMetadata expiryMetadata) throws IOException {
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
-            // RU_COMPAT_4_2
-            Version version = out.getVersion();
-            if (version.isGreaterOrEqual(Versions.V5_0)) {
-                out.writeInt(record.getRawCreationTime());
-                out.writeInt(record.getRawLastAccessTime());
-                out.writeInt(record.getRawLastUpdateTime());
-                out.writeInt(record.getHits());
-                out.writeInt(record.getVersion());
-                out.writeInt(record.getRawLastStoredTime());
-            } else {
-                out.writeInt(expiryMetadata.getRawTtl());
-                out.writeInt(expiryMetadata.getRawMaxIdle());
-                out.writeInt(record.getRawCreationTime());
-                out.writeInt(record.getRawLastAccessTime());
-                out.writeInt(record.getRawLastUpdateTime());
-                out.writeInt(record.getHits());
-                out.writeLong(record.getVersion());
-                out.writeInt(record.getRawLastStoredTime());
-                out.writeInt(expiryMetadata.getRawExpirationTime());
-            }
+            out.writeInt(record.getRawCreationTime());
+            out.writeInt(record.getRawLastAccessTime());
+            out.writeInt(record.getRawLastUpdateTime());
+            out.writeInt(record.getHits());
+            out.writeInt(record.getVersion());
+            out.writeInt(record.getRawLastStoredTime());
         }
 
         @Override
-        public Record readRecord(ObjectDataInput in,
-                                 ExpiryMetadata expiryMetadata) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new DataRecordWithStats();
             record.setValue(readData(in));
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            if (version.isGreaterOrEqual(Versions.V5_0)) {
-                record.setRawCreationTime(in.readInt());
-                record.setRawLastAccessTime(in.readInt());
-                record.setRawLastUpdateTime(in.readInt());
-                record.setHits(in.readInt());
-                record.setVersion(in.readInt());
-                record.setRawLastStoredTime(in.readInt());
-            } else {
-                expiryMetadata.setRawTtl(in.readInt());
-                expiryMetadata.setRawMaxIdle(in.readInt());
-                record.setRawCreationTime(in.readInt());
-                record.setRawLastAccessTime(in.readInt());
-                record.setRawLastUpdateTime(in.readInt());
-                record.setHits(in.readInt());
-                record.setVersion(longToIntVersion(in.readLong()));
-                record.setRawLastStoredTime(in.readInt());
-                expiryMetadata.setRawExpirationTime(in.readInt());
-            }
-
+            record.setRawCreationTime(in.readInt());
+            record.setRawLastAccessTime(in.readInt());
+            record.setRawLastUpdateTime(in.readInt());
+            record.setHits(in.readInt());
+            record.setVersion(in.readInt());
+            record.setRawLastStoredTime(in.readInt());
             return record;
         }
     },
 
     SIMPLE_DATA_RECORD_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
-                         ExpiryMetadata expiryMetadata) throws IOException {
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
-            // RU_COMPAT_4_2
-            Version version = out.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.write(out);
-            }
         }
 
         @Override
-        public Record readRecord(ObjectDataInput in,
-                                 ExpiryMetadata expiryMetadata) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecord();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.read(in);
-            }
-
             return record;
         }
     },
 
     SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
-                         ExpiryMetadata expiryMetadata) throws IOException {
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getRawLastAccessTime());
-            // RU_COMPAT_4_2
-            Version version = out.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.write(out);
-            }
         }
 
         @Override
-        public Record readRecord(ObjectDataInput in,
-                                 ExpiryMetadata expiryMetadata) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecordWithLRUEviction();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setRawLastAccessTime(in.readInt());
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.read(in);
-            }
-
             return record;
         }
     },
 
     SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
-                         ExpiryMetadata expiryMetadata) throws IOException {
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getHits());
-            // RU_COMPAT_4_2
-            Version version = out.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.write(out);
-            }
         }
 
         @Override
-        public Record readRecord(ObjectDataInput in,
-                                 ExpiryMetadata expiryMetadata) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecordWithLFUEviction();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setHits(in.readInt());
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            if (!version.isGreaterOrEqual(Versions.V5_0)) {
-                expiryMetadata.read(in);
-            }
-
             return record;
         }
     };
@@ -214,12 +141,8 @@ public enum RecordReaderWriter {
         }
     }
 
-    private static int longToIntVersion(long version) {
-        return version >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) version;
-    }
-
     abstract void writeRecord(ObjectDataOutput out,
-                              Record record, Data dataValue, ExpiryMetadata expiryMetadata) throws IOException;
+                              Record record, Data dataValue) throws IOException;
 
-    public abstract Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException;
+    public abstract Record readRecord(ObjectDataInput in) throws IOException;
 }

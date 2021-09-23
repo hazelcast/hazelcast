@@ -50,7 +50,7 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     /**
      * Defines maximum DECIMAL scale.
      */
-    public static final int MAX_DECIMAL_SCALE = MAX_DECIMAL_PRECISION;
+    public static final int MAX_DECIMAL_SCALE = QueryDataType.MAX_DECIMAL_SCALE;
 
     private HazelcastTypeSystem() {
         // No-op

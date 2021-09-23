@@ -59,13 +59,13 @@ public class HazelcastTypeSystemTest {
     @Test
     public void numericPrecisionAndScaleTest() {
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.MAX_DECIMAL_PRECISION);
-        assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.MAX_DECIMAL_SCALE);
+        assertEquals(QueryDataType.MAX_DECIMAL_SCALE, HazelcastTypeSystem.MAX_DECIMAL_SCALE);
 
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxNumericPrecision());
-        assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxNumericScale());
+        assertEquals(QueryDataType.MAX_DECIMAL_SCALE, HazelcastTypeSystem.INSTANCE.getMaxNumericScale());
 
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxPrecision(DECIMAL));
-        assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxScale(DECIMAL));
+        assertEquals(QueryDataType.MAX_DECIMAL_SCALE, HazelcastTypeSystem.INSTANCE.getMaxScale(DECIMAL));
     }
 
     @Test

@@ -896,6 +896,13 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testReal_literal() {
+        put(1);
+
+        checkValue0(sql("CAST(1.5 AS REAL)", OBJECT), OBJECT, 1.5F);
+    }
+
+    @Test
     public void testDouble_literal_small() {
         put(1);
 
@@ -927,6 +934,31 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     public void testDouble_literal_big() {
         put(1);
 
+        String literal = literal("1.1E35");
+
+        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+        checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DOUBLE, BOOLEAN));
+
+        checkFailure0(sql(literal, TINYINT), PARSING, "CAST function cannot convert literal 1.1E35 to type TINYINT: Numeric overflow while converting DOUBLE to TINYINT");
+        checkFailure0(sql(literal, SMALLINT), PARSING, "CAST function cannot convert literal 1.1E35 to type SMALLINT: Numeric overflow while converting DOUBLE to SMALLINT");
+        checkFailure0(sql(literal, INTEGER), PARSING, "CAST function cannot convert literal 1.1E35 to type INTEGER: Numeric overflow while converting DOUBLE to INTEGER");
+        checkFailure0(sql(literal, BIGINT), PARSING, "CAST function cannot convert literal 1.1E35 to type BIGINT: Numeric overflow while converting DOUBLE to BIGINT");
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("1.1E35"));
+        checkValue0(sql(literal, REAL), REAL, 1.1E35F);
+        checkValue0(sql(literal, DOUBLE), DOUBLE, 1.1E35D);
+
+        checkFailure0(sql(literal, DATE), PARSING, castError(DOUBLE, DATE));
+        checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
+        checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
+        checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+
+        checkValue0(sql(literal, OBJECT), OBJECT, 1.1E35D);
+    }
+
+    @Test
+    public void testDouble_literal_huge() {
+        put(1);
+
         String literal = literal("1.1E100");
 
         checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
@@ -936,16 +968,16 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, SMALLINT), PARSING, "CAST function cannot convert literal 1.1E100 to type SMALLINT: Numeric overflow while converting DOUBLE to SMALLINT");
         checkFailure0(sql(literal, INTEGER), PARSING, "CAST function cannot convert literal 1.1E100 to type INTEGER: Numeric overflow while converting DOUBLE to INTEGER");
         checkFailure0(sql(literal, BIGINT), PARSING, "CAST function cannot convert literal 1.1E100 to type BIGINT: Numeric overflow while converting DOUBLE to BIGINT");
-        checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("1.1E+100"));
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("1.100000000000000036919869142993200560714308010269170019300014421873657477457E+100"));
         checkFailure0(sql(literal, REAL), PARSING, "CAST function cannot convert literal 1.1E100 to type REAL: Numeric overflow while converting DOUBLE to REAL");
-        checkValue0(sql(literal, DOUBLE), DOUBLE, 1.1E100d);
+        checkValue0(sql(literal, DOUBLE), DOUBLE, 1.1E100D);
 
         checkFailure0(sql(literal, DATE), PARSING, castError(DOUBLE, DATE));
         checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkValue0(sql(literal, OBJECT), OBJECT, 1.1E100d);
+        checkValue0(sql(literal, OBJECT), OBJECT, 1.1E100D);
     }
 
     @Test

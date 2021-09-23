@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -37,36 +37,36 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.BYTE;
-import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.CHAR;
-import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DATE;
-import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.INT;
-import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.LONG;
-import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.SHORT;
-import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.UTF;
-import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.INT;
+import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
+import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
 
 /**
  * Default implementation of the {@link CompactWriter} that writes
@@ -235,12 +235,12 @@ public class DefaultCompactWriter implements CompactWriter {
         }
     }
 
-    protected <T> void writeVariableSizeField(@Nonnull String fieldName, FieldType fieldType, T object, Writer<T> writer) {
+    protected <T> void writeVariableSizeField(@Nonnull String fieldName, FieldKind fieldKind, T object, Writer<T> writer) {
         try {
             if (object == null) {
-                setPositionAsNull(fieldName, fieldType);
+                setPositionAsNull(fieldName, fieldKind);
             } else {
-                setPosition(fieldName, fieldType);
+                setPosition(fieldName, fieldKind);
                 writer.write(out, object);
             }
         } catch (IOException e) {
@@ -250,17 +250,17 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeString(@Nonnull String fieldName, String str) {
-        writeVariableSizeField(fieldName, UTF, str, ObjectDataOutput::writeString);
+        writeVariableSizeField(fieldName, STRING, str, ObjectDataOutput::writeString);
     }
 
     @Override
     public void writeObject(@Nonnull String fieldName, Object value) {
-        writeVariableSizeField(fieldName, COMPOSED, value,
+        writeVariableSizeField(fieldName, COMPACT, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
     public void writeGenericRecord(@Nonnull String fieldName, GenericRecord value) {
-        writeVariableSizeField(fieldName, COMPOSED, value,
+        writeVariableSizeField(fieldName, COMPACT, value,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
@@ -363,20 +363,20 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) {
-        writeVariableSizeArray(fieldName, UTF_ARRAY, values, ObjectDataOutput::writeString);
+        writeVariableSizeArray(fieldName, STRING_ARRAY, values, ObjectDataOutput::writeString);
     }
 
     interface Writer<T> {
         void write(BufferObjectDataOutput out, T value) throws IOException;
     }
 
-    protected <T> void writeVariableSizeArray(@Nonnull String fieldName, FieldType fieldType, T[] values, Writer<T> writer) {
+    protected <T> void writeVariableSizeArray(@Nonnull String fieldName, FieldKind fieldKind, T[] values, Writer<T> writer) {
         if (values == null) {
-            setPositionAsNull(fieldName, fieldType);
+            setPositionAsNull(fieldName, fieldKind);
             return;
         }
         try {
-            setPosition(fieldName, fieldType);
+            setPosition(fieldName, fieldKind);
             int itemCount = values.length;
             out.writeInt(itemCount);
             int dataLengthOffset = out.position();
@@ -425,31 +425,31 @@ public class DefaultCompactWriter implements CompactWriter {
         writeVariableSizeField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, values, DefaultCompactWriter::writeOffsetDateTimeArray0);
     }
 
-    protected void setPositionAsNull(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDescriptor field = checkFieldDefinition(fieldName, fieldType);
+    protected void setPositionAsNull(@Nonnull String fieldName, FieldKind fieldKind) {
+        FieldDescriptor field = checkFieldDefinition(fieldName, fieldKind);
         int index = field.getIndex();
         fieldOffsets[index] = -1;
     }
 
-    protected void setPosition(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDescriptor field = checkFieldDefinition(fieldName, fieldType);
+    protected void setPosition(@Nonnull String fieldName, FieldKind fieldKind) {
+        FieldDescriptor field = checkFieldDefinition(fieldName, fieldKind);
         int pos = out.position();
         int fieldPosition = pos - dataStartPosition;
         int index = field.getIndex();
         fieldOffsets[index] = fieldPosition;
     }
 
-    private int getFixedSizeFieldPosition(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, fieldType);
+    private int getFixedSizeFieldPosition(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
+        FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, fieldKind);
         return fieldDefinition.getOffset() + dataStartPosition;
     }
 
-    protected FieldDescriptor checkFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
+    protected FieldDescriptor checkFieldDefinition(@Nonnull String fieldName, @Nonnull FieldKind kind) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
-        if (!field.getType().equals(fieldType)) {
+        if (field.getKind() != kind) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName + " for " + schema);
         }
         return field;
@@ -457,12 +457,12 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectArray(@Nonnull String fieldName, T[] values) {
-        writeVariableSizeArray(fieldName, COMPOSED_ARRAY, values,
+        writeVariableSizeArray(fieldName, COMPACT_ARRAY, values,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
     public void writeGenericRecordArray(@Nonnull String fieldName, GenericRecord[] values) {
-        writeVariableSizeArray(fieldName, COMPOSED_ARRAY, values,
+        writeVariableSizeArray(fieldName, COMPACT_ARRAY, values,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
