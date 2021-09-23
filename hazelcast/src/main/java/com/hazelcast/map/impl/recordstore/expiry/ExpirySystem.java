@@ -242,16 +242,11 @@ public class ExpirySystem {
             return;
         }
 
-        long ttl = expiryMetadata.getTtl();
-        if (ttl <= maxIdle) {
-            return;
-        }
-
         // RU_COMPAT_4_2
         lastUpdateTime = isClusterVersionLessThanV5()
                 ? lastUpdateTime : expiryMetadata.getLastUpdateTime();
 
-        expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
+        expiryMetadata.setExpirationTime(nextExpirationTime(expiryMetadata.getTtl(),
                 maxIdle, now, lastUpdateTime));
     }
 
