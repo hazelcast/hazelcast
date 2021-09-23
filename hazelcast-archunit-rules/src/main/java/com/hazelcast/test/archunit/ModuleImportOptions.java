@@ -18,7 +18,7 @@ package com.hazelcast.test.archunit;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 
-import java.util.regex.Matcher;
+import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
 public final class ModuleImportOptions {
@@ -27,29 +27,8 @@ public final class ModuleImportOptions {
     }
 
     public static ImportOption onlyCurrentModule() {
-        String callerClassName = new Throwable().getStackTrace()[1].getClassName();
-        String moduleName = getProjectModuleName(callerClassName);
+        String moduleName = Paths.get("").toAbsolutePath().getFileName().toString();
         Pattern projectModulePattern = Pattern.compile(".*/" + moduleName + "/target/classes/.*");
         return location -> location.matches(projectModulePattern);
-    }
-
-    private static String getProjectModuleName(String clazz) {
-        String currentClassLocation = getClassLocation(clazz);
-        Pattern moduleExtractingPattern = Pattern.compile(".*/([^/]+)/target/test-classes/.*");
-        Matcher matcher = moduleExtractingPattern.matcher(currentClassLocation);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        throw new IllegalStateException("Current module not found");
-    }
-
-    private static String getClassLocation(String className) {
-        try {
-            Class<?> clazz = Class.forName(className);
-            return clazz.getProtectionDomain().getCodeSource().getLocation().getPath();
-
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
