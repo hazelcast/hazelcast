@@ -65,7 +65,6 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -985,7 +984,6 @@ public class MigrationManager {
 
         /** Schedules all migrations. */
         private void scheduleMigrations(List<Queue<MigrationInfo>> migrationQs) {
-            Version version = nodeEngine.getClusterService().getClusterVersion();
             schedule(new MigrationPlanTask(migrationQs));
         }
 
