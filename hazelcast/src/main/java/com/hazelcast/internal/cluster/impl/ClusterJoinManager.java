@@ -114,7 +114,7 @@ public class ClusterJoinManager {
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
 
-    private long staleJoinPreventionDurationInMillis;
+    private final long staleJoinPreventionDurationInMillis;
     private long firstJoinRequest;
     private long timeToStartJoin;
     private volatile boolean joinInProgress;
