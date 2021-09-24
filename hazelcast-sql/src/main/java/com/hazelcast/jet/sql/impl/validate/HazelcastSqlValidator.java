@@ -256,7 +256,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 }
                 break;
             default:
-                break;
+                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
         }
     }
 
