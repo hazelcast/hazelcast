@@ -3875,7 +3875,7 @@
     </xs:simpleType>
 
     <xs:complexType name="eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="10000"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>
@@ -3883,7 +3883,7 @@
     </xs:complexType>
 
     <xs:complexType name="eviction-map">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="0"/>
         <xs:attribute name="max-size-policy" type="max-size-policy-map" default="PER_NODE"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>

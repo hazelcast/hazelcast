@@ -19,6 +19,8 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,6 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
+import static com.hazelcast.config.EvictionPolicy.RANDOM;
+import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -79,6 +84,21 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
         assertNull(instance.getConfig().getManagedContext());
+    }
+
+    @Test
+    public void testPlaceholderInEviction() {
+        assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
+
+        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
+
+        HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
+        MapConfig mapConfig = instance.getConfig().getMapConfig("map-with-eviction");
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        assertThat(evictionConfig.getSize()).isEqualTo(1983);
+        assertThat(evictionConfig.getMaxSizePolicy()).isEqualTo(PER_PARTITION);
+        assertThat(evictionConfig.getEvictionPolicy()).isEqualTo(RANDOM);
     }
 
     @Test

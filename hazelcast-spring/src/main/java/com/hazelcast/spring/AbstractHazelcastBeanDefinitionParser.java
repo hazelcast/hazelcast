@@ -23,14 +23,11 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
@@ -44,6 +41,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
 import com.hazelcast.spring.jet.JetBeanDefinitionParser;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -64,15 +62,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
@@ -434,7 +427,6 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
-        @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
         protected BeanDefinition getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
             Node size = node.getAttributes().getNamedItem("size");
             Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
@@ -447,53 +439,26 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             BeanDefinitionBuilder evictionConfigBuilder = createBeanBuilder(EvictionConfig.class);
+            evictionConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            evictionConfigBuilder.setFactoryMethod("newEvictionConfig");
 
-            Integer maxSize = isIMap ? MapConfig.DEFAULT_MAX_SIZE : EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
-            MaxSizePolicy maxSizePolicyValue = isIMap
-                    ? MapConfig.DEFAULT_MAX_SIZE_POLICY : EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
-            EvictionPolicy evictionPolicyValue = isIMap
-                    ? MapConfig.DEFAULT_EVICTION_POLICY : EvictionConfig.DEFAULT_EVICTION_POLICY;
             String comparatorClassNameValue = null;
-            String comparatorBeanValue = null;
 
-            if (size != null) {
-                maxSize = parseInt(getTextContent(size));
-                if (isIMap && maxSize == 0) {
-                    maxSize = MapConfig.DEFAULT_MAX_SIZE;
-                }
-            }
-            if (maxSizePolicy != null) {
-                maxSizePolicyValue = MaxSizePolicy.valueOf(
-                        upperCaseInternal(getTextContent(maxSizePolicy)));
-            }
-            if (evictionPolicy != null) {
-                evictionPolicyValue = EvictionPolicy.valueOf(
-                        upperCaseInternal(getTextContent(evictionPolicy)));
-            }
             if (comparatorClassName != null) {
                 comparatorClassNameValue = getTextContent(comparatorClassName);
             }
-            if (comparatorBean != null) {
-                comparatorBeanValue = getTextContent(comparatorBean);
-            }
 
-            try {
-                doEvictionConfigChecks(maxSizePolicyValue, evictionPolicyValue,
-                        comparatorClassNameValue, comparatorBeanValue, isIMap, isNearCache);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidConfigurationException(e.getMessage());
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(size));
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(maxSizePolicy));
+            evictionConfigBuilder.addConstructorArgValue(getTextContent(evictionPolicy));
+            evictionConfigBuilder.addConstructorArgValue(isNearCache);
+            evictionConfigBuilder.addConstructorArgValue(isIMap);
+            evictionConfigBuilder.addConstructorArgValue(comparatorClassNameValue);
+            if (comparatorBean == null) {
+                evictionConfigBuilder.addConstructorArgValue(null);
+            } else {
+                evictionConfigBuilder.addConstructorArgReference(getTextContent(comparatorBean));
             }
-
-            evictionConfigBuilder.addPropertyValue("size", maxSize);
-            evictionConfigBuilder.addPropertyValue("maxSizePolicy", maxSizePolicyValue);
-            evictionConfigBuilder.addPropertyValue("evictionPolicy", evictionPolicyValue);
-            if (comparatorClassNameValue != null) {
-                evictionConfigBuilder.addPropertyValue("comparatorClassName", comparatorClassNameValue);
-            }
-            if (comparatorBean != null) {
-                evictionConfigBuilder.addPropertyReference("comparator", comparatorBeanValue);
-            }
-
             return evictionConfigBuilder.getBeanDefinition();
         }
 
@@ -755,25 +720,4 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
     }
 
-    private static void doEvictionConfigChecks(MaxSizePolicy maxSizePolicyValue,
-                                               EvictionPolicy evictionPolicyValue,
-                                               String comparatorClassNameValue,
-                                               String comparatorBeanValue,
-                                               boolean isIMap, boolean isNearCache) {
-        if (isIMap) {
-            checkMapEvictionConfig(maxSizePolicyValue, evictionPolicyValue,
-                    comparatorClassNameValue, comparatorBeanValue);
-            return;
-        }
-
-        if (isNearCache) {
-            checkNearCacheEvictionConfig(evictionPolicyValue,
-                    comparatorClassNameValue, comparatorBeanValue);
-            return;
-        }
-
-        checkEvictionConfig(evictionPolicyValue,
-                comparatorClassNameValue, comparatorBeanValue,
-                COMMONLY_SUPPORTED_EVICTION_POLICIES);
-    }
 }
