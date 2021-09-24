@@ -37,7 +37,7 @@ public final class JsonPathUtil {
             .build());
 
     static {
-        // default Cache is LRU, but we don't want it, because cache is implemented per-JSONPath-based-function
+        // default Cache is LRU, but we don't want it, because cache is implemented per JSONPath-based function
         CacheProvider.setCache(new NOOPCache());
     }
 

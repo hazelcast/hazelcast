@@ -54,7 +54,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             SqlJsonValueEmptyOrErrorBehavior onEmpty,
             SqlJsonValueEmptyOrErrorBehavior onError
     ) {
-
         super(operands, resultType);
         this.onEmpty = onEmpty;
         this.onError = onError;

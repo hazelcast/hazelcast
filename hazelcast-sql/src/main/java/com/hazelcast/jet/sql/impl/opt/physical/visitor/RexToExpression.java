@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
-import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;

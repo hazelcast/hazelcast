@@ -106,7 +106,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                 .hasMessageContaining("Empty JSON object");
+                .hasMessageContaining("Empty JSON object");
 
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertEquals(new HazelcastJsonValue("[]"),
