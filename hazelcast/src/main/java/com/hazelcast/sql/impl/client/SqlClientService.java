@@ -134,7 +134,7 @@ public class SqlClientService implements SqlService {
         ClientMessage message,
         Throwable err
     ) {
-        if(err != null) {
+        if (err != null) {
             RuntimeException error = rethrow(err, connection);
             res.onExecuteError(error);
             throw error;
