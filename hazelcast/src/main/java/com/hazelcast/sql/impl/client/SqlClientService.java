@@ -105,23 +105,13 @@ public class SqlClientService implements SqlService {
 
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-            try {
-                future.whenComplete((message, error) ->  {
-                    if (error != null) {
-                        RuntimeException err = rethrow(error, connection);
-                        res.onExecuteError(err);
-                        throw err;
-                    } else {
-                        handleExecuteResponse(res, message);
-                    }
-                }).get();
-            } catch (Exception e) {
-                throw unwrapExecutionException(e);
-            }
+            future.whenComplete((message, error) ->  {
+                handleExecuteResponse(connection, res, message, error);
+            }).get();
 
             return res;
         } catch (Exception e) {
-            throw rethrow(e, connection);
+            throw rethrow(unwrapExecutionException(e), connection);
         }
     }
 
@@ -139,9 +129,16 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
+        ClientConnection connection,
         SqlClientResult res,
-        ClientMessage message
+        ClientMessage message,
+        Throwable err
     ) {
+        if(err != null) {
+            RuntimeException error = rethrow(err, connection);
+            res.onExecuteError(error);
+            throw error;
+        }
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         HazelcastSqlException responseError = handleResponseError(response.error);
 
