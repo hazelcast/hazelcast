@@ -66,7 +66,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
 
@@ -470,26 +469,18 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
             BeanDefinitionBuilder nearCachePreloaderConfigBuilder = createBeanBuilder(NearCachePreloaderConfig.class);
 
-            Boolean enabledValue = Boolean.FALSE;
-            String directoryValue = "";
-            Integer storeInitialDelaySecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS;
-            Integer storeIntervalSecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS;
+            String storeInitialDelaySecondsValue = String.valueOf(NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS);
+            String storeIntervalSecondsValue = String.valueOf(NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS);
 
-            if (enabled != null) {
-                enabledValue = Boolean.parseBoolean(getTextContent(enabled));
-            }
-            if (directory != null) {
-                directoryValue = getTextContent(directory);
-            }
             if (storeInitialDelaySeconds != null) {
-                storeInitialDelaySecondsValue = parseInt(getTextContent(storeInitialDelaySeconds));
+                storeInitialDelaySecondsValue = getTextContent(storeInitialDelaySeconds);
             }
             if (storeIntervalSeconds != null) {
-                storeIntervalSecondsValue = parseInt(getTextContent(storeIntervalSeconds));
+                storeIntervalSecondsValue = getTextContent(storeIntervalSeconds);
             }
 
-            nearCachePreloaderConfigBuilder.addPropertyValue("enabled", enabledValue);
-            nearCachePreloaderConfigBuilder.addPropertyValue("directory", directoryValue);
+            nearCachePreloaderConfigBuilder.addPropertyValue("enabled", getTextContent(enabled));
+            nearCachePreloaderConfigBuilder.addPropertyValue("directory", getTextContent(directory));
             nearCachePreloaderConfigBuilder.addPropertyValue("storeInitialDelaySeconds", storeInitialDelaySecondsValue);
             nearCachePreloaderConfigBuilder.addPropertyValue("storeIntervalSeconds", storeIntervalSecondsValue);
 

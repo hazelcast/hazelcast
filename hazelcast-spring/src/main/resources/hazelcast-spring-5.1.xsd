@@ -3897,8 +3897,8 @@
     <xs:complexType name="preloader">
         <xs:attribute name="enabled" type="parameterized-boolean" default="false"/>
         <xs:attribute name="directory" type="xs:string" default=""/>
-        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600"/>
-        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600"/>
+        <xs:attribute name="store-initial-delay-seconds" type="parameterized-positive-integer" default="600"/>
+        <xs:attribute name="store-interval-seconds" type="parameterized-positive-integer" default="600"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">

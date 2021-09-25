@@ -185,7 +185,7 @@
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"
-                          store-initial-delay-seconds="23" store-interval-seconds="42"/>
+                          store-initial-delay-seconds="23" store-interval-seconds="${preloader.storeIntervalSeconds}"/>
         </hz:near-cache>
     </hz:client>
 
