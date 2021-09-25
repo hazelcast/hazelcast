@@ -80,6 +80,9 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.getAllHazelcastClients().iterator().next();
         assertNull(client.getClientConfig().getManagedContext());
 
+        int batchSize = client.getClientConfig().getQueryCacheConfigs().get("").get("cache1").getBatchSize();
+        assertEquals(12, batchSize);
+
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());

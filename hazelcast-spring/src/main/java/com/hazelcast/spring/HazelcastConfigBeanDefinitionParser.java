@@ -1338,29 +1338,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("include-value".equals(nodeName)) {
-                    boolean includeValue = getBooleanValue(textContent);
-                    builder.addPropertyValue("includeValue", includeValue);
+                    builder.addPropertyValue("includeValue", textContent);
                 } else if ("batch-size".equals(nodeName)) {
-                    int batchSize = getIntegerValue("batch-size", textContent.trim()
-                    );
-                    builder.addPropertyValue("batchSize", batchSize);
+                    builder.addPropertyValue("batchSize", textContent);
                 } else if ("buffer-size".equals(nodeName)) {
-                    int bufferSize = getIntegerValue("buffer-size", textContent.trim()
-                    );
-                    builder.addPropertyValue("bufferSize", bufferSize);
+                    builder.addPropertyValue("bufferSize", textContent);
                 } else if ("delay-seconds".equals(nodeName)) {
-                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
-                    );
-                    builder.addPropertyValue("delaySeconds", delaySeconds);
+                    builder.addPropertyValue("delaySeconds", textContent);
                 } else if ("in-memory-format".equals(nodeName)) {
                     String value = textContent.trim();
                     builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
                 } else if ("coalesce".equals(nodeName)) {
-                    boolean coalesce = getBooleanValue(textContent);
-                    builder.addPropertyValue("coalesce", coalesce);
+                    builder.addPropertyValue("coalesce", textContent);
                 } else if ("populate".equals(nodeName)) {
-                    boolean populate = getBooleanValue(textContent);
-                    builder.addPropertyValue("populate", populate);
+                    builder.addPropertyValue("populate", textContent);
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList<BeanDefinition> indexes = new ManagedList<>();
                     for (Node indexNode : childElements(node)) {

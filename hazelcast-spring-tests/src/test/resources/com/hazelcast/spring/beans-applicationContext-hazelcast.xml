@@ -87,6 +87,12 @@
                                reuse-address="false"
                                tcp-no-delay="false"/>
         </hz:network>
+        <hz:query-caches>
+            <hz:query-cache name="cache1" mapName="map1">
+                <hz:predicate type="sql">__key > 12</hz:predicate>
+                <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
+            </hz:query-cache>
+        </hz:query-caches>
     </hz:client>
 
 
