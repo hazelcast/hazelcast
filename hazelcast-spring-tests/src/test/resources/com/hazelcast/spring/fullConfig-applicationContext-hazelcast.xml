@@ -201,7 +201,7 @@
                         <hz:max-attempts>2</hz:max-attempts>
                         <hz:parallel-mode>true</hz:parallel-mode>
                         <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
-                        <hz:ttl>1</hz:ttl>
+                        <hz:ttl>${failure.detector.ttl}</hz:ttl>
                     </hz:icmp>
                 </hz:failure-detector>
                 <hz:rest-api enabled="false">
