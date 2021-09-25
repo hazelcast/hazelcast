@@ -243,8 +243,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleDataSerializableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<>();
+            ManagedMap<String, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<String, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("data-serializable-factory".equals(name)) {
@@ -253,10 +253,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     Node classNode = attributes.getNamedItem("class-name");
                     Node fidNode = attributes.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(getTextContent(fidNode), new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
-                        classNames.put(parseInt(getTextContent(fidNode)), getTextContent(classNode));
+                        classNames.put(getTextContent(fidNode), getTextContent(classNode));
                     }
                 }
             }
@@ -320,15 +320,15 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
             }
             if (overrideJavaSerializationNode != null) {
-                boolean value = getBooleanValue(getTextContent(overrideJavaSerializationNode));
+                String value = getTextContent(overrideJavaSerializationNode);
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(overrideJavaSerializationName), value);
             }
             return globalSerializerConfigBuilder;
         }
 
         protected void handlePortableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<>();
+            ManagedMap<String, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<String, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("portable-factory".equals(name)) {
@@ -337,10 +337,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     Node classNode = attributes.getNamedItem("class-name");
                     Node fidNode = attributes.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(getTextContent(fidNode), new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
-                        classNames.put(parseInt(getTextContent(fidNode)), getTextContent(classNode));
+                        classNames.put(getTextContent(fidNode), getTextContent(classNode));
                     }
                 }
             }
@@ -692,8 +692,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
             Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
-            boolean defaultsDisabled = getBooleanValue(getTextContent(defaultsDisabledAttr));
-            filterConfigBuilder.addPropertyValue("defaultsDisabled", defaultsDisabled);
+            filterConfigBuilder.addPropertyValue("defaultsDisabled", getTextContent(defaultsDisabledAttr));
             serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
                     filterConfigBuilder.getBeanDefinition());
         }

@@ -1493,7 +1493,7 @@
 
     <xs:complexType name="serialization-factory">
         <xs:attributeGroup ref="class-or-bean-name"/>
-        <xs:attribute name="factory-id" type="xs:string" use="required"/>
+        <xs:attribute name="factory-id" type="parameterized-integer" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="global-serializer">
