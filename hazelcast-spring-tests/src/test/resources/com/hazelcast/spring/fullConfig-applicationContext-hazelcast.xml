@@ -909,7 +909,7 @@
             </hz:security>
 
             <hz:member-attributes>
-                <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
+                <hz:attribute name="cluster.name">${cluster.name}</hz:attribute>
             </hz:member-attributes>
 
             <hz:split-brain-protection enabled="true" name="my-split-brain-protection">

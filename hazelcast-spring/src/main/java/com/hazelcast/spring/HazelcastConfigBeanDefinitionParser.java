@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -75,7 +76,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
@@ -1830,29 +1830,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     continue;
                 }
                 String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-                String attributeType = getTextContent(n.getAttributes().getNamedItem("type")).trim();
                 String value = getTextContent(n);
-                Object oValue;
-                if ("string".equals(attributeType)) {
-                    oValue = value;
-                } else if ("boolean".equals(attributeType)) {
-                    oValue = Boolean.parseBoolean(value);
-                } else if ("byte".equals(attributeType)) {
-                    oValue = Byte.parseByte(value);
-                } else if ("double".equals(attributeType)) {
-                    oValue = Double.parseDouble(value);
-                } else if ("float".equals(attributeType)) {
-                    oValue = Float.parseFloat(value);
-                } else if ("int".equals(attributeType)) {
-                    oValue = Integer.parseInt(value);
-                } else if ("long".equals(attributeType)) {
-                    oValue = Long.parseLong(value);
-                } else if ("short".equals(attributeType)) {
-                    oValue = Short.parseShort(value);
-                } else {
-                    oValue = value;
-                }
-                attributes.put(attributeName, oValue);
+                attributes.put(attributeName, value);
             }
             memberAttributeConfigBuilder.addPropertyValue("attributes", attributes);
             configBuilder.addPropertyValue("memberAttributeConfig", beanDefinition);
