@@ -83,6 +83,8 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         int batchSize = client.getClientConfig().getQueryCacheConfigs().get("").get("cache1").getBatchSize();
         assertEquals(12, batchSize);
 
+        assertFalse(client.getClientConfig().getMetricsConfig().isEnabled());
+
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());

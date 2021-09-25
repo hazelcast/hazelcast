@@ -68,7 +68,6 @@ import java.util.List;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
@@ -559,8 +558,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder metricsConfigBuilder = createBeanBuilder(ClientMetricsConfig.class);
             fillValues(node, metricsConfigBuilder, "jmx");
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-            boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-            metricsConfigBuilder.addPropertyValue("enabled", enabled);
+            metricsConfigBuilder.addPropertyValue("enabled", getTextContent(attrEnabled));
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);

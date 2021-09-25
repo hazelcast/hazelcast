@@ -93,6 +93,10 @@
                 <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
             </hz:query-cache>
         </hz:query-caches>
+        <hz:metrics enabled="${metrics.enabled}">
+            <hz:jmx enabled="false"/>
+            <hz:collection-frequency-seconds>42</hz:collection-frequency-seconds>
+        </hz:metrics>
     </hz:client>
 
 

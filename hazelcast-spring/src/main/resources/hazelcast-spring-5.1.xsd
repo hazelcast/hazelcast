@@ -3673,7 +3673,7 @@
     <xs:complexType name="client-metrics">
         <xs:all>
             <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
-            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+            <xs:element name="collection-frequency-seconds" type="parameterized-unsigned-int" default="5" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the metrics collection frequency in seconds.
@@ -3684,7 +3684,7 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Master-switch for the metrics system. Controls whether
@@ -5404,7 +5404,7 @@
     </xs:complexType>
 
     <xs:complexType name="metrics-jmx">
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to
