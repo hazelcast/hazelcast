@@ -32,14 +32,11 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
-import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.MemorySize;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
@@ -65,7 +62,6 @@ import java.util.List;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
 
@@ -520,20 +516,11 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         private void handlePersistentMemoryConfig(Node pmemNode, BeanDefinitionBuilder pmemConfigBuilder,
                                                   ManagedList<BeanDefinition> directoriesList) {
             Node enabledNode = pmemNode.getAttributes().getNamedItem("enabled");
-            if (enabledNode != null) {
-                boolean enabled = getBooleanValue(getTextContent(enabledNode));
-                pmemConfigBuilder.addPropertyValue("enabled", enabled);
-            }
+            pmemConfigBuilder.addPropertyValue("enabled", getTextContent(enabledNode));
 
             Node mode = pmemNode.getAttributes().getNamedItem("mode");
-            if (mode != null) {
-                String modeValue = getTextContent(mode);
-                try {
-                    pmemConfigBuilder.addPropertyValue("mode", PersistentMemoryMode.valueOf(modeValue));
-                } catch (Exception ex) {
-                    throw new InvalidConfigurationException("Invalid 'mode' for 'persistent-memory': " + modeValue);
-                }
-            }
+            pmemConfigBuilder.addPropertyValue("mode", getTextContent(mode));
+
 
             for (Node dirsNode : childElements(pmemNode)) {
                 String dirsNodeName = cleanNodeName(dirsNode);
@@ -545,10 +532,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                             NamedNodeMap attributes = dirNode.getAttributes();
                             Node numaNode = attributes.getNamedItem("numa-node");
                             pmemDirConfigBuilder.addConstructorArgValue(getTextContent(dirNode));
-                            String numaNodeStr = getTextContent(numaNode);
-                            if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeStr)) {
-                                pmemDirConfigBuilder.addConstructorArgValue(getIntegerValue("numa-node", numaNodeStr));
-                            }
+                            pmemDirConfigBuilder.addConstructorArgValue(getTextContent(numaNode));
                             directoriesList.add(pmemDirConfigBuilder.getBeanDefinition());
                         }
                     }
@@ -562,7 +546,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
             memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
-            memorySizeConfigBuilder.addConstructorArgValue(MemoryUnit.valueOf(getTextContent(unit)));
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
             nativeMemoryConfigBuilder.addPropertyValue("size", memorySizeConfigBuilder.getBeanDefinition());
         }
 

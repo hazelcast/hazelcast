@@ -3966,6 +3966,10 @@
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
+        <xs:union memberTypes="memory-unit-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="memory-unit-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
@@ -4009,7 +4013,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
+        <xs:attribute name="enabled" default="false" type="parameterized-boolean">
             <xs:annotation>
                 <xs:documentation>
                     Sets if using persistent memory as Hazelcast native memory is enabled.
@@ -4027,6 +4031,10 @@
     </xs:complexType>
 
     <xs:simpleType name="persistent-memory-mode">
+            <xs:union memberTypes="persistent-memory-mode-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="persistent-memory-mode-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="MOUNTED">
                 <xs:annotation>
@@ -4045,6 +4053,7 @@
         </xs:restriction>
     </xs:simpleType>
 
+
     <xs:complexType name="persistent-memory-directory">
         <xs:annotation>
             <xs:documentation>
@@ -4059,7 +4068,7 @@
         </xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="numa-node" type="xs:int" default="-1">
+                <xs:attribute name="numa-node" type="parameterized-integer" default="-1">
                     <xs:annotation>
                         <xs:documentation>
                             The NUMA node that the persistent memory mounted
