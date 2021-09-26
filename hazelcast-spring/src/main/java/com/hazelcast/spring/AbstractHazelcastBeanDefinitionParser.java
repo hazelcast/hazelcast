@@ -61,7 +61,6 @@ import java.util.List;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
 
@@ -569,7 +568,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void handleAutoDetection(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             BeanDefinitionBuilder autoDetectionConfigBuilder = createBeanBuilder(AutoDetectionConfig.class);
-            autoDetectionConfigBuilder.addPropertyValue("enabled", getBooleanValue(getAttribute(node, "enabled")));
+            autoDetectionConfigBuilder.addPropertyValue("enabled", getAttribute(node, "enabled"));
             joinConfigBuilder.addPropertyValue("autoDetectionConfig", autoDetectionConfigBuilder.getBeanDefinition());
         }
 
