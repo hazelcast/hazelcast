@@ -31,3 +31,8 @@ jobs:
         run: mvn --errors --no-transfer-progress --batch-mode clean test-compile
       - name: Install with Maven
         run: mvn --errors --no-transfer-progress --batch-mode install -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
+      - name: Publish Test Report
+        if: ${{ always() }}
+        uses: scacap/action-surefire-report@v1
+        with:
+          fail_on_test_failures: true
