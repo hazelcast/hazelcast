@@ -97,6 +97,11 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        reportReliableTopicReceived(resultSet.size());
+    }
+
+    @Override
     public Object getResponse() {
         return resultSet;
     }

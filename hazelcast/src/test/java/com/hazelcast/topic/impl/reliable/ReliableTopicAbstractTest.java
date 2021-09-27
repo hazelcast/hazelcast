@@ -53,7 +53,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     private ReliableTopicProxy<String> topic;
     private HazelcastInstance local;
     private HazelcastInstance[] instances;
-//    private HazelcastInstance remote;
 
     @Before
     public void setup() {
@@ -68,7 +67,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         instances = newInstances(config);
         local = instances[0];
-//        remote = instances[instances.length - 1];
         HazelcastInstance target = instances[instances.length - 1];
 
         String name = randomNameOwnedBy(target, "reliableTopic");

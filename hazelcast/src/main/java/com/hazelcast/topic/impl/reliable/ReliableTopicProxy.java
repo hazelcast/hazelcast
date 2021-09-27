@@ -348,7 +348,6 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                         "Failed to publish messages: " + payload + " on topic:" + getName()));
             } else {
                 returnFuture.complete(null);
-                messages.forEach(p -> localTopicStats.incrementPublishes());
             }
         });
     }

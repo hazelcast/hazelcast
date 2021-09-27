@@ -80,6 +80,16 @@ public class ReliableTopicService implements ManagedService, RemoteService,
     }
 
     /**
+     * Increments the number of received messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
+    public void incrementReceivedMessages(String topicName) {
+        getLocalTopicStats(topicName).incrementReceives();
+    }
+
+    /**
      * Returns reliable topic statistics local to this member
      * for the reliable topic with {@code name}.
      *

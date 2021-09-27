@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
@@ -134,17 +135,28 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
     }
 
     /**
-     * ReliableTopic is built on top of RingBuffer. This method determines 'publish' operation
+     * ReliableTopic is built on top of RingBuffer. This method determines if 'publish' operation
      * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
      */
     protected void reportReliableTopicPublish(int publishCount) {
+        reportReliableTopicStat(publishCount, (topic) -> getReliableTopicService().incrementPublishes(topic));
+    }
+
+    /**
+     * ReliableTopic is built on top of RingBuffer. This method determines if 'read' operation
+     * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
+     */
+    protected void reportReliableTopicReceived(int receivedCount) {
+        reportReliableTopicStat(receivedCount, (topic) -> getReliableTopicService().incrementReceivedMessages(topic));
+    }
+
+    private void reportReliableTopicStat(int count, Consumer<String> statsReposter) {
         if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
             String reliableTopicName = name.substring(RingbufferService.TOPIC_RB_PREFIX.length());
-            IntStream.range(0, publishCount)
-                    .forEach((val) -> getReliableTopicService().incrementPublishes(reliableTopicName));
+            IntStream.range(0, count).forEach((val) -> statsReposter.accept(reliableTopicName));
         }
     }
-    
+
     protected ReliableTopicService getReliableTopicService() {
         return getNodeEngine().getService(ReliableTopicService.SERVICE_NAME);
     }
