@@ -311,6 +311,7 @@ public abstract class Converter implements Serializable {
 
             case OBJECT:
                 return canConvertToObject();
+
             case JSON:
                 return canConvertToJson();
 

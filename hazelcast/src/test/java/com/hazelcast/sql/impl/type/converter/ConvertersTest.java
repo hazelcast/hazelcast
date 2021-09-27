@@ -1000,6 +1000,7 @@ public class ConvertersTest {
                 assertEquals(expected, converter.canConvertToObject());
 
                 break;
+
             case JSON:
                 assertEquals(expected, converter.canConvertToJson());
 

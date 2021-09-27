@@ -257,6 +257,7 @@ public final class QueryDataTypeUtils {
 
             case NULL:
                 return NULL;
+
             case JSON:
                 return JSON;
 
@@ -312,6 +313,7 @@ public final class QueryDataTypeUtils {
 
             case NULL:
                 return NULL;
+
             case JSON:
                 return JSON;
 

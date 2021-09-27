@@ -36,6 +36,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+/**
+ * A test for JSON_QUERY function.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
