@@ -31,7 +31,7 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
 
     private List<MutationObserver> mutationObservers = EMPTY_LIST;
 
-    public CompositeMutationObserver() {
+    CompositeMutationObserver() {
     }
 
     public void add(MutationObserver<R> mutationObserver) {
