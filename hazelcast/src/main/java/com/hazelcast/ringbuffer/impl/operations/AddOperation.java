@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
@@ -71,9 +70,7 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
 
     @Override
     public void afterRun() throws Exception {
-        if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
-            getReliableTopicService().incrementPublishes(name.substring(RingbufferService.TOPIC_RB_PREFIX.length()));
-        }
+        reportReliableTopicPublish(1);
     }
 
     @Override

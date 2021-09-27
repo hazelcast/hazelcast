@@ -17,21 +17,19 @@
 package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_ALL_OPERATION;
@@ -74,11 +72,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
     @Override
     public void afterRun() throws Exception {
-        if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
-            IntStream.range(0, items.length)
-                    .forEach((val) -> getReliableTopicService().incrementPublishes(
-                            name.substring(RingbufferService.TOPIC_RB_PREFIX.length())));
-        }
+        reportReliableTopicPublish(items.length);
     }
 
     @Override

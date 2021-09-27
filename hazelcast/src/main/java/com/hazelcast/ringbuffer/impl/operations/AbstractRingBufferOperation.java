@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.io.IOException;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
@@ -56,10 +57,6 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
 
     public AbstractRingBufferOperation(String name) {
         this.name = name;
-    }
-
-    protected ReliableTopicService getReliableTopicService() {
-        return getNodeEngine().getService(ReliableTopicService.SERVICE_NAME);
     }
 
     @Override
@@ -134,5 +131,21 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
     @Override
     public ObjectNamespace getServiceNamespace() {
         return getRingBufferContainer().getNamespace();
+    }
+
+    /**
+     * ReliableTopic is built on top of RingBuffer. This method determines 'publish' operation
+     * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
+     */
+    protected void reportReliableTopicPublish(int publishCount) {
+        if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
+            String reliableTopicName = name.substring(RingbufferService.TOPIC_RB_PREFIX.length());
+            IntStream.range(0, publishCount)
+                    .forEach((val) -> getReliableTopicService().incrementPublishes(reliableTopicName));
+        }
+    }
+    
+    protected ReliableTopicService getReliableTopicService() {
+        return getNodeEngine().getService(ReliableTopicService.SERVICE_NAME);
     }
 }
