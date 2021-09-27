@@ -42,3 +42,8 @@ jobs:
         with:
           report_paths: '**/failsafe-reports/TEST-*.xml'
           fail_on_test_failures: true
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: '**/*-reports/TEST-*.xml'
