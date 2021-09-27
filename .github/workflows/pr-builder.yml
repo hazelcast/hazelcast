@@ -30,7 +30,7 @@ jobs:
       - name: Compile with Maven
         run: mvn --errors --no-transfer-progress --batch-mode clean test-compile
       - name: Install with Maven
-        run: mvn --errors --no-transfer-progress --batch-mode install -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
+        run: mvn --errors --no-transfer-progress --batch-mode install -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder -pl hazelcast-spring,hazelcast-spring-tests
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1
