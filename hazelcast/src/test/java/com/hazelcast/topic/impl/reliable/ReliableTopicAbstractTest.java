@@ -35,8 +35,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,6 +52,8 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     private ReliableTopicProxy<String> topic;
     private HazelcastInstance local;
+    private HazelcastInstance[] instances;
+//    private HazelcastInstance remote;
 
     @Before
     public void setup() {
@@ -61,8 +66,9 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         config.addReliableTopicConfig(topicConfig);
         config.addRingBufferConfig(ringbufferConfig);
 
-        HazelcastInstance[] instances = newInstances(config);
+        instances = newInstances(config);
         local = instances[0];
+//        remote = instances[instances.length - 1];
         HazelcastInstance target = instances[instances.length - 1];
 
         String name = randomNameOwnedBy(target, "reliableTopic");
@@ -235,40 +241,42 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             anotherTopic.publish("foo");
         }
 
-
-        assertEquals(messageCount, localTopicStats.getPublishOperationCount());
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(messageCount, localTopicStats.getReceiveOperationCount());
-            }
+        assertTrueEventually(() -> {
+            // here only message count
+            final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(SERVICE_NAME);
+            final Map<String, LocalTopicStats> localStats = reliableTopicService.getStats();
+            assertEquals(2, localStats.size());
+            assertEquals(messageCount, getTotalOperationsCount(topic.getName(), LocalTopicStats::getPublishOperationCount));
+            assertEquals(messageCount, getTotalOperationsCount(topic.getName(), LocalTopicStats::getReceiveOperationCount));
+            assertEquals(messageCount, getTotalOperationsCount(anotherTopic.getName(), LocalTopicStats::getPublishOperationCount));
+            assertEquals(0, getTotalOperationsCount(anotherTopic.getName(), LocalTopicStats::getReceiveOperationCount));
         });
-
-        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
-        assertEquals(2, stats.size());
-        assertEquals(messageCount, stats.get(topic.getName()).getPublishOperationCount());
-        assertEquals(messageCount, stats.get(topic.getName()).getReceiveOperationCount());
-        assertEquals(messageCount, stats.get(anotherTopic.getName()).getPublishOperationCount());
-        assertEquals(0, stats.get(anotherTopic.getName()).getReceiveOperationCount());
     }
 
     @Test
     public void testDestroyTopicRemovesStatistics() {
         topic.publish("foobar");
 
-        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
-        assertEquals(1, stats.size());
-        assertEquals(1, stats.get(topic.getName()).getPublishOperationCount());
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(SERVICE_NAME);
+        final Map<String, LocalTopicStats> localStats = reliableTopicService.getStats();
+
+        assertTrueEventually(() -> {
+            assertEquals(1, localStats.size());
+            assertEquals(1, getTotalOperationsCount(topic.getName(), LocalTopicStats::getPublishOperationCount));
+        });
 
         topic.destroy();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(reliableTopicService.getStats().containsKey(topic.getName()));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(reliableTopicService.getStats().containsKey(topic.getName())));
+    }
+
+    private int getTotalOperationsCount(String name, Function<LocalTopicStats, Long> function) {
+        return Stream.of(instances)
+                .map(instance -> {
+                    ReliableTopicService reliableTopicService = getNode(instance).nodeEngine.getService(SERVICE_NAME);
+                    return reliableTopicService.getLocalTopicStats(name);
+                })
+                .map(function)
+                .mapToInt(Long::intValue).sum();
     }
 }

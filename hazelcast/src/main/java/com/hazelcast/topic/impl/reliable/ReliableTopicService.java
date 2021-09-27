@@ -31,6 +31,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 
 import java.util.Map;
@@ -43,7 +44,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RELIABLE_
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class ReliableTopicService implements ManagedService, RemoteService, StatisticsAwareService, DynamicMetricsProvider {
+public class ReliableTopicService implements ManagedService, RemoteService,
+        StatisticsAwareService<LocalTopicStats>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:reliableTopicService";
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<>();
@@ -65,6 +67,16 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
     @Override
     public void destroyDistributedObject(String objectName, boolean local) {
         statsMap.remove(objectName);
+    }
+
+    /**
+     * Increments the number of published messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
+    public void incrementPublishes(String topicName) {
+        getLocalTopicStats(topicName).incrementPublishes();
     }
 
     /**

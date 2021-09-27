@@ -170,19 +170,15 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             switch (overloadPolicy) {
                 case ERROR:
                     addOrFail(message);
-                    localTopicStats.incrementPublishes();
                     break;
                 case DISCARD_OLDEST:
                     addOrOverwrite(message);
-                    localTopicStats.incrementPublishes();
                     break;
                 case DISCARD_NEWEST:
                     ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
-                    localTopicStats.incrementPublishes();
                     break;
                 case BLOCK:
                     addWithBackoff(Collections.singleton(message));
-                    localTopicStats.incrementPublishes();
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -289,19 +285,15 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                         throw new TopicOverloadException(
                                 String.format("Failed to publish messages: %s on topic: %s", payload, getName()));
                     }
-                    localTopicStats.incrementPublishes();
                     break;
                 case DISCARD_OLDEST:
                     ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
-                    localTopicStats.incrementPublishes();
                     break;
                 case DISCARD_NEWEST:
                     ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
-                    localTopicStats.incrementPublishes();
                     break;
                 case BLOCK:
                     addWithBackoff(messages);
-                    localTopicStats.incrementPublishes();
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -368,7 +360,6 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                 returnFuture.completeExceptionally(t);
             } else {
                 returnFuture.complete(null);
-                messages.forEach(p -> localTopicStats.incrementPublishes());
             }
         });
         return returnFuture;
@@ -387,7 +378,6 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                         pauseMillis, MILLISECONDS);
             } else {
                 returnFuture.complete(null);
-                localTopicStats.incrementPublishes();
             }
         });
     }

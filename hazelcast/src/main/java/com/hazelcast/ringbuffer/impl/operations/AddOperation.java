@@ -17,16 +17,17 @@
 package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -66,6 +67,13 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
         }
 
         resultSequence = ringbuffer.add(item);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
+            getReliableTopicService().incrementPublishes(name.substring(RingbufferService.TOPIC_RB_PREFIX.length()));
+        }
     }
 
     @Override
