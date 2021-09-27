@@ -36,6 +36,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetDestroyingRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetMembershipChangeScheduleOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -615,8 +616,12 @@ class RaftGroupMembershipManager {
             InternalCompletableFuture<Collection<CPMemberInfo>> future = queryMetadata(new GetActiveCPMembersOp());
             Collection<CPMemberInfo> members = future.join();
             Map<RaftEndpoint, CPMember> map = new HashMap<>(members.size());
+
+            final ClusterService cs = nodeEngine.getClusterService();
             for (CPMemberInfo member : members) {
-                map.put(member.toRaftEndpoint(), member);
+                if (cs.getMember(member.getAddress()) != null) {
+                    map.put(member.toRaftEndpoint(), member);
+                }
             }
             return map;
         }
