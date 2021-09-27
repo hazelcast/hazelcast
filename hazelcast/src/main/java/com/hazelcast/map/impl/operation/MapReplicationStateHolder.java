@@ -198,13 +198,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 }
 
                 long nowInMillis = Clock.currentTimeMillis();
-                if (isDifferentialReplication) {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putOrUpdateReplicatedRecord);
-                } else {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putReplicatedRecord);
-                }
+                forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
+                        populateIndexes, nowInMillis);
 
 
                 if (populateIndexes) {
@@ -226,8 +221,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     private void forEachReplicatedRecord(List keyRecordExpiry,
                                          MapContainer mapContainer,
                                          RecordStore recordStore,
-                                         boolean populateIndexes, long nowInMillis,
-                                         ReplicatedRecordProcessor replicatedRecordProcessor) {
+                                         boolean populateIndexes, long nowInMillis) {
         long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
         EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
         boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
@@ -243,11 +237,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
                     }
                 } else {
-                    replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
+                    recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
                     ownedEntryCountOnThisNode++;
                 }
             } else {
-                replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
+                recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
                 if (recordStore.shouldEvict()) {
                     // No need to continue replicating records anymore.
                     // We are already over eviction threshold, each put record will cause another eviction.
@@ -474,10 +468,5 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
 
         return true;
-    }
-
-    private interface ReplicatedRecordProcessor {
-        void processRecord(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
-                           boolean indexesMustBePopulated, long now);
     }
 }
