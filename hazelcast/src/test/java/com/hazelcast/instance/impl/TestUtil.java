@@ -22,6 +22,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.retry.IntervalFunction;
+import com.hazelcast.jet.retry.impl.IntervalFunctions;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -36,6 +38,7 @@ import java.util.List;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("WeakerAccess")
 public final class TestUtil {
@@ -154,10 +157,19 @@ public final class TestUtil {
         if (instance == null) {
             return;
         }
+        final int maxRetryCount = 15;
+        IntervalFunction intervalFunction = IntervalFunctions.exponentialBackoffWithCap(10L, 2, 1000L);
         PartitionService ps = instance.getPartitionService();
+
         for (Partition partition : ps.getPartitions()) {
+            int i = 1;
             while (partition.getOwner() == null) {
-                sleepMillis(10);
+                if (i > maxRetryCount) {
+                    fail("The owner of Partition{partitionId=" + partition.getPartitionId() + "}"
+                            + " could not be obtained after " + maxRetryCount + " retries.");
+                }
+                sleepMillis((int) intervalFunction.waitAfterAttempt(i));
+                ++i;
             }
         }
     }
