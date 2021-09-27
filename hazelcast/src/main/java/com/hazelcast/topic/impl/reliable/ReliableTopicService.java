@@ -31,7 +31,6 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 
 import java.util.Map;
@@ -67,26 +66,6 @@ public class ReliableTopicService implements ManagedService, RemoteService,
     @Override
     public void destroyDistributedObject(String objectName, boolean local) {
         statsMap.remove(objectName);
-    }
-
-    /**
-     * Increments the number of published messages on the ITopic
-     * with the name {@code topicName}.
-     *
-     * @param topicName the name of the {@link ITopic}
-     */
-    public void incrementPublishes(String topicName) {
-        getLocalTopicStats(topicName).incrementPublishes();
-    }
-
-    /**
-     * Increments the number of received messages on the ITopic
-     * with the name {@code topicName}.
-     *
-     * @param topicName the name of the {@link ITopic}
-     */
-    public void incrementReceivedMessages(String topicName) {
-        getLocalTopicStats(topicName).incrementReceives();
     }
 
     /**

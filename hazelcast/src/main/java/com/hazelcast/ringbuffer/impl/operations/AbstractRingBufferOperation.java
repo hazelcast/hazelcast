@@ -51,8 +51,6 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
 
     protected String name;
 
-    protected ReliableTopicService reliableTopicService;
-
     public AbstractRingBufferOperation() {
     }
 
@@ -139,7 +137,8 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
      * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
      */
     protected void reportReliableTopicPublish(int publishCount) {
-        reportReliableTopicStat(publishCount, (topic) -> getReliableTopicService().incrementPublishes(topic));
+        reportReliableTopicStat(publishCount, (topic) ->
+                getReliableTopicService().getLocalTopicStats(topic).incrementPublishes());
     }
 
     /**
@@ -147,17 +146,18 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
      * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
      */
     protected void reportReliableTopicReceived(int receivedCount) {
-        reportReliableTopicStat(receivedCount, (topic) -> getReliableTopicService().incrementReceivedMessages(topic));
+        reportReliableTopicStat(receivedCount, (topic) ->
+                getReliableTopicService().getLocalTopicStats(topic).incrementReceives());
     }
 
-    private void reportReliableTopicStat(int count, Consumer<String> statsReposter) {
+    private void reportReliableTopicStat(int count, Consumer<String> statsReporter) {
         if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
             String reliableTopicName = name.substring(RingbufferService.TOPIC_RB_PREFIX.length());
-            IntStream.range(0, count).forEach((val) -> statsReposter.accept(reliableTopicName));
+            IntStream.range(0, count).forEach((i) -> statsReporter.accept(reliableTopicName));
         }
     }
 
-    protected ReliableTopicService getReliableTopicService() {
+    private ReliableTopicService getReliableTopicService() {
         return getNodeEngine().getService(ReliableTopicService.SERVICE_NAME);
     }
 }
