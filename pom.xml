@@ -363,6 +363,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.self="override">
+                    <trimStackTrace>false</trimStackTrace>
                     <argLine>
                         ${vmHeapSettings}
                         ${javaModuleArgs}
@@ -613,6 +614,7 @@
                                 </goals>
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
+                                    <trimStackTrace>false</trimStackTrace>
                                     <argLine>
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
@@ -645,6 +647,7 @@
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -727,6 +730,7 @@
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
                             <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -889,6 +893,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -1047,6 +1052,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -1111,6 +1117,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
