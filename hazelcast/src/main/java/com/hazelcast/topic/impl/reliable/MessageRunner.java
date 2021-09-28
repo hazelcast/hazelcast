@@ -110,7 +110,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                 ReliableTopicMessage message = result.get(i);
                 try {
                     listener.storeSequence(result.getSequence(i));
-                    process(message);
+                    listener.onMessage(toMessage(message));
                 } catch (Throwable t) {
                     if (terminate(t)) {
                         cancel();
@@ -131,19 +131,6 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             }
         }
     }
-
-    /**
-     * Processes the message by increasing the local topic stats and
-     * calling the user supplied listener.
-     *
-     * @param message the reliable topic message
-     */
-    private void process(ReliableTopicMessage message) {
-        updateStatistics();
-        listener.onMessage(toMessage(message));
-    }
-
-    protected abstract void updateStatistics();
 
     private Message<E> toMessage(ReliableTopicMessage m) {
         Member member = getMember(m);
