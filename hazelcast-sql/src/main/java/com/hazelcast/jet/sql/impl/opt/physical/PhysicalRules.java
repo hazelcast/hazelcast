@@ -40,6 +40,7 @@ public final class PhysicalRules {
 
                 // Aggregate rules
                 AggregatePhysicalRule.INSTANCE,
+                SlidingWindowPhysicalRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,

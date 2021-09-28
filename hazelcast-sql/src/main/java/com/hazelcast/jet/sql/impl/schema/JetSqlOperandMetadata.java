@@ -22,8 +22,6 @@ import com.hazelcast.jet.sql.impl.validate.operand.NamedOperandCheckerProgram;
 import com.hazelcast.jet.sql.impl.validate.operand.OperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.OperandCheckerProgram;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastOperandTypeCheckerAware;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -33,16 +31,19 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public final class JetSqlOperandMetadata implements SqlOperandMetadata, HazelcastOperandTypeCheckerAware {
+public abstract class JetSqlOperandMetadata implements SqlOperandMetadata, HazelcastOperandTypeCheckerAware {
 
     private final List<JetTableFunctionParameter> parameters;
     private final SqlOperandTypeInference operandTypeInference;
+
+    public JetSqlOperandMetadata(List<JetTableFunctionParameter> parameters) {
+        this(parameters, null);
+    }
 
     public JetSqlOperandMetadata(
             List<JetTableFunctionParameter> parameters,
@@ -52,69 +53,67 @@ public final class JetSqlOperandMetadata implements SqlOperandMetadata, Hazelcas
         this.operandTypeInference = operandTypeInference;
     }
 
-    public List<JetTableFunctionParameter> parameters() {
+    public final List<JetTableFunctionParameter> parameters() {
         return parameters;
     }
 
     @Override
-    public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
+    public final List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
         throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
-    public List<String> paramNames() {
+    public final List<String> paramNames() {
         return parameters.stream()
                 .map(JetTableFunctionParameter::name)
                 .collect(toList());
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+    public final boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         HazelcastCallBinding binding = prepareBinding(callBinding, operandTypeInference);
+        boolean checkResult;
         if (ValidationUtil.hasAssignment(binding.getCall())) {
             OperandChecker[] checkers = parameters.stream()
                     .map(JetTableFunctionParameter::checker)
                     .toArray(OperandChecker[]::new);
-            return new NamedOperandCheckerProgram(checkers).check(binding, throwOnFailure);
+            checkResult = new NamedOperandCheckerProgram(checkers).check(binding, throwOnFailure);
         } else {
             OperandChecker[] checkers = parameters.stream()
                     .limit(binding.getOperandCount())
                     .map(JetTableFunctionParameter::checker)
                     .toArray(OperandChecker[]::new);
-            return new OperandCheckerProgram(checkers).check(binding, throwOnFailure);
+            checkResult = new OperandCheckerProgram(checkers).check(binding, throwOnFailure);
         }
+        return checkResult && checkOperandTypes(binding, throwOnFailure);
     }
 
+    protected abstract boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure);
+
     @Override
-    public SqlOperandCountRange getOperandCountRange() {
+    public final SqlOperandCountRange getOperandCountRange() {
         int numberOfOptionalParameters = (int) parameters.stream().filter(JetTableFunctionParameter::optional).count();
         return SqlOperandCountRanges.between(parameters.size() - numberOfOptionalParameters, parameters.size());
     }
 
     @Override
-    public String getAllowedSignatures(SqlOperator operator, String operatorName) {
-        return parameters.stream()
-                .map(parameter -> {
-                    QueryDataType type = HazelcastTypeUtils.toHazelcastType(parameter.type());
-                    return parameter.optional()
-                            ? "[, " + parameter.name() + " " + type.getTypeFamily() + "]"
-                            : parameter.name() + " " + type.getTypeFamily();
-                }).collect(Collectors.joining("", operatorName + "(", ")"));
+    public final String getAllowedSignatures(SqlOperator operator, String operatorName) {
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
-    public Consistency getConsistency() {
+    public final Consistency getConsistency() {
         return Consistency.NONE;
     }
 
     @Override
-    public boolean isOptional(int i) {
+    public final boolean isOptional(int i) {
         return parameters.get(i).optional();
     }
 
-    @Nonnull
+    @Nullable
     @Override
-    public SqlOperandTypeInference typeInference() {
+    public final SqlOperandTypeInference typeInference() {
         return operandTypeInference;
     }
 }

@@ -46,10 +46,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
+import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -86,6 +88,19 @@ public class TestBatchSqlConnector implements SqlConnector {
             String tableName,
             List<String> names,
             List<QueryDataTypeFamily> types,
+            Object[]... values
+    ) {
+        List<String[]> stringValues = stream(values)
+                .map(row -> stream(row).map(value -> value == null ? null : value.toString()).toArray(String[]::new))
+                .collect(Collectors.toList());
+        create(sqlService, tableName, names, types, stringValues);
+    }
+
+    public static void create(
+            SqlService sqlService,
+            String tableName,
+            List<String> names,
+            List<QueryDataTypeFamily> types,
             List<String[]> values
     ) {
         if (names.stream().anyMatch(n -> n.contains(DELIMITER) || n.contains("'"))) {
@@ -113,7 +128,6 @@ public class TestBatchSqlConnector implements SqlConnector {
                 + ", '" + OPTION_TYPES + "'='" + typesSerialized + "'"
                 + ", '" + OPTION_VALUES + "'='" + valuesSerialized + "'"
                 + ")";
-        System.out.println(sql);
         sqlService.execute(sql).updateCount();
     }
 

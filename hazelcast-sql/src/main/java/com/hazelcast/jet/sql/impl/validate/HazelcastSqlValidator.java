@@ -73,7 +73,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
 /**
@@ -182,33 +181,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
         isInfiniteRows = containsStreamingSource(node);
-    }
-
-    @Override
-    protected void validateGroupClause(SqlSelect select) {
-        super.validateGroupClause(select);
-
-        if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
-        }
-    }
-
-    private boolean containsGroupingOrAggregation(SqlSelect select) {
-        if (select.getGroup() != null && select.getGroup().size() > 0) {
-            return true;
-        }
-
-        if (select.isDistinct()) {
-            return true;
-        }
-
-        for (SqlNode node : select.getSelectList()) {
-            if (node.getKind().belongsTo(AGGREGATE)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override

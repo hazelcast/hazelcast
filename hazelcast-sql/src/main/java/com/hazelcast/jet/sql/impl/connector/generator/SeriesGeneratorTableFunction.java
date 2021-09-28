@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
@@ -47,10 +48,7 @@ public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction
     public SeriesGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                new JetSqlOperandMetadata(
-                        PARAMETERS,
-                        new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
-                ),
+                SeriesOperandMetadata.INSTANCE,
                 binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
                 SeriesSqlConnector.INSTANCE
         );
@@ -68,5 +66,22 @@ public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction
 
     private static String randomName() {
         return SCHEMA_NAME_SERIES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    private static final class SeriesOperandMetadata extends JetSqlOperandMetadata {
+
+        private static final SeriesOperandMetadata INSTANCE = new SeriesOperandMetadata();
+
+        private SeriesOperandMetadata() {
+            super(
+                    PARAMETERS,
+                    new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
+            );
+        }
+
+        @Override
+        protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+            return true;
+        }
     }
 }

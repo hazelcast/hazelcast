@@ -22,11 +22,14 @@ import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
@@ -36,11 +39,13 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -48,6 +53,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 
 import javax.annotation.Nullable;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -64,6 +71,7 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
+import static com.hazelcast.sql.impl.expression.datetime.DateTimeUtils.asTimestampWithTimezone;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
@@ -277,6 +285,99 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex(
                 "CombineByKey",
                 Processors.combineByKeyP(aggregateOperation, (key, value) -> value)
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
+        return vertex;
+    }
+
+    public Vertex onSlidingWindow(SlidingWindowPhysicalRel rel) {
+        int timestampFieldIndex = rel.timestampFieldIndex();
+        FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider(parameterMetadata);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window",
+                mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
+                            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                            SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
+                            return row -> {
+                                OffsetDateTime timestamp = (OffsetDateTime) row[timestampFieldIndex];
+                                long timestampMillis = timestamp.toInstant().toEpochMilli();
+                                long windowStartMillis = windowPolicy.floorFrameTs(timestampMillis);
+                                long windowEndMillis = windowPolicy.higherFrameTs(timestampMillis);
+
+                                Object[] result = Arrays.copyOf(row, row.length + 2);
+                                result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, timestamp.getOffset());
+                                result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, timestamp.getOffset());
+
+                                return result;
+                            };
+                        }),
+                        (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                )
+        );
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
+        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.timestampFn(null);
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-AggregateByKey",
+                Processors.aggregateToSlidingWindowP(
+                        singletonList(groupKeyFn),
+                        singletonList(timestampFn),
+                        TimestampKind.EVENT,
+                        windowPolicy,
+                        0,
+                        aggregateOperation,
+                        (start, end, ignoredKey, result, isEarly) -> result
+                )
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
+        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.timestampFn(null);
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-AccumulateByKey",
+                Processors.accumulateByFrameP(
+                        singletonList(groupKeyFn),
+                        singletonList(timestampFn),
+                        TimestampKind.EVENT,
+                        windowPolicy,
+                        aggregateOperation
+                )
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-CombineByKey",
+                Processors.combineToSlidingWindowP(
+                        windowPolicy,
+                        aggregateOperation,
+                        (start, end, ignoredKey, result, isEarly) -> result
+                )
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
         return vertex;

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -1000,40 +999,6 @@ public class SqlAggregateTest extends SqlTestSupport {
                         new Row(new BigDecimal("3"))
                 )
         );
-    }
-
-    @Test
-    public void test_aggregatingStreamingSource() {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
-    }
-
-    @Test
-    public void test_aggregatingStreamingFunction() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
-    }
-
-    @Test
-    public void test_distinctStreamingSource() {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
-    }
-
-    @Test
-    public void test_distinctStreamingFunction() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
     }
 
     @Test
