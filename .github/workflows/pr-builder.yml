@@ -28,10 +28,10 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Compile with Maven
-        run: mvn --errors --no-transfer-progress --batch-mode clean test-compile
+        run: ./mvnw --errors --no-transfer-progress --batch-mode clean test-compile
       - name: Install with Maven
         run: >
-          mvn --errors --no-transfer-progress --batch-mode
+          ./mvnw --errors --no-transfer-progress --batch-mode
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
           -pl hazelcast-spring,hazelcast-spring-tests
