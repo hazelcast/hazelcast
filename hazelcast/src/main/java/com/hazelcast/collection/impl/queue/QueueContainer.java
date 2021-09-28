@@ -1255,7 +1255,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * @since 5.01
+     * @since 5.0.1
      */
     public void resetAgeStats() {
         minAge = -1;

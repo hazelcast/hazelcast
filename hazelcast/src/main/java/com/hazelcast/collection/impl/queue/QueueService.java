@@ -430,6 +430,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         provide(descriptor, context, QUEUE_PREFIX, getStats());
     }
 
+    /**
+     * @since 5.0.1
+     */
     public void resetAgeStats(String queueName) {
         containerMap.get(queueName).resetAgeStats();
     }
