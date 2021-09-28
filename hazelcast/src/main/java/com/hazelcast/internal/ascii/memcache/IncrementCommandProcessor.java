@@ -27,6 +27,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.NOT_FOUND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.RETURN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class IncrementCommandProcessor extends MemcacheCommandProcessor<IncrementCommand> {
@@ -85,14 +86,15 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                 }
             }
 
-            final byte[] value1 = entry.getValue();
-            final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
+            String value1 = bytesToString(entry.getValue());
+            final long current = Long.parseLong(value1);
             long result = -1;
             result = incrementCommandTypeCheck(incrementCommand, result, current);
 
-            incrementCommand.setResponse(concatenate(stringToBytes(String.valueOf(result)), RETURN));
-            MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
-            textCommandService.put(mapName, key, newValue);
+            byte[] newValue = stringToBytes(String.valueOf(result));
+            incrementCommand.setResponse(concatenate(newValue, RETURN));
+            MemcacheEntry newEntry = new MemcacheEntry(key, newValue, entry.getFlag());
+            textCommandService.put(mapName, key, newEntry);
         } else {
             if (incrementCommand.getType() == INCREMENT) {
                 textCommandService.incrementIncMissCount();
