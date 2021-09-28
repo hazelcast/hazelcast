@@ -20,10 +20,17 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor;
+import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
@@ -39,9 +46,12 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class MemcachedRawTcpTest extends HazelcastTestSupport {
     protected HazelcastInstance instance;
 
@@ -235,58 +245,45 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
 
         checkStats(10, 20, 10, 10, 0, 0, 0, 0, 0, 0);
     }
-//
-//    @Test
-//    public void testSetGetDelete_WithDefaultIMap() throws Exception {
-//        testSetGetDelete_WithIMap(MemcacheCommandProcessor.DEFAULT_MAP_NAME, "");
-//    }
-//
-//    @Test
-//    public void testSetGetDelete_WithCustomIMap() throws Exception {
-//        String mapName = randomMapName();
-//        testSetGetDelete_WithIMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName, mapName + ":");
-//    }
-//
-//    private void testSetGetDelete_WithIMap(String mapName, String prefix) throws Exception {
-//        String key = "key";
-//        String value = "value";
-//        String value2 = "value2";
-//
-//        IMap<String, Object> map = instance.getMap(mapName);
-//        map.put(key, value);
-//        assertEquals(value, client.get(prefix + key));
-//
-//        client.set(prefix + key, 0, value2).get();
-//
-//        MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(key);
-//        MemcacheEntry expectedEntry = new MemcacheEntry(prefix + key, value2.getBytes(), 0);
-//        assertEquals(expectedEntry, memcacheEntry);
-//        assertEquals(prefix + key, memcacheEntry.getKey());
-//
-//        client.delete(prefix + key).get();
-//        assertNull(client.get(prefix + key));
-//        assertNull(map.get(key));
-//    }
-//
-//    @Test
-//    public void testDeleteAll_withIMapPrefix() throws Exception {
-//        String mapName = randomMapName();
-//        String prefix = mapName + ":";
-//        IMap<String, Object> map = instance.getMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName);
-//
-//        for (int i = 0; i < 100; i++) {
-//            map.put(String.valueOf(i), i);
-//        }
-//
-//        OperationFuture<Boolean> future = client.delete(prefix);
-//        future.get();
-//
-//        for (int i = 0; i < 100; i++) {
-//            assertNull(client.get(prefix + String.valueOf(i)));
-//        }
-//        assertTrue(map.isEmpty());
-//    }
-//
+
+    @Test
+    public void testSetGetDelete_WithDefaultIMap() throws Exception {
+        testSetGetDelete_WithIMap(MemcacheCommandProcessor.DEFAULT_MAP_NAME, "");
+    }
+
+    @Test
+    public void testSetGetDelete_WithCustomIMap() throws Exception {
+        String mapName = randomMapName();
+        testSetGetDelete_WithIMap(MemcacheCommandProcessor.MAP_NAME_PREFIX + mapName, mapName + ":");
+    }
+
+    private void testSetGetDelete_WithIMap(String mapName, String prefix) throws Exception {
+        String key = "key";
+        String value = "value";
+        String value2 = "value2";
+
+        IMap<String, Object> map = instance.getMap(mapName);
+        map.put(key, value);
+
+        writeLine(String.format("get %s", prefix + key));
+        assertEquals(String.format("VALUE %s 0 %d", prefix + key, value.length()), readLine());
+        assertEquals(value, readLine());
+        assertEquals("END", readLine());
+
+        writeLine(String.format("set %s 123 0 %d", prefix + key, value2.length()));
+        writeLine(value2);
+        assertEquals("STORED", readLine());
+
+        MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(key);
+        MemcacheEntry expectedEntry = new MemcacheEntry(prefix + key, value2.getBytes(), 123);
+        assertEquals(expectedEntry, memcacheEntry);
+        assertEquals(prefix + key, memcacheEntry.getKey());
+
+        writeLine(String.format("delete %s", prefix + key));
+        assertEquals("DELETED", readLine());
+        assertNull(map.get(key));
+    }
+
     @Test
     public void testIncrement() throws Exception {
         writeLine("incr key 1");
@@ -308,6 +305,16 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
         assertEquals("END", readLine());
 
         checkStats(1, 2, 1, 1, 0, 0, 1, 1, 0, 0);
+    }
+
+    @Test
+    public void testIncrement_byLargerThanLongMax() throws Exception {
+        writeLine("set key 0 0 2");
+        writeLine("42");
+        assertEquals("STORED", readLine());
+
+        writeLine("incr key 18446744073709551573"); // 2^64 - 1 - 42
+        assertEquals("18446744073709551615", readLine()); // 2^64 - 1
     }
 
     @Test
@@ -418,6 +425,21 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
 
         writeLine("decr key 1");
         assertTrue(readLine().startsWith("CLIENT_ERROR"));
+    }
+
+    @Test
+    public void testDecrement_onLargerThanLongMax() throws Exception {
+        writeLine("set key 0 0 20");
+        writeLine("18446744073709551615"); // 2^64 - 1
+        assertEquals("STORED", readLine());
+
+        writeLine("decr key 1");
+        assertEquals("18446744073709551614", readLine());
+
+        writeLine("get key");
+        assertEquals("VALUE key 0 20", readLine());
+        assertEquals("18446744073709551614", readLine());
+        assertEquals("END", readLine());
     }
 
     @Test
