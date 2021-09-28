@@ -130,8 +130,6 @@ QueryDataType QueryDataType() :
         type = DateTimeTypes()
     |
         type = ObjectTypes()
-    |
-        type = CustomTypes()
     )
     {
         return type;
@@ -207,18 +205,11 @@ QueryDataType ObjectTypes() :
     QueryDataType type;
 }
 {
-    <OBJECT> { type = QueryDataType.OBJECT; }
-    {
-        return type;
-    }
-}
-
-QueryDataType CustomTypes() :
-{
-    QueryDataType type;
-}
-{
-    <JSON> { type = QueryDataType.JSON; }
+    (
+        <OBJECT> { type = QueryDataType.OBJECT; }
+    |
+        <JSON> { type = QueryDataType.JSON; }
+    )
     {
         return type;
     }

@@ -225,16 +225,20 @@ public class HazelcastTable extends AbstractTable {
         QueryDataType fieldType = field.getType();
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unsupported type family: " + fieldType
+                    + ", getSqlTypeName should never return null.");
+        }
 
         if (sqlTypeName == SqlTypeName.OTHER) {
-            return convertCustomType(fieldType, typeFactory);
+            return convertCustomType(fieldType);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
     }
 
-    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+    private static RelDataType convertCustomType(QueryDataType fieldType) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
                 return HazelcastJsonType.create(true);

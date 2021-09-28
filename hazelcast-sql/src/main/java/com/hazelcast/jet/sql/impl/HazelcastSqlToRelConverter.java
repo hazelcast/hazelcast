@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.validate.HazelcastResources;
@@ -242,8 +241,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         // TODO: replace with correct function instance based on nullability of the original expression type?
-        if (literal != null && SqlTypeName.OTHER.equals(to.getSqlTypeName())
-                && HazelcastJsonType.FAMILY.equals(to.getFamily())) {
+        if (literal != null && HazelcastTypeUtils.isJsonType(to)) {
             return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
 

@@ -163,6 +163,10 @@ public final class HazelcastTypeUtils {
         return identifier.isSimple() && equalsIgnoreCase(SqlColumnType.JSON.name(), identifier.getSimple());
     }
 
+    public static boolean isJsonType(RelDataType type) {
+        return SqlTypeName.OTHER.equals(type.getSqlTypeName()) && HazelcastJsonType.FAMILY.equals(type.getFamily());
+    }
+
     /**
      * @return {@code true} if the given type is a numeric type, {@code false}
      * otherwise.

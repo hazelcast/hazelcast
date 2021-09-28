@@ -297,6 +297,10 @@ public final class OptUtils {
         QueryDataType fieldType = field.getType();
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unsupported type family: " + fieldType
+                    + ", getSqlTypeName should never return null.");
+        }
 
         if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType);

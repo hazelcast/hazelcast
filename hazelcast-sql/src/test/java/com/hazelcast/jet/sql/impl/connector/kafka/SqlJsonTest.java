@@ -257,7 +257,7 @@ public class SqlJsonTest extends SqlTestSupport {
 
         assertTopicEventually(
                 name,
-                "INSERT INTO " + name + " VALUES (JSON_PARSE('[1,2,3]'), JSON_PARSE('[4,5,6]'))",
+                "INSERT INTO " + name + " VALUES (CAST('[1,2,3]' AS JSON), CAST('[4,5,6]' AS JSON))",
                 createMap("[1,2,3]", "[4,5,6]")
         );
         assertRowsEventuallyInAnyOrder(

@@ -221,6 +221,8 @@
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>com.jayway.jsonpath:json-path</include>
+                                    <include>net.minidev:json-smart</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
@@ -229,8 +231,6 @@
                                     <include>com.google.guava:failureaccess</include>
                                     <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
-                                    <include>net.minidev:json-smart</include>
-                                    <include>com.google.code.gson:gson</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -261,6 +261,10 @@
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>net.minidev</pattern>
+                                    <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.apache.commons</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
                                 </relocation>
@@ -279,10 +283,6 @@
                                 <relocation>
                                     <pattern>org.slf4</pattern>
                                     <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>net.minidev</pattern>
-                                    <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -331,6 +331,18 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>net.minidev:json-smart</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.code.gson:gson</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>commons-codec:commons-codec</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
@@ -361,18 +373,6 @@
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>org/slf4j/impl/StaticLoggerBinder.java</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>net.minidev:json-smart</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.code.gson:gson</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

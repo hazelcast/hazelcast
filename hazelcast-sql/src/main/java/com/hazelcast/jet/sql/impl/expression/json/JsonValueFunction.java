@@ -102,10 +102,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
 
         final String path = (String) operands[1].eval(row, context);
-        if (isNullOrEmpty(path)) {
-            return onErrorResponse(onError, QueryException.error("JSON_VALUE path expression is empty"), defaultOnError);
-        }
-
         try {
             return execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile));
         } catch (Exception exception) {

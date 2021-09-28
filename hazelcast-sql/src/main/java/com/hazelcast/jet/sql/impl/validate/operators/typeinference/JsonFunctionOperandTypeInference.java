@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.validate.operators.typeinference;
 
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInference {
 
@@ -30,7 +30,7 @@ public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInf
                                   final RelDataType[] operandTypes) {
         final RelDataType firstOperandType = callBinding.getOperandType(0);
 
-        operandTypes[0] = firstOperandType.getSqlTypeName().equals(SqlTypeName.OTHER)
+        operandTypes[0] = HazelcastTypeUtils.isJsonType(firstOperandType)
                 ? HazelcastJsonType.create(firstOperandType.isNullable())
                 : callBinding.getTypeFactory().createSqlType(firstOperandType.getSqlTypeName());
 

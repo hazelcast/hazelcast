@@ -97,10 +97,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         }
 
         final String path = (String) operands[1].eval(row, context);
-        if (isNullOrEmpty(path)) {
-            return onErrorResponse(onError, QueryException.error("JSON_QUERY path expression is empty"));
-        }
-
         try {
             return wrap(execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile), wrapperBehavior));
         } catch (Exception exception) {
