@@ -34,7 +34,6 @@ jobs:
           ./mvnw --errors --no-transfer-progress --batch-mode
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
-          -pl hazelcast-spring,hazelcast-spring-tests
           install
       - name: EnricoMi - Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
