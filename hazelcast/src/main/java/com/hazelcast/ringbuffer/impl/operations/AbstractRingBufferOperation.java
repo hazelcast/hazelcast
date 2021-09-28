@@ -17,6 +17,7 @@
 package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.logging.ILogger;
@@ -134,7 +135,7 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
 
     /**
      * ReliableTopic is built on top of RingBuffer. This method determines if 'publish' operation
-     * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
+     * is actually called on ReliableTopic and reports the statistics to {@link LocalTopicStatsImpl}.
      */
     protected void reportReliableTopicPublish(int publishCount) {
         reportReliableTopicStat(publishCount, (topic) ->
@@ -143,7 +144,7 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
 
     /**
      * ReliableTopic is built on top of RingBuffer. This method determines if 'read' operation
-     * is actually called on ReliableTopic and reports the statistics to {@link ReliableTopicService}.
+     * is actually called on ReliableTopic and reports the statistics to {@link LocalTopicStatsImpl}.
      */
     protected void reportReliableTopicReceived(int receivedCount) {
         reportReliableTopicStat(receivedCount, (topic) ->
