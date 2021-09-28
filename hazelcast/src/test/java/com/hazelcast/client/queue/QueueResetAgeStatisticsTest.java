@@ -42,7 +42,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueueResetAgeStatisticsTest extends HazelcastTestSupport {
+public class QueueResetAgeStatisticsTest
+        extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastClientInstanceImpl client;
@@ -91,14 +92,10 @@ public class QueueResetAgeStatisticsTest extends HazelcastTestSupport {
         assertEquals((populatedStatsAfterReset.getMinAge() + populatedStatsAfterReset.getMaxAge()) / 2,
                 populatedStatsAfterReset.getAverageAge()
         );
-
-
     }
 
     @After
     public void shutdown() {
-        client.shutdown();
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
-
 }
