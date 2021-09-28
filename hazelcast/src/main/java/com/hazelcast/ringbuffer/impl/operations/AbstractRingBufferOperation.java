@@ -17,6 +17,9 @@
 package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,12 +28,13 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
@@ -127,5 +131,34 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
     @Override
     public ObjectNamespace getServiceNamespace() {
         return getRingBufferContainer().getNamespace();
+    }
+
+    /**
+     * ReliableTopic is built on top of RingBuffer. This method determines if 'publish' operation
+     * is actually called on ReliableTopic and reports the statistics to {@link LocalTopicStatsImpl}.
+     */
+    protected void reportReliableTopicPublish(int publishCount) {
+        reportReliableTopicStat(publishCount, (topic) ->
+                getReliableTopicService().getLocalTopicStats(topic).incrementPublishes());
+    }
+
+    /**
+     * ReliableTopic is built on top of RingBuffer. This method determines if 'read' operation
+     * is actually called on ReliableTopic and reports the statistics to {@link LocalTopicStatsImpl}.
+     */
+    protected void reportReliableTopicReceived(int receivedCount) {
+        reportReliableTopicStat(receivedCount, (topic) ->
+                getReliableTopicService().getLocalTopicStats(topic).incrementReceives());
+    }
+
+    private void reportReliableTopicStat(int count, Consumer<String> statsReporter) {
+        if (name.startsWith(RingbufferService.TOPIC_RB_PREFIX)) {
+            String reliableTopicName = name.substring(RingbufferService.TOPIC_RB_PREFIX.length());
+            IntStream.range(0, count).forEach((i) -> statsReporter.accept(reliableTopicName));
+        }
+    }
+
+    private ReliableTopicService getReliableTopicService() {
+        return getNodeEngine().getService(ReliableTopicService.SERVICE_NAME);
     }
 }
