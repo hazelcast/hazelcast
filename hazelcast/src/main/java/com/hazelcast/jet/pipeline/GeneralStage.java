@@ -41,6 +41,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.hazelcast.function.PredicateEx.alwaysTrue;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * The common aspect of {@link BatchStage batch} and {@link StreamStage
@@ -592,7 +593,7 @@ public interface GeneralStage<T> extends Stage {
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         GeneralStage<R> res = mapUsingService(ServiceFactories.<K, V>replicatedMapService(mapName),
-                (map, t) -> mapFn.apply(t, map.get(lookupKeyFn.apply(t))));
+                (map, t) -> mapFn.apply(t, map == null ? null : map.get(lookupKeyFn.apply(t))));
         return res.setName("mapUsingReplicatedMap");
     }
 
@@ -691,7 +692,11 @@ public interface GeneralStage<T> extends Stage {
                 ServiceFactories.<K, V>iMapService(mapName),
                 DEFAULT_MAX_CONCURRENT_OPS,
                 DEFAULT_PRESERVE_ORDER,
-                (map, t) -> map.getAsync(lookupKeyFn.apply(t)).toCompletableFuture().thenApply(e -> mapFn.apply(t, e))
+                (map, t) -> {
+                    CompletableFuture<V> future = map == null ? completedFuture(null) :
+                            map.getAsync(lookupKeyFn.apply(t)).toCompletableFuture();
+                    return future.thenApply(e -> mapFn.apply(t, e));
+                }
         );
         return res.setName("mapUsingIMap");
     }

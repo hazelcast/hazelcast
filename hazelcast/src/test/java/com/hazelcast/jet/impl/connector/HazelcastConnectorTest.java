@@ -29,6 +29,9 @@ import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
@@ -106,6 +109,46 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         cacheManager.getCache(streamSinkName);
     }
 
+    public void when_readNonExistedMap_then_mapNotCreated() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.map(sourceName))
+                .writeTo(Sinks.noop());
+
+        instance().getJet().newJob(p).join();
+
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+    }
+
+    public void when_queryNonExistedMap_then_mapNotCreated() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.map(sourceName, o -> true, o -> o))
+                .writeTo(Sinks.noop());
+
+        instance().getJet().newJob(p).join();
+
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+    }
+
+    public void when_readNonExistedCache_then_cacheNotCreated() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.cache(sourceName))
+                .writeTo(Sinks.noop());
+
+        instance().getJet().newJob(p).join();
+
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().endsWith(sourceName)));
+    }
+
+    public void when_readNonExistedList_then_listNotCreated() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.cache(sourceName))
+                .writeTo(Sinks.noop());
+
+        instance().getJet().newJob(p).join();
+
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+    }
+
     @Test
     public void when_readMap_and_writeMap() {
         IMap<Integer, Integer> sourceMap = instance().getMap(sourceName);
@@ -171,9 +214,9 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMapP(sourceName,
-                        new TruePredicate<>(),
-                        Projections.singleAttribute("value")
-                ));
+                new TruePredicate<>(),
+                Projections.singleAttribute("value")
+        ));
         Vertex sink = dag.newVertex("sink", writeListP(sinkName));
         dag.edge(between(source, sink));
 
@@ -185,10 +228,10 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
     public void checkContents_projectedToNull(String sinkName) {
         assertEquals(
                 IntStream.range(0, ENTRY_COUNT)
-                         .filter(i -> i % 2 != 0)
-                         .mapToObj(String::valueOf)
-                         .sorted()
-                         .collect(joining("\n")),
+                        .filter(i -> i % 2 != 0)
+                        .mapToObj(String::valueOf)
+                        .sorted()
+                        .collect(joining("\n")),
                 instance().<String>getList(sinkName).stream()
                         .sorted()
                         .collect(joining("\n")));

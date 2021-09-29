@@ -781,6 +781,23 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
+    public void mapUsingReplicatedMap_whenReplicatedMapDoesNotExist_replicatedMapNotCreated() {
+        // Given
+        String mapName = randomMapName();
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        StreamStage<Entry<Object, Object>> mapped = streamStageFromList(input)
+                .mapUsingReplicatedMap(mapName, FunctionEx.identity(), Util::entry);
+
+        // Then
+        mapped.writeTo(sink);
+        execute();
+
+        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
+    }
+
+    @Test
     public void mapUsingIMap() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -806,6 +823,23 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 streamToString(
                         this.<Integer, String>sinkStreamOfEntry(),
                         e -> String.format("(%04d, %s)", e.getKey(), e.getValue())));
+    }
+
+    @Test
+    public void mapUsingIMap_whenMapDoesNotExist_mapNotCreated() {
+        // Given
+        String mapName = randomMapName();
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        StreamStage<Entry<Object, Object>> mapped = streamStageFromList(input)
+                .mapUsingIMap(mapName, FunctionEx.identity(), Util::entry);
+
+        // Then
+        mapped.writeTo(sink);
+        execute();
+
+        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
     }
 
     @Test
@@ -835,6 +869,24 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 streamToString(
                         this.<Integer, String>sinkStreamOfEntry(),
                         e -> String.format("(%04d, %s)", e.getKey(), e.getValue())));
+    }
+
+    @Test
+    public void mapUsingIMap_keyed_whenMapDoesNotExist_thenMapNotCreated() {
+        // Given
+        String mapName = randomMapName();
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        StreamStage<Entry<Object, Object>> mapped = streamStageFromList(input)
+                .groupingKey(i -> i)
+                .mapUsingIMap(mapName, Util::entry);
+
+        // Then
+        mapped.writeTo(sink);
+        execute();
+
+        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
     }
 
     @Test

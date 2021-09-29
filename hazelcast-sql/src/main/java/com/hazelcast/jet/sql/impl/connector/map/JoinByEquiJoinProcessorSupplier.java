@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,6 +39,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -49,6 +51,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,7 +62,7 @@ import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.groupingBy;
@@ -78,6 +81,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     private List<Integer> partitions;
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
+    // can be null in case of a non-existent map
     private transient MapProxyImpl<Object, Object> map;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
@@ -104,7 +108,10 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
     @Override
     public void init(@Nonnull Context context) {
-        map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
+        NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
+        if (nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+            map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
+        }
         evalContext = SimpleExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -152,10 +159,16 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                         ? empty()
                         : singleton(extendArray(left, rightRowProjector.getColumnCount()));
             }
+            Set<Entry<Object, Object>> matchingRows;
+            if (map == null) {
+                matchingRows = Collections.emptySet();
+            } else {
+                matchingRows = joinInfo.isInner()
+                        ? map.entrySet(predicate, partitions.copy())
+                        : map.entrySet(predicate);
 
-            Set<Entry<Object, Object>> matchingRows = joinInfo.isInner()
-                    ? map.entrySet(predicate, partitions.copy())
-                    : map.entrySet(predicate);
+            }
+
             List<Object[]> joined = join(left, matchingRows, rightRowProjector, joinInfo.nonEquiCondition(), evalContext);
             return joined.isEmpty() && joinInfo.isLeftOuter()
                     ? singleton(extendArray(left, rightRowProjector.getColumnCount()))
@@ -187,7 +200,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
     @Override
     public List<Permission> permissions() {
-        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        return singletonList(new MapPermission(mapName, ACTION_READ));
     }
 
     @Override

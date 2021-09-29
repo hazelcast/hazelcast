@@ -42,6 +42,7 @@ import java.util.function.Function;
 import static com.hazelcast.internal.util.MapUtil.entry;
 import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_PRESERVE_ORDER;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An intermediate step when constructing a group-and-aggregate pipeline
@@ -616,8 +617,11 @@ public interface GeneralStageWithKey<T, K> {
     ) {
         return mapUsingServiceAsync(ServiceFactories.<K, V>iMapService(mapName),
                 DEFAULT_MAX_CONCURRENT_OPS, DEFAULT_PRESERVE_ORDER,
-                (map, key, item) -> map.getAsync(key).toCompletableFuture()
-                                       .thenApply(value -> mapFn.apply(item, value)));
+                (map, key, item) -> {
+                    CompletableFuture<V> future = map == null ? completedFuture(null) :
+                            map.getAsync(key).toCompletableFuture();
+                    return future.thenApply(value -> mapFn.apply(item, value));
+                });
     }
 
     /**

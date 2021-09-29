@@ -45,6 +45,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.apache.calcite.rel.core.JoinRelType.LEFT;
+import static org.junit.Assert.assertTrue;
 
 public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
 
@@ -68,6 +69,15 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
     @Before
     public void before() {
         map = instance().getMap(MAP_NAME);
+    }
+
+    @Test
+    public void test_joinDoesNotCreateMap() {
+        map.destroy();
+        runTest(INNER, TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE,
+                singletonList(new Object[]{1}),
+                emptyList());
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(MAP_NAME)));
     }
 
     @Test

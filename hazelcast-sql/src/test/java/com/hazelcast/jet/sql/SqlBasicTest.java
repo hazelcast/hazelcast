@@ -164,7 +164,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
 
         // Get proper map
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        IMap<Object, AbstractPojo> map = member1.getMap(mapName());
 
         // Populate map with values
         Map<Object, AbstractPojo> data = new HashMap<>();

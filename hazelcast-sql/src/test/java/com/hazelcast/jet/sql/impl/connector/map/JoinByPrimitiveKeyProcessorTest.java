@@ -40,6 +40,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertTrue;
 
 public class JoinByPrimitiveKeyProcessorTest extends SqlTestSupport {
 
@@ -63,6 +64,15 @@ public class JoinByPrimitiveKeyProcessorTest extends SqlTestSupport {
     @Before
     public void before() {
         map = instance().getMap(MAP_NAME);
+    }
+
+    @Test
+    public void test_joinDoesNotCreateMap() {
+        map.destroy();
+        runTest(TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE, true,
+                singletonList(new Object[]{null}),
+                emptyList());
+        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(MAP_NAME)));
     }
 
     @Test

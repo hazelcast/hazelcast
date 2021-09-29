@@ -20,18 +20,22 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.proxy.ClientListProxy;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.impl.list.ListProxyImpl;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.BiFunction;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
@@ -68,8 +72,14 @@ public final class ReadIListP extends AbstractProcessor {
         } else {
             instance = context.hazelcastInstance();
             serializationService = ((ProcCtx) context).serializationService();
+            NodeEngineImpl nodeEngine = Util.getNodeEngine(instance);
+            if (!nodeEngine.getProxyService().existsDistributedObject(ListService.SERVICE_NAME, name)) {
+                traverser = empty();
+            }
         }
-        traverser = createTraverser(instance, name).map(serializationService::toObject);
+        if (traverser == null) {
+            traverser = createTraverser(instance, name).map(serializationService::toObject);
+        }
     }
 
     @SuppressWarnings("rawtypes")

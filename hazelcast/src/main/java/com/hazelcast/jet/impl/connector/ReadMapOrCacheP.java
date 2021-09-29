@@ -73,7 +73,6 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
@@ -92,6 +91,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -119,7 +119,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private F[] readFutures;
 
     // currently emitted batch, its iterating position and partitionId
-    private List<R> currentBatch = Collections.emptyList();
+    private List<R> currentBatch = emptyList();
     private int currentBatchPosition;
     private int currentPartitionIndex = -1;
     private int numCompletedPartitions;
@@ -444,6 +444,27 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
     }
 
+    static class NonExistentCacheReader
+            extends Reader<InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>> {
+
+        NonExistentCacheReader(String mapName) {
+            super(mapName,
+                    CacheEntriesWithCursor::getPointers,
+                    CacheEntriesWithCursor::getEntries);
+        }
+
+        @Nonnull @Override
+        InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
+            return InternalCompletableFuture.newCompletedFuture(
+                    new CacheEntriesWithCursor(emptyList(), new IterationPointer[]{new IterationPointer(-1, 0)}));
+        }
+
+        @Nullable @Override
+        Object toObject(@Nonnull Entry<Data, Data> record) {
+            return null;
+        }
+    }
+
     static class RemoteCacheReader
             extends Reader<ClientInvocationFuture, CacheIterateEntriesCodec.ResponseParameters, Entry<Data, Data>> {
 
@@ -575,6 +596,27 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
     }
 
+    static class NonExistentMapReader
+            extends Reader<CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>> {
+
+        NonExistentMapReader(String mapName) {
+            super(mapName,
+                    AbstractCursor::getIterationPointers,
+                    AbstractCursor::getBatch);
+        }
+
+        @Nonnull @Override
+        InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
+            return InternalCompletableFuture.newCompletedFuture(
+                    new MapEntriesWithCursor(emptyList(), new IterationPointer[]{new IterationPointer(-1, 0)}));
+        }
+
+        @Nullable @Override
+        Object toObject(@Nonnull Entry<Data, Data> record) {
+            return null;
+        }
+    }
+
     static class LocalMapQueryReader
             extends Reader<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow> {
 
@@ -619,6 +661,30 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public Object toObject(@Nonnull QueryResultRow record) {
             return serializationService.toObject(record.getValue());
         }
+    }
+
+    static class NonExistentMapQueryReader
+            extends Reader<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow> {
+
+        NonExistentMapQueryReader(@Nonnull String mapName) {
+            super(mapName,
+                    ResultSegment::getPointers,
+                    segment -> ((QueryResult) segment.getResult()).getRows()
+            );
+        }
+
+        @Nonnull @Override
+        public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, IterationPointer[] pointers) {
+            return InternalCompletableFuture.newCompletedFuture(
+                    new ResultSegment(new QueryResult(), new IterationPointer[]{new IterationPointer(-1, 0)}));
+        }
+
+
+        @Nullable @Override
+        public Object toObject(@Nonnull QueryResultRow record) {
+            return null;
+        }
+
     }
 
     static class RemoteMapReader

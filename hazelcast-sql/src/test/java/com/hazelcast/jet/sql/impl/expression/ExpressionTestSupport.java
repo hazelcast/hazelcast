@@ -28,6 +28,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import junit.framework.TestCase;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.math.BigDecimal;
@@ -76,11 +77,16 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected static final String STANDARD_LOCAL_OFFSET_TIME_VAL = "2020-1-1 0:0:0+00:00";
     protected static final String STANDARD_LOCAL_DATE_TIME_VAL = "2020-1-1 0:0:0";
 
-    protected static IMap map;
+    protected IMap map;
 
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
+
+    }
+
+    @Before
+    public void beforeTest() {
         map = instance().getMap("map");
     }
 

@@ -79,7 +79,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         for (int i = 0; i < count; i++) {
             String mapName = this.mapName;
             Processor processor = new AsyncTransformUsingServiceBatchedP<>(
-                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.createIMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
                     MAX_BATCH_SIZE,

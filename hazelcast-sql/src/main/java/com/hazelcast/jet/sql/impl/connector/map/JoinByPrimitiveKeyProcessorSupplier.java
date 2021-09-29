@@ -43,7 +43,6 @@ import java.util.List;
 
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -97,7 +96,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.getIMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
                     (IMap<Object, Object> map, Object[] left) -> {
@@ -105,7 +104,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
                         if (key == null) {
                             return inner ? null : completedFuture(null);
                         }
-                        return map.getAsync(key).toCompletableFuture();
+                        return map == null ? completedFuture(null) : map.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
                         Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition, evalContext);
@@ -141,7 +140,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public List<Permission> permissions() {
-        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        return singletonList(new MapPermission(mapName, ACTION_READ));
     }
 
     @Override

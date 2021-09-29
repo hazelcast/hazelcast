@@ -29,7 +29,6 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
@@ -73,7 +72,7 @@ public final class ServiceFactories {
     public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
         ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapFactory =
                 ServiceFactories.sharedService(SecuredFunctions.replicatedMapFn(mapName));
-        return replicatedMapFactory.withPermission(new ReplicatedMapPermission(mapName, ACTION_CREATE, ACTION_READ));
+        return replicatedMapFactory.withPermission(new ReplicatedMapPermission(mapName, ACTION_READ));
     }
 
     /**
@@ -100,8 +99,8 @@ public final class ServiceFactories {
     @Nonnull
     public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
         ServiceFactory<?, IMap<K, V>> iMapServiceFactory =
-                ServiceFactories.sharedService(SecuredFunctions.iMapFn(mapName));
-        return iMapServiceFactory.withPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+                ServiceFactories.sharedService(SecuredFunctions.getIMapFn(mapName));
+        return iMapServiceFactory.withPermission(new MapPermission(mapName, ACTION_READ));
     }
 
     /**

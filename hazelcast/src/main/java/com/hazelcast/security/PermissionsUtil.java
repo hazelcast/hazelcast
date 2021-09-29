@@ -75,7 +75,7 @@ public final class PermissionsUtil {
 
     @Nullable
     public static Permission listReadPermission(@Nullable String clientXml, @Nonnull String name) {
-        return checkRemote(clientXml, new ListPermission(name, ACTION_CREATE, ACTION_READ));
+        return checkRemote(clientXml, new ListPermission(name, ACTION_READ));
     }
 
     public static void checkPermission(SecuredFunction function, ProcessorMetaSupplier.Context context) {

@@ -36,13 +36,16 @@ import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.topic.ITopic;
 
 import java.io.BufferedWriter;
@@ -59,6 +62,7 @@ import java.util.Map;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
@@ -75,7 +79,7 @@ public final class SecuredFunctions {
     private SecuredFunctions() {
     }
 
-    public static <K, V> FunctionEx<? super Context, IMap<K, V>> iMapFn(String name) {
+    public static <K, V> FunctionEx<? super Context, IMap<K, V>> createIMapFn(String name) {
         return new FunctionEx<Context, IMap<K, V>>() {
             @Override
             public IMap<K, V> applyEx(Context context) {
@@ -85,6 +89,24 @@ public final class SecuredFunctions {
             @Override
             public List<Permission> permissions() {
                 return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
+            }
+        };
+    }
+
+    public static <K, V> FunctionEx<? super Context, IMap<K, V>> getIMapFn(String name) {
+        return new FunctionEx<Context, IMap<K, V>>() {
+            @Override
+            public IMap<K, V> applyEx(Context context) {
+                NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
+                if (nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, name)) {
+                    return context.hazelcastInstance().getMap(name);
+                }
+                return null;
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(new MapPermission(name, ACTION_READ));
             }
         };
     }
@@ -125,12 +147,16 @@ public final class SecuredFunctions {
         return new FunctionEx<Context, ReplicatedMap<K, V>>() {
             @Override
             public ReplicatedMap<K, V> applyEx(Context context) {
-                return context.hazelcastInstance().getReplicatedMap(name);
+                NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
+                if (nodeEngine.getProxyService().existsDistributedObject(ReplicatedMapService.SERVICE_NAME, name)) {
+                    return context.hazelcastInstance().getReplicatedMap(name);
+                }
+                return null;
             }
 
             @Override
             public List<Permission> permissions() {
-                return singletonList(new ReplicatedMapPermission(name, ACTION_CREATE, ACTION_READ));
+                return singletonList(new ReplicatedMapPermission(name, ACTION_READ));
             }
         };
     }

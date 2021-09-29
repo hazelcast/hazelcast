@@ -16,8 +16,14 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntriesWithCursor;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentCacheReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapQueryReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapReader;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -40,6 +46,7 @@ import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.security.Permission;
@@ -50,6 +57,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
@@ -62,7 +70,14 @@ public final class HazelcastReaders {
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
-                (hzInstance, serializationService) -> new LocalCacheReader(hzInstance, serializationService, cacheName)
+                (hzInstance, serializationService) -> {
+                    String name = HazelcastCacheManager.CACHE_MANAGER_PREFIX + cacheName;
+                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
+                    if (!nodeEngine.getProxyService().existsDistributedObject(CacheService.SERVICE_NAME, name)) {
+                        return new NonExistentCacheReader(cacheName);
+                    }
+                    return new LocalCacheReader(hzInstance, serializationService, cacheName);
+                }
         ) {
             @Override
             public Permission getRequiredPermission() {
@@ -84,7 +99,13 @@ public final class HazelcastReaders {
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<
                 CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
-                (hzInstance, serializationService) -> new LocalMapReader(hzInstance, serializationService, mapName)
+                (hzInstance, serializationService) -> {
+                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
+                    if (!nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+                        return new NonExistentMapReader(mapName);
+                    }
+                    return new LocalMapReader(hzInstance, serializationService, mapName);
+                }
         ) {
             @Override
             public Permission getRequiredPermission() {
@@ -103,8 +124,13 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
-                (hzInstance, serializationService) ->
-                        new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection)
+                (hzInstance, serializationService) -> {
+                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
+                    if (!nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+                        return new NonExistentMapQueryReader(mapName);
+                    }
+                    return new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection);
+                }
         ) {
             @Override
             public Permission getRequiredPermission() {
