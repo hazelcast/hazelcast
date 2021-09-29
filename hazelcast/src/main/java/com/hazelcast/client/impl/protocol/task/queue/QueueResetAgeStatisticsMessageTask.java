@@ -70,7 +70,7 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
 
     @Override
     public String getMethodName() {
-        return null;
+        return "resetQueueAgeStatistics";
     }
 
     @Override
