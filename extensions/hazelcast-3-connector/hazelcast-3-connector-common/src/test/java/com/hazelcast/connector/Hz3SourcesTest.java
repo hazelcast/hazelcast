@@ -127,7 +127,7 @@ public class Hz3SourcesTest extends BaseHz3Test {
 
     @Test
     public void when_tryToReadFromHz5Cluster_then_shouldThrowJetException() {
-        Config hz5Config = new Config();
+        Config hz5Config = new Config().setClusterName("hz3-test");
         hz5Config.getNetworkConfig().setPort(15701);
         HazelcastInstance hz5 = Hazelcast.newHazelcastInstance(hz5Config);
 

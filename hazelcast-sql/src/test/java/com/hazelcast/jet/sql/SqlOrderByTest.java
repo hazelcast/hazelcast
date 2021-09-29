@@ -521,72 +521,72 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sql1 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql1, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql1));
 
         String sqlLimit1 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT 10 OFFSET -5 ROWS";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit1, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit1));
 
         String sql2 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql2, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql2));
 
         String sqlLimit2 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT -10 OFFSET 5 ROWS";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit2, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit2));
 
         String sql3 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET \"\" ROWS";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql3, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql3));
 
         String sql4 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET intVal ROWS";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql4, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql4));
 
         String sql5 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " FETCH FIRST \"\" ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql5, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql5));
 
         String sqlLimit5 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT \"\"";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit5, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit5));
 
         String sql6 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " FETCH FIRST null ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql6, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql6));
 
         String sqlLimit6 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT null";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit6, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit6));
 
         String sql7 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " FETCH FIRST \"abc\" ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql7, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql7));
 
         String sqlLimit7 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT \"abc\"";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit7, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit7));
 
         String sql8 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " FETCH FIRST 1 + ? ROWS ONLY";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql8, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sql8));
 
         String sqlLimit8 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " LIMIT 1 + ?";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit8, 0));
+        assertThrows(HazelcastSqlException.class, () -> query(sqlLimit8));
     }
 
     @Test
