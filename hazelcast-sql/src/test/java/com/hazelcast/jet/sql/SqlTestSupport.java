@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -194,15 +195,45 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Execute a query and wait until it completes. Assert that the returned
      * rows contain the expected rows, in any order.
      *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsAnyOrder(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
+        assertRowsAnyOrder(instance, sql, emptyList(), expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in any order.
+     *
      * @param sql          The query
      * @param arguments    The query arguments
      * @param expectedRows Expected rows
      */
     public static void assertRowsAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsAnyOrder(instance(), sql, arguments, expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in any order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsAnyOrder(
+            HazelcastInstance instance,
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows
+    ) {
         SqlStatement statement = new SqlStatement(sql);
         arguments.forEach(statement::addParameter);
 
-        SqlService sqlService = instance().getSql();
+        SqlService sqlService = instance.getSql();
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
@@ -356,6 +387,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
     }
 
+    /**
+     * Create an IMap mapping with given {@code name} that uses provided arbitrary key and value formats.
+     */
+    public static void createMapping(String name, String keyFormat, String valueFormat) {
+        createMapping(instance(), name, keyFormat, valueFormat);
+    }
+
+    public static void createMapping(HazelcastInstance instance, String name, String keyFormat, String valueFormat) {
+        String sql = "CREATE MAPPING " + name
+                + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + keyFormat + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + "'\n"
+                + ")";
+        try (SqlResult result = instance.getSql().execute(sql)) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
@@ -402,6 +452,21 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    public List<Row> rows(final int rowLength, final Object ...values) {
+        if ((values.length % rowLength) != 0) {
+            throw new HazelcastException("Number of row value args is not divisible by row length");
+        }
+
+        final List<Row> rowList = new ArrayList<>();
+        for (int i = 0; i < values.length; i += rowLength) {
+            Object[] rowValues = new Object[rowLength];
+            System.arraycopy(values, i, rowValues, 0, rowLength);
+            rowList.add(new Row(rowValues));
+        }
+
+        return rowList;
     }
 
     /**
