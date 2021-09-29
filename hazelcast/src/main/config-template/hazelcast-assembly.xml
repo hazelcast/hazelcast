@@ -171,6 +171,13 @@
         <failure-detector>
             <icmp enabled="false"/>
         </failure-detector>
+        <!--
+            Configuration for REST endpoints. When it's enabled, it will allow healthcheck calls over the HTTP protocol.
+         -->
+        <rest-api enabled="@FILTER_BIND_ANY@">
+            <endpoint-group name="HEALTH_CHECK" enabled="true"/>
+            <endpoint-group name="CLUSTER_READ" enabled="false"/>
+        </rest-api>
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
