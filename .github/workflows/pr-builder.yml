@@ -35,13 +35,16 @@ jobs:
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
           install
-      - name: Publish Unit Test Results
+      - name: Publish Test Report
+        if: ${{ always() }}
+        uses: scacap/action-surefire-report@v1.0.13
+        with:
+          report_paths: '**/*-reports/TEST-*.xml'
+          fail_on_test_failures: true
+          check_name: Test Results - scacap
+      - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
         if: always()
         with:
-          files: '**/surefire-reports/TEST-*.xml'
-      - name: Publish Integration Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.19
-        if: always()
-        with:
-          files: '**/failsafe-reports/TEST-*.xml'
+          check_name: Test results - EnricoMi
+          files: '**/*-reports/TEST-*.xml'
