@@ -59,7 +59,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     @Probe(name = QUEUE_METRIC_BACKUP_ITEM_COUNT)
     private int backupItemCount;
     @Probe(name = QUEUE_METRIC_MIN_AGE, unit = MS)
-    private long minAge;
+    private long minAge = Long.MAX_VALUE;
     @Probe(name = QUEUE_METRIC_MAX_AGE, unit = MS)
     private long maxAge;
     @Probe(name = QUEUE_METRIC_AVERAGE_AGE, unit = MS)

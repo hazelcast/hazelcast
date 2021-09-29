@@ -59,7 +59,7 @@ public class QueueResetAgeStatisticsTest
     public void testAgeStatsReset()
             throws ExecutionException, InterruptedException {
         IQueue<String> myQueue = client.getQueue("my-queue");
-        assertEquals(0, member.getQueue("my-queue").getLocalQueueStats().getMinAge());
+        assertEquals(Long.MAX_VALUE, member.getQueue("my-queue").getLocalQueueStats().getMinAge());
         myQueue.add("item-1");
         myQueue.add("item-2");
         Thread.sleep(50);
@@ -76,7 +76,7 @@ public class QueueResetAgeStatisticsTest
         invocation.invoke().get();
         LocalQueueStats statsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
         assertEquals(0, statsAfterReset.getMaxAge());
-        assertEquals(0, statsAfterReset.getMinAge());
+        assertEquals(Long.MAX_VALUE, statsAfterReset.getMinAge());
         assertEquals(0, statsAfterReset.getAverageAge());
 
         myQueue.add("item-3");

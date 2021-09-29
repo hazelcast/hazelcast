@@ -1107,16 +1107,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         totalAgedCount++;
         totalAge += elapsed;
-
-        if (minAge == -1) {
-            minAge = elapsed;
-        }
         minAge = Math.min(minAge, elapsed);
         maxAge = Math.max(maxAge, elapsed);
     }
 
     public void setStats(LocalQueueStatsImpl stats) {
-        stats.setMinAge(minAge == -1 ? 0 : minAge);
+        stats.setMinAge(minAge);
         stats.setMaxAge(maxAge);
         long totalAgedCountVal = Math.max(totalAgedCount, 1);
         stats.setAverageAge(totalAge / totalAgedCountVal);
@@ -1258,7 +1254,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @since 5.0.1
      */
     public void resetAgeStats() {
-        minAge = -1;
+        minAge = Long.MAX_VALUE;
         maxAge = 0;
         totalAge = 0;
         totalAgedCount = 0;
