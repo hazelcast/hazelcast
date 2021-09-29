@@ -3,13 +3,13 @@ on:
   push:
     branches:
       - 'luk/*'
-#      - 'master'
-#      - '[0-9]+.[0-9]+.z'
+      - 'master'
+      - '[0-9]+.[0-9]+.z'
   pull_request:
     branches:
       - 'luk/*'
-#      - 'master'
-#      - '[0-9]+.[0-9]+.z'
+      - 'master'
+      - '[0-9]+.[0-9]+.z'
 jobs:
   validate:
     runs-on: self-hosted
@@ -35,12 +35,12 @@ jobs:
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
           install
-      - name: EnricoMi - Publish Unit Test Results
+      - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
         if: always()
         with:
           files: '**/surefire-reports/TEST-*.xml'
-      - name: EnricoMi - Publish Integration Test Results
+      - name: Publish Integration Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
         if: always()
         with:
