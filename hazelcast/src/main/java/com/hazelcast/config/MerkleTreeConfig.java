@@ -26,7 +26,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import java.io.IOException;
 import java.util.Objects;
 
-import static com.hazelcast.internal.cluster.Versions.V5_0;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableBoolean;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableBoolean;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -179,22 +178,13 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_4_2
-        if (out.getVersion().isGreaterOrEqual(V5_0)) {
-            writeNullableBoolean(out, enabled);
-        } else {
-            out.writeBoolean(isEnabled());
-        }
+        writeNullableBoolean(out, enabled);
         out.writeInt(depth);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(V5_0)) {
-            enabled = readNullableBoolean(in);
-        } else {
-            enabled = in.readBoolean();
-        }
+        enabled = readNullableBoolean(in);
         depth = in.readInt();
     }
 

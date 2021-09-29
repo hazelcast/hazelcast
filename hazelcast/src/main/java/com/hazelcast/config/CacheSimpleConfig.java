@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
@@ -793,11 +792,8 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
-        // RU_COMPAT_4_2
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-            out.writeObject(merkleTreeConfig);
-            out.writeObject(dataPersistenceConfig);
-        }
+        out.writeObject(merkleTreeConfig);
+        out.writeObject(dataPersistenceConfig);
     }
 
     @Override
@@ -827,11 +823,8 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
 
-        // RU_COMPAT_4_2
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-            merkleTreeConfig = in.readObject();
-            setDataPersistenceConfig(in.readObject());
-        }
+        merkleTreeConfig = in.readObject();
+        setDataPersistenceConfig(in.readObject());
     }
 
     @Override

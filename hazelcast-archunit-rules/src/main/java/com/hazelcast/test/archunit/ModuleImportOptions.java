@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.test.archunit;
 
-/**
- * Represents a read-only view of a MaxIdle for the merging process after a split-brain.
- *
- * @since 3.10
- */
-public interface MergingMaxIdle extends MergingView {
+import com.tngtech.archunit.core.importer.ImportOption;
 
-    /**
-     * Returns the MaxIdle of the merge data.
-     *
-     * @return the MaxIdle of the merge data
-     */
-    Long getMaxIdle();
+import java.nio.file.Paths;
+import java.util.regex.Pattern;
+
+public final class ModuleImportOptions {
+
+    private ModuleImportOptions() {
+    }
+
+    public static ImportOption onlyCurrentModule() {
+        String moduleName = Paths.get("").toAbsolutePath().getFileName().toString();
+        Pattern projectModulePattern = Pattern.compile(".*/" + moduleName + "/target/classes/.*");
+        return location -> location.matches(projectModulePattern);
+    }
 }

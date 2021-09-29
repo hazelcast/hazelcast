@@ -45,6 +45,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -68,7 +69,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 /**
  * Holder for raw IMap key-value pairs and their metadata.
  */
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of these partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;

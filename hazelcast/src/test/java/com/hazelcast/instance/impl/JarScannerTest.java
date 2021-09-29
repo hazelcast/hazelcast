@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.jar.JarFile;
 
@@ -50,7 +51,8 @@ public class JarScannerTest {
         try (JarFile jarFile = new JarFile(dummyJarFile.toFile())) {
             List<String> classFiles = JarScanner.findClassFiles(jarFile, "SomeClass");
 
-            assertThat(classFiles).contains("com/example/SomeClass.class");
+            String pathToClass = Paths.get("com", "example", "SomeClass.class").toString();
+            assertThat(classFiles).contains(pathToClass);
         }
     }
 

@@ -35,19 +35,6 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_rightJoin() {
-        TestBatchSqlConnector.create(sqlService, "b", 0);
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT 1 FROM b AS b1 RIGHT JOIN b AS b2 ON b1.v = b2.v"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("RIGHT join not supported");
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT 1 FROM b AS b1 RIGHT OUTER JOIN b AS b2 ON b1.v = b2.v"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("RIGHT join not supported");
-    }
-
-    @Test
     public void test_fullJoin() {
         TestBatchSqlConnector.create(sqlService, "b", 0);
 

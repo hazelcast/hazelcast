@@ -309,6 +309,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                         || symbolValue == JoinType.COMMA
                         || symbolValue == JoinType.CROSS
                         || symbolValue == JoinType.LEFT
+                        || symbolValue == JoinType.RIGHT
                 ) {
                     return null;
                 }
@@ -380,6 +381,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 && joinType != JoinType.COMMA
                 && joinType != JoinType.CROSS
                 && joinType != JoinType.LEFT
+                && joinType != JoinType.RIGHT
         ) {
             throw unsupported(join, joinType.name() + " join");
         }
