@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -32,9 +31,11 @@ import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class IncrementCommandProcessor extends MemcacheCommandProcessor<IncrementCommand> {
+    private final EntryConverter entryConverter;
 
-    public IncrementCommandProcessor(TextCommandServiceImpl textCommandService) {
+    public IncrementCommandProcessor(TextCommandServiceImpl textCommandService, EntryConverter entryConverter) {
         super(textCommandService);
+        this.entryConverter = entryConverter;
     }
 
     @Override
@@ -70,22 +71,9 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
 
     private void incrementUnderLock(IncrementCommand incrementCommand, String key, String mapName) {
         Object value = textCommandService.get(mapName, key);
-        MemcacheEntry entry;
 
         if (value != null) {
-            if (value instanceof MemcacheEntry) {
-                entry = (MemcacheEntry) value;
-            } else if (value instanceof byte[]) {
-                entry = new MemcacheEntry(incrementCommand.getKey(), (byte[]) value, 0);
-            } else if (value instanceof String) {
-                entry = new MemcacheEntry(incrementCommand.getKey(), stringToBytes((String) value), 0);
-            } else {
-                try {
-                    entry = new MemcacheEntry(incrementCommand.getKey(), textCommandService.toByteArray(value), 0);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
-            }
+            MemcacheEntry entry = entryConverter.toEntry(incrementCommand.getKey(), value);
 
             String currentCachedValue = bytesToString(entry.getValue());
 
@@ -94,8 +82,8 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                 updateHitCount(incrementCommand);
 
                 byte[] newCachedValueBytes = stringToBytes(newCachedValue);
-                MemcacheEntry newEntry = new MemcacheEntry(key, newCachedValueBytes, entry.getFlag());
-                textCommandService.put(mapName, key, newEntry);
+                MemcacheEntry newValue = new MemcacheEntry(key, newCachedValueBytes, entry.getFlag());
+                textCommandService.put(mapName, key, newValue);
                 incrementCommand.setResponse(concatenate(newCachedValueBytes, RETURN));
             } catch (NumberFormatException e) {
                 incrementCommand.setResponse(concatenate(concatenate(CLIENT_ERROR, stringToBytes(e.getMessage())), RETURN));
