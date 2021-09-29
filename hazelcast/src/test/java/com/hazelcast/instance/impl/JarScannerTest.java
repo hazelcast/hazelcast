@@ -51,7 +51,7 @@ public class JarScannerTest {
         try (JarFile jarFile = new JarFile(dummyJarFile.toFile())) {
             List<String> classFiles = JarScanner.findClassFiles(jarFile, "SomeClass");
 
-            String pathToClass = Paths.get("com", "example", "SomeClass.class").toString();
+            String pathToClass = Paths.get("com1", "example", "SomeClass.class").toString();
             assertThat(classFiles).contains(pathToClass);
         }
     }
