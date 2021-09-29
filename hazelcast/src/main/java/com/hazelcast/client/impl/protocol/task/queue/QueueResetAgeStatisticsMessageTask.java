@@ -22,10 +22,13 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
 public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageTask<String> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("queue.resetAgeMetrics");
 
     public QueueResetAgeStatisticsMessageTask(ClientMessage clientMessage, Node node,
                                               Connection connection) {
@@ -42,7 +45,7 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override
@@ -73,5 +76,10 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
     }
 }
