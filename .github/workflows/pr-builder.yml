@@ -46,6 +46,16 @@ jobs:
           ./mvnw --errors --no-transfer-progress --batch-mode -f modulepath-tests/pom.xml
           -Dmaven.test.failure.ignore=true
           install
+      - name: Upload Test artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: test-artifacts-${{ github.workflow }}-${{ github.run_number }}
+          path: |
+            **/surefire-reports
+            **/failsafe-reports
+            **/*.hprof
+            **/core*
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
