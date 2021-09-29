@@ -59,6 +59,7 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>${aws.sdk.version}</version>
         </dependency>
+        <!-- hadoop-aws also depends on dynamodb module-->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-dynamodb</artifactId>
