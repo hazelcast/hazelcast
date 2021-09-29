@@ -80,6 +80,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure('b', sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
         putAndCheckFailure('b', sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
         putAndCheckValue('b', sql("this", OBJECT), OBJECT, "b");
+        putAndCheckValue('b', sql("this", JSON), JSON, new HazelcastJsonValue("b"));
     }
 
     @Test
@@ -336,6 +337,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(true, sql("this", TIME), PARSING, castError(BOOLEAN, TIME));
         putAndCheckFailure(true, sql("this", TIMESTAMP), PARSING, castError(BOOLEAN, TIMESTAMP));
         putAndCheckFailure(true, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BOOLEAN, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(true, sql("this", JSON), PARSING, castError(BOOLEAN, JSON));
     }
 
     @Test
@@ -359,6 +361,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(true), TIME), PARSING, castError(BOOLEAN, TIME));
         checkFailure0(sql(literal(true), TIMESTAMP), PARSING, castError(BOOLEAN, TIMESTAMP));
         checkFailure0(sql(literal(true), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BOOLEAN, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal(true), JSON), PARSING, castError(BOOLEAN, JSON));
     }
 
     @Test
@@ -408,6 +411,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure((byte) 0, sql("this", TIME), PARSING, castError(TINYINT, TIME));
         putAndCheckFailure((byte) 0, sql("this", TIMESTAMP), PARSING, castError(TINYINT, TIMESTAMP));
         putAndCheckFailure((byte) 0, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(TINYINT, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure((byte) 0, sql("this", JSON), PARSING, castError(TINYINT, JSON));
     }
 
     @Test
@@ -434,6 +438,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(1), TIME), PARSING, castError(TINYINT, TIME));
         checkFailure0(sql(literal(1), TIMESTAMP), PARSING, castError(TINYINT, TIMESTAMP));
         checkFailure0(sql(literal(1), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(TINYINT, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal(1), JSON), PARSING, castError(TINYINT, JSON));
 
         checkValue0(sql(literal(1), OBJECT), OBJECT, (byte) 1);
     }
@@ -485,6 +490,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure((short) 0, sql("this", TIME), PARSING, castError(SMALLINT, TIME));
         putAndCheckFailure((short) 0, sql("this", TIMESTAMP), PARSING, castError(SMALLINT, TIMESTAMP));
         putAndCheckFailure((short) 0, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(SMALLINT, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure((short) 0, sql("this", JSON), PARSING, castError(SMALLINT, JSON));
     }
 
     @Test
@@ -508,6 +514,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Short.MAX_VALUE), TIME), PARSING, castError(SMALLINT, TIME));
         checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP), PARSING, castError(SMALLINT, TIMESTAMP));
         checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(SMALLINT, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal(Short.MAX_VALUE), JSON), PARSING, castError(SMALLINT, JSON));
 
         checkValue0(sql(literal(Short.MAX_VALUE), OBJECT), OBJECT, Short.MAX_VALUE);
     }
@@ -559,6 +566,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0, sql("this", TIME), PARSING, castError(INTEGER, TIME));
         putAndCheckFailure(0, sql("this", TIMESTAMP), PARSING, castError(INTEGER, TIMESTAMP));
         putAndCheckFailure(0, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(0, sql("this", JSON), PARSING, castError(INTEGER, JSON));
     }
 
     @Test
@@ -582,6 +590,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Integer.MAX_VALUE), TIME), PARSING, castError(INTEGER, TIME));
         checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP), PARSING, castError(INTEGER, TIMESTAMP));
         checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal(Integer.MAX_VALUE), JSON), PARSING, castError(INTEGER, JSON));
 
         checkValue0(sql(literal(Integer.MAX_VALUE), OBJECT), OBJECT, Integer.MAX_VALUE);
     }
@@ -633,6 +642,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0L, sql("this", TIME), PARSING, castError(BIGINT, TIME));
         putAndCheckFailure(0L, sql("this", TIMESTAMP), PARSING, castError(BIGINT, TIMESTAMP));
         putAndCheckFailure(0L, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BIGINT, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(0L, sql("this", JSON), PARSING, castError(BIGINT, JSON));
     }
 
     @Test
@@ -656,6 +666,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Long.MAX_VALUE), TIME), PARSING, castError(BIGINT, TIME));
         checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP), PARSING, castError(BIGINT, TIMESTAMP));
         checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BIGINT, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal(Long.MAX_VALUE), JSON), PARSING, castError(BIGINT, JSON));
 
         checkValue0(sql(literal(Long.MAX_VALUE), OBJECT), OBJECT, Long.MAX_VALUE);
     }
@@ -706,6 +717,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIME), PARSING, castError(DECIMAL, TIME));
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(BigDecimal.ZERO, sql("this", JSON), PARSING, castError(DECIMAL, JSON));
     }
 
     @Test
@@ -758,6 +770,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIME), PARSING, castError(DECIMAL, TIME));
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         putAndCheckFailure(BigDecimal.ZERO, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(BigDecimal.ZERO, sql("this", JSON), PARSING, castError(DECIMAL, JSON));
     }
 
     @Test
@@ -783,6 +796,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIME), PARSING, castError(DECIMAL, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal, JSON), PARSING, castError(DECIMAL, JSON));
 
         checkValue0(sql(literal, OBJECT), OBJECT, decimalValue);
     }
@@ -810,6 +824,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIME), PARSING, castError(DECIMAL, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal, JSON), PARSING, castError(DECIMAL, JSON));
 
         checkValue0(sql(literal, OBJECT), OBJECT, decimalValue);
     }
@@ -840,6 +855,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0f, sql("this", TIME), PARSING, castError(REAL, TIME));
         putAndCheckFailure(0f, sql("this", TIMESTAMP), PARSING, castError(REAL, TIMESTAMP));
         putAndCheckFailure(0f, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(REAL, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(0f, sql("this", JSON), PARSING, castError(REAL, JSON));
     }
 
     @Test
@@ -868,6 +884,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0d, sql("this", TIME), PARSING, castError(DOUBLE, TIME));
         putAndCheckFailure(0d, sql("this", TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         putAndCheckFailure(0d, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(0d, sql("this", JSON), PARSING, castError(DOUBLE, JSON));
     }
 
     /**
@@ -926,6 +943,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal, JSON), PARSING, castError(DOUBLE, JSON));
 
         checkValue0(sql(literal, OBJECT), OBJECT, 11d);
     }
@@ -951,6 +969,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal, JSON), PARSING, castError(DOUBLE, JSON));
 
         checkValue0(sql(literal, OBJECT), OBJECT, 1.1E35D);
     }
@@ -976,6 +995,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+        checkFailure0(sql(literal, JSON), PARSING, castError(DOUBLE, JSON));
 
         checkValue0(sql(literal, OBJECT), OBJECT, 1.1E100D);
     }
@@ -1003,6 +1023,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_DATE_VAL, sql("this", REAL), PARSING, castError(DATE, REAL));
         putAndCheckFailure(LOCAL_DATE_VAL, sql("this", DOUBLE), PARSING, castError(DATE, DOUBLE));
         putAndCheckFailure(LOCAL_DATE_VAL, sql("this", TIME), PARSING, castError(DATE, TIME));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this", JSON), PARSING, castError(DATE, JSON));
     }
 
     @Test
@@ -1028,6 +1049,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_TIME_VAL, sql("this", REAL), PARSING, castError(TIME, REAL));
         putAndCheckFailure(LOCAL_TIME_VAL, sql("this", DOUBLE), PARSING, castError(TIME, DOUBLE));
         putAndCheckFailure(LOCAL_TIME_VAL, sql("this", DATE), PARSING, castError(TIME, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this", JSON), PARSING, castError(TIME, JSON));
     }
 
     @Test
@@ -1054,6 +1076,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this", DECIMAL), PARSING, castError(TIMESTAMP, DECIMAL));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this", REAL), PARSING, castError(TIMESTAMP, REAL));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this", DOUBLE), PARSING, castError(TIMESTAMP, DOUBLE));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this", JSON), PARSING, castError(TIMESTAMP, JSON));
     }
 
     @Test
@@ -1080,6 +1103,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this", DECIMAL), PARSING, castError(TIMESTAMP_WITH_TIME_ZONE, DECIMAL));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this", REAL), PARSING, castError(TIMESTAMP_WITH_TIME_ZONE, REAL));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this", DOUBLE), PARSING, castError(TIMESTAMP_WITH_TIME_ZONE, DOUBLE));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this", JSON), PARSING, castError(TIMESTAMP_WITH_TIME_ZONE, JSON));
     }
 
     @Test
@@ -1117,7 +1141,21 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testJson() {
-        putAndCheckValue(new HazelcastJsonValue("[1,2,3]"), sql("this", VARCHAR), VARCHAR, "[1,2,3]");
+        final HazelcastJsonValue value = new HazelcastJsonValue("[1,2,3]");
+        putAndCheckValue(value, sql("this", VARCHAR), VARCHAR, "[1,2,3]");
+        putAndCheckValue(value, sql("this", OBJECT), OBJECT, value);
+
+        putAndCheckFailure(value, sql("this", TINYINT), PARSING, castError(JSON, TINYINT));
+        putAndCheckFailure(value, sql("this", SMALLINT), PARSING, castError(JSON, SMALLINT));
+        putAndCheckFailure(value, sql("this", INTEGER), PARSING, castError(JSON, INTEGER));
+        putAndCheckFailure(value, sql("this", BIGINT), PARSING, castError(JSON, BIGINT));
+        putAndCheckFailure(value, sql("this", DECIMAL), PARSING, castError(JSON, DECIMAL));
+        putAndCheckFailure(value, sql("this", REAL), PARSING, castError(JSON, REAL));
+        putAndCheckFailure(value, sql("this", DOUBLE), PARSING, castError(JSON, DOUBLE));
+        putAndCheckFailure(value, sql("this", DATE), PARSING, castError(JSON, DATE));
+        putAndCheckFailure(value, sql("this", TIME), PARSING, castError(JSON, TIME));
+        putAndCheckFailure(value, sql("this", TIMESTAMP), PARSING, castError(JSON, TIMESTAMP));
+        putAndCheckFailure(value, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(JSON, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test

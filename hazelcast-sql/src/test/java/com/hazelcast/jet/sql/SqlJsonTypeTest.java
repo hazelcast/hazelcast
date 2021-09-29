@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.SlowTest;
@@ -29,13 +27,11 @@ import org.junit.experimental.categories.Category;
 public class SqlJsonTypeTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
-        final Config config = new Config();
-        config.getJetConfig().setEnabled(true);
-        initializeWithClient(1, config, new ClientConfig());
+        initializeWithClient(1, null, null);
     }
 
     @Test
-    public void when_insertedIntoExistingMap_typeIsCorrect() {
+    public void test_insertIntoExistingMap() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         createMapping("test", "bigint", "json");
 
@@ -53,7 +49,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_sinkIsUsedWithExistingMap_typeIsCorrect() {
+    public void test_sinkIntoExistingMap() {
         createMapping("test", "bigint", "json");
 
         execute("INSERT INTO test VALUES (1, CAST('[1,2,3]' AS JSON))");
@@ -66,17 +62,25 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_clientIsUsed_typeIsPassedCorrectly() {
+    public void test_client() {
         createMapping(client(), "test", "bigint", "json");
 
         final IMap<Long, HazelcastJsonValue> test = client().getMap("test");
         test.put(1L, json("[1,2,3]"));
 
         executeClient("INSERT INTO test VALUES (2, CAST('[4,5,6]' AS JSON))");
-
         assertRowsAnyOrder(client(),
                 "SELECT * FROM test" ,
                 rows(2, 1L, json("[1,2,3]"), 2L, json("[4,5,6]")));
+
+        executeClient("INSERT INTO test VALUES (3, ?)", json("[7,8,9]"));
+        assertRowsAnyOrder(client(),
+                "SELECT * FROM test" ,
+                rows(2,
+                        1L, json("[1,2,3]"),
+                        2L, json("[4,5,6]"),
+                        3L, json("[7,8,9]")
+                ));
     }
 
     public void execute(final String sql, final Object ...arguments) {

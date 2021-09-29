@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
@@ -43,13 +42,11 @@ import static org.junit.Assert.assertNull;
 public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
-        final Config config = new Config();
-        config.getJetConfig().setEnabled(true);
-        initialize(1, config);
+        initialize(1, null);
     }
 
     @Test
-    public void when_stringIsPassed_queryWorks() {
+    public void test_string() {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
         createMapping("test", Long.class, String.class);
@@ -58,7 +55,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_jsonIsPassed_queryWorks() {
+    public void test_hazelcastJsonValue() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json("[1,2,3]"));
         createMapping("test", "bigint", "json");
@@ -67,7 +64,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_complexObjectIsPassed_queryWorks() {
+    public void test_objectWithJsonField() {
         final IMap<Long, ComplexObject> test = instance().getMap("test");
         test.put(1L, new ComplexObject(1L, "[1,2,3]"));
         createMapping("test", Long.class, ComplexObject.class);
@@ -77,7 +74,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_extendedSyntaxSpecified_queryWorks() {
+    public void test_extendedSyntax() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json(""));
         test.put(2L, json("[1,2,"));
@@ -103,7 +100,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_defaultWrapperBehaviorIsSpecified_queryWorks() {
+    public void test_defaultWrapperBehavior() {
         initComplexObject();
 
         assertEquals("[1,\"2\",3,{\"t\":1}]",
@@ -116,7 +113,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_noArrayWrapperSpecified_queryWorks() {
+    public void test_noArrayWrapper() {
         initComplexObject();
 
         assertEquals("[1,\"2\",3,{\"t\":1}]",
@@ -132,7 +129,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_conditionalArrayWrapperSpecified_queryWorks() {
+    public void test_conditionalArrayWrapper() {
         initComplexObject();
 
         assertEquals("[1,\"2\",3,{\"t\":1}]",
@@ -147,7 +144,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_unconditionalArrayWrapperSpecified_queryWorks() {
+    public void test_unconditionalArrayWrapper() {
         initComplexObject();
 
         assertEquals("[[1,\"2\",3,{\"t\":1}]]",

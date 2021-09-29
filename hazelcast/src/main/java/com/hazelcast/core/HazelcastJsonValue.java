@@ -37,9 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class HazelcastJsonValue {
 
-    private String string;
-
-    public HazelcastJsonValue() { }
+    private final String string;
 
     /**
      * Creates a HazelcastJsonValue from the given string.

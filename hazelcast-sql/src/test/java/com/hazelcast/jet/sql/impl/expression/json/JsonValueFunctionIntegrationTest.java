@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
@@ -48,13 +47,11 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        final Config config = new Config();
-        config.getJetConfig().setEnabled(true);
-        initialize(1, config);
+        initialize(1, null);
     }
 
     @Test
-    public void when_calledWithBasicSyntax_objectValueIsReturned() {
+    public void when_calledWithBasicSyntax_then_varcharIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField') FROM test" ,
@@ -78,7 +75,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_calledWithReturning_correctTypeIsReturned() {
+    public void when_calledWithReturning_then_correctTypeIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT) FROM test" ,
@@ -102,7 +99,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_extendedSyntaxIsSpecified_queryWorksCorrectly() {
+    public void test_extendedSyntax() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json(""));
         test.put(2L, json("[1,2,"));
@@ -122,7 +119,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_fullExtendedSyntaxIsSpecifiedQueryWorks() {
+    public void test_fullExtendedSyntaxExpression() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json(""));
         test.put(2L, json("[1,2,"));
@@ -153,7 +150,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void when_objectIsReturned_errorIsThrown() {
+    public void when_objectIsReturned_then_errorIsThrown() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json("{\"test\":1}"));
         createMapping("test", "bigint", "json");
