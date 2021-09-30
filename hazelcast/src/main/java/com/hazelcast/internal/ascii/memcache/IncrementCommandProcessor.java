@@ -124,8 +124,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                 return Long.toUnsignedString(current - incrementAmount);
             }
         } else {
-            assert false;
-            return "";
+            throw new IllegalStateException("Unexpected command type");
         }
     }
 

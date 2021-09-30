@@ -319,6 +319,16 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIncrement_onEmptyValue_shouldFail() throws Exception {
+        sendLine("set key 0 0 0");
+        sendLine("");
+        assertEquals("STORED", receiveLine());
+
+        sendLine("incr key 1");
+        assertTrue(receiveLine().startsWith("CLIENT_ERROR"));
+    }
+
+    @Test
     public void testIncrement_onLargerThanLongMax() throws Exception {
         sendLine("set key 0 0 20");
         sendLine("18446744073709551614"); // 2^64 - 2
