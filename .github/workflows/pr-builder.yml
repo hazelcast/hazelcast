@@ -49,7 +49,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v2.2.4
         with:
-          name: test-artifacts-${{ github.workflow }}-${{ github.run_number }}
+          name: test-artifacts-${{ github.workflow }}-${{ github.run_number }}-${{ github.sha }}
           path: |
             **/surefire-reports
             **/failsafe-reports
