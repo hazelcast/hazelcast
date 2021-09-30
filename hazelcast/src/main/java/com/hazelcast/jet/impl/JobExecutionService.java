@@ -409,8 +409,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
         // situation occurs when a job participant leaves, then the job start will
         // fail. Since the unknown participating member situation couldn't
         // be resolved with retrying the InitExecutionOperation for this
-        // case, we do nothing here and let it fail on below if there is
-        // a not found participant.
+        // case, we do nothing here and let it fail below if some participant
+        // isn't found.
         // The job start won't fail if this situation occurs when a new member
         // is added to the cluster, because all job participants are known to the
         // other participating members. The only disadvantage of this is that a
