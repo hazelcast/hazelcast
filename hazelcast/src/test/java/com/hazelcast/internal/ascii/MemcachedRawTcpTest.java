@@ -38,9 +38,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -559,34 +556,14 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
     }
 
     /**
-     * Tries to receive a response line from the server,
-     * calls Assert.fail() if nothing was received in 1 second.
-     * @return received line
+     * Receives a response line from the server
      */
     private String receiveLine() throws Exception {
-        CompletableFuture<String> lineFuture = new CompletableFuture<>();
-
-        Thread t = new Thread(() -> {
-            if (scanner.hasNextLine()) {
-                lineFuture.complete(scanner.nextLine());
-            } else {
-                lineFuture.complete(null);
-            }
-        });
-        t.start();
-
-        String line = null;
-        try {
-            line = lineFuture.get(1000, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            t.interrupt();
+        if (scanner.hasNextLine()) {
+            return scanner.nextLine();
+        } else {
+            return null;
         }
-
-        if (line == null) {
-            fail("readLine() failed: no line found");
-        }
-
-        return line;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -607,7 +584,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
         expectedStats.put("decr_misses", decMisses);
 
         String line;
-        while (!(line = receiveLine()).equals("END")) {
+        while ((line = receiveLine()) != null && !line.equals("END")) {
             String[] tokens = line.split(" ");
             String statName = tokens[1];
             String actualStatValue = tokens[2];
