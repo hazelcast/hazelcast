@@ -34,6 +34,7 @@ jobs:
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
           install
+          -pl hazelcast-spring hazelcast-spring-tests
       - name: Setup JDK 11
         uses: actions/setup-java@v2.3.0
         with:
