@@ -56,6 +56,8 @@ jobs:
             **/*.hprof
             **/core*
             !**/src
+            !**/target/classes
+            !**/target/test-classes
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
