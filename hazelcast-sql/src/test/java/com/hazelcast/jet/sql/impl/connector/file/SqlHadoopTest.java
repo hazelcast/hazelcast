@@ -55,6 +55,8 @@ public class SqlHadoopTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        assumeThatNoWindowsOS();
+
         initialize(1, null);
         sqlService = instance().getSql();
 
