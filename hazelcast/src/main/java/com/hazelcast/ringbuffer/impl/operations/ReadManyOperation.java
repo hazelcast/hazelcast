@@ -67,14 +67,12 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
         if (resultSet == null) {
             resultSet = new ReadResultSetImpl<>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
             sequence = startSequence;
-            if (ringbuffer == null) {
-                ringbuffer = getRingBufferContainer();
-            }
         }
 
         if (ringbuffer == null) {
-            return false;
+            return minSize > 0;
         }
+
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
