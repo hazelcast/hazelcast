@@ -58,13 +58,6 @@ jobs:
             !**/src
             !**/target/classes
             !**/target/test-classes
-      - name: Publish Test Report
-        if: ${{ always() }}
-        uses: scacap/action-surefire-report@v1.0.13
-        with:
-          report_paths: '**/*-reports/TEST-*.xml'
-          fail_on_test_failures: true
-          check_name: Test Results - scacap
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
         if: ${{ !cancelled() }}
