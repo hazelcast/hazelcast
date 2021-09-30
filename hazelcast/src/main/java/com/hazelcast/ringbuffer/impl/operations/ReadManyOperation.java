@@ -65,12 +65,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
             sequence = startSequence;
         }
 
-        RingbufferService service = getService();
-        ObjectNamespace namespace = RingbufferService.getRingbufferNamespace(name);
-        RingbufferContainer ringbuffer = service.getContainerOrNull(getPartitionId(), namespace);
-        if (ringbuffer == null) {
-            return false;
-        }
+        RingbufferContainer ringbuffer = getRingBufferContainer();
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
