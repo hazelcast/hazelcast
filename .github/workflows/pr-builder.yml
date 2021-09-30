@@ -46,7 +46,7 @@ jobs:
           -Dmaven.test.failure.ignore=true
           install
       - name: Upload Test artifacts
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v2.2.4
         with:
           name: test-artifacts-${{ github.workflow }}-${{ github.run_number }}-${{ github.sha }}
@@ -67,7 +67,7 @@ jobs:
           check_name: Test Results - scacap
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.19
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           check_name: Test results - EnricoMi
           files: '**/*-reports/TEST-*.xml'
