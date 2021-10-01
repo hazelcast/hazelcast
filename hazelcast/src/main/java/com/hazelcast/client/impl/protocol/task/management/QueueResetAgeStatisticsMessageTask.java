@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCResetAgeStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.impl.Node;
@@ -50,12 +50,12 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
 
     @Override
     protected String decodeClientMessage(ClientMessage clientMessage) {
-        return MCResetAgeStatisticsCodec.decodeRequest(clientMessage);
+        return MCResetQueueAgeStatisticsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCResetAgeStatisticsCodec.encodeResponse();
+        return MCResetQueueAgeStatisticsCodec.encodeResponse();
     }
 
     @Override

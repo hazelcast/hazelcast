@@ -178,8 +178,8 @@ import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCResetAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
@@ -1829,7 +1829,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartTriggerBackupMessageTask(cm, node, con));
         factories.put(MCInterruptHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
-        factories.put(MCResetAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(MCResetQueueAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
     }
 

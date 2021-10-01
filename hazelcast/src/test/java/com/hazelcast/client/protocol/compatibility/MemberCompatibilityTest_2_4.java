@@ -7447,16 +7447,16 @@ public class MemberCompatibilityTest_2_4 {
     }
 
     @Test
-    public void test_MCResetAgeStatisticsCodec_decodeRequest() {
+    public void test_MCResetQueueAgeStatisticsCodec_decodeRequest() {
         int fileClientMessageIndex = 839;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, MCResetAgeStatisticsCodec.decodeRequest(fromFile)));
+        assertTrue(isEqual(aString, MCResetQueueAgeStatisticsCodec.decodeRequest(fromFile)));
     }
 
     @Test
-    public void test_MCResetAgeStatisticsCodec_encodeResponse() {
+    public void test_MCResetQueueAgeStatisticsCodec_encodeResponse() {
         int fileClientMessageIndex = 840;
-        ClientMessage encoded = MCResetAgeStatisticsCodec.encodeResponse();
+        ClientMessage encoded = MCResetQueueAgeStatisticsCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -6584,15 +6584,15 @@ public class ClientCompatibilityTest_2_4 {
     }
 
     @Test
-    public void test_MCResetAgeStatisticsCodec_encodeRequest() {
+    public void test_MCResetQueueAgeStatisticsCodec_encodeRequest() {
         int fileClientMessageIndex = 839;
-        ClientMessage encoded = MCResetAgeStatisticsCodec.encodeRequest(aString);
+        ClientMessage encoded = MCResetQueueAgeStatisticsCodec.encodeRequest(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCResetAgeStatisticsCodec_decodeResponse() {
+    public void test_MCResetQueueAgeStatisticsCodec_decodeResponse() {
         int fileClientMessageIndex = 840;
     }
 
