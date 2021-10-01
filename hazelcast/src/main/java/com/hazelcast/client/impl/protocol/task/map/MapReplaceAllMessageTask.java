@@ -26,14 +26,14 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.security.Permission;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 public class MapReplaceAllMessageTask
-        extends AbstractMapAllPartitionsMessageTask<MapReplaceAllCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapReplaceAllCodec.RequestParameters> {
 
     private BiFunction function;
 
@@ -42,15 +42,15 @@ public class MapReplaceAllMessageTask
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createPartitionWideEntryWithPredicateOperationFactory(parameters.name,
-           new MapEntryReplacingEntryProcessor(function), Predicates.alwaysTrue());
+    protected Operation prepareOperation() {
+        OperationFactory operationFactory = createOperationFactory();
+        return operationFactory.createOperation();
     }
 
-    @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        return null;
+    protected OperationFactory createOperationFactory() {
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        return operationProvider.createPartitionWideEntryWithPredicateOperationFactory(parameters.name,
+           new MapEntryReplacingEntryProcessor(function), Predicates.alwaysTrue());
     }
 
     @Override
