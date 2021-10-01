@@ -50,6 +50,7 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlJsonEmptyOrError;
@@ -105,6 +106,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
+    private static final int JSON_VALUE_EXTENDED_SYNTAX_MIN_TOKENS = 4;
 
     /**
      * See {@link #convertCall(SqlNode, Blackboard)} for more information.
@@ -387,49 +389,123 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * Because there is no RexNode for type reference in Calcite (see CAST implementation),
      * the type has to be instead set as the type of the parent (JSON_VALUE's RexCall), which is
      * then interpreted as the desired type of the expression.
+     *
+     * Supported syntax:
+     * JSON_VALUE(jsonArg, jsonPathArg [returning] [onEmpty|onError])
+     * returning: RETURNING dataType
+     * onEmpty: (DEFAULT value | NULL | ERROR) ON EMPTY
+     * onError: (DEFAULT value | NULL | ERROR) ON ERROR
      */
     private RexNode convertJsonValueCall(SqlCall call, Blackboard bb) {
         RexNode target = bb.convertExpression(call.operand(0));
         RexNode path = bb.convertExpression(call.operand(1));
+
         SqlJsonValueEmptyOrErrorBehavior onError = SqlJsonValueEmptyOrErrorBehavior.NULL;
         SqlJsonValueEmptyOrErrorBehavior onEmpty = SqlJsonValueEmptyOrErrorBehavior.NULL;
+
         RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
+
         RexNode defaultValueOnError = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
         RexNode defaultValueOnEmpty = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
-        // TODO: clean up/simplify implementation
-        for (int i = 2; i < call.operandCount(); ) {
-            if (!(call.operand(i) instanceof SqlLiteral)) {
-                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax.");
+
+        if (call.operandCount() == 2) {
+            return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
+                    target,
+                    path,
+                    defaultValueOnEmpty,
+                    defaultValueOnError,
+                    bb.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
+                    bb.convertLiteral(onError.symbol(SqlParserPos.ZERO))
+            ));
+        }
+
+        // Minimum number of tokens for any extended syntax expression,
+        // normally should never happen, guard against future changes.
+        if (call.operandCount() < JSON_VALUE_EXTENDED_SYNTAX_MIN_TOKENS) {
+            throw QueryException.error("Number of arguments for JSON_VALUE call is less than minimum expected "
+                    + "number of arguments for Extended Syntax");
+        }
+        // Start at 3rd Arg
+        int tokenIndex = 2;
+
+        // RETURNING can only be placed at the beginning, never in the middle or the end of the list of tokens.
+        if (isJsonValueReturningClause(call.operand(tokenIndex))) {
+            if (!(call.operand(tokenIndex + 1) instanceof SqlDataTypeSpec)) {
+                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE RETURNING syntax");
+            }
+            returning = validator.getValidatedNodeType(call.operand(tokenIndex + 1));
+            tokenIndex += 2;
+        }
+
+        boolean onEmptyDefined = false;
+        boolean onErrorDefined = false;
+
+        while (tokenIndex < call.operandCount()) {
+            if (!(call.operand(tokenIndex) instanceof SqlLiteral)) {
+                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax");
             }
 
-            final SqlLiteral literal = call.operand(i);
-            final Object value = literal.getValue();
-            if (value instanceof SqlJsonValueReturning) {
-                returning = validator.getValidatedNodeType(call.operand(i + 1));
-                i += 2;
-                continue;
+            final SqlJsonValueEmptyOrErrorBehavior behavior = (SqlJsonValueEmptyOrErrorBehavior)
+                    ((SqlLiteral) call.operand(tokenIndex)).getValue();
+
+            RexNode defaultExpr = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+
+            if (behavior == null) {
+                throw QueryException.error(SqlErrorCode.PARSING,
+                        "Failed to extract ON behavior for JSON_VALUE call");
             }
 
-            final SqlJsonValueEmptyOrErrorBehavior behavior = (SqlJsonValueEmptyOrErrorBehavior) literal.getValue();
-            final int onTargetIndex = behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)
-                    ? i + 2
-                    : i + 1;
-            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(onTargetIndex)).getValue();
-
-            if (onTarget.equals(SqlJsonEmptyOrError.EMPTY)) {
-                onEmpty = behavior;
-                if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
-                    defaultValueOnEmpty = bb.convertExpression(call.operand(i + 1));
-                }
-            } else if (onTarget.equals(SqlJsonEmptyOrError.ERROR)) {
-                onError = behavior;
-                if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
-                    defaultValueOnError = bb.convertExpression(call.operand(i + 1));
-                }
+            switch (behavior) {
+                case DEFAULT:
+                    defaultExpr = bb.convertExpression(call.operand(tokenIndex + 1));
+                    tokenIndex += 2;
+                    break;
+                case NULL:
+                case ERROR:
+                    tokenIndex++;
+                    break;
+                default:
+                    // guard against possible unsupported updates to syntax, should never be thrown.
+                    throw QueryException.error(SqlErrorCode.PARSING,
+                            "Unsupported JSON_VALUE OnEmptyOrErrorBehavior");
             }
 
-            // DEFAULT is 3-tokens, everything else is 2.
-            i += behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT) ? 3 : 2;
+            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(tokenIndex))
+                    .getValue();
+            if (onTarget == null) {
+                throw QueryException.error(SqlErrorCode.PARSING,
+                        "Failed to extract ON-behavior target for JSON_VALUE call");
+            }
+
+            switch (onTarget) {
+                case EMPTY:
+                    if (onEmptyDefined) {
+                        throw QueryException.error(SqlErrorCode.PARSING,
+                                "Duplicate ON EMPTY clause in JSON_VALUE call");
+                    }
+                    if (behavior == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        defaultValueOnEmpty = defaultExpr;
+                    }
+                    onEmpty = behavior;
+                    onEmptyDefined = true;
+                    break;
+                case ERROR:
+                    if (onErrorDefined) {
+                        throw QueryException.error(SqlErrorCode.PARSING,
+                                "Duplicate ON ERROR clause in JSON_VALUE call");
+                    }
+                    if (behavior == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        defaultValueOnError = defaultExpr;
+                    }
+                    onError = behavior;
+                    onErrorDefined = true;
+                    break;
+                default:
+                    // guard against possible unsupported updates to syntax, should never be thrown.
+                    throw QueryException.error(SqlErrorCode.PARSING,
+                            "Unsupported JSON_VALUE EmptyOrErrorBehavior target");
+            }
+            tokenIndex++;
         }
 
         return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
@@ -440,6 +516,18 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 bb.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
                 bb.convertLiteral(onError.symbol(SqlParserPos.ZERO))
         ));
+    }
+
+    private boolean isJsonValueReturningClause(SqlNode node) {
+        return node instanceof SqlLiteral && ((SqlLiteral) node).getValue() instanceof SqlJsonValueReturning;
+    }
+
+    private boolean isJsonValueOnErrorClause(SqlNode node) {
+        return false;
+    }
+
+    private boolean isJsonValueOnEmptyClause(SqlNode node) {
+        return false;
     }
 
     private static List<RexNode> convertExpressionList(RexBuilder rexBuilder,

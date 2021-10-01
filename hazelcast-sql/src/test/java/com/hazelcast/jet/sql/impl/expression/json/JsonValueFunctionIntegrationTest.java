@@ -162,6 +162,38 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 .hasMessageContaining("Result of JSON_VALUE can not be array or object");
     }
 
+    @Test
+    public void when_duplicatedOnEmptyClause_then_errorIsThrown() {
+        final String[] sqlQueries = new String[] {
+                "SELECT JSON_VALUE('[1]', '$[0]' NULL ON EMPTY DEFAULT 1 ON EMPTY)",
+                "SELECT JSON_VALUE('[1]', '$[0]' RETURNING BIGINT ERROR ON EMPTY NULL ON EMPTY)",
+                "SELECT JSON_VALUE('[1]', '$[0]' NULL ON ERROR DEFAULT 1 ON EMPTY DEFAULT 2 ON EMPTY)",
+                "SELECT JSON_VALUE('[1]', '$[0]' RETURNING BIGINT ERROR ON ERROR ERROR ON EMPTY NULL ON EMPTY)"
+        };
+
+        for (final String sql : sqlQueries) {
+            assertThatThrownBy(() -> query(sql))
+                    .isInstanceOf(HazelcastSqlException.class)
+                    .hasMessageContaining("Duplicate ON EMPTY clause in JSON_VALUE call");
+        }
+    }
+
+    @Test
+    public void when_duplicatedOnErrorClause_then_errorIsThrown() {
+        final String[] sqlQueries = new String[] {
+                "SELECT JSON_VALUE('[1]', '$[0]' NULL ON ERROR DEFAULT 1 ON ERROR)",
+                "SELECT JSON_VALUE('[1]', '$[0]' RETURNING BIGINT ERROR ON ERROR NULL ON ERROR)",
+                "SELECT JSON_VALUE('[1]', '$[0]' NULL ON EMPTY DEFAULT 1 ON ERROR DEFAULT 2 ON ERROR)",
+                "SELECT JSON_VALUE('[1]', '$[0]' RETURNING BIGINT ERROR ON EMPTY ERROR ON ERROR NULL ON ERROR)"
+        };
+
+        for (final String sql : sqlQueries) {
+            assertThatThrownBy(() -> query(sql))
+                    .isInstanceOf(HazelcastSqlException.class)
+                    .hasMessageContaining("Duplicate ON ERROR clause in JSON_VALUE call");
+        }
+    }
+
     private void initMultiTypeObject() {
         final MultiTypeObject value = new MultiTypeObject();
         final String serializedValue;
