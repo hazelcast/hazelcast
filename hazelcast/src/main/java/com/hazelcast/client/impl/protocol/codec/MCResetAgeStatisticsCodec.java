@@ -36,22 +36,22 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Resets the max-age, min-age and average-age metrics of the queue
  */
-@Generated("a027785e3b2afea3282cf74d1c5aac05")
-public final class QueueResetAgeStatisticsCodec {
-    //hex: 0x031500
-    public static final int REQUEST_MESSAGE_TYPE = 201984;
-    //hex: 0x031501
-    public static final int RESPONSE_MESSAGE_TYPE = 201985;
+@Generated("b9254b7971ece42aa6003a83a17b967b")
+public final class MCResetAgeStatisticsCodec {
+    //hex: 0x202100
+    public static final int REQUEST_MESSAGE_TYPE = 2105600;
+    //hex: 0x202101
+    public static final int RESPONSE_MESSAGE_TYPE = 2105601;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private QueueResetAgeStatisticsCodec() {
+    private MCResetAgeStatisticsCodec() {
     }
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Queue.ResetAgeStatistics");
+        clientMessage.setOperationName("MC.ResetAgeStatistics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);

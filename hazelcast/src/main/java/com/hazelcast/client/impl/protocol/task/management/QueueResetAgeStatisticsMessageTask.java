@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.queue;
+package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.QueueResetAgeStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.impl.Node;
@@ -50,12 +50,12 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
 
     @Override
     protected String decodeClientMessage(ClientMessage clientMessage) {
-        return QueueResetAgeStatisticsCodec.decodeRequest(clientMessage);
+        return MCResetAgeStatisticsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return QueueResetAgeStatisticsCodec.encodeResponse();
+        return MCResetAgeStatisticsCodec.encodeResponse();
     }
 
     @Override

@@ -178,6 +178,7 @@ import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
@@ -303,7 +304,6 @@ import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.QueueResetAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
@@ -552,6 +552,7 @@ import com.hazelcast.client.impl.protocol.task.management.MatchClientFilteringCo
 import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.QueueResetAgeStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RemoveCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ResetCPSubsystemMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
@@ -680,7 +681,6 @@ import com.hazelcast.client.impl.protocol.task.queue.QueuePutMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemainingCapacityMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemoveListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemoveMessageTask;
-import com.hazelcast.client.impl.protocol.task.queue.QueueResetAgeStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueTakeMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapAddEntryListenerMessageTask;
@@ -849,9 +849,9 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
-import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
+import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -1554,8 +1554,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new QueueClearMessageTask(cm, node, con));
         factories.put(QueueDrainToMaxSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueDrainMaxSizeMessageTask(cm, node, con));
-        factories.put(QueueResetAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
     }
 
     private void initializeCardinalityTaskFactories() {
@@ -1831,6 +1829,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartTriggerBackupMessageTask(cm, node, con));
         factories.put(MCInterruptHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
+        factories.put(MCResetAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {
