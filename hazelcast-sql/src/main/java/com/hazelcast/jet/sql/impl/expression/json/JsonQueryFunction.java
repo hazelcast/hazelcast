@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
@@ -96,9 +97,18 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             return onEmptyResponse(onEmpty);
         }
 
-        final String path = (String) operands[1].eval(row, context);
+        final JsonPath jsonPath;
         try {
-            return wrap(execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile), wrapperBehavior));
+            final String path = (String) operands[1].eval(row, context);
+            jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
+        } catch (InvalidPathException | IllegalArgumentException exception) {
+            throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
+        } catch (NullPointerException ignored) {
+            throw QueryException.error("JSONPath expression can not be null");
+        }
+
+        try {
+            return wrap(execute(json, jsonPath, wrapperBehavior));
         } catch (Exception exception) {
              return onErrorResponse(onError, exception);
         }

@@ -30,7 +30,6 @@ import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFuncti
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonQueryFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.math.HazelcastAbsFunction;
@@ -227,7 +226,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
 
     public static final SqlFunction JSON_QUERY = HazelcastJsonQueryFunction.INSTANCE;
-    public static final SqlOperator JSON_PARSE = HazelcastJsonParseFunction.INSTANCE;
     public static final SqlOperator JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;

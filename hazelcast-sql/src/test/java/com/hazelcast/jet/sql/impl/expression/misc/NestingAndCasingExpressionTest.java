@@ -526,11 +526,6 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void test_JSON_PARSE() {
-        check(sql("JSON_PARSE(?) || JSON_PARSE(?)"), "[1]", "[1]");
-    }
-
-    @Test
     public void test_JSON_VALUE() {
         check(sql("JSON_VALUE(CAST(? AS JSON), '$[0]') || JSON_VALUE(CAST(? AS JSON), '$[0]')"), "[1]", "[1]");
     }

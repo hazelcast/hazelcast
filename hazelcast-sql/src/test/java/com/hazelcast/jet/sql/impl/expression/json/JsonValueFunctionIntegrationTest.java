@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -194,6 +195,23 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         }
     }
 
+    @Test
+    public void test_invalidJsonPath() {
+        createMapping("test", Long.class, ObjectWithJson.class);
+
+        instance().getSql().execute("INSERT INTO test (__key, jsonValue) VALUES (1, '[1,2,3]')");
+
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Invalid JSONPath expression");
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Invalid JSONPath expression");
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSONPath expression can not be null");
+    }
+
     private void initMultiTypeObject() {
         final MultiTypeObject value = new MultiTypeObject();
         final String serializedValue;
@@ -216,5 +234,10 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         public Float floatField = 8.0f;
         public Double doubleField = 9.0;
         public BigDecimal bigDecimalField = new BigDecimal("1e1000");
+    }
+
+    public static class ObjectWithJson implements Serializable {
+        public String jsonValue;
+        public String jsonPath;
     }
 }

@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 
@@ -101,9 +102,18 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             return onEmptyResponse(onEmpty, defaultOnEmpty);
         }
 
-        final String path = (String) operands[1].eval(row, context);
+        final JsonPath jsonPath;
         try {
-            return execute(json, pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile));
+            final String path = (String) operands[1].eval(row, context);
+            jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
+        } catch (InvalidPathException | IllegalArgumentException exception) {
+            throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
+        } catch (NullPointerException ignored) {
+            throw QueryException.error("JSONPath expression can not be null");
+        }
+
+        try {
+            return execute(json, jsonPath);
         } catch (Exception exception) {
             return onErrorResponse(onError, exception, defaultOnError);
         }

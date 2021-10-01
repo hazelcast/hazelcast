@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -452,7 +453,7 @@ public final class RexToExpression {
                             .getSymbol();
 
                     return JsonQueryFunction.create(operands[0], operands[1], wrapperBehavior, onEmpty, onError);
-                } else if (function == HazelcastSqlOperatorTable.JSON_PARSE) {
+                } else if (function == HazelcastJsonParseFunction.INSTANCE) {
                     return JsonParseFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
                     final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();

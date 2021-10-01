@@ -65,9 +65,9 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
     @Test
     public void test_objectWithJsonField() {
-        final IMap<Long, ComplexObject> test = instance().getMap("test");
-        test.put(1L, new ComplexObject(1L, "[1,2,3]"));
-        createMapping("test", Long.class, ComplexObject.class);
+        final IMap<Long, ObjectWithJson> test = instance().getMap("test");
+        test.put(1L, new ObjectWithJson(1L, "[1,2,3]"));
+        createMapping("test", Long.class, ObjectWithJson.class);
 
         assertRowsAnyOrder("SELECT JSON_QUERY(jsonValue, '$'), id FROM test",
                 rows(2, json("[1,2,3]"), 1L));
@@ -158,6 +158,23 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                         .toString());
     }
 
+    @Test
+    public void test_invalidJsonPath() {
+        initComplexObject();
+        createMapping("test2", Long.class, ObjectWithJson.class);
+        instance().getSql().execute("INSERT INTO test2 (__key, id) VALUES (1, 1)");
+
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Invalid JSONPath expression");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Invalid JSONPath expression");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY('[1,2,3]', jsonValue) FROM test2"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSONPath expression can not be null");
+    }
+
     protected void initComplexObject() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         createMapping("test", "bigint", "json");
@@ -168,14 +185,14 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                 + "]"));
     }
 
-    public static class ComplexObject implements Serializable {
+    public static class ObjectWithJson implements Serializable {
         private Long id;
         private String jsonValue;
 
-        public ComplexObject() {
+        public ObjectWithJson() {
         }
 
-        public ComplexObject(final Long id, final String jsonValue) {
+        public ObjectWithJson(final Long id, final String jsonValue) {
             this.id = id;
             this.jsonValue = jsonValue;
         }
