@@ -34,9 +34,15 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -52,9 +58,12 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
+import static java.util.Arrays.asList;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Objects.requireNonNull;
 
 /**
  * This base class solely exists for the purpose of simplification of the Manager class
@@ -122,7 +131,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final int index;
 
         private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
+        private final Map<LinkedAddresses, LinkedAddresses> connectionsInProgress = new ConcurrentHashMap<>();
 
         Plane(int index) {
             this.index = index;
@@ -184,15 +193,84 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            return connectionsInProgress.contains(address);
+            boolean contained = false;
+            Collection<LinkedAddresses> linkedAddresses = getLinkedAddresses(address);
+            for (LinkedAddresses linkedAddress : linkedAddresses) {
+                contained = contained || connectionsInProgress.containsKey(linkedAddress);
+            }
+            return contained;
+        }
+
+        public Address getConnectedAddress(Address address) {
+            LinkedAddresses linkedAddresses = new LinkedAddresses(address);
+            LinkedAddresses a1 = connectionsInProgress.get(linkedAddresses);
+            if (a1 != null) {
+                if (a1.primary) {
+                    return address;
+                }
+
+                for (Address linkedAddress : a1.linkedAddresses) {
+                    LinkedAddresses a2 = connectionsInProgress.get(new LinkedAddresses(linkedAddress));
+                    if (a2 != null && a2.primary) {
+                        return linkedAddress;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public boolean addConnectionInProgress(Address address) {
-            return connectionsInProgress.add(address);
+            boolean added = true;
+            Iterable<LinkedAddresses> linkedAddresses = getLinkedAddresses(address);
+            for (LinkedAddresses linkedAddress : linkedAddresses) {
+                added = added && connectionsInProgress.putIfAbsent(linkedAddress, linkedAddress) == null;
+            }
+            return added;
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            return connectionsInProgress.remove(address);
+            LinkedAddresses linkedAddresses = new LinkedAddresses(address);
+            LinkedAddresses removed = connectionsInProgress.remove(linkedAddresses);
+
+            if (removed != null) {
+                removed.linkedAddresses.forEach(a -> connectionsInProgress.remove(new LinkedAddresses(a)));
+
+            }
+
+            return removed != null;
+        }
+
+        private Collection<LinkedAddresses> getLinkedAddresses(Address address) {
+            Set<LinkedAddresses> linkedAddressesSet = new HashSet<>();
+            try {
+                InetAddress inetAddress = address.getInetAddress();
+
+                String host = address.getHost();
+                String canonicalHost = inetAddress.getCanonicalHostName();
+                String ip = inetAddress.getHostAddress();
+
+                Address addressHost = new Address(host, address.getPort());
+                Address addressIp = new Address(ip, address.getPort());
+                Address addressCanonicalHost = new Address(canonicalHost, address.getPort());
+                LinkedAddresses laHost = new LinkedAddresses(addressHost,
+                        asList(addressIp, addressCanonicalHost),
+                        true);
+                LinkedAddresses laCanonicalHost = new LinkedAddresses(addressCanonicalHost,
+                        asList(addressIp, addressHost),
+                        false);
+                LinkedAddresses laIp = new LinkedAddresses(addressIp,
+                        asList(addressHost, addressCanonicalHost),
+                        false);
+                linkedAddressesSet.add(laHost);
+                linkedAddressesSet.add(laIp);
+                linkedAddressesSet.add(laCanonicalHost);
+            } catch (UnknownHostException e) {
+                // we have a hostname here in `address`, but we can't resolve it
+                // how on earth we could come here?
+                ignore(e);
+            }
+            return linkedAddressesSet;
         }
 
         public void clearConnectionsInProgress() {
@@ -200,7 +278,54 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public int connectionsInProgressCount() {
-            return connectionsInProgress.size();
+            int count = 0;
+            for (LinkedAddresses addresses : connectionsInProgress.keySet()) {
+                if (addresses.primary) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    private static class LinkedAddresses {
+        private final Address mappedAddress;
+        private final List<Address> linkedAddresses;
+        private final boolean primary;
+
+        private LinkedAddresses(Address mappedAddress) {
+            this(mappedAddress, Collections.emptyList(), true);
+        }
+
+        public LinkedAddresses(Address mappedAddress, List<Address> linkedAddresses, boolean primary) {
+            this.mappedAddress = requireNonNull(mappedAddress);
+            this.linkedAddresses = requireNonNull(linkedAddresses);
+            this.primary = primary;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            LinkedAddresses that = (LinkedAddresses) o;
+
+            return Objects.equals(mappedAddress, that.mappedAddress);
+        }
+
+        @Override
+        public int hashCode() {
+            return mappedAddress != null ? mappedAddress.hashCode() : 0;
+        }
+
+        @Override
+        public String toString() {
+            return "LinkedAddresses{"
+                    + "mappedAddress=" + mappedAddress
+                    + ", linkedAddresses=" + linkedAddresses
+                    + ", primary=" + primary
+                    + '}';
         }
     }
 
