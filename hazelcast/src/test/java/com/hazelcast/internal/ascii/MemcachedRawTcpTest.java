@@ -63,7 +63,7 @@ public class MemcachedRawTcpTest extends HazelcastTestSupport {
         config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getAutoDetectionConfig().setEnabled(false);
+        join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
         return config;
     }
