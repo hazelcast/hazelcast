@@ -298,7 +298,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             this(mappedAddress, Collections.emptyList(), true);
         }
 
-        public LinkedAddresses(Address mappedAddress, List<Address> linkedAddresses, boolean primary) {
+        private LinkedAddresses(Address mappedAddress, List<Address> linkedAddresses, boolean primary) {
             this.mappedAddress = requireNonNull(mappedAddress);
             this.linkedAddresses = requireNonNull(linkedAddresses);
             this.primary = primary;
