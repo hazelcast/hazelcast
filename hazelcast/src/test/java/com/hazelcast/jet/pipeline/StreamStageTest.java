@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -79,6 +80,7 @@ import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -794,7 +796,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         mapped.writeTo(sink);
         execute();
 
-        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
+        assertMapNotCreated(mapName);
     }
 
     @Test
@@ -839,7 +841,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         mapped.writeTo(sink);
         execute();
 
-        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
+        assertMapNotCreated(mapName);
     }
 
     @Test
@@ -886,7 +888,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         mapped.writeTo(sink);
         execute();
 
-        assertTrue(hz().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(mapName)));
+        assertMapNotCreated(mapName);
     }
 
     @Test
@@ -1523,5 +1525,11 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         assertEquals(
                 streamToString(input.stream().filter(filterFn), formatFn),
                 streamToString(sinkStreamOf(Integer.class), formatFn));
+    }
+
+    private void assertMapNotCreated(String name) {
+        assertThat(hz().getDistributedObjects())
+                .extracting(DistributedObject::getName)
+                .doesNotContain(name);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -40,7 +41,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JoinByPrimitiveKeyProcessorTest extends SqlTestSupport {
 
@@ -72,7 +73,9 @@ public class JoinByPrimitiveKeyProcessorTest extends SqlTestSupport {
         runTest(TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE, true,
                 singletonList(new Object[]{null}),
                 emptyList());
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(MAP_NAME)));
+        assertThat(instance().getDistributedObjects())
+                .extracting(DistributedObject::getName)
+                .doesNotContain(MAP_NAME);
     }
 
     @Test

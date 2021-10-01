@@ -21,6 +21,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -68,6 +69,7 @@ import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDES
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -109,44 +111,44 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         cacheManager.getCache(streamSinkName);
     }
 
-    public void when_readNonExistedMap_then_mapNotCreated() {
+    public void when_readNonExistingMap_then_mapNotCreated() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(sourceName))
                 .writeTo(Sinks.noop());
 
         instance().getJet().newJob(p).join();
 
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+        assertSourceDataStructureNotCreated();
     }
 
-    public void when_queryNonExistedMap_then_mapNotCreated() {
+    public void when_queryNonExistingMap_then_mapNotCreated() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(sourceName, o -> true, o -> o))
                 .writeTo(Sinks.noop());
 
         instance().getJet().newJob(p).join();
 
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+        assertSourceDataStructureNotCreated();
     }
 
-    public void when_readNonExistedCache_then_cacheNotCreated() {
+    public void when_readNonExistingCache_then_cacheNotCreated() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.cache(sourceName))
                 .writeTo(Sinks.noop());
 
         instance().getJet().newJob(p).join();
 
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().endsWith(sourceName)));
+        assertSourceDataStructureNotCreated();
     }
 
-    public void when_readNonExistedList_then_listNotCreated() {
+    public void when_readNonExistingList_then_listNotCreated() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.cache(sourceName))
                 .writeTo(Sinks.noop());
 
         instance().getJet().newJob(p).join();
 
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(sourceName)));
+        assertSourceDataStructureNotCreated();
     }
 
     @Test
@@ -448,5 +450,11 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         });
 
         job.cancel();
+    }
+
+    private void assertSourceDataStructureNotCreated() {
+        assertThat(instance().getDistributedObjects())
+                .extracting(DistributedObject::getName)
+                .doesNotContain(sourceName);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -45,7 +46,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.apache.calcite.rel.core.JoinRelType.LEFT;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
 
@@ -77,7 +78,9 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
         runTest(INNER, TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE,
                 singletonList(new Object[]{1}),
                 emptyList());
-        assertTrue(instance().getDistributedObjects().stream().noneMatch(d -> d.getName().equals(MAP_NAME)));
+        assertThat(instance().getDistributedObjects())
+                .extracting(DistributedObject::getName)
+                .doesNotContain(MAP_NAME);
     }
 
     @Test
