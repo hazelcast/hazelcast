@@ -289,7 +289,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
     }
 
-    private static class LinkedAddresses {
+    private static final class LinkedAddresses {
         private final Address mappedAddress;
         private final List<Address> linkedAddresses;
         private final boolean primary;
