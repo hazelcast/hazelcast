@@ -30,7 +30,7 @@ import static com.hazelcast.jet.elastic.ElasticClients.client;
 
 public final class ElasticSupport {
 
-    public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName.parse("elasticsearch:6.8.14")
+    public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName.parse("elasticsearch:6.8.17")
             .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
     public static final int PORT = 9200;
 
