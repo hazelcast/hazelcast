@@ -65,3 +65,8 @@ jobs:
         with:
           check_name: Test results - EnricoMi
           files: '**/*-reports/TEST-*.xml'
+      - uses: testspace-com/setup-testspace@v1
+        with:
+          domain: ${{github.repository_owner}}
+      - name: Publish Results to Testspace
+        run: testspace **/*-reports/TEST-*.xml
