@@ -18,21 +18,24 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.CLIENT_ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.NOT_FOUND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.RETURN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class IncrementCommandProcessor extends MemcacheCommandProcessor<IncrementCommand> {
+    private final EntryConverter entryConverter;
 
-    public IncrementCommandProcessor(TextCommandServiceImpl textCommandService) {
+    public IncrementCommandProcessor(TextCommandServiceImpl textCommandService, EntryConverter entryConverter) {
         super(textCommandService);
+        this.entryConverter = entryConverter;
     }
 
     @Override
@@ -68,31 +71,23 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
 
     private void incrementUnderLock(IncrementCommand incrementCommand, String key, String mapName) {
         Object value = textCommandService.get(mapName, key);
-        MemcacheEntry entry;
 
         if (value != null) {
-            if (value instanceof MemcacheEntry) {
-                entry = (MemcacheEntry) value;
-            } else if (value instanceof byte[]) {
-                entry = new MemcacheEntry(incrementCommand.getKey(), (byte[]) value, 0);
-            } else if (value instanceof String) {
-                entry = new MemcacheEntry(incrementCommand.getKey(), stringToBytes((String) value), 0);
-            } else {
-                try {
-                    entry = new MemcacheEntry(incrementCommand.getKey(), textCommandService.toByteArray(value), 0);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
+            MemcacheEntry entry = entryConverter.toEntry(incrementCommand.getKey(), value);
+
+            String currentCachedValue = bytesToString(entry.getValue());
+
+            try {
+                String newCachedValue = doIncrement(incrementCommand, currentCachedValue);
+                updateHitCount(incrementCommand);
+
+                byte[] newCachedValueBytes = stringToBytes(newCachedValue);
+                MemcacheEntry newValue = new MemcacheEntry(key, newCachedValueBytes, entry.getFlag());
+                textCommandService.put(mapName, key, newValue);
+                incrementCommand.setResponse(concatenate(newCachedValueBytes, RETURN));
+            } catch (NumberFormatException e) {
+                incrementCommand.setResponse(concatenate(concatenate(CLIENT_ERROR, stringToBytes(e.getMessage())), RETURN));
             }
-
-            final byte[] value1 = entry.getValue();
-            final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
-            long result = -1;
-            result = incrementCommandTypeCheck(incrementCommand, result, current);
-
-            incrementCommand.setResponse(concatenate(stringToBytes(String.valueOf(result)), RETURN));
-            MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
-            textCommandService.put(mapName, key, newValue);
         } else {
             if (incrementCommand.getType() == INCREMENT) {
                 textCommandService.incrementIncMissCount();
@@ -111,18 +106,33 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         }
     }
 
-    private long incrementCommandTypeCheck(IncrementCommand incrementCommand, long result, long current) {
-        long paramResult = result;
+    private String doIncrement(IncrementCommand incrementCommand, String currentValue) {
+        // overflows and underflows are handled differently for `incr` and `decr` commands.
+        // see https://github.com/memcached/memcached/blob/4b23988/doc/protocol.txt#L347-L390
+        // for details.
+
+        long current = Long.parseUnsignedLong(currentValue);
+        long incrementAmount = incrementCommand.getValue();
+
         if (incrementCommand.getType() == INCREMENT) {
-            paramResult = current + incrementCommand.getValue();
-            paramResult = 0 > paramResult ? Long.MAX_VALUE : paramResult;
+            return Long.toUnsignedString(current + incrementAmount);
+        } else if (incrementCommand.getType() == DECREMENT) {
+            if (Long.compareUnsigned(current, incrementAmount) < 0) {
+                // underflow
+                return "0";
+            } else {
+                return Long.toUnsignedString(current - incrementAmount);
+            }
+        } else {
+            throw new IllegalStateException("Unexpected command type");
+        }
+    }
+
+    private void updateHitCount(IncrementCommand incrementCommand) {
+        if (incrementCommand.getType() == INCREMENT) {
             textCommandService.incrementIncHitCount();
         } else if (incrementCommand.getType() == DECREMENT) {
-            paramResult = current - incrementCommand.getValue();
-            paramResult = 0 > paramResult ? 0 : paramResult;
             textCommandService.incrementDecrHitCount();
         }
-
-        return paramResult;
     }
 }
