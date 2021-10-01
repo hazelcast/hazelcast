@@ -79,10 +79,10 @@ public final class InstantiationUtils {
     }
 
     private static boolean isParamsMatching(Constructor<?> constructor, Object[] params) {
-        Class<?>[] constructorParamTypes = constructor.getParameterTypes();
-        if (constructorParamTypes.length != params.length) {
+        if (constructor.getParameterCount() != params.length) {
             return false;
         }
+        Class<?>[] constructorParamTypes = constructor.getParameterTypes();
         for (int i = 0; i < constructorParamTypes.length; i++) {
             Class<?> constructorParamType = constructorParamTypes[i];
             Object param = params[i];

@@ -142,7 +142,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         if (!method.getName().startsWith("get") && !method.getName().startsWith("is")) {
             return false;
         }
-        if (method.getParameterTypes().length != 0) {
+        if (method.getParameterCount() != 0) {
             return false;
         }
         return !void.class.equals(method.getReturnType());

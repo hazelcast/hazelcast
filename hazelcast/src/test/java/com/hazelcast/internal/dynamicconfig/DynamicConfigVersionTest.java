@@ -57,7 +57,7 @@ public class DynamicConfigVersionTest {
         for (Method method : allConfigMethods) {
             String methodName = method.getName();
             if (methodName.startsWith("add") && methodName.endsWith("Config")) {
-                assert method.getParameterTypes().length == 1;
+                assert method.getParameterCount() == 1;
                 Class klass = method.getParameterTypes()[0];
                 boolean isMappedToVersion = CONFIG_TO_VERSION.get(klass) != null
                         || NON_DYNAMIC_CONFIG_CLASSES.contains(klass);

@@ -1283,8 +1283,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 if (!requiresArg) {
                     return method;
                 }
-                Class<?>[] args = method.getParameterTypes();
-                if (args.length != 1) {
+                if (method.getParameterCount() != 1) {
                     continue;
                 }
                 Class<?> arg = method.getParameterTypes()[0];
