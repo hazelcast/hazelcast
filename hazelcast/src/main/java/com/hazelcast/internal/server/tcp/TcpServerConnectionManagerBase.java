@@ -306,8 +306,12 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             LinkedAddresses that = (LinkedAddresses) o;
 
