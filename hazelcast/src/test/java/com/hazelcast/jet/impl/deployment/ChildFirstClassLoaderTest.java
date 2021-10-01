@@ -203,7 +203,6 @@ public class ChildFirstClassLoaderTest {
 
         String content = readResource("childfirstclassloader/resource_jar.txt");
         assertThat(content).isEqualTo("resource in jar");
-
     }
 
     /*
