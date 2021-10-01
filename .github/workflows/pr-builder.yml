@@ -27,14 +27,13 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Compile with Maven
-        run: ./mvnw --errors --no-transfer-progress --batch-mode clean test-compile -pl hazelcast-spring,hazelcast-spring-tests
+        run: ./mvnw --errors --no-transfer-progress --batch-mode clean test-compile
       - name: Install with Maven
         run: >
           ./mvnw --errors --no-transfer-progress --batch-mode
           -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -Dbuildtime.output.log=true
           "-DextraVmArgs=-XX:+HeapDumpOnOutOfMemoryError" -PparallelTest -Ppr-builder
           install
-          -pl hazelcast-spring,hazelcast-spring-tests
       - name: Setup JDK 11
         uses: actions/setup-java@v2.3.0
         with:
