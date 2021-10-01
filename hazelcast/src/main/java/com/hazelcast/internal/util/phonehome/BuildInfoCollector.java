@@ -36,7 +36,7 @@ import static java.lang.Math.min;
  */
 class BuildInfoCollector implements MetricsCollector {
 
-    private static final int CLASSPATH_MAX_LENGTH = 10_000;
+    private static final int CLASSPATH_MAX_LENGTH = 100_000;
 
     static String formatClassPath(String classpath) {
         String[] classPathEntries = classpath.split(File.pathSeparator);
