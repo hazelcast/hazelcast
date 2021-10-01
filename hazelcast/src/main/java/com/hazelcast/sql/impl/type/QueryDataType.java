@@ -56,7 +56,8 @@ import java.io.Serializable;
  */
 public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
-    public static final int MAX_DECIMAL_PRECISION = 38;
+    public static final int MAX_DECIMAL_PRECISION = 76;
+    public static final int MAX_DECIMAL_SCALE = 38;
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);

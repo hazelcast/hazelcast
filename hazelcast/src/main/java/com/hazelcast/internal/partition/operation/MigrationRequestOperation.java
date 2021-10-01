@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
@@ -45,7 +44,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
@@ -155,33 +153,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 .whenCompleteAsync(new MigrationCallback(), asyncExecutor);
     }
 
-    private void trySendNewFragmentV42() {
-        try {
-            verifyMaster();
-            verifyExistingDestination();
-
-            InternalPartitionServiceImpl partitionService = getService();
-            MigrationManager migrationManager = partitionService.getMigrationManager();
-            MigrationInfo currentActiveMigration = migrationManager.addActiveMigration(migrationInfo);
-            if (!migrationInfo.equals(currentActiveMigration)) {
-                throw new IllegalStateException("Current active migration " + currentActiveMigration
-                        + " is different than expected: " + migrationInfo);
-            }
-
-            ReplicaFragmentMigrationState migrationState = createNextReplicaFragmentMigrationState();
-
-            if (migrationState != null) {
-                invokeMigrationOperation(migrationState, false);
-            } else {
-                getLogger().finest("All migration fragments done for " + migrationInfo);
-                completeMigration(true);
-            }
-        } catch (Throwable e) {
-            logThrowable(e);
-            completeMigration(false);
-        }
-    }
-
     private void trySendNewFragment() {
         try {
             verifyMaster();
@@ -200,14 +171,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
             // migration invocation must always happen on partition thread
             if (migrationState != null) {
-                // RU_COMPAT_4_2
-                if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
-                    invokeMigrationOperation(migrationState, false);
-                } else {
-                    // this is executed in async pool thread
-                    // migration ops must be serialized and invoked from partition threads
-                    getNodeEngine().getOperationService().execute(new InvokeMigrationOps(migrationState, getPartitionId()));
-                }
+                // migration ops must be serialized and invoked from partition threads
+                getNodeEngine().getOperationService().execute(new InvokeMigrationOps(migrationState, getPartitionId()));
             } else {
                 getLogger().finest("All migration fragments done for " + migrationInfo);
                 completeMigration(true);
@@ -378,16 +343,10 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 logThrowable(throwable);
                 completeMigration(false);
             } else if (Boolean.TRUE.equals(result)) {
-                // RU_COMPAT_4_2
-                if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
-                    // ASYNC executor is of CONCRETE type (does not share threads with other executors)
-                    // and is never used for user-supplied code.
-                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
-                            () -> trySendNewFragment());
-                } else {
-                    OperationService operationService = getNodeEngine().getOperationService();
-                    operationService.execute(new SendNewMigrationFragmentRunnableV42());
-                }
+                // ASYNC executor is of CONCRETE type (does not share threads with other executors)
+                // and is never used for user-supplied code.
+                getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
+                        () -> trySendNewFragment());
             } else {
                 ILogger logger = getLogger();
                 if (logger.isFineEnabled()) {
@@ -396,21 +355,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 completeMigration(false);
             }
         }
-    }
-
-    // RU_COMPAT_4_2
-    private final class SendNewMigrationFragmentRunnableV42 implements PartitionSpecificRunnable, UrgentSystemOperation {
-
-        @Override
-        public int getPartitionId() {
-            return MigrationRequestOperation.this.getPartitionId();
-        }
-
-        @Override
-        public void run() {
-            trySendNewFragmentV42();
-        }
-
     }
 
     private static class ServiceNamespacesContext {

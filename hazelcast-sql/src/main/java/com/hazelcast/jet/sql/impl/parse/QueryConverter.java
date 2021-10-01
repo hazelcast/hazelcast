@@ -26,7 +26,7 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.rules.SubQueryRemoveRule;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -57,12 +57,11 @@ public class QueryConverter {
     private static final SqlToRelConverter.Config CONFIG;
 
     static {
-        SqlToRelConverter.ConfigBuilder configBuilder = SqlToRelConverter.configBuilder()
-                                                                         .withExpand(EXPAND)
-                                                                         .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
-                                                                         .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
-
-        CONFIG = configBuilder.build();
+        CONFIG = SqlToRelConverter.configBuilder()
+                .withExpand(EXPAND)
+                .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
+                .withTrimUnusedFields(TRIM_UNUSED_FIELDS)
+                .build();
     }
 
     private final SqlValidator validator;
@@ -114,9 +113,9 @@ public class QueryConverter {
     private static RelNode rewriteSubqueries(RelNode rel) {
         HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
 
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.FILTER);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.PROJECT);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.JOIN);
+        hepPgmBldr.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
+        hepPgmBldr.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
+        hepPgmBldr.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
 
         HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
 

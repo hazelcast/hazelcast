@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
@@ -42,7 +41,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -52,7 +50,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +71,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
  */
 public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
-    // holds recordStore-references of this partitions' maps
+    // holds recordStore-references of these partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
 
     protected transient Map<String, LocalReplicationStatsImpl> statsByMapName = new ConcurrentHashMap<>();
@@ -87,8 +84,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     protected transient Map<String, Boolean> loaded;
 
     // Definitions of indexes for each map. The indexes are sent in the map-replication operation for each partition
-    // since only this approach guarantees that that there is no race between index migration and data migration.
-    // Earlier the index definition used to arrive in the post-join operations, but these operation has no guarantee
+    // since only this approach guarantees that there is no race between index migration and data migration.
+    // Earlier the index definition used to arrive in the post-join operations, but these operations has no guarantee
     // on order of execution, so it was possible that the post-join operations were executed after some map-replication
     // operations, which meant that the index did not include some data.
     protected transient List<MapIndexInfo> mapIndexInfos;
@@ -337,13 +334,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             String mapName = entry.getKey();
             RecordStore<Record> recordStore = entry.getValue();
             out.writeString(mapName);
-
-            // RU_COMPAT_42
-            if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-                writeRecordStoreV5(mapName, recordStore, out);
-            } else {
-                writeRecordStoreV42(mapName, recordStore, out);
-            }
+            writeRecordStore(mapName, recordStore, out);
             recordStore.getStats().writeData(out);
         }
 
@@ -359,7 +350,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
     }
 
-    private void writeRecordStoreV5(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
+    private void writeRecordStore(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
             throws IOException {
         if (merkleTreeDiffByMapName.containsKey(mapName)) {
             out.writeBoolean(true);
@@ -368,11 +359,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             out.writeBoolean(false);
             writeRecordStoreData(recordStore, out);
         }
-    }
-
-    private void writeRecordStoreV42(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
-            throws IOException {
-        writeRecordStoreData(recordStore, out);
     }
 
     protected void writeDifferentialData(String mapName,
@@ -388,14 +374,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         recordStore.forEach((dataKey, record) -> {
             try {
                 IOUtil.writeData(out, dataKey);
-                ExpiryMetadata expiryMetadata = recordStore.getExpirySystem()
-                        .getExpiredMetadata(dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()), expiryMetadata);
-                // RU_COMPAT_4_2
-                Version version = out.getVersion();
-                if (version.isGreaterOrEqual(Versions.V5_0)) {
-                    Records.writeExpiry(out, expiryMetadata);
-                }
+                Records.writeRecord(out, record, ss.toData(record.getValue()));
+                Records.writeExpiry(out, recordStore.getExpirySystem()
+                        .getExpiredMetadata(dataKey));
             } catch (IOException e) {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -417,7 +398,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
         for (int i = 0; i < size; i++) {
             String mapName = in.readString();
-            boolean differentialReplication = in.getVersion().isGreaterOrEqual(Versions.V5_0) && in.readBoolean();
+            boolean differentialReplication = in.readBoolean();
 
             if (differentialReplication) {
                 readDifferentialData(mapName, in);
@@ -452,29 +433,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         int numOfRecords = in.readInt();
         List keyRecord = new ArrayList<>(numOfRecords * 3);
         for (int j = 0; j < numOfRecords; j++) {
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            boolean isV5 = version.isGreaterOrEqual(Versions.V5_0);
-
             Data dataKey = IOUtil.readData(in);
-            ExpiryMetadata expiryMetadata = null;
-            if (!isV5) {
-                expiryMetadata = new ExpiryMetadataImpl();
-            }
-            Record record = Records.readRecord(in, expiryMetadata);
-            if (isV5) {
-                expiryMetadata = Records.readExpiry(in);
-            }
+            Record record = Records.readRecord(in);
+            ExpiryMetadata expiryMetadata = Records.readExpiry(in);
 
             keyRecord.add(dataKey);
             keyRecord.add(record);
             keyRecord.add(expiryMetadata);
         }
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-            stats.readData(in);
-            recordStoreStatsPerMapName.put(mapName, stats);
-        }
+        LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+        stats.readData(in);
+        recordStoreStatsPerMapName.put(mapName, stats);
         data.put(mapName, keyRecord);
     }
 

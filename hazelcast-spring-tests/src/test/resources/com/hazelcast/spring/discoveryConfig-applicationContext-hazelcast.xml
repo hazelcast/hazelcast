@@ -35,6 +35,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
+            <hz:cluster-name>discoveryConfig</hz:cluster-name>
 
             <hz:wan-replication name="testWan">
                 <hz:batch-publisher>

@@ -22,9 +22,12 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOper
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlMapValueConstructor;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -109,5 +112,16 @@ public class HazelcastMapValueConstructor extends HazelcastSpecialOperator {
                 typeFactory.leastRestrictive(Util.quotientList(argTypes, 2, 0)),
                 typeFactory.leastRestrictive(Util.quotientList(argTypes, 2, 1))
         );
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        writer.keyword(getName());
+        SqlWriter.Frame frame = writer.startList("[", "]");
+        for (SqlNode operand : call.getOperandList()) {
+            writer.sep(",");
+            operand.unparse(writer, leftPrec, rightPrec);
+        }
+        writer.endList(frame);
     }
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.recordstore.expiry;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
@@ -43,12 +42,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.isTtlOrMaxIdleConfigured;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.nextExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
-import static com.hazelcast.map.impl.record.Record.UNSET;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -120,7 +116,7 @@ public class ExpirySystem {
         map.clear();
     }
 
-    protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
+    protected final Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
         if (expireTimeByKey != null) {
             return expireTimeByKey;
         }
@@ -167,12 +163,6 @@ public class ExpirySystem {
             return;
         }
 
-        // RU_COMPAT_4_2
-        if (isClusterVersionLessThanV5()) {
-            checkIfTtlGreaterThanMaxIdle(recordStore.getName(),
-                    lastUpdateTime, maxIdleMillis, ttlMillis);
-        }
-
         createOrUpdateExpiryMetadata(key, ttlMillis, maxIdleMillis,
                 expirationTime, lastUpdateTime);
 
@@ -200,22 +190,6 @@ public class ExpirySystem {
                 .setLastUpdateTime(lastUpdateTime);
     }
 
-    private boolean isClusterVersionLessThanV5() {
-        return mapServiceContext.getNodeEngine().getClusterService()
-                .getClusterVersion().isLessThan(Versions.V5_0);
-    }
-
-    private static void checkIfTtlGreaterThanMaxIdle(String mapName, long lastUpdateTime,
-                                                     long maxIdleMillis, long ttlMillis) {
-        if (lastUpdateTime == UNSET && isTtlOrMaxIdleConfigured(ttlMillis)
-                && isTtlOrMaxIdleConfigured(maxIdleMillis) && ttlMillis > maxIdleMillis) {
-            String message = "Map `%s` has timeToLiveSeconds `%d` which is greater than maxIdleSeconds `%d`, "
-                    + "for this configuration to work, please set `perEntryStatsEnabled` field of map-config to `true`.";
-            throw new UnsupportedOperationException(String.format(message, mapName,
-                    MILLISECONDS.toSeconds(ttlMillis), MILLISECONDS.toSeconds(maxIdleMillis)));
-        }
-    }
-
     public final long calculateExpirationTime(long ttl, long maxIdle,
                                               long now, long lastUpdateTime) {
         MapConfig mapConfig = mapContainer.getMapConfig();
@@ -231,12 +205,7 @@ public class ExpirySystem {
         callRemove(key, expireTimeByKey);
     }
 
-    public final void extendExpiryTime(Data dataKey, long now, long lastUpdateTime) {
-        if (isEmpty()) {
-            return;
-        }
-
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+    public final void extendExpiryTime(Data dataKey, long now) {
         if (isEmpty()) {
             return;
         }
@@ -256,16 +225,11 @@ public class ExpirySystem {
             return;
         }
 
-        // RU_COMPAT_4_2
-        lastUpdateTime = isClusterVersionLessThanV5()
-                ? lastUpdateTime : expiryMetadata.getLastUpdateTime();
-
         expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
-                maxIdle, now, lastUpdateTime));
+                maxIdle, now, expiryMetadata.getLastUpdateTime()));
     }
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
         }
@@ -347,7 +311,6 @@ public class ExpirySystem {
     }
 
     private int findMaxScannableCount(int percentage) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return 0;
         }

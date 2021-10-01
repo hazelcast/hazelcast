@@ -19,8 +19,11 @@ package com.hazelcast.jet.sql.impl.validate.operators.special;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlValuesOperator;
+import org.apache.calcite.sql.SqlWriter;
 
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
@@ -39,5 +42,15 @@ public class HazelcastValuesOperator extends HazelcastSpecialOperator {
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         throw new UnsupportedOperationException("never called for VALUES");
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        SqlWriter.Frame frame = writer.startList(SqlWriter.FrameTypeEnum.VALUES, "VALUES", "");
+        for (SqlNode operand : call.getOperandList()) {
+            writer.sep(",");
+            operand.unparse(writer, 0, 0);
+        }
+        writer.endList(frame);
     }
 }

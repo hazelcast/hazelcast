@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9f09c70d6c3b390d1ac8d7beccc69fb9")
+@Generated("2587e72ce5254aefa2a154ce6c500693")
 public final class FieldDescriptorCodec {
-    private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int KIND_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = KIND_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private FieldDescriptorCodec() {
     }
@@ -36,7 +36,7 @@ public final class FieldDescriptorCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getType());
+        encodeInt(initialFrame.content, KIND_FIELD_OFFSET, fieldDescriptor.getKind());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, fieldDescriptor.getFieldName());
@@ -49,12 +49,12 @@ public final class FieldDescriptorCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
+        int kind = decodeInt(initialFrame.content, KIND_FIELD_OFFSET);
 
         java.lang.String fieldName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createFieldDescriptor(fieldName, type);
+        return CustomTypeFactory.createFieldDescriptor(fieldName, kind);
     }
 }

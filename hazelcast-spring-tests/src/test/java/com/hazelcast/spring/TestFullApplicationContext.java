@@ -726,7 +726,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testClusterNameConfig() {
-        assertEquals("spring-cluster", config.getClusterName());
+        assertEquals("spring-cluster-fullConfig", config.getClusterName());
     }
 
     @Test

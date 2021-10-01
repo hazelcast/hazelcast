@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -39,36 +39,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.BYTE;
-import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.CHAR;
-import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DATE;
-import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.INT;
-import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.LONG;
-import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.SHORT;
-import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.UTF;
-import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.INT;
+import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
+import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -135,7 +136,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     public Object read(@Nonnull CompactReader reader) throws IOException {
         // We always fed DefaultCompactReader to this serializer.
         DefaultCompactReader compactReader = (DefaultCompactReader) reader;
-        Class associatedClass = compactReader.getAssociatedClass();
+        Class associatedClass = requireNonNull(compactReader.getAssociatedClass(),
+                "AssociatedClass is required for ReflectiveCompactSerializer");
+
         Object object;
         object = createObject(associatedClass);
         try {
@@ -170,9 +173,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
         return fields;
     }
 
-    private boolean fieldExists(Schema schema, String name, FieldType fieldType) {
+    private boolean fieldExists(Schema schema, String name, FieldKind fieldKind) {
         FieldDescriptor fieldDescriptor = schema.getField(name);
-        return fieldDescriptor != null && fieldDescriptor.getType().equals(fieldType);
+        return fieldDescriptor != null && fieldDescriptor.getKind() == fieldKind;
     }
 
     private void createFastReadWriteCaches(Class clazz) throws IOException {
@@ -247,7 +250,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 writers[index] = (w, o) -> w.writeChar(name, field.getChar(o));
             } else if (String.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, UTF)) {
+                    if (fieldExists(schema, name, STRING)) {
                         field.set(o, reader.readString(name));
                     }
                 };
@@ -287,6 +290,18 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                     }
                 };
                 writers[index] = (w, o) -> w.writeTimestampWithTimezone(name, (OffsetDateTime) field.get(o));
+            } else if (type.isEnum()) {
+                readers[index] = (reader, schema, o) -> {
+                    if (fieldExists(schema, name, STRING)) {
+                        String enumName = reader.readString(name);
+                        field.set(o, enumName == null ? null : Enum.valueOf((Class<? extends Enum>) type, enumName));
+                    }
+                };
+                writers[index] = (w, o) -> {
+                    Object rawValue = field.get(o);
+                    String value = rawValue == null ? null : ((Enum) rawValue).name();
+                    w.writeString(name, value);
+                };
             } else if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
                 if (Byte.TYPE.equals(componentType)) {
@@ -347,7 +362,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                     writers[index] = (w, o) -> w.writeCharArray(name, (char[]) field.get(o));
                 } else if (String.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, UTF_ARRAY)) {
+                        if (fieldExists(schema, name, STRING_ARRAY)) {
                             field.set(o, reader.readStringArray(name));
                         }
                     };
@@ -387,9 +402,22 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                         }
                     };
                     writers[index] = (w, o) -> w.writeTimestampWithTimezoneArray(name, (OffsetDateTime[]) field.get(o));
+                } else if (componentType.isEnum()) {
+                    readers[index] = (reader, schema, o) -> {
+                        if (fieldExists(schema, name, STRING_ARRAY)) {
+                            String[] stringArray = reader.readStringArray(name);
+                            Enum[] enumArray = enumsFromString((Class<? extends Enum>) componentType, stringArray);
+                            field.set(o, enumArray);
+                        }
+                    };
+                    writers[index] = (w, o) -> {
+                        Enum[] values = (Enum[]) field.get(o);
+                        String[] stringArray = enumsAsStrings(values);
+                        w.writeStringArray(name, stringArray);
+                    };
                 } else {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, COMPOSED_ARRAY)) {
+                        if (fieldExists(schema, name, COMPACT_ARRAY)) {
                             field.set(o, reader.readObjectArray(name, componentType));
                         }
                     };
@@ -397,7 +425,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 }
             } else {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, COMPOSED)) {
+                    if (fieldExists(schema, name, COMPACT)) {
                         field.set(o, reader.readObject(name));
                     }
                 };
@@ -408,6 +436,30 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
         writersCache.put(clazz, writers);
         readersCache.put(clazz, readers);
+    }
+
+    private String[] enumsAsStrings(Enum[] values) {
+        String[] stringArray = null;
+        if (values != null) {
+            stringArray = new String[values.length];
+            for (int i = 0; i < values.length; i++) {
+                stringArray[i] = values[i] == null ? null : values[i].name();
+            }
+        }
+        return stringArray;
+    }
+
+    private Enum[] enumsFromString(Class<? extends Enum> componentType, String[] stringArray) {
+        Enum[] enumArray = null;
+        if (stringArray != null) {
+            enumArray = new Enum[stringArray.length];
+            for (int i = 0; i < stringArray.length; i++) {
+                enumArray[i] = stringArray[i] == null
+                        ? null
+                        : Enum.valueOf(componentType, stringArray[i]);
+            }
+        }
+        return enumArray;
     }
 
     interface Reader {

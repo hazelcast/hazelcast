@@ -38,19 +38,19 @@ public final class Records {
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record,
-                                   Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
+                                   Data dataValue) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         out.writeByte(readerWriter.getId());
-        readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
+        readerWriter.writeRecord(out, record, dataValue);
     }
 
-    public static Record readRecord(ObjectDataInput in,
-                                    ExpiryMetadata expiryMetadata) throws IOException {
+    public static Record readRecord(ObjectDataInput in) throws IOException {
         byte matchingDataRecordId = in.readByte();
-        return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
+        return getById(matchingDataRecordId).readRecord(in);
     }
 
-    public static void writeExpiry(ObjectDataOutput out, ExpiryMetadata expiryMetadata) throws IOException {
+    public static void writeExpiry(ObjectDataOutput out,
+                                   ExpiryMetadata expiryMetadata) throws IOException {
         boolean hasExpiry = expiryMetadata.hasExpiry();
         out.writeBoolean(hasExpiry);
         if (hasExpiry) {

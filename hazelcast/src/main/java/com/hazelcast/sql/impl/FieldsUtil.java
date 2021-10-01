@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldKind;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
@@ -44,7 +46,8 @@ public final class FieldsUtil {
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
 
-    private FieldsUtil() { }
+    private FieldsUtil() {
+    }
 
     /**
      * Return a list of fields and their types from a {@link Class}.
@@ -159,7 +162,7 @@ public final class FieldsUtil {
         for (String name : clazz.getFieldNames()) {
             FieldType portableType = clazz.getFieldType(name);
 
-            QueryDataType type = resolveType(portableType);
+            QueryDataType type = resolveType(FieldTypeToFieldKind.toFieldKind(portableType));
 
             fields.putIfAbsent(name, type);
         }
@@ -177,8 +180,8 @@ public final class FieldsUtil {
 
         // Add regular fields.
         for (String name : schema.getFieldNames()) {
-            FieldType compactType = schema.getField(name).getType();
-            QueryDataType type = resolveType(compactType);
+            FieldKind compactKind = schema.getField(name).getKind();
+            QueryDataType type = resolveType(compactKind);
             fields.putIfAbsent(name, type);
         }
 
@@ -187,8 +190,8 @@ public final class FieldsUtil {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldType type) {
-        switch (type) {
+    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+        switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
 
@@ -201,7 +204,7 @@ public final class FieldsUtil {
             case CHAR:
                 return QueryDataType.VARCHAR_CHARACTER;
 
-            case UTF:
+            case STRING:
                 return QueryDataType.VARCHAR;
 
             case INT:

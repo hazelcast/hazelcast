@@ -100,7 +100,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
         SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
 
-        // Comparisons predicates
+        // Comparison predicates
         SUPPORTED_KINDS.add(SqlKind.EQUALS);
         SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
         SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
@@ -187,6 +187,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NOT_LIKE);
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
@@ -308,6 +309,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                         || symbolValue == JoinType.COMMA
                         || symbolValue == JoinType.CROSS
                         || symbolValue == JoinType.LEFT
+                        || symbolValue == JoinType.RIGHT
                 ) {
                     return null;
                 }
@@ -379,6 +381,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 && joinType != JoinType.COMMA
                 && joinType != JoinType.CROSS
                 && joinType != JoinType.LEFT
+                && joinType != JoinType.RIGHT
         ) {
             throw unsupported(join, joinType.name() + " join");
         }

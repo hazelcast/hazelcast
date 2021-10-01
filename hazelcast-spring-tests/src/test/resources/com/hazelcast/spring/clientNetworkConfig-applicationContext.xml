@@ -35,7 +35,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:cluster-name>${cluster.name}-clientNetworkConfig</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -62,7 +62,7 @@
     </hz:hazelcast>
 
     <hz:client id="client">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-clientNetworkConfig</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
