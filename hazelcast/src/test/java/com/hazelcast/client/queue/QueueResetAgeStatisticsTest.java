@@ -87,7 +87,7 @@ public class QueueResetAgeStatisticsTest
         myQueue.take();
 
         LocalQueueStats populatedStatsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
-        assertTrue(statsAfterReset.getMinAge() > 20);
+        assertTrue(statsAfterReset.getMinAge() + " is greater than 20", statsAfterReset.getMinAge() > 20);
         assertTrue(statsAfterReset.getMaxAge() > 100);
         assertEquals((populatedStatsAfterReset.getMinAge() + populatedStatsAfterReset.getMaxAge()) / 2,
                 populatedStatsAfterReset.getAverageAge()
