@@ -132,8 +132,8 @@ public class TextCommandServiceImpl implements TextCommandService {
         register(UNKNOWN, new ErrorCommandProcessor(this));
         register(VERSION, new VersionCommandProcessor(this));
         register(TOUCH, new TouchCommandProcessor(this));
-        register(INCREMENT, new IncrementCommandProcessor(this));
-        register(DECREMENT, new IncrementCommandProcessor(this));
+        register(INCREMENT, new IncrementCommandProcessor(this, entryConverter));
+        register(DECREMENT, new IncrementCommandProcessor(this, entryConverter));
         register(ERROR_CLIENT, new ErrorCommandProcessor(this));
         register(ERROR_SERVER, new ErrorCommandProcessor(this));
         register(HTTP_GET, new HttpGetCommandProcessor(this));
