@@ -264,6 +264,17 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    static class PlainRunnableTask implements Runnable, Serializable {
+
+        PlainRunnableTask() {
+        }
+
+        @Override
+        public void run() {
+            System.out.println("PlainRunnableTask");
+        }
+    }
+
     static class EchoTask implements Runnable, Serializable {
 
         EchoTask() {
@@ -446,6 +457,13 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    public static class AutoDisposableRunnable implements Runnable, AutoDisposableTask {
+
+        @Override
+        public void run() {
+        }
+    }
+
     public static class NamedCallable implements Callable<Boolean>, NamedTask, Serializable {
 
         public static final String NAME = "NAMED-CALLABLE";
@@ -458,6 +476,21 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public String getName() {
             return NAME;
+        }
+    }
+
+    public static class NamedRunnable implements Runnable, NamedTask, Serializable {
+
+        public static final String NAME = "NAMED-RUNNABLE";
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
+        @Override
+        public void run() {
+
         }
     }
 
