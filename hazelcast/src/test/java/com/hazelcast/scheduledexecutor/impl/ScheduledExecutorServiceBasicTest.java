@@ -574,7 +574,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenAutoDisposable() throws Exception {
+    public void capacity_whenAutoDisposable_Callable() throws Exception {
         String schedulerName = ANY_EXECUTOR_NAME;
         int capacity = 10;
 
@@ -605,6 +605,61 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         // no exceptions thrown
     }
+
+    @Test
+    public void capacity_whenAutoDisposableRunnable() {
+        String schedulerName = ANY_EXECUTOR_NAME;
+
+        HazelcastInstance[] instances = createClusterWithCount(1, null);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        List<IScheduledFuture> futures = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(service.schedule(autoDisposable(new PlainRunnableTask()), 0, TimeUnit.SECONDS));
+        }
+
+        futures.forEach(this::assertTaskHasBeenDestroyedEventually);
+
+        // Re-schedule to verify capacity
+        for (int i = 0; i < 10; i++) {
+            service.schedule(autoDisposable(new PlainRunnableTask()), 0, TimeUnit.SECONDS);
+        }
+
+        // no exceptions thrown
+    }
+
+    @Test
+    public void capacity_whenAutoDisposable_Runnable() throws Exception {
+        String schedulerName = ANY_EXECUTOR_NAME;
+        int capacity = 10;
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(capacity);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        List<IScheduledFuture<Double>> futures = new ArrayList<>();
+        for (int i = 0; i < capacity; i++) {
+            Runnable command = autoDisposable(new PlainRunnableTask());
+            IScheduledFuture<Double> future = service.scheduleOnKeyOwner(command, keyOwner, 0, SECONDS);
+            futures.add(future);
+        }
+
+        futures.forEach(this::assertTaskHasBeenDestroyedEventually);
+
+        for (int i = 0; i < capacity; i++) {
+            service.scheduleOnKeyOwner(autoDisposable(new PlainRunnableTask()), keyOwner, 0, TimeUnit.SECONDS);
+        }
+
+        // no exceptions thrown
+    }
+
 
     protected void assertCapacityReached(IScheduledExecutorService service, String key, String expectedError) {
         try {
@@ -968,7 +1023,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             } catch (ExecutionException ex) {
                 sneakyThrow(ex.getCause());
             }
-        }));
+        }), 2);
     }
 
     @Test(expected = TimeoutException.class)
