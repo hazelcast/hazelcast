@@ -17,10 +17,13 @@
 package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
@@ -57,12 +60,19 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
 
     @Override
     public boolean shouldWait() {
+        RingbufferService service = getService();
+        ObjectNamespace namespace = RingbufferService.getRingbufferNamespace(name);
+        RingbufferContainer ringbuffer = service.getContainerOrNull(getPartitionId(), namespace);
+
         if (resultSet == null) {
             resultSet = new ReadResultSetImpl<>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
             sequence = startSequence;
         }
 
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        if (ringbuffer == null) {
+            return minSize > 0;
+        }
+
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
@@ -108,8 +118,8 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        ObjectNamespace namespace = RingbufferService.getRingbufferNamespace(name);
+        return new RingbufferWaitNotifyKey(namespace, getPartitionId());
     }
 
     @Override
