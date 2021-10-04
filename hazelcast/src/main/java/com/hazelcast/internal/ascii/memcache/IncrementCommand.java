@@ -23,16 +23,16 @@ import java.nio.ByteBuffer;
 
 public class IncrementCommand extends AbstractTextCommand {
 
-    private String key;
-    private int value;
-    private boolean noreply;
+    private final String key;
+    private final long value;
+    private final boolean noReply;
     private ByteBuffer response;
 
-    public IncrementCommand(TextCommandConstants.TextCommandType type, String key, int value, boolean noReply) {
+    public IncrementCommand(TextCommandConstants.TextCommandType type, String key, long value, boolean noReply) {
         super(type);
         this.key = key;
         this.value = value;
-        this.noreply = noReply;
+        this.noReply = noReply;
     }
 
     @Override
@@ -50,14 +50,14 @@ public class IncrementCommand extends AbstractTextCommand {
 
     @Override
     public boolean shouldReply() {
-        return !noreply;
+        return !noReply;
     }
 
     public String getKey() {
         return key;
     }
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 
