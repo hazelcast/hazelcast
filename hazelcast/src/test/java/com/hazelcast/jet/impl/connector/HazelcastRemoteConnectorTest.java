@@ -35,11 +35,16 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -130,6 +135,29 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     public void destroyObjects(HazelcastInstance hz) {
         hz.getDistributedObjects().forEach(DistributedObject::destroy);
+    }
+
+    @Test
+    public void when_readRemoteCache_and_nonExistingCache_then_cacheNotCreated() {
+        testNonExistingDataStructure(Sources.remoteCache(SOURCE_NAME, clientConfig));
+    }
+
+    @Test
+    public void when_readRemoteMap_and_nonExistingMap_then_mapNotCreated() {
+        testNonExistingDataStructure(Sources.remoteMap(SOURCE_NAME, clientConfig));
+    }
+
+    @Test
+    public void when_readRemoteMap_withPredicateAndFunction_and_nonExistingMap_then_mapNotCreated() {
+        testNonExistingDataStructure(
+                Sources.remoteMap(SOURCE_NAME, clientConfig,
+                        e -> !e.getKey().equals(0), Entry::getValue)
+        );
+    }
+
+    @Test
+    public void when_readRemoteList_and_nonExistingList_then_listNotCreated() {
+        testNonExistingDataStructure(Sources.remoteList(SOURCE_NAME, clientConfig));
     }
 
     @Test
@@ -282,6 +310,10 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         job.cancel();
     }
 
+    private void executeAndWait(Pipeline p) {
+        assertCompletesEventually(localHz.getJet().newJob(p).getFuture());
+    }
+
     private void executeAndWait(DAG dag) {
         assertCompletesEventually(localHz.getJet().newJob(dag).getFuture());
     }
@@ -293,5 +325,16 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     private static void populateCache(ICache<Object, Object> cache) {
         cache.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(toMap(m -> m, m -> m)));
+    }
+
+    private <T> void testNonExistingDataStructure(BatchSource<T> source) {
+        Pipeline p = Pipeline.create();
+        p.readFrom(source).writeTo(Sinks.noop());
+
+        executeAndWait(p);
+
+        Assertions.assertThat(remoteHz.getDistributedObjects())
+                .extracting(DistributedObject::getName)
+                .doesNotContain(SOURCE_NAME);
     }
 }

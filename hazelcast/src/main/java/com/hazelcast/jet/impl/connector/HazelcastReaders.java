@@ -20,33 +20,36 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentCacheReader;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapQueryReader;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapReader;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentCacheReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapQueryReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistentMapReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistingRemoteCacheReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistingRemoteMapReader;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.NonExistingRemoteQueryMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteCacheReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
 import com.hazelcast.jet.impl.util.ImdgUtil;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.security.Permission;
@@ -57,7 +60,6 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
@@ -69,14 +71,13 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
+                CompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
                 (hzInstance, serializationService) -> {
                     String name = HazelcastCacheManager.CACHE_MANAGER_PREFIX + cacheName;
-                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
-                    if (!nodeEngine.getProxyService().existsDistributedObject(CacheService.SERVICE_NAME, name)) {
-                        return new NonExistentCacheReader(cacheName);
+                    if (existsDistributedObject(hzInstance, CacheService.SERVICE_NAME, name)) {
+                        return new LocalCacheReader(hzInstance, serializationService, cacheName);
                     }
-                    return new LocalCacheReader(hzInstance, serializationService, cacheName);
+                    return new NonExistentCacheReader(cacheName);
                 }
         ) {
             @Override
@@ -92,7 +93,13 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, hzInstance -> new RemoteCacheReader(hzInstance, cacheName));
+        return new RemoteProcessorSupplier<>(clientXml, hzInstance -> {
+            String name = HazelcastCacheManager.CACHE_MANAGER_PREFIX + cacheName;
+            if (existsDistributedObject(hzInstance, CacheService.SERVICE_NAME, name)) {
+                return new RemoteCacheReader(hzInstance, cacheName);
+            }
+            return new NonExistingRemoteCacheReader(hzInstance, cacheName);
+        });
     }
 
     @Nonnull
@@ -100,11 +107,11 @@ public final class HazelcastReaders {
         return new LocalProcessorMetaSupplier<
                 CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
                 (hzInstance, serializationService) -> {
-                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
-                    if (!nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
-                        return new NonExistentMapReader(mapName);
+                    if (existsDistributedObject(hzInstance, MapService.SERVICE_NAME, mapName)) {
+                        return new LocalMapReader(hzInstance, serializationService, mapName);
+
                     }
-                    return new LocalMapReader(hzInstance, serializationService, mapName);
+                    return new NonExistentMapReader(mapName);
                 }
         ) {
             @Override
@@ -123,13 +130,13 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(predicate), "predicate");
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
-        return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
+        return new LocalProcessorMetaSupplier<CompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
                 (hzInstance, serializationService) -> {
-                    NodeEngineImpl nodeEngine = getNodeEngine(hzInstance);
-                    if (!nodeEngine.getProxyService().existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
-                        return new NonExistentMapQueryReader(mapName);
+                    if (existsDistributedObject(hzInstance, MapService.SERVICE_NAME, mapName)) {
+                        return new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection);
+
                     }
-                    return new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection);
+                    return new NonExistentMapQueryReader(mapName);
                 }
         ) {
             @Override
@@ -145,7 +152,12 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, hzInstance -> new RemoteMapReader(hzInstance, mapName));
+        return new RemoteProcessorSupplier<>(clientXml, hzInstance -> {
+            if (existsDistributedObject(hzInstance, MapService.SERVICE_NAME, mapName)) {
+                return new RemoteMapReader(hzInstance, mapName);
+            }
+            return new NonExistingRemoteMapReader(hzInstance, mapName);
+        });
     }
 
     @Nonnull
@@ -160,7 +172,12 @@ public final class HazelcastReaders {
 
         String clientXml = ImdgUtil.asXmlString(clientConfig);
         return new RemoteProcessorSupplier<>(clientXml,
-                hzInstance -> new RemoteMapQueryReader(hzInstance, mapName, predicate, projection));
+                hzInstance -> {
+                    if (existsDistributedObject(hzInstance, MapService.SERVICE_NAME, mapName)) {
+                        return new RemoteMapQueryReader(hzInstance, mapName, predicate, projection);
+                    }
+                    return new NonExistingRemoteQueryMapReader(hzInstance, mapName);
+                });
     }
 
     public static ProcessorMetaSupplier localOrRemoteListSupplier(String name, ClientConfig clientConfig) {
@@ -168,5 +185,9 @@ public final class HazelcastReaders {
         Permission permission = PermissionsUtil.listReadPermission(clientXml, name);
         return forceTotalParallelismOne(
                 ProcessorSupplier.of(SecuredFunctions.readListProcessorFn(name, clientXml)), name, permission);
+    }
+
+    private static boolean existsDistributedObject(HazelcastInstance instance, String serviceName, String name) {
+        return ((AbstractJetInstance) instance.getJet()).existsDistributedObject(serviceName, name);
     }
 }

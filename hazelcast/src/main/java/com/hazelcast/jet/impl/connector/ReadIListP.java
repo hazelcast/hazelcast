@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -77,9 +78,13 @@ public final class ReadIListP extends AbstractProcessor {
                 traverser = empty();
             }
         }
-        if (traverser == null) {
-            traverser = createTraverser(instance, name).map(serializationService::toObject);
-        }
+        traverser = existsDistributedObject(instance)
+                ? createTraverser(instance, name).map(serializationService::toObject)
+                : empty();
+    }
+
+    boolean existsDistributedObject(HazelcastInstance instance) {
+        return ((AbstractJetInstance) (instance.getJet())).existsDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("rawtypes")
