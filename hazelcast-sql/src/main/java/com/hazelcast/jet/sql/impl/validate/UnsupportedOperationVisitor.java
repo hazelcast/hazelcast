@@ -82,6 +82,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IN);
         SUPPORTED_KINDS.add(SqlKind.NOT_IN);
         SUPPORTED_KINDS.add(SqlKind.BETWEEN);
+        SUPPORTED_KINDS.add(SqlKind.EXISTS);
 
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
@@ -338,6 +339,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case SELECT:
                 processSelect((SqlSelect) call);
                 break;
+            case SCALAR_QUERY:
+                processSelect((SqlSelect) call.getOperandList().get(0));
+                break;
 
             case UPDATE:
             case DELETE:
@@ -351,6 +355,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case OTHER_FUNCTION:
             case EXTRACT:
             case POSITION:
+            case EXISTS:
                 processOther(call);
                 break;
 

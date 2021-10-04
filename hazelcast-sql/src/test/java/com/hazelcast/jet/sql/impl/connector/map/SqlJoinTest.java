@@ -51,6 +51,42 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void test_semiJoin() {
+            String leftName = randomName();
+            TestBatchSqlConnector.create(
+                    sqlService,
+                    leftName,
+                    singletonList("v"),
+                    singletonList(INTEGER),
+                    asList(new String[]{"0"}, new String[]{"1"}, new String[]{"2"}));
+
+            String mapName = randomName();
+            createMapping(mapName, int.class, String.class);
+            instance().getMap(mapName).put(1, "value-1");
+            instance().getMap(mapName).put(2, "value-2");
+            instance().getMap(mapName).put(3, "value-3");
+
+            assertRowsAnyOrder(
+                    "SELECT m.__key, m.this " +
+                            "FROM " + mapName + " m " +
+                            "WHERE EXISTS (SELECT l.v FROM " + leftName + " l WHERE l.v = m.__key)",
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2")
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT m.__key, m.this " +
+                            "FROM " + mapName + " m " +
+                            "WHERE NOT EXISTS (SELECT l.v FROM " + leftName + " l WHERE l.v = m.__key)",
+                    asList(
+                            new Row(3, "value-3")
+                    )
+            );
+        }
+
+        @Test
         public void test_innerJoin() {
             String leftName = randomName();
             TestBatchSqlConnector.create(sqlService, leftName, 3);

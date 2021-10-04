@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastExistsOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
@@ -118,6 +119,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlInfixOperator NOT_BETWEEN_SYMMETRIC = HazelcastBetweenOperator.NOT_BETWEEN_SYMMETRIC;
     public static final SqlBinaryOperator IN = HazelcastInOperator.IN;
     public static final SqlBinaryOperator NOT_IN = HazelcastInOperator.NOT_IN;
+    public static final SqlOperator EXISTS = HazelcastExistsOperator.INSTANCE;
 
     //#endregion
 

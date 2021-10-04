@@ -27,6 +27,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Arrays;
@@ -58,10 +59,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        int[] rightKeys = (getRight() instanceof TableScan) ? getKeysFromRightScan() : analyzeCondition().rightKeys.toIntArray();
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
@@ -96,5 +94,12 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
+    }
+
+    private int[] getKeysFromRightScan() {
+        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
+        List<Integer> projects = table.getProjects();
+        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        return rightKeys;
     }
 }

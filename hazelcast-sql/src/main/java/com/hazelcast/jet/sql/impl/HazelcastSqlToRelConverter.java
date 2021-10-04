@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
@@ -36,6 +37,10 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -43,6 +48,7 @@ import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
@@ -55,6 +61,7 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlBetweenOperator;
 import org.apache.calcite.sql.fun.SqlInOperator;
@@ -127,11 +134,27 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertIn((SqlCall) node, blackboard);
         } else if (node.getKind() == SqlKind.BETWEEN) {
             return convertBetween((SqlCall) node, blackboard);
+        } else if (node.getKind() == SqlKind.EXISTS) {
+            return convertExists((SqlCall) node);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
         }
 
         return null;
+    }
+
+    private RexNode convertExists(SqlCall node) {
+        SqlCall scalarQuery = (SqlCall) Iterables.getOnlyElement(node.getOperandList());
+        SqlSelect select = (SqlSelect) Iterables.getOnlyElement(scalarQuery.getOperandList());
+        RelRoot root = convertQueryRecursive(select, false, null);
+        RelNode rel = root.rel;
+        while (rel instanceof Project
+                || rel instanceof Sort
+                && ((Sort) rel).fetch == null
+                && ((Sort) rel).offset == null) {
+            rel = ((SingleRel) rel).getInput();
+        }
+        return RexSubQuery.exists(rel);
     }
 
     /**
