@@ -1571,6 +1571,11 @@
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.10.0</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
