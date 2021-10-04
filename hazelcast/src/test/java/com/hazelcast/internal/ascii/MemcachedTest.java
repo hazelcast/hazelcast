@@ -247,16 +247,13 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(-1, value);
         assertNull(client.get(key));
 
-        OperationFuture<Boolean> future = client.set(key, 0, 1);
+        OperationFuture<Boolean> future = client.set(key, 0, "1");
         future.get();
 
         value = client.incr(key, 10);
         assertEquals(11, value);
 
-        value = client.incr(key, -5);
-        assertEquals(6, value);
-
-        checkStats(1, 1, 0, 1, 0, 0, 2, 1, 0, 0);
+        checkStats(1, 1, 0, 1, 0, 0, 1, 1, 0, 0);
     }
 
     @Test
@@ -267,16 +264,13 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(-1, value);
         assertNull(client.get(key));
 
-        OperationFuture<Boolean> future = client.set(key, 0, 5);
+        OperationFuture<Boolean> future = client.set(key, 0, "5");
         future.get();
 
         value = client.decr(key, 2);
         assertEquals(3, value);
 
-        value = client.decr(key, -2);
-        assertEquals(5, value);
-
-        checkStats(1, 1, 0, 1, 0, 0, 0, 0, 2, 1);
+        checkStats(1, 1, 0, 1, 0, 0, 0, 0, 1, 1);
     }
 
     @Test
