@@ -2997,6 +2997,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  hot-restart-persistence:\n"
                 + "    enabled: true\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    parallelism: " + parallelism + "\n"
@@ -3008,6 +3009,7 @@ public class YamlConfigBuilderTest
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertTrue(hotRestartPersistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
@@ -3030,6 +3032,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  persistence:\n"
                 + "    enabled: true\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    parallelism: " + parallelism + "\n"
@@ -3042,6 +3045,7 @@ public class YamlConfigBuilderTest
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
         assertTrue(persistenceConfig.isEnabled());
+        assertTrue(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, persistenceConfig.getParallelism());
