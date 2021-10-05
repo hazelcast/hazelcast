@@ -53,15 +53,17 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
             newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
+    public static final long DEFAULT_MAX_AGE = Long.MIN_VALUE;
+    public static final long DEFAULT_MIN_AGE = Long.MAX_VALUE;
 
     @Probe(name = QUEUE_METRIC_OWNED_ITEM_COUNT)
     private int ownedItemCount;
     @Probe(name = QUEUE_METRIC_BACKUP_ITEM_COUNT)
     private int backupItemCount;
     @Probe(name = QUEUE_METRIC_MIN_AGE, unit = MS)
-    private long minAge = Long.MAX_VALUE;
+    private long minAge = DEFAULT_MIN_AGE;
     @Probe(name = QUEUE_METRIC_MAX_AGE, unit = MS)
-    private long maxAge;
+    private long maxAge = DEFAULT_MAX_AGE;
     @Probe(name = QUEUE_METRIC_AVERAGE_AGE, unit = MS)
     private long averageAge;
     @Probe(name = QUEUE_METRIC_CREATION_TIME, unit = MS)
