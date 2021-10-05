@@ -109,8 +109,6 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
                 .filter(cpMember -> !cpMember.getUuid().equals(termindatedMemberUuid))
                 .collect(Collectors.toList());
 
-
-
         // Assert eventually since during the test
         // a long pause can cause leadership change unexpectedly.
         assertTrueEventually(() -> {
