@@ -201,7 +201,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(dataKey, newRecord);
         } else {
             storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
-            updateStatsOnPut(false, now);
         }
 
         Records.copyMetadataFrom(replicatedRecord, newRecord);

@@ -281,12 +281,13 @@ public interface RecordStore<R extends Record> {
     R getRecord(Data key);
 
     /**
-     * Puts a data key and a record value to record-store.
-     * Used in replication operations: does not attempt
-     * loading from map store and is not intercepted by
+     * This method is used in replication operations.
+     *
+     * Puts a data key and a record into a record-store.
+     * Used in replication operations means does not attempt
+     * loading from map store and it is not intercepted by
      * {@code MapInterceptor}.
-     * Similarly to {@link #putReplicatedRecord(Data, Record, ExpiryMetadata, boolean, long)},
-     * this method is used in replication operations.
+     *
      * If an existing record is located for the same key
      * (as defined in {@link Storage#getIfSameKey(Object)}),
      * then that record is updated instead of creating a
