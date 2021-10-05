@@ -284,21 +284,21 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
 
         private void newConnection(final EndpointQualifier qualifier, SocketChannel socketChannel) throws IOException {
             TcpServerConnectionManager connectionManager = server.getConnectionManager(qualifier);
-            Channel channel = connectionManager.newChannel(socketChannel, false);
-
-            if (logger.isFineEnabled()) {
-                logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
-            }
-            serverContext.getAuditLogService()
-                .eventBuilder(AuditlogTypeIds.NETWORK_CONNECT)
-                .message("New connection accepted.")
-                .addParameter("qualifier", qualifier)
-                .addParameter("remoteAddress", socketChannel.getRemoteAddress())
-                .log();
-            if (serverContext.isSocketInterceptorEnabled(qualifier)) {
-                serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
-            } else {
-                newConnection0(connectionManager, channel);
+            try (Channel channel = connectionManager.newChannel(socketChannel, false)) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
+                }
+                serverContext.getAuditLogService()
+                    .eventBuilder(AuditlogTypeIds.NETWORK_CONNECT)
+                    .message("New connection accepted.")
+                    .addParameter("qualifier", qualifier)
+                    .addParameter("remoteAddress", socketChannel.getRemoteAddress())
+                    .log();
+                if (serverContext.isSocketInterceptorEnabled(qualifier)) {
+                    serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
+                } else {
+                    newConnection0(connectionManager, channel);
+                }
             }
         }
 
