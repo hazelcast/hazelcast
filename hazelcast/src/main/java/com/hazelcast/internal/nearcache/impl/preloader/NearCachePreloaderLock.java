@@ -36,15 +36,15 @@ class NearCachePreloaderLock {
     private final ILogger logger;
 
     private final File lockFile;
-    private final FileChannel channel;
+    private final RandomAccessFile randomAccessFile;
     private final FileLock lock;
 
     NearCachePreloaderLock(ILogger logger, String lockFilename) {
         this.logger = logger;
 
         this.lockFile = new File(lockFilename);
-        this.channel = openChannel(lockFile);
-        this.lock = acquireLock(lockFile, channel);
+        this.randomAccessFile = openRandomAccessFile(lockFile);
+        this.lock = acquireLock(lockFile, randomAccessFile.getChannel());
     }
 
     void release() {
@@ -57,7 +57,7 @@ class NearCachePreloaderLock {
         }
 
         try {
-            channel.close();
+            randomAccessFile.close();
         } catch (IOException e) {
             logger.severe("Problem while closing the channel " + lockFile, e);
         } finally {
@@ -87,9 +87,9 @@ class NearCachePreloaderLock {
         }
     }
 
-    private FileChannel openChannel(File lockFile) {
+    private static RandomAccessFile openRandomAccessFile(File lockFile) {
         try {
-            return new RandomAccessFile(lockFile, "rw").getChannel();
+            return new RandomAccessFile(lockFile, "rw");
         } catch (IOException e) {
             throw new HazelcastException("Cannot create lock file " + lockFile.getAbsolutePath(), e);
         }
