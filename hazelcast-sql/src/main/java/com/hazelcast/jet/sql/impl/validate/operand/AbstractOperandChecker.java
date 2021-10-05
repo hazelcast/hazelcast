@@ -25,7 +25,6 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 public abstract class AbstractOperandChecker implements OperandChecker {
     protected AbstractOperandChecker() {
@@ -51,8 +50,6 @@ public abstract class AbstractOperandChecker implements OperandChecker {
         }
 
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
-
-        assert operandType.getSqlTypeName() != SqlTypeName.NULL : "Operand type is not resolved";
 
         // Handle type match
         if (matchesTargetType(operandType)) {

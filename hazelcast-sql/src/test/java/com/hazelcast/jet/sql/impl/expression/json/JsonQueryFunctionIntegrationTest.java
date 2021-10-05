@@ -175,6 +175,19 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                 .hasMessageContaining("JSONPath expression can not be null");
     }
 
+    @Test
+    public void test_nullLiteral() {
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [UNKNOWN, UNKNOWN, SYMBOL, SYMBOL, SYMBOL]");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY('null', null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [VARCHAR, UNKNOWN, SYMBOL, SYMBOL, SYMBOL]");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, 'null')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [UNKNOWN, VARCHAR, SYMBOL, SYMBOL, SYMBOL]");
+    }
+
     protected void initComplexObject() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         createMapping("test", "bigint", "json");

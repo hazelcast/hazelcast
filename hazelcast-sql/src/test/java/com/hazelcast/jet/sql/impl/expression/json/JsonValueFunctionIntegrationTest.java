@@ -212,6 +212,19 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 .hasMessageContaining("JSONPath expression can not be null");
     }
 
+    @Test
+    public void test_nullLiteral() {
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(null, null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_VALUE' function to [UNKNOWN, UNKNOWN]");
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE('null', null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_VALUE' function to [VARCHAR, UNKNOWN]");
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(null, 'null')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot apply 'JSON_VALUE' function to [UNKNOWN, VARCHAR]");
+    }
+
     private void initMultiTypeObject() {
         final MultiTypeObject value = new MultiTypeObject();
         final String serializedValue;
