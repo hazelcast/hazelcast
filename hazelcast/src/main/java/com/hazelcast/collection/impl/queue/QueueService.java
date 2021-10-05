@@ -373,6 +373,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
+    protected ConcurrentMap<String, LocalQueueStatsImpl> getStatsMap() {
+        return statsMap;
+    }
+
     @Override
     public TransactionalQueueProxy createTransactionalObject(String name, Transaction transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, name, transaction);

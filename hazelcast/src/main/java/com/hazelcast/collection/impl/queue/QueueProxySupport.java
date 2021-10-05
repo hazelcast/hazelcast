@@ -120,6 +120,11 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
         invokeAndGet(operation);
     }
 
+    @Override
+    protected void postDestroy() {
+        getService().getStatsMap().remove(name);
+    }
+
     Object peekInternal() {
         PeekOperation operation = new PeekOperation(name);
         return invokeAndGetData(operation);
