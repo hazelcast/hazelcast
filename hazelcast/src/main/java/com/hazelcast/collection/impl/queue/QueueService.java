@@ -430,6 +430,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         provide(descriptor, context, QUEUE_PREFIX, getStats());
     }
 
+    /**
+     * @since 5.1
+     */
+    public void resetAgeStats(String queueName) {
+        QueueContainer queueContainer = containerMap.get(queueName);
+        if (queueContainer != null) {
+            queueContainer.resetAgeStats();
+        }
+    }
+
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {
 
         Merger(QueueContainerCollector collector) {
