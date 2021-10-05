@@ -30,10 +30,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.LEADERSHIP_BALANCE_TASK_PERIOD;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -85,6 +90,41 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
                 int count = entry.getValue().size();
                 assertEquals(leadershipsString(leadershipsMap), leadershipsPerMember, count);
             }
+        });
+
+        // terminate a member and check if the leadership rebalance process did occur
+        HazelcastInstance terminatedMember = instances[new Random().nextInt(instances.length)];
+        UUID termindatedMemberUuid = terminatedMember.getCPSubsystem().getLocalCPMember().getUuid();
+        terminatedMember.getLifecycleService().terminate();
+
+        HazelcastInstance[] aliveInstances = Arrays.stream(instances)
+                .filter(instance -> instance != terminatedMember)
+                .toArray(HazelcastInstance[]::new);
+
+        HazelcastInstance newMetadataLeader = getLeaderInstance(aliveInstances, getMetadataGroupId(aliveInstances[0]));
+        Collection<CPMember> aliveCpMembers = newMetadataLeader.getCPSubsystem()
+                .getCPSubsystemManagementService()
+                .getCPMembers()
+                .toCompletableFuture()
+                .get().stream()
+                .filter(cpMember -> !cpMember.getUuid().equals(termindatedMemberUuid))
+                .collect(Collectors.toList());
+
+
+
+        // Assert eventually since during the test
+        // a long pause can cause leadership change unexpectedly.
+        assertTrueEventually(() -> {
+            // Wait for leader election all groups
+            for (CPGroupId groupId : groupIds) {
+                waitAllForLeaderElection(aliveInstances, groupId);
+            }
+
+            rebalanceLeaderships(newMetadataLeader);
+
+            Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(newMetadataLeader, aliveCpMembers);
+            int groupsWithLeaderCnt = leadershipsMap.values().stream().map(Collection::size).reduce(Integer::sum).get();
+            assertEquals(leadershipsString(leadershipsMap), groupCount, groupsWithLeaderCnt);
         });
     }
 
