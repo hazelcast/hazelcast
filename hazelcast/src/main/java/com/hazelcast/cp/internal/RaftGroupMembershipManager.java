@@ -568,8 +568,12 @@ class RaftGroupMembershipManager {
             CPMember to = null;
             CPGroupId groupId = null;
             int min = maxLeaderships;
+            final ClusterService cs = nodeEngine.getClusterService();
             for (CPGroupSummary group : groups) {
                 for (CPMember member : group.members()) {
+                    if (cs.getMember(member.getAddress()) == null) {
+                        continue;
+                    }
                     Collection<CPGroupId> g = leaderships.get(member);
                     int k = g != null ? g.size() : 0;
                     if (k < min) {

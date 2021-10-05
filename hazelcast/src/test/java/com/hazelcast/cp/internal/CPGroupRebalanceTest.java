@@ -38,7 +38,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.LEADERSHIP_BALANCE_TASK_PERIOD;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -58,7 +57,7 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
     @Test
     public void test() throws Exception {
         int groupSize = 5;
-        int leadershipsPerMember = 10;
+        int leadershipsPerMember = 20;
         int groupCount = groupSize * leadershipsPerMember;
 
         HazelcastInstance[] instances = newInstances(groupSize, groupSize, 0);
@@ -123,8 +122,10 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
             rebalanceLeaderships(newMetadataLeader);
 
             Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(newMetadataLeader, aliveCpMembers);
-            int groupsWithLeaderCnt = leadershipsMap.values().stream().map(Collection::size).reduce(Integer::sum).get();
-            assertEquals(leadershipsString(leadershipsMap), groupCount, groupsWithLeaderCnt);
+            for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
+                int count = entry.getValue().size();
+                assertEquals(leadershipsString(leadershipsMap), 25, count);
+            }
         });
     }
 
