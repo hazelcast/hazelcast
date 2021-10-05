@@ -3283,7 +3283,8 @@
         },
         "auto-remove-stale-data": {
           "type": "boolean",
-          "default": false
+          "default": true,
+          "description": "Sets whether or not automatic removal of stale Hot Restart data is enabled. When a member terminates or crashes when cluster state is ACTIVE, remaining members redistributes data among themselves and data persisted on terminated member's storage becomes stale. That terminated member cannot rejoin the cluster without removing Hot Restart data. When auto-removal of stale Hot Restart data is enabled, while restarting that member, Hot Restart data is automatically removed and it joins the cluster as a completely new member. Otherwise, Hot Restart data should be removed manually."
         },
         "base-dir": {
           "type": "string",
@@ -3459,7 +3460,8 @@
         },
         "auto-remove-stale-data": {
           "type": "boolean",
-          "default": false
+          "default": true,
+          "description": "Sets whether or not automatic removal of stale Hot Restart data is enabled. When a member terminates or crashes when cluster state is ACTIVE, remaining members redistributes data among themselves and data persisted on terminated member's storage becomes stale. That terminated member cannot rejoin the cluster without removing Hot Restart data. When auto-removal of stale Hot Restart data is enabled, while restarting that member, Hot Restart data is automatically removed and it joins the cluster as a completely new member. Otherwise, Hot Restart data should be removed manually."
         },
         "base-dir": {
           "type": "string",
