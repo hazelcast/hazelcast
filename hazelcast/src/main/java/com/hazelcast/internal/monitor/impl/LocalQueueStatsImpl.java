@@ -41,6 +41,8 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalQueueStatsImpl implements LocalQueueStats {
 
+    public static final long DEFAULT_MAX_AGE = Long.MIN_VALUE;
+    public static final long DEFAULT_MIN_AGE = Long.MAX_VALUE;
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS =
@@ -53,8 +55,6 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
             newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
-    public static final long DEFAULT_MAX_AGE = Long.MIN_VALUE;
-    public static final long DEFAULT_MIN_AGE = Long.MAX_VALUE;
 
     @Probe(name = QUEUE_METRIC_OWNED_ITEM_COUNT)
     private int ownedItemCount;
