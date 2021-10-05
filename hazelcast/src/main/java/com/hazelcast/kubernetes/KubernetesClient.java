@@ -102,8 +102,9 @@ class KubernetesClient {
             String endpointSlicesUrlString =
                     String.format("%s/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", kubernetesMaster, namespace);
             callGet(endpointSlicesUrlString);
+            LOGGER.finest("Using EndpointSlices API to discover endpoints.");
         } catch (Exception e) {
-            //EndpointSlices are not supported
+            LOGGER.finest("EndpointSlices are not available, using Endpoints API to discover endpoints.");
             return new KubernetesApiEndpointProvider();
         }
         return new KubernetesApiEndpointSlicesProvider();
