@@ -100,6 +100,8 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
                 .filter(instance -> instance != terminatedMember)
                 .toArray(HazelcastInstance[]::new);
 
+        waitAllForSafeState(aliveInstances);
+
         HazelcastInstance newMetadataLeader = getLeaderInstance(aliveInstances, getMetadataGroupId(aliveInstances[0]));
         Collection<CPMember> aliveCpMembers = newMetadataLeader.getCPSubsystem()
                 .getCPSubsystemManagementService()
