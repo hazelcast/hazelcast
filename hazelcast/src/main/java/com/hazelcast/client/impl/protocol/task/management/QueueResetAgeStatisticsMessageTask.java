@@ -75,7 +75,7 @@ public class QueueResetAgeStatisticsMessageTask extends AbstractCallableMessageT
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters};
     }
 
     @Override

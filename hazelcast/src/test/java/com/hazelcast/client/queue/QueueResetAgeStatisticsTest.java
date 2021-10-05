@@ -62,7 +62,7 @@ public class QueueResetAgeStatisticsTest
         assertEquals(Long.MAX_VALUE, member.getQueue("my-queue").getLocalQueueStats().getMinAge());
         myQueue.add("item-1");
         myQueue.add("item-2");
-        Thread.sleep(50);
+        sleepAtLeastMillis(50);
         myQueue.take();
         myQueue.take();
 
@@ -81,13 +81,14 @@ public class QueueResetAgeStatisticsTest
 
         myQueue.add("item-3");
         myQueue.add("item-4");
-        Thread.sleep(20);
+        sleepAtLeastMillis(20);
         myQueue.take();
+        sleepAtLeastMillis(100);
         Thread.sleep(100);
         myQueue.take();
 
         LocalQueueStats populatedStatsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
-        assertTrue(statsAfterReset.getMinAge() + " is greater than 20", statsAfterReset.getMinAge() > 20);
+        assertTrue(statsAfterReset.getMinAge() + " is greater than or equal to 20", statsAfterReset.getMinAge() >= 20);
         assertTrue(statsAfterReset.getMaxAge() > 100);
         assertEquals((populatedStatsAfterReset.getMinAge() + populatedStatsAfterReset.getMaxAge()) / 2,
                 populatedStatsAfterReset.getAverageAge()
