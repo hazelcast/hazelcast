@@ -1251,7 +1251,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * @since 5.0.1
+     * @since 5.1
      */
     public void resetAgeStats() {
         minAge = Long.MAX_VALUE;

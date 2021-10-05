@@ -431,7 +431,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     /**
-     * @since 5.0.1
+     * @since 5.1
      */
     public void resetAgeStats(String queueName) {
         QueueContainer queueContainer = containerMap.get(queueName);
