@@ -44,7 +44,7 @@ public class SingleProtocolDecoder
     protected final InboundHandler[] inboundHandlers;
     protected final ProtocolType supportedProtocol;
 
-    private final SingleProtocolEncoder encoder;
+    final SingleProtocolEncoder encoder;
     private final boolean shouldSignalMemberProtocolEncoder;
 
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
@@ -132,24 +132,23 @@ public class SingleProtocolDecoder
     // If not then signal SingleProtocolEncoder and throw exception.
     protected boolean verifyProtocol(String incomingProtocol) {
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
-            String message = "Unsupported protocol exchange detected, " + "expected protocol: "
-                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol;
-            if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
-                message = "Instance to be connected replied with HZX. "
-                        + "This means a different protocol than expected sent to target instance";
-                // We can throw exception here, and we don't need to signal the
-                // encoder because when HZX is received there is no data to be
-                // sent.
-                throw new ProtocolException(message);
-            }
-
-            // Exception message must be set before signalling.
-            encoder.setExceptionMessage(message);
-            encoder.signalWrongProtocol();
-
+            handleUnexpectedProtocol(incomingProtocol);
+            encoder.signalWrongProtocol("Unsupported protocol exchange detected, expected protocol: "
+                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol);
             return false;
         }
         return true;
+    }
+
+    protected void handleUnexpectedProtocol(String incomingProtocol) {
+        if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
+            // We can throw exception here, and we don't need to signal the
+            // encoder because when HZX is received there is no data to be
+            // sent.
+            throw new ProtocolException("Instance to be connected replied with"
+                    + " HZX. This means a different protocol than expected sent"
+                    + " to target instance");
+        }
     }
 
     private String loadProtocol() {

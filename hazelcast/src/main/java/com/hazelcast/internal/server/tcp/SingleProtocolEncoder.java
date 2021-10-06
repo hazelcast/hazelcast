@@ -125,14 +125,11 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
-    public void signalWrongProtocol() {
+    public void signalWrongProtocol(String exceptionMessage) {
+        this.exceptionMessage = exceptionMessage;
         isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
         channel.outboundPipeline().wakeup();
-    }
-
-    public void setExceptionMessage(String exceptionMessage) {
-        this.exceptionMessage = exceptionMessage;
     }
 
     public OutboundHandler getFirstOutboundHandler() {
