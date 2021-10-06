@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
@@ -43,16 +44,14 @@ public class ClientMapReplaceAllTest extends HazelcastTestSupport {
 
     private HazelcastInstance memberInstance;
 
-    protected TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
     protected HazelcastInstance clientInstance;
 
     @After
     public final void stopHazelcastInstances() {
-        hazelcastFactory.terminateAll();
         if (memberInstance != null) {
             memberInstance.shutdown();
         }
+        HazelcastClient.shutdownAll();
     }
 
     @Before
@@ -63,7 +62,7 @@ public class ClientMapReplaceAllTest extends HazelcastTestSupport {
         config.addMapConfig(mapConfig);
         ClientConfig clientConfig = getClientConfig();
         memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
-        clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        clientInstance = HazelcastClient.newHazelcastClient();
     }
 
     @Test
