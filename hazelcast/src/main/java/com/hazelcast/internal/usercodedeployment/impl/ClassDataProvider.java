@@ -91,7 +91,7 @@ public final class ClassDataProvider {
         }
 
         Map<String, byte[]> innerClassDefinitions = loadInnerClasses(className);
-        innerClassDefinitions = loadAnonymousClasses(className, innerClassDefinitions);
+        loadAnonymousClasses(className, innerClassDefinitions);
 
         ClassData classData = new ClassData();
         if (innerClassDefinitions != null) {
@@ -101,23 +101,30 @@ public final class ClassDataProvider {
         return classData;
     }
 
-    private Map<String, byte[]> loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
+    private void loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
         int i = 1;
-        while (true) {
-            try {
-                String innerClassName = className + "$" + i;
-                parent.loadClass(innerClassName);
-                byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
-                if (innerClassDefinitions == null) {
-                    innerClassDefinitions = new HashMap<String, byte[]>();
-                }
-                innerClassDefinitions.put(innerClassName, innerByteCode);
-                i++;
-            } catch (ClassNotFoundException e) {
-                break;
+
+        String innerClassName = className + "$" + i;
+        boolean shouldContinue = attemptToLoadClass(innerClassName);
+
+        while (shouldContinue) {
+            byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
+            if (innerClassDefinitions == null) {
+                innerClassDefinitions = new HashMap<String, byte[]>();
             }
+            innerClassDefinitions.put(innerClassName, innerByteCode);
+            i++;
         }
-        return innerClassDefinitions;
+    }
+
+    private boolean attemptToLoadClass(String innerClassName) {
+        try {
+            parent.loadClass(innerClassName);
+        } catch (ClassNotFoundException exception) {
+            return false;
+        }
+
+        return true;
     }
 
     private Map<String, byte[]> loadInnerClasses(String className) {
