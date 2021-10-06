@@ -401,6 +401,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 if (status == JobStatus.FAILED || status == JobStatus.COMPLETED) {
                     return;
                 }
+            } catch (JobNotFoundException e) {
+                SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
+                return;
             } catch (Exception e) {
                 SUPPORT_LOGGER.warning("Failure to read job status: " + e, e);
             }
@@ -410,10 +413,16 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 job.cancel();
                 try {
                     job.join();
+                } catch (JobNotFoundException e) {
+                    SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
+                    return;
                 } catch (Exception ignored) {
                     // This can be CancellationException or any other job failure. We don't care,
                     // we're supposed to rid the cluster of the job and that's what we have.
                 }
+                return;
+            } catch (JobNotFoundException e) {
+                SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
                 return;
             } catch (Exception e) {
                 cancellationFailure = e;
