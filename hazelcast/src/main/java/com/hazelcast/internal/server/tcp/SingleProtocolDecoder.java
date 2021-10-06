@@ -97,7 +97,10 @@ public class SingleProtocolDecoder
                 return CLEAN;
             }
 
-            verifyProtocol(loadProtocol());
+            if (!verifyProtocol(loadProtocol())) {
+                // Exception will be thrown in the SingleProtocolEncoder.
+                return CLEAN;
+            }
             encoder.signalProtocolVerified();
 
             // Initialize the connection
@@ -127,17 +130,26 @@ public class SingleProtocolDecoder
 
     // Verify that received protocol is expected one.
     // If not then signal SingleProtocolEncoder and throw exception.
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
-            encoder.signalWrongProtocol();
             String message = "Unsupported protocol exchange detected, " + "expected protocol: "
                     + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol;
             if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
                 message = "Instance to be connected replied with HZX. "
                         + "This means a different protocol than expected sent to target instance";
+                // We can throw exception here, and we don't need to signal the
+                // encoder because when HZX is received there is no data to be
+                // sent.
+                throw new ProtocolException(message);
             }
-            throw new ProtocolException(message);
+
+            // Exception message must be set before signalling.
+            encoder.setExceptionMessage(message);
+            encoder.signalWrongProtocol();
+
+            return false;
         }
+        return true;
     }
 
     private String loadProtocol() {

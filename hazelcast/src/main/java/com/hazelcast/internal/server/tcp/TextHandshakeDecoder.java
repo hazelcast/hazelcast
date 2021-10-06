@@ -31,7 +31,7 @@ public class TextHandshakeDecoder
     }
 
     @Override
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
                 throw new IllegalStateException("Unsupported protocol exchange detected, expected protocol: REST");
@@ -41,6 +41,7 @@ public class TextHandshakeDecoder
                 throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: MEMCACHED");
             }
         }
+        return true;
     }
 
     @Override
