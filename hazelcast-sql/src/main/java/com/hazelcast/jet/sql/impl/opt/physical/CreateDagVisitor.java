@@ -291,7 +291,6 @@ public class CreateDagVisitor {
         JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
 
         if (!(rel.getRight() instanceof FullScanPhysicalRel)) {
-            System.out.println("Generic Join");
             Vertex joinVertex = dag.newUniqueVertex(
                     "Generic Join",
                     HashJoinProcessor.supplier(

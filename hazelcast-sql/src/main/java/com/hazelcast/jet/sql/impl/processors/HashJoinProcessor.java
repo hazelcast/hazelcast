@@ -18,8 +18,9 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
-import com.hazelcast.jet.core.Inbox;
-import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -37,19 +38,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 
-public class HashJoinProcessor implements Processor {
+public class HashJoinProcessor extends AbstractProcessor {
 
     private JetJoinInfo joinInfo;
     private int rightInputColumnCount;
 
-    private transient Outbox outbox;
     private transient ExpressionEvalContext evalContext;
-
     private transient Multimap<HashableKeys, Object[]> hashMap;
     private transient boolean rightExhausted;
+    private transient FlatMapper<Object[], Object[]> flatMapper;
 
     public HashJoinProcessor() {
     }
@@ -60,67 +62,42 @@ public class HashJoinProcessor implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
-        this.outbox = outbox;
+    public void init(@Nonnull Context context) throws Exception {
         this.evalContext = SimpleExpressionEvalContext.from(context);
         this.hashMap = LinkedListMultimap.create();
+        this.flatMapper = flatMapper(this::join);
+    }
+
+    public Traverser<Object[]> join(Object[] leftRow) {
+            Object[] joinKeys = getHashKeys(leftRow, joinInfo.leftEquiJoinIndices());
+            Collection<Object[]> matchedRows = hashMap.get(new HashableKeys(joinKeys));
+            List<Object[]> output = matchedRows.stream()
+                    .map(right -> ExpressionUtil.join(
+                            leftRow,
+                            right,
+                            joinInfo.nonEquiCondition(),
+                            evalContext)
+                    )
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (joinInfo.isLeftOuter() && output.isEmpty()) {
+                return Traversers.singleton(extendArray(leftRow, rightInputColumnCount));
+            }
+            return Traversers.traverseIterable(output);
     }
 
     @Override
-    public void process(int ordinal, @Nonnull Inbox inbox) {
-        switch (ordinal) {
-            case 0:
-                assert rightExhausted;
-                for (Object[] leftRow; (leftRow = (Object[]) inbox.peek()) != null;) {
-                    Object[] joinKeys = getHashKeys(leftRow, joinInfo.leftEquiJoinIndices());
-                    Collection<Object[]> matchedRows = hashMap.get(new HashableKeys(joinKeys));
-                    if (matchedRows.isEmpty()) {
-                        if (joinInfo.isLeftOuter()) {
-                            if (outbox.offer(extendArray(leftRow, rightInputColumnCount))) {
-                                inbox.poll();
-                            }
-                        } else {
-                            inbox.poll();
-                        }
-                    } else {
-                        for (Object[] rightMatchedRow : matchedRows) {
-                            Object[] joined = ExpressionUtil.join(
-                                    leftRow,
-                                    rightMatchedRow,
-                                    joinInfo.nonEquiCondition(),
-                                    evalContext
-                            );
-                            if (joinInfo.isLeftOuter()) {
-                                if (joined == null) {
-                                    if (outbox.offer(extendArray(leftRow, rightInputColumnCount))) {
-                                        inbox.poll();
-                                    }
-                                } else {
-                                    if (outbox.offer(joined)) {
-                                        inbox.poll();
-                                    }
-                                }
-                            } else {
-                                if (joined != null) {
-                                    if (outbox.offer(joined)) {
-                                        inbox.poll();
-                                    }
-                                } else {
-                                    inbox.poll();
-                                }
-                            }
-                        }
-                    }
-                }
-            case 1:
-                for (Object[] rightRow; (rightRow = (Object[]) inbox.poll()) != null;) {
-                    Object[] joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
-                    hashMap.put(new HashableKeys(joinKeys), rightRow);
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Ordinal must be 0 or 1");
-        }
+    protected boolean tryProcess0(@Nonnull Object item) {
+        assert rightExhausted;
+        return flatMapper.tryProcess((Object[]) item);
+    }
+
+    @Override
+    protected boolean tryProcess1(@Nonnull Object item) {
+        Object[] rightRow = (Object[]) item;
+        Object[] joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
+        hashMap.put(new HashableKeys(joinKeys), rightRow);
+        return true;
     }
 
     @Override

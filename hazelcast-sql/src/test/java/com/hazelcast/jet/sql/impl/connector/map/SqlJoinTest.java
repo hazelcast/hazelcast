@@ -838,12 +838,12 @@ public class SqlJoinTest {
                             " (SELECT l.v FROM " + batchName +
                             " l WHERE l.v < m.this)",
                     asList(
-                            new Row(1, "value-1"),
-                            new Row(2, "value-2"),
-                            new Row(3, "value-3")
+                            new Row("value-2", 2),
+                            new Row("value-3", 3),
+                            new Row("value-4", 4)
                     ),
                     asList(
-                            new Row(4, "value-4")
+                            new Row("value-1", 1)
                     )
             );
         }
