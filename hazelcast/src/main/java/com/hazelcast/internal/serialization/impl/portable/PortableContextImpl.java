@@ -85,7 +85,6 @@ public final class PortableContextImpl implements PortableContext {
             }
             return classDefinition;
         }
-        return null;
     }
 
     ClassDefinition readClassDefinition(BufferObjectDataInput in, int factoryId, int classId, int version)
