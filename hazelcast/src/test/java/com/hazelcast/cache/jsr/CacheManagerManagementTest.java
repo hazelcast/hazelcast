@@ -29,6 +29,7 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.assertNoMBeanLeftovers;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -55,6 +56,7 @@ public class CacheManagerManagementTest extends org.jsr107.tck.management.CacheM
             assertNoMBeanLeftovers();
             fail("Should have failed due to mbean leftovers");
         } catch (AssertionError error) {
+            assertThat(error.getMessage()).contains("Leftover MBeans are still registered with the platform MBeanServer");
             cache.close();
         }
     }
