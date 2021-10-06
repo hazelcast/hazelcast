@@ -881,6 +881,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  management-center:\n"
                 + "    scripting-enabled: true\n"
+                + "    console-enabled: true\n"
                 + "    trusted-interfaces:\n"
                 + "      - 127.0.0.1\n"
                 + "      - 192.168.1.*\n";
@@ -889,6 +890,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isConsoleEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -904,6 +906,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -915,6 +918,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override

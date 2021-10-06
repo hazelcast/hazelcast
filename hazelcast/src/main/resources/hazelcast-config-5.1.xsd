@@ -2620,6 +2620,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="console-enabled" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    True to allow console commands execution on the member, false to disallow.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="security">
         <xs:all>

@@ -30,6 +30,8 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     private boolean scriptingEnabled;
 
+    private boolean consoleEnabled;
+
     private final Set<String> trustedInterfaces = newSetFromMap(new ConcurrentHashMap<>());
 
     public ManagementCenterConfig() {
@@ -56,6 +58,30 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      */
     public boolean isScriptingEnabled() {
         return scriptingEnabled;
+    }
+
+    /**
+     * Enables/disables console commands execution on the member. Management center allows to send a console command for
+     * execution to a member. The console command can access the underlying system Hazelcast member is running and
+     * bypasses configured client permissions.
+     * Disabling console commands execution improves the member security.
+     * <p>
+     * Default value for this config element is {@code false}.
+     *
+     * @param consoleEnabled {@code true} to allow console commands on the member, {@code false} to disallow
+     * @return this management center config instance
+     * @since 5.1
+     */
+    public ManagementCenterConfig setConsoleEnabled(final boolean consoleEnabled) {
+        this.consoleEnabled = consoleEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if executing console commands is allowed ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isConsoleEnabled() {
+        return consoleEnabled;
     }
 
     /**
@@ -107,7 +133,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     @Override
     public int hashCode() {
-        return Objects.hash(scriptingEnabled, trustedInterfaces);
+        return Objects.hash(scriptingEnabled, consoleEnabled, trustedInterfaces);
     }
 
     @Override
@@ -122,6 +148,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
             return false;
         }
         ManagementCenterConfig other = (ManagementCenterConfig) obj;
-        return scriptingEnabled == other.scriptingEnabled && Objects.equals(trustedInterfaces, other.trustedInterfaces);
+        return scriptingEnabled == other.scriptingEnabled && consoleEnabled == other.consoleEnabled
+                && Objects.equals(trustedInterfaces, other.trustedInterfaces);
     }
 }

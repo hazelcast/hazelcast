@@ -409,19 +409,9 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testRunConsoleCommandMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
-                MCRunConsoleCommandCodec.encodeRequest(randomString(), "help"),
-                null
-        );
-
-        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
-                MCRunConsoleCommandCodec::decodeResponse
-        );
-
-        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
+        ClientMessage clientMessage = MCRunConsoleCommandCodec.encodeRequest(randomString(), randomString());
+        assertFailure(clientMessage, AccessControlException.class,
+                "Using Console is not allowed on this Hazelcast member.");
     }
 
     @Test

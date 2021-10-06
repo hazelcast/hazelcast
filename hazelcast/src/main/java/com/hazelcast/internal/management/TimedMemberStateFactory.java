@@ -134,6 +134,7 @@ public class TimedMemberStateFactory {
 
         ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
         timedMemberState.setScriptingEnabled(managementCenterConfig.isScriptingEnabled());
+        timedMemberState.setConsoleEnabled(managementCenterConfig.isConsoleEnabled());
 
         return timedMemberState;
     }
