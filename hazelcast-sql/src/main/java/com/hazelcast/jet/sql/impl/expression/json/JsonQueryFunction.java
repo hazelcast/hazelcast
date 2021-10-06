@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,13 +30,13 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -106,7 +107,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (InvalidPathException exception) {
+        } catch (IllegalArgumentException exception) {
             throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
         }
 
@@ -150,7 +151,14 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     }
 
     private String execute(final String json, final JsonPath path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
-        final Object result = JsonPathUtil.read(json, path);
+        final Collection<JsonElement> resultColl = JsonPathUtil.read(json, path);
+        if (resultColl.isEmpty()) {
+            throw QueryException.error("JSON_VALUE evaluated to no value");
+        }
+        if (resultColl.size() > 1) {
+            throw QueryException.error("JSON_VALUE evaluated to multiple values");
+        }
+        Object result = resultColl.iterator().next();
         final String serializedResult = SERIALIZER.toJson(result);
 
         switch (wrapperBehavior) {

@@ -176,7 +176,7 @@
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
-                                    <include>com.jayway.jsonpath:json-path</include>
+                                    <include>com.github.jsurfer:jsurfer</include>
                                     <include>net.minidev:json-smart</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
@@ -289,7 +289,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.github.jsurfer:jsurfer</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -471,9 +471,9 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>${json-path.version}</version>
+            <groupId>com.github.jsurfer</groupId>
+            <artifactId>jsurfer-gson</artifactId>
+            <version>${json-surfer.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

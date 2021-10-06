@@ -26,6 +26,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.antlr.v4.runtime.InputMismatchException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -79,23 +80,23 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     public void when_calledWithReturning_then_correctTypeIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT) FROM test" ,
-                rows(1, (byte) 1));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT error on error) FROM test" ,
+                rows(1, Byte.MAX_VALUE));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test" ,
-                rows(1, (short) 2));
+                rows(1, Short.MAX_VALUE));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField' RETURNING INTEGER) FROM test" ,
-                rows(1, 3));
+                rows(1, Integer.MAX_VALUE));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test" ,
-                rows(1, 4L));
+                rows(1, Long.MAX_VALUE));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test" ,
-                rows(1, "6"));
+                rows(1, "foo"));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test" ,
-                rows(1, "7"));
+                rows(1, "c"));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField' RETURNING REAL) FROM test" ,
-                rows(1, 8.0f));
+                rows(1, 8.1f));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test" ,
-                rows(1, 9.0));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL) FROM test" ,
+                rows(1, 9.123456789012345e50));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL error on error) FROM test" ,
                 rows(1, new BigDecimal("1e1000")));
     }
 
@@ -203,10 +204,12 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
+                // TODO better error
+                .hasRootCauseInstanceOf(InputMismatchException.class);
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
+                // TODO better error
+                .hasRootCauseInstanceOf(InputMismatchException.class);
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("JSONPath expression can not be null");
@@ -237,14 +240,14 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     }
 
     private static class MultiTypeObject {
-        public Byte byteField = 1;
-        public Short shortField = 2;
-        public Integer intField = 3;
-        public Long longField = 4L;
-        public String stringField = "6";
-        public Character charField = '7';
-        public Float floatField = 8.0f;
-        public Double doubleField = 9.0;
+        public Byte byteField = Byte.MAX_VALUE;
+        public Short shortField = Short.MAX_VALUE;
+        public Integer intField = Integer.MAX_VALUE;
+        public Long longField = Long.MAX_VALUE;
+        public String stringField = "foo";
+        public Character charField = 'c';
+        public Float floatField = 8.1f;
+        public Double doubleField = 9.123456789012345e50;
         public BigDecimal bigDecimalField = new BigDecimal("1e1000");
     }
 

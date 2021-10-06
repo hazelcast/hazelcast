@@ -18,9 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.hazelcast.query.QueryException;
 import com.jayway.jsonpath.Configuration;
@@ -30,17 +28,22 @@ import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.spi.cache.CacheProvider;
 import com.jayway.jsonpath.spi.cache.NOOPCache;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import org.jsfr.json.Collector;
+import org.jsfr.json.GsonParser;
+import org.jsfr.json.JsonSurfer;
+import org.jsfr.json.ValueBox;
+import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.path.JsonPath;
+import org.jsfr.json.provider.GsonProvider;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
-    private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
-            .jsonProvider(new GsonJsonProvider())
-            .build());
-
-    static {
-        // default Cache is LRU, but we don't want it, because cache is implemented per JSONPath-based function
-        CacheProvider.setCache(new NOOPCache());
-    }
+    private static final JsonSurfer SURFER = new JsonSurfer(GsonParser.INSTANCE, GsonProvider.INSTANCE);;
 
     private JsonPathUtil() { }
 
@@ -52,21 +55,30 @@ public final class JsonPathUtil {
 
     public static JsonPath compile(String path) {
         try {
-            return JsonPath.compile(path);
+            return JsonPathCompiler.compile(path);
         } catch (IllegalArgumentException e) {
             throw new InvalidPathException("Illegal argument provided to JSONPath compile function", e);
         }
     }
 
+    // TODO [viliam] remove this?
     public static Object read(String json, String pathString) {
         return read(json, compile(pathString));
     }
 
-    public static Object read(String json, JsonPath path) {
-        final JsonElement result = CONTEXT.parse(json).read(path);
+    public static Collection<JsonElement> read(String json, JsonPath path) {
+        Collector collector = SURFER.collector(json);
+        ValueBox<Collection<JsonElement>> box = collector.collectAll(path, JsonElement.class);
+        collector.exec();
+        Collection<JsonElement> results = box.get();
+        // translate JSON primitives in the result
+        return resulst;
+
         if (result.isJsonArray() || result.isJsonObject()) {
             return result;
         }
+
+        return result;
 
         if (result.isJsonNull()) {
             return null;

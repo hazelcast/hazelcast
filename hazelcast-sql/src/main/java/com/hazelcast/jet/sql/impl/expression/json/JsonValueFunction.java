@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
+import com.google.gson.JsonElement;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,13 +30,13 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -111,7 +112,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (InvalidPathException | IllegalArgumentException exception) {
+        } catch (IllegalArgumentException exception) {
             throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
         }
 
@@ -147,7 +148,15 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     }
 
     private T execute(final String json, final JsonPath path) {
-        final Object result = JsonPathUtil.read(json, path);
+        final Collection<JsonElement> resultColl = JsonPathUtil.read(json, path);
+        if (resultColl.isEmpty()) {
+            throw QueryException.error("JSON_VALUE evaluated to no value");
+        }
+        if (resultColl.size() > 1) {
+            throw QueryException.error("JSON_VALUE evaluated to multiple values");
+        }
+        Object result = resultColl.iterator().next();
+
         if (JsonPathUtil.isArrayOrObject(result)) {
             throw QueryException.error("Result of JSON_VALUE can not be array or object");
         }
