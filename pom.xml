@@ -1416,7 +1416,6 @@
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro-mapred</artifactId>
                 <version>${avro.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <!-- The following dependencies are not needed for our use of Avro -->
                     <exclusion>
