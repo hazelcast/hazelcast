@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.google.common.collect.LinkedListMultimap;
@@ -68,7 +84,12 @@ public class HashJoinProcessor implements Processor {
                         }
                     } else {
                         for (Object[] rightMatchedRow : matchedRows) {
-                            Object[] joined = ExpressionUtil.join(leftRow, rightMatchedRow, joinInfo.nonEquiCondition(), evalContext);
+                            Object[] joined = ExpressionUtil.join(
+                                    leftRow,
+                                    rightMatchedRow,
+                                    joinInfo.nonEquiCondition(),
+                                    evalContext
+                            );
                             if (joinInfo.isLeftOuter()) {
                                 if (joined == null) {
                                     if (outbox.offer(extendArray(leftRow, rightInputColumnCount))) {
@@ -133,7 +154,7 @@ public class HashJoinProcessor implements Processor {
         return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount);
     }
 
-    private static class HashableKeys {
+    private static final class HashableKeys {
         private final Object[] keys;
 
         private HashableKeys(Object[] keys) {
@@ -159,7 +180,7 @@ public class HashJoinProcessor implements Processor {
         }
     }
 
-    private static class HashJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
+    private static final class HashJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private JetJoinInfo joinInfo;
         private int rightInputColumnCount;
 

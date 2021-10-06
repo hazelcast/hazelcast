@@ -70,6 +70,8 @@ import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootR
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+    private static final int LOW_PRIORITY = 10;
+    private static final int HIGH_PRIORITY = 1;
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
@@ -397,8 +399,8 @@ public class CreateDagVisitor {
         Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
         Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
 
-        Edge left = between(leftInput, joinVertex).priority(10).broadcast().distributed();
-        Edge right = from(rightInput).to(joinVertex, 1).priority(1);
+        Edge left = between(leftInput, joinVertex).priority(LOW_PRIORITY).broadcast().distributed();
+        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY);
         if (joinInfo.isLeftOuter()) {
             left = left.unicast().local();
             right = right.broadcast().distributed();
