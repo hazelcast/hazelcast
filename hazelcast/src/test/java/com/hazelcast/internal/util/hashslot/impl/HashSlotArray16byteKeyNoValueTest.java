@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -243,7 +244,8 @@ public class HashSlotArray16byteKeyNoValueTest {
         try {
             cursor.advance();
             fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
-        } catch (AssertionError ignored) {
+        } catch (AssertionError ex) {
+            assertThat(ex).hasMessage("Cursor has advanced past the last slot");
         }
     }
 

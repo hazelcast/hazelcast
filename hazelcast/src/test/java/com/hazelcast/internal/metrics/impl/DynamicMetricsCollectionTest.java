@@ -34,6 +34,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -189,7 +190,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
             metricsRegistry.collect(collectorMock);
             fail("Should throw AssertionError");
         } catch (AssertionError ex) {
-            // nop
+            assertThat(ex).hasMessageMatching("Collecting metrics from source .+ failed");
         }
     }
 
