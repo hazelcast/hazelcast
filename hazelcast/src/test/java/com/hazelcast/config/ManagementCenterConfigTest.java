@@ -42,9 +42,21 @@ public class ManagementCenterConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testConsoleDisabledByDefault() {
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isConsoleEnabled());
+    }
+
+    @Test
     public void testScriptingDisabled_whenProgrammaticConfig() {
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());
         Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isScriptingEnabled());
+    }
+
+    @Test
+    public void testConsoleDisabled_whenProgrammaticConfig() {
+        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isConsoleEnabled());
     }
 
     @Test
@@ -57,10 +69,26 @@ public class ManagementCenterConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testConsoleDisabled_whenXmlConfig() {
+        InMemoryXmlConfig xmlConfig = new InMemoryXmlConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n"
+                + "<management-center />\n"
+                + "</hazelcast>");
+        HazelcastInstance hz = factory.newHazelcastInstance(xmlConfig);
+        Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isConsoleEnabled());
+    }
+
+    @Test
     public void testScriptingDisabled_whenYamlConfig() {
         InMemoryYamlConfig yamlConfig = new InMemoryYamlConfig("hazelcast:\n  cluster-name: name\n");
         HazelcastInstance hz = factory.newHazelcastInstance(yamlConfig);
         Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isScriptingEnabled());
+    }
+
+    @Test
+    public void testConsoleDisabled_whenYamlConfig() {
+        InMemoryYamlConfig yamlConfig = new InMemoryYamlConfig("hazelcast:\n  cluster-name: name\n");
+        HazelcastInstance hz = factory.newHazelcastInstance(yamlConfig);
+        Assert.assertFalse(hz.getConfig().getManagementCenterConfig().isConsoleEnabled());
     }
 
     @Test

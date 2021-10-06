@@ -2811,6 +2811,7 @@
             </xs:element>
         </xs:sequence>
         <xs:attribute name="scripting-enabled" type="xs:boolean"/>
+        <xs:attribute name="console-enabled" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="trusted-interfaces">

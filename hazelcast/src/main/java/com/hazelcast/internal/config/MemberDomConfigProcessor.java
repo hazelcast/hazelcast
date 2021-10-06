@@ -2629,6 +2629,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
         }
 
+        Node consoleEnabledNode = getNamedItemNode(node, "console-enabled");
+        if (consoleEnabledNode != null) {
+            managementCenterConfig.setConsoleEnabled(getBooleanValue(getTextContent(consoleEnabledNode)));
+        }
+
         for (Node n : childElements(node)) {
             if (matches("trusted-interfaces", cleanNodeName(n))) {
                 handleTrustedInterfaces(managementCenterConfig, n);
