@@ -103,11 +103,11 @@ public final class ClassDataProvider {
 
     private void loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
         int i = 1;
-
-        String innerClassName = className + "$" + i;
-        boolean shouldContinue = attemptToLoadClass(innerClassName);
+        boolean shouldContinue = true;
 
         while (shouldContinue) {
+            String innerClassName = className + "$" + i;
+            shouldContinue = attemptToLoadClass(innerClassName);
             byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
             if (innerClassDefinitions == null) {
                 innerClassDefinitions = new HashMap<String, byte[]>();
