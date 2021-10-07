@@ -37,7 +37,7 @@ import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class JetQueryResultProducer implements QueryResultProducer {
+public class HazelcastQueryResultProducer implements QueryResultProducer {
 
     static final int QUEUE_CAPACITY = 4096;
 
@@ -59,7 +59,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
      * batch jobs where low streaming latency isn't required, but rather we
      * want to return full pages of results to the client.
      */
-    public JetQueryResultProducer(boolean blockForNextItem) {
+    public HazelcastQueryResultProducer(boolean blockForNextItem) {
         this.blockForNextItem = blockForNextItem;
     }
 

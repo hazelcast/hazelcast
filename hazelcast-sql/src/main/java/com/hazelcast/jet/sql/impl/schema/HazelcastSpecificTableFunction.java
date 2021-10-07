@@ -26,9 +26,9 @@ import java.util.List;
 /**
  * A table function return type of which is known upfront.
  */
-public abstract class JetSpecificTableFunction extends JetTableFunction {
+public abstract class HazelcastSpecificTableFunction extends HazelcastTableFunction {
 
-    protected JetSpecificTableFunction(
+    protected HazelcastSpecificTableFunction(
             String name,
             SqlOperandMetadata operandMetadata,
             SqlReturnTypeInference returnTypeInference,

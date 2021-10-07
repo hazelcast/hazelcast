@@ -54,11 +54,11 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 /**
  * A table function return type of which is NOT known upfront and is determined during validation phase.
  */
-public abstract class JetDynamicTableFunction extends JetTableFunction {
+public abstract class HazelcastDynamicTableFunction extends HazelcastTableFunction {
 
-    protected JetDynamicTableFunction(
+    protected HazelcastDynamicTableFunction(
             String name,
-            JetSqlOperandMetadata operandMetadata,
+            HazelcastSqlOperandMetadata operandMetadata,
             Function<List<Object>, Table> tableFn,
             SqlConnector connector
     ) {
@@ -70,29 +70,29 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
         );
 
         assert operandMetadata.parameters().stream()
-                .map(JetTableFunctionParameter::type)
+                .map(HazelcastTableFunctionParameter::type)
                 .allMatch(type -> type == VARCHAR || type == MAP);
     }
 
     public final HazelcastTable toTable(RelDataType rowType) {
-        return ((JetFunctionRelDataType) rowType).table();
+        return ((HazelcastFunctionRelDataType) rowType).table();
     }
 
     private static RelDataType inferReturnType(
             String name,
-            List<JetTableFunctionParameter> parameters,
+            List<HazelcastTableFunctionParameter> parameters,
             Function<List<Object>, Table> tableFn,
             SqlOperatorBinding callBinding
     ) {
         List<Object> arguments = toArguments(name, parameters, callBinding);
         HazelcastTable table = new HazelcastTable(tableFn.apply(arguments), UnknownStatistic.INSTANCE);
         RelDataType rowType = table.getRowType(callBinding.getTypeFactory());
-        return new JetFunctionRelDataType(table, rowType);
+        return new HazelcastFunctionRelDataType(table, rowType);
     }
 
     private static List<Object> toArguments(
             String functionName,
-            List<JetTableFunctionParameter> parameters,
+            List<HazelcastTableFunctionParameter> parameters,
             SqlOperatorBinding callBinding
     ) {
         SqlCallBinding binding = (SqlCallBinding) callBinding;
@@ -106,12 +106,12 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     private static List<Object> fromNamedArguments(
             String functionName,
-            List<JetTableFunctionParameter> parameters,
+            List<HazelcastTableFunctionParameter> parameters,
             SqlCall call,
             HazelcastSqlValidator validator
     ) {
         List<Object> arguments = new ArrayList<>(parameters.size());
-        for (JetTableFunctionParameter parameter : parameters) {
+        for (HazelcastTableFunctionParameter parameter : parameters) {
             SqlNode operand = findOperandByName(parameter.name(), call);
             Object value = operand == null ? null : extractValue(functionName, parameter, operand, validator);
             arguments.add(value);
@@ -132,7 +132,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     private static List<Object> fromPositionalArguments(
             String functionName,
-            List<JetTableFunctionParameter> parameters,
+            List<HazelcastTableFunctionParameter> parameters,
             SqlCall call,
             HazelcastSqlValidator validator
     ) {
@@ -149,7 +149,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     private static Object extractValue(
             String functionName,
-            JetTableFunctionParameter parameter,
+            HazelcastTableFunctionParameter parameter,
             SqlNode operand,
             HazelcastSqlValidator validator
     ) {
@@ -185,7 +185,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     private static Map<String, String> extractMapValue(
             String functionName,
-            JetTableFunctionParameter parameter,
+            HazelcastTableFunctionParameter parameter,
             SqlCall call,
             HazelcastSqlValidator validator
     ) {
@@ -205,7 +205,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     private static String extractMapStringValue(
             String functionName,
-            JetTableFunctionParameter parameter,
+            HazelcastTableFunctionParameter parameter,
             SqlNode node,
             HazelcastSqlValidator validator
     ) {
@@ -234,12 +234,12 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
      * The only purpose of this class is to be able to pass the {@code
      * HazelcastTable} object to place where the function is used.
      */
-    private static final class JetFunctionRelDataType implements RelDataType {
+    private static final class HazelcastFunctionRelDataType implements RelDataType {
 
         private final HazelcastTable table;
         private final RelDataType delegate;
 
-        private JetFunctionRelDataType(HazelcastTable table, RelDataType delegate) {
+        private HazelcastFunctionRelDataType(HazelcastTable table, RelDataType delegate) {
             this.delegate = delegate;
             this.table = table;
         }

@@ -55,9 +55,9 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 
-abstract class JetPlan extends SqlPlan {
+abstract class HazelcastPlan extends SqlPlan {
 
-    protected JetPlan(PlanKey planKey) {
+    protected HazelcastPlan(PlanKey planKey) {
         super(planKey);
     }
 
@@ -77,18 +77,18 @@ abstract class JetPlan extends SqlPlan {
     public void checkPermissions(SqlSecurityContext context) {
     }
 
-    static class CreateMappingPlan extends JetPlan {
+    static class CreateMappingPlan extends HazelcastPlan {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         CreateMappingPlan(
                 PlanKey planKey,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -132,22 +132,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
-            JetPlan.ensureNoTimeout("CREATE MAPPING", timeout);
+            HazelcastPlan.ensureNoArguments("CREATE MAPPING", arguments);
+            HazelcastPlan.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropMappingPlan extends JetPlan {
+    static class DropMappingPlan extends HazelcastPlan {
         private final String name;
         private final boolean ifExists;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         DropMappingPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -186,24 +186,24 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP MAPPING", arguments);
-            JetPlan.ensureNoTimeout("DROP MAPPING", timeout);
+            HazelcastPlan.ensureNoArguments("DROP MAPPING", arguments);
+            HazelcastPlan.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateJobPlan extends JetPlan {
+    static class CreateJobPlan extends HazelcastPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final DmlPlan dmlPlan;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         CreateJobPlan(
                 PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 DmlPlan dmlPlan,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -252,21 +252,21 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoTimeout("CREATE JOB", timeout);
+            HazelcastPlan.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
 
-    static class AlterJobPlan extends JetPlan {
+    static class AlterJobPlan extends HazelcastPlan {
         private final String jobName;
         private final AlterJobOperation operation;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
                 AlterJobOperation operation,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -300,24 +300,24 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("ALTER JOB", arguments);
-            JetPlan.ensureNoTimeout("ALTER JOB", timeout);
+            HazelcastPlan.ensureNoArguments("ALTER JOB", arguments);
+            HazelcastPlan.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropJobPlan extends JetPlan {
+    static class DropJobPlan extends HazelcastPlan {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         DropJobPlan(
                 PlanKey planKey,
                 String jobName,
                 boolean ifExists,
                 String withSnapshotName,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -356,22 +356,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP JOB", arguments);
-            JetPlan.ensureNoTimeout("DROP JOB", timeout);
+            HazelcastPlan.ensureNoArguments("DROP JOB", arguments);
+            HazelcastPlan.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateSnapshotPlan extends JetPlan {
+    static class CreateSnapshotPlan extends HazelcastPlan {
         private final String snapshotName;
         private final String jobName;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         CreateSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 String jobName,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -405,22 +405,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
-            JetPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
+            HazelcastPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            HazelcastPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropSnapshotPlan extends JetPlan {
+    static class DropSnapshotPlan extends HazelcastPlan {
         private final String snapshotName;
         private final boolean ifExists;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         DropSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 boolean ifExists,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -454,20 +454,20 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
-            JetPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            HazelcastPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
+            HazelcastPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class ShowStatementPlan extends JetPlan {
+    static class ShowStatementPlan extends HazelcastPlan {
         private final ShowStatementTarget showTarget;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
-                JetPlanExecutor planExecutor
+                HazelcastPlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -496,19 +496,19 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
-            JetPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
+            HazelcastPlan.ensureNoArguments("SHOW " + showTarget, arguments);
+            HazelcastPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class SelectPlan extends JetPlan {
+    static class SelectPlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         SelectPlan(
@@ -518,7 +518,7 @@ abstract class JetPlan extends SqlPlan {
                 DAG dag,
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -575,12 +575,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DmlPlan extends JetPlan {
+    static class DmlPlan extends HazelcastPlan {
         private final TableModify.Operation operation;
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         DmlPlan(
@@ -589,7 +589,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -641,14 +641,14 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapSelectPlan extends JetPlan {
+    static class IMapSelectPlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final KvRowProjector.Supplier rowProjectorSupplier;
         private final SqlRowMetadata rowMetadata;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSelectPlan(
@@ -659,7 +659,7 @@ abstract class JetPlan extends SqlPlan {
                 Expression<?> keyCondition,
                 KvRowProjector.Supplier rowProjectorSupplier,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -721,12 +721,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapInsertPlan extends JetPlan {
+    static class IMapInsertPlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapInsertPlan(
@@ -735,7 +735,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -787,12 +787,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapSinkPlan extends JetPlan {
+    static class IMapSinkPlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, Map<Object, Object>> entriesFn;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSinkPlan(
@@ -801,7 +801,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, Map<Object, Object>> entriesFn,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -853,13 +853,13 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapUpdatePlan extends JetPlan {
+    static class IMapUpdatePlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapUpdatePlan(
@@ -869,7 +869,7 @@ abstract class JetPlan extends SqlPlan {
                 String mapName,
                 Expression<?> keyCondition,
                 UpdatingEntryProcessor.Supplier updaterSupplier,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -927,12 +927,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapDeletePlan extends JetPlan {
+    static class IMapDeletePlan extends HazelcastPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
-        private final JetPlanExecutor planExecutor;
+        private final HazelcastPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapDeletePlan(
@@ -941,7 +941,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Expression<?> keyCondition,
-                JetPlanExecutor planExecutor,
+                HazelcastPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);

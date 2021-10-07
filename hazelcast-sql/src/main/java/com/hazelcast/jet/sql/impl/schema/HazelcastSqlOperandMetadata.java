@@ -39,20 +39,20 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public final class JetSqlOperandMetadata implements SqlOperandMetadata, HazelcastOperandTypeCheckerAware {
+public final class HazelcastSqlOperandMetadata implements SqlOperandMetadata, HazelcastOperandTypeCheckerAware {
 
-    private final List<JetTableFunctionParameter> parameters;
+    private final List<HazelcastTableFunctionParameter> parameters;
     private final SqlOperandTypeInference operandTypeInference;
 
-    public JetSqlOperandMetadata(
-            List<JetTableFunctionParameter> parameters,
+    public HazelcastSqlOperandMetadata(
+            List<HazelcastTableFunctionParameter> parameters,
             SqlOperandTypeInference operandTypeInference
     ) {
         this.parameters = parameters;
         this.operandTypeInference = operandTypeInference;
     }
 
-    public List<JetTableFunctionParameter> parameters() {
+    public List<HazelcastTableFunctionParameter> parameters() {
         return parameters;
     }
 
@@ -64,7 +64,7 @@ public final class JetSqlOperandMetadata implements SqlOperandMetadata, Hazelcas
     @Override
     public List<String> paramNames() {
         return parameters.stream()
-                .map(JetTableFunctionParameter::name)
+                .map(HazelcastTableFunctionParameter::name)
                 .collect(toList());
     }
 
@@ -73,13 +73,13 @@ public final class JetSqlOperandMetadata implements SqlOperandMetadata, Hazelcas
         HazelcastCallBinding binding = prepareBinding(callBinding, operandTypeInference);
         if (ValidationUtil.hasAssignment(binding.getCall())) {
             OperandChecker[] checkers = parameters.stream()
-                    .map(JetTableFunctionParameter::checker)
+                    .map(HazelcastTableFunctionParameter::checker)
                     .toArray(OperandChecker[]::new);
             return new NamedOperandCheckerProgram(checkers).check(binding, throwOnFailure);
         } else {
             OperandChecker[] checkers = parameters.stream()
                     .limit(binding.getOperandCount())
-                    .map(JetTableFunctionParameter::checker)
+                    .map(HazelcastTableFunctionParameter::checker)
                     .toArray(OperandChecker[]::new);
             return new OperandCheckerProgram(checkers).check(binding, throwOnFailure);
         }
@@ -87,7 +87,7 @@ public final class JetSqlOperandMetadata implements SqlOperandMetadata, Hazelcas
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        int numberOfOptionalParameters = (int) parameters.stream().filter(JetTableFunctionParameter::optional).count();
+        int numberOfOptionalParameters = (int) parameters.stream().filter(HazelcastTableFunctionParameter::optional).count();
         return SqlOperandCountRanges.between(parameters.size() - numberOfOptionalParameters, parameters.size());
     }
 

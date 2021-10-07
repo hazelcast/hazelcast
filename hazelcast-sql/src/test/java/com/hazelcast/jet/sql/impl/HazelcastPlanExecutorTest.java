@@ -22,9 +22,9 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
+import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateMappingPlan;
+import com.hazelcast.jet.sql.impl.HazelcastPlan.DmlPlan;
+import com.hazelcast.jet.sql.impl.HazelcastPlan.DropMappingPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -56,10 +56,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @RunWith(JUnitParamsRunner.class)
-public class JetPlanExecutorTest {
+public class HazelcastPlanExecutorTest {
 
     @InjectMocks
-    private JetPlanExecutor planExecutor;
+    private HazelcastPlanExecutor planExecutor;
 
     @Mock
     private MappingCatalog catalog;

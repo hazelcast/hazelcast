@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-class JetSqlResultImpl extends AbstractSqlResult {
+class HazelcastSqlResultImpl extends AbstractSqlResult {
 
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
@@ -44,7 +44,7 @@ class JetSqlResultImpl extends AbstractSqlResult {
 
     private ResultIterator<SqlRow> iterator;
 
-    JetSqlResultImpl(
+    HazelcastSqlResultImpl(
             QueryId queryId,
             QueryResultProducer rootResultConsumer,
             SqlRowMetadata rowMetadata,
@@ -144,7 +144,7 @@ class JetSqlResultImpl extends AbstractSqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(getRowMetadata(), delegate.next(), JetSqlResultImpl.this);
+                return new SqlRowImpl(getRowMetadata(), delegate.next(), HazelcastSqlResultImpl.this);
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

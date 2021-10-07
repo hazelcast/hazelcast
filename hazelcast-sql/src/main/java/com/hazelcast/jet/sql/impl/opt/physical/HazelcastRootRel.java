@@ -27,9 +27,9 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
-public class JetRootRel extends SingleRel implements PhysicalRel {
+public class HazelcastRootRel extends SingleRel implements PhysicalRel {
 
-    public JetRootRel(RelNode input) {
+    public HazelcastRootRel(RelNode input) {
         super(input.getCluster(), RelTraitSet.createEmpty(), input);
     }
 

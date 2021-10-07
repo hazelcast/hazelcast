@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
+import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -44,7 +44,7 @@ public class JetSqlParserTest {
                                                   .setUnquotedCasing(Casing.UNCHANGED)
                                                   .setQuotedCasing(Casing.UNCHANGED)
                                                   .setQuoting(Quoting.DOUBLE_QUOTE)
-                                                  .setParserFactory(JetSqlParser.FACTORY)
+                                                  .setParserFactory(HazelcastSqlParser.FACTORY)
                                                   .build();
 
     @Test
