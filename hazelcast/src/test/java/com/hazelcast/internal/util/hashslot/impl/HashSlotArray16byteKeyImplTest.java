@@ -314,7 +314,6 @@ public class HashSlotArray16byteKeyImplTest {
             fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
         } catch (AssertionError ex) {
             assertThat(ex).hasMessage("Cursor has advanced past the last slot");
-
         }
     }
 
