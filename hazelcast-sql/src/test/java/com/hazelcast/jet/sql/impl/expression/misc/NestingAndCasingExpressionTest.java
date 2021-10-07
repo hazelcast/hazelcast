@@ -81,6 +81,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("JSON_FLAT_FILE")
                     || field.getName().equals("AVRO_FILE")
                     || field.getName().equals("PARQUET_FILE")
+                    || field.getName().equals("EXISTS")
             ) {
                 continue;
             }
@@ -129,7 +130,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_IN() {
-        check(sql("(1 IN (1)) || (1 IN (1)) "));
+        check(sql("(1 IN (1)) || (1 IN (1))"));
     }
 
     @Test
@@ -531,7 +532,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     private String sql(String expression) {
-        return "SELECT " + expression + " FROM map";
+        return print("SELECT " + expression + " FROM map");
+    }
+
+    private String print(String s) {
+        System.out.println("QUERY1: " + s);
+        return s;
     }
 
     private String sqlWithWhere(String expression) {
