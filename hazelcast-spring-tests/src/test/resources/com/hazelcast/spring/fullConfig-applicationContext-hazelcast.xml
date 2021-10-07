@@ -580,7 +580,7 @@
                               use-native-byte-order="false">
 
                 <hz:data-serializable-factories>
-                    <hz:data-serializable-factory factory-id="1"
+                    <hz:data-serializable-factory factory-id="${test.factory.id}"
                                                   class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
 
                     <hz:data-serializable-factory factory-id="2" implementation="dummyDataSerializableFactory"/>
