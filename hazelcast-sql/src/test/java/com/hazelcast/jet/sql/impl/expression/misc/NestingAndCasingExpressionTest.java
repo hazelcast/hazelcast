@@ -532,12 +532,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     private String sql(String expression) {
-        return print("SELECT " + expression + " FROM map");
-    }
-
-    private String print(String s) {
-        System.out.println("QUERY1: " + s);
-        return s;
+        return "SELECT " + expression + " FROM map";
     }
 
     private String sqlWithWhere(String expression) {
