@@ -222,10 +222,10 @@
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>net.minidev:json-smart</include>
-                                    <include>com.google.code.gson:gson</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>

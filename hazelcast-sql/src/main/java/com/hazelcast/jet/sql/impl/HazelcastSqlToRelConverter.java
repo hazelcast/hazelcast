@@ -521,14 +521,6 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return node instanceof SqlLiteral && ((SqlLiteral) node).getValue() instanceof SqlJsonValueReturning;
     }
 
-    private boolean isJsonValueOnErrorClause(SqlNode node) {
-        return false;
-    }
-
-    private boolean isJsonValueOnEmptyClause(SqlNode node) {
-        return false;
-    }
-
     private static List<RexNode> convertExpressionList(RexBuilder rexBuilder,
                                                        Blackboard bb,
                                                        List<SqlNode> nodes,
