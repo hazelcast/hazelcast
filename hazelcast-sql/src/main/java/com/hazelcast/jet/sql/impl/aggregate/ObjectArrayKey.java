@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * A wrapper for Object[] supporting equals/hashCode.
+ * A wrapper for Object[] supporting equals/hashCode and hz-serialization.
  */
 public final class ObjectArrayKey implements DataSerializable {
 

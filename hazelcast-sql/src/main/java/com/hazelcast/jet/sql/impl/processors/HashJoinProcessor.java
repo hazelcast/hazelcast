@@ -45,16 +45,13 @@ import static com.hazelcast.jet.impl.util.Util.extendArray;
 
 public class HashJoinProcessor extends AbstractProcessor {
 
-    private JetJoinInfo joinInfo;
-    private int rightInputColumnCount;
+    private final JetJoinInfo joinInfo;
+    private final int rightInputColumnCount;
 
-    private transient ExpressionEvalContext evalContext;
-    private transient Multimap<ObjectArrayKey, Object[]> hashMap;
-    private transient boolean rightExhausted;
-    private transient FlatMapper<Object[], Object[]> flatMapper;
-
-    private HashJoinProcessor() {
-    }
+    private ExpressionEvalContext evalContext;
+    private Multimap<ObjectArrayKey, Object[]> hashMap;
+    private boolean rightExhausted;
+    private FlatMapper<Object[], Object[]> flatMapper;
 
     public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount) {
         this.joinInfo = joinInfo;
@@ -135,6 +132,7 @@ public class HashJoinProcessor extends AbstractProcessor {
         private JetJoinInfo joinInfo;
         private int rightInputColumnCount;
 
+        @SuppressWarnings("unused") // for deserialization
         private HashJoinProcessorSupplier() {
         }
 
