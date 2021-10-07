@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.Accessors;
@@ -23,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,17 +37,42 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueDestroyTest extends HazelcastTestSupport {
 
-    @Test
-    public void checkStatsMapEntryRemovedWhenQueueDestroyed() {
-        final int LOOP_COUNT = 10;
-        final int ADD_COUNT = 100;
+    private static final int LOOP_COUNT = 10;
+    private static final int ADD_COUNT = 100;
 
-        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        QueueService qService = Accessors.getService(hz, SERVICE_NAME);
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void checkStatsMapEntryRemovedWhenQueueDestroyedFromMember() {
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+        QueueService qService = Accessors.getService(member, SERVICE_NAME);
 
         for (int i = 0; i < LOOP_COUNT; i++) {
             String queueName = String.valueOf(i);
-            IQueue<Integer> q = hz.getQueue(queueName);
+            IQueue<Integer> q = member.getQueue(queueName);
+
+            for (int j = 0; j < ADD_COUNT; j++) {
+                q.add(j);
+            }
+            q.destroy();
+            assertEquals(0, qService.getStatsMap().size());
+        }
+    }
+
+    @Test
+    public void checkStatsMapEntryRemovedWhenQueueDestroyedFromClient() {
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        QueueService qService = Accessors.getService(member, SERVICE_NAME);
+
+        for (int i = 0; i < LOOP_COUNT; i++) {
+            String queueName = String.valueOf(i);
+            IQueue<Integer> q = client.getQueue(queueName);
 
             for (int j = 0; j < ADD_COUNT; j++) {
                 q.add(j);
