@@ -118,12 +118,12 @@ public class ParserOperationsTest extends SqlTestSupport {
 
     @Test
     public void testSelectScalar() {
-        checkFailure("SELECT (SELECT a FROM t) FROM t", "SCALAR QUERY not supported");
+        checkSuccess("SELECT (SELECT a FROM t) FROM t");
     }
 
     @Test
     public void testWhereScalar() {
-        checkFailure("SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL", "SCALAR QUERY not supported");
+        checkSuccess("SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL");
     }
 
     @Test
