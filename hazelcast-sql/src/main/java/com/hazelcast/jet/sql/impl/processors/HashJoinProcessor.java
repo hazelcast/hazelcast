@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.aggregate.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -35,7 +36,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -49,11 +49,11 @@ public class HashJoinProcessor extends AbstractProcessor {
     private int rightInputColumnCount;
 
     private transient ExpressionEvalContext evalContext;
-    private transient Multimap<HashableKeys, Object[]> hashMap;
+    private transient Multimap<ObjectArrayKey, Object[]> hashMap;
     private transient boolean rightExhausted;
     private transient FlatMapper<Object[], Object[]> flatMapper;
 
-    public HashJoinProcessor() {
+    private HashJoinProcessor() {
     }
 
     public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount) {
@@ -68,9 +68,9 @@ public class HashJoinProcessor extends AbstractProcessor {
         this.flatMapper = flatMapper(this::join);
     }
 
-    public Traverser<Object[]> join(Object[] leftRow) {
-            Object[] joinKeys = getHashKeys(leftRow, joinInfo.leftEquiJoinIndices());
-            Collection<Object[]> matchedRows = hashMap.get(new HashableKeys(joinKeys));
+    private Traverser<Object[]> join(Object[] leftRow) {
+            ObjectArrayKey joinKeys = getHashKeys(leftRow, joinInfo.leftEquiJoinIndices());
+            Collection<Object[]> matchedRows = hashMap.get(joinKeys);
             List<Object[]> output = matchedRows.stream()
                     .map(right -> ExpressionUtil.join(
                             leftRow,
@@ -95,8 +95,8 @@ public class HashJoinProcessor extends AbstractProcessor {
     @Override
     protected boolean tryProcess1(@Nonnull Object item) {
         Object[] rightRow = (Object[]) item;
-        Object[] joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
-        hashMap.put(new HashableKeys(joinKeys), rightRow);
+        ObjectArrayKey joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
+        hashMap.put(joinKeys, rightRow);
         return true;
     }
 
@@ -119,42 +119,16 @@ public class HashJoinProcessor extends AbstractProcessor {
         }
     }
 
-    private Object[] getHashKeys(Object[] row, int[] joinIndices) {
+    private ObjectArrayKey getHashKeys(Object[] row, int[] joinIndices) {
         Object[] hashKeys = new Object[joinIndices.length];
         for (int i = 0; i < joinIndices.length; i++) {
             hashKeys[i] = row[joinIndices[i]];
         }
-        return hashKeys;
+        return new ObjectArrayKey(hashKeys);
     }
 
     public static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
         return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount);
-    }
-
-    private static final class HashableKeys {
-        private final Object[] keys;
-
-        private HashableKeys(Object[] keys) {
-            this.keys = keys;
-        }
-
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            HashableKeys that = (HashableKeys) o;
-            return Arrays.equals(keys, that.keys);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(keys);
-        }
     }
 
     private static final class HashJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {

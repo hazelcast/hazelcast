@@ -34,7 +34,7 @@ public final class ObjectArrayKey implements DataSerializable {
     private ObjectArrayKey() {
     }
 
-    private ObjectArrayKey(Object[] array) {
+    public ObjectArrayKey(Object[] array) {
         this.array = array;
     }
 
