@@ -18,8 +18,8 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,9 +31,9 @@ import static com.hazelcast.collection.impl.queue.QueueService.SERVICE_NAME;
 import static org.junit.Assert.assertEquals;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueueDestroyTest extends HazelcastTestSupport  {
+public class QueueDestroyTest extends HazelcastTestSupport {
 
     @Test
     public void checkStatsMapEntryRemovedWhenQueueDestroyed() {
@@ -41,7 +41,7 @@ public class QueueDestroyTest extends HazelcastTestSupport  {
         final int ADD_COUNT = 100;
 
         HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        QueueService qService = Util.getNodeEngine(hz).getService(SERVICE_NAME);
+        QueueService qService = Accessors.getService(hz, SERVICE_NAME);
 
         for (int i = 0; i < LOOP_COUNT; i++) {
             String queueName = String.valueOf(i);
