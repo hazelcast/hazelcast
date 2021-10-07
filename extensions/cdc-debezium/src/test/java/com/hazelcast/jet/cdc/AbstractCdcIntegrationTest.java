@@ -19,6 +19,7 @@ package com.hazelcast.jet.cdc;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.dockerjava.api.DockerClient;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -32,6 +33,7 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
@@ -52,6 +54,8 @@ import static org.junit.Assume.assumeTrue;
 
 @Category({IgnoreInJenkinsOnWindows.class})
 public class AbstractCdcIntegrationTest extends JetTestSupport {
+
+    private static final int CONTAINER_START_ATTEMPTS = 3;
 
     @Rule
     public TestName testName = new TestName();
@@ -142,6 +146,35 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         int port = container.getMappedPort(defaultPort);
         container.setPortBindings(Collections.singletonList(port + ":" + defaultPort));
         return port;
+    }
+
+    /**
+     * Start the container after it has been stop
+     *
+     * It's necessary to use this method after calling {@link #stopContainer(GenericContainer)} with
+     * {@link #fixPortBinding(GenericContainer, Integer)}. If fixed port is not used you can use
+     * {@link GenericContainer#start()}
+     *
+     * @param container container to start
+     */
+    protected static void startContainer(GenericContainer<?> container) {
+        RuntimeException exception = null;
+        for (int i = 0; i < CONTAINER_START_ATTEMPTS; i++) {
+            try {
+                container.start();
+                return;
+            } catch (ContainerLaunchException e) {
+                if (ExceptionUtil.toString(e).contains("port is already allocated")) {
+                    exception = e;
+                    sleepMillis(1000 + i * 1000);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        if (!container.isRunning()) {
+            throw exception;
+        }
     }
 
     /**

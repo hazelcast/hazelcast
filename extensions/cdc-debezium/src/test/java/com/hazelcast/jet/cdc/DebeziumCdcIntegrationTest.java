@@ -154,7 +154,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         MySQLContainer<?> container = mySqlContainer();
 
         try {
-            container.start();
+            startContainer(container);
 
             // given
             List<String> expectedRecords = Arrays.asList(

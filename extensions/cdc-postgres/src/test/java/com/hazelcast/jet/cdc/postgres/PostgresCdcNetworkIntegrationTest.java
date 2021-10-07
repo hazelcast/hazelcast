@@ -129,7 +129,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             assertTrue(hz.getMap("results").isEmpty());
 
             // and DB starts
-            postgres.start();
+            startContainer(postgres);
             try {
                 // then source connects successfully
                 assertEqualsEventually(() -> hz.getMap("results").size(), 4);

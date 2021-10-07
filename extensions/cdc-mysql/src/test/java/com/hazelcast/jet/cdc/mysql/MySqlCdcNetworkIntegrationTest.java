@@ -136,7 +136,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             assertTrue(hz.getMap("results").isEmpty());
 
             // and DB starts
-            mysql.start();
+            startContainer(mysql);
             try {
                 // then source connects successfully
                 assertEqualsEventually(() -> hz.getMap("results").size(), 4);
@@ -346,7 +346,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         if (network != null) {
             mysql = mysql.withNetwork(network);
         }
-        mysql.start();
+        startContainer(mysql);
         return mysql;
     }
 
