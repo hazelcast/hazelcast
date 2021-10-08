@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,9 +35,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -186,12 +185,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         // we just expect there is no exception apart from AssertionError,
         // which is for testing only
-        try {
-            metricsRegistry.collect(collectorMock);
-            fail("Should throw AssertionError");
-        } catch (AssertionError ex) {
-            assertThat(ex).hasMessageMatching("Collecting metrics from source .+ failed");
-        }
+        Assert.assertThrows(AssertionError.class, () -> metricsRegistry.collect(collectorMock));
     }
 
     private static class SourceObject {
