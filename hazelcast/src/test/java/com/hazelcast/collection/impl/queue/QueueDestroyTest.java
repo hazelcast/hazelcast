@@ -20,7 +20,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.Accessors;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,19 +29,32 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.collection.impl.queue.QueueService.SERVICE_NAME;
 import static org.junit.Assert.assertEquals;
 
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueDestroyTest extends HazelcastTestSupport {
 
     private static final int LOOP_COUNT = 10;
     private static final int ADD_COUNT = 100;
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @Parameterized.Parameter
+    public Supplier<HazelcastInstance> instanceSupplier;
+
+    @Parameterized.Parameters(name = "instance={0}")
+    public static Supplier<HazelcastInstance>[] parameters() {
+        return new Supplier[]{hazelcastFactory::newHazelcastClient,
+                () -> hazelcastFactory.newHazelcastInstance(smallInstanceConfig())};
+    }
 
     @After
     public void tearDown() {
@@ -50,29 +64,12 @@ public class QueueDestroyTest extends HazelcastTestSupport {
     @Test
     public void checkStatsMapEntryRemovedWhenQueueDestroyedFromMember() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance destroyerInstance = instanceSupplier.get();
         QueueService qService = Accessors.getService(member, SERVICE_NAME);
 
         for (int i = 0; i < LOOP_COUNT; i++) {
             String queueName = String.valueOf(i);
-            IQueue<Integer> q = member.getQueue(queueName);
-
-            for (int j = 0; j < ADD_COUNT; j++) {
-                q.add(j);
-            }
-            q.destroy();
-            assertEquals(0, qService.getStatsMap().size());
-        }
-    }
-
-    @Test
-    public void checkStatsMapEntryRemovedWhenQueueDestroyedFromClient() {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        QueueService qService = Accessors.getService(member, SERVICE_NAME);
-
-        for (int i = 0; i < LOOP_COUNT; i++) {
-            String queueName = String.valueOf(i);
-            IQueue<Integer> q = client.getQueue(queueName);
+            IQueue<Integer> q = destroyerInstance.getQueue(queueName);
 
             for (int j = 0; j < ADD_COUNT; j++) {
                 q.add(j);
