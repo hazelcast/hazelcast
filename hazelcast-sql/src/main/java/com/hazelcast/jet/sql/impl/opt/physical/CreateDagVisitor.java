@@ -50,7 +50,6 @@ import org.apache.calcite.rel.SingleRel;
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -316,7 +315,7 @@ public class CreateDagVisitor {
         return merger;
     }
 
-    public Vertex onRoot(JetRootRel rootRel) {
+    public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
         Expression<?> offset;

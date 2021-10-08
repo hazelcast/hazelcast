@@ -84,8 +84,8 @@ import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
  * Helper class to resolve indexes.
  */
 @SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
-public final class JetIndexResolver {
-    private JetIndexResolver() {
+public final class IndexResolver {
+    private IndexResolver() {
         // No-op.
     }
 
