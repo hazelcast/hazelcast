@@ -102,14 +102,16 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             return onEmptyResponse(onEmpty, defaultOnEmpty);
         }
 
+        final String path = (String) operands[1].eval(row, context);
+        if (path == null) {
+            throw QueryException.error("JSONPath expression can not be null");
+        }
+
         final JsonPath jsonPath;
         try {
-            final String path = (String) operands[1].eval(row, context);
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (InvalidPathException | IllegalArgumentException exception) {
             throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
-        } catch (NullPointerException ignored) {
-            throw QueryException.error("JSONPath expression can not be null");
         }
 
         try {

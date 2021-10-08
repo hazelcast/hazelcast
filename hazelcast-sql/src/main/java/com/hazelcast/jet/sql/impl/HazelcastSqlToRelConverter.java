@@ -50,7 +50,6 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlJsonEmptyOrError;
@@ -418,20 +417,11 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             ));
         }
 
-        // Minimum number of tokens for any extended syntax expression,
-        // normally should never happen, guard against future changes.
-        if (call.operandCount() < JSON_VALUE_EXTENDED_SYNTAX_MIN_TOKENS) {
-            throw QueryException.error("Number of arguments for JSON_VALUE call is less than minimum expected "
-                    + "number of arguments for Extended Syntax");
-        }
         // Start at 3rd Arg
         int tokenIndex = 2;
 
         // RETURNING can only be placed at the beginning, never in the middle or the end of the list of tokens.
         if (isJsonValueReturningClause(call.operand(tokenIndex))) {
-            if (!(call.operand(tokenIndex + 1) instanceof SqlDataTypeSpec)) {
-                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE RETURNING syntax");
-            }
             returning = validator.getValidatedNodeType(call.operand(tokenIndex + 1));
             tokenIndex += 2;
         }

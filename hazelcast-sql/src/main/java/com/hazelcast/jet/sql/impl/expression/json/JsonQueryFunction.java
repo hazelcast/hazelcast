@@ -97,14 +97,16 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             return onEmptyResponse(onEmpty);
         }
 
+        final String path = (String) operands[1].eval(row, context);
+        if (path == null) {
+            throw QueryException.error("JSONPath expression can not be null");
+        }
+
         final JsonPath jsonPath;
         try {
-            final String path = (String) operands[1].eval(row, context);
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (InvalidPathException | IllegalArgumentException exception) {
+        } catch (InvalidPathException exception) {
             throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
-        } catch (NullPointerException ignored) {
-            throw QueryException.error("JSONPath expression can not be null");
         }
 
         try {

@@ -24,6 +24,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.hazelcast.query.QueryException;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.spi.cache.CacheProvider;
@@ -50,7 +51,11 @@ public final class JsonPathUtil {
     }
 
     public static JsonPath compile(String path) {
-        return JsonPath.compile(path);
+        try {
+            return JsonPath.compile(path);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPathException("Illegal argument provided to JSONPath compile function", e);
+        }
     }
 
     public static Object read(String json, String pathString) {
