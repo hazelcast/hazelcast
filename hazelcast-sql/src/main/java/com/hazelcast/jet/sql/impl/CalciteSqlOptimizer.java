@@ -34,7 +34,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
-import com.hazelcast.jet.sql.impl.opt.JetConventions;
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
@@ -108,12 +108,12 @@ import static java.util.stream.Collectors.toList;
  * properties.
  * <p>
  * The optimization process is split into two phases - logical and physical. During logical planning we normalize abstract
- * nodes and convert them to nodes with {@link JetConventions#LOGICAL} convention. These new nodes are Hazelcast-specific
+ * nodes and convert them to nodes with {@link Conventions#LOGICAL} convention. These new nodes are Hazelcast-specific
  * and hence may have additional properties. For example, at this stage we do filter pushdowns, introduce constrained scans,
  * etc.
  * <p>
  * During physical planning we look for specific physical implementations of logical nodes. Implementation nodes have
- * {@link JetConventions#PHYSICAL} convention. The process contains the following fundamental steps:
+ * {@link Conventions#PHYSICAL} convention. The process contains the following fundamental steps:
  * <ul>
  *     <li>Choosing proper access methods for scan (normal scan, index scan, etc)</li>
  *     <li>Propagating physical properties from children nodes to their parents</li>
@@ -129,7 +129,7 @@ import static java.util.stream.Collectors.toList;
  * fired in effectively uncontrollable fashion, thus making propagation of physical properties difficult. To overcome this
  * problem we use several techniques that helps us emulate at least some parts of Cascades-style optimization.
  * <p>
- * First, {@link JetConventions#PHYSICAL} convention overrides {@link Convention#canConvertConvention(Convention)} and
+ * First, {@link Conventions#PHYSICAL} convention overrides {@link Convention#canConvertConvention(Convention)} and
  * {@link Convention#useAbstractConvertersForConversion(RelTraitSet, RelTraitSet)} methods. Their implementations ensure that
  * whenever a new child node with {@code PHYSICAL} convention is created, the rule of the parent {@code LOGICAL} nodes
  * will be re-scheduled. Second, physical rules for {@code LOGICAL} nodes iterate over concrete physical implementations of

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(JUnitParamsRunner.class)
-public class JetSqlParserTest {
+public class HazelcastSqlParserTest {
 
     private static final Config CONFIG = SqlParser.configBuilder()
                                                   .setCaseSensitive(true)

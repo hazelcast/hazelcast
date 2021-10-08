@@ -42,7 +42,7 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.LON
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.STRING;
 
-abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
+abstract class SqlIndexTestSupport extends OptimizerTestSupport {
 
     @SuppressWarnings("rawtypes")
     protected static String toLiteral(ExpressionType type, Object value) {
