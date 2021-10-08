@@ -83,6 +83,7 @@ import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 public final class IOUtil {
 
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
+    private static final Random RANDOM = new Random();
 
     private IOUtil() {
     }
@@ -551,7 +552,6 @@ public final class IOUtil {
     public static void moveWithTimeout(Path source, Path target, Duration duration) {
         long endTime = System.nanoTime() + duration.toNanos();
         IOException lastException = null;
-        Random rnd = new Random();
         do {
             try {
                 move(source, target);
@@ -564,7 +564,7 @@ public final class IOUtil {
             }
             try {
                 //random delay up to half a second
-                Thread.sleep(rnd.nextInt(500));
+                Thread.sleep(RANDOM.nextInt(500));
             } catch (InterruptedException e) {
                 ignore(e);
             }
