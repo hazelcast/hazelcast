@@ -20,10 +20,12 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Union;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelRecordType;
 
 import java.util.List;
 
-class UnionLogicalRel extends Union implements LogicalRel {
+public class UnionLogicalRel extends Union implements LogicalRel {
 
     UnionLogicalRel(
             RelOptCluster cluster,
@@ -38,4 +40,5 @@ class UnionLogicalRel extends Union implements LogicalRel {
     public final Union copy(RelTraitSet traitSet, List<RelNode> inputs, boolean all) {
         return new UnionLogicalRel(getCluster(), traitSet, inputs, all);
     }
+
 }

@@ -50,6 +50,7 @@ import org.apache.calcite.rel.SingleRel;
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -298,6 +299,21 @@ public class CreateDagVisitor {
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
+    }
+
+    public Vertex onUnion(UnionPhysicalRel rel) {
+        Vertex merger = dag.newUniqueVertex(
+                "UnionMerger",
+                ProcessorSupplier.of(mapP(FunctionEx.identity()))
+        );
+
+        int ordinal = 0;
+        for (RelNode input : rel.getInputs()) {
+            Vertex inputVertex = ((PhysicalRel) input).accept(this);
+            Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
+            dag.edge(edge);
+        }
+        return merger;
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
