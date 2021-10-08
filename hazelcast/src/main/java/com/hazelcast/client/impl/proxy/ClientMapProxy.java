@@ -2200,6 +2200,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
         replaceAllInternal(function);
     }
 
+    /**
+     * Orchestrator method that invokes all the paritition in parallel to replace each entry's
+     * value with the result of invoking the given function on that entry
+     *
+     * @param function  remappingfunction
+     */
     protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
         if (SerializationUtil.isClassStaticAndSerializable(function) && !useDefaultReplaceAllOperation) {
             try {

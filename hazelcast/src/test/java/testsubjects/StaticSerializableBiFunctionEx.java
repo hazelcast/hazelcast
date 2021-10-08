@@ -19,6 +19,11 @@ package testsubjects;
 import java.io.Serializable;
 import java.util.function.BiFunction;
 
+/**
+ * Serializable BiFunction Implementation to simulate
+ * client input function and throw exception if desired.
+ *
+ */
 public class StaticSerializableBiFunctionEx implements BiFunction<Integer, Integer, Integer>, Serializable {
 
     public StaticSerializableBiFunctionEx() {
