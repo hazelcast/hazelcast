@@ -42,6 +42,28 @@ import java.time.OffsetDateTime;
 public interface CompactReader {
 
     /**
+     * Reads a boolean.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    boolean readBoolean(@Nonnull String fieldName);
+
+    /**
+     * Reads a boolean or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    boolean readBoolean(@Nonnull String fieldName, boolean defaultValue);
+
+    /**
      * Reads an 8-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
@@ -174,28 +196,6 @@ public interface CompactReader {
     double readDouble(@Nonnull String fieldName, double defaultValue);
 
     /**
-     * Reads a boolean.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    boolean readBoolean(@Nonnull String fieldName);
-
-    /**
-     * Reads a boolean or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    boolean readBoolean(@Nonnull String fieldName, boolean defaultValue);
-
-    /**
      * Reads a 16-bit unsigned integer.
      *
      * @param fieldName name of the field.
@@ -230,18 +230,6 @@ public interface CompactReader {
     String readString(@Nonnull String fieldName);
 
     /**
-     * Reads an UTF-8 encoded string or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    String readString(@Nonnull String fieldName, @Nullable String defaultValue);
-
-    /**
      * Reads an arbitrary precision and scale floating point number.
      *
      * @param fieldName name of the field.
@@ -254,19 +242,6 @@ public interface CompactReader {
     BigDecimal readDecimal(@Nonnull String fieldName);
 
     /**
-     * Reads an arbitrary precision and scale floating point number
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    BigDecimal readDecimal(@Nonnull String fieldName, @Nullable BigDecimal defaultValue);
-
-    /**
      * Reads a time consisting of hour, minute, second, and nano seconds.
      *
      * @param fieldName name of the field.
@@ -275,24 +250,8 @@ public interface CompactReader {
      *                                         or the type of the field does not match
      *                                         with the one defined in the schema.
      */
-    @Nonnull
-    LocalTime readTime(@Nonnull String fieldName);
-
-    /**
-     * Reads a time consisting of hour, minute, second, and nano seconds
-     * or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
     @Nullable
-    LocalTime readTime(@Nonnull String fieldName, @Nullable LocalTime defaultValue);
+    LocalTime readTime(@Nonnull String fieldName);
 
     /**
      * Reads a date consisting of year, month, and day.
@@ -303,23 +262,8 @@ public interface CompactReader {
      *                                         or the type of the field does not match
      *                                         with the one defined in the schema.
      */
-    @Nonnull
-    LocalDate readDate(@Nonnull String fieldName);
-
-    /**
-     * Reads a date consisting of year, month, and day or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
     @Nullable
-    LocalDate readDate(@Nonnull String fieldName, @Nullable LocalDate defaultValue);
+    LocalDate readDate(@Nonnull String fieldName);
 
     /**
      * Reads a timestamp consisting of date and time.
@@ -330,23 +274,8 @@ public interface CompactReader {
      *                                         or the type of the field does not match
      *                                         with the one defined in the schema.
      */
-    @Nonnull
-    LocalDateTime readTimestamp(@Nonnull String fieldName);
-
-    /**
-     * Reads a timestamp consisting of date and time or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
     @Nullable
-    LocalDateTime readTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime defaultValue);
+    LocalDateTime readTimestamp(@Nonnull String fieldName);
 
     /**
      * Reads a timestamp with timezone consisting of date, time and timezone offset.
@@ -357,24 +286,8 @@ public interface CompactReader {
      *                                         or the type of the field does not match
      *                                         with the one defined in the schema.
      */
-    @Nonnull
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
-
-    /**
-     * Reads a timestamp with timezone consisting of date, time and timezone offset
-     * or returns the default value.
-     * <p>
-     * This method may only return {@code null}, if the {@code defaultValue}
-     * is {@code null}.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
     @Nullable
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime defaultValue);
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
 
     /**
      * Reads an arbitrary object.
@@ -387,45 +300,7 @@ public interface CompactReader {
      * @throws com.hazelcast.core.HazelcastException if the object cannot be created.
      */
     @Nullable
-    <T> T readObject(@Nonnull String fieldName);
-
-    /**
-     * Reads an arbitrary object or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     * @throws com.hazelcast.core.HazelcastException if the object cannot be created.
-     */
-    @Nullable
-    <T> T readObject(@Nonnull String fieldName, @Nullable T defaultValue);
-
-    /**
-     * Reads an array of 8-bit two's complement signed integers.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    @Nullable
-    byte[] readByteArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of 8-bit two's complement signed integers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    byte[] readByteArray(@Nonnull String fieldName, @Nullable byte[] defaultValue);
+    <T> T readCompact(@Nonnull String fieldName);
 
     /**
      * Reads an array of booleans.
@@ -440,16 +315,16 @@ public interface CompactReader {
     boolean[] readBooleanArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of booleans or returns the default value.
+     * Reads an array of 8-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
      */
     @Nullable
-    boolean[] readBooleanArray(@Nonnull String fieldName, @Nullable boolean[] defaultValue);
+    byte[] readByteArray(@Nonnull String fieldName);
 
     /**
      * Reads an array of 16-bit unsigned integers.
@@ -464,16 +339,16 @@ public interface CompactReader {
     char[] readCharArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 16-bit unsigned integers or returns the default value.
+     * Reads an array of 16-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
      */
     @Nullable
-    char[] readCharArray(@Nonnull String fieldName, @Nullable char[] defaultValue);
+    short[] readShortArray(@Nonnull String fieldName);
 
     /**
      * Reads an array of 32-bit two's complement signed integers.
@@ -488,19 +363,6 @@ public interface CompactReader {
     int[] readIntArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit two's complement signed integers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    int[] readIntArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
-
-    /**
      * Reads an array of 64-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
@@ -511,44 +373,6 @@ public interface CompactReader {
      */
     @Nullable
     long[] readLongArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of 64-bit two's complement signed integers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    long[] readLongArray(@Nonnull String fieldName, @Nullable long[] defaultValue);
-
-    /**
-     * Reads an array of 64-bit IEEE 754 floating point numbers.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    @Nullable
-    double[] readDoubleArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of 64-bit IEEE 754 floating point numbers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    double[] readDoubleArray(@Nonnull String fieldName, @Nullable double[] defaultValue);
 
     /**
      * Reads an array of 32-bit IEEE 754 floating point numbers.
@@ -563,20 +387,7 @@ public interface CompactReader {
     float[] readFloatArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit IEEE 754 floating point numbers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    float[] readFloatArray(@Nonnull String fieldName, @Nullable float[] defaultValue);
-
-    /**
-     * Reads an array of 16-bit two's complement signed integers.
+     * Reads an array of 64-bit IEEE 754 floating point numbers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -585,20 +396,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    short[] readShortArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of 16-bit two's complement signed integers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    short[] readShortArray(@Nonnull String fieldName, @Nullable short[] defaultValue);
+    double[] readDoubleArray(@Nonnull String fieldName);
 
     /**
      * Reads an array of UTF-8 encoded strings.
@@ -613,18 +411,6 @@ public interface CompactReader {
     String[] readStringArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of UTF-8 encoded strings or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    String[] readStringArray(@Nonnull String fieldName, @Nullable String[] defaultValue);
-
-    /**
      * Reads an array of arbitrary precision and scale floating point numbers.
      *
      * @param fieldName name of the field.
@@ -635,19 +421,6 @@ public interface CompactReader {
      */
     @Nullable
     BigDecimal[] readDecimalArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of arbitrary precision and scale floating point numbers
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    BigDecimal[] readDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] defaultValue);
 
     /**
      * Reads an array of times consisting of hour, minute, second, and nano seconds.
@@ -662,20 +435,6 @@ public interface CompactReader {
     LocalTime[] readTimeArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of times consisting of hour, minute, second, and nano seconds
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field. The items in the array
-     * cannot be null except for the items in the provided {@code defaultValue}.
-     */
-    @Nullable
-    LocalTime[] readTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] defaultValue);
-
-    /**
      * Reads an array of dates consisting of year, month, and day.
      *
      * @param fieldName name of the field.
@@ -686,20 +445,6 @@ public interface CompactReader {
      */
     @Nullable
     LocalDate[] readDateArray(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of dates consisting of year, month, and day
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field. The items in the array
-     * cannot be null except for the items in the provided {@code defaultValue}.
-     */
-    @Nullable
-    LocalDate[] readDateArray(@Nonnull String fieldName, @Nullable LocalDate[] defaultValue);
 
     /**
      * Reads an array of timestamps consisting of date and time.
@@ -714,20 +459,6 @@ public interface CompactReader {
     LocalDateTime[] readTimestampArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of timestamps consisting of date and time
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field. The items in the array
-     * cannot be null except for the items in the provided {@code defaultValue}.
-     */
-    @Nullable
-    LocalDateTime[] readTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
-
-    /**
      * Reads an array of timestamps with timezone consisting of date, time and timezone offset.
      *
      * @param fieldName name of the field.
@@ -740,20 +471,6 @@ public interface CompactReader {
     OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName);
 
     /**
-     * Reads an array of timestamps with timezone consisting of date, time and timezone offset
-     * or returns the default value.
-     *
-     * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field. The items in the array
-     * cannot be null except for the items in the provided {@code defaultValue}.
-     */
-    @Nullable
-    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
-
-    /**
      * Reads an array of arbitrary objects.
      *
      * @param fieldName name of the field.
@@ -763,17 +480,172 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    <T> T[] readObjectArray(@Nonnull String fieldName, @Nullable Class<T> componentType);
+    <T> T[] readCompactArray(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
     /**
-     * Reads an array of arbitrary objects or returns the default value.
+     * Reads a boolean.
      *
      * @param fieldName name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
      */
     @Nullable
-    <T> T[] readObjectArray(@Nonnull String fieldName, @Nullable Class<T> componentType, T[] defaultValue);
+    Boolean readNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * Reads an 8-bit two's complement signed integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Byte readNullableByte(@Nonnull String fieldName);
+
+    /**
+     * Reads a 16-bit two's complement signed integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    Short readNullableShort(@Nonnull String fieldName);
+
+    /**
+     * Reads a 32-bit two's complement signed integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Integer readNullableInt(@Nonnull String fieldName);
+
+    /**
+     * Reads a 64-bit two's complement signed integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Long readNullableLong(@Nonnull String fieldName);
+
+    /**
+     * Reads a 32-bit IEEE 754 floating point number.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Float readNullableFloat(@Nonnull String fieldName);
+
+    /**
+     * Reads a 64-bit IEEE 754 floating point number.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Double readNullableDouble(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of booleans.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Boolean[] readNullableBooleanArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 8-bit two's complement signed integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Byte[] readNullableByteArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 16-bit two's complement signed integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Short[] readNullableShortArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 32-bit two's complement signed integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Integer[] readNullableIntArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 64-bit two's complement signed integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Long[] readNullableLongArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 32-bit IEEE 754 floating point numbers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Float[] readNullableFloatArray(@Nonnull String fieldName);
+
+    /**
+     * Reads an array of 64-bit IEEE 754 floating point numbers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    Double[] readNullableDoubleArray(@Nonnull String fieldName);
 }

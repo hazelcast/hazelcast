@@ -68,6 +68,20 @@ import static com.hazelcast.nio.serialization.FieldKind.INT;
 import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.LONG;
 import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
@@ -179,20 +193,26 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    public boolean getBoolean(@Nonnull String fieldName) {
+        try {
+            FieldDescriptor fd = getFieldDefinition(fieldName, BOOLEAN);
+            int booleanOffset = fd.getOffset();
+            int bitOffset = fd.getBitOffset();
+            int getOffset = booleanOffset + dataStartPosition;
+            byte lastByte = in.readByte(getOffset);
+            return ((lastByte >>> bitOffset) & 1) != 0;
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
     public byte getByte(@Nonnull String fieldName) {
         try {
             return in.readByte(readFixedSizePosition(fieldName, BYTE));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
-    }
-
-    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind kind) {
-        FieldDescriptor field = schema.getField(fieldName);
-        if (field == null) {
-            return false;
-        }
-        return field.getKind() == kind;
     }
 
     @Override
@@ -241,20 +261,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
-    public boolean getBoolean(@Nonnull String fieldName) {
-        try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, BOOLEAN);
-            int booleanOffset = fd.getOffset();
-            int bitOffset = fd.getBitOffset();
-            int getOffset = booleanOffset + dataStartPosition;
-            byte lastByte = in.readByte(getOffset);
-            return ((lastByte >>> bitOffset) & 1) != 0;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
     public char getChar(@Nonnull String fieldName) {
         try {
             return in.readChar(readFixedSizePosition(fieldName, CHAR));
@@ -293,57 +299,25 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public LocalTime getTime(@Nonnull String fieldName) {
-        int currentPos = in.position();
-        try {
-            in.position(readFixedSizePosition(fieldName, TIME));
-            return IOUtil.readLocalTime(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        return getVariableLength(fieldName, TIME, IOUtil::readLocalTime);
     }
 
     @Override
     @Nonnull
     public LocalDate getDate(@Nonnull String fieldName) {
-        int currentPos = in.position();
-        try {
-            in.position(readFixedSizePosition(fieldName, DATE));
-            return IOUtil.readLocalDate(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        return getVariableLength(fieldName, DATE, IOUtil::readLocalDate);
     }
 
     @Override
     @Nonnull
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
-        int currentPos = in.position();
-        try {
-            in.position(readFixedSizePosition(fieldName, TIMESTAMP));
-            return IOUtil.readLocalDateTime(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        return getVariableLength(fieldName, TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
     @Override
     @Nonnull
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
-        int currentPos = in.position();
-        try {
-            in.position(readFixedSizePosition(fieldName, TIMESTAMP_WITH_TIMEZONE));
-            return IOUtil.readOffsetDateTime(in);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
+        return getVariableLength(fieldName, TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
 
@@ -358,13 +332,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
-    public byte[] getByteArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
+    public boolean[] getBooleanArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
     }
 
     @Override
-    public boolean[] getBooleanArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
+    public byte[] getByteArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
     }
 
     @Override
@@ -409,29 +383,112 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIME_ARRAY, CompactInternalGenericRecord::getTimeArray);
+        return getVariableSizeArray(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, DATE_ARRAY, CompactInternalGenericRecord::getDateArray);
+        return getVariableSizeArray(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIMESTAMP_ARRAY, CompactInternalGenericRecord::getTimestampArray);
+        return getVariableSizeArray(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY,
-                CompactInternalGenericRecord::getTimestampWithTimezoneArray);
+        return getVariableSizeArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
     @Override
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, COMPACT_ARRAY, GenericRecord[]::new,
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBoolean(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_BOOLEAN, ObjectDataInput::readBoolean);
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByte(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_BYTE, ObjectDataInput::readByte);
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDouble(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_DOUBLE, ObjectDataInput::readDouble);
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_FLOAT, ObjectDataInput::readFloat);
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_INT, ObjectDataInput::readInt);
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLong(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_LONG, ObjectDataInput::readLong);
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShort(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, NULLABLE_SHORT, ObjectDataInput::readShort);
+    }
+
+    @Nullable
+    @Override
+    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
+    }
+
+    @Nullable
+    @Override
+    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_BYTE_ARRAY, Byte[]::new, ObjectDataInput::readByte);
+    }
+
+    @Nullable
+    @Override
+    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_DOUBLE_ARRAY, Double[]::new, ObjectDataInput::readDouble);
+    }
+
+    @Nullable
+    @Override
+    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_FLOAT_ARRAY, Float[]::new, ObjectDataInput::readFloat);
+    }
+
+    @Nullable
+    @Override
+    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_INT_ARRAY, Integer[]::new, ObjectDataInput::readInt);
+    }
+
+    @Nullable
+    @Override
+    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_LONG_ARRAY, Long[]::new, ObjectDataInput::readLong);
+    }
+
+    @Nullable
+    @Override
+    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+        return getVariableSizeArray(fieldName, NULLABLE_SHORT_ARRAY, Short[]::new, ObjectDataInput::readShort);
     }
 
     @Override
@@ -620,29 +677,75 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVarSizeFromArray(fieldName, DECIMAL_ARRAY, IOUtil::readBigDecimal, index);
     }
 
+    @Nullable
     @Override
     public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, TIME_ARRAY, IOUtil::readLocalTime, index);
+        return getVarSizeFromArray(fieldName, TIME_ARRAY, IOUtil::readLocalTime, index);
     }
 
+    @Nullable
     @Override
     public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, DATE_ARRAY, IOUtil::readLocalDate, index);
+        return getVarSizeFromArray(fieldName, DATE_ARRAY, IOUtil::readLocalDate, index);
     }
 
+    @Nullable
     @Override
     public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
+        return getVarSizeFromArray(fieldName, TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
     }
 
+    @Nullable
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+        return getVarSizeFromArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_BYTE_ARRAY, ObjectDataInput::readByte, index);
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_BOOLEAN_ARRAY, ObjectDataInput::readBoolean, index);
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_INT_ARRAY, ObjectDataInput::readInt, index);
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_LONG_ARRAY, ObjectDataInput::readLong, index);
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_FLOAT_ARRAY, ObjectDataInput::readFloat, index);
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_DOUBLE_ARRAY, ObjectDataInput::readDouble, index);
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+        return getVarSizeFromArray(fieldName, NULLABLE_SHORT_ARRAY, ObjectDataInput::readShort, index);
     }
 
     @Override
-    public Object getObjectFromArray(@Nonnull String fieldName, int index) {
-        return getVarSizeFromArray(fieldName, COMPACT_ARRAY,
+    public <T> T getObjectFromArray(@Nonnull String fieldName, int index) {
+        return (T) getVarSizeFromArray(fieldName, COMPACT_ARRAY,
                 in -> serializer.read(in, schemaIncludedInBinary), index);
     }
 
@@ -756,4 +859,14 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         return values;
     }
+
+
+    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind kind) {
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            return false;
+        }
+        return field.getKind() == kind;
+    }
+
 }

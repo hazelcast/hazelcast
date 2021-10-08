@@ -72,16 +72,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Double getDoubleFromArray(@Nonnull String fieldName, int index);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
-    @Nullable
-    Float getFloatFromArray(@Nonnull String fieldName, int index);
+    Short getShortFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -108,7 +99,16 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Short getShortFromArray(@Nonnull String fieldName, int index);
+    Float getFloatFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double getDoubleFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -139,7 +139,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Object getObjectFromArray(@Nonnull String fieldName, int index);
+    <T> T getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
@@ -209,4 +209,67 @@ public interface InternalGenericRecord extends GenericRecord {
      */
     @Nullable
     OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte getNullableByteFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short getNullableShortFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getNullableIntFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long getNullableLongFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float getNullableFloatFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double getNullableDoubleFromArray(@Nonnull String fieldName, int index);
 }

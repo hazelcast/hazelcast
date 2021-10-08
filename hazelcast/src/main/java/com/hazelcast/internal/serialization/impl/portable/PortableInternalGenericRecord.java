@@ -763,7 +763,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Object getObjectFromArray(@Nonnull String fieldName, int index) {
+    public <T> T getObjectFromArray(@Nonnull String fieldName, int index) {
         return readNestedFromArray(fieldName, index, false);
     }
 

@@ -142,26 +142,26 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
         return get(fieldName, FieldType.DECIMAL);
     }
 
-    @Override
     @Nullable
+    @Override
     public LocalTime getTime(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIME);
     }
 
-    @Override
     @Nullable
+    @Override
     public LocalDate getDate(@Nonnull String fieldName) {
         return get(fieldName, FieldType.DATE);
     }
 
-    @Override
     @Nullable
+    @Override
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP);
     }
 
-    @Override
     @Nullable
+    @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }

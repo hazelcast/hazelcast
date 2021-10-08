@@ -167,6 +167,20 @@ public class EnumCompatibilityTest {
         mappings.put(FieldKind.COMPACT_ARRAY, 29);
         mappings.put(FieldKind.PORTABLE, 30);
         mappings.put(FieldKind.PORTABLE_ARRAY, 31);
+        mappings.put(FieldKind.NULLABLE_BOOLEAN, 32);
+        mappings.put(FieldKind.NULLABLE_BOOLEAN_ARRAY, 33);
+        mappings.put(FieldKind.NULLABLE_BYTE, 34);
+        mappings.put(FieldKind.NULLABLE_BYTE_ARRAY, 35);
+        mappings.put(FieldKind.NULLABLE_SHORT, 36);
+        mappings.put(FieldKind.NULLABLE_SHORT_ARRAY, 37);
+        mappings.put(FieldKind.NULLABLE_INT, 38);
+        mappings.put(FieldKind.NULLABLE_INT_ARRAY, 39);
+        mappings.put(FieldKind.NULLABLE_LONG, 40);
+        mappings.put(FieldKind.NULLABLE_LONG_ARRAY, 41);
+        mappings.put(FieldKind.NULLABLE_FLOAT, 42);
+        mappings.put(FieldKind.NULLABLE_FLOAT_ARRAY, 43);
+        mappings.put(FieldKind.NULLABLE_DOUBLE, 44);
+        mappings.put(FieldKind.NULLABLE_DOUBLE_ARRAY, 45);
         verifyCompatibility(FieldKind.values(), FieldKind::getId, mappings);
     }
 

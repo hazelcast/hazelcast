@@ -102,7 +102,7 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeObject(@Nonnull String fieldName, @Nullable Object object) {
+    public void writeCompact(@Nonnull String fieldName, @Nullable Object object) {
         addField(new FieldDescriptor(fieldName, FieldKind.COMPACT));
     }
 
@@ -112,22 +112,22 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeTime(@Nonnull String fieldName, @Nonnull LocalTime value) {
+    public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
         addField(new FieldDescriptor(fieldName, FieldKind.TIME));
     }
 
     @Override
-    public void writeDate(@Nonnull String fieldName, @Nonnull LocalDate value) {
+    public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
         addField(new FieldDescriptor(fieldName, FieldKind.DATE));
     }
 
     @Override
-    public void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value) {
+    public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
         addField(new FieldDescriptor(fieldName, FieldKind.TIMESTAMP));
     }
 
     @Override
-    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value) {
+    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
         addField(new FieldDescriptor(fieldName, FieldKind.TIMESTAMP_WITH_TIMEZONE));
     }
 
@@ -202,7 +202,77 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeObjectArray(@Nonnull String fieldName, @Nullable Object[] values) {
+    public void writeCompactArray(@Nonnull String fieldName, @Nullable Object[] values) {
         addField(new FieldDescriptor(fieldName, FieldKind.COMPACT_ARRAY));
+    }
+
+    @Override
+    public void writeNullableByte(@Nonnull String fieldName, @Nullable Byte value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_BYTE));
+    }
+
+    @Override
+    public void writeNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_BOOLEAN));
+    }
+
+    @Override
+    public void writeNullableShort(@Nonnull String fieldName, @Nullable Short value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_SHORT));
+    }
+
+    @Override
+    public void writeNullableInt(@Nonnull String fieldName, @Nullable Integer value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_INT));
+    }
+
+    @Override
+    public void writeNullableLong(@Nonnull String fieldName, @Nullable Long value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_LONG));
+    }
+
+    @Override
+    public void writeNullableFloat(@Nonnull String fieldName, @Nullable Float value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_FLOAT));
+    }
+
+    @Override
+    public void writeNullableDouble(@Nonnull String fieldName, @Nullable Double value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_DOUBLE));
+    }
+
+    @Override
+    public void writeNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_BYTE_ARRAY));
+    }
+
+    @Override
+    public void writeNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_BOOLEAN_ARRAY));
+    }
+
+    @Override
+    public void writeNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_SHORT_ARRAY));
+    }
+
+    @Override
+    public void writeNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_INT_ARRAY));
+    }
+
+    @Override
+    public void writeNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_LONG_ARRAY));
+    }
+
+    @Override
+    public void writeNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_FLOAT_ARRAY));
+    }
+
+    @Override
+    public void writeNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.NULLABLE_DOUBLE_ARRAY));
     }
 }

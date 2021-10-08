@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -400,4 +398,130 @@ public interface GenericRecord {
      */
     @Nullable
     GenericRecord[] getGenericRecordArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean getNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte getNullableByte(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double getNullableDouble(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float getNullableFloat(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getNullableInt(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long getNullableLong(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short getNullableShort(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean[] getNullableBooleanArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte[] getNullableByteArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double[] getNullableDoubleArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float[] getNullableFloatArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer[] getNullableIntArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long[] getNullableLongArray(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short[] getNullableShortArray(@Nonnull String fieldName);
 }

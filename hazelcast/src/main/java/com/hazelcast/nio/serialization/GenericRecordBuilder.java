@@ -208,6 +208,121 @@ interface GenericRecordBuilder {
      * Otherwise, it is illegal to set to the same field twice.
      *
      * @param fieldName name of the field as it is defined in its class definition.
+     *                  It should be composed of only alpha-numeric characters.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  It should be composed of only alpha-numeric characters.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableByte(@Nonnull String fieldName, @Nullable Byte value);
+
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableShort(@Nonnull String fieldName, @Nullable Short value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableInt(@Nonnull String fieldName, @Nullable Integer value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableLong(@Nonnull String fieldName, @Nullable Long value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableFloat(@Nonnull String fieldName, @Nullable Float value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableDouble(@Nonnull String fieldName, @Nullable Double value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
      * @param value     to set to GenericRecord
      * @return itself for chaining
@@ -319,6 +434,7 @@ interface GenericRecordBuilder {
      *                                         the type of the field does not match the one in the class definition or
      *                                         Same field is trying to be set without using
      *                                         {@link GenericRecord#cloneWithBuilder()}.
+     *
      */
     @Nonnull
     GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
@@ -450,6 +566,118 @@ interface GenericRecordBuilder {
      */
     @Nonnull
     GenericRecordBuilder setShortArray(@Nonnull String fieldName, @Nullable short[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.

@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -57,6 +58,20 @@ import static com.hazelcast.nio.serialization.FieldKind.INT;
 import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.LONG;
 import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
@@ -148,24 +163,8 @@ public class DefaultCompactWriter implements CompactWriter {
         }
     }
 
-    @Override
-    public void writeInt(@Nonnull String fieldName, int value) {
-        int position = getFixedSizeFieldPosition(fieldName, INT);
-        try {
-            out.writeInt(position, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
-    public void writeLong(@Nonnull String fieldName, long value) {
-        int position = getFixedSizeFieldPosition(fieldName, LONG);
-        try {
-            out.writeLong(position, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
+    IllegalStateException illegalStateException(IOException cause) {
+        return new IllegalStateException("IOException is not expected from BufferObjectDataOutput ", cause);
     }
 
     @Override
@@ -179,10 +178,6 @@ public class DefaultCompactWriter implements CompactWriter {
         } catch (IOException e) {
             throw illegalStateException(e);
         }
-    }
-
-    private IllegalStateException illegalStateException(IOException cause) {
-        return new IllegalStateException("IOException is not expected from BufferObjectDataOutput ", cause);
     }
 
     @Override
@@ -206,10 +201,30 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeDouble(@Nonnull String fieldName, double value) {
-        int position = getFixedSizeFieldPosition(fieldName, DOUBLE);
+    public void writeShort(@Nonnull String fieldName, short value) {
+        int position = getFixedSizeFieldPosition(fieldName, SHORT);
         try {
-            out.writeDouble(position, value);
+            out.writeShort(position, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public void writeInt(@Nonnull String fieldName, int value) {
+        int position = getFixedSizeFieldPosition(fieldName, INT);
+        try {
+            out.writeInt(position, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public void writeLong(@Nonnull String fieldName, long value) {
+        int position = getFixedSizeFieldPosition(fieldName, LONG);
+        try {
+            out.writeLong(position, value);
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -226,16 +241,17 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeShort(@Nonnull String fieldName, short value) {
-        int position = getFixedSizeFieldPosition(fieldName, SHORT);
+    public void writeDouble(@Nonnull String fieldName, double value) {
+        int position = getFixedSizeFieldPosition(fieldName, DOUBLE);
         try {
-            out.writeShort(position, value);
+            out.writeDouble(position, value);
         } catch (IOException e) {
             throw illegalStateException(e);
         }
     }
 
-    protected <T> void writeVariableSizeField(@Nonnull String fieldName, FieldKind fieldKind, T object, Writer<T> writer) {
+    protected <T> void writeVariableSizeField(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
+                                              @Nullable T object, @Nonnull Writer<T> writer) {
         try {
             if (object == null) {
                 setPositionAsNull(fieldName, fieldKind);
@@ -249,17 +265,17 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeString(@Nonnull String fieldName, String str) {
+    public void writeString(@Nonnull String fieldName, @Nullable String str) {
         writeVariableSizeField(fieldName, STRING, str, ObjectDataOutput::writeString);
     }
 
     @Override
-    public void writeObject(@Nonnull String fieldName, Object value) {
+    public void writeCompact(@Nonnull String fieldName, @Nullable Object value) {
         writeVariableSizeField(fieldName, COMPACT, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
-    public void writeGenericRecord(@Nonnull String fieldName, GenericRecord value) {
+    public void writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         writeVariableSizeField(fieldName, COMPACT, value,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
@@ -270,55 +286,23 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeTime(@Nonnull String fieldName, @Nonnull LocalTime value) {
-        int lastPos = out.position();
-        try {
-            out.position(getFixedSizeFieldPosition(fieldName, TIME));
-            IOUtil.writeLocalTime(out, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            out.position(lastPos);
-        }
+    public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
+        writeVariableSizeField(fieldName, TIME, value, IOUtil::writeLocalTime);
     }
 
     @Override
-    public void writeDate(@Nonnull String fieldName, @Nonnull LocalDate value) {
-        int lastPos = out.position();
-        try {
-            out.position(getFixedSizeFieldPosition(fieldName, DATE));
-            IOUtil.writeLocalDate(out, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            out.position(lastPos);
-        }
+    public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
+        writeVariableSizeField(fieldName, DATE, value, IOUtil::writeLocalDate);
     }
 
     @Override
-    public void writeTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value) {
-        int lastPos = out.position();
-        try {
-            out.position(getFixedSizeFieldPosition(fieldName, TIMESTAMP));
-            IOUtil.writeLocalDateTime(out, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            out.position(lastPos);
-        }
+    public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
+        writeVariableSizeField(fieldName, TIMESTAMP, value, IOUtil::writeLocalDateTime);
     }
 
     @Override
-    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value) {
-        int lastPos = out.position();
-        try {
-            out.position(getFixedSizeFieldPosition(fieldName, TIMESTAMP_WITH_TIMEZONE));
-            IOUtil.writeOffsetDateTime(out, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            out.position(lastPos);
-        }
+    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
+        writeVariableSizeField(fieldName, TIMESTAMP_WITH_TIMEZONE, value, IOUtil::writeOffsetDateTime);
     }
 
     @Override
@@ -370,7 +354,8 @@ public class DefaultCompactWriter implements CompactWriter {
         void write(BufferObjectDataOutput out, T value) throws IOException;
     }
 
-    protected <T> void writeVariableSizeArray(@Nonnull String fieldName, FieldKind fieldKind, T[] values, Writer<T> writer) {
+    protected <T> void writeVariableSizeArray(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
+                                              @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
             setPositionAsNull(fieldName, fieldKind);
             return;
@@ -406,32 +391,32 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values) {
-        writeVariableSizeField(fieldName, TIME_ARRAY, values, DefaultCompactWriter::writeLocalTimeArray0);
+    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value) {
+        writeVariableSizeArray(fieldName, TIME_ARRAY, value, IOUtil::writeLocalTime);
     }
 
     @Override
-    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values) {
-        writeVariableSizeField(fieldName, DATE_ARRAY, values, DefaultCompactWriter::writeLocalDateArray0);
+    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value) {
+        writeVariableSizeArray(fieldName, DATE_ARRAY, value, IOUtil::writeLocalDate);
     }
 
     @Override
-    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values) {
-        writeVariableSizeField(fieldName, TIMESTAMP_ARRAY, values, DefaultCompactWriter::writeLocalDateTimeArray0);
+    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
+        writeVariableSizeArray(fieldName, TIMESTAMP_ARRAY, value, IOUtil::writeLocalDateTime);
     }
 
     @Override
-    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
-        writeVariableSizeField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, values, DefaultCompactWriter::writeOffsetDateTimeArray0);
+    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
+        writeVariableSizeArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, value, IOUtil::writeOffsetDateTime);
     }
 
-    protected void setPositionAsNull(@Nonnull String fieldName, FieldKind fieldKind) {
+    protected void setPositionAsNull(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
         FieldDescriptor field = checkFieldDefinition(fieldName, fieldKind);
         int index = field.getIndex();
         fieldOffsets[index] = -1;
     }
 
-    protected void setPosition(@Nonnull String fieldName, FieldKind fieldKind) {
+    protected void setPosition(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
         FieldDescriptor field = checkFieldDefinition(fieldName, fieldKind);
         int pos = out.position();
         int fieldPosition = pos - dataStartPosition;
@@ -456,45 +441,87 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeObjectArray(@Nonnull String fieldName, T[] values) {
-        writeVariableSizeArray(fieldName, COMPACT_ARRAY, values,
+    public <T> void writeCompactArray(@Nonnull String fieldName, @Nullable T[] value) {
+        writeVariableSizeArray(fieldName, COMPACT_ARRAY, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
-    public void writeGenericRecordArray(@Nonnull String fieldName, GenericRecord[] values) {
-        writeVariableSizeArray(fieldName, COMPACT_ARRAY, values,
+    public void writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        writeVariableSizeArray(fieldName, COMPACT_ARRAY, value,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
-    private static void writeLocalDateArray0(ObjectDataOutput out, LocalDate[] value) throws IOException {
-        out.writeInt(value.length);
-        for (LocalDate localDate : value) {
-            IOUtil.writeLocalDate(out, localDate);
-        }
+    @Override
+    public void writeNullableByte(@Nonnull String fieldName, @Nullable Byte value) {
+        writeVariableSizeField(fieldName, NULLABLE_BYTE, value, (Writer<Byte>) DataOutput::writeByte);
     }
 
-    private static void writeLocalTimeArray0(ObjectDataOutput out, LocalTime[] value) throws IOException {
-        out.writeInt(value.length);
-        for (LocalTime localTime : value) {
-            IOUtil.writeLocalTime(out, localTime);
-        }
+    @Override
+    public void writeNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value) {
+        writeVariableSizeField(fieldName, NULLABLE_BOOLEAN, value, DataOutput::writeBoolean);
     }
 
-    private static void writeLocalDateTimeArray0(ObjectDataOutput out, LocalDateTime[] value) throws IOException {
-        out.writeInt(value.length);
-        for (LocalDateTime localDateTime : value) {
-            IOUtil.writeLocalDateTime(out, localDateTime);
-        }
+    @Override
+    public void writeNullableShort(@Nonnull String fieldName, @Nullable Short value) {
+        writeVariableSizeField(fieldName, NULLABLE_SHORT, value, (Writer<Short>) DataOutput::writeShort);
     }
 
-    private static void writeOffsetDateTimeArray0(ObjectDataOutput out, OffsetDateTime[] value) throws IOException {
-        out.writeInt(value.length);
-        for (OffsetDateTime offsetDateTime : value) {
-            IOUtil.writeOffsetDateTime(out, offsetDateTime);
-        }
+    @Override
+    public void writeNullableInt(@Nonnull String fieldName, @Nullable Integer value) {
+        writeVariableSizeField(fieldName, NULLABLE_INT, value, DataOutput::writeInt);
     }
 
-    private static void writeBooleanBits(BufferObjectDataOutput out, boolean[] booleans) throws IOException {
+    @Override
+    public void writeNullableLong(@Nonnull String fieldName, @Nullable Long value) {
+        writeVariableSizeField(fieldName, NULLABLE_LONG, value, DataOutput::writeLong);
+    }
+
+    @Override
+    public void writeNullableFloat(@Nonnull String fieldName, @Nullable Float value) {
+        writeVariableSizeField(fieldName, NULLABLE_FLOAT, value, DataOutput::writeFloat);
+    }
+
+    @Override
+    public void writeNullableDouble(@Nonnull String fieldName, @Nullable Double value) {
+        writeVariableSizeField(fieldName, NULLABLE_DOUBLE, value, DataOutput::writeDouble);
+    }
+
+    @Override
+    public void writeNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_BYTE_ARRAY, value, (Writer<Byte>) DataOutput::writeByte);
+    }
+
+    @Override
+    public void writeNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_BOOLEAN_ARRAY, value, DataOutput::writeBoolean);
+    }
+
+    @Override
+    public void writeNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_SHORT_ARRAY, value, (Writer<Short>) DataOutput::writeShort);
+    }
+
+    @Override
+    public void writeNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_INT_ARRAY, value, DataOutput::writeInt);
+    }
+
+    @Override
+    public void writeNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_LONG_ARRAY, value, DataOutput::writeLong);
+    }
+
+    @Override
+    public void writeNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_FLOAT_ARRAY, value, DataOutput::writeFloat);
+    }
+
+    @Override
+    public void writeNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value) {
+        writeVariableSizeArray(fieldName, NULLABLE_DOUBLE_ARRAY, value, DataOutput::writeDouble);
+    }
+
+    static void writeBooleanBits(BufferObjectDataOutput out, @Nullable boolean[] booleans) throws IOException {
         int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
         out.writeInt(len);
         int position = out.position();
