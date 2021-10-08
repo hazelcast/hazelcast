@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.generator;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
-import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetSqlOperandMetadata;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSpecificTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
@@ -33,18 +33,18 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
-public final class StreamGeneratorTableFunction extends JetSpecificTableFunction {
+public final class StreamGeneratorTableFunction extends HazelcastSpecificTableFunction {
 
     private static final String SCHEMA_NAME_STREAM = "stream";
     private static final String FUNCTION_NAME = "GENERATE_STREAM";
-    private static final List<JetTableFunctionParameter> PARAMETERS = singletonList(
-            new JetTableFunctionParameter(0, "rate", INTEGER, false, TypedOperandChecker.INTEGER)
+    private static final List<HazelcastTableFunctionParameter> PARAMETERS = singletonList(
+            new HazelcastTableFunctionParameter(0, "rate", INTEGER, false, TypedOperandChecker.INTEGER)
     );
 
     public StreamGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                new JetSqlOperandMetadata(
+                new HazelcastSqlOperandMetadata(
                         PARAMETERS,
                         new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
                 ),

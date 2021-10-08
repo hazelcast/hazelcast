@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 
-public final class JetConventions {
+public final class Conventions {
 
     public static final Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 
@@ -37,6 +37,6 @@ public final class JetConventions {
         }
     };
 
-    private JetConventions() {
+    private Conventions() {
     }
 }

@@ -29,7 +29,7 @@ import java.util.Collection;
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetSqlIndexTest extends JetSqlIndexAbstractTest {
+public class SqlIndexTest extends SqlIndexAbstractTest {
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
         return parametersQuick();

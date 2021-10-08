@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetSqlResultImplTest extends JetTestSupport {
+public class SqlResultImplTest extends JetTestSupport {
 
     @Test
     // test for https://github.com/hazelcast/hazelcast-jet/issues/2697

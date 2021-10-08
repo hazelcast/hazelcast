@@ -24,7 +24,7 @@ import org.apache.calcite.rel.RelNode;
 
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class FilterPhysicalRule extends RelOptRule {
 

@@ -46,7 +46,7 @@ import static java.util.Arrays.asList;
  * Make sure that CAST expressions are unwrapped properly.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class JetSqlIndexCastTest extends OptimizerTestSupport {
+public class SqlIndexCastTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
 
