@@ -49,6 +49,8 @@ public class ChildFirstClassLoaderTest {
 
     private static URL jarUrl;
     private static URL emptyJarUrl;
+
+    private URLClassLoader intermediateCl;
     private ChildFirstClassLoader cl;
 
     @BeforeClass
@@ -66,6 +68,9 @@ public class ChildFirstClassLoaderTest {
         if (jarUrl != null) {
             Files.delete(Paths.get(jarUrl.toURI()));
         }
+        if (emptyJarUrl != null) {
+            Files.delete(Paths.get(emptyJarUrl.toURI()));
+        }
     }
 
     @After
@@ -73,6 +78,10 @@ public class ChildFirstClassLoaderTest {
         if (cl != null) {
             cl.close();
             cl = null;
+        }
+        if (intermediateCl != null) {
+            intermediateCl.close();
+            intermediateCl = null;
         }
     }
 
@@ -170,7 +179,7 @@ public class ChildFirstClassLoaderTest {
     public void canLoadClassFromIntermediate() throws Exception {
         URL jarUrl = resourceJarUrl("deployment/sample-pojo-1.0-car.jar");
 
-        URLClassLoader intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
+        intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
         cl = new ChildFirstClassLoader(new URL[]{emptyJarUrl},
                 intermediateCl);
 
@@ -187,7 +196,8 @@ public class ChildFirstClassLoaderTest {
      */
     @Test
     public void canLoadResourceFromIntermediate() throws Exception {
-        URLClassLoader intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
+        intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
+
         cl = new ChildFirstClassLoader(new URL[]{emptyJarUrl},
                 intermediateCl);
 
@@ -220,7 +230,7 @@ public class ChildFirstClassLoaderTest {
      */
     @Test
     public void prefersResourceInParentBeforeIntermediate() throws Exception {
-        URLClassLoader intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
+        intermediateCl = new URLClassLoader(new URL[]{jarUrl}, ClassLoader.getSystemClassLoader());
         cl = new ChildFirstClassLoader(new URL[]{emptyJarUrl},
                 intermediateCl);
 
@@ -233,11 +243,12 @@ public class ChildFirstClassLoaderTest {
     }
 
     private String readResource(String name) throws IOException {
-        InputStream is = cl.getResourceAsStream(name);
-        if (is == null) {
-            throw new IllegalArgumentException("Resource with name " + name +
-                    " could not be found in classloader " + cl);
+        try (InputStream is = cl.getResourceAsStream(name)) {
+            if (is == null) {
+                throw new IllegalArgumentException("Resource with name " + name +
+                        " could not be found in classloader " + cl);
+            }
+            return IOUtils.toString(is, UTF_8);
         }
-        return IOUtils.toString(is, UTF_8);
     }
 }

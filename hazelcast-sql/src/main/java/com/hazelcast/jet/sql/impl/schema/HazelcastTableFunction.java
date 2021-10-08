@@ -27,12 +27,12 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference.wrap;
 
-public abstract class JetTableFunction extends SqlFunction implements SqlTableFunction {
+public abstract class HazelcastTableFunction extends SqlFunction implements SqlTableFunction {
 
     private final SqlReturnTypeInference returnTypeInference;
     private final SqlConnector connector;
 
-    protected JetTableFunction(
+    protected HazelcastTableFunction(
             String name,
             SqlOperandMetadata operandMetadata,
             SqlReturnTypeInference returnTypeInference,

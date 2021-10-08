@@ -71,6 +71,11 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     }
 
     @Override
+    public void afterRun() throws Exception {
+        reportReliableTopicReceived(1);
+    }
+
+    @Override
     public void onWaitExpire() {
         //todo:
     }

@@ -58,7 +58,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlIndexConverterMismatchTest extends JetSqlIndexTestSupport {
+public class SqlIndexConverterMismatchTest extends SqlIndexTestSupport {
 
     private static final String MAP_NAME = "map";
 

@@ -55,9 +55,9 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 
-abstract class JetPlan extends SqlPlan {
+abstract class SqlPlanImpl extends SqlPlan {
 
-    protected JetPlan(PlanKey planKey) {
+    protected SqlPlanImpl(PlanKey planKey) {
         super(planKey);
     }
 
@@ -77,18 +77,18 @@ abstract class JetPlan extends SqlPlan {
     public void checkPermissions(SqlSecurityContext context) {
     }
 
-    static class CreateMappingPlan extends JetPlan {
+    static class CreateMappingPlan extends SqlPlanImpl {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateMappingPlan(
                 PlanKey planKey,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -132,22 +132,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
-            JetPlan.ensureNoTimeout("CREATE MAPPING", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE MAPPING", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropMappingPlan extends JetPlan {
+    static class DropMappingPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropMappingPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -186,24 +186,24 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP MAPPING", arguments);
-            JetPlan.ensureNoTimeout("DROP MAPPING", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateJobPlan extends JetPlan {
+    static class CreateJobPlan extends SqlPlanImpl {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final DmlPlan dmlPlan;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateJobPlan(
                 PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 DmlPlan dmlPlan,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -252,21 +252,21 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoTimeout("CREATE JOB", timeout);
+            SqlPlanImpl.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
 
-    static class AlterJobPlan extends JetPlan {
+    static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
         private final AlterJobOperation operation;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
                 AlterJobOperation operation,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -300,24 +300,24 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("ALTER JOB", arguments);
-            JetPlan.ensureNoTimeout("ALTER JOB", timeout);
+            SqlPlanImpl.ensureNoArguments("ALTER JOB", arguments);
+            SqlPlanImpl.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropJobPlan extends JetPlan {
+    static class DropJobPlan extends SqlPlanImpl {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropJobPlan(
                 PlanKey planKey,
                 String jobName,
                 boolean ifExists,
                 String withSnapshotName,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -356,22 +356,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP JOB", arguments);
-            JetPlan.ensureNoTimeout("DROP JOB", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP JOB", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateSnapshotPlan extends JetPlan {
+    static class CreateSnapshotPlan extends SqlPlanImpl {
         private final String snapshotName;
         private final String jobName;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 String jobName,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -405,22 +405,22 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
-            JetPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropSnapshotPlan extends JetPlan {
+    static class DropSnapshotPlan extends SqlPlanImpl {
         private final String snapshotName;
         private final boolean ifExists;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 boolean ifExists,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -454,20 +454,20 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
-            JetPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class ShowStatementPlan extends JetPlan {
+    static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
-                JetPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -496,19 +496,19 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
-            JetPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
+            SqlPlanImpl.ensureNoArguments("SHOW " + showTarget, arguments);
+            SqlPlanImpl.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class SelectPlan extends JetPlan {
+    static class SelectPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         SelectPlan(
@@ -518,7 +518,7 @@ abstract class JetPlan extends SqlPlan {
                 DAG dag,
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -575,12 +575,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DmlPlan extends JetPlan {
+    static class DmlPlan extends SqlPlanImpl {
         private final TableModify.Operation operation;
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         DmlPlan(
@@ -589,7 +589,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -641,14 +641,14 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapSelectPlan extends JetPlan {
+    static class IMapSelectPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final KvRowProjector.Supplier rowProjectorSupplier;
         private final SqlRowMetadata rowMetadata;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSelectPlan(
@@ -659,7 +659,7 @@ abstract class JetPlan extends SqlPlan {
                 Expression<?> keyCondition,
                 KvRowProjector.Supplier rowProjectorSupplier,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -721,12 +721,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapInsertPlan extends JetPlan {
+    static class IMapInsertPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapInsertPlan(
@@ -735,7 +735,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -787,12 +787,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapSinkPlan extends JetPlan {
+    static class IMapSinkPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, Map<Object, Object>> entriesFn;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSinkPlan(
@@ -801,7 +801,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, Map<Object, Object>> entriesFn,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -853,13 +853,13 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapUpdatePlan extends JetPlan {
+    static class IMapUpdatePlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapUpdatePlan(
@@ -869,7 +869,7 @@ abstract class JetPlan extends SqlPlan {
                 String mapName,
                 Expression<?> keyCondition,
                 UpdatingEntryProcessor.Supplier updaterSupplier,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -927,12 +927,12 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class IMapDeletePlan extends JetPlan {
+    static class IMapDeletePlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
-        private final JetPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapDeletePlan(
@@ -941,7 +941,7 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Expression<?> keyCondition,
-                JetPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);

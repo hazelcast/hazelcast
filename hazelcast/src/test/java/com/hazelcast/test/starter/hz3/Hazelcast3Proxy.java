@@ -60,7 +60,7 @@ public class Hazelcast3Proxy {
         try {
             File hazelcastJar = locateVersion("3.12.12", new File("target"), false)[HAZELCAST_JAR_INDEX];
             URLClassLoader classLoader = new ChildFirstClassLoader(
-                    new URL[]{new URL("file:" + hazelcastJar.toPath().toAbsolutePath())},
+                    new URL[]{hazelcastJar.toURI().toURL()},
                     Hazelcast3Proxy.class.getClassLoader()
             );
             Object config = buildHz3Config(xmlConfig, classLoader);
