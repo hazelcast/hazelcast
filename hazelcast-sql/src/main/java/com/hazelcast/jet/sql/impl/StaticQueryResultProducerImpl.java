@@ -27,17 +27,17 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonList;
 
-public class HazelcastStaticQueryResultProducer implements QueryResultProducer {
+public class StaticQueryResultProducerImpl implements QueryResultProducer {
 
     private final Iterator<? extends Row> iterator;
 
     private boolean iteratorRequested;
 
-    public HazelcastStaticQueryResultProducer(Object[] row) {
+    public StaticQueryResultProducerImpl(Object[] row) {
         this(singletonList(new HeapRow(row)).iterator());
     }
 
-    public HazelcastStaticQueryResultProducer(Iterator<? extends Row> iterator) {
+    public StaticQueryResultProducerImpl(Iterator<? extends Row> iterator) {
         this.iterator = iterator;
     }
 

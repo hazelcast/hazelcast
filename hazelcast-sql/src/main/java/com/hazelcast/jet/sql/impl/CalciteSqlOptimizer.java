@@ -17,21 +17,21 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.AlterJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateMappingPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateSnapshotPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DmlPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapDeletePlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapInsertPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapSelectPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapSinkPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapUpdatePlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.SelectPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.opt.JetConventions;
@@ -41,7 +41,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.HazelcastRootRel;
+import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
@@ -168,7 +168,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final MappingResolver mappingResolver;
     private final List<TableResolver> tableResolvers;
-    private final HazelcastPlanExecutor planExecutor;
+    private final PlanExecutor planExecutor;
 
     private final ILogger logger;
 
@@ -179,7 +179,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(mappingCatalog);
-        this.planExecutor = new HazelcastPlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
+        this.planExecutor = new PlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -292,7 +292,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
-        HazelcastPlan dmlPlan = toPlan(
+        SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
@@ -338,7 +338,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
     }
 
-    private HazelcastPlan toPlan(
+    private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
             RelNode rel,
@@ -431,7 +431,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new HazelcastRootRel(physicalRel), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),

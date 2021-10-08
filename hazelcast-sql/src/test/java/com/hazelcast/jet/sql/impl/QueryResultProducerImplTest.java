@@ -44,14 +44,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HazelcastQueryResultProducerTest extends JetTestSupport {
+public class QueryResultProducerImplTest extends JetTestSupport {
 
-    private HazelcastQueryResultProducer producer;
+    private QueryResultProducerImpl producer;
     private ResultIterator<Row> iterator;
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     private void initProducer(boolean blockForNextItem) {
-        producer = new HazelcastQueryResultProducer(blockForNextItem);
+        producer = new QueryResultProducerImpl(blockForNextItem);
         iterator = producer.iterator();
     }
 
@@ -246,7 +246,7 @@ public class HazelcastQueryResultProducerTest extends JetTestSupport {
     public void when_queueCapacityExceeded_then_inboxNotConsumed() {
         initProducer(false);
         int numExcessItems = 2;
-        for (int i = 0; i < HazelcastQueryResultProducer.QUEUE_CAPACITY + numExcessItems; i++) {
+        for (int i = 0; i < QueryResultProducerImpl.QUEUE_CAPACITY + numExcessItems; i++) {
             inbox.queue().add(new Object[0]);
         }
         producer.consume(inbox);

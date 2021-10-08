@@ -24,21 +24,21 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.AlterJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateMappingPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.CreateSnapshotPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DmlPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropJobPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapDeletePlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapInsertPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapSelectPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapSinkPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.IMapUpdatePlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.SelectPlan;
-import com.hazelcast.jet.sql.impl.HazelcastPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -74,13 +74,13 @@ import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMEN
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
-public class HazelcastPlanExecutor {
+public class PlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
-    public HazelcastPlanExecutor(
+    public PlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
@@ -195,9 +195,9 @@ public class HazelcastPlanExecutor {
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
-        return new HazelcastSqlResultImpl(
+        return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new HazelcastStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                new StaticQueryResultProducerImpl(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
                 metadata,
                 false,
                 serializationService
@@ -211,7 +211,7 @@ public class HazelcastPlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setTimeoutMillis(timeout);
 
-        HazelcastQueryResultProducer queryResultProducer = new HazelcastQueryResultProducer(!plan.isStreaming());
+        QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         long jobId = jet.newJobId();
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
@@ -230,7 +230,7 @@ public class HazelcastPlanExecutor {
             throw e;
         }
 
-        return new HazelcastSqlResultImpl(
+        return new SqlResultImpl(
                 queryId,
                 queryResultProducer,
                 plan.getRowMetadata(),
@@ -263,9 +263,9 @@ public class HazelcastPlanExecutor {
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
         Object[] row = await(future, timeout);
-        return new HazelcastSqlResultImpl(
+        return new SqlResultImpl(
                 queryId,
-                new HazelcastStaticQueryResultProducer(row),
+                new StaticQueryResultProducerImpl(row),
                 plan.rowMetadata(),
                 false,
                 serializationService

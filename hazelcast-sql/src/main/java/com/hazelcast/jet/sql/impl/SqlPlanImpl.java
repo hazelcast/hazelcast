@@ -55,9 +55,9 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 
-abstract class HazelcastPlan extends SqlPlan {
+abstract class SqlPlanImpl extends SqlPlan {
 
-    protected HazelcastPlan(PlanKey planKey) {
+    protected SqlPlanImpl(PlanKey planKey) {
         super(planKey);
     }
 
@@ -77,18 +77,18 @@ abstract class HazelcastPlan extends SqlPlan {
     public void checkPermissions(SqlSecurityContext context) {
     }
 
-    static class CreateMappingPlan extends HazelcastPlan {
+    static class CreateMappingPlan extends SqlPlanImpl {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateMappingPlan(
                 PlanKey planKey,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -132,22 +132,22 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("CREATE MAPPING", arguments);
-            HazelcastPlan.ensureNoTimeout("CREATE MAPPING", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE MAPPING", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropMappingPlan extends HazelcastPlan {
+    static class DropMappingPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropMappingPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -186,24 +186,24 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("DROP MAPPING", arguments);
-            HazelcastPlan.ensureNoTimeout("DROP MAPPING", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateJobPlan extends HazelcastPlan {
+    static class CreateJobPlan extends SqlPlanImpl {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final DmlPlan dmlPlan;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateJobPlan(
                 PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 DmlPlan dmlPlan,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -252,21 +252,21 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoTimeout("CREATE JOB", timeout);
+            SqlPlanImpl.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
 
-    static class AlterJobPlan extends HazelcastPlan {
+    static class AlterJobPlan extends SqlPlanImpl {
         private final String jobName;
         private final AlterJobOperation operation;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         AlterJobPlan(
                 PlanKey planKey,
                 String jobName,
                 AlterJobOperation operation,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -300,24 +300,24 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("ALTER JOB", arguments);
-            HazelcastPlan.ensureNoTimeout("ALTER JOB", timeout);
+            SqlPlanImpl.ensureNoArguments("ALTER JOB", arguments);
+            SqlPlanImpl.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropJobPlan extends HazelcastPlan {
+    static class DropJobPlan extends SqlPlanImpl {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropJobPlan(
                 PlanKey planKey,
                 String jobName,
                 boolean ifExists,
                 String withSnapshotName,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -356,22 +356,22 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("DROP JOB", arguments);
-            HazelcastPlan.ensureNoTimeout("DROP JOB", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP JOB", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class CreateSnapshotPlan extends HazelcastPlan {
+    static class CreateSnapshotPlan extends SqlPlanImpl {
         private final String snapshotName;
         private final String jobName;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         CreateSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 String jobName,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -405,22 +405,22 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
-            HazelcastPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropSnapshotPlan extends HazelcastPlan {
+    static class DropSnapshotPlan extends SqlPlanImpl {
         private final String snapshotName;
         private final boolean ifExists;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         DropSnapshotPlan(
                 PlanKey planKey,
                 String snapshotName,
                 boolean ifExists,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -454,20 +454,20 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
-            HazelcastPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class ShowStatementPlan extends HazelcastPlan {
+    static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
-                HazelcastPlanExecutor planExecutor
+                PlanExecutor planExecutor
         ) {
             super(planKey);
 
@@ -496,19 +496,19 @@ abstract class HazelcastPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            HazelcastPlan.ensureNoArguments("SHOW " + showTarget, arguments);
-            HazelcastPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
+            SqlPlanImpl.ensureNoArguments("SHOW " + showTarget, arguments);
+            SqlPlanImpl.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class SelectPlan extends HazelcastPlan {
+    static class SelectPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         SelectPlan(
@@ -518,7 +518,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 DAG dag,
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -575,12 +575,12 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class DmlPlan extends HazelcastPlan {
+    static class DmlPlan extends SqlPlanImpl {
         private final TableModify.Operation operation;
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         DmlPlan(
@@ -589,7 +589,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -641,14 +641,14 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class IMapSelectPlan extends HazelcastPlan {
+    static class IMapSelectPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final KvRowProjector.Supplier rowProjectorSupplier;
         private final SqlRowMetadata rowMetadata;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSelectPlan(
@@ -659,7 +659,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 Expression<?> keyCondition,
                 KvRowProjector.Supplier rowProjectorSupplier,
                 SqlRowMetadata rowMetadata,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -721,12 +721,12 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class IMapInsertPlan extends HazelcastPlan {
+    static class IMapInsertPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapInsertPlan(
@@ -735,7 +735,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -787,12 +787,12 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class IMapSinkPlan extends HazelcastPlan {
+    static class IMapSinkPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Function<ExpressionEvalContext, Map<Object, Object>> entriesFn;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapSinkPlan(
@@ -801,7 +801,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, Map<Object, Object>> entriesFn,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -853,13 +853,13 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class IMapUpdatePlan extends HazelcastPlan {
+    static class IMapUpdatePlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapUpdatePlan(
@@ -869,7 +869,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 String mapName,
                 Expression<?> keyCondition,
                 UpdatingEntryProcessor.Supplier updaterSupplier,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
@@ -927,12 +927,12 @@ abstract class HazelcastPlan extends SqlPlan {
         }
     }
 
-    static class IMapDeletePlan extends HazelcastPlan {
+    static class IMapDeletePlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
         private final Expression<?> keyCondition;
-        private final HazelcastPlanExecutor planExecutor;
+        private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         IMapDeletePlan(
@@ -941,7 +941,7 @@ abstract class HazelcastPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Expression<?> keyCondition,
-                HazelcastPlanExecutor planExecutor,
+                PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
             super(planKey);
