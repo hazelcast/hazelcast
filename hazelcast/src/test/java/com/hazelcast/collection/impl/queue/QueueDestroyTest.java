@@ -62,7 +62,7 @@ public class QueueDestroyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void checkStatsMapEntryRemovedWhenQueueDestroyedFromMember() {
+    public void checkStatsMapEntryRemovedWhenQueueDestroyed() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         HazelcastInstance destroyerInstance = instanceSupplier.get();
         QueueService qService = Accessors.getService(member, SERVICE_NAME);
