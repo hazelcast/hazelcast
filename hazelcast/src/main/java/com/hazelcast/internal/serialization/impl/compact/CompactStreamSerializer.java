@@ -259,7 +259,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 return null;
             }
             try {
-                Object object = ClassLoaderUtil.newInstance(clazz.getClassLoader(), clazz);
+                Object object = ClassLoaderUtil.newInstanceBypassingConstructor(clazz);
                 return getOrCreateRegistration(object);
             } catch (Exception e) {
                 throw new HazelcastSerializationException("Class " + clazz + " must have an empty constructor", e);

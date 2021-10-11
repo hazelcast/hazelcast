@@ -19,6 +19,9 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ExceptionUtil;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
+import org.objenesis.instantiator.ObjectInstantiator;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -51,6 +54,9 @@ public final class ClassLoaderUtil {
     private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
+
+    private static final Objenesis OBJENESIS = new ObjenesisStd();
+    private static final Map<Class<?>, ObjectInstantiator> OBJECT_INSTANTIATORS = new ConcurrentHashMap<>();
 
     static {
         try {
@@ -222,6 +228,18 @@ public final class ClassLoaderUtil {
             CONSTRUCTOR_CACHE.put(classLoader, klass.getName(), constructor);
         }
         return (T) constructor.newInstance();
+    }
+
+    /**
+     * Creates a new instance of given class, bypassing constructors using Objenesis' instantiators.
+     * @param klass class which instance will be created
+     * @param <T> type of class {@code klass}
+     * @return newly created blank object
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T> T newInstanceBypassingConstructor(Class klass) {
+        ObjectInstantiator instantiator = OBJECT_INSTANTIATORS.computeIfAbsent(klass, OBJENESIS::getInstantiatorOf);
+        return (T) instantiator.newInstance();
     }
 
     public static Class<?> loadClass(final ClassLoader classLoaderHint, final String className) throws ClassNotFoundException {

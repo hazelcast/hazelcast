@@ -23,6 +23,9 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
+import org.objenesis.instantiator.ObjectInstantiator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -156,7 +159,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     @Nonnull
     private Object createObject(Class associatedClass) {
         try {
-            return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
+            return ClassLoaderUtil.newInstanceBypassingConstructor(associatedClass);
         } catch (Exception e) {
             throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
