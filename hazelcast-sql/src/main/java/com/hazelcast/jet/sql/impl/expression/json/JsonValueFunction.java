@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
-import com.google.gson.JsonElement;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -148,7 +147,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     }
 
     private T execute(final String json, final JsonPath path) {
-        final Collection<JsonElement> resultColl = JsonPathUtil.read(json, path);
+        final Collection<Object> resultColl = JsonPathUtil.read(json, path);
         if (resultColl.isEmpty()) {
             throw QueryException.error("JSON_VALUE evaluated to no value");
         }

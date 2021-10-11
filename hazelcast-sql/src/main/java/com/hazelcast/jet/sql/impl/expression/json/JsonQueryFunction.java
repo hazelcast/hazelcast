@@ -151,7 +151,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     }
 
     private String execute(final String json, final JsonPath path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
-        final Collection<JsonElement> resultColl = JsonPathUtil.read(json, path);
+        final Collection<Object> resultColl = JsonPathUtil.read(json, path);
         if (resultColl.isEmpty()) {
             throw QueryException.error("JSON_VALUE evaluated to no value");
         }

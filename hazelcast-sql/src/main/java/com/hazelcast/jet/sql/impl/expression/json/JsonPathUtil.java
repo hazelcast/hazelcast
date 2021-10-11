@@ -18,16 +18,12 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.hazelcast.query.QueryException;
-import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.ParseContext;
-import com.jayway.jsonpath.spi.cache.CacheProvider;
-import com.jayway.jsonpath.spi.cache.NOOPCache;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import org.jsfr.json.Collector;
 import org.jsfr.json.GsonParser;
 import org.jsfr.json.JsonSurfer;
@@ -37,9 +33,7 @@ import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.GsonProvider;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
@@ -66,40 +60,39 @@ public final class JsonPathUtil {
         return read(json, compile(pathString));
     }
 
-    public static Collection<JsonElement> read(String json, JsonPath path) {
+    public static Collection<Object> read(String json, JsonPath path) {
         Collector collector = SURFER.collector(json);
         ValueBox<Collection<JsonElement>> box = collector.collectAll(path, JsonElement.class);
         collector.exec();
-        Collection<JsonElement> results = box.get();
-        // translate JSON primitives in the result
-        return resulst;
+        return box.get().stream()
+                // translate JSON primitives in the result
+                .map(result -> {
+                    if (result.isJsonArray() || result.isJsonObject()) {
+                        return result;
+                    }
 
-        if (result.isJsonArray() || result.isJsonObject()) {
-            return result;
-        }
+                    if (result.isJsonNull()) {
+                        return null;
+                    }
 
-        return result;
-
-        if (result.isJsonNull()) {
-            return null;
-        }
-
-        final JsonPrimitive primitive = result.getAsJsonPrimitive();
-        if (primitive.isNumber()) {
-            // GSON's getAsNumber returns LazilyParsedNumber, which produces undesirable serialization results
-            // e.g. {"value":3"} instead of plain "3", therefore we need to convert it to plain Number.
-            if (primitive.toString().matches(".*[.eE].*")) {
-                return primitive.getAsBigDecimal();
-            } else {
-                return primitive.getAsLong();
-            }
-        } else if (primitive.isBoolean()) {
-            return primitive.getAsBoolean();
-        } else if (primitive.isString()) {
-            return primitive.getAsString();
-        } else {
-            throw new QueryException("Unsupported JSONPath result type: " + primitive.getClass().getName());
-        }
+                    final JsonPrimitive primitive = result.getAsJsonPrimitive();
+                    if (primitive.isNumber()) {
+                        // GSON's getAsNumber returns LazilyParsedNumber, which produces undesirable serialization results
+                        // e.g. {"value":3"} instead of plain "3", therefore we need to convert it to plain Number.
+                        if (primitive.toString().matches(".*[.eE].*")) {
+                            return primitive.getAsBigDecimal();
+                        } else {
+                            return primitive.getAsLong();
+                        }
+                    } else if (primitive.isBoolean()) {
+                        return primitive.getAsBoolean();
+                    } else if (primitive.isString()) {
+                        return primitive.getAsString();
+                    } else {
+                        throw QueryException.error("Unsupported JSONPath result type: " + primitive.getClass().getName());
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     public static boolean isArray(Object value) {
