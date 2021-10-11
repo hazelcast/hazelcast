@@ -56,8 +56,7 @@ public class ClientMapReplaceAllTest extends HazelcastTestSupport {
     @Before
     public final void startHazelcastInstances() {
         Config config = getConfig();
-        MapConfig mapConfig = new MapConfig("mapWithTTL");
-        mapConfig.setTimeToLiveSeconds(1);
+        MapConfig mapConfig = new MapConfig("mapConfig");
         config.addMapConfig(mapConfig);
         ClientConfig clientConfig = getClientConfig();
         memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
