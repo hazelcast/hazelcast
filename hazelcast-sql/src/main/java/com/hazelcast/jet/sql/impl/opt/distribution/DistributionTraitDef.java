@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.distribution;
 
-import com.hazelcast.jet.sql.impl.opt.JetConventions;
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
@@ -112,7 +112,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             return null;
         }
 
-        if (rel.getConvention() != JetConventions.PHYSICAL) {
+        if (rel.getConvention() != Conventions.PHYSICAL) {
             // Only physical nodes could be converted.
             return null;
         }

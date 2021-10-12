@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
+import com.hazelcast.jet.sql.impl.CalciteConfiguration;
+import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlConformance;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.CalciteConfiguration;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlConformance;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -42,7 +42,7 @@ public class QueryParser {
         SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
         CalciteConfiguration.DEFAULT.toParserConfig(configBuilder);
         configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
-        configBuilder.setParserFactory(JetSqlParser.FACTORY);
+        configBuilder.setParserFactory(HazelcastSqlParser.FACTORY);
         CONFIG = configBuilder.build();
     }
 

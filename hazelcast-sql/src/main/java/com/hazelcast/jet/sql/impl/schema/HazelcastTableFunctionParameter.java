@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.jet.sql.impl.validate.operand.OperandChecker;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class JetTableFunctionParameter {
+public class HazelcastTableFunctionParameter {
 
     private final int ordinal;
     private final String name;
@@ -27,7 +27,7 @@ public class JetTableFunctionParameter {
     private final boolean optional;
     private final OperandChecker checker;
 
-    public JetTableFunctionParameter(
+    public HazelcastTableFunctionParameter(
             int ordinal,
             String name,
             SqlTypeName type,

@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class JetMapScanMigrationStressTest extends JetTestSupport {
+public class MapScanMigrationStressTest extends JetTestSupport {
     private static final int ITEM_COUNT = 500_000;
     private static final String MAP_NAME = "map";
 

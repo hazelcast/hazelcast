@@ -16,7 +16,7 @@ data: {
   parser: {
     # Generated parser implementation package and class name.
     package: "com.hazelcast.jet.sql.impl.calcite.parser",
-    class: "JetSqlParser",
+    class: "HazelcastSqlParser",
 
     # List of additional classes and packages to import.
     # Example: "org.apache.calcite.sql.*", "java.util.List".

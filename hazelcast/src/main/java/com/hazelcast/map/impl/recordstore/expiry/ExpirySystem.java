@@ -136,10 +136,25 @@ public class ExpirySystem {
     }
 
     /**
+     * Add expiryMetadata of key to this expiry system.
+     */
+    public final void add(Data key, ExpiryMetadata expiryMetadata, long now) {
+        if (expiryMetadata == ExpiryMetadata.NULL) {
+            removeKeyFromExpirySystem(key);
+            return;
+        }
+
+        add(key, expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                expiryMetadata.getExpirationTime(),
+                expiryMetadata.getLastUpdateTime(), now);
+
+    }
+
+    /**
      * Add expirable key to this expiry system.
      */
     public final void add(Data key, long ttl, long maxIdle,
-                          long expiryTime, long now, long lastUpdateTime) {
+                          long expiryTime, long lastUpdateTime, long now) {
         // If expiry-time <= 0, no expiry-time exists, this is update
         // or first put of the key hence we need to calculate it.
         // If expiry-time > 0, this means we have a previously

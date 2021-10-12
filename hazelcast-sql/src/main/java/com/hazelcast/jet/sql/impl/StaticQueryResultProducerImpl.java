@@ -27,17 +27,17 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonList;
 
-public class JetStaticQueryResultProducer implements QueryResultProducer {
+public class StaticQueryResultProducerImpl implements QueryResultProducer {
 
     private final Iterator<? extends Row> iterator;
 
     private boolean iteratorRequested;
 
-    public JetStaticQueryResultProducer(Object[] row) {
+    public StaticQueryResultProducerImpl(Object[] row) {
         this(singletonList(new HeapRow(row)).iterator());
     }
 
-    public JetStaticQueryResultProducer(Iterator<? extends Row> iterator) {
+    public StaticQueryResultProducerImpl(Iterator<? extends Row> iterator) {
         this.iterator = iterator;
     }
 

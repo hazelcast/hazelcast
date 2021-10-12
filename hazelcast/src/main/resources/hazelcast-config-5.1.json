@@ -283,6 +283,11 @@
           "type": "boolean",
           "default": false
         },
+        "console-enabled": {
+          "description": "Set to true to allow console commands execution on the member, false to disallow.",
+          "type": "boolean",
+          "default": false
+        },
         "trusted-interfaces": {
           "type": "array",
           "items": {

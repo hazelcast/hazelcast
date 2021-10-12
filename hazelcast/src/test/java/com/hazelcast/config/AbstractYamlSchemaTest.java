@@ -56,7 +56,7 @@ public abstract class AbstractYamlSchemaTest {
     private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
 
     public static final Schema SCHEMA = SchemaLoader.builder()
-            .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
+            .schemaJson(readJSONObject("/hazelcast-config-5.1.json"))
             .draftV6Support()
             .schemaClient(SchemaClient.classPathAwareClient())
             .build()
