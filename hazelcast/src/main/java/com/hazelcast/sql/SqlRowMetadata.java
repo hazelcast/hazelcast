@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * SQL row metadata.
  */
-public final class SqlRowMetadata {
+public final class SqlRowMetadata implements Serializable {
     /** Constant indicating that the column is not found. */
     public static final int COLUMN_NOT_FOUND = -1;
 

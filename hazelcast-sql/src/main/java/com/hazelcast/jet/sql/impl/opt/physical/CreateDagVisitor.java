@@ -39,8 +39,10 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.processors.HashJoinProcessor;
+import com.hazelcast.jet.sql.impl.processors.HashJoinStreamProcessor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -61,11 +63,13 @@ import java.util.function.Predicate;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
+import static com.hazelcast.jet.sql.impl.CalciteSqlOptimizer.createRowMetadata;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -290,8 +294,6 @@ public class CreateDagVisitor {
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
-        assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
-
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
@@ -310,15 +312,40 @@ public class CreateDagVisitor {
     public Vertex onHashJoin(JoinHashPhysicalRel rel) {
         JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
 
-        Vertex joinVertex = dag.newUniqueVertex(
-                "Hash Join",
-                HashJoinProcessor.supplier(
-                        joinInfo,
-                        rel.getRight().getRowType().getFieldCount()
-                )
-        );
-        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
-        return joinVertex;
+        if (!rel.isStreaming()) {
+            Vertex joinVertex = dag.newUniqueVertex(
+                    "Hash Join",
+                    HashJoinProcessor.supplier(
+                            joinInfo,
+                            rel.getRight().getRowType().getFieldCount()
+                    ));
+            connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+            return joinVertex;
+        } else {
+            CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
+            visitor.onRoot(new RootRel(rel.getRight()));
+            SqlRowMetadata rowMetadata = createRowMetadata(
+                    rel.getRight().getRowType().getFieldNames(),
+                    ((PhysicalRel) rel.getRight()).schema(parameterMetadata).getTypes(),
+                    rel.getRight().getRowType().getFieldList()
+            );
+            Vertex joinVertex = dag.newUniqueVertex(
+                    "Hash Join (Streaming)",
+                    forceTotalParallelismOne(
+                            HashJoinStreamProcessor.supplier(
+                                    joinInfo,
+                                    rel.getRight().getRowType().getFieldCount(),
+                                    visitor.getDag(),
+                                    rowMetadata
+                                    ),
+                            localMemberAddress
+                    )
+            );
+            connectInput(rel.getLeft(), joinVertex, e -> e.distributeTo(localMemberAddress).allToOne(""));
+            return joinVertex;
+        }
+
+
     }
 
     public Vertex onUnion(UnionPhysicalRel rel) {
@@ -336,7 +363,7 @@ public class CreateDagVisitor {
         int ordinal = 0;
         for (RelNode input : rel.getInputs()) {
             Vertex inputVertex = ((PhysicalRel) input).accept(this);
-            Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
+            Edge edge = from(inputVertex).to(merger, ordinal++);
             dag.edge(edge);
         }
         return merger;

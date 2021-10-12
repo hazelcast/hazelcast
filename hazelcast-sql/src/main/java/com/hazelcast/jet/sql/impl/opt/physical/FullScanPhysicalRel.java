@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
@@ -133,6 +135,13 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
                 scanCpu + filterCpu + projectCpu,
                 0
         );
+    }
+
+    @Override
+    public boolean isStreaming() {
+        HazelcastTable hazelcastTable = getTable().unwrap(HazelcastTable.class);
+        SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
+        return connector.isStream();
     }
 
     @Override

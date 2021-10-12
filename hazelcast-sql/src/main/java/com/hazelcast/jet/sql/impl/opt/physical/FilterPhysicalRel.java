@@ -72,6 +72,11 @@ public class FilterPhysicalRel extends Filter implements PhysicalRel {
     }
 
     @Override
+    public boolean isStreaming() {
+        return ((PhysicalRel) getInput()).isStreaming();
+    }
+
+    @Override
     public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
         return new FilterPhysicalRel(getCluster(), traitSet, input, condition);
     }

@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-class SqlResultImpl extends AbstractSqlResult {
+public class SqlResultImpl extends AbstractSqlResult {
 
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
@@ -44,7 +44,7 @@ class SqlResultImpl extends AbstractSqlResult {
 
     private ResultIterator<SqlRow> iterator;
 
-    SqlResultImpl(
+    public SqlResultImpl(
             QueryId queryId,
             QueryResultProducer rootResultConsumer,
             SqlRowMetadata rowMetadata,

@@ -72,6 +72,11 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
     }
 
     @Override
+    public boolean isStreaming() {
+        return ((PhysicalRel) getInput(0)).isStreaming();
+    }
+
+    @Override
     public Join copy(
             RelTraitSet traitSet,
             RexNode conditionExpr,

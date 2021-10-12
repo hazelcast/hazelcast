@@ -19,11 +19,12 @@ package com.hazelcast.sql;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
  * SQL column metadata.
  */
-public final class SqlColumnMetadata {
+public final class SqlColumnMetadata implements Serializable {
 
     private final String name;
     private final SqlColumnType type;

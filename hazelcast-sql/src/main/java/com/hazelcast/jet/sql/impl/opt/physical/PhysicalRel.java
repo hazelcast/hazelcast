@@ -60,6 +60,10 @@ public interface PhysicalRel extends RelNode {
         return Util.toList(nodes, node -> node.accept(visitor));
     }
 
+    default boolean isStreaming() {
+        return false;
+    }
+
     @Override
     default RelDataType getRowType() {
         return getTable().unwrap(HazelcastTable.class).getRowType(getCluster().getTypeFactory());

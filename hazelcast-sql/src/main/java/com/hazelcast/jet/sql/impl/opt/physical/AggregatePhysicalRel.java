@@ -64,6 +64,11 @@ public class AggregatePhysicalRel extends Aggregate implements PhysicalRel {
     }
 
     @Override
+    public boolean isStreaming() {
+        return ((PhysicalRel) getInput()).isStreaming();
+    }
+
+    @Override
     public final Aggregate copy(
             RelTraitSet traitSet,
             RelNode input,

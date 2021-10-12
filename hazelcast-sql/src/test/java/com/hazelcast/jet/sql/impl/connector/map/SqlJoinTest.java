@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -673,6 +674,30 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void test_exists_streaming() {
+            String stream = createStream();
+            String table = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+
+            assertRowsEventually(
+                    "SELECT * FROM " + stream +
+                            " s WHERE " + whereClause()
+                            + "(SELECT * FROM  " + table + " t WHERE t.k = s.v)",
+                    asList(
+                            new Row(1L),
+                            new Row(2L),
+                            new Row(3L)
+                    ),
+                    asList(
+                            new Row(0L)
+                    )
+            );
+        }
+
+        @Test
         public void test_exists_withSubqueryAlwaysReturningSome() {
             String name = createTable(
                     asList("k", "v"),
@@ -898,6 +923,12 @@ public class SqlJoinTest {
             return name;
         }
 
+        private static String createStream() {
+            String name = randomName();
+            TestStreamSqlConnector.create(sqlService, name);
+            return name;
+        }
+
         private String whereClause() {
             switch (joinType) {
                 case SEMI:
@@ -916,6 +947,19 @@ public class SqlJoinTest {
                     break;
                 case ANTI:
                     assertRowsAnyOrder(sql, rowsNotExisted);
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected join type: " + joinType);
+            }
+        }
+
+        private void assertRowsEventually(String sql, Collection<Row> rowsExisted, Collection<Row> rowsNotExisted) {
+            switch (joinType) {
+                case SEMI:
+                    assertRowsEventuallyInAnyOrder(sql, rowsExisted);
+                    break;
+                case ANTI:
+                    assertRowsEventuallyInAnyOrder(sql, rowsNotExisted);
                     break;
                 default:
                     throw new IllegalStateException("Unexpected join type: " + joinType);

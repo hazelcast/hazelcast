@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -130,6 +131,15 @@ public class TestStreamSqlConnector implements SqlConnector {
         public PlanObjectKey getObjectKey() {
             return new TestStreamPlanObjectKey(getSchemaName(), getSqlName());
         }
+    }
+
+    public static void create(
+            SqlService sqlService,
+            String tableName
+    ) {
+        String sql = "CREATE MAPPING " + tableName + " TYPE " + TYPE_NAME + "";
+        System.out.println(sql);
+        sqlService.execute(sql).updateCount();
     }
 
     private static final class TestStreamPlanObjectKey implements PlanObjectKey {
