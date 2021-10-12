@@ -128,8 +128,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // 2. Do scanning and evict expired keys.
         int scannedCount = 0;
         int expiredCount = 0;
+        long scanLoopStartNanos = System.nanoTime();
         try {
-            long scanLoopStartNanos = System.nanoTime();
             do {
                 scannedCount += sampleForExpiry();
                 expiredCount += evictExpiredSamples(now, backup);
@@ -141,17 +141,18 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         if (logger.isFinestEnabled()) {
-            logProgress(maxScannableCount, scannedCount, expiredCount);
+            logProgress(maxScannableCount, scannedCount, expiredCount, scanLoopStartNanos);
         }
 
         accumulateOrSendExpiredKey(null, null);
     }
 
-    private void logProgress(int maxScannableCount, int scannedCount, int expiredCount) {
+    private void logProgress(int maxScannableCount, int scannedCount,
+                             int expiredCount, long scanLoopStartNanos) {
         logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
-                        + "maxScannableKeyCount: %d, scannedKeyCount: %d, expiredKeyCount: %d"
-                , getName(), getPartitionId(), size()
-                , maxScannableCount, scannedCount, expiredCount));
+                        + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, scanTookNanos: %d"
+                , getName(), getPartitionId(), size(), maxScannableCount, scannedCount,
+                expiredCount, (System.nanoTime() - scanLoopStartNanos)));
     }
 
     /**
