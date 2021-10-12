@@ -225,6 +225,15 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
+    protected HazelcastInstance[] createHazelcastInstances(int nodeCount) {
+        return createHazelcastInstances(getConfig(), nodeCount);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(Config config, int nodeCount) {
+        createHazelcastInstanceFactory(nodeCount);
+        return factory.newInstances(config, nodeCount);
+    }
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
