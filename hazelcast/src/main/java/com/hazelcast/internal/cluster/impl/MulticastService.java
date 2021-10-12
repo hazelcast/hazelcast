@@ -266,6 +266,7 @@ public final class MulticastService implements Runnable {
                             + "Verify that the sender Node, doesn't have symmetric-encryption on. This -> "
                             + Packet.VERSION + ", Incoming -> " + packetVersion
                             + ", Sender -> " + datagramPacketReceive.getAddress());
+                    input.close();
                     return null;
                 }
                 try {
