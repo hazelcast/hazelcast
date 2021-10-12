@@ -18,15 +18,14 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.UnionLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.UpdateLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 final class UnionPhysicalRule extends ConverterRule {
 

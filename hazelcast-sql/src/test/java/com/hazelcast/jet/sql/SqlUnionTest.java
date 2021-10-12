@@ -1,7 +1,24 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -90,12 +107,12 @@ public class SqlUnionTest extends SqlTestSupport {
     @Test
     public void baseUnionErrorTest() {
         String sql = "(SELECT * FROM map1) UNION (SELECT __key FROM map2)";
-        assertThrows(Exception.class, () -> instance().getSql().execute(sql));
+        assertThrows(HazelcastSqlException.class, () -> instance().getSql().execute(sql));
     }
 
     @Test
     public void baseUnionAllErrorTest() {
         String sql = "(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)";
-        assertThrows(Exception.class, () -> instance().getSql().execute(sql));
+        assertThrows(HazelcastSqlException.class, () -> instance().getSql().execute(sql));
     }
 }

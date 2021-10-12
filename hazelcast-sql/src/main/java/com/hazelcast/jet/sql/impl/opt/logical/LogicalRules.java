@@ -61,6 +61,8 @@ public final class LogicalRules {
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 
                 // Union rules
+                CoreRules.UNION_TO_DISTINCT,
+                CoreRules.UNION_REMOVE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules

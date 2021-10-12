@@ -17,15 +17,18 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Union;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelRecordType;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
 public class UnionLogicalRel extends Union implements LogicalRel {
+    private static final double ENLARGER = 100.;
 
     UnionLogicalRel(
             RelOptCluster cluster,
@@ -41,4 +44,14 @@ public class UnionLogicalRel extends Union implements LogicalRel {
         return new UnionLogicalRel(getCluster(), traitSet, inputs, all);
     }
 
+    @Override
+    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rowCount = mq.getRowCount(this);
+        // Enforce priority of UnionToDistinct rule :
+        // Union[all=false] -> Union[all=true] + Aggregate
+        if (!all) {
+            rowCount *= ENLARGER;
+        }
+        return planner.getCostFactory().makeCost(rowCount, rowCount, 0);
+    }
 }
