@@ -220,6 +220,7 @@
                                     <include>org.apache.calcite:calcite-core</include>
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
+                                    <include>org.checkerframework:checker-qual</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
@@ -253,6 +254,10 @@
                                 <relocation>
                                     <pattern>org.apache.calcite</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.checkerframework</pattern>
+                                    <shadedPattern>${relocation.root}.org.checkerframework</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.jayway</pattern>
@@ -316,6 +321,12 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.checkerframework:checker-qual</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -471,10 +482,6 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.checkerframework</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
