@@ -20,7 +20,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.Accessors;
-import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,7 +36,7 @@ import static com.hazelcast.collection.impl.queue.QueueService.SERVICE_NAME;
 import static org.junit.Assert.assertEquals;
 
 
-@RunWith(HazelcastParametrizedRunner.class)
+@RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueDestroyTest extends HazelcastTestSupport {
