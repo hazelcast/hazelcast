@@ -129,7 +129,7 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
             Map<CPMember, Collection<CPGroupId>> leadershipsMap = getLeadershipsMap(newMetadataLeader, aliveCpMembers);
             for (Entry<CPMember, Collection<CPGroupId>> entry : leadershipsMap.entrySet()) {
                 int count = entry.getValue().size();
-                assertEquals(leadershipsString(leadershipsMap), 25, count);
+                assertEquals(leadershipsString(leadershipsMap), groupCount / (groupSize - 1) , count);
             }
         });
     }
