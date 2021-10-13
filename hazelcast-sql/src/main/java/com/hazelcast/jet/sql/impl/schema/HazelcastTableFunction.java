@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -30,13 +29,11 @@ import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.Hazelc
 public abstract class HazelcastTableFunction extends SqlFunction implements SqlTableFunction {
 
     private final SqlReturnTypeInference returnTypeInference;
-    private final SqlConnector connector;
 
     protected HazelcastTableFunction(
             String name,
             SqlOperandMetadata operandMetadata,
-            SqlReturnTypeInference returnTypeInference,
-            SqlConnector connector
+            SqlReturnTypeInference returnTypeInference
     ) {
         super(
                 name,
@@ -48,11 +45,6 @@ public abstract class HazelcastTableFunction extends SqlFunction implements SqlT
         );
 
         this.returnTypeInference = wrap(returnTypeInference);
-        this.connector = connector;
-    }
-
-    public final boolean isStream() {
-        return connector.isStream();
     }
 
     @Override

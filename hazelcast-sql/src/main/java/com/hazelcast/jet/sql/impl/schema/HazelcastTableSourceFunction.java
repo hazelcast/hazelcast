@@ -17,25 +17,27 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
-import java.util.List;
+import java.util.Objects;
 
-/**
- * A table function return type of which is known upfront.
- */
-public abstract class HazelcastSpecificTableFunction extends HazelcastTableSourceFunction {
+public abstract class HazelcastTableSourceFunction extends HazelcastTableFunction {
 
-    protected HazelcastSpecificTableFunction(
+    private final SqlConnector connector;
+
+    protected HazelcastTableSourceFunction(
             String name,
             SqlOperandMetadata operandMetadata,
             SqlReturnTypeInference returnTypeInference,
             SqlConnector connector
     ) {
-        super(name, operandMetadata, returnTypeInference, connector);
+        super(name, operandMetadata, returnTypeInference);
+
+        this.connector = Objects.requireNonNull(connector);
     }
 
-    public abstract HazelcastTable toTable(List<Expression<?>> argumentExpressions);
+    public final boolean isStream() {
+        return connector.isStream();
+    }
 }

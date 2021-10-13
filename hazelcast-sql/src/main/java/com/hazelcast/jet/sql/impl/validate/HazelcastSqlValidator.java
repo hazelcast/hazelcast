@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastEventWatermarkFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -181,7 +182,31 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
+
+        if (countWatermarks(node) > 1) {
+            throw newValidationError(node, RESOURCE.multipleWatermarksNotSupported());
+        }
+
         isInfiniteRows = containsStreamingSource(node);
+    }
+
+    private static int countWatermarks(SqlNode node) {
+        class WatermarksCounter extends SqlBasicVisitor<Void> {
+            int count;
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastEventWatermarkFunction) {
+                    count++;
+                }
+                return super.visit(call);
+            }
+        }
+
+        WatermarksCounter visitor = new WatermarksCounter();
+        node.accept(visitor);
+        return visitor.count;
     }
 
     @Override
@@ -388,8 +413,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastTableFunction) {
-                    if (((HazelcastTableFunction) operator).isStream()) {
+                if (operator instanceof HazelcastTableSourceFunction) {
+                    if (((HazelcastTableSourceFunction) operator).isStream()) {
                         found = true;
                         return null;
                     }

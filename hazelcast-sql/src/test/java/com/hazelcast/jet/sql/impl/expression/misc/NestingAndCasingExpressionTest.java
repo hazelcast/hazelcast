@@ -81,6 +81,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("JSON_FLAT_FILE")
                     || field.getName().equals("AVRO_FILE")
                     || field.getName().equals("PARQUET_FILE")
+                    || field.getName().equals("DESCRIPTOR")
+                    || field.getName().equals("EVENT_WATERMARK")
             ) {
                 continue;
             }
