@@ -1184,7 +1184,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                         }
                         getOrConnectToMember(member, false);
                     } catch (Exception e) {
-                        logger.warning("Could not connect to member " + uuid + ", reason " + e);
+                        if (logger.isFineEnabled()) {
+                            logger.fine("Could not connect to member " + uuid, e);
+                        } else {
+                            logger.warning("Could not connect to member " + uuid + ", reason " + e);
+                        }
                     } finally {
                         connectingAddresses.remove(uuid);
                     }
