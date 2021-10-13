@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
@@ -29,14 +28,21 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-public final class JoinPhysicalRule extends RelOptRule {
+public final class HashJoinPhysicalRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new JoinPhysicalRule();
+    static final RelOptRule INSTANCE = new HashJoinPhysicalRule();
 
-    private JoinPhysicalRule() {
+    private HashJoinPhysicalRule() {
         super(
-                operand(JoinLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()), operand(RelNode.class, any()))),
-                JoinPhysicalRule.class.getSimpleName()
+                operand(
+                        JoinLogicalRel.class,
+                        LOGICAL,
+                        some(
+                                operand(RelNode.class, any()),
+                                operandJ(RelNode.class, LOGICAL, c -> !(c instanceof TableScan), any())
+                        )
+                ),
+                HashJoinPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -54,27 +60,14 @@ public final class JoinPhysicalRule extends RelOptRule {
         Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
         for (RelNode left : lefts) {
             for (RelNode right : rights) {
-                RelSubset subset = (RelSubset) right;
-                RelNode rel;
-                if (subset.getBest() instanceof TableScan) {
-                    rel = new JoinNestedLoopPhysicalRel(
-                            logicalJoin.getCluster(),
-                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                            left,
-                            right,
-                            logicalJoin.getCondition(),
-                            logicalJoin.getJoinType()
-                    );
-                } else {
-                    rel = new JoinHashPhysicalRel(
-                            logicalJoin.getCluster(),
-                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                            left,
-                            right,
-                            logicalJoin.getCondition(),
-                            logicalJoin.getJoinType()
-                    );
-                }
+                RelNode rel = new JoinHashPhysicalRel(
+                        logicalJoin.getCluster(),
+                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                        left,
+                        right,
+                        logicalJoin.getCondition(),
+                        logicalJoin.getJoinType()
+                );
                 call.transformTo(rel);
             }
         }
