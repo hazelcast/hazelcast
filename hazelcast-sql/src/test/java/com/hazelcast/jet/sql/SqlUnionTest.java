@@ -108,16 +108,22 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @Test
     public void baseUnionErrorTest() {
-        String sql = "(SELECT * FROM map1) UNION (SELECT __key FROM map2)";
-        assertThatThrownBy(() -> instance().getSql().execute(sql))
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION (SELECT __key FROM map2)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Column count mismatch in UNION");
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT __key FROM map1) UNION (SELECT * FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
     }
 
     @Test
     public void baseUnionAllErrorTest() {
-        String sql = "(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)";
-        assertThatThrownBy(() -> instance().getSql().execute(sql))
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Column count mismatch in UNION");
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT __key FROM map1) UNION ALL (SELECT * FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
     }
