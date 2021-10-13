@@ -47,6 +47,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     boolean lite;
     boolean socketInterceptorEnabled;
     boolean scriptingEnabled;
+    boolean consoleEnabled;
 
     public List<String> getMemberList() {
         return memberList;
@@ -120,6 +121,14 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.scriptingEnabled = scriptingEnabled;
     }
 
+    public boolean isConsoleEnabled() {
+        return consoleEnabled;
+    }
+
+    public void setConsoleEnabled(boolean consoleEnabled) {
+        this.consoleEnabled = consoleEnabled;
+    }
+
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
         TimedMemberState state = (TimedMemberState) super.clone();
@@ -132,6 +141,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         state.setLite(lite);
         state.setSocketInterceptorEnabled(socketInterceptorEnabled);
         state.setScriptingEnabled(scriptingEnabled);
+        state.setConsoleEnabled(consoleEnabled);
         return state;
     }
 
@@ -153,6 +163,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         root.add("lite", lite);
         root.add("socketInterceptorEnabled", socketInterceptorEnabled);
         root.add("scriptingEnabled", scriptingEnabled);
+        root.add("consoleEnabled", consoleEnabled);
         return root;
     }
 
@@ -173,6 +184,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         lite = getBoolean(json, "lite");
         socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
         scriptingEnabled = getBoolean(json, "scriptingEnabled");
+        consoleEnabled = getBoolean(json, "consoleEnabled");
     }
 
     @Override

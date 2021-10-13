@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastOperandTypeCheckerAware;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCaseOperator;
@@ -65,7 +65,7 @@ public class HazelcastSqlOperatorTableTest {
     public void testOperandTypeChecker() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
             boolean valid = operator instanceof HazelcastOperandTypeCheckerAware
-                    || operator instanceof JetTableFunction
+                    || operator instanceof HazelcastTableFunction
                     || operator instanceof HazelcastWindowTableFunction
                     || operator instanceof HazelcastCaseOperator
                     || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT;
@@ -78,7 +78,7 @@ public class HazelcastSqlOperatorTableTest {
     @Test
     public void testReturnTypeInference() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
-            if (operator instanceof JetTableFunction
+            if (operator instanceof HazelcastTableFunction
                     || operator instanceof HazelcastWindowTableFunction
                     || operator == HazelcastSqlOperatorTable.IN
                     || operator == HazelcastSqlOperatorTable.NOT_IN

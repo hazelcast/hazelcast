@@ -57,14 +57,15 @@ public interface Storage<K, R> {
     boolean containsKey(K key);
 
     /**
-     * Returned iterator from this method doesn't throw {@link java.util.ConcurrentModificationException} to fail fast.
-     * Because fail fast may not be the desired behaviour always. For example if you are caching an iterator as in
-     * {@link AbstractEvictableRecordStore#expirationIterator} and you know that in next rounds you will
-     * eventually visit all entries, you don't need fail fast behaviour.
-     * <p>
-     * Note that returned iterator is not thread-safe !!!
+     * Read-only amd not thread-safe iterator.
      *
-     * @return new iterator instance
+     * Returned iterator from this method doesn't throw {@link
+     * java.util.ConcurrentModificationException} to fail fast. Because fail
+     * fast may not be the desired behaviour always. For example if you are
+     * caching an iterator as in and you know that in next rounds you will
+     * eventually visit all entries, you don't need fail fast behaviour.
+     *
+     * @return new read only iterator instance
      */
     Iterator<Map.Entry<Data, R>> mutationTolerantIterator();
 

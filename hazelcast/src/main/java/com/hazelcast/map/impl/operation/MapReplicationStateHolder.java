@@ -45,6 +45,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -68,7 +69,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 /**
  * Holder for raw IMap key-value pairs and their metadata.
  */
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of these partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
@@ -197,13 +198,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 }
 
                 long nowInMillis = Clock.currentTimeMillis();
-                if (isDifferentialReplication) {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putOrUpdateReplicatedRecord);
-                } else {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putReplicatedRecord);
-                }
+                forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
+                        populateIndexes, nowInMillis);
 
 
                 if (populateIndexes) {
@@ -225,8 +221,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     private void forEachReplicatedRecord(List keyRecordExpiry,
                                          MapContainer mapContainer,
                                          RecordStore recordStore,
-                                         boolean populateIndexes, long nowInMillis,
-                                         ReplicatedRecordProcessor replicatedRecordProcessor) {
+                                         boolean populateIndexes, long nowInMillis) {
         long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
         EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
         boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
@@ -242,11 +237,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                         recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
                     }
                 } else {
-                    replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
+                    recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
                     ownedEntryCountOnThisNode++;
                 }
             } else {
-                replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
+                recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
                 if (recordStore.shouldEvict()) {
                     // No need to continue replicating records anymore.
                     // We are already over eviction threshold, each put record will cause another eviction.
@@ -473,10 +468,5 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
 
         return true;
-    }
-
-    private interface ReplicatedRecordProcessor {
-        void processRecord(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
-                           boolean indexesMustBePopulated, long now);
     }
 }

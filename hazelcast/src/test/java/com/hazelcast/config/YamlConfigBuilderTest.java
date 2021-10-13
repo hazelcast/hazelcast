@@ -881,6 +881,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  management-center:\n"
                 + "    scripting-enabled: true\n"
+                + "    console-enabled: true\n"
                 + "    trusted-interfaces:\n"
                 + "      - 127.0.0.1\n"
                 + "      - 192.168.1.*\n";
@@ -889,6 +890,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isConsoleEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -904,6 +906,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -915,6 +918,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -2996,6 +3000,7 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  hot-restart-persistence:\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    enabled: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
@@ -3008,6 +3013,7 @@ public class YamlConfigBuilderTest
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertTrue(hotRestartPersistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
@@ -3030,6 +3036,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  persistence:\n"
                 + "    enabled: true\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    parallelism: " + parallelism + "\n"
@@ -3042,6 +3049,7 @@ public class YamlConfigBuilderTest
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
         assertTrue(persistenceConfig.isEnabled());
+        assertTrue(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, persistenceConfig.getParallelism());

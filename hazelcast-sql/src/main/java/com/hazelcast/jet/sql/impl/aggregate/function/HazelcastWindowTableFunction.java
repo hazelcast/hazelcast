@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
-import com.hazelcast.jet.sql.impl.schema.JetSqlOperandMetadata;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
@@ -63,9 +63,9 @@ public abstract class HazelcastWindowTableFunction extends SqlWindowTableFunctio
         return RETURN_TYPE_INFERENCE;
     }
 
-    protected static final class WindowOperandMetadata extends JetSqlOperandMetadata {
+    protected static final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
-        public WindowOperandMetadata(List<JetTableFunctionParameter> parameters) {
+        public WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {
             super(parameters);
         }
 

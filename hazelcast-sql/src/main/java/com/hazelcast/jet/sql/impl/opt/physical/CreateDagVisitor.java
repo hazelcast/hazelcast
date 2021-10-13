@@ -401,7 +401,7 @@ public class CreateDagVisitor {
         return vertex;
     }
 
-    public Vertex onRoot(JetRootRel rootRel) {
+    public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
         Expression<?> offset;
