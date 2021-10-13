@@ -63,8 +63,6 @@ public class UnionPhysicalRel extends Union implements PhysicalRel {
         // The number and the order of the columns in the select list of both queries must be the same.
         // The data types must be compatible.
 
-        // Find the only FullScan/IndexScan relation
-        // For multiple UNION statements one of two possible inputs would be ScanPhysicalRel
         RelOptTable relTable = null;
         for (int i = 0; i < inputs.size(); ++i) {
             if (inputs.get(i) instanceof FullScanPhysicalRel || inputs.get(i) instanceof IndexScanMapPhysicalRel) {

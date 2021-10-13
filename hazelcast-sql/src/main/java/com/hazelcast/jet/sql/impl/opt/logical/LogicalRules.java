@@ -63,6 +63,7 @@ public final class LogicalRules {
                 // Union rules
                 CoreRules.UNION_TO_DISTINCT,
                 CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules

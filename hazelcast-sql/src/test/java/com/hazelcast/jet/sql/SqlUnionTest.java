@@ -22,6 +22,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -126,5 +127,18 @@ public class SqlUnionTest extends SqlTestSupport {
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT __key FROM map1) UNION ALL (SELECT * FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19772")
+    @Test
+    public void valueLogicalRuleWithUnionIssueReproducer() {
+        expected.clear();
+        for (int i = 0; i < 50; ++i) {
+            expected.add(new Row(i));
+        }
+        String sql = "(SELECT map1.id FROM map1 WHERE NOT (NOT (NOT (TRUE)))) UNION ALL " +
+                "(SELECT map1.id FROM map1 WHERE NOT (NOT (NOT (NOT (TRUE))))) UNION ALL " +
+                "(SELECT map1.id FROM map1 WHERE (NOT (NOT (NOT (TRUE)))) IS NULL)";
+        assertRowsAnyOrder(sql, expected);
     }
 }
