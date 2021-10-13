@@ -67,6 +67,7 @@ public final class LogicalRules {
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
+                PruneEmptyRules.UNION_INSTANCE,
                 ValuesLogicalRules.CONVERT_INSTANCE,
                 ValuesLogicalRules.FILTER_INSTANCE,
                 ValuesLogicalRules.PROJECT_INSTANCE,

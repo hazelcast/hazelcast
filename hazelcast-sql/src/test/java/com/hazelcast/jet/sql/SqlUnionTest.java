@@ -22,7 +22,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -129,7 +128,6 @@ public class SqlUnionTest extends SqlTestSupport {
                 .hasMessageContaining("Column count mismatch in UNION");
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19772")
     @Test
     public void valueLogicalRuleWithUnionIssueReproducer() {
         expected.clear();
