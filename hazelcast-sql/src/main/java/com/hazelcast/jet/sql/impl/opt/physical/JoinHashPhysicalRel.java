@@ -22,15 +22,11 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -85,10 +81,5 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
         return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
-    }
-
-    @Override
-    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeZeroCost();
     }
 }

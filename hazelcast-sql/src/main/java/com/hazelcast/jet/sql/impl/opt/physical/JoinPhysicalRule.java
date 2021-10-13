@@ -20,8 +20,10 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.core.TableScan;
 
 import java.util.Collection;
 
@@ -52,14 +54,27 @@ public final class JoinPhysicalRule extends RelOptRule {
         Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
         for (RelNode left : lefts) {
             for (RelNode right : rights) {
-                RelNode rel = new JoinNestedLoopPhysicalRel(
-                        logicalJoin.getCluster(),
-                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                        left,
-                        right,
-                        logicalJoin.getCondition(),
-                        logicalJoin.getJoinType()
-                );
+                RelSubset subset = (RelSubset) right;
+                RelNode rel;
+                if (subset.getBest() instanceof TableScan) {
+                    rel = new JoinNestedLoopPhysicalRel(
+                            logicalJoin.getCluster(),
+                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                            left,
+                            right,
+                            logicalJoin.getCondition(),
+                            logicalJoin.getJoinType()
+                    );
+                } else {
+                    rel = new JoinHashPhysicalRel(
+                            logicalJoin.getCluster(),
+                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                            left,
+                            right,
+                            logicalJoin.getCondition(),
+                            logicalJoin.getJoinType()
+                    );
+                }
                 call.transformTo(rel);
             }
         }
