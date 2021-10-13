@@ -43,7 +43,12 @@ public class SingleProtocolDecoder
 
     protected final InboundHandler[] inboundHandlers;
     protected final ProtocolType supportedProtocol;
-
+    /**
+     * This flag is used to ensure that {@link #verifyProtocol(String)} is called only once
+     * with initial bytes of connection. Formerly, this method would be called multiple times
+     * with new incoming data, although it failed after its first call.
+     */
+    protected volatile boolean isVerifyProtocolCalled;
     final SingleProtocolEncoder encoder;
     private final boolean shouldSignalMemberProtocolEncoder;
 
@@ -80,6 +85,7 @@ public class SingleProtocolDecoder
         this.inboundHandlers = next;
         this.encoder = encoder;
         this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
+        this.isVerifyProtocolCalled = false;
     }
 
     @Override
@@ -97,8 +103,10 @@ public class SingleProtocolDecoder
                 return CLEAN;
             }
 
-            if (!verifyProtocol(loadProtocol())) {
-                // Exception will be thrown in the SingleProtocolEncoder.
+            if (isVerifyProtocolCalled || !verifyProtocol(loadProtocol())) {
+                // The exception that will close the Connection eventually thrown
+                // in SingleProtocolEncoder, since we send wrong protocol signal
+                // for this in verifyProtocol.
                 return CLEAN;
             }
             encoder.signalProtocolVerified();
@@ -131,6 +139,7 @@ public class SingleProtocolDecoder
     // Verify that received protocol is expected one.
     // If not then signal SingleProtocolEncoder and throw exception.
     protected boolean verifyProtocol(String incomingProtocol) {
+        isVerifyProtocolCalled = true;
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
             handleUnexpectedProtocol(incomingProtocol);
             encoder.signalWrongProtocol("Unsupported protocol exchange detected, expected protocol: "
