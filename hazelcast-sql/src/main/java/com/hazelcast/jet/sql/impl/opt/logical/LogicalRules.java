@@ -49,9 +49,11 @@ public final class LogicalRules {
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
+                // Windowing rules
+                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
+
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
-                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
 
                 // Sort rules
                 SortLogicalRule.INSTANCE,

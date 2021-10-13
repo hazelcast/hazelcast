@@ -28,7 +28,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.HazelcastDescriptorOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
@@ -236,6 +236,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
+    //#region Windowing functions.
+
+    public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
+    public static final SqlFunction TUMBLE = new HazelcastTumbleTableFunction();
+
+    //#endregion
+
     //#region Aggregation functions.
 
     public static final SqlFunction COUNT = new HazelcastCountAggFunction();
@@ -243,9 +250,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction AVG = new HazelcastAvgAggFunction();
     public static final SqlFunction MIN = new HazelcastMinMaxAggFunction(SqlKind.MIN);
     public static final SqlFunction MAX = new HazelcastMinMaxAggFunction(SqlKind.MAX);
-
-    public static final SqlFunction TUMBLE = new HazelcastTumbleTableFunction();
-    public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
 
     //#endregion
 

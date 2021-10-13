@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.validate.operators;
+package com.hazelcast.jet.sql.impl.validate.operators.common;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastOperandTypeCheckerAware;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -85,6 +84,8 @@ public class HazelcastDescriptorOperator extends SqlOperator implements Hazelcas
             if (!(operand instanceof SqlIdentifier) || !((SqlIdentifier) operand).isSimple()) {
                 if (throwOnFailure) {
                     throw SqlUtil.newContextException(operand.getParserPosition(), RESOURCE.aliasMustBeSimpleIdentifier());
+                } else {
+                    return false;
                 }
             }
         }

@@ -38,9 +38,11 @@ public final class PhysicalRules {
                 FullScanPhysicalRule.INSTANCE,
                 IndexScanMapPhysicalRule.INSTANCE,
 
+                // Windowing rules
+                SlidingWindowPhysicalRule.INSTANCE,
+
                 // Aggregate rules
                 AggregatePhysicalRule.INSTANCE,
-                SlidingWindowPhysicalRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,

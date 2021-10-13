@@ -65,7 +65,7 @@ public class SlidingWindowPhysicalRel extends TableFunctionScan implements Physi
     }
 
     public int timestampFieldIndex() {
-        return ((RexInputRef) ((RexCall) operand(0)).getOperands().get(0)).getIndex();
+        return ((RexInputRef) ((RexCall) operand(1)).getOperands().get(0)).getIndex();
     }
 
     @SuppressWarnings("unchecked")
@@ -74,7 +74,7 @@ public class SlidingWindowPhysicalRel extends TableFunctionScan implements Physi
     ) {
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         if (operator() == HazelcastSqlOperatorTable.TUMBLE) {
-            Expression<SqlDaySecondInterval> windowSizeExpression = (Expression<SqlDaySecondInterval>) operand(1).accept(visitor);
+            Expression<SqlDaySecondInterval> windowSizeExpression = (Expression<SqlDaySecondInterval>) operand(2).accept(visitor);
             return context -> tumblingWinPolicy(windowSizeExpression.eval(EmptyRow.INSTANCE, context).getMillis());
         } else {
             throw new IllegalArgumentException();
