@@ -27,6 +27,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
     private IMap<Integer, Person> map2;
@@ -107,12 +109,16 @@ public class SqlUnionTest extends SqlTestSupport {
     @Test
     public void baseUnionErrorTest() {
         String sql = "(SELECT * FROM map1) UNION (SELECT __key FROM map2)";
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql().execute(sql));
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Column count mismatch in UNION");
     }
 
     @Test
     public void baseUnionAllErrorTest() {
         String sql = "(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)";
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql().execute(sql));
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Column count mismatch in UNION");
     }
 }
