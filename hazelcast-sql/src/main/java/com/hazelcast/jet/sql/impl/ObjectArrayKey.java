@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.sql.impl.aggregate;
+package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.nio.ObjectDataInput;
