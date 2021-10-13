@@ -116,7 +116,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nonnull LocalDateTime value) {
+    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
         return write(fieldName, value, FieldKind.TIMESTAMP);
     }
 

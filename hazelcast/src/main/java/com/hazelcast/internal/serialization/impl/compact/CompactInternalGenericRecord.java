@@ -297,111 +297,128 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public LocalTime getTime(@Nonnull String fieldName) {
         return getVariableLength(fieldName, TIME, IOUtil::readLocalTime);
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public LocalDate getDate(@Nonnull String fieldName) {
         return getVariableLength(fieldName, DATE, IOUtil::readLocalDate);
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         return getVariableLength(fieldName, TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
     @Override
-    @Nonnull
+    @Nullable
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         return getVariableLength(fieldName, TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
 
     @Override
+    @Nullable
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
         return getVariableLength(fieldName, COMPACT, in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
     @Override
+    @Nullable
     public <T> T getObject(@Nonnull String fieldName) {
         return (T) getVariableLength(fieldName, COMPACT, in -> serializer.read(in, schemaIncludedInBinary));
     }
 
     @Override
+    @Nullable
     public boolean[] getBooleanArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
     }
 
     @Override
+    @Nullable
     public byte[] getByteArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
     }
 
     @Override
+    @Nullable
     public char[] getCharArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, CHAR_ARRAY, ObjectDataInput::readCharArray);
     }
 
     @Override
+    @Nullable
     public int[] getIntArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
     }
 
     @Override
+    @Nullable
     public long[] getLongArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, LONG_ARRAY, ObjectDataInput::readLongArray);
     }
 
     @Override
+    @Nullable
     public double[] getDoubleArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
     }
 
     @Override
+    @Nullable
     public float[] getFloatArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, FLOAT_ARRAY, ObjectDataInput::readFloatArray);
     }
 
     @Override
+    @Nullable
     public short[] getShortArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
     }
 
     @Override
+    @Nullable
     public String[] getStringArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, STRING_ARRAY, String[]::new, ObjectDataInput::readString);
     }
 
     @Override
+    @Nullable
     public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
     @Override
+    @Nullable
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
+    @Nullable
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
+    @Nullable
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
+    @Nullable
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
     @Override
+    @Nullable
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, COMPACT_ARRAY, GenericRecord[]::new,
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
@@ -744,6 +761,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nullable
     public <T> T getObjectFromArray(@Nonnull String fieldName, int index) {
         return (T) getVarSizeFromArray(fieldName, COMPACT_ARRAY,
                 in -> serializer.read(in, schemaIncludedInBinary), index);
@@ -787,54 +805,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     protected IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we get from a well known format and position");
-    }
-
-    private static LocalDate[] getDateArray(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-        LocalDate[] values = new LocalDate[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = IOUtil.readLocalDate(in);
-        }
-        return values;
-    }
-
-    private static LocalTime[] getTimeArray(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-        LocalTime[] values = new LocalTime[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = IOUtil.readLocalTime(in);
-        }
-        return values;
-    }
-
-    private static LocalDateTime[] getTimestampArray(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-        LocalDateTime[] values = new LocalDateTime[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = IOUtil.readLocalDateTime(in);
-        }
-        return values;
-    }
-
-    private static OffsetDateTime[] getTimestampWithTimezoneArray(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-        OffsetDateTime[] values = new OffsetDateTime[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = IOUtil.readOffsetDateTime(in);
-        }
-        return values;
     }
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
