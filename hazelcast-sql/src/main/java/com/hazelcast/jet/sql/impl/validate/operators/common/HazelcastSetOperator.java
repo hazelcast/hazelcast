@@ -22,7 +22,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlSetOperator;
 
 /**
- * A common subclass for binary operators.
+ * A common superclass for binary operators.
  * <p>
  * See {@link HazelcastOperandTypeCheckerAware} for motivation.
  */
