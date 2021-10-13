@@ -635,7 +635,7 @@ public class HazelcastCommandLine implements Runnable {
     public static class Verbosity {
 
         @Option(names = {"-v", "--verbosity"},
-                description = {"Show logs from Jet client and full stack trace of errors"},
+                description = {"Show verbose logs and full stack trace of errors"},
                 order = 1
         )
         private boolean isVerbose;
