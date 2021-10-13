@@ -31,16 +31,22 @@ public class TextHandshakeDecoder
     }
 
     @Override
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
+        handleUnexpectedProtocol(incomingProtocol);
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, expected protocol: REST");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: REST");
+                return false;
             }
         } else {
             if (!MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: MEMCACHED");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: MEMCACHED");
+                return false;
             }
         }
+        return true;
     }
 
     @Override

@@ -67,8 +67,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
  * Static utility classes for rules.
@@ -221,7 +221,7 @@ public final class OptUtils {
     }
 
     private static boolean isPhysical(RelNode rel) {
-        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(JetConventions.PHYSICAL);
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
     }
 
     public static HazelcastRelOptCluster getCluster(RelNode rel) {

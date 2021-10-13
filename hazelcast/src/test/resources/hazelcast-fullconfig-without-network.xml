@@ -44,7 +44,7 @@
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false">
+    <management-center scripting-enabled="false" console-enabled="false">
         <trusted-interfaces>
             <interface>10.10.1.*</interface>
             <interface>10.10.2.*</interface>

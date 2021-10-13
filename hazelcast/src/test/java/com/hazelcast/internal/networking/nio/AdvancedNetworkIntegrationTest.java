@@ -69,6 +69,11 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         assertWrongProtocolAlert(CLIENT_PORT, Protocols.CLUSTER, "AAA");
         assertWrongProtocolAlert(WAN1_PORT, Protocols.CLIENT_BINARY, "AAA");
         assertWrongProtocolAlert(WAN2_PORT, Protocols.CLIENT_BINARY, "AAA");
+
+        assertWrongProtocolAlert(REST_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(REST_PORT, Protocols.CLUSTER, "AAA");
+        assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLUSTER, "AAA");
     }
 
     @Test

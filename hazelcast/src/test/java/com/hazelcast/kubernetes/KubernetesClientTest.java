@@ -43,6 +43,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -64,6 +65,69 @@ public class KubernetesClientTest {
         kubernetesClient = newKubernetesClient();
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
                 .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
+    }
+
+    @Test
+    public void buildKubernetesApiUrlProviderReturnsEndpointProvider() {
+        //language=JSON
+        String endpointSlicesResponse = "{\n"
+                + "  \"kind\": \"Status\",\n"
+                + "  \"apiVersion\": \"v1\",\n"
+                + "  \"metadata\": {\n"
+                + "    \n"
+                + "  },\n"
+                + "  \"status\": \"Failure\",\n"
+                + "  \"message\": \"the server could not find the requested resource\",\n"
+                + "  \"reason\":\"NotFound\",\n"
+                + "  \"details\": {\n"
+                + "    \n"
+                + "  },\n"
+                + "  \"code\": 404\n"
+                + "}";
+        stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE),
+                404, endpointSlicesResponse);
+        assertThat(kubernetesClient.buildKubernetesApiUrlProvider(), instanceOf(KubernetesApiEndpointProvider.class));
+    }
+
+    @Test
+    public void buildKubernetesApiUrlProviderReturnsEndpointSlicesProvider() {
+        //language=JSON
+        String endpointSlicesResponse = "{\n"
+                + "  \"kind\": \"EndpointSliceList\",\n"
+                + "  \"apiVersion\": \"discovery.k8s.io/v1\",\n"
+                + "  \"items\": [\n"
+                + "    {\n"
+                + "      \"metadata\": {\n"
+                + "        \"name\": \"es1\",\n"
+                + "        \"namespace\": \"\",\n"
+                + "        \"uid\": \"someUuid\",\n"
+                + "        \"labels\": {\n"
+                + "          \"kubernetes.io/service-name\": \"\"\n"
+                + "        }\n"
+                + "      },\n"
+                + "      \"addressType\": \"\",\n"
+                + "      \"endpoints\": [\n"
+                + "        {\n"
+                + "          \"addresses\": [\n"
+                + "            \"34.68.96.71\"\n"
+                + "          ],\n"
+                + "          \"conditions\": {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        }\n"
+                + "      ],\n"
+                + "      \"ports\": [\n"
+                + "        {\n"
+                + "          \"name\": \"https\",\n"
+                + "          \"protocol\": \"TCP\",\n"
+                + "          \"port\": 443\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+        stub(String.format("/apis/discovery.k8s.io/v1/namespaces/%s/endpointslices", NAMESPACE), endpointSlicesResponse);
+        assertThat(kubernetesClient.buildKubernetesApiUrlProvider(), instanceOf(KubernetesApiEndpointSlicesProvider.class));
     }
 
     @Test
@@ -151,44 +215,52 @@ public class KubernetesClientTest {
         // given
         //language=JSON
         String endpointsListResponse = "{\n"
-                + "  \"kind\": \"EndpointsList\",\n"
-                + "  \"items\": [\n"
-                + "    {\n"
-                + "      \"subsets\": [\n"
-                + "        {\n"
-                + "          \"addresses\": [\n"
-                + "            {\n"
-                + "              \"ip\": \"192.168.0.25\",\n"
-                + "              \"hazelcast-service-port\": 5701\n"
-                + "            }\n"
-                + "          ]\n"
-                + "        }\n"
-                + "      ]\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"subsets\": [\n"
-                + "        {\n"
-                + "          \"addresses\": [\n"
-                + "            {\n"
-                + "              \"ip\": \"172.17.0.5\",\n"
-                + "              \"hazelcast-service-port\": 5702\n"
-                + "            }\n"
-                + "          ],\n"
-                + "          \"notReadyAddresses\": [\n"
-                + "            {\n"
-                + "              \"ip\": \"172.17.0.6\"\n"
-                + "            }\n"
-                + "          ],\n"
-                + "          \"ports\": [\n"
-                + "            {\n"
-                + "              \"port\": 5701\n"
-                + "            }\n"
-                + "          ]\n"
-                + "        }\n"
-                + "      ]\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}";
+               + "  \"kind\": \"EndpointsList\",\n"
+               + "  \"items\": [\n"
+               + "    {\n"
+               + "      \"subsets\": [\n"
+               + "        {\n"
+               + "          \"addresses\": [\n"
+               + "            {\n"
+               + "              \"ip\": \"192.168.0.25\"\n"
+               + "            }\n"
+               + "          ],\n"
+               + "          \"ports\": [\n"
+               + "            {\n"
+               + "              \"port\": 5701\n"
+               + "            },\n"
+               + "            {\n"
+               + "              \"name\": \"hazelcast-service-port\",\n"
+               + "              \"protocol\": \"TCP\",\n"
+               + "              \"port\": 5702\n"
+               + "            }\n"
+               + "          ]\n"
+               + "        }\n"
+               + "      ]\n"
+               + "    },\n"
+               + "    {\n"
+               + "      \"subsets\": [\n"
+               + "        {\n"
+               + "          \"addresses\": [\n"
+               + "            {\n"
+               + "              \"ip\": \"172.17.0.5\"\n"
+               + "            }\n"
+               + "          ],\n"
+               + "          \"notReadyAddresses\": [\n"
+               + "            {\n"
+               + "              \"ip\": \"172.17.0.6\"\n"
+               + "            }\n"
+               + "          ],\n"
+               + "          \"ports\": [\n"
+               + "            {\n"
+               + "              \"port\": 5701\n"
+               + "            }\n"
+               + "          ]\n"
+               + "        }\n"
+               + "      ]\n"
+               + "    }\n"
+               + "  ]\n"
+               + "}";
         String serviceLabel = "sample-service-label";
         String serviceLabelValue = "sample-service-label-value";
         Map<String, String> queryParams = singletonMap("labelSelector", String.format("%s=%s", serviceLabel, serviceLabelValue));
@@ -199,7 +271,7 @@ public class KubernetesClientTest {
 
         // then
         assertThat(format(result),
-                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702), notReady("172.17.0.6", 5701)));
+                containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
     }
 
     @Test
@@ -207,22 +279,27 @@ public class KubernetesClientTest {
         // given
         //language=JSON
         String endpointResponse = "{\n"
-                + "  \"kind\": \"Endpoints\",\n"
-                + "  \"subsets\": [\n"
-                + "    {\n"
-                + "      \"addresses\": [\n"
-                + "        {\n"
-                + "          \"ip\": \"192.168.0.25\",\n"
-                + "          \"hazelcast-service-port\": 5701\n"
-                + "        },\n"
-                + "        {\n"
-                + "          \"ip\": \"172.17.0.5\",\n"
-                + "          \"hazelcast-service-port\": 5702\n"
-                + "        }\n"
-                + "      ]\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}";
+              + "  \"kind\": \"Endpoints\",\n"
+              + "  \"subsets\": [\n"
+              + "    {\n"
+              + "      \"addresses\": [\n"
+              + "        {\n"
+              + "          \"ip\": \"192.168.0.25\"\n"
+              + "        },\n"
+              + "        {\n"
+              + "          \"ip\": \"172.17.0.5\"\n"
+              + "        }\n"
+              + "      ],\n"
+              + "      \"ports\": [\n"
+              + "        {\n"
+              + "          \"name\": \"hazelcast-service-port\",\n"
+              + "          \"protocol\": \"TCP\",\n"
+              + "          \"port\": 5702\n"
+              + "        }\n"
+              + "      ]\n"
+              + "    }\n"
+              + "  ]\n"
+              + "}";
         String serviceName = "service-name";
         stub(String.format("/api/v1/namespaces/%s/endpoints/%s", NAMESPACE, serviceName), endpointResponse);
 
@@ -230,7 +307,7 @@ public class KubernetesClientTest {
         List<Endpoint> result = kubernetesClient.endpointsByName(serviceName);
 
         // then
-        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5702)));
     }
 
     @Test
@@ -992,8 +1069,12 @@ public class KubernetesClientTest {
     }
 
     private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
+        return newKubernetesClient(exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, new KubernetesApiEndpointProvider());
+    }
+
+    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue, KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
     }
 
     private static List<String> format(List<Endpoint> addresses) {

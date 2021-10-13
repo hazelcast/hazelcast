@@ -25,7 +25,7 @@ import org.apache.calcite.rel.core.JoinRelType;
 
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 public final class JoinPhysicalRule extends RelOptRule {
 

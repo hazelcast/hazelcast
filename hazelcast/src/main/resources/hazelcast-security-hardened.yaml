@@ -26,9 +26,10 @@ hazelcast:
     hazelcast.socket.bind.any: false
 
   management-center:
-    # Explicitly disable the scripting operations sent from the Management center.
-    # The default value is false already so this one is just to be sure and explicit.
+    # Explicitly disable the scripting operations and the console commands sent from the Management center.
+    # The default value for both attributes is false already so this one is just to be sure and explicit.
     scripting-enabled: false
+    console-enabled: false
 
   user-code-deployment:
     # Explicitly disable the user-code deployments. I.e. allow only code which already is on the classpath.

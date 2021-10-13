@@ -108,6 +108,8 @@ class NodeSecurityBanner {
         }
         addSecurityFeatureCheck(sb, "Disable scripting in the Management Center",
                 !config.getManagementCenterConfig().isScriptingEnabled());
+        addSecurityFeatureCheck(sb, "Disable console in the Management Center",
+                !config.getManagementCenterConfig().isConsoleEnabled());
         SecurityConfig securityConfig = config.getSecurityConfig();
         boolean securityEnabled = securityConfig != null && securityConfig.isEnabled();
 

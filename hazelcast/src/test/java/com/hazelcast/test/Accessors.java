@@ -103,6 +103,10 @@ public class Accessors {
         return getNode(hz).getNodeExtension().getAuditlogService();
     }
 
+    public static <T> T getService(HazelcastInstance hz, String serviceName) {
+        return getNodeEngineImpl(hz).getService(serviceName);
+    }
+
     public static Address getAddress(HazelcastInstance hz) {
         return getClusterService(hz).getThisAddress();
     }

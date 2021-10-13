@@ -179,6 +179,7 @@ import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
@@ -551,6 +552,7 @@ import com.hazelcast.client.impl.protocol.task.management.MatchClientFilteringCo
 import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.QueueResetAgeStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RemoveCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ResetCPSubsystemMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
@@ -847,9 +849,9 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
-import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
+import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -1827,6 +1829,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartTriggerBackupMessageTask(cm, node, con));
         factories.put(MCInterruptHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
+        factories.put(MCResetQueueAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {

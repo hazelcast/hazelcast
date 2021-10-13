@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -388,8 +388,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof JetTableFunction) {
-                    if (((JetTableFunction) operator).isStream()) {
+                if (operator instanceof HazelcastTableFunction) {
+                    if (((HazelcastTableFunction) operator).isStream()) {
                         found = true;
                         return null;
                     }
