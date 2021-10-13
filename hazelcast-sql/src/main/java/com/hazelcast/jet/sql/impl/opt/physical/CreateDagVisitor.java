@@ -287,21 +287,22 @@ public class CreateDagVisitor {
         return vertex;
     }
 
-    public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
+    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
         JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
 
-        if (!(rel.getRight() instanceof FullScanPhysicalRel)) {
-            Vertex joinVertex = dag.newUniqueVertex(
-                    "Generic Join",
-                    HashJoinProcessor.supplier(
-                            joinInfo,
-                            rel.getRight().getRowType().getFieldCount()
-                    )
-            );
-            connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
-            return joinVertex;
-        }
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Hash Join",
+                HashJoinProcessor.supplier(
+                        joinInfo,
+                        rel.getRight().getRowType().getFieldCount()
+                )
+        );
+        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
+    }
 
+    public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);

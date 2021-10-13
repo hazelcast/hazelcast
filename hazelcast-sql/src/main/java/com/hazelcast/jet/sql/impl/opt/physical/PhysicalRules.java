@@ -46,6 +46,7 @@ public final class PhysicalRules {
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
+                JoinConverterRule.INSTANCE,
 
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,

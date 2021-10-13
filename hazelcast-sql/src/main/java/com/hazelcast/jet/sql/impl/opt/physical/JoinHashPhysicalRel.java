@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -33,15 +32,12 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
-public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
+public class JoinHashPhysicalRel extends Join implements PhysicalRel {
 
-    JoinNestedLoopPhysicalRel(
+    JoinHashPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
@@ -52,17 +48,33 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
         super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
     }
 
-    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).filter(parameterMetadata);
+    @Override
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
+        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
+        return PlanNodeSchema.combine(leftSchema, rightSchema);
     }
 
-    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).projection(parameterMetadata);
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        return visitor.onHashJoin(this);
+    }
+
+    @Override
+    public Join copy(
+            RelTraitSet traitSet,
+            RexNode conditionExpr,
+            RelNode left,
+            RelNode right,
+            JoinRelType joinType,
+            boolean semiJoinDone
+    ) {
+        return new JoinHashPhysicalRel(getCluster(), traitSet, left, right, conditionExpr, joinType);
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-        int[] rightKeys = getKeysFromRightScan();
+        int[] rightKeys = analyzeCondition().rightKeys.toIntArray();
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
@@ -76,38 +88,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
     }
 
     @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
-        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
-        return PlanNodeSchema.combine(leftSchema, rightSchema);
-    }
-
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onNestedLoopJoin(this);
-    }
-
-    @Override
-    public Join copy(
-            RelTraitSet traitSet,
-            RexNode conditionExpr,
-            RelNode left,
-            RelNode right,
-            JoinRelType joinType,
-            boolean semiJoinDone
-    ) {
-        return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
-    }
-
-    @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeHugeCost();
-    }
-
-    private int[] getKeysFromRightScan() {
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
-        return rightKeys;
+        return planner.getCostFactory().makeZeroCost();
     }
 }
