@@ -402,10 +402,16 @@ public class CreateDagVisitor {
         Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
 
         Edge left = between(leftInput, joinVertex).priority(LOW_PRIORITY).broadcast().distributed();
-        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY);
+        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY).unicast().local();
         if (joinInfo.isLeftOuter()) {
             left = left.unicast().local();
             right = right.broadcast().distributed();
+        }
+        if (joinInfo.isEquiJoin()) {
+            int[] leftIndices = joinInfo.leftEquiJoinIndices();
+            int[] rightIndices = joinInfo.rightEquiJoinIndices();
+            left = left.distributed().partitioned(row -> HashJoinProcessor.getHashKeys((Object[]) row, leftIndices));
+            right = right.distributed().partitioned(row -> HashJoinProcessor.getHashKeys((Object[]) row, rightIndices));
         }
         dag.edge(left);
         dag.edge(right);

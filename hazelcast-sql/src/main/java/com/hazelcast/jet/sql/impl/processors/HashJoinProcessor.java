@@ -123,7 +123,7 @@ public class HashJoinProcessor extends AbstractProcessor {
         }
     }
 
-    private ObjectArrayKey getHashKeys(Object[] row, int[] joinIndices) {
+    public static ObjectArrayKey getHashKeys(Object[] row, int[] joinIndices) {
         Object[] hashKeys = new Object[joinIndices.length];
         for (int i = 0; i < joinIndices.length; i++) {
             hashKeys[i] = row[joinIndices[i]];
