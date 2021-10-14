@@ -63,6 +63,16 @@ public class CompactStreamSerializerTest {
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     @Test
+    public void testAllTypesWithReflectiveSerializer() {
+        SerializationService serializationService = createSerializationService();
+        MainDTO expected = createMainDTO();
+
+        Data data = serializationService.toData(expected);
+        MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+    @Test
     public void testDefaultsReflection_insideCollection() {
         SerializationService serializationService = createSerializationService();
 

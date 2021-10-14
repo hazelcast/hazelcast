@@ -191,4 +191,32 @@ public class MainDTO {
         result = 31 * result + (nullableD != null ? nullableD.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MainDTO{"
+                + "+ b=" + b
+                + ", + bool=" + bool
+                + ", + c=" + c
+                + ", + s=" + s
+                + ", + i=" + i
+                + ", + l=" + l
+                + ", + f=" + f
+                + ", + d=" + d
+                + ", + str='" + str + '\''
+                + ", + p=" + p
+                + ", + bigDecimal=" + bigDecimal
+                + ", + localTime=" + localTime
+                + ", + localDate=" + localDate
+                + ", + localDateTime=" + localDateTime
+                + ", + offsetDateTime=" + offsetDateTime
+                + ", + nullableB=" + nullableB
+                + ", + nullableBool=" + nullableBool
+                + ", + nullableS=" + nullableS
+                + ", + nullableI=" + nullableI
+                + ", + nullableL=" + nullableL
+                + ", + nullableF=" + nullableF
+                + ", + nullableD=" + nullableD
+                + '}';
+    }
 }
