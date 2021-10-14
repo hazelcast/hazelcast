@@ -18,26 +18,21 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.hazelcast.query.QueryException;
-import com.jayway.jsonpath.InvalidPathException;
 import org.jsfr.json.Collector;
-import org.jsfr.json.GsonParser;
+import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
 import org.jsfr.json.path.JsonPath;
-import org.jsfr.json.provider.GsonProvider;
+import org.jsfr.json.provider.JacksonJrProvider;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
-    private static final JsonSurfer SURFER = new JsonSurfer(GsonParser.INSTANCE, GsonProvider.INSTANCE);;
+    private static final JsonSurfer SURFER = new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE);;
 
     private JsonPathUtil() { }
 
@@ -48,11 +43,7 @@ public final class JsonPathUtil {
     }
 
     public static JsonPath compile(String path) {
-        try {
-            return JsonPathCompiler.compile(path);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPathException("Illegal argument provided to JSONPath compile function", e);
-        }
+        return JsonPathCompiler.compile(path);
     }
 
     // TODO [viliam] remove this?
@@ -62,45 +53,17 @@ public final class JsonPathUtil {
 
     public static Collection<Object> read(String json, JsonPath path) {
         Collector collector = SURFER.collector(json);
-        ValueBox<Collection<JsonElement>> box = collector.collectAll(path, JsonElement.class);
+        ValueBox<Collection<Object>> box = collector.collectAll(path, Object.class);
         collector.exec();
-        return box.get().stream()
-                // translate JSON primitives in the result
-                .map(result -> {
-                    if (result.isJsonArray() || result.isJsonObject()) {
-                        return result;
-                    }
-
-                    if (result.isJsonNull()) {
-                        return null;
-                    }
-
-                    final JsonPrimitive primitive = result.getAsJsonPrimitive();
-                    if (primitive.isNumber()) {
-                        // GSON's getAsNumber returns LazilyParsedNumber, which produces undesirable serialization results
-                        // e.g. {"value":3"} instead of plain "3", therefore we need to convert it to plain Number.
-                        if (primitive.toString().matches(".*[.eE].*")) {
-                            return primitive.getAsBigDecimal();
-                        } else {
-                            return primitive.getAsLong();
-                        }
-                    } else if (primitive.isBoolean()) {
-                        return primitive.getAsBoolean();
-                    } else if (primitive.isString()) {
-                        return primitive.getAsString();
-                    } else {
-                        throw QueryException.error("Unsupported JSONPath result type: " + primitive.getClass().getName());
-                    }
-                })
-                .collect(Collectors.toList());
+        return box.get();
     }
 
     public static boolean isArray(Object value) {
-        return value instanceof JsonArray;
+        return value instanceof ArrayList;
     }
 
     public static boolean isObject(Object value) {
-        return value instanceof JsonObject;
+        return value instanceof Map;
     }
 
     public static boolean isArrayOrObject(Object value) {

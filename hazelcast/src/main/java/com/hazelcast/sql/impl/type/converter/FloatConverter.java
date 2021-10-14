@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 
 /**
@@ -143,7 +142,7 @@ public final class FloatConverter extends Converter {
             throw nanValueError(QueryDataTypeFamily.DECIMAL);
         }
 
-        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
+        return BigDecimal.valueOf(val0);
     }
 
     @Override

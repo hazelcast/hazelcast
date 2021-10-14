@@ -29,11 +29,12 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -168,24 +169,22 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             return result.toString();
         }
 
+        Converter converter = Converters.getConverter(result.getClass());
         switch (this.resultType.getTypeFamily().getPublicType()) {
             case TINYINT:
-                return ((Number) result).byteValue();
+                return converter.asTinyint(result);
             case SMALLINT:
-                return ((Number) result).shortValue();
+                return converter.asSmallint(result);
             case INTEGER:
-                return ((Number) result).intValue();
+                return converter.asInt(result);
             case BIGINT:
-                return ((Number) result).longValue();
+                return converter.asBigint(result);
             case REAL:
-                return ((Number) result).floatValue();
+                return converter.asReal(result);
             case DOUBLE:
-                return ((Number) result).doubleValue();
+                return converter.asDouble(result);
             case DECIMAL:
-                Number number = ((Number) result);
-                return number instanceof BigDecimal
-                        ? (BigDecimal) number
-                        : BigDecimal.valueOf(number.doubleValue());
+                return converter.asDecimal(result);
             default:
                 return result;
         }

@@ -166,13 +166,16 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
+                // TODO [viliam] improve error message
+                .hasMessageEndingWith("Invalid JSONPath expression: org.antlr.v4.runtime.misc.ParseCancellationException");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
+                // TODO [viliam] improve error message
+                .hasMessageEndingWith("Invalid JSONPath expression: org.antlr.v4.runtime.misc.ParseCancellationException");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('[1,2,3]', jsonValue) FROM test2"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                // TODO [viliam] improve error message
+                .hasMessageEndingWith("JSONPath expression can not be null");
     }
 
     @Test

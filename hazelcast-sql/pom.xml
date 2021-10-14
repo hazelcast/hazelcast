@@ -472,7 +472,7 @@
         </dependency>
         <dependency>
             <groupId>com.github.jsurfer</groupId>
-            <artifactId>jsurfer-gson</artifactId>
+            <artifactId>jsurfer-jackson-jr</artifactId>
             <version>${json-surfer.version}</version>
         </dependency>
         <dependency>

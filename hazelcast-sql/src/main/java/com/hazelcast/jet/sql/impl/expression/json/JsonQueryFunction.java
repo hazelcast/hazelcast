@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +29,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 import org.jsfr.json.path.JsonPath;
@@ -107,8 +107,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (IllegalArgumentException exception) {
-            throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
+        } catch (ParseCancellationException e) {
+            throw QueryException.error("Invalid JSONPath expression: " + e, e);
         }
 
         try {

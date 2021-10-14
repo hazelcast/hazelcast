@@ -56,48 +56,51 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     public void when_calledWithBasicSyntax_then_varcharIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField') FROM test" ,
-                rows(1, "1"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField') FROM test" ,
-                rows(1, "2"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField') FROM test" ,
-                rows(1, "3"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField') FROM test" ,
-                rows(1, "4"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField') FROM test" ,
-                rows(1, "6"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField') FROM test" ,
-                rows(1, "7"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField') FROM test" ,
-                rows(1, "8.0"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField') FROM test" ,
-                rows(1, "9.0"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
-                rows(1, "1E+1000"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' error on error) FROM test",
+                rows(1, "127"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField') FROM test",
+                rows(1, "32767"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField') FROM test",
+                rows(1, "2147483647"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField') FROM test",
+                rows(1, "9223372036854775807"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField') FROM test",
+                rows(1, "foo"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField') FROM test",
+                rows(1, "c"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField') FROM test",
+                rows(1, "8.1"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField') FROM test",
+                rows(1, "9.123456789012345E50"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test",
+                rows(1, "Infinity"));
     }
 
     @Test
     public void when_calledWithReturning_then_correctTypeIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT error on error) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT error on error) FROM test",
                 rows(1, Byte.MAX_VALUE));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test",
                 rows(1, Short.MAX_VALUE));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField' RETURNING INTEGER) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField' RETURNING INTEGER) FROM test",
                 rows(1, Integer.MAX_VALUE));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test",
                 rows(1, Long.MAX_VALUE));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test",
                 rows(1, "foo"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test",
                 rows(1, "c"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField' RETURNING REAL) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField' RETURNING REAL) FROM test",
                 rows(1, 8.1f));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test" ,
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test",
                 rows(1, 9.123456789012345e50));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL error on error) FROM test" ,
-                rows(1, new BigDecimal("1e1000")));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL error on error) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot convert infinite DOUBLE to DECIMAL");
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DECIMAL) FROM test",
+                rows(1, new BigDecimal("9.123456789012345e50")));
     }
 
     @Test
