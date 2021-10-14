@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSupport {
 
-    static final Car PORSCHE = new Car("Porsche", new Engine(300), 1421,
+    static final Car PORSCHE = new Car("Porsche", new Engine(300), null,
             Wheel.w("front", false), Wheel.w("rear", false));
 
     @Test(expected = IllegalArgumentException.class)

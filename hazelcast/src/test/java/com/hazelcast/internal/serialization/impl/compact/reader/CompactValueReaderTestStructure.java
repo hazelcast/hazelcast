@@ -209,13 +209,13 @@ public class CompactValueReaderTestStructure {
                 nullableFloat_ = float_;
                 nullableDouble_ = double_;
 
-                nullableBytes = new Byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13)};
-                nullableBooleans = new Boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0};
-                nullableShorts = new Short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23)};
-                nullableInts = new Integer[]{seed + 31, seed + 32, seed + 33};
-                nullableLongs = new Long[]{(long) (seed + 41), (long) (seed + 42), (long) (seed + 43)};
-                nullableFloats = new Float[]{seed + 51.01f, seed + 52.01f, seed + 53.01f};
-                nullableDoubles = new Double[]{(double) (seed + 61.01f), (double) (seed + 62.01f), (double) (seed + 63.01f)};
+                nullableBytes = new Byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13), null};
+                nullableBooleans = new Boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0, null};
+                nullableShorts = new Short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23), null};
+                nullableInts = new Integer[]{null, seed + 31, seed + 32, seed + 33};
+                nullableLongs = new Long[]{(long) (seed + 41), null, (long) (seed + 42), (long) (seed + 43)};
+                nullableFloats = new Float[]{seed + 51.01f, seed + 52.01f, null, seed + 53.01f};
+                nullableDoubles = new Double[]{null, (double) (seed + 61.01f), (double) (seed + 62.01f), (double) (seed + 63.01f)};
 
             } else if (init == Init.NONE) {
                 bytes = new byte[]{};
