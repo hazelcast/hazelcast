@@ -1216,6 +1216,7 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/jet/**</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
