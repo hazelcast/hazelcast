@@ -1212,11 +1212,11 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
                                 <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
-                                <!-- wrapper ClassRecordingSerializationService -->
-                                <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
+                                <!-- sampling serialization service -->
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/jet/**</exclude>
+                                <exclude>**/jet/**/*.java</exclude>
+                                <exclude>**/*Jet*.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
