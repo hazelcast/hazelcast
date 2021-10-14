@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
@@ -52,6 +53,7 @@ public class HashJoinProcessor extends AbstractProcessor {
     private Multimap<ObjectArrayKey, Object[]> hashMap;
     private boolean rightExhausted;
     private FlatMapper<Object[], Object[]> flatMapper;
+    private long maxItemsInHashTable;
 
     public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount) {
         this.joinInfo = joinInfo;
@@ -63,6 +65,7 @@ public class HashJoinProcessor extends AbstractProcessor {
         this.evalContext = SimpleExpressionEvalContext.from(context);
         this.hashMap = LinkedListMultimap.create();
         this.flatMapper = flatMapper(this::join);
+        this.maxItemsInHashTable = context.maxProcessorAccumulatedRecords();
     }
 
     private Traverser<Object[]> join(Object[] leftRow) {
@@ -91,6 +94,10 @@ public class HashJoinProcessor extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess1(@Nonnull Object item) {
+        if (hashMap.size() == maxItemsInHashTable) {
+            throw new AccumulationLimitExceededException();
+        }
+
         Object[] rightRow = (Object[]) item;
         ObjectArrayKey joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
         hashMap.put(joinKeys, rightRow);
