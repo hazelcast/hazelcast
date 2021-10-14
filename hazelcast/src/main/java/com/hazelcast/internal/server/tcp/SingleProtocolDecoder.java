@@ -107,6 +107,9 @@ public class SingleProtocolDecoder
                 // The exception that will close the Connection eventually thrown
                 // in SingleProtocolEncoder, since we send wrong protocol signal
                 // for this in verifyProtocol.
+
+                // we do this trick to prevent previous handlers get into DIRTY loop.
+                src.position(src.limit());
                 return CLEAN;
             }
             encoder.signalProtocolVerified();
