@@ -45,8 +45,8 @@ public final class PhysicalRules {
                 SortPhysicalRule.INSTANCE,
 
                 // Join rules
-                NestedLoopJoinPhysicalRule.INSTANCE,
-                HashJoinPhysicalRule.INSTANCE,
+                JoinNestedLoopPhysicalRule.INSTANCE,
+                JoinHashPhysicalRule.INSTANCE,
 
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,
