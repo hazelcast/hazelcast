@@ -22,11 +22,11 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -58,7 +58,6 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -236,14 +235,13 @@ public final class OptUtils {
 
     /**
      * If the {@code node} is a {@link RelSubset}, finds the subset matching
-     * the {@code operandPredicate}. If multiple or no matches are found,
-     * throws an error.
+     * the {@code operandPredicate}.
+     * If multiple or no matches are found, returns null.
      * <p>
      * If the {@code node} isn't a {@code RelSubset}, check that it matches the
      * predicate and returns it.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
     public static <T> T findMatchingRel(RelNode node, RelOptRuleOperand operandPredicate) {
         if (node instanceof RelSubset) {
             RelNode res = null;
@@ -255,14 +253,11 @@ public final class OptUtils {
                     res = rel;
                 }
             }
-            if (res != null) {
-                return (T) res;
-            }
+            return (T) res;
         } else if (operandPredicate.matches(node)) {
             return (T) node;
         }
-
-        throw new RuntimeException("expected rel not found: " + node);
+        return null;
     }
 
     public static PlanNodeSchema schema(RelDataType rowType) {

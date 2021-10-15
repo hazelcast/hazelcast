@@ -154,10 +154,9 @@ final class ValuesLogicalRules {
                     Union union = call.rel(0);
                     List<ExpressionValues> expressionValues = new ArrayList<>(union.getInputs().size());
                     for (RelNode input : union.getInputs()) {
-                        try {
-                            ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
+                        ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
+                        if (values != null) {
                             expressionValues.addAll(values.values());
-                        } catch (RuntimeException e) {
                         }
                     }
                     RelNode rel = new ValuesLogicalRel(

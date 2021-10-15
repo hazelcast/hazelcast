@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlResult;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
