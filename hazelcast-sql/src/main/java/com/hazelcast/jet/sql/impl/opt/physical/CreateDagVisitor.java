@@ -32,15 +32,16 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.processors.HashJoinProcessor;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -410,8 +411,8 @@ public class CreateDagVisitor {
         if (joinInfo.isEquiJoin()) {
             int[] leftIndices = joinInfo.leftEquiJoinIndices();
             int[] rightIndices = joinInfo.rightEquiJoinIndices();
-            left = left.distributed().partitioned(row -> HashJoinProcessor.getHashKeys((Object[]) row, leftIndices));
-            right = right.distributed().partitioned(row -> HashJoinProcessor.getHashKeys((Object[]) row, rightIndices));
+            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
+            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
         }
         dag.edge(left);
         dag.edge(right);

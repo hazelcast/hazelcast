@@ -34,7 +34,7 @@ public final class ObjectArrayKey implements DataSerializable {
     private ObjectArrayKey() {
     }
 
-    public ObjectArrayKey(Object[] array) {
+    private ObjectArrayKey(Object[] array) {
         this.array = array;
     }
 
@@ -70,6 +70,14 @@ public final class ObjectArrayKey implements DataSerializable {
     @Override
     public int hashCode() {
         return Arrays.hashCode(array);
+    }
+
+    public static ObjectArrayKey project(Object[] row, int[] indices) {
+        Object[] hashKeys = new Object[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            hashKeys[i] = row[indices[i]];
+        }
+        return new ObjectArrayKey(hashKeys);
     }
 
     /**

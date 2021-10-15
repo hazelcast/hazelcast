@@ -27,8 +27,8 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -69,7 +69,7 @@ public class HashJoinProcessor extends AbstractProcessor {
     }
 
     private Traverser<Object[]> join(Object[] leftRow) {
-            ObjectArrayKey joinKeys = getHashKeys(leftRow, joinInfo.leftEquiJoinIndices());
+            ObjectArrayKey joinKeys = ObjectArrayKey.project(leftRow, joinInfo.leftEquiJoinIndices());
             Collection<Object[]> matchedRows = hashMap.get(joinKeys);
             List<Object[]> output = matchedRows.stream()
                     .map(right -> ExpressionUtil.join(
@@ -99,7 +99,7 @@ public class HashJoinProcessor extends AbstractProcessor {
         }
 
         Object[] rightRow = (Object[]) item;
-        ObjectArrayKey joinKeys = getHashKeys(rightRow, joinInfo.rightEquiJoinIndices());
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(rightRow, joinInfo.rightEquiJoinIndices());
         hashMap.put(joinKeys, rightRow);
         return true;
     }
@@ -121,14 +121,6 @@ public class HashJoinProcessor extends AbstractProcessor {
             default:
                 throw new IllegalArgumentException("Ordinal must be 0 or 1");
         }
-    }
-
-    public static ObjectArrayKey getHashKeys(Object[] row, int[] joinIndices) {
-        Object[] hashKeys = new Object[joinIndices.length];
-        for (int i = 0; i < joinIndices.length; i++) {
-            hashKeys[i] = row[joinIndices[i]];
-        }
-        return new ObjectArrayKey(hashKeys);
     }
 
     public static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
