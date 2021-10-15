@@ -26,6 +26,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlUnionTest extends SqlTestSupport {
@@ -45,7 +46,10 @@ public class SqlUnionTest extends SqlTestSupport {
         map1 = instance().getMap("map1");
         map2 = instance().getMap("map2");
         map3 = instance().getMap("map3");
+    }
 
+    @Test
+    public void baseUnionTest() {
         createMapping("map1", Integer.class, Person.class);
         createMapping("map2", Integer.class, Person.class);
 
@@ -54,28 +58,36 @@ public class SqlUnionTest extends SqlTestSupport {
             map2.put(i, new Person(i, "ABC" + i));
             expected.add(new Row(i, i, "ABC" + i));
         }
-    }
-
-    @Test
-    public void baseUnionTest() {
         String sql = "(SELECT * FROM map1) UNION (SELECT * FROM map2)";
         assertRowsAnyOrder(sql, expected);
     }
 
     @Test
     public void multipleUnionTest() {
+        createMapping("map1", Integer.class, Person.class);
+        createMapping("map2", Integer.class, Person.class);
         createMapping("map3", Integer.class, Person.class);
 
         for (int i = 0; i < 50; ++i) {
+            map1.put(i, new Person(i, "ABC" + i));
+            map2.put(i, new Person(i, "ABC" + i));
             map3.put(i, new Person(i, "ABC" + i));
+            expected.add(new Row(i, i, "ABC" + i));
         }
+
         String sql = "(SELECT * FROM map1) UNION (SELECT * FROM map2) UNION (SELECT * FROM map3)";
         assertRowsAnyOrder(sql, expected);
     }
 
     @Test
     public void baseUnionAllTest() {
+        createMapping("map1", Integer.class, Person.class);
+        createMapping("map2", Integer.class, Person.class);
+
         for (int i = 0; i < 50; ++i) {
+            map1.put(i, new Person(i, "ABC" + i));
+            map2.put(i, new Person(i, "ABC" + i));
+            expected.add(new Row(i, i, "ABC" + i));
             expected.add(new Row(i, i, "ABC" + i));
         }
         String sql = "(SELECT * FROM map1) UNION ALL (SELECT * FROM map2)";
@@ -84,19 +96,28 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @Test
     public void multipleUnionAllTest() {
+        createMapping("map1", Integer.class, Person.class);
+        createMapping("map2", Integer.class, Person.class);
         createMapping("map3", Integer.class, Person.class);
 
         for (int i = 0; i < 50; ++i) {
+            map1.put(i, new Person(i, "ABC" + i));
+            map2.put(i, new Person(i, "ABC" + i));
             map3.put(i, new Person(i, "ABC" + i));
-            expected.add(new Row(i, i, "ABC" + i));
-            expected.add(new Row(i, i, "ABC" + i));
+            expected.addAll(
+                    asList(new Row(i, i, "ABC" + i), new Row(i, i, "ABC" + i), new Row(i, i, "ABC" + i))
+            );
         }
+
         String sql = "(SELECT * FROM map1) UNION ALL (SELECT * FROM map2) UNION ALL (SELECT * FROM map3)";
         assertRowsAnyOrder(sql, expected);
     }
 
     @Test
     public void baseUnionColumnCountMismatchTest() {
+        createMapping("map1", Integer.class, Person.class);
+        createMapping("map2", Integer.class, Integer.class);
+
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION (SELECT __key FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
@@ -109,6 +130,7 @@ public class SqlUnionTest extends SqlTestSupport {
     @Test
     public void baseUnionTypeInferErrorTest() {
         instance().getMap("map4");
+        createMapping("map1", Integer.class, Person.class);
         createMapping("map4", Integer.class, Integer.class);
 
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT name FROM map1) UNION (SELECT this FROM map4)"))
@@ -122,6 +144,9 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @Test
     public void baseUnionAllColumnCountMismatchTest() {
+        createMapping("map1", Integer.class, Person.class);
+        createMapping("map2", Integer.class, Person.class);
+
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
@@ -134,6 +159,7 @@ public class SqlUnionTest extends SqlTestSupport {
     @Test
     public void baseUnionAllTypeInferErrorTest() {
         instance().getMap("map4");
+        createMapping("map1", Integer.class, Person.class);
         createMapping("map4", Integer.class, Integer.class);
 
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT name FROM map1) UNION ALL (SELECT this FROM map4)"))
@@ -146,17 +172,31 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void logicalRelBelowUnionOptimizedTest() {
-        expected.clear();
+    public void simplifiedLogicalRelBelowUnionOptimizedTest() {
+        map1 = instance().getMap("map1");
+
+        createMapping("map1", Integer.class, Person.class);
+
         for (int i = 0; i < 50; ++i) {
+            map1.put(i, new Person(i, "ABC" + i));
+            expected.add(new Row((byte) 1));
+        }
+        expected.add(new Row((byte) 1));
+        String sql = "SELECT 1 FROM (values(1)) UNION ALL SELECT 1 FROM map1";
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void logicalRelBelowUnionOptimizedTest() {
+        map1 = instance().getMap("map1");
+
+        createMapping("map1", Integer.class, Person.class);
+
+        for (int i = 0; i < 50; ++i) {
+            map1.put(i, new Person(i, "ABC" + i));
             expected.add(new Row(i));
         }
         String sql = "SELECT id FROM map1 WHERE false UNION ALL SELECT id FROM map1";
-        assertRowsAnyOrder(sql, expected);
-
-        expected.clear();
-        expected.add(new Row((byte) 1));
-        sql = "SELECT 1 FROM (values(1)) UNION ALL SELECT 1 FROM map1";
         assertRowsAnyOrder(sql, expected);
     }
 }
