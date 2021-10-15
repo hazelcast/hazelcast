@@ -32,7 +32,7 @@ public class TextHandshakeDecoder
 
     @Override
     protected boolean verifyProtocol(String incomingProtocol) {
-        super.isVerifyProtocolCalled = true;
+        super.verifyProtocolCalled = true;
         handleUnexpectedProtocol(incomingProtocol);
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {

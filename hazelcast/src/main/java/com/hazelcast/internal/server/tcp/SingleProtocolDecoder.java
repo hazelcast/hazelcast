@@ -48,7 +48,7 @@ public class SingleProtocolDecoder
      * with initial bytes of connection. Formerly, this method would be called multiple times
      * with new incoming data, although it failed after its first call.
      */
-    protected volatile boolean isVerifyProtocolCalled;
+    protected volatile boolean verifyProtocolCalled;
     final SingleProtocolEncoder encoder;
     private final boolean shouldSignalMemberProtocolEncoder;
 
@@ -85,7 +85,7 @@ public class SingleProtocolDecoder
         this.inboundHandlers = next;
         this.encoder = encoder;
         this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
-        this.isVerifyProtocolCalled = false;
+        this.verifyProtocolCalled = false;
     }
 
     @Override
@@ -102,14 +102,17 @@ public class SingleProtocolDecoder
                 // The protocol has not yet been fully received.
                 return CLEAN;
             }
-
-            if (isVerifyProtocolCalled || !verifyProtocol(loadProtocol())) {
+            boolean verifyProtocolPreviouslyCalled = verifyProtocolCalled;
+            if (verifyProtocolPreviouslyCalled || !verifyProtocol(loadProtocol())) {
                 // The exception that will close the Connection eventually thrown
                 // in SingleProtocolEncoder, since we send wrong protocol signal
                 // for this in verifyProtocol.
-
-                // we do this trick to prevent previous handlers get into DIRTY loop.
-                src.position(src.limit());
+                if (verifyProtocolPreviouslyCalled) {
+                    // we do this trick to prevent previous handlers get into
+                    // DIRTY loop (we observed this in TLSDecoder before) while
+                    // waiting for the connection to close on the encoder side.
+                    src.position(src.limit());
+                }
                 return CLEAN;
             }
             encoder.signalProtocolVerified();
@@ -142,7 +145,7 @@ public class SingleProtocolDecoder
     // Verify that received protocol is expected one.
     // If not then signal SingleProtocolEncoder and throw exception.
     protected boolean verifyProtocol(String incomingProtocol) {
-        isVerifyProtocolCalled = true;
+        verifyProtocolCalled = true;
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
             handleUnexpectedProtocol(incomingProtocol);
             encoder.signalWrongProtocol("Unsupported protocol exchange detected, expected protocol: "
