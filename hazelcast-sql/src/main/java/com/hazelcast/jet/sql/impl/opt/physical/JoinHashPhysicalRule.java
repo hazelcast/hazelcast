@@ -28,14 +28,21 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-public final class NestedLoopJoinPhysicalRule extends RelOptRule {
+public final class JoinHashPhysicalRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new NestedLoopJoinPhysicalRule();
+    static final RelOptRule INSTANCE = new JoinHashPhysicalRule();
 
-    private NestedLoopJoinPhysicalRule() {
+    private JoinHashPhysicalRule() {
         super(
-                operand(JoinLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()), operand(TableScan.class, any()))),
-                NestedLoopJoinPhysicalRule.class.getSimpleName()
+                operand(
+                        JoinLogicalRel.class,
+                        LOGICAL,
+                        some(
+                                operand(RelNode.class, any()),
+                                operandJ(RelNode.class, LOGICAL, node -> !(node instanceof TableScan), any())
+                        )
+                ),
+                JoinHashPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -53,14 +60,14 @@ public final class NestedLoopJoinPhysicalRule extends RelOptRule {
         Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
         for (RelNode left : lefts) {
             for (RelNode right : rights) {
-                RelNode rel = new JoinNestedLoopPhysicalRel(
-                            logicalJoin.getCluster(),
-                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                            left,
-                            right,
-                            logicalJoin.getCondition(),
-                            logicalJoin.getJoinType()
-                    );
+                RelNode rel = new JoinHashPhysicalRel(
+                        logicalJoin.getCluster(),
+                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                        left,
+                        right,
+                        logicalJoin.getCondition(),
+                        logicalJoin.getJoinType()
+                );
                 call.transformTo(rel);
             }
         }

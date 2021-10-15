@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Collection;
+import java.util.List;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
@@ -659,7 +661,7 @@ public class SqlJoinTest {
 
         @Parameters(name = "{0} JOIN")
         public static Object[] params() {
-            return new Object[] { JoinType.SEMI, JoinType.ANTI };
+            return new Object[]{JoinType.SEMI, JoinType.ANTI};
         }
 
         @Parameter
@@ -671,94 +673,114 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void test_exists_withSubqueryAlwaysReturningSome() {
+            String name = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+
+            assertRows("SELECT * FROM " + name + " " +
+                            "WHERE " +
+                            whereClause() + " (SELECT 1)",
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2"),
+                            new Row(3, "value-3")
+                    ),
+                    emptyList()
+            );
+        }
+
+        @Test
+        public void test_exists_withSubqueryAlwaysReturningNone() {
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+            String subName = createTable(
+                    singletonList("v"),
+                    singletonList(INTEGER)
+            );
+
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT 1 FROM " + subName + " WHERE v = 1)",
+                    emptyList(),
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2"),
+                            new Row(3, "value-3")
+                    )
+            );
+        }
+
+        @Test
         public void test_exists_onCorrelatedPrimitiveKey() {
-            String leftName = randomName();
-            TestBatchSqlConnector.create(
-                    sqlService,
-                    leftName,
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+            String subName = createTable(
                     singletonList("v"),
                     singletonList(INTEGER),
-                    asList(new String[]{"0"}, new String[]{"1"}, new String[]{"2"}));
+                    new String[]{"0"}, new String[]{"1"}, new String[]{"2"}
+            );
 
-            String mapName = randomName();
-            createMapping(mapName, int.class, String.class);
-            instance().getMap(mapName).put(1, "value-1");
-            instance().getMap(mapName).put(2, "value-2");
-            instance().getMap(mapName).put(3, "value-3");
-
-            assertRows("SELECT m.__key, m.this " +
-                    "FROM " + mapName + " m " +
-                    "WHERE " + whereClause() +
-                    " (SELECT l.v FROM " + leftName + " l WHERE l.v = m.__key)",
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT s.v FROM " + subName + " s WHERE s.v = m.k)",
                     asList(
                             new Row(1, "value-1"),
                             new Row(2, "value-2")
                     ),
-                    asList(
-                            new Row(3, "value-3")
-                    )
+                    singletonList(new Row(3, "value-3"))
             );
         }
 
         @Test
         public void test_exists_onCorrelatedPrimitiveValue() {
-            String batchName = randomName();
-            TestBatchSqlConnector.create(
-                    sqlService,
-                    batchName,
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+            String subName = createTable(
                     singletonList("v"),
                     singletonList(VARCHAR),
-                    asList(new String[]{"value-0"}, new String[]{"value-1"}, new String[]{"value-2"}));
+                    new String[]{"value-0"}, new String[]{"value-1"}, new String[]{"value-2"}
+            );
 
-            String mapName = randomName();
-            createMapping(mapName, int.class, String.class);
-            instance().getMap(mapName).put(1, "value-1");
-            instance().getMap(mapName).put(2, "value-2");
-            instance().getMap(mapName).put(3, "value-3");
-
-            assertRows("SELECT m.__key, m.this " +
-                            "FROM " + mapName + " m " +
-                            "WHERE " + whereClause() +
-                            " (SELECT l.v FROM " + batchName + " l WHERE l.v = m.this)",
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT s.v FROM " + subName + " s WHERE s.v = m.v)",
                     asList(
                             new Row(1, "value-1"),
                             new Row(2, "value-2")
                     ),
-                    asList(
-                            new Row(3, "value-3")
-                    )
+                    singletonList(new Row(3, "value-3"))
             );
         }
 
         @Test
         public void test_exists_withAdditionalCondition() {
-            String batchName = randomName();
-            TestBatchSqlConnector.create(
-                    sqlService,
-                    batchName,
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(VARCHAR, INTEGER),
+                    new String[]{"value-1", "1"}, new String[]{"value-2", "2"}, new String[]{"value-3", "3"}, new String[]{"value-4", "4"}
+            );
+            String subName = createTable(
                     singletonList("v"),
                     singletonList(INTEGER),
-                    asList(
-                            new String[]{"1"},
-                            new String[]{null},
-                            new String[]{"3"},
-                            new String[]{"4"}
-                    )
+                    new String[]{"1"}, new String[]{null}, new String[]{"3"}, new String[]{"4"}
             );
 
-            String mapName = randomName();
-            createMapping(mapName, String.class, int.class);
-            instance().getMap(mapName).put("value-1", 1);
-            instance().getMap(mapName).put("value-2", 2);
-            instance().getMap(mapName).put("value-3", 3);
-            instance().getMap(mapName).put("value-4", 4);
-
             assertRows(
-                    "SELECT m.this, m.__key " +
-                            "FROM  " + mapName + " m " +
-                            "WHERE " + whereClause() +
-                            " (SELECT l.v FROM " + batchName +
-                            " l WHERE l.v = m.this AND l.v >= 2)",
+                    "SELECT m.v, m.k FROM  " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT s.v FROM " + subName + " s WHERE s.v = m.v AND s.v >= 2)",
                     asList(
                             new Row(3, "value-3"),
                             new Row(4, "value-4")
@@ -772,101 +794,78 @@ public class SqlJoinTest {
 
         @Test
         public void test_exists_withAdditionalCondition_thenFilter() {
-            String batchName = randomName();
-            TestBatchSqlConnector.create(
-                    sqlService,
-                    batchName,
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(VARCHAR, INTEGER),
+                    new String[]{"value-1", "1"}, new String[]{"value-2", "2"}, new String[]{"value-3", "3"}, new String[]{"value-4", "4"}
+            );
+            String subName = createTable(
                     singletonList("v"),
                     singletonList(INTEGER),
-                    asList(
-                            new String[]{"1"},
-                            new String[]{null},
-                            new String[]{"3"},
-                            new String[]{"4"}
-                    )
+                    new String[]{"1"}, new String[]{null}, new String[]{"3"}, new String[]{"4"}
             );
 
-            String mapName = randomName();
-            createMapping(mapName, String.class, int.class);
-            instance().getMap(mapName).put("value-1", 1);
-            instance().getMap(mapName).put("value-2", 2);
-            instance().getMap(mapName).put("value-3", 3);
-            instance().getMap(mapName).put("value-4", 4);
-
             assertRows(
-                    "SELECT m.this, m.__key " +
-                            "FROM  " + mapName + " m " +
-                            "WHERE " + whereClause() +
-                            " (SELECT l.v FROM " + batchName +
-                            " l WHERE l.v = m.this AND l.v >= 2) AND m.this % 2 = 1",
-                    asList(
-                            new Row(3, "value-3")
-                    ),
-                    asList(
-                            new Row(1, "value-1")
-                    )
+                    "SELECT m.v, m.k FROM  " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT s.v FROM " + subName + " s WHERE s.v = m.v AND s.v >= 2) " +
+                            "AND m.v % 2 = 1",
+                    singletonList(new Row(3, "value-3")),
+                    singletonList(new Row(1, "value-1"))
             );
         }
 
         @Test
         public void test_exists_onOtherThanEquality() {
-            String batchName = randomName();
-            TestBatchSqlConnector.create(
-                    sqlService,
-                    batchName,
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(VARCHAR, INTEGER),
+                    new String[]{"value-1", "1"}, new String[]{"value-2", "2"}, new String[]{"value-3", "3"}, new String[]{"value-4", "4"}
+            );
+            String subName = createTable(
                     singletonList("v"),
                     singletonList(INTEGER),
-                    asList(
-                            new String[]{"1"},
-                            new String[]{null},
-                            new String[]{"3"},
-                            new String[]{"4"}
-                    )
+                    new String[]{"1"}, new String[]{null}, new String[]{"3"}, new String[]{"4"}
             );
 
-            String mapName = randomName();
-            createMapping(mapName, String.class, int.class);
-            instance().getMap(mapName).put("value-1", 1);
-            instance().getMap(mapName).put("value-2", 2);
-            instance().getMap(mapName).put("value-3", 3);
-            instance().getMap(mapName).put("value-4", 4);
-
             assertRows(
-                    "SELECT m.__key, m.this " +
-                            "FROM  " + mapName + " m " +
-                            "WHERE " + whereClause() +
-                            " (SELECT l.v FROM " + batchName +
-                            " l WHERE l.v < m.this)",
+                    "SELECT * FROM  " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT s.v FROM " + subName + " s WHERE s.v < m.v)",
                     asList(
                             new Row("value-2", 2),
                             new Row("value-3", 3),
                             new Row("value-4", 4)
                     ),
-                    asList(
-                            new Row("value-1", 1)
-                    )
+                    singletonList(new Row("value-1", 1))
             );
         }
 
-        private void assertRows(String sql, Collection<Row> rowsExisted, Collection<Row> rowsNotExisted) {
+        private static String createTable(List<String> names, List<QueryDataTypeFamily> types, String[]... values) {
+            String name = randomName();
+            TestBatchSqlConnector.create(sqlService, name, names, types, asList(values));
+            return name;
+        }
+
+        private String whereClause() {
             switch (joinType) {
-                case ANTI:
-                    assertRowsAnyOrder(sql, rowsNotExisted);
-                    break;
                 case SEMI:
-                    assertRowsAnyOrder(sql, rowsExisted);
-                    break;
+                    return "EXISTS";
+                case ANTI:
+                    return "NOT EXISTS";
                 default:
                     throw new IllegalStateException("Unexpected join type: " + joinType);
             }
         }
 
-        private String whereClause() {
+        private void assertRows(String sql, Collection<Row> rowsExisted, Collection<Row> rowsNotExisted) {
             switch (joinType) {
-                case ANTI:
-                    return "NOT EXISTS";
                 case SEMI:
-                    return "EXISTS";
+                    assertRowsAnyOrder(sql, rowsExisted);
+                    break;
+                case ANTI:
+                    assertRowsAnyOrder(sql, rowsNotExisted);
+                    break;
                 default:
                     throw new IllegalStateException("Unexpected join type: " + joinType);
             }
@@ -886,7 +885,7 @@ public class SqlJoinTest {
 
         @Parameters(name = "{0} JOIN")
         public static Object[] params() {
-            return new Object[] { OuterJoinType.LEFT, OuterJoinType.RIGHT };
+            return new Object[]{OuterJoinType.LEFT, OuterJoinType.RIGHT};
         }
 
         @Parameter
@@ -1091,7 +1090,7 @@ public class SqlJoinTest {
 
             assertRowsAnyOrder(
                     "SELECT t.v, m.__key, m.this " +
-                            "FROM " +  joinClause(batchName, mapName) + " ON 1 = 1",
+                            "FROM " + joinClause(batchName, mapName) + " ON 1 = 1",
                     asList(
                             new Row(0, "value-1", 1),
                             new Row(0, "value-2", 2),
@@ -1154,7 +1153,7 @@ public class SqlJoinTest {
 
             assertRowsAnyOrder(
                     "SELECT t.v, m.__key, m.this " +
-                            "FROM " +  joinClause(batchName, mapName)
+                            "FROM " + joinClause(batchName, mapName)
                             + " ON m.__key > t.v AND m.this IS NOT NULL",
                     asList(
                             new Row(0, 1, "value-1"),

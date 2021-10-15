@@ -287,20 +287,6 @@ public class CreateDagVisitor {
         return vertex;
     }
 
-    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
-        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
-
-        Vertex joinVertex = dag.newUniqueVertex(
-                "Hash Join",
-                HashJoinProcessor.supplier(
-                        joinInfo,
-                        rel.getRight().getRowType().getFieldCount()
-                )
-        );
-        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
-        return joinVertex;
-    }
-
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
@@ -319,6 +305,20 @@ public class CreateDagVisitor {
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
+    }
+
+    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Hash Join",
+                HashJoinProcessor.supplier(
+                        joinInfo,
+                        rel.getRight().getRowType().getFieldCount()
+                )
+        );
+        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
     }
 
     public Vertex onRoot(RootRel rootRel) {
