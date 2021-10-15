@@ -101,7 +101,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
 
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 1);
 
-        // since there is an item, we don't need to wait
+        // since there is no item, we should wait
         boolean shouldWait = op.shouldWait();
         assertTrue(shouldWait);
     }

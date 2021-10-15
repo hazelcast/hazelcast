@@ -29,11 +29,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -58,6 +59,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     private final AtomicBoolean stop = new AtomicBoolean();
 
     private Ringbuffer<Long> ringbuffer;
+
+    @Before
+    public void setUp() throws Exception {
+        // We sometimes get a GC pause longer than TTL (2s) on IBM JDK
+        // The idea is that we hint GC before the test to clear any garbage from previous tests
+        System.gc();
+    }
 
     @After
     public void tearDown() {
@@ -140,6 +148,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         private long lastLogMs = 0;
 
         private volatile long produced;
+        private final List<Long> items = new ArrayList<>(MAX_BATCH);
 
         ProduceThread() {
             super("ProduceThread");
@@ -153,7 +162,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         @Override
         public void doRun() throws Throwable {
             while (!stop.get()) {
-                List<Long> items = makeBatch();
+                makeBatch();
                 addAll(items);
             }
 
@@ -161,9 +170,9 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
 
         @SuppressWarnings("NonAtomicOperationOnVolatileField")
-        private List<Long> makeBatch() {
+        private void makeBatch() {
+            items.clear();
             int count = max(1, random.nextInt(MAX_BATCH));
-            LinkedList<Long> items = new LinkedList<Long>();
 
             for (int k = 0; k < count; k++) {
                 items.add(produced);
@@ -175,7 +184,6 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                     logger.info(getName() + " at " + produced);
                 }
             }
-            return items;
         }
 
         private void addAll(List<Long> items) throws Exception {
@@ -236,6 +244,12 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                             throw e;
                         }
                     }
+                }
+
+                if (result.getSequence(0) != seq) {
+                    logger.info("Sequence of the first retrieved result is newer than expected sequence, "
+                            + "this is possible for readManyAsync operation");
+                    seq = result.getSequence(0);
                 }
 
                 for (Long item : result) {
