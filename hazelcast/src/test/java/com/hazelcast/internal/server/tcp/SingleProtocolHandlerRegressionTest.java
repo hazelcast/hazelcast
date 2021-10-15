@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.net.InetAddress;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -43,9 +44,11 @@ import static org.junit.Assert.assertTrue;
 public class SingleProtocolHandlerRegressionTest extends HazelcastTestSupport {
 
     private static final long ASSERT_TRUE_TIMEOUT_SECS = 20;
+    private TextProtocolClient textProtocolClient;
 
     @After
-    public void cleanup() {
+    public void cleanup() throws IOException {
+        textProtocolClient.close();
         Hazelcast.shutdownAll();
     }
 
@@ -61,13 +64,13 @@ public class SingleProtocolHandlerRegressionTest extends HazelcastTestSupport {
         // Get address of the client endpoint
         InetAddress address = instance.getCluster().getLocalMember().getSocketAddress(CLIENT).getAddress();
         int port = instance.getCluster().getLocalMember().getSocketAddress(CLIENT).getPort();
-        TextProtocolClient client = new TextProtocolClient(address, port);
-        client.connect();
+        textProtocolClient = new TextProtocolClient(address, port);
+        textProtocolClient.connect();
 
-        assertTrueEventually(() -> assertTrue(client.isConnected()), ASSERT_TRUE_TIMEOUT_SECS);
+        assertTrueEventually(() -> assertTrue(textProtocolClient.isConnected()), ASSERT_TRUE_TIMEOUT_SECS);
         assertTrueEventually(() -> assertEquals(connectionManager.getConnections().size(), 1), ASSERT_TRUE_TIMEOUT_SECS);
         // Send wrong protocol data to client endpoint
-        client.sendData("AAACP2CP2");
+        textProtocolClient.sendData("AAACP2CP2");
         // Assert that connection must be closed on the member side
         assertTrueEventually(
                 () -> assertTrue("Connection must be closed on the member side", connectionManager.getConnections().isEmpty()),
