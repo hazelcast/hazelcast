@@ -44,7 +44,6 @@ public class HazelcastExistsOperator extends HazelcastPrefixOperator {
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        // TODO: Implement checking properly
         return true;
     }
 }
