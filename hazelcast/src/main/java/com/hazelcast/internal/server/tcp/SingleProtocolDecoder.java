@@ -108,10 +108,11 @@ public class SingleProtocolDecoder
                 // in SingleProtocolEncoder, since we send wrong protocol signal
                 // for this in verifyProtocol.
                 if (verifyProtocolPreviouslyCalled) {
-                    // We do this trick to clear buffer in the finally block.
-                    // Otherwise, previous handler may stuck in a DIRTY loop 
-                    // even if the channel closes. We observed this behaviour
-                    // in TLSDecoder before.
+                    // We do this trick to clear buffer on compactOrClear(ByteBuffer)
+                    // which is called in the finally block below. Otherwise, the
+                    // previous handler may get stuck in a DIRTY loop even if the
+                    // channel closes. We observed this behavior in TLSDecoder
+                    // before.
                     src.position(src.limit());
                 }
                 return CLEAN;
