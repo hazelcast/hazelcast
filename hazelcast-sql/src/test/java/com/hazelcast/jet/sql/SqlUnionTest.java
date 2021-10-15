@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
-import org.junit.After;
+import com.hazelcast.sql.SqlResult;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -55,16 +55,6 @@ public class SqlUnionTest extends SqlTestSupport {
             map2.put(i, new Person(i, "ABC" + i));
             expected.add(new Row(i, i, "ABC" + i));
         }
-    }
-
-    @Override
-    @After
-    public void tearDown() {
-        map1.clear();
-        map2.clear();
-        map3.clear();
-        expected.clear();
-        super.tearDown();
     }
 
     @Test
@@ -107,7 +97,7 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void baseUnionErrorTest() {
+    public void baseUnionColumnCountMismatchTest() {
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION (SELECT __key FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
@@ -118,7 +108,21 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void baseUnionAllErrorTest() {
+    public void baseUnionTypeInferErrorTest() {
+        instance().getMap("map4");
+        createMapping("map4", Integer.class, Integer.class);
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT name FROM map1) UNION (SELECT this FROM map4)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot infer return type for UNION");
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT this FROM map4) UNION (SELECT name FROM map1)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot infer return type for UNION");
+    }
+
+    @Test
+    public void baseUnionAllColumnCountMismatchTest() {
         assertThatThrownBy(() -> instance().getSql().execute("(SELECT * FROM map1) UNION ALL (SELECT __key FROM map2)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Column count mismatch in UNION");
@@ -129,14 +133,31 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void valueLogicalRuleWithUnionIssueReproducer() {
+    public void baseUnionAllTypeInferErrorTest() {
+        instance().getMap("map4");
+        createMapping("map4", Integer.class, Integer.class);
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT name FROM map1) UNION ALL (SELECT this FROM map4)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot infer return type for UNION ALL");
+
+        assertThatThrownBy(() -> instance().getSql().execute("(SELECT this FROM map4) UNION ALL (SELECT name FROM map1)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot infer return type for UNION ALL");
+    }
+
+    @Test
+    public void logicalRelBelowUnionOptimizedTest() {
         expected.clear();
         for (int i = 0; i < 50; ++i) {
             expected.add(new Row(i));
         }
-        String sql = "(SELECT map1.id FROM map1 WHERE NOT (NOT (NOT (TRUE)))) UNION ALL " +
-                "(SELECT map1.id FROM map1 WHERE NOT (NOT (NOT (NOT (TRUE))))) UNION ALL " +
-                "(SELECT map1.id FROM map1 WHERE (NOT (NOT (NOT (TRUE)))) IS NULL)";
+        String sql = "SELECT id FROM map1 WHERE false UNION ALL SELECT id FROM map1";
+        assertRowsAnyOrder(sql, expected);
+
+        expected.clear();
+        expected.add(new Row((byte) 1));
+        sql = "SELECT 1 FROM (values(1)) UNION ALL SELECT 1 FROM map1";
         assertRowsAnyOrder(sql, expected);
     }
 }

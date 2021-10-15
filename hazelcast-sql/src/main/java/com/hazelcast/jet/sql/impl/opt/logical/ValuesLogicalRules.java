@@ -152,13 +152,14 @@ final class ValuesLogicalRules {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
                     Union union = call.rel(0);
-
                     List<ExpressionValues> expressionValues = new ArrayList<>(union.getInputs().size());
                     for (RelNode input : union.getInputs()) {
-                        ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
-                        expressionValues.addAll(values.values());
+                        try {
+                            ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
+                            expressionValues.addAll(values.values());
+                        } catch (RuntimeException e) {
+                        }
                     }
-
                     RelNode rel = new ValuesLogicalRel(
                             union.getCluster(),
                             union.getTraitSet(),
