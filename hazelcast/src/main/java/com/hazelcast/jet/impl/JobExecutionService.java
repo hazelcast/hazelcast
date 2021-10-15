@@ -455,17 +455,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * Completes and cleans up execution of the given job
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
-        executionContexts.remove(executionContext.executionId());
-        JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
-        try {
-            doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
-        } finally {
-            if (!executionContext.isLightJob()) {
-                jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+        ExecutionContext removed = executionContexts.remove(executionContext.executionId());
+        if (removed != null) {
+            JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
+            try {
+                doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
+            } finally {
+                if (!executionContext.isLightJob()) {
+                    jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+                }
+                executionCompleted.inc();
+                executionContextJobIds.remove(executionContext.jobId());
+                logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
             }
-            executionCompleted.inc();
-            executionContextJobIds.remove(executionContext.jobId());
-            logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
         }
     }
 
