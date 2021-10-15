@@ -128,7 +128,7 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void baseUnionTypeInferErrorTest() {
+    public void baseUnionTypeMismatchErrorTest() {
         instance().getMap("map4");
         createMapping("map1", Integer.class, Person.class);
         createMapping("map4", Integer.class, Integer.class);
@@ -157,7 +157,7 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void baseUnionAllTypeInferErrorTest() {
+    public void baseUnionAllTypeMismatchErrorTest() {
         instance().getMap("map4");
         createMapping("map1", Integer.class, Person.class);
         createMapping("map4", Integer.class, Integer.class);
@@ -172,7 +172,8 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
-    public void simplifiedLogicalRelBelowUnionOptimizedTest() {
+    public void test_unionOfTableScanAndValues() {
+        // test for https://github.com/hazelcast/hazelcast/issues/19772
         map1 = instance().getMap("map1");
 
         createMapping("map1", Integer.class, Person.class);
@@ -183,20 +184,6 @@ public class SqlUnionTest extends SqlTestSupport {
         }
         expected.add(new Row((byte) 1));
         String sql = "SELECT 1 FROM (values(1)) UNION ALL SELECT 1 FROM map1";
-        assertRowsAnyOrder(sql, expected);
-    }
-
-    @Test
-    public void logicalRelBelowUnionOptimizedTest() {
-        map1 = instance().getMap("map1");
-
-        createMapping("map1", Integer.class, Person.class);
-
-        for (int i = 0; i < 50; ++i) {
-            map1.put(i, new Person(i, "ABC" + i));
-            expected.add(new Row(i));
-        }
-        String sql = "SELECT id FROM map1 WHERE false UNION ALL SELECT id FROM map1";
         assertRowsAnyOrder(sql, expected);
     }
 }

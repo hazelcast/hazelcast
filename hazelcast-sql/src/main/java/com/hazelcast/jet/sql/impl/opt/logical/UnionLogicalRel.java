@@ -24,7 +24,6 @@ import org.apache.calcite.rel.core.Union;
 import java.util.List;
 
 public class UnionLogicalRel extends Union implements LogicalRel {
-    private static final double ENLARGER = 100.;
 
     UnionLogicalRel(
             RelOptCluster cluster,

@@ -303,7 +303,9 @@ public class CreateDagVisitor {
     public Vertex onUnion(UnionPhysicalRel rel) {
         // Union[all=false] rel should be never be produced, and it is always replaced by
         // UNION_TO_DISTINCT rule : Union[all=false] -> Union[all=true] + Aggregate.
-        assert rel.all : "Union[all=false] rel should be never be produced";
+        if (!rel.all) {
+            throw new RuntimeException("Union[all=false] rel should never be produced");
+        }
 
         Vertex merger = dag.newUniqueVertex(
                 "UnionMerger",

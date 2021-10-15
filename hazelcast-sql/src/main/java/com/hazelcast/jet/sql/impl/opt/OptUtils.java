@@ -58,6 +58,7 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -236,12 +237,14 @@ public final class OptUtils {
     /**
      * If the {@code node} is a {@link RelSubset}, finds the subset matching
      * the {@code operandPredicate}.
-     * If multiple or no matches are found, returns null.
+     * If multiple matches are found, it throws. If no match is found, it returns null.
      * <p>
-     * If the {@code node} isn't a {@code RelSubset}, check that it matches the
-     * predicate and returns it.
+     * If the {@code node} isn't a {@code RelSubset} and it matches the
+     * predicate, the {@code node} is returned. If it doesn't match,
+     * {@code null} is returned.
      */
     @SuppressWarnings("unchecked")
+    @Nullable
     public static <T> T findMatchingRel(RelNode node, RelOptRuleOperand operandPredicate) {
         if (node instanceof RelSubset) {
             RelNode res = null;
