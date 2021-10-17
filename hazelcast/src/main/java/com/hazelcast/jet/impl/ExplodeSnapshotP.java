@@ -25,8 +25,10 @@ import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerminator;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,19 +56,22 @@ public class ExplodeSnapshotP extends AbstractProcessor {
     }
 
     private Traverser<Object> traverser(byte[] data) {
-        BufferObjectDataInput in = serializationService.createObjectDataInput(data);
-
-        return () -> uncheckCall(() -> {
-            Object key = in.readObject();
-            if (key == SnapshotDataValueTerminator.INSTANCE) {
-                in.close();
-                return null;
-            }
-            Object value = in.readObject();
-            return key instanceof BroadcastKey
-                    ? new BroadcastEntry(key, value)
-                    : entry(key, value);
-        });
+        try (BufferObjectDataInput in = serializationService.createObjectDataInput(data)) {
+            return () -> uncheckCall(() -> {
+                Object key = in.readObject();
+                if (key == SnapshotDataValueTerminator.INSTANCE) {
+                    in.close();
+                    return null;
+                }
+                Object value = in.readObject();
+                return key instanceof BroadcastKey
+                        ? new BroadcastEntry(key, value)
+                        : entry(key, value);
+            });
+        } catch (IOException e) {
+            ExceptionUtil.sneakyThrow(e);
+            return null;
+        }
     }
 
     @Override
