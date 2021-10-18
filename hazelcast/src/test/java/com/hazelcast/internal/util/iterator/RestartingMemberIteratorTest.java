@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.iterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -69,7 +70,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 0;
         Member mockMember = addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         assertTrue(iterator.hasNext());
 
         Member member = iterator.next();
@@ -83,7 +85,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 1;
         Member mockMember = addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         assertTrue(iterator.hasNext());
 
         Member member = iterator.next();
@@ -104,7 +107,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 0;
         addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         // start iterating
         iterator.next();
 
@@ -120,7 +124,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 0;
         addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         iterator.next();
 
         addClusterMember();
@@ -133,7 +138,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 0;
         addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         iterator.next();
         iterator.remove();
     }
@@ -143,7 +149,8 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         int maxRetries = 0;
         addClusterMember();
 
-        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries);
+        RestartingMemberIterator iterator = new RestartingMemberIterator(mockClusterService, maxRetries,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
         iterator.next();
 
         //this should throw NoSuchElementException

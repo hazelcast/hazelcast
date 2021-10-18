@@ -31,6 +31,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import static java.lang.String.format;
 
@@ -47,20 +48,22 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
 
     private final ClusterService clusterService;
     private final int maxRetries;
+    private final long retryDelayMillis;
 
     private volatile boolean topologyChanged;
     private volatile Member nextMember;
     private volatile Set<Member> initialMembers;
 
-    public RestartingMemberIterator(ClusterService clusterService, int maxRetries) {
+    public RestartingMemberIterator(ClusterService clusterService, int maxRetries, long retryDelayMillis) {
         this.clusterService = clusterService;
         this.maxRetries = maxRetries;
+        this.retryDelayMillis = retryDelayMillis;
 
-        Set<Member> currentMembers = clusterService.getMembers();
-        startNewRound(currentMembers);
+        startNewRound();
     }
 
-    private void startNewRound(Set<Member> currentMembers) {
+    private void startNewRound() {
+        Set<Member> currentMembers = clusterService.getMembers();
         topologyChanged = false;
         memberQueue.addAll(currentMembers);
         nextMember = memberQueue.poll();
@@ -78,7 +81,7 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
     private boolean advance() {
         Set<Member> currentMembers = clusterService.getMembers();
         if (topologyChanged(currentMembers)) {
-            retry(currentMembers);
+            retry();
             // at any given moment there should always be at least one cluster member (our own member)
             assert nextMember != null;
             return true;
@@ -88,13 +91,14 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
         return nextMember != null;
     }
 
-    private void retry(Set<Member> currentMembers) {
+    private void retry() {
         if (retryCounter.incrementAndGet() > maxRetries) {
             throw new HazelcastException(format("Cluster topology was not stable for %d retries,"
                     + " invoke on stable cluster failed", maxRetries));
         }
         memberQueue.clear();
-        startNewRound(currentMembers);
+        delayNextRound();
+        startNewRound();
     }
 
     private boolean topologyChanged(Set<Member> currentMembers) {
@@ -138,5 +142,9 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
 
     public int getRetryCount() {
         return retryCounter.get();
+    }
+
+    private void delayNextRound() {
+        LockSupport.parkNanos(retryDelayMillis * 1_000_000L);
     }
 }

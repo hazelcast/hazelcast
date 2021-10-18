@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -61,7 +62,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
         Set<Member> members = new HashSet<>();
         members.add(mock(Member.class));
         when(clusterService.getMembers()).thenReturn(members);
-        repairingIterator = new RestartingMemberIterator(clusterService, 100);
+        repairingIterator = new RestartingMemberIterator(clusterService, 100, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS);
     }
 
     @Test

@@ -64,7 +64,8 @@ public final class InvocationUtil {
             return newCompletedFuture(null);
         }
 
-        RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
+        RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries,
+                nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE));
 
         // we are going to iterate over all members and invoke an operation on each of them
         InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine,
@@ -122,9 +123,6 @@ public final class InvocationUtil {
 
         @Override
         public InternalCompletableFuture<Object> apply(final Member member) {
-            if (isRetry()) {
-                return invokeOnMemberWithDelay(member);
-            }
             return invokeOnMember(member);
         }
 
