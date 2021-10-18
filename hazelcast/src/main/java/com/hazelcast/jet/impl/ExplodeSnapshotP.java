@@ -55,23 +55,21 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         serializationService = ((ProcCtx) context).serializationService();
     }
 
+    @SuppressWarnings("squid:S2095")
     private Traverser<Object> traverser(byte[] data) {
-        try (BufferObjectDataInput in = serializationService.createObjectDataInput(data)) {
-            return () -> uncheckCall(() -> {
-                Object key = in.readObject();
-                if (key == SnapshotDataValueTerminator.INSTANCE) {
-                    in.close();
-                    return null;
-                }
-                Object value = in.readObject();
-                return key instanceof BroadcastKey
-                        ? new BroadcastEntry(key, value)
-                        : entry(key, value);
-            });
-        } catch (IOException e) {
-            ExceptionUtil.sneakyThrow(e);
-            return null;
-        }
+        BufferObjectDataInput in = serializationService.createObjectDataInput(data);
+
+        return () -> uncheckCall(() -> {
+            Object key = in.readObject();
+            if (key == SnapshotDataValueTerminator.INSTANCE) {
+                in.close();
+                return null;
+            }
+            Object value = in.readObject();
+            return key instanceof BroadcastKey
+                    ? new BroadcastEntry(key, value)
+                    : entry(key, value);
+        });
     }
 
     @Override
