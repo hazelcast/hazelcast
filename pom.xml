@@ -510,6 +510,24 @@
                     <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>get-hz-3</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
+                        </configuration>
+                    </execution>
+                </executions>
+                <inherited>false</inherited>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>

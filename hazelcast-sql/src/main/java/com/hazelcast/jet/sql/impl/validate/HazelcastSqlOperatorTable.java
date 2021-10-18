@@ -27,6 +27,12 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
@@ -144,6 +150,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
     public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;
+
+    //#endregion
+
+    //#region Relational operator
+
+    public static final SqlOperator UNION = HazelcastUnionOperator.UNION;
+    public static final SqlOperator UNION_ALL = HazelcastUnionOperator.UNION_ALL;
 
     //#endregion
 

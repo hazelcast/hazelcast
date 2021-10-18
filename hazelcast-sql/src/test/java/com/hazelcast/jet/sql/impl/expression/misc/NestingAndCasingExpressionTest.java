@@ -70,6 +70,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
                     || field.getName().equals("DESC")
+                    || field.getName().equals("UNION")
+                    || field.getName().equals("UNION_ALL")
                     || field.getName().equals("VALUES")
                     || field.getName().equals("ROW")
                     || field.getName().equals("COLLECTION_TABLE")
