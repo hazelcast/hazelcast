@@ -35,13 +35,10 @@ jobs:
 
       - name: Update title of GitHub issue
         uses: actions/github-script@v4.0.2
-        env:
-          JIRA_ISSUE_NUMBER: ${{ steps.create_jira_issue.outputs.issue }}
-          GITHUB_ORIGINAL_TITLE: ${{ github.event.issue.title }}
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
-            const newTitle = `[${process.env.JIRA_ISSUE_NUMBER}] ${process.env.GITHUB_ORIGINAL_TITLE}`
+            const newTitle = `[${{ steps.create_jira_issue.outputs.issue }}] ${{ github.event.issue.title }}`
             github.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
