@@ -21,6 +21,11 @@ import com.hazelcast.core.HazelcastJsonValue;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Codec for SQL JSON data type.
+ *
+ * @since 5.1
+ */
 public final class HazelcastJsonValueCodec {
     private HazelcastJsonValueCodec() {
     }
