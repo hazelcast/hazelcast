@@ -48,7 +48,9 @@ public class SingleProtocolHandlerRegressionTest extends HazelcastTestSupport {
 
     @After
     public void cleanup() throws IOException {
-        textProtocolClient.close();
+        if (textProtocolClient != null) {
+            textProtocolClient.close();
+        }
         Hazelcast.shutdownAll();
     }
 
