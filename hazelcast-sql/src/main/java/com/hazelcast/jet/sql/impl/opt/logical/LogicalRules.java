@@ -29,6 +29,7 @@ public final class LogicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
+                PruneEmptyRules.FILTER_INSTANCE,
                 FilterLogicalRule.INSTANCE,
                 CoreRules.FILTER_MERGE,
                 CoreRules.FILTER_PROJECT_TRANSPOSE,
@@ -38,6 +39,7 @@ public final class LogicalRules {
                 CoreRules.FILTER_REDUCE_EXPRESSIONS,
 
                 // Project rules
+                PruneEmptyRules.PROJECT_INSTANCE,
                 ProjectLogicalRule.INSTANCE,
                 CoreRules.PROJECT_MERGE,
                 CoreRules.PROJECT_REMOVE,
@@ -61,12 +63,12 @@ public final class LogicalRules {
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 
                 // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
-                PruneEmptyRules.UNION_INSTANCE,
                 ValuesLogicalRules.CONVERT_INSTANCE,
                 ValuesLogicalRules.FILTER_INSTANCE,
                 ValuesLogicalRules.PROJECT_INSTANCE,
@@ -85,11 +87,7 @@ public final class LogicalRules {
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE,
-
-                // Miscellaneous
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE
+                DeleteByKeyMapLogicalRule.INSTANCE
         );
     }
 }

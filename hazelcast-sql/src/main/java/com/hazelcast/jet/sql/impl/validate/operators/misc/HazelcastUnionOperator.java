@@ -18,10 +18,8 @@ package com.hazelcast.jet.sql.impl.validate.operators.misc;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSetOperator;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
 import java.util.Objects;
 
@@ -40,15 +38,5 @@ public class HazelcastUnionOperator extends HazelcastSetOperator {
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         return Objects.requireNonNull(getOperandTypeChecker()).checkOperandTypes(callBinding, throwOnFailure);
-    }
-
-    @Override
-    public HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
-        return super.prepareBinding(binding);
-    }
-
-    @Override
-    public HazelcastCallBinding prepareBinding(SqlCallBinding binding, SqlOperandTypeInference operandTypeInference) {
-        return super.prepareBinding(binding, operandTypeInference);
     }
 }

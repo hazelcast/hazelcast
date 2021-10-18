@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.UnionLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
@@ -44,7 +43,7 @@ final class UnionPhysicalRule extends ConverterRule {
         return new UnionPhysicalRel(
                 logicalUnion.getCluster(),
                 OptUtils.toPhysicalConvention(logicalUnion.getTraitSet()),
-                logicalUnion.getInputs().stream().map(OptUtils::toPhysicalInput).collect(Collectors.toList()),
+                Util.toList(logicalUnion.getInputs(), OptUtils::toPhysicalInput),
                 logicalUnion.all
         );
     }
