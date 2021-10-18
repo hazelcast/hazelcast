@@ -845,22 +845,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_BOOLEAN_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableBooleanArray(fieldName);
+                return genericRecord.getArrayOfNullableBooleans(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableBooleanFromArray(fieldName, index);
+                return record.getBooleanFromArrayOfNullableBooleans(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableBooleanArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableBooleans(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableBooleanArray(fieldName, record.getNullableBooleanArray(fieldName));
+                writer.writeNullableBooleanArray(fieldName, record.getArrayOfNullableBooleans(fieldName));
             }
 
             @Override
@@ -888,22 +888,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_BYTE_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableByteArray(fieldName);
+                return genericRecord.getArrayOfNullableBytes(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableByteFromArray(fieldName, index);
+                return record.getByteFromArrayOfNullableBytes(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableByteArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableBytes(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableByteArray(fieldName, record.getNullableByteArray(fieldName));
+                writer.writeNullableByteArray(fieldName, record.getArrayOfNullableBytes(fieldName));
             }
 
             @Override
@@ -930,22 +930,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_SHORT_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableShortArray(fieldName);
+                return genericRecord.getArrayOfNullableShorts(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableShortFromArray(fieldName, index);
+                return record.getShortFromArrayOfNullableShorts(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableShortArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableShorts(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableShortArray(fieldName, record.getNullableShortArray(fieldName));
+                writer.writeNullableShortArray(fieldName, record.getArrayOfNullableShorts(fieldName));
             }
 
             @Override
@@ -972,22 +972,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_INT_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableIntArray(fieldName);
+                return genericRecord.getArrayOfNullableInts(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableIntFromArray(fieldName, index);
+                return record.getIntFromArrayOfNullableInts(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableIntArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableInts(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableIntArray(fieldName, record.getNullableIntArray(fieldName));
+                writer.writeNullableIntArray(fieldName, record.getArrayOfNullableInts(fieldName));
             }
 
             @Override
@@ -1014,22 +1014,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_LONG_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableLongArray(fieldName);
+                return genericRecord.getArrayOfNullableLongs(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableLongFromArray(fieldName, index);
+                return record.getLongFromArrayOfNullableLongs(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableLongArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableLongs(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableLongArray(fieldName, record.getNullableLongArray(fieldName));
+                writer.writeNullableLongArray(fieldName, record.getArrayOfNullableLongs(fieldName));
             }
 
             @Override
@@ -1056,22 +1056,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_FLOAT_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableFloatArray(fieldName);
+                return genericRecord.getArrayOfNullableFloats(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableFloatFromArray(fieldName, index);
+                return record.getFloatFromArrayOfNullableFloats(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableFloatArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableFloats(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableFloatArray(fieldName, record.getNullableFloatArray(fieldName));
+                writer.writeNullableFloatArray(fieldName, record.getArrayOfNullableFloats(fieldName));
             }
 
             @Override
@@ -1098,22 +1098,22 @@ public final class FieldOperations {
         ALL[FieldKind.NULLABLE_DOUBLE_ARRAY.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableDoubleArray(fieldName);
+                return genericRecord.getArrayOfNullableDoubles(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableDoubleFromArray(fieldName, index);
+                return record.getDoubleFromArrayOfNullableDoubles(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getNullableDoubleArray(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableDoubles(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableDoubleArray(fieldName, record.getNullableDoubleArray(fieldName));
+                writer.writeNullableDoubleArray(fieldName, record.getArrayOfNullableDoubles(fieldName));
             }
 
             @Override

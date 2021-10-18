@@ -469,7 +469,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Boolean[] getNullableBooleanArray(@Nonnull String fieldName);
+    Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -478,7 +478,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Byte[] getNullableByteArray(@Nonnull String fieldName);
+    Byte[] getArrayOfNullableBytes(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -487,7 +487,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Double[] getNullableDoubleArray(@Nonnull String fieldName);
+    Double[] getArrayOfNullableDoubles(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -496,7 +496,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Float[] getNullableFloatArray(@Nonnull String fieldName);
+    Float[] getArrayOfNullableFloats(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -505,7 +505,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Integer[] getNullableIntArray(@Nonnull String fieldName);
+    Integer[] getArrayOfNullableInts(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -514,7 +514,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Long[] getNullableLongArray(@Nonnull String fieldName);
+    Long[] getArrayOfNullableLongs(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -523,5 +523,5 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Short[] getNullableShortArray(@Nonnull String fieldName);
+    Short[] getArrayOfNullableShorts(@Nonnull String fieldName);
 }

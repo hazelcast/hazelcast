@@ -468,43 +468,43 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Nullable
     @Override
-    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+    public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
     }
 
     @Nullable
     @Override
-    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+    public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_BYTE_ARRAY, Byte[]::new, ObjectDataInput::readByte);
     }
 
     @Nullable
     @Override
-    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_DOUBLE_ARRAY, Double[]::new, ObjectDataInput::readDouble);
     }
 
     @Nullable
     @Override
-    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_FLOAT_ARRAY, Float[]::new, ObjectDataInput::readFloat);
     }
 
     @Nullable
     @Override
-    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_INT_ARRAY, Integer[]::new, ObjectDataInput::readInt);
     }
 
     @Nullable
     @Override
-    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_LONG_ARRAY, Long[]::new, ObjectDataInput::readLong);
     }
 
     @Nullable
     @Override
-    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+    public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
         return getVariableSizeArray(fieldName, NULLABLE_SHORT_ARRAY, Short[]::new, ObjectDataInput::readShort);
     }
 
@@ -720,43 +720,43 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Nullable
     @Override
-    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+    public Byte getByteFromArrayOfNullableBytes(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_BYTE_ARRAY, ObjectDataInput::readByte, index);
     }
 
     @Nullable
     @Override
-    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+    public Boolean getBooleanFromArrayOfNullableBooleans(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_BOOLEAN_ARRAY, ObjectDataInput::readBoolean, index);
     }
 
     @Nullable
     @Override
-    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+    public Integer getIntFromArrayOfNullableInts(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_INT_ARRAY, ObjectDataInput::readInt, index);
     }
 
     @Nullable
     @Override
-    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+    public Long getLongFromArrayOfNullableLongs(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_LONG_ARRAY, ObjectDataInput::readLong, index);
     }
 
     @Nullable
     @Override
-    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+    public Float getFloatFromArrayOfNullableFloats(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_FLOAT_ARRAY, ObjectDataInput::readFloat, index);
     }
 
     @Nullable
     @Override
-    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+    public Double getDoubleFromArrayOfNullableDoubles(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_DOUBLE_ARRAY, ObjectDataInput::readDouble, index);
     }
 
     @Nullable
     @Override
-    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+    public Short getShortFromArrayOfNullableShorts(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_SHORT_ARRAY, ObjectDataInput::readShort, index);
     }
 

@@ -83,85 +83,85 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+    public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+    public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+    public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+    public Byte getByteFromArrayOfNullableBytes(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+    public Boolean getBooleanFromArrayOfNullableBooleans(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+    public Short getShortFromArrayOfNullableShorts(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+    public Integer getIntFromArrayOfNullableInts(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+    public Long getLongFromArrayOfNullableLongs(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+    public Float getFloatFromArrayOfNullableFloats(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+    public Double getDoubleFromArrayOfNullableDoubles(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 }

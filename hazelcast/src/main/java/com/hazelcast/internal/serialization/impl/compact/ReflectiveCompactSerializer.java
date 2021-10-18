@@ -426,49 +426,49 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_BOOLEAN_ARRAY)) {
-                            field.set(o, reader.readNullableBooleanArray(name));
+                            field.set(o, reader.readArrayOfNullableBooleans(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableBooleanArray(name, (Boolean[]) field.get(o));
                 } else if (Byte.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_BYTE_ARRAY)) {
-                            field.set(o, reader.readNullableByteArray(name));
+                            field.set(o, reader.readArrayOfNullableBytes(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableByteArray(name, (Byte[]) field.get(o));
                 } else if (Short.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_SHORT_ARRAY)) {
-                            field.set(o, reader.readNullableShortArray(name));
+                            field.set(o, reader.readArrayOfNullableShorts(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableShortArray(name, (Short[]) field.get(o));
                 } else if (Integer.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_INT_ARRAY)) {
-                            field.set(o, reader.readNullableIntArray(name));
+                            field.set(o, reader.readArrayOfNullableInts(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableIntArray(name, (Integer[]) field.get(o));
                 } else if (Long.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_LONG_ARRAY)) {
-                            field.set(o, reader.readNullableLongArray(name));
+                            field.set(o, reader.readArrayOfNullableLongs(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableLongArray(name, (Long[]) field.get(o));
                 } else if (Float.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_FLOAT_ARRAY)) {
-                            field.set(o, reader.readNullableFloatArray(name));
+                            field.set(o, reader.readArrayOfNullableFloats(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableFloatArray(name, (Float[]) field.get(o));
                 } else if (Double.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_DOUBLE_ARRAY)) {
-                            field.set(o, reader.readNullableDoubleArray(name));
+                            field.set(o, reader.readArrayOfNullableDoubles(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeNullableDoubleArray(name, (Double[]) field.get(o));

@@ -291,43 +291,43 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
-    public Boolean[] getNullableBooleanArray(@Nonnull String fieldName) {
+    public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_BOOLEAN_ARRAY);
     }
 
     @Nullable
     @Override
-    public Byte[] getNullableByteArray(@Nonnull String fieldName) {
+    public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_BYTE_ARRAY);
     }
 
     @Nullable
     @Override
-    public Double[] getNullableDoubleArray(@Nonnull String fieldName) {
+    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_DOUBLE_ARRAY);
     }
 
     @Nullable
     @Override
-    public Float[] getNullableFloatArray(@Nonnull String fieldName) {
+    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_FLOAT_ARRAY);
     }
 
     @Nullable
     @Override
-    public Integer[] getNullableIntArray(@Nonnull String fieldName) {
+    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_INT_ARRAY);
     }
 
     @Nullable
     @Override
-    public Long[] getNullableLongArray(@Nonnull String fieldName) {
+    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_LONG_ARRAY);
     }
 
     @Nullable
     @Override
-    public Short[] getNullableShortArray(@Nonnull String fieldName) {
+    public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.NULLABLE_SHORT_ARRAY);
     }
 

@@ -490,85 +490,85 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Nullable
     @Override
-    public Boolean[] readNullableBooleanArray(@Nonnull String fieldName) {
-        return getNullableBooleanArray(fieldName);
+    public Boolean[] readArrayOfNullableBooleans(@Nonnull String fieldName) {
+        return getArrayOfNullableBooleans(fieldName);
     }
 
     @Nullable
     @Override
-    public Boolean[] readNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_BOOLEAN_ARRAY) ? getNullableBooleanArray(fieldName) : defaultValue;
+    public Boolean[] readArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_BOOLEAN_ARRAY) ? getArrayOfNullableBooleans(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Byte[] readNullableByteArray(@Nonnull String fieldName) {
-        return getNullableByteArray(fieldName);
+    public Byte[] readArrayOfNullableBytes(@Nonnull String fieldName) {
+        return getArrayOfNullableBytes(fieldName);
     }
 
     @Nullable
     @Override
-    public Byte[] readNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_BYTE_ARRAY) ? getNullableByteArray(fieldName) : defaultValue;
+    public Byte[] readArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_BYTE_ARRAY) ? getArrayOfNullableBytes(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Short[] readNullableShortArray(@Nonnull String fieldName) {
-        return getNullableShortArray(fieldName);
+    public Short[] readArrayOfNullableShorts(@Nonnull String fieldName) {
+        return getArrayOfNullableShorts(fieldName);
     }
 
     @Nullable
     @Override
-    public Short[] readNullableShortArray(@Nonnull String fieldName, @Nullable Short[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_SHORT_ARRAY) ? getNullableShortArray(fieldName) : defaultValue;
+    public Short[] readArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_SHORT_ARRAY) ? getArrayOfNullableShorts(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Integer[] readNullableIntArray(@Nonnull String fieldName) {
-        return getNullableIntArray(fieldName);
+    public Integer[] readArrayOfNullableInts(@Nonnull String fieldName) {
+        return getArrayOfNullableInts(fieldName);
     }
 
     @Nullable
     @Override
-    public Integer[] readNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_INT_ARRAY) ? getNullableIntArray(fieldName) : defaultValue;
+    public Integer[] readArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_INT_ARRAY) ? getArrayOfNullableInts(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Long[] readNullableLongArray(@Nonnull String fieldName) {
-        return getNullableLongArray(fieldName);
+    public Long[] readArrayOfNullableLongs(@Nonnull String fieldName) {
+        return getArrayOfNullableLongs(fieldName);
     }
 
     @Nullable
     @Override
-    public Long[] readNullableLongArray(@Nonnull String fieldName, @Nullable Long[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_LONG_ARRAY) ? getNullableLongArray(fieldName) : defaultValue;
+    public Long[] readArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_LONG_ARRAY) ? getArrayOfNullableLongs(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Float[] readNullableFloatArray(@Nonnull String fieldName) {
-        return getNullableFloatArray(fieldName);
+    public Float[] readArrayOfNullableFloats(@Nonnull String fieldName) {
+        return getArrayOfNullableFloats(fieldName);
     }
 
     @Nullable
     @Override
-    public Float[] readNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_FLOAT_ARRAY) ? getNullableFloatArray(fieldName) : defaultValue;
+    public Float[] readArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_FLOAT_ARRAY) ? getArrayOfNullableFloats(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Double[] readNullableDoubleArray(@Nonnull String fieldName) {
-        return getNullableDoubleArray(fieldName);
+    public Double[] readArrayOfNullableDoubles(@Nonnull String fieldName) {
+        return getArrayOfNullableDoubles(fieldName);
     }
 
     @Nullable
     @Override
-    public Double[] readNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_DOUBLE_ARRAY) ? getNullableDoubleArray(fieldName) : defaultValue;
+    public Double[] readArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_DOUBLE_ARRAY) ? getArrayOfNullableDoubles(fieldName) : defaultValue;
     }
 }
