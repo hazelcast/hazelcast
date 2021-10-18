@@ -39,7 +39,7 @@ jobs:
           JIRA_ISSUE_NUMBER: ${{ steps.create_jira_issue.outputs.issue }}
           GITHUB_ORIGINAL_TITLE: ${{ github.event.issue.title }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const newTitle = `[${process.env.JIRA_ISSUE_NUMBER}] ${process.env.GITHUB_ORIGINAL_TITLE}`
             github.issues.update({
@@ -51,7 +51,7 @@ jobs:
       - name: Add comment to GitHub issue
         uses: actions/github-script@v4.0.2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             github.issues.createComment({
               issue_number: context.issue.number,
