@@ -99,12 +99,8 @@ public class QueryConverter {
         // See "Unnesting Arbitrary Queries", Thomas Neumann and Alfons Kemper.
         RelNode relDecorrelated = converter.decorrelate(node, relNoSubqueries);
 
-        // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
-        // primarily in projections. This steps removes unused fields from the tree.
-        RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
-
-        // 5. Collect original field names.
-        return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
+        // 4. Collect original field names.
+        return new QueryConvertResult(relDecorrelated, Pair.right(root.fields));
     }
 
     /**

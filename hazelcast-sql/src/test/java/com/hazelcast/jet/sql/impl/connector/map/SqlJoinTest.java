@@ -741,6 +741,37 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void test_exists_onWithMultipleNestedExistsAndNonScalarSubquery() {
+            String mainName = createTable(
+                    asList("k", "v"),
+                    asList(INTEGER, VARCHAR),
+                    new String[]{"1", "value-1"}, new String[]{"2", "value-2"}, new String[]{"3", "value-3"}
+            );
+            String subName = createTable(
+                    asList("v", "w"),
+                    asList(INTEGER, INTEGER),
+                    new String[]{"0", "0"}, new String[]{"1", "1"}, new String[]{"2", "2"}
+            );
+            String subSubName = createTable(
+                    asList("a", "b"),
+                    asList(INTEGER, INTEGER),
+                    new String[]{"0", "0"}, new String[]{"1", "1"}, new String[]{"2", "2"}
+            );
+
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT * FROM " + subName + " s WHERE "
+                            + whereClause() + " (SELECT * FROM " + subSubName + " t WHERE t.a = s.v))",
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2"),
+                            new Row(3, "value-3")
+                    ),
+                    emptyList()
+            );
+        }
+
+        @Test
         public void test_exists_onCorrelatedPrimitiveValue() {
             String mainName = createTable(
                     asList("k", "v"),
