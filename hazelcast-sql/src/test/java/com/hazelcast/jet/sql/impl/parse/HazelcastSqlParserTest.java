@@ -100,10 +100,15 @@ public class HazelcastSqlParserTest {
                 + ")";
 
         // when
-        SqlCreateIndex node = (SqlCreateIndex) parse(sql);
+        SqlNode parsedNode = parse(sql);
 
         // then
+        assertThat(parsedNode).isInstanceOf(SqlCreateIndex.class);
 
+        // when
+        SqlCreateIndex node = (SqlCreateIndex) parsedNode;
+
+        // then
         assertThat(node.mappingName()).isEqualTo("mapping_name");
         assertThat(node.indexName()).isEqualTo("index_name");
         assertThat(node.type()).isEqualTo("index_type");
@@ -114,6 +119,37 @@ public class HazelcastSqlParserTest {
                 .isEqualTo(new Object[]{"column_name1"});
         assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
+    }
+
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
+    public void test_createIndexRequiresMapping(boolean ifNotExists) {
+        // given
+        String sql = "CREATE INDEX "
+                + (ifNotExists ? "IF NOT EXISTS " : "")
+                + "index_name ";
+
+        // when & then
+        assertThatThrownBy(() -> parse(sql))
+                .hasMessageContaining("Was expecting one of:\n" +
+                        "    \"ON\" ...\n" +
+                        "    \".\" ...\n");
+    }
+
+    public void test_createIndexRequiresIndexType(boolean ifNotExists) {
+        // given
+        String sql = "CREATE INDEX "
+                + (ifNotExists ? "IF NOT EXISTS " : "")
+                + "index_name "
+                + "ON mapping_name "
+                + "(column_name1, column_name2);";
+
+        // when & then
+        assertThatThrownBy(() -> parse(sql))
+                .hasMessageContaining("Was expecting:\n    \"TYPE\"");
     }
 
     @Test
