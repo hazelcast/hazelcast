@@ -28,8 +28,6 @@ import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Iterator;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -68,8 +66,7 @@ public final class InvocationUtil {
                 nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE));
 
         // we are going to iterate over all members and invoke an operation on each of them
-        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine,
-                memberIterator);
+        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine);
         Iterator<InternalCompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
         // ChainingFuture uses the iterator to start invocations
@@ -109,16 +106,10 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements Function<Member, InternalCompletableFuture<Object>> {
         private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
-        private final transient RestartingMemberIterator memberIterator;
-        private final long retryDelayMillis;
-        private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine,
-                RestartingMemberIterator memberIterator) {
+        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine) {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;
-            this.memberIterator = memberIterator;
-            this.retryDelayMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
         }
 
         @Override
@@ -126,48 +117,11 @@ public final class InvocationUtil {
             return invokeOnMember(member);
         }
 
-        private boolean isRetry() {
-            int currentRetryCount = memberIterator.getRetryCount();
-            if (lastRetryCount == currentRetryCount) {
-                return false;
-            }
-            lastRetryCount = currentRetryCount;
-            return true;
-        }
-
-        private InternalCompletableFuture<Object> invokeOnMemberWithDelay(Member member) {
-            InternalCompletableFuture<Object> future = new InternalCompletableFuture<>();
-            InvokeOnMemberTask task = new InvokeOnMemberTask(member, future);
-            nodeEngine.getExecutionService().schedule(task, retryDelayMillis, TimeUnit.MILLISECONDS);
-            return future;
-        }
-
         private InternalCompletableFuture<Object> invokeOnMember(Member member) {
             Address address = member.getAddress();
             Operation operation = operationSupplier.get();
             String serviceName = operation.getServiceName();
             return nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, address);
-        }
-
-        private class InvokeOnMemberTask implements Runnable {
-            private final Member member;
-            private final CompletableFuture<Object> future;
-
-            InvokeOnMemberTask(Member member, CompletableFuture<Object> future) {
-                this.member = member;
-                this.future = future;
-            }
-
-            @Override
-            public void run() {
-                invokeOnMember(member).whenCompleteAsync((response, t) -> {
-                    if (t == null) {
-                        future.complete(response);
-                    } else {
-                        future.completeExceptionally(t);
-                    }
-                });
-            }
         }
     }
 }

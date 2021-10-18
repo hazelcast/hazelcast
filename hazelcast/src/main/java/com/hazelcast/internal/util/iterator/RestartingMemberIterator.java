@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Iterates over stable cluster from the oldest to youngest member.
@@ -145,6 +146,6 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
     }
 
     private void delayNextRound() {
-        LockSupport.parkNanos(retryDelayMillis * 1_000_000L);
+        LockSupport.parkNanos(MILLISECONDS.toNanos(retryDelayMillis));
     }
 }
