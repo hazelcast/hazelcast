@@ -306,55 +306,55 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values) {
+    public void writeArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] values) {
         writeVariableSizeField(fieldName, BYTE_ARRAY, values, ObjectDataOutput::writeByteArray);
     }
 
     @Override
-    public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] values) {
+    public void writeArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] values) {
         writeVariableSizeField(fieldName, BOOLEAN_ARRAY, values, DefaultCompactWriter::writeBooleanBits);
     }
 
     @Override
-    public void writeCharArray(@Nonnull String fieldName, @Nullable char[] values) {
+    public void writeArrayOfChars(@Nonnull String fieldName, @Nullable char[] values) {
         writeVariableSizeField(fieldName, CHAR_ARRAY, values, ObjectDataOutput::writeCharArray);
     }
 
     @Override
-    public void writeIntArray(@Nonnull String fieldName, @Nullable int[] values) {
+    public void writeArrayOfInts(@Nonnull String fieldName, @Nullable int[] values) {
         writeVariableSizeField(fieldName, INT_ARRAY, values, ObjectDataOutput::writeIntArray);
     }
 
     @Override
-    public void writeLongArray(@Nonnull String fieldName, @Nullable long[] values) {
+    public void writeArrayOfLongs(@Nonnull String fieldName, @Nullable long[] values) {
         writeVariableSizeField(fieldName, LONG_ARRAY, values, ObjectDataOutput::writeLongArray);
     }
 
     @Override
-    public void writeDoubleArray(@Nonnull String fieldName, @Nullable double[] values) {
+    public void writeArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] values) {
         writeVariableSizeField(fieldName, DOUBLE_ARRAY, values, ObjectDataOutput::writeDoubleArray);
     }
 
     @Override
-    public void writeFloatArray(@Nonnull String fieldName, @Nullable float[] values) {
+    public void writeArrayOfFloats(@Nonnull String fieldName, @Nullable float[] values) {
         writeVariableSizeField(fieldName, FLOAT_ARRAY, values, ObjectDataOutput::writeFloatArray);
     }
 
     @Override
-    public void writeShortArray(@Nonnull String fieldName, @Nullable short[] values) {
+    public void writeArrayOfShorts(@Nonnull String fieldName, @Nullable short[] values) {
         writeVariableSizeField(fieldName, SHORT_ARRAY, values, ObjectDataOutput::writeShortArray);
     }
 
     @Override
-    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) {
-        writeVariableSizeArray(fieldName, STRING_ARRAY, values, ObjectDataOutput::writeString);
+    public void writeArrayOfStrings(@Nonnull String fieldName, @Nullable String[] values) {
+        writeArrayOfVariableSizes(fieldName, STRING_ARRAY, values, ObjectDataOutput::writeString);
     }
 
     interface Writer<T> {
         void write(BufferObjectDataOutput out, T value) throws IOException;
     }
 
-    protected <T> void writeVariableSizeArray(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
+    protected <T> void writeArrayOfVariableSizes(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
                                               @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
             setPositionAsNull(fieldName, fieldKind);
@@ -386,28 +386,28 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
-        writeVariableSizeArray(fieldName, DECIMAL_ARRAY, values, IOUtil::writeBigDecimal);
+    public void writeArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
+        writeArrayOfVariableSizes(fieldName, DECIMAL_ARRAY, values, IOUtil::writeBigDecimal);
     }
 
     @Override
-    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value) {
-        writeVariableSizeArray(fieldName, TIME_ARRAY, value, IOUtil::writeLocalTime);
+    public void writeArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value) {
+        writeArrayOfVariableSizes(fieldName, TIME_ARRAY, value, IOUtil::writeLocalTime);
     }
 
     @Override
-    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value) {
-        writeVariableSizeArray(fieldName, DATE_ARRAY, value, IOUtil::writeLocalDate);
+    public void writeArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value) {
+        writeArrayOfVariableSizes(fieldName, DATE_ARRAY, value, IOUtil::writeLocalDate);
     }
 
     @Override
-    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
-        writeVariableSizeArray(fieldName, TIMESTAMP_ARRAY, value, IOUtil::writeLocalDateTime);
+    public void writeArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
+        writeArrayOfVariableSizes(fieldName, TIMESTAMP_ARRAY, value, IOUtil::writeLocalDateTime);
     }
 
     @Override
-    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
-        writeVariableSizeArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, value, IOUtil::writeOffsetDateTime);
+    public void writeArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
+        writeArrayOfVariableSizes(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, value, IOUtil::writeOffsetDateTime);
     }
 
     protected void setPositionAsNull(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
@@ -441,13 +441,13 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeCompactArray(@Nonnull String fieldName, @Nullable T[] value) {
-        writeVariableSizeArray(fieldName, COMPACT_ARRAY, value,
+    public <T> void writeArrayOfCompacts(@Nonnull String fieldName, @Nullable T[] value) {
+        writeArrayOfVariableSizes(fieldName, COMPACT_ARRAY, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
-    public void writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        writeVariableSizeArray(fieldName, COMPACT_ARRAY, value,
+    public void writeArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        writeArrayOfVariableSizes(fieldName, COMPACT_ARRAY, value,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
@@ -487,38 +487,38 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_BYTE_ARRAY, value, (Writer<Byte>) DataOutput::writeByte);
+    public void writeArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_BYTE_ARRAY, value, (Writer<Byte>) DataOutput::writeByte);
     }
 
     @Override
-    public void writeNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_BOOLEAN_ARRAY, value, DataOutput::writeBoolean);
+    public void writeArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_BOOLEAN_ARRAY, value, DataOutput::writeBoolean);
     }
 
     @Override
-    public void writeNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_SHORT_ARRAY, value, (Writer<Short>) DataOutput::writeShort);
+    public void writeArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_SHORT_ARRAY, value, (Writer<Short>) DataOutput::writeShort);
     }
 
     @Override
-    public void writeNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_INT_ARRAY, value, DataOutput::writeInt);
+    public void writeArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_INT_ARRAY, value, DataOutput::writeInt);
     }
 
     @Override
-    public void writeNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_LONG_ARRAY, value, DataOutput::writeLong);
+    public void writeArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_LONG_ARRAY, value, DataOutput::writeLong);
     }
 
     @Override
-    public void writeNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_FLOAT_ARRAY, value, DataOutput::writeFloat);
+    public void writeArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_FLOAT_ARRAY, value, DataOutput::writeFloat);
     }
 
     @Override
-    public void writeNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value) {
-        writeVariableSizeArray(fieldName, NULLABLE_DOUBLE_ARRAY, value, DataOutput::writeDouble);
+    public void writeArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value) {
+        writeArrayOfVariableSizes(fieldName, NULLABLE_DOUBLE_ARRAY, value, DataOutput::writeDouble);
     }
 
     static void writeBooleanBits(BufferObjectDataOutput out, @Nullable boolean[] booleans) throws IOException {

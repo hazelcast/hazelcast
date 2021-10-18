@@ -373,147 +373,147 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                             field.set(o, reader.readBooleanArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeBooleanArray(name, (boolean[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfBooleans(name, (boolean[]) field.get(o));
                 } else if (Byte.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, BYTE_ARRAY)) {
                             field.set(o, reader.readByteArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeByteArray(name, (byte[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfBytes(name, (byte[]) field.get(o));
                 } else if (Short.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, SHORT_ARRAY)) {
                             field.set(o, reader.readShortArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeShortArray(name, (short[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfShorts(name, (short[]) field.get(o));
                 } else if (Integer.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, INT_ARRAY)) {
                             field.set(o, reader.readIntArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeIntArray(name, (int[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfInts(name, (int[]) field.get(o));
                 } else if (Long.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, LONG_ARRAY)) {
                             field.set(o, reader.readLongArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeLongArray(name, (long[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfLongs(name, (long[]) field.get(o));
                 } else if (Float.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, FLOAT_ARRAY)) {
                             field.set(o, reader.readFloatArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeFloatArray(name, (float[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfFloats(name, (float[]) field.get(o));
                 } else if (Double.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, DOUBLE_ARRAY)) {
                             field.set(o, reader.readDoubleArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeDoubleArray(name, (double[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfDoubles(name, (double[]) field.get(o));
                 } else if (Character.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, CHAR_ARRAY)) {
                             field.set(o, reader.readCharArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeCharArray(name, (char[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfChars(name, (char[]) field.get(o));
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_BOOLEAN_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableBooleans(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableBooleanArray(name, (Boolean[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableBooleans(name, (Boolean[]) field.get(o));
                 } else if (Byte.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_BYTE_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableBytes(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableByteArray(name, (Byte[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableBytes(name, (Byte[]) field.get(o));
                 } else if (Short.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_SHORT_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableShorts(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableShortArray(name, (Short[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableShorts(name, (Short[]) field.get(o));
                 } else if (Integer.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_INT_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableInts(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableIntArray(name, (Integer[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableInts(name, (Integer[]) field.get(o));
                 } else if (Long.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_LONG_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableLongs(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableLongArray(name, (Long[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableLongs(name, (Long[]) field.get(o));
                 } else if (Float.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_FLOAT_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableFloats(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableFloatArray(name, (Float[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableFloats(name, (Float[]) field.get(o));
                 } else if (Double.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, NULLABLE_DOUBLE_ARRAY)) {
                             field.set(o, reader.readArrayOfNullableDoubles(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeNullableDoubleArray(name, (Double[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableDoubles(name, (Double[]) field.get(o));
                 } else if (String.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, STRING_ARRAY)) {
                             field.set(o, reader.readStringArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeStringArray(name, (String[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfStrings(name, (String[]) field.get(o));
                 } else if (BigDecimal.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, DECIMAL_ARRAY)) {
                             field.set(o, reader.readDecimalArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeDecimalArray(name, (BigDecimal[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfDecimals(name, (BigDecimal[]) field.get(o));
                 } else if (LocalTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, TIME_ARRAY)) {
                             field.set(o, reader.readTimeArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeTimeArray(name, (LocalTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTimes(name, (LocalTime[]) field.get(o));
                 } else if (LocalDate.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, DATE_ARRAY)) {
                             field.set(o, reader.readDateArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeDateArray(name, (LocalDate[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfDates(name, (LocalDate[]) field.get(o));
                 } else if (LocalDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, TIMESTAMP_ARRAY)) {
                             field.set(o, reader.readTimestampArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeTimestampArray(name, (LocalDateTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTimestamps(name, (LocalDateTime[]) field.get(o));
                 } else if (OffsetDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, TIMESTAMP_WITH_TIMEZONE_ARRAY)) {
                             field.set(o, reader.readTimestampWithTimezoneArray(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeTimestampWithTimezoneArray(name, (OffsetDateTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTimestampWithTimezones(name, (OffsetDateTime[]) field.get(o));
                 } else if (componentType.isEnum()) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, STRING_ARRAY)) {
@@ -525,7 +525,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                     writers[index] = (w, o) -> {
                         Enum[] values = (Enum[]) field.get(o);
                         String[] stringArray = enumsAsStrings(values);
-                        w.writeStringArray(name, stringArray);
+                        w.writeArrayOfStrings(name, stringArray);
                     };
                 } else {
                     readers[index] = (reader, schema, o) -> {
@@ -533,7 +533,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                             field.set(o, reader.readCompactArray(name, componentType));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeCompactArray(name, (Object[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfCompacts(name, (Object[]) field.get(o));
                 }
             } else {
                 readers[index] = (reader, schema, o) -> {

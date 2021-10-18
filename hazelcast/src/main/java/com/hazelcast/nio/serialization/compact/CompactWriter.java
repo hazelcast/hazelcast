@@ -160,7 +160,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] value);
+    void writeArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] value);
 
     /**
      * Writes an array of 8-bit two's complement signed integers.
@@ -168,7 +168,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeByteArray(@Nonnull String fieldName, @Nullable byte[] value);
+    void writeArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
      * Writes an array of 16-bit unsigned integers.
@@ -176,7 +176,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeCharArray(@Nonnull String fieldName, @Nullable char[] value);
+    void writeArrayOfChars(@Nonnull String fieldName, @Nullable char[] value);
 
     /**
      * Writes an array of 16-bit two's complement signed integers.
@@ -184,7 +184,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeShortArray(@Nonnull String fieldName, @Nullable short[] value);
+    void writeArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value);
 
     /**
      * Writes an array of 32-bit two's complement signed integers.
@@ -192,7 +192,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeIntArray(@Nonnull String fieldName, @Nullable int[] value);
+    void writeArrayOfInts(@Nonnull String fieldName, @Nullable int[] value);
 
     /**
      * Writes an array of 64-bit two's complement signed integers.
@@ -200,7 +200,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeLongArray(@Nonnull String fieldName, @Nullable long[] value);
+    void writeArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value);
 
     /**
      * Writes an array of 32-bit IEEE 754 floating point numbers.
@@ -208,7 +208,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeFloatArray(@Nonnull String fieldName, @Nullable float[] value);
+    void writeArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value);
 
     /**
      * Writes an array of 64-bit IEEE 754 floating point numbers.
@@ -216,7 +216,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
+    void writeArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value);
 
     /**
      * Writes an array of UTF-8 encoded strings.
@@ -224,7 +224,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeStringArray(@Nonnull String fieldName, @Nullable String[] value);
+    void writeArrayOfStrings(@Nonnull String fieldName, @Nullable String[] value);
 
     /**
      * Writes an array of arbitrary precision and scale floating point numbers.
@@ -232,7 +232,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] value);
+    void writeArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
     /**
      * Writes an array of times consisting of hour, minute, second, and nano seconds.
@@ -240,7 +240,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value);
+    void writeArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value);
 
     /**
      * Writes an array of dates consisting of year, month, and day.
@@ -248,7 +248,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value);
+    void writeArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value);
 
     /**
      * Writes an array of timestamps consisting of date and time.
@@ -256,7 +256,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
+    void writeArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
 
     /**
      * Writes an array of timestamps with timezone consisting of date, time and timezone offset.
@@ -264,7 +264,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
+    void writeArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
 
     /**
      * Writes an array of nested compact objects.
@@ -272,7 +272,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    <T> void writeCompactArray(@Nonnull String fieldName, @Nullable T[] value);
+    <T> void writeArrayOfCompacts(@Nonnull String fieldName, @Nullable T[] value);
 
     /**
      * Writes a nullable boolean.
@@ -331,58 +331,58 @@ public interface CompactWriter {
     void writeNullableDouble(@Nonnull String fieldName, @Nullable Double value);
 
     /**
-     * Writes a nullable array of booleans.
+     * Writes a nullable array of nullable booleans.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableBooleanArray(@Nonnull String fieldName, @Nullable Boolean[] value);
+    void writeArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value);
 
     /**
-     * Writes a nullable array of 8-bit two's complement signed integers.
+     * Writes a nullable array of nullable 8-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableByteArray(@Nonnull String fieldName, @Nullable Byte[] value);
+    void writeArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value);
 
     /**
-     * Writes a nullable array of 16-bit two's complement signed integers.
+     * Writes a nullable array of nullable 16-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableShortArray(@Nonnull String fieldName, @Nullable Short[] value);
+    void writeArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value);
 
     /**
-     * Writes a nullable array of 32-bit two's complement signed integers.
+     * Writes a nullable array of nullable 32-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableIntArray(@Nonnull String fieldName, @Nullable Integer[] value);
+    void writeArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value);
 
     /**
-     * Writes a nullable array of 64-bit two's complement signed integers.
+     * Writes a nullable array of nullable 64-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableLongArray(@Nonnull String fieldName, @Nullable Long[] value);
+    void writeArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value);
 
     /**
-     * Writes a nullable array of 32-bit IEEE 754 floating point numbers.
+     * Writes a nullable array of nullable 32-bit IEEE 754 floating point numbers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableFloatArray(@Nonnull String fieldName, @Nullable Float[] value);
+    void writeArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value);
 
     /**
-     * Writes a nullable array of 64-bit IEEE 754 floating point numbers.
+     * Writes a nullable array of nullable 64-bit IEEE 754 floating point numbers.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableDoubleArray(@Nonnull String fieldName, @Nullable Double[] value);
+    void writeArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value);
 }

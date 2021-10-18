@@ -79,7 +79,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeBooleanArray(fieldName, record.getBooleanArray(fieldName));
+                writer.writeArrayOfBooleans(fieldName, record.getBooleanArray(fieldName));
             }
 
             @Override
@@ -126,7 +126,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeByteArray(fieldName, record.getByteArray(fieldName));
+                writer.writeArrayOfBytes(fieldName, record.getByteArray(fieldName));
             }
 
             @Override
@@ -173,7 +173,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeCharArray(fieldName, record.getCharArray(fieldName));
+                writer.writeArrayOfChars(fieldName, record.getCharArray(fieldName));
             }
 
             @Override
@@ -236,7 +236,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeShortArray(fieldName, record.getShortArray(fieldName));
+                writer.writeArrayOfShorts(fieldName, record.getShortArray(fieldName));
             }
 
             @Override
@@ -283,7 +283,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeIntArray(fieldName, record.getIntArray(fieldName));
+                writer.writeArrayOfInts(fieldName, record.getIntArray(fieldName));
             }
 
             @Override
@@ -330,7 +330,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeLongArray(fieldName, record.getLongArray(fieldName));
+                writer.writeArrayOfLongs(fieldName, record.getLongArray(fieldName));
             }
 
             @Override
@@ -377,7 +377,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeFloatArray(fieldName, record.getFloatArray(fieldName));
+                writer.writeArrayOfFloats(fieldName, record.getFloatArray(fieldName));
             }
 
             @Override
@@ -424,7 +424,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
+                writer.writeArrayOfDoubles(fieldName, record.getDoubleArray(fieldName));
             }
 
             @Override
@@ -471,7 +471,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeStringArray(fieldName, record.getStringArray(fieldName));
+                writer.writeArrayOfStrings(fieldName, record.getStringArray(fieldName));
             }
 
             @Override
@@ -514,7 +514,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));
+                writer.writeArrayOfDecimals(fieldName, record.getDecimalArray(fieldName));
             }
 
             @Override
@@ -562,7 +562,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeTimeArray(fieldName, record.getTimeArray(fieldName));
+                writer.writeArrayOfTimes(fieldName, record.getTimeArray(fieldName));
             }
 
             @Override
@@ -611,7 +611,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeDateArray(fieldName, record.getDateArray(fieldName));
+                writer.writeArrayOfDates(fieldName, record.getDateArray(fieldName));
             }
 
             @Override
@@ -661,7 +661,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeTimestampArray(fieldName, record.getTimestampArray(fieldName));
+                writer.writeArrayOfTimestamps(fieldName, record.getTimestampArray(fieldName));
             }
 
             @Override
@@ -710,7 +710,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
+                writer.writeArrayOfTimestampWithTimezones(fieldName, record.getTimestampWithTimezoneArray(fieldName));
             }
 
             @Override
@@ -764,7 +764,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeGenericRecordArray(fieldName, record.getGenericRecordArray(fieldName));
+                writer.writeArrayOfGenericRecords(fieldName, record.getGenericRecordArray(fieldName));
             }
 
             @Override
@@ -817,7 +817,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeGenericRecordArray(fieldName, record.getGenericRecordArray(fieldName));
+                writer.writeArrayOfGenericRecords(fieldName, record.getGenericRecordArray(fieldName));
             }
 
             @Override
@@ -860,7 +860,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableBooleanArray(fieldName, record.getArrayOfNullableBooleans(fieldName));
+                writer.writeArrayOfNullableBooleans(fieldName, record.getArrayOfNullableBooleans(fieldName));
             }
 
             @Override
@@ -903,7 +903,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableByteArray(fieldName, record.getArrayOfNullableBytes(fieldName));
+                writer.writeArrayOfNullableBytes(fieldName, record.getArrayOfNullableBytes(fieldName));
             }
 
             @Override
@@ -945,7 +945,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableShortArray(fieldName, record.getArrayOfNullableShorts(fieldName));
+                writer.writeArrayOfNullableShorts(fieldName, record.getArrayOfNullableShorts(fieldName));
             }
 
             @Override
@@ -987,7 +987,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableIntArray(fieldName, record.getArrayOfNullableInts(fieldName));
+                writer.writeArrayOfNullableInts(fieldName, record.getArrayOfNullableInts(fieldName));
             }
 
             @Override
@@ -1029,7 +1029,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableLongArray(fieldName, record.getArrayOfNullableLongs(fieldName));
+                writer.writeArrayOfNullableLongs(fieldName, record.getArrayOfNullableLongs(fieldName));
             }
 
             @Override
@@ -1071,7 +1071,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableFloatArray(fieldName, record.getArrayOfNullableFloats(fieldName));
+                writer.writeArrayOfNullableFloats(fieldName, record.getArrayOfNullableFloats(fieldName));
             }
 
             @Override
@@ -1113,7 +1113,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeNullableDoubleArray(fieldName, record.getArrayOfNullableDoubles(fieldName));
+                writer.writeArrayOfNullableDoubles(fieldName, record.getArrayOfNullableDoubles(fieldName));
             }
 
             @Override

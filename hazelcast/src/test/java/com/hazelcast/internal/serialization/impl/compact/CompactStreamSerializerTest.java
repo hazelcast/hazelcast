@@ -225,9 +225,9 @@ public class CompactStreamSerializerTest {
                         out.writeString("n", object.getName());
                         out.writeString("hs", object.getHiringStatus() == null ? null : object.getHiringStatus().name());
                         out.writeInt("a", object.getZcode());
-                        out.writeLongArray("ids", object.getIds());
+                        out.writeArrayOfLongs("ids", object.getIds());
                         out.writeCompact("s", object.getSingleEmployee());
-                        out.writeCompactArray("ss", object.getOtherEmployees());
+                        out.writeArrayOfCompacts("ss", object.getOtherEmployees());
                     }
                 });
 

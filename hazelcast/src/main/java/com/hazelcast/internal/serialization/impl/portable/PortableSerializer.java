@@ -378,49 +378,49 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     genericRecordBuilder.setTimestampWithTimezone(fieldName, reader.getTimestampWithTimezone(fieldName));
                     break;
                 case PORTABLE_ARRAY:
-                    genericRecordBuilder.setGenericRecordArray(fieldName, reader.getGenericRecordArray(fieldName));
+                    genericRecordBuilder.setArrayOfGenericRecords(fieldName, reader.getGenericRecordArray(fieldName));
                     break;
                 case BYTE_ARRAY:
-                    genericRecordBuilder.setByteArray(fieldName, reader.getByteArray(fieldName));
+                    genericRecordBuilder.setArrayOfBytes(fieldName, reader.getByteArray(fieldName));
                     break;
                 case BOOLEAN_ARRAY:
-                    genericRecordBuilder.setBooleanArray(fieldName, reader.getBooleanArray(fieldName));
+                    genericRecordBuilder.setArrayOfBooleans(fieldName, reader.getBooleanArray(fieldName));
                     break;
                 case CHAR_ARRAY:
-                    genericRecordBuilder.setCharArray(fieldName, reader.getCharArray(fieldName));
+                    genericRecordBuilder.setArrayOfChars(fieldName, reader.getCharArray(fieldName));
                     break;
                 case SHORT_ARRAY:
-                    genericRecordBuilder.setShortArray(fieldName, reader.getShortArray(fieldName));
+                    genericRecordBuilder.setArrayOfShorts(fieldName, reader.getShortArray(fieldName));
                     break;
                 case INT_ARRAY:
-                    genericRecordBuilder.setIntArray(fieldName, reader.getIntArray(fieldName));
+                    genericRecordBuilder.setArrayOfInts(fieldName, reader.getIntArray(fieldName));
                     break;
                 case LONG_ARRAY:
-                    genericRecordBuilder.setLongArray(fieldName, reader.getLongArray(fieldName));
+                    genericRecordBuilder.setArrayOfLongs(fieldName, reader.getLongArray(fieldName));
                     break;
                 case FLOAT_ARRAY:
-                    genericRecordBuilder.setFloatArray(fieldName, reader.getFloatArray(fieldName));
+                    genericRecordBuilder.setArrayOfFloats(fieldName, reader.getFloatArray(fieldName));
                     break;
                 case DOUBLE_ARRAY:
-                    genericRecordBuilder.setDoubleArray(fieldName, reader.getDoubleArray(fieldName));
+                    genericRecordBuilder.setArrayOfDoubles(fieldName, reader.getDoubleArray(fieldName));
                     break;
                 case UTF_ARRAY:
-                    genericRecordBuilder.setStringArray(fieldName, reader.getStringArray(fieldName));
+                    genericRecordBuilder.setArrayOfStrings(fieldName, reader.getStringArray(fieldName));
                     break;
                 case DECIMAL_ARRAY:
-                    genericRecordBuilder.setDecimalArray(fieldName, reader.getDecimalArray(fieldName));
+                    genericRecordBuilder.setArrayOfDecimals(fieldName, reader.getDecimalArray(fieldName));
                     break;
                 case TIME_ARRAY:
-                    genericRecordBuilder.setTimeArray(fieldName, reader.getTimeArray(fieldName));
+                    genericRecordBuilder.setArrayOfTimes(fieldName, reader.getTimeArray(fieldName));
                     break;
                 case DATE_ARRAY:
-                    genericRecordBuilder.setDateArray(fieldName, reader.getDateArray(fieldName));
+                    genericRecordBuilder.setArrayOfDates(fieldName, reader.getDateArray(fieldName));
                     break;
                 case TIMESTAMP_ARRAY:
-                    genericRecordBuilder.setTimestampArray(fieldName, reader.getTimestampArray(fieldName));
+                    genericRecordBuilder.setArrayOfTimestamps(fieldName, reader.getTimestampArray(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    genericRecordBuilder.setTimestampWithTimezoneArray(fieldName,
+                    genericRecordBuilder.setArrayOfTimestampWithTimezones(fieldName,
                             reader.getTimestampWithTimezoneArray(fieldName));
                     break;
                 default:
