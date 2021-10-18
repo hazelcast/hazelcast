@@ -48,10 +48,14 @@ public class QueryConverter {
      */
     private static final boolean EXPAND = false;
 
-    /** Whether to trim unused fields. The trimming is needed after subquery elimination. */
+    /**
+     * Whether to trim unused fields. The trimming is needed after subquery elimination.
+     */
     private static final boolean TRIM_UNUSED_FIELDS = true;
 
-    /** Increase the maximum number of elements in the RHS to convert the IN operator to a sequence of OR comparisons. */
+    /**
+     * Increase the maximum number of elements in the RHS to convert the IN operator to a sequence of OR comparisons.
+     */
     private static final int HAZELCAST_IN_ELEMENTS_THRESHOLD = 10_000;
 
     private static final SqlToRelConverter.Config CONFIG;
@@ -116,6 +120,9 @@ public class QueryConverter {
         hepPgmBldr.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
         hepPgmBldr.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
         hepPgmBldr.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+
+        hepPgmBldr.addRuleInstance(CoreRules.UNION_MERGE);
+        hepPgmBldr.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
         HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
 

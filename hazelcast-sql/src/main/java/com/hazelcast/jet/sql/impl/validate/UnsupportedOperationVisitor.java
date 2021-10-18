@@ -119,6 +119,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CASE);
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
+        SUPPORTED_KINDS.add(SqlKind.UNION);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
