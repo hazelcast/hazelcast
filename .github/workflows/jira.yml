@@ -24,7 +24,7 @@ jobs:
           project: HZ
           issuetype: Task
           summary: | 
-            [GH#${{ github.event.issue.number }}] ${{ github.event.issue.title }}
+             ${{ github.event.issue.title }} [GH#${{ github.event.issue.number }}]
           description: |
             {panel}
             *Created By:* ${{ github.event.issue.user.login }}
