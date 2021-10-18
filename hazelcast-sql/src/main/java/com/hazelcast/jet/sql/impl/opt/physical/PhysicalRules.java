@@ -47,6 +47,9 @@ public final class PhysicalRules {
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
 
+                // Union rules
+                UnionPhysicalRule.INSTANCE,
+
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,
 
@@ -61,8 +64,6 @@ public final class PhysicalRules {
                 SinkMapPhysicalRule.INSTANCE,
                 UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
-
-                UnionPhysicalRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
