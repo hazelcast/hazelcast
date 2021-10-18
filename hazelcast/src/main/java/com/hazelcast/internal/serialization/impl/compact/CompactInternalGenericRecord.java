@@ -335,92 +335,92 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     @Nullable
-    public boolean[] getBooleanArray(@Nonnull String fieldName) {
+    public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
         return getVariableSize(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
     }
 
     @Override
     @Nullable
-    public byte[] getByteArray(@Nonnull String fieldName) {
+    public byte[] getArrayOfBytes(@Nonnull String fieldName) {
         return getVariableSize(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
     }
 
     @Override
     @Nullable
-    public char[] getCharArray(@Nonnull String fieldName) {
+    public char[] getArrayOfChars(@Nonnull String fieldName) {
         return getVariableSize(fieldName, CHAR_ARRAY, ObjectDataInput::readCharArray);
     }
 
     @Override
     @Nullable
-    public int[] getIntArray(@Nonnull String fieldName) {
+    public int[] getArrayOfInts(@Nonnull String fieldName) {
         return getVariableSize(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
     }
 
     @Override
     @Nullable
-    public long[] getLongArray(@Nonnull String fieldName) {
+    public long[] getArrayOfLongs(@Nonnull String fieldName) {
         return getVariableSize(fieldName, LONG_ARRAY, ObjectDataInput::readLongArray);
     }
 
     @Override
     @Nullable
-    public double[] getDoubleArray(@Nonnull String fieldName) {
+    public double[] getArrayOfDoubles(@Nonnull String fieldName) {
         return getVariableSize(fieldName, DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
     }
 
     @Override
     @Nullable
-    public float[] getFloatArray(@Nonnull String fieldName) {
+    public float[] getArrayOfFloats(@Nonnull String fieldName) {
         return getVariableSize(fieldName, FLOAT_ARRAY, ObjectDataInput::readFloatArray);
     }
 
     @Override
     @Nullable
-    public short[] getShortArray(@Nonnull String fieldName) {
+    public short[] getArrayOfShorts(@Nonnull String fieldName) {
         return getVariableSize(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
     }
 
     @Override
     @Nullable
-    public String[] getStringArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, STRING_ARRAY, String[]::new, ObjectDataInput::readString);
+    public String[] getArrayOfStrings(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, STRING_ARRAY, String[]::new, ObjectDataInput::readString);
     }
 
     @Override
     @Nullable
-    public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
+    public BigDecimal[] getArrayOfDecimals(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
     @Override
     @Nullable
-    public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+    public LocalTime[] getArrayOfTimes(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
     @Nullable
-    public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
+    public LocalDate[] getArrayOfDates(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
     @Nullable
-    public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+    public LocalDateTime[] getArrayOfTimestamps(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
     @Nullable
-    public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+    public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
     @Override
     @Nullable
-    public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, COMPACT_ARRAY, GenericRecord[]::new,
+    public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
+        return getArrayOfVariableSizes(fieldName, COMPACT_ARRAY, GenericRecord[]::new,
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
@@ -469,48 +469,48 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
     }
 
     @Nullable
     @Override
     public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_BYTE_ARRAY, Byte[]::new, ObjectDataInput::readByte);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_BYTE_ARRAY, Byte[]::new, ObjectDataInput::readByte);
     }
 
     @Nullable
     @Override
     public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_DOUBLE_ARRAY, Double[]::new, ObjectDataInput::readDouble);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_DOUBLE_ARRAY, Double[]::new, ObjectDataInput::readDouble);
     }
 
     @Nullable
     @Override
     public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_FLOAT_ARRAY, Float[]::new, ObjectDataInput::readFloat);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_FLOAT_ARRAY, Float[]::new, ObjectDataInput::readFloat);
     }
 
     @Nullable
     @Override
     public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_INT_ARRAY, Integer[]::new, ObjectDataInput::readInt);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_INT_ARRAY, Integer[]::new, ObjectDataInput::readInt);
     }
 
     @Nullable
     @Override
     public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_LONG_ARRAY, Long[]::new, ObjectDataInput::readLong);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_LONG_ARRAY, Long[]::new, ObjectDataInput::readLong);
     }
 
     @Nullable
     @Override
     public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
-        return getVariableSizeArray(fieldName, NULLABLE_SHORT_ARRAY, Short[]::new, ObjectDataInput::readShort);
+        return getArrayOfVariableSizes(fieldName, NULLABLE_SHORT_ARRAY, Short[]::new, ObjectDataInput::readShort);
     }
 
     @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return (T[]) getVariableSizeArray(fieldName, COMPACT_ARRAY,
+    public <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType) {
+        return (T[]) getArrayOfVariableSizes(fieldName, COMPACT_ARRAY,
                 length -> (T[]) Array.newInstance(componentType, length),
                 in -> serializer.read(in, schemaIncludedInBinary));
     }
@@ -519,7 +519,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         R read(BufferObjectDataInput t) throws IOException;
     }
 
-    private <T> T[] getVariableSizeArray(@Nonnull String fieldName, FieldKind fieldKind,
+    private <T> T[] getArrayOfVariableSizes(@Nonnull String fieldName, FieldKind fieldKind,
                                          Function<Integer, T[]> constructor,
                                          Reader<T> reader) {
         int currentPos = in.position();
@@ -720,43 +720,43 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Nullable
     @Override
-    public Byte getByteFromArrayOfNullableBytes(@Nonnull String fieldName, int index) {
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_BYTE_ARRAY, ObjectDataInput::readByte, index);
     }
 
     @Nullable
     @Override
-    public Boolean getBooleanFromArrayOfNullableBooleans(@Nonnull String fieldName, int index) {
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_BOOLEAN_ARRAY, ObjectDataInput::readBoolean, index);
     }
 
     @Nullable
     @Override
-    public Integer getIntFromArrayOfNullableInts(@Nonnull String fieldName, int index) {
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_INT_ARRAY, ObjectDataInput::readInt, index);
     }
 
     @Nullable
     @Override
-    public Long getLongFromArrayOfNullableLongs(@Nonnull String fieldName, int index) {
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_LONG_ARRAY, ObjectDataInput::readLong, index);
     }
 
     @Nullable
     @Override
-    public Float getFloatFromArrayOfNullableFloats(@Nonnull String fieldName, int index) {
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_FLOAT_ARRAY, ObjectDataInput::readFloat, index);
     }
 
     @Nullable
     @Override
-    public Double getDoubleFromArrayOfNullableDoubles(@Nonnull String fieldName, int index) {
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_DOUBLE_ARRAY, ObjectDataInput::readDouble, index);
     }
 
     @Nullable
     @Override
-    public Short getShortFromArrayOfNullableShorts(@Nonnull String fieldName, int index) {
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, NULLABLE_SHORT_ARRAY, ObjectDataInput::readShort, index);
     }
 

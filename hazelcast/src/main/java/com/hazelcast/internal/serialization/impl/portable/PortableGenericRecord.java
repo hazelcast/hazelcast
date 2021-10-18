@@ -125,43 +125,43 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Byte getByteFromArrayOfNullableBytes(@Nonnull String fieldName, int index) {
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Boolean getBooleanFromArrayOfNullableBooleans(@Nonnull String fieldName, int index) {
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short getShortFromArrayOfNullableShorts(@Nonnull String fieldName, int index) {
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer getIntFromArrayOfNullableInts(@Nonnull String fieldName, int index) {
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long getLongFromArrayOfNullableLongs(@Nonnull String fieldName, int index) {
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float getFloatFromArrayOfNullableFloats(@Nonnull String fieldName, int index) {
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double getDoubleFromArrayOfNullableDoubles(@Nonnull String fieldName, int index) {
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 }

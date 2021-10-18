@@ -161,7 +161,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType);
+    <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.
@@ -233,7 +233,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Boolean getBooleanFromArrayOfNullableBooleans(@Nonnull String fieldName, int index);
+    Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -243,7 +243,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Byte getByteFromArrayOfNullableBytes(@Nonnull String fieldName, int index);
+    Byte getNullableByteFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -253,7 +253,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Short getShortFromArrayOfNullableShorts(@Nonnull String fieldName, int index);
+    Short getNullableShortFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -263,7 +263,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Integer getIntFromArrayOfNullableInts(@Nonnull String fieldName, int index);
+    Integer getNullableIntFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -273,7 +273,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Long getLongFromArrayOfNullableLongs(@Nonnull String fieldName, int index);
+    Long getNullableLongFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -283,7 +283,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Float getFloatFromArrayOfNullableFloats(@Nonnull String fieldName, int index);
+    Float getNullableFloatFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -293,5 +293,5 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Double getDoubleFromArrayOfNullableDoubles(@Nonnull String fieldName, int index);
+    Double getNullableDoubleFromArray(@Nonnull String fieldName, int index);
 }

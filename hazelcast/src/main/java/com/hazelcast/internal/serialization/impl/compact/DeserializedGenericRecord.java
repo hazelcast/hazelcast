@@ -159,91 +159,91 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Override
     @Nullable
-    public boolean[] getBooleanArray(@Nonnull String fieldName) {
+    public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.BOOLEAN_ARRAY);
     }
 
     @Override
     @Nullable
-    public byte[] getByteArray(@Nonnull String fieldName) {
+    public byte[] getArrayOfBytes(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.BYTE_ARRAY);
     }
 
     @Override
     @Nullable
-    public char[] getCharArray(@Nonnull String fieldName) {
+    public char[] getArrayOfChars(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.CHAR_ARRAY);
     }
 
     @Override
     @Nullable
-    public double[] getDoubleArray(@Nonnull String fieldName) {
+    public double[] getArrayOfDoubles(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.DOUBLE_ARRAY);
     }
 
     @Override
     @Nullable
-    public float[] getFloatArray(@Nonnull String fieldName) {
+    public float[] getArrayOfFloats(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.FLOAT_ARRAY);
     }
 
     @Override
     @Nullable
-    public int[] getIntArray(@Nonnull String fieldName) {
+    public int[] getArrayOfInts(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.INT_ARRAY);
     }
 
     @Override
     @Nullable
-    public long[] getLongArray(@Nonnull String fieldName) {
+    public long[] getArrayOfLongs(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.LONG_ARRAY);
     }
 
     @Override
     @Nullable
-    public short[] getShortArray(@Nonnull String fieldName) {
+    public short[] getArrayOfShorts(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.SHORT_ARRAY);
     }
 
     @Override
     @Nullable
-    public String[] getStringArray(@Nonnull String fieldName) {
+    public String[] getArrayOfStrings(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.STRING_ARRAY);
     }
 
     @Override
     @Nullable
-    public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
+    public BigDecimal[] getArrayOfDecimals(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.DECIMAL_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalTime[] getTimeArray(@Nonnull String fieldName) {
+    public LocalTime[] getArrayOfTimes(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.TIME_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalDate[] getDateArray(@Nonnull String fieldName) {
+    public LocalDate[] getArrayOfDates(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.DATE_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
+    public LocalDateTime[] getArrayOfTimestamps(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.TIMESTAMP_ARRAY);
     }
 
     @Override
     @Nullable
-    public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
+    public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 
     @Nullable
     @Override
-    public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
+    public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
         return get(fieldName, FieldKind.COMPACT_ARRAY);
     }
 
