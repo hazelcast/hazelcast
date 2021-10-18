@@ -322,6 +322,27 @@ public class CreateDagVisitor {
         return joinVertex;
     }
 
+    public Vertex onUnion(UnionPhysicalRel rel) {
+        // Union[all=false] rel should be never be produced, and it is always replaced by
+        // UNION_TO_DISTINCT rule : Union[all=false] -> Union[all=true] + Aggregate.
+        if (!rel.all) {
+            throw new RuntimeException("Union[all=false] rel should never be produced");
+        }
+
+        Vertex merger = dag.newUniqueVertex(
+                "UnionMerger",
+                ProcessorSupplier.of(mapP(FunctionEx.identity()))
+        );
+
+        int ordinal = 0;
+        for (RelNode input : rel.getInputs()) {
+            Vertex inputVertex = ((PhysicalRel) input).accept(this);
+            Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
+            dag.edge(edge);
+        }
+        return merger;
+    }
+
     public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;

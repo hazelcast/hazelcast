@@ -22,7 +22,7 @@ package com.hazelcast.internal.nio;
 public final class Protocols {
 
     /**
-     * The length in bytes of the of the protocol-string
+     * The length in bytes of the protocol-string
      */
     public static final int PROTOCOL_LENGTH = 3;
 

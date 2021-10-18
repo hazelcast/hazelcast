@@ -48,6 +48,9 @@ public final class PhysicalRules {
                 JoinNestedLoopPhysicalRule.INSTANCE,
                 JoinHashPhysicalRule.INSTANCE,
 
+                // Union rules
+                UnionPhysicalRule.INSTANCE,
+
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,
 

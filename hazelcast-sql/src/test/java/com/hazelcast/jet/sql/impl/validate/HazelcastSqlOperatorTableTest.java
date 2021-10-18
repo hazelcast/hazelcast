@@ -79,6 +79,8 @@ public class HazelcastSqlOperatorTableTest {
             if (operator instanceof HazelcastTableFunction
                     || operator == HazelcastSqlOperatorTable.IN
                     || operator == HazelcastSqlOperatorTable.NOT_IN
+                    || operator == HazelcastSqlOperatorTable.UNION
+                    || operator == HazelcastSqlOperatorTable.UNION_ALL
                     || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT) {
                 continue;
             }
