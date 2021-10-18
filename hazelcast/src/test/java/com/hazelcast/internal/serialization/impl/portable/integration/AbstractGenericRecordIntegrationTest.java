@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.genericrecord;
+package com.hazelcast.internal.serialization.impl.portable.integration;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -50,7 +50,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
+public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTestSupport {
 
     private final SerializationConfig serializationConfig = new SerializationConfig()
             .addPortableFactory(PortableTest.PORTABLE_FACTORY_ID, new PortableTest.TestPortableFactory());

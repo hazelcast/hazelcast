@@ -392,7 +392,8 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue) {
-        return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY) ? getArrayOfTimestampWithTimezones(fieldName) : defaultValue;
+        return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY)
+                ? getArrayOfTimestampWithTimezones(fieldName) : defaultValue;
     }
 
     @Override

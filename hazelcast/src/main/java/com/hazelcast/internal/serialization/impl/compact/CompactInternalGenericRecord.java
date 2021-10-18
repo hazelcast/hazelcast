@@ -414,7 +414,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+        return getArrayOfVariableSizes(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY,
+                OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
     @Override
@@ -520,8 +521,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T[] getArrayOfVariableSizes(@Nonnull String fieldName, FieldKind fieldKind,
-                                         Function<Integer, T[]> constructor,
-                                         Reader<T> reader) {
+                                            Function<Integer, T[]> constructor,
+                                            Reader<T> reader) {
         int currentPos = in.position();
         try {
             int position = readVariableSizeFieldPosition(fieldName, fieldKind);

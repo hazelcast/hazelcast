@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -83,12 +82,12 @@ public class SqlCompactTest extends SqlTestSupport {
     public static void beforeClass() {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
-        CompactSerializationConfig compactSerializationConfig =
-                config.getSerializationConfig().getCompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
 //        Left commented deliberately. See https://github.com/hazelcast/hazelcast/issues/19427
-//        // registering this class to the member to see it does not affect any of the tests.
-//        // It has a different schema than all the tests
+//        registering this class to the member to see it does not affect any of the tests.
+//        It has a different schema than all the tests
+//        CompactSerializationConfig compactSerializationConfig =
+//                config.getSerializationConfig().getCompactSerializationConfig();
+//        compactSerializationConfig.setEnabled(true);
 //        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
 //            @Nonnull
 //            @Override
