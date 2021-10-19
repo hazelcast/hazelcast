@@ -91,7 +91,7 @@ public final class ClassDataProvider {
         }
 
         Map<String, byte[]> innerClassDefinitions = loadInnerClasses(className);
-        loadAnonymousClasses(className, innerClassDefinitions);
+        innerClassDefinitions = loadAnonymousClasses(className, innerClassDefinitions);
 
         ClassData classData = new ClassData();
         if (innerClassDefinitions != null) {
@@ -101,13 +101,17 @@ public final class ClassDataProvider {
         return classData;
     }
 
-    private void loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
+    private Map<String, byte[]> loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
         int i = 1;
-        boolean shouldContinue = true;
-        String innerClassName = className + "$" + i;
-        shouldContinue = attemptToLoadClass(innerClassName);
 
-        while (shouldContinue) {
+        while (true) {
+            String innerClassName = className + "$" + i;
+            boolean shouldContinue = attemptToLoadClass(innerClassName);
+
+            if (!shouldContinue) {
+                break;
+            }
+
             byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
             if (innerClassDefinitions == null) {
                 innerClassDefinitions = new HashMap<String, byte[]>();
@@ -115,6 +119,7 @@ public final class ClassDataProvider {
             innerClassDefinitions.put(innerClassName, innerByteCode);
             i++;
         }
+        return innerClassDefinitions;
     }
 
     private boolean attemptToLoadClass(String innerClassName) {
