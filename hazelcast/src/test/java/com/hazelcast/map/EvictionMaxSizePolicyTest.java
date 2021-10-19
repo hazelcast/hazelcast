@@ -129,7 +129,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                     assertEquals(message, initialMapSize, evictedKeyCount + currentMapSize);
                     // current map size should approximately be around (nodeCount - 1) * perNodeMaxSize.
                     assertTrue(message, ((nodeCount - 1) * perNodeMaxSize)
-                            + (PARTITION_COUNT / nodeCount) >= currentMapSize);
+                            + (PARTITION_COUNT / (nodeCount - 1)) >= currentMapSize);
                 }
             }
 
@@ -138,7 +138,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             IMap<Object, Object> map2 = nodes.get(2).getMap(mapName);
             long totalBackupEntryCount = getTotalBackupEntryCount(map1, map2);
             assertTrue("totalBackupEntryCount=" + totalBackupEntryCount, ((nodeCount - 1) * perNodeMaxSize)
-                    + (PARTITION_COUNT / nodeCount) >= totalBackupEntryCount);
+                    + (PARTITION_COUNT / nodeCount - 1) >= totalBackupEntryCount);
         });
     }
 
