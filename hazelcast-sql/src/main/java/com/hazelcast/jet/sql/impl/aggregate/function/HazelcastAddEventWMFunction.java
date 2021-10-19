@@ -42,7 +42,7 @@ import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.sql.type.SqlTypeName.COLUMN_LIST;
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class HazelcastEventWatermarkFunction extends HazelcastTableFunction {
+public class HazelcastAddEventWMFunction extends HazelcastTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, RowOperandChecker.INSTANCE),
@@ -67,8 +67,8 @@ public class HazelcastEventWatermarkFunction extends HazelcastTableFunction {
         return callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
     };
 
-    public HazelcastEventWatermarkFunction() {
-        super("EVENT_WATERMARK", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
+    public HazelcastAddEventWMFunction() {
+        super("ADD_EVENT_TIME_WM", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
     }
 
     @Override

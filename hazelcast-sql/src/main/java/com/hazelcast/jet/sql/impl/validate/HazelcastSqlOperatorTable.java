@@ -23,7 +23,7 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastEventWatermarkFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAddEventWMFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
@@ -247,7 +247,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     //#region Windowing functions.
 
     public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
-    public static final SqlFunction EVENT_WATERMARK = new HazelcastEventWatermarkFunction();
+    public static final SqlFunction ADD_EVENT_TIME_WM = new HazelcastAddEventWMFunction();
 
     //#endregion
 

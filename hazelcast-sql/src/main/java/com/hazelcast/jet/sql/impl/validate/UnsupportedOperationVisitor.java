@@ -197,7 +197,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Windowing
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EVENT_WATERMARK);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ADD_EVENT_TIME_WM);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
