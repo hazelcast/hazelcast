@@ -136,7 +136,7 @@ public class TxnSetOperation extends BasePutOperation
         dataValue = getValueOrPostProcessedValue(record, dataValue);
         ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         return new TxnSetBackupOperation(name, dataKey,
-                record, dataValue, expiredMetadata, transactionId);
+                record, dataValue, expiryMetadata, transactionId);
     }
 
     @Override

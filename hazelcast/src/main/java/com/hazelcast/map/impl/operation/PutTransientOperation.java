@@ -42,7 +42,7 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
     @Override
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
         ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
-        return new PutTransientBackupOperation(name, dataKey, record, dataValue, expiredMetadata);
+        return new PutTransientBackupOperation(name, dataKey, record, dataValue, expiryMetadata);
     }
 
     protected long getTtl() {

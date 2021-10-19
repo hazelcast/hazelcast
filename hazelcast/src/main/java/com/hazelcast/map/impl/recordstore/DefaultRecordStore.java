@@ -1010,7 +1010,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = record.getValue();
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
             MapMergeTypes<Object, Object> existingEntry
-                    = createMergingEntry(serializationService, key, record, expiredMetadata);
+                    = createMergingEntry(serializationService, key, record, expiryMetadata);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
