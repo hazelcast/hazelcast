@@ -38,7 +38,7 @@ jobs:
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
-            const newTitle = `[${{ steps.create_jira_issue.outputs.issue }}] ${{ github.event.issue.title }}`
+            const newTitle = `${{ github.event.issue.title }} [${{ steps.create_jira_issue.outputs.issue }}]`
             github.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
