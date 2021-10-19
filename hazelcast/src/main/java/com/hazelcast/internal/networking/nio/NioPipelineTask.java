@@ -25,7 +25,7 @@ import static java.lang.Thread.currentThread;
  * using {@link NioThread#addTaskAndWakeup(Runnable)}.
  *
  * The problem however is that pipeline migration can cause a task to end up at a
- * NioThread that doesn't own the pipeline any longer. Therefor, this task does a
+ * NioThread that doesn't own the pipeline any longer. Therefore, this task does a
  * check when it is executed if the owner of the pipeline is the same as the
  * current thread. If it is, then the {@link #run0()} is called. If it isn't, the
  * task is sent to the {@link NioPipeline#ownerAddTaskAndWakeup(Runnable)} which will
