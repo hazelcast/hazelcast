@@ -87,7 +87,7 @@ public class QueryParser {
         }
         SqlNode topNode = statements.get(0);
 
-        rewriteExists(topNode);
+       rewriteExists(topNode);
 
         SqlNode node = validator.validate(topNode);
 
@@ -130,15 +130,11 @@ public class QueryParser {
                                 )
                         );
                         super.visit(select);
-                    } else {
-                        super.visit(call);
+                        return null;
                     }
-                } else {
-                    super.visit(call);
                 }
-            } else {
-                super.visit(call);
             }
+            super.visit(call);
             return null;
         }
     }

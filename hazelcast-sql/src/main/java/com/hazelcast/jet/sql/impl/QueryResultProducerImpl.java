@@ -93,6 +93,11 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
+        if (limit <= 0) {
+            done.compareAndSet(null, new ResultLimitReachedException());
+            ensureNotDone();
+        }
+
         for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
