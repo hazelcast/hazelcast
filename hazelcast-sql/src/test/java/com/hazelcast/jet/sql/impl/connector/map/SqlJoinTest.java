@@ -769,6 +769,18 @@ public class SqlJoinTest {
                     ),
                     emptyList()
             );
+
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT * FROM " + subName + " s WHERE "
+                            + whereClause() + " (SELECT * FROM " + subSubName + " t WHERE t.a = s.v ORDER BY b))",
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2"),
+                            new Row(3, "value-3")
+                    ),
+                    emptyList()
+            );
         }
 
         @Test

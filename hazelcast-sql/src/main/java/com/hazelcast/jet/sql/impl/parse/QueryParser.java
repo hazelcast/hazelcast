@@ -30,6 +30,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -87,7 +88,7 @@ public class QueryParser {
         }
         SqlNode topNode = statements.get(0);
 
-       rewriteExists(topNode);
+        rewriteExists(topNode);
 
         SqlNode node = validator.validate(topNode);
 
@@ -120,17 +121,34 @@ public class QueryParser {
                 if (basicCall.getOperator().kind == SqlKind.EXISTS) {
                     List<SqlNode> operandList = basicCall.getOperandList();
                     SqlNode operand = operandList.get(0);
-                    if (operand instanceof SqlSelect) {
-                        SqlSelect select = (SqlSelect) operand;
-
-                        select.setSelectList(
-                                new SqlNodeList(
-                                        singleton(SqlLiteral.createExactNumeric("1", select.getSelectList().getParserPosition())),
-                                        select.getSelectList().getParserPosition()
-                                )
-                        );
-                        super.visit(select);
-                        return null;
+                    switch (operand.getKind()) {
+                        case SELECT:
+                            SqlSelect select = (SqlSelect) operand;
+                            select.setSelectList(
+                                    new SqlNodeList(
+                                            singleton(SqlLiteral.createExactNumeric(
+                                                    "1", select.getSelectList().getParserPosition()
+                                            )),
+                                            select.getSelectList().getParserPosition()
+                                    )
+                            );
+                            super.visit(select);
+                            return null;
+                        case ORDER_BY:
+                            SqlOrderBy orderBy = (SqlOrderBy) operand;
+                            SqlSelect query = (SqlSelect) orderBy.query;
+                            query.setSelectList(
+                                    new SqlNodeList(
+                                            singleton(SqlLiteral.createExactNumeric(
+                                                    "1", query.getSelectList().getParserPosition()
+                                            )),
+                                            query.getSelectList().getParserPosition()
+                                    )
+                            );
+                            super.visit(query);
+                            return null;
+                        default:
+                            throw new IllegalStateException("Unexpected SqlNode as EXISTS operator");
                     }
                 }
             }
