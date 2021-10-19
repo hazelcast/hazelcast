@@ -18,13 +18,14 @@ package com.hazelcast.nio;
 
 import javax.annotation.Nullable;
 import java.io.DataInput;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
  * Provides serialization methods for arrays of primitive types.
  */
-public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVersionAware {
+public interface ObjectDataInput extends DataInput,Closeable, VersionAware, WanProtocolVersionAware {
 
     /**
      * @deprecated for the sake of better naming. Use {@link #readString()} instead
