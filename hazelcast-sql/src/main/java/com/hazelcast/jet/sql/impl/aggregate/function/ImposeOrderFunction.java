@@ -42,7 +42,7 @@ import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.sql.type.SqlTypeName.COLUMN_LIST;
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class HazelcastAddEventWMFunction extends HazelcastTableFunction {
+public class ImposeOrderFunction extends HazelcastTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, RowOperandChecker.INSTANCE),
@@ -67,8 +67,8 @@ public class HazelcastAddEventWMFunction extends HazelcastTableFunction {
         return callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
     };
 
-    public HazelcastAddEventWMFunction() {
-        super("ADD_EVENT_TIME_WM", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
+    public ImposeOrderFunction() {
+        super("IMPOSE_ORDER", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
     }
 
     @Override

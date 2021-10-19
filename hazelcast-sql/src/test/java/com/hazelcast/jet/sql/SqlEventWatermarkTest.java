@@ -50,7 +50,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))",
+                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))",
                 asList(
                         new Row(timestamp(0), "Alice"),
                         new Row(timestamp(1), null),
@@ -65,9 +65,9 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT * FROM" +
-                        "    TABLE(ADD_EVENT_TIME_WM(" +
+                        "    TABLE(IMPOSE_ORDER(" +
                         "      TABLE " + name +
                         "      , DESCRIPTOR(ts)" +
                         "      , INTERVAL '0.001' SECOND" +
@@ -89,7 +89,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT * FROM " + name + " WHERE name != 'Alice')" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
@@ -108,7 +108,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT ts FROM " + name + ")" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
@@ -131,7 +131,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT ts FROM " + name + " WHERE name != 'Alice')" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
@@ -146,7 +146,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT ts + INTERVAL '0.001' SECOND AS ts, name  FROM " + name + ")" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
@@ -164,7 +164,7 @@ public class SqlEventWatermarkTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(ADD_EVENT_TIME_WM(" +
+                        "TABLE(IMPOSE_ORDER(" +
                         "  max_lag => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE " + name + ")" +
                         "  , time_column => DESCRIPTOR(ts)" +

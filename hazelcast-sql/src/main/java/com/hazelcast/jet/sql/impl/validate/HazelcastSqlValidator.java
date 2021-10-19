@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAddEventWMFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -197,7 +197,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastAddEventWMFunction) {
+                if (operator instanceof ImposeOrderFunction) {
                     count++;
                 }
                 return super.visit(call);

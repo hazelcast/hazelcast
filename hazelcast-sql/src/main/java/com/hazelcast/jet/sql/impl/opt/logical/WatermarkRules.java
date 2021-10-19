@@ -21,7 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAddEventWMFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -50,10 +50,10 @@ import static org.apache.calcite.plan.RelOptRule.operand;
 final class WatermarkRules {
 
     @SuppressWarnings("AnonInnerLength")
-    static final RelOptRule ADD_EVENT_TIME_WM_INSTANCE = new ConverterRule(
-            LogicalTableFunctionScan.class, scan -> extractAddEventTimeWMFunction(scan) != null,
+    static final RelOptRule IMPOSE_ORDER_INSTANCE = new ConverterRule(
+            LogicalTableFunctionScan.class, scan -> extractImposeOrderFunction(scan) != null,
             Convention.NONE, LOGICAL,
-            WatermarkRules.class.getSimpleName() + "(Add Event Time WM)"
+            WatermarkRules.class.getSimpleName() + "(Impose Order)"
     ) {
         @Override
         public RelNode convert(RelNode rel) {
@@ -97,9 +97,9 @@ final class WatermarkRules {
         }
     };
 
-    static final RelOptRule WM_INTO_SCAN_INSTANCE = new RelOptRule(
+    static final RelOptRule WATERMARK_INTO_SCAN_INSTANCE = new RelOptRule(
             operand(WatermarkLogicalRel.class, operand(FullScanLogicalRel.class, none())),
-            WatermarkRules.class.getSimpleName() + "(WM Into Scan)"
+            WatermarkRules.class.getSimpleName() + "(Watermark Into Scan)"
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
@@ -119,16 +119,16 @@ final class WatermarkRules {
     private WatermarkRules() {
     }
 
-    private static HazelcastAddEventWMFunction extractAddEventTimeWMFunction(LogicalTableFunctionScan scan) {
+    private static ImposeOrderFunction extractImposeOrderFunction(LogicalTableFunctionScan scan) {
         if (scan == null || !(scan.getCall() instanceof RexCall)) {
             return null;
         }
         RexCall call = (RexCall) scan.getCall();
 
-        if (!(call.getOperator() instanceof HazelcastAddEventWMFunction)) {
+        if (!(call.getOperator() instanceof ImposeOrderFunction)) {
             return null;
         }
-        return (HazelcastAddEventWMFunction) call.getOperator();
+        return (ImposeOrderFunction) call.getOperator();
     }
 
     private static RexNode extractOperand(LogicalTableFunctionScan function, int index) {
