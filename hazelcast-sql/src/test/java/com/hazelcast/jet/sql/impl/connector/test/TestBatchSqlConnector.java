@@ -205,10 +205,13 @@ public class TestBatchSqlConnector implements SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nonnull FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
-        List<Object[]> rows = ((TestBatchTable) table).rows;
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+        }
 
+        List<Object[]> rows = ((TestBatchTable) table).rows;
         BatchSource<Object[]> source = SourceBuilder
                 .batch("batch", ctx -> {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);

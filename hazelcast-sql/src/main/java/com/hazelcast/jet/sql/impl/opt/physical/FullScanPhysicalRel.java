@@ -42,6 +42,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
 
     ) {
         super(cluster, traitSet, table);
@@ -88,6 +89,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
         return project(schema, projection, parameterMetadata);
     }
 
+    @Nullable
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
@@ -152,7 +154,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("eventTimePolicyProvider", eventTimePolicyProvider);
+                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null);
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -39,20 +40,21 @@ public class FullScanLogicalRel extends TableScan implements LogicalRel {
             RelTraitSet traitSet,
             RelOptTable table
     ) {
-        this(cluster, traitSet, table, context -> EventTimePolicy.noEventTime());
+        this(cluster, traitSet, table, null);
     }
 
     FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         super(cluster, traitSet, emptyList(), table);
 
         this.eventTimePolicyProvider = eventTimePolicyProvider;
     }
 
+    @Nullable
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
@@ -60,7 +62,7 @@ public class FullScanLogicalRel extends TableScan implements LogicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("eventTimePolicyProvider", eventTimePolicyProvider);
+                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null);
     }
 
     @Override

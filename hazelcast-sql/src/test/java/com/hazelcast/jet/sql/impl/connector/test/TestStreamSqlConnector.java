@@ -147,7 +147,6 @@ public class TestStreamSqlConnector implements SqlConnector {
 
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
-
         assert names.length == types.length;
 
         List<MappingField> fields = new ArrayList<>(names.length);
@@ -207,12 +206,14 @@ public class TestStreamSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nonnull FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
+        EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicyProvider.apply(null);
+
         TestStreamTable table = (TestStreamTable) table0;
-
         List<Object[]> rows = table.rows;
-
         StreamSourceTransform<Object[]> source = (StreamSourceTransform<Object[]>) SourceBuilder
                 .stream("stream", ctx -> {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
@@ -220,7 +221,7 @@ public class TestStreamSqlConnector implements SqlConnector {
                 })
                 .fillBufferFn(TestStreamDataGenerator::fillBuffer)
                 .build();
-        ProcessorMetaSupplier pms = source.metaSupplierFn.apply(eventTimePolicyProvider.apply(null));
+        ProcessorMetaSupplier pms = source.metaSupplierFn.apply(eventTimePolicy);
         return dag.newUniqueVertex(table.toString(), pms);
     }
 

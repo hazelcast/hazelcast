@@ -122,10 +122,13 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
-            @Nonnull FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         KafkaTable table = (KafkaTable) table0;
 
+        EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicyProvider.apply(null);
         return dag.newUniqueVertex(
                 table.toString(),
                 ProcessorMetaSupplier.of(
@@ -133,7 +136,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
                                 table.topicName(),
-                                eventTimePolicyProvider.apply(null),
+                                eventTimePolicy,
                                 table.paths(),
                                 table.types(),
                                 table.keyQueryDescriptor(),

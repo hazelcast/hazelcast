@@ -145,8 +145,12 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nonnull FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+        }
+
         BatchSource<Object[]> source = SourceBuilder
                 .batch("batch", SimpleExpressionEvalContext::from)
                 .<Object[]>fillBufferFn((ctx, buf) -> {
