@@ -50,11 +50,6 @@ public class UnionPhysicalRel extends Union implements PhysicalRel {
 
     @Override
     public SetOp copy(RelTraitSet traitSet, List<RelNode> inputs, boolean all) {
-        return new UnionPhysicalRel(
-                getCluster(),
-                traitSet,
-                inputs,
-                all
-        );
+        return new UnionPhysicalRel(getCluster(), traitSet, inputs, all);
     }
 }
