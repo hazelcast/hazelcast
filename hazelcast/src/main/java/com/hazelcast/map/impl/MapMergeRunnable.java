@@ -54,7 +54,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
         store.forEach((BiConsumer<Data, Record>) (key, record) -> {
             Data dataKey = toHeapData(key);
             Data dataValue = toHeapData(record.getValue());
-            ExpiryMetadata expiredMetadata = store.getExpirySystem().getExpiredMetadata(dataKey);
+            ExpiryMetadata expiredMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
             consumer.accept(partitionId,
                     createMergingEntry(getSerializationService(), dataKey, dataValue,
                             record, expiredMetadata));

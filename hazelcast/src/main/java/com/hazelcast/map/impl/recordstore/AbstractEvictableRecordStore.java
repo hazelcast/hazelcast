@@ -182,7 +182,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             getExpirySystem().add(key, mergingEntry.getTtl(),
                     maxIdle, mergingEntry.getExpirationTime(), mergingEntry.getLastUpdateTime(), now);
         } else {
-            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
+            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiryMetadata(key);
             getExpirySystem().add(key, mergingEntry.getTtl(),
                     expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
                     mergingEntry.getLastUpdateTime(), now);

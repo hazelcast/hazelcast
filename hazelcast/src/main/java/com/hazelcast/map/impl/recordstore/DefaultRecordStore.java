@@ -267,7 +267,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 mapDataStore.addTransient(key, now);
             } else {
                 mapDataStore.addBackup(key, value,
-                        expirySystem.getExpiredMetadata(key).getExpirationTime(),
+                        expirySystem.getExpiryMetadata(key).getExpirationTime(),
                         now, transactionId);
             }
         }
@@ -1008,7 +1008,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     null, ADDED, persist, false);
         } else {
             oldValue = record.getValue();
-            ExpiryMetadata expiredMetadata = expirySystem.getExpiredMetadata(key);
+            ExpiryMetadata expiredMetadata = expirySystem.getExpiryMetadata(key);
             MapMergeTypes<Object, Object> existingEntry
                     = createMergingEntry(serializationService, key, record, expiredMetadata);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
