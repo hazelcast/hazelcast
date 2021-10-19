@@ -493,7 +493,11 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     private long extractOperationCallId(Data data) throws IOException {
         ObjectDataInput input = ((SerializationServiceV1) node.getSerializationService())
                 .initDataSerializableInputAndSkipTheHeader(data);
-        return input.readLong();
+        try{
+            return input.readLong();
+        }finally {
+            input.close();
+        }
     }
 
     private void setOperationResponseHandler(Operation op) {
