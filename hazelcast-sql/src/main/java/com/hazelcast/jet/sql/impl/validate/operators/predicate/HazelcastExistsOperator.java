@@ -46,4 +46,9 @@ public class HazelcastExistsOperator extends HazelcastPrefixOperator {
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         return true;
     }
+
+    @Override
+    public boolean argumentMustBeScalar(int ordinal) {
+        return false;
+    }
 }

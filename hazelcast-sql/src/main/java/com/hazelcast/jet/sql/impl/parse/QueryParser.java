@@ -24,23 +24,12 @@ import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOrderBy;
-import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.impl.ParseException;
-import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlVisitor;
-
-import java.util.List;
-
-import static java.util.Collections.singleton;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -88,8 +77,6 @@ public class QueryParser {
         }
         SqlNode topNode = statements.get(0);
 
-        rewriteExists(topNode);
-
         SqlNode node = validator.validate(topNode);
 
         SqlVisitor<Void> visitor = new UnsupportedOperationVisitor();
@@ -106,54 +93,5 @@ public class QueryParser {
         String eol = System.getProperty("line.separator", "\n");
         String[] parts = message.split(eol, 2);
         return parts[0];
-    }
-
-    private static void rewriteExists(SqlNode topNode) {
-        SqlVisitor<Void> rewriter = new SqlRewriter();
-        topNode.accept(rewriter);
-    }
-
-    private static class SqlRewriter extends SqlBasicVisitor<Void> {
-        @Override
-        public Void visit(SqlCall call) {
-            if (call instanceof SqlBasicCall) {
-                SqlBasicCall basicCall = (SqlBasicCall) call;
-                if (basicCall.getOperator().kind == SqlKind.EXISTS) {
-                    List<SqlNode> operandList = basicCall.getOperandList();
-                    SqlNode operand = operandList.get(0);
-                    switch (operand.getKind()) {
-                        case SELECT:
-                            SqlSelect select = (SqlSelect) operand;
-                            select.setSelectList(
-                                    new SqlNodeList(
-                                            singleton(SqlLiteral.createExactNumeric(
-                                                    "1", select.getSelectList().getParserPosition()
-                                            )),
-                                            select.getSelectList().getParserPosition()
-                                    )
-                            );
-                            super.visit(select);
-                            return null;
-                        case ORDER_BY:
-                            SqlOrderBy orderBy = (SqlOrderBy) operand;
-                            SqlSelect query = (SqlSelect) orderBy.query;
-                            query.setSelectList(
-                                    new SqlNodeList(
-                                            singleton(SqlLiteral.createExactNumeric(
-                                                    "1", query.getSelectList().getParserPosition()
-                                            )),
-                                            query.getSelectList().getParserPosition()
-                                    )
-                            );
-                            super.visit(query);
-                            return null;
-                        default:
-                            throw new IllegalStateException("Unexpected SqlNode as EXISTS operator");
-                    }
-                }
-            }
-            super.visit(call);
-            return null;
-        }
     }
 }
