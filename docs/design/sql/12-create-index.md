@@ -56,7 +56,7 @@ TYPE index_type
 ```
 
 ```
-DROP INDEX [ IF EXISTS ] name
+DROP INDEX [ IF EXISTS ] name ON mapping_name
 ```
 
 #### Terminology

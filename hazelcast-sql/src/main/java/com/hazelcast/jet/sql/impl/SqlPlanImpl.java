@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -189,6 +190,148 @@ abstract class SqlPlanImpl extends SqlPlan {
             SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
+        }
+    }
+
+    static class CreateIndexPlan extends SqlPlanImpl {
+        private final String name;
+        private final String mappingName;
+        private final String[] attributes;
+        Map<String, String> options;
+        private final IndexType indexType;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final PlanExecutor planExecutor;
+
+        CreateIndexPlan(
+                PlanKey planKey,
+                String name,
+                String mappingName,
+                IndexType indexType,
+                List<String> attributes,
+                Map<String, String> options,
+                boolean replace,
+                boolean ifNotExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.mappingName = mappingName;
+            this.indexType = indexType;
+            this.attributes = new String[attributes.size()];
+            attributes.toArray(this.attributes);
+            this.options = options;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.planExecutor = planExecutor;
+        }
+
+        public String indexName() {
+            return name;
+        }
+
+        public String mappingName() {
+            return mappingName;
+        }
+
+        public String[] attributes() {
+            return attributes;
+        }
+
+        public IndexType indexType() {
+            return indexType;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        boolean replace() {
+            return replace;
+        }
+
+        boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE INDEX", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE INDEX", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropIndexPlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropIndexPlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean ifExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_DESTROY));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            throw QueryException.error("DROP INDEX is not supported.");
         }
     }
 

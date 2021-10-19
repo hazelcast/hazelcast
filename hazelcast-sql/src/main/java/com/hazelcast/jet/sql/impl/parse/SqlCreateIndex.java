@@ -79,7 +79,6 @@ public class SqlCreateIndex extends SqlCreate {
         return type.toString();
     }
 
-
     public Map<String, String> options() {
         return options.getList().stream()
                 .map(node -> (SqlOption) node)
@@ -165,7 +164,7 @@ public class SqlCreateIndex extends SqlCreate {
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         Set<String> columnNames = new HashSet<>();
         for (SqlNode column : columns.getList()) {
-            String name = ((SqlLiteral) requireNonNull(column)).toValue();
+            String name = ((SqlIdentifier) requireNonNull(column)).getSimple();
             if (!columnNames.add(name)) {
                 throw validator.newValidationError(column, RESOURCE.duplicateColumn(name));
             }

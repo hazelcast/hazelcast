@@ -129,6 +129,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // DDL & DML
         SUPPORTED_KINDS.add(SqlKind.CREATE_TABLE);
+        SUPPORTED_KINDS.add(SqlKind.CREATE_INDEX);
         SUPPORTED_KINDS.add(SqlKind.DROP_TABLE);
         SUPPORTED_KINDS.add(SqlKind.COLUMN_DECL);
 

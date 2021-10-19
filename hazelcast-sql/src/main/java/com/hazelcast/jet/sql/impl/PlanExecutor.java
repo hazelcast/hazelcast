@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.BitmapIndexOptions;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -25,10 +27,12 @@ import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -56,6 +60,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import java.util.List;
@@ -97,6 +102,33 @@ public class PlanExecutor {
 
     SqlResult execute(DropMappingPlan plan) {
         catalog.removeMapping(plan.name(), plan.ifExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateIndexPlan plan) {
+        if (!catalog.getMappingNamesSet().contains(plan.mappingName())) {
+            throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
+        }
+
+        Mapping mapping = catalog.getMapping(plan.mappingName());
+        if (mapping == null) {
+            throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
+        }
+
+        IndexConfig indexConfig = new IndexConfig(plan.indexType(), plan.attributes())
+                .setName(plan.indexName());
+
+//        if (!plan.options().isEmpty()) {
+//            Map<String, String> options = plan.options();
+//            BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
+//            bitmapIndexOptions.setUniqueKey(options.get("BITMAP_UNIQUE_KEY"));
+//            bitmapIndexOptions.setUniqueKeyTransformation(
+//                    options.get("BITMAP_UNIQUE_KEY_TRANSFORMATION")
+//            );
+//        }
+
+        hazelcastInstance.getMap(mapping.externalName()).addIndex(indexConfig);
+
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 

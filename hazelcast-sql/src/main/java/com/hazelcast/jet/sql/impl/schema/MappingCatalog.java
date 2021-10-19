@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -103,6 +104,10 @@ public class MappingCatalog implements TableResolver {
         }
     }
 
+    public Mapping getMapping(String name) {
+        return storage.get(name);
+    }
+
     private Mapping resolveMapping(Mapping mapping) {
         String type = mapping.type();
         Map<String, String> options = mapping.options();
@@ -129,6 +134,11 @@ public class MappingCatalog implements TableResolver {
     @Nonnull
     public List<String> getMappingNames() {
         return storage.values().stream().map(Mapping::name).collect(Collectors.toList());
+    }
+
+    @Nonnull
+    public Set<String> getMappingNamesSet() {
+        return storage.values().stream().map(Mapping::name).collect(Collectors.toSet());
     }
 
     @Nonnull
