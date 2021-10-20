@@ -46,6 +46,14 @@
                 </hz:interfaces>
             </hz:network>
             <hz:map name="map1" backup-count="${backup.count}" statistics-enabled="${boolean.false}"/>
+            <hz:map name="map-with-eviction"
+                    backup-count="0"
+                    async-backup-count="1"
+                    max-idle-seconds="${dummy.max.idle.seconds:7200}">
+                <hz:eviction eviction-policy="RANDOM"
+                             max-size-policy="PER_PARTITION"
+                             size="${dummy.eviction.size:5000}"/>
+            </hz:map>
             <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
                               min-block-size="10"
                               page-size="20">
@@ -79,6 +87,16 @@
                                reuse-address="false"
                                tcp-no-delay="false"/>
         </hz:network>
+        <hz:query-caches>
+            <hz:query-cache name="cache1" mapName="map1">
+                <hz:predicate type="sql">__key > 12</hz:predicate>
+                <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
+            </hz:query-cache>
+        </hz:query-caches>
+        <hz:metrics enabled="${metrics.enabled}">
+            <hz:jmx enabled="false"/>
+            <hz:collection-frequency-seconds>42</hz:collection-frequency-seconds>
+        </hz:metrics>
     </hz:client>
 
 

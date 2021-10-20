@@ -185,7 +185,7 @@
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"
-                          store-initial-delay-seconds="23" store-interval-seconds="42"/>
+                          store-initial-delay-seconds="23" store-interval-seconds="${preloader.storeIntervalSeconds}"/>
         </hz:near-cache>
     </hz:client>
 
@@ -585,10 +585,10 @@
         <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
                           min-block-size="10"
                           page-size="20">
-            <hz:size unit="GIGABYTES" value="256"/>
-            <hz:persistent-memory enabled="false" mode="MOUNTED">
+            <hz:size unit="${native.memory.unit}" value="256"/>
+            <hz:persistent-memory enabled="false" mode="${persistent.memory.mode}">
                 <hz:directories>
-                    <hz:directory numa-node="0">/mnt/pmem0</hz:directory>
+                    <hz:directory numa-node="${numa.node.first}">/mnt/pmem0</hz:directory>
                     <hz:directory numa-node="1">/mnt/pmem1</hz:directory>
                 </hz:directories>
             </hz:persistent-memory>
