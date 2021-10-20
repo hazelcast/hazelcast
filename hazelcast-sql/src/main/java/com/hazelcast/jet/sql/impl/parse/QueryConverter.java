@@ -32,6 +32,7 @@ import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -169,16 +170,16 @@ public class QueryConverter {
             }
 
             private RexSubQuery getExists(LogicalFilter filter) {
-                if (filter.getCondition().getKind().toString().equals("EXISTS")) {
+                if (filter.getCondition().getKind() == SqlKind.EXISTS) {
                     if (filter.getCondition() instanceof RexSubQuery) {
                         return (RexSubQuery) filter.getCondition();
                     }
                 }
                 if (filter.getCondition() instanceof RexCall) {
                     RexCall call = ((RexCall) filter.getCondition());
-                    if (call.getOperator().getKind().toString().equals("NOT")) {
+                    if (call.getOperator().getKind() == SqlKind.NOT) {
                         RexNode operand = call.getOperands().get(0);
-                        if (operand instanceof RexSubQuery && operand.getKind().toString().equals("EXISTS")) {
+                        if (operand instanceof RexSubQuery && operand.getKind() == SqlKind.EXISTS) {
                             return (RexSubQuery) operand;
                         }
                     }

@@ -151,8 +151,7 @@ public class HashJoinProcessorTest extends SqlTestSupport {
 
         ProcessorSupplier processor = HashJoinProcessor.supplier(
                 new JetJoinInfo(joinType, leftEquiJoinIndices, rightEquiJoinIndices, nonEquiCondition, null),
-                rightInputColumnCount,
-                false
+                rightInputColumnCount
         );
 
         TestSupport

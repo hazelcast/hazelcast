@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastPrefixOpera
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
@@ -39,12 +40,12 @@ public class HazelcastExistsOperator extends HazelcastPrefixOperator {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.any();
+        return SqlOperandCountRanges.of(1);
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        return true;
+        return OperandTypes.ANY.checkOperandTypes(callBinding, throwOnFailure);
     }
 
     @Override

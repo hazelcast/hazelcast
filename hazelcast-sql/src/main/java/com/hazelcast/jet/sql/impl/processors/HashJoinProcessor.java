@@ -51,15 +51,12 @@ public class HashJoinProcessor extends AbstractProcessor {
 
     private ExpressionEvalContext evalContext;
     private Multimap<ObjectArrayKey, Object[]> hashMap;
-    private boolean assertionsEnabled;
-    private boolean rightExhausted;
     private FlatMapper<Object[], Object[]> flatMapper;
     private long maxItemsInHashTable;
 
-    public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount, boolean assertionsEnabled) {
+    public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount) {
         this.joinInfo = joinInfo;
         this.rightInputColumnCount = rightInputColumnCount;
-        this.assertionsEnabled = assertionsEnabled;
     }
 
     @Override
@@ -90,7 +87,6 @@ public class HashJoinProcessor extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
-        assert !assertionsEnabled || rightExhausted;
         return flatMapper.tryProcess((Object[]) item);
     }
 
@@ -110,41 +106,21 @@ public class HashJoinProcessor extends AbstractProcessor {
         return true;
     }
 
-    @Override
-    public boolean completeEdge(int ordinal) {
-        switch (ordinal) {
-            case 0:
-                assert !assertionsEnabled || rightExhausted;
-                return true;
-            case 1:
-                rightExhausted = true;
-                return true;
-            default:
-                throw new IllegalArgumentException("Ordinal must be 0 or 1");
-        }
-    }
-
     public static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
-        return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount, true);
-    }
-
-    static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount, boolean assertionsEnabled) {
-        return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount, assertionsEnabled);
+        return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount);
     }
 
     private static final class HashJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private JetJoinInfo joinInfo;
         private int rightInputColumnCount;
-        private boolean assertionsEnabled;
 
         @SuppressWarnings("unused") // for deserialization
         private HashJoinProcessorSupplier() {
         }
 
-        private HashJoinProcessorSupplier(JetJoinInfo joinInfo, int rightInputColumnCount, boolean assertionsEnabled) {
+        private HashJoinProcessorSupplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
             this.joinInfo = joinInfo;
             this.rightInputColumnCount = rightInputColumnCount;
-            this.assertionsEnabled = assertionsEnabled;
         }
 
         @Nonnull
@@ -152,7 +128,7 @@ public class HashJoinProcessor extends AbstractProcessor {
         public Collection<? extends Processor> get(int count) {
             List<HashJoinProcessor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                processors.add(new HashJoinProcessor(joinInfo, rightInputColumnCount, assertionsEnabled));
+                processors.add(new HashJoinProcessor(joinInfo, rightInputColumnCount));
             }
             return processors;
         }
