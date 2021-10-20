@@ -340,9 +340,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case SELECT:
                 processSelect((SqlSelect) call);
                 break;
-            case SCALAR_QUERY:
-                processSelect((SqlSelect) call.getOperandList().get(0));
-                break;
 
             case UPDATE:
             case DELETE:
