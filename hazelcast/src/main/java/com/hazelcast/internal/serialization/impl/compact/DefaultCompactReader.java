@@ -28,46 +28,46 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.CHAR;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
-import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
-import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
 import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
 import static com.hazelcast.nio.serialization.FieldKind.INT;
-import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INTS;
 import static com.hazelcast.nio.serialization.FieldKind.LONG;
-import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_LONGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_DOUBLES;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOATS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
-import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
 
 /**
  * Adapter to make CompactInternalGenericRecord provide `CompactReader` API.
@@ -249,7 +249,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public byte[] readByteArray(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
-        return isFieldExists(fieldName, BYTE_ARRAY) ? getArrayOfBytes(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_BYTES) ? getArrayOfBytes(fieldName) : defaultValue;
     }
 
     @Override
@@ -260,7 +260,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public boolean[] readBooleanArray(@Nonnull String fieldName, @Nullable boolean[] defaultValue) {
-        return isFieldExists(fieldName, BOOLEAN_ARRAY) ? getArrayOfBooleans(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_BOOLEANS) ? getArrayOfBooleans(fieldName) : defaultValue;
     }
 
     @Override
@@ -271,7 +271,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public char[] readCharArray(@Nonnull String fieldName, @Nullable char[] defaultValue) {
-        return isFieldExists(fieldName, CHAR_ARRAY) ? getArrayOfChars(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_CHARS) ? getArrayOfChars(fieldName) : defaultValue;
     }
 
     @Override
@@ -282,7 +282,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public int[] readIntArray(@Nonnull String fieldName, @Nullable int[] defaultValue) {
-        return isFieldExists(fieldName, INT_ARRAY) ? getArrayOfInts(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_INTS) ? getArrayOfInts(fieldName) : defaultValue;
     }
 
     @Override
@@ -293,7 +293,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public long[] readLongArray(@Nonnull String fieldName, @Nullable long[] defaultValue) {
-        return isFieldExists(fieldName, LONG_ARRAY) ? getArrayOfLongs(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_LONGS) ? getArrayOfLongs(fieldName) : defaultValue;
     }
 
     @Override
@@ -304,7 +304,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public double[] readDoubleArray(@Nonnull String fieldName, @Nullable double[] defaultValue) {
-        return isFieldExists(fieldName, DOUBLE_ARRAY) ? getArrayOfDoubles(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_DOUBLES) ? getArrayOfDoubles(fieldName) : defaultValue;
     }
 
     @Override
@@ -315,7 +315,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public float[] readFloatArray(@Nonnull String fieldName, @Nullable float[] defaultValue) {
-        return isFieldExists(fieldName, FLOAT_ARRAY) ? getArrayOfFloats(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_FLOATS) ? getArrayOfFloats(fieldName) : defaultValue;
     }
 
     @Override
@@ -326,7 +326,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public short[] readShortArray(@Nonnull String fieldName, @Nullable short[] defaultValue) {
-        return isFieldExists(fieldName, SHORT_ARRAY) ? getArrayOfShorts(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_SHORTS) ? getArrayOfShorts(fieldName) : defaultValue;
     }
 
     @Override
@@ -337,7 +337,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public String[] readStringArray(@Nonnull String fieldName, @Nullable String[] defaultValue) {
-        return isFieldExists(fieldName, STRING_ARRAY) ? getArrayOfStrings(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_STRINGS) ? getArrayOfStrings(fieldName) : defaultValue;
     }
 
     @Override
@@ -348,7 +348,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public BigDecimal[] readDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] defaultValue) {
-        return isFieldExists(fieldName, DECIMAL_ARRAY) ? getArrayOfDecimals(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_DECIMALS) ? getArrayOfDecimals(fieldName) : defaultValue;
     }
 
     @Override
@@ -359,7 +359,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public LocalTime[] readTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] defaultValue) {
-        return isFieldExists(fieldName, TIME_ARRAY) ? getArrayOfTimes(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_TIMES) ? getArrayOfTimes(fieldName) : defaultValue;
     }
 
     @Override
@@ -370,7 +370,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public LocalDate[] readDateArray(@Nonnull String fieldName, @Nullable LocalDate[] defaultValue) {
-        return isFieldExists(fieldName, DATE_ARRAY) ? getArrayOfDates(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_DATES) ? getArrayOfDates(fieldName) : defaultValue;
     }
 
     @Override
@@ -381,7 +381,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public LocalDateTime[] readTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue) {
-        return isFieldExists(fieldName, TIMESTAMP_ARRAY) ? getArrayOfTimestamps(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_TIMESTAMPS) ? getArrayOfTimestamps(fieldName) : defaultValue;
     }
 
     @Override
@@ -392,7 +392,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue) {
-        return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY)
+        return isFieldExists(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONES)
                 ? getArrayOfTimestampWithTimezones(fieldName) : defaultValue;
     }
 
@@ -404,7 +404,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public <T> T[] readCompactArray(@Nonnull String fieldName, @Nullable Class<T> componentType, @Nullable T[] defaultValue) {
-        return isFieldExists(fieldName, COMPACT_ARRAY) ? getArrayOfObjects(fieldName, componentType) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_COMPACTS) ? getArrayOfObjects(fieldName, componentType) : defaultValue;
     }
 
     @Nullable
@@ -498,7 +498,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Boolean[] readArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_BOOLEAN_ARRAY) ? getArrayOfNullableBooleans(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_BOOLEANS) ? getArrayOfNullableBooleans(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -510,7 +510,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Byte[] readArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_BYTE_ARRAY) ? getArrayOfNullableBytes(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_BYTES) ? getArrayOfNullableBytes(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -522,7 +522,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Short[] readArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_SHORT_ARRAY) ? getArrayOfNullableShorts(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_SHORTS) ? getArrayOfNullableShorts(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -534,7 +534,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Integer[] readArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_INT_ARRAY) ? getArrayOfNullableInts(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INTS) ? getArrayOfNullableInts(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -546,7 +546,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Long[] readArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_LONG_ARRAY) ? getArrayOfNullableLongs(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_LONGS) ? getArrayOfNullableLongs(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -558,7 +558,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Float[] readArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_FLOAT_ARRAY) ? getArrayOfNullableFloats(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_FLOATS) ? getArrayOfNullableFloats(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -570,6 +570,6 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Double[] readArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_DOUBLE_ARRAY) ? getArrayOfNullableDoubles(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_DOUBLES) ? getArrayOfNullableDoubles(fieldName) : defaultValue;
     }
 }

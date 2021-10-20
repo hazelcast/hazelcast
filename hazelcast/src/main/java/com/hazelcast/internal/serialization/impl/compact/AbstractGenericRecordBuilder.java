@@ -129,91 +129,91 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        return write(fieldName, value, FieldKind.COMPACT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_COMPACTS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value) {
-        return write(fieldName, value, FieldKind.BYTE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_BYTES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] value) {
-        return write(fieldName, value, FieldKind.BOOLEAN_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_BOOLEANS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
-        return write(fieldName, value, FieldKind.CHAR_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_CHARS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfInts(@Nonnull String fieldName, @Nullable int[] value) {
-        return write(fieldName, value, FieldKind.INT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_INTS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value) {
-        return write(fieldName, value, FieldKind.LONG_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_LONGS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value) {
-        return write(fieldName, value, FieldKind.DOUBLE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_DOUBLES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value) {
-        return write(fieldName, value, FieldKind.FLOAT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_FLOATS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value) {
-        return write(fieldName, value, FieldKind.SHORT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_SHORTS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfStrings(@Nonnull String fieldName, @Nullable String[] value) {
-        return write(fieldName, value, FieldKind.STRING_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_STRINGS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] value) {
-        return write(fieldName, value, FieldKind.DECIMAL_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_DECIMALS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value) {
-        return write(fieldName, value, FieldKind.TIME_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value) {
-        return write(fieldName, value, FieldKind.DATE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_DATES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
-        return write(fieldName, value, FieldKind.TIMESTAMP_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMESTAMPS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
-        return write(fieldName, value, FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES);
     }
 
     @Nonnull
@@ -261,43 +261,43 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_BOOLEAN_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_BOOLEANS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_BYTE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_BYTES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_FLOAT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_FLOATS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_INT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_INTS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_DOUBLE_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_DOUBLES);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_LONG_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_LONGS);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value) {
-        return write(fieldName, value, FieldKind.NULLABLE_SHORT_ARRAY);
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_SHORTS);
     }
 
     protected abstract GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldType);

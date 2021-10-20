@@ -61,7 +61,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getBoolean(fieldName));
             }
         };
-        ALL[FieldKind.BOOLEAN_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_BOOLEANS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfBooleans(fieldName);
@@ -108,7 +108,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getByte(fieldName));
             }
         };
-        ALL[FieldKind.BYTE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_BYTES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfBytes(fieldName);
@@ -155,7 +155,7 @@ public final class FieldOperations {
                 JsonEscape.writeEscaped(stringBuilder, record.getChar(fieldName));
             }
         };
-        ALL[FieldKind.CHAR_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_CHARS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfChars(fieldName);
@@ -218,7 +218,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getShort(fieldName));
             }
         };
-        ALL[FieldKind.SHORT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_SHORTS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfShorts(fieldName);
@@ -265,7 +265,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getInt(fieldName));
             }
         };
-        ALL[FieldKind.INT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_INTS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfInts(fieldName);
@@ -312,7 +312,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getLong(fieldName));
             }
         };
-        ALL[FieldKind.LONG_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_LONGS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfLongs(fieldName);
@@ -359,7 +359,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getFloat(fieldName));
             }
         };
-        ALL[FieldKind.FLOAT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_FLOATS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfFloats(fieldName);
@@ -406,7 +406,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getDouble(fieldName));
             }
         };
-        ALL[FieldKind.DOUBLE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_DOUBLES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfDoubles(fieldName);
@@ -453,7 +453,7 @@ public final class FieldOperations {
                 JsonEscape.writeEscaped(stringBuilder, value);
             }
         };
-        ALL[FieldKind.STRING_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_STRINGS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfStrings(fieldName);
@@ -496,7 +496,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.DECIMAL_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_DECIMALS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfDecimals(fieldName);
@@ -544,7 +544,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIME_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_TIMES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTimes(fieldName);
@@ -593,7 +593,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.DATE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_DATES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfDates(fieldName);
@@ -643,7 +643,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIMESTAMP_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_TIMESTAMPS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTimestamps(fieldName);
@@ -692,7 +692,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfTimestampWithTimezones(fieldName);
@@ -741,7 +741,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getGenericRecord(fieldName));
             }
         };
-        ALL[FieldKind.COMPACT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_COMPACTS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getArrayOfObjects(fieldName, Object.class);
@@ -794,7 +794,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getGenericRecord(fieldName));
             }
         };
-        ALL[FieldKind.PORTABLE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_PORTABLES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getArrayOfObjects(fieldName, Object.class);
@@ -842,7 +842,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_BOOLEAN_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_BOOLEANS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableBooleans(fieldName);
@@ -885,7 +885,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_BYTE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_BYTES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableBytes(fieldName);
@@ -927,7 +927,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_SHORT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_SHORTS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableShorts(fieldName);
@@ -969,7 +969,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_INT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_INTS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableInts(fieldName);
@@ -1011,7 +1011,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_LONG_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_LONGS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableLongs(fieldName);
@@ -1053,7 +1053,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_FLOAT_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_FLOATS.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableFloats(fieldName);
@@ -1095,7 +1095,7 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.NULLABLE_DOUBLE_ARRAY.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_DOUBLES.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfNullableDoubles(fieldName);

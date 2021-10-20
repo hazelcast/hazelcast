@@ -33,49 +33,49 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.CHAR;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
-import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
-import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
 import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
 import static com.hazelcast.nio.serialization.FieldKind.INT;
-import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INTS;
 import static com.hazelcast.nio.serialization.FieldKind.LONG;
-import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_LONGS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_DOUBLES;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOATS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
-import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
 
 public class DeserializedGenericRecord extends CompactGenericRecord {
 
@@ -206,8 +206,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, BOOLEAN_ARRAY, NULLABLE_BOOLEAN_ARRAY);
-        if (fieldKind == NULLABLE_BOOLEAN_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS);
+        if (fieldKind == ARRAY_OF_NULLABLE_BOOLEANS) {
             Boolean[] array = (Boolean[]) objects.get(fieldName);
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -224,8 +224,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public byte[] getArrayOfBytes(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, BYTE_ARRAY, NULLABLE_BYTE_ARRAY);
-        if (fieldKind == NULLABLE_BYTE_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES);
+        if (fieldKind == ARRAY_OF_NULLABLE_BYTES) {
             Byte[] array = (Byte[]) objects.get(fieldName);
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -242,14 +242,14 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public char[] getArrayOfChars(@Nonnull String fieldName) {
-        return get(fieldName, CHAR_ARRAY);
+        return get(fieldName, ARRAY_OF_CHARS);
     }
 
     @Override
     @Nullable
     public double[] getArrayOfDoubles(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, DOUBLE_ARRAY, NULLABLE_DOUBLE_ARRAY);
-        if (fieldKind == NULLABLE_DOUBLE_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_DOUBLES, ARRAY_OF_NULLABLE_DOUBLES);
+        if (fieldKind == ARRAY_OF_NULLABLE_DOUBLES) {
             Double[] array = (Double[]) objects.get(fieldName);
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -266,8 +266,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public float[] getArrayOfFloats(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, FLOAT_ARRAY, NULLABLE_FLOAT_ARRAY);
-        if (fieldKind == NULLABLE_FLOAT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOATS, ARRAY_OF_NULLABLE_FLOATS);
+        if (fieldKind == ARRAY_OF_NULLABLE_FLOATS) {
             Float[] array = (Float[]) objects.get(fieldName);
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -284,8 +284,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public int[] getArrayOfInts(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, INT_ARRAY, NULLABLE_INT_ARRAY);
-        if (fieldKind == NULLABLE_INT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS);
+        if (fieldKind == ARRAY_OF_NULLABLE_INTS) {
             Integer[] array = (Integer[]) objects.get(fieldName);
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -302,8 +302,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public long[] getArrayOfLongs(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, LONG_ARRAY, NULLABLE_LONG_ARRAY);
-        if (fieldKind == NULLABLE_LONG_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS);
+        if (fieldKind == ARRAY_OF_NULLABLE_LONGS) {
             Long[] array = (Long[]) objects.get(fieldName);
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -320,8 +320,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public short[] getArrayOfShorts(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, SHORT_ARRAY, NULLABLE_SHORT_ARRAY);
-        if (fieldKind == NULLABLE_SHORT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_SHORTS, ARRAY_OF_NULLABLE_SHORTS);
+        if (fieldKind == ARRAY_OF_NULLABLE_SHORTS) {
             Short[] array = (Short[]) objects.get(fieldName);
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
@@ -338,43 +338,43 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public String[] getArrayOfStrings(@Nonnull String fieldName) {
-        return get(fieldName, STRING_ARRAY);
+        return get(fieldName, ARRAY_OF_STRINGS);
     }
 
     @Override
     @Nullable
     public BigDecimal[] getArrayOfDecimals(@Nonnull String fieldName) {
-        return get(fieldName, DECIMAL_ARRAY);
+        return get(fieldName, ARRAY_OF_DECIMALS);
     }
 
     @Override
     @Nullable
     public LocalTime[] getArrayOfTimes(@Nonnull String fieldName) {
-        return get(fieldName, TIME_ARRAY);
+        return get(fieldName, ARRAY_OF_TIMES);
     }
 
     @Override
     @Nullable
     public LocalDate[] getArrayOfDates(@Nonnull String fieldName) {
-        return get(fieldName, DATE_ARRAY);
+        return get(fieldName, ARRAY_OF_DATES);
     }
 
     @Override
     @Nullable
     public LocalDateTime[] getArrayOfTimestamps(@Nonnull String fieldName) {
-        return get(fieldName, TIMESTAMP_ARRAY);
+        return get(fieldName, ARRAY_OF_TIMESTAMPS);
     }
 
     @Override
     @Nullable
     public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
-        return get(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY);
+        return get(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONES);
     }
 
     @Nullable
     @Override
     public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
-        return get(fieldName, COMPACT_ARRAY);
+        return get(fieldName, ARRAY_OF_COMPACTS);
     }
 
     @Nullable
@@ -422,8 +422,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, BOOLEAN_ARRAY, NULLABLE_BOOLEAN_ARRAY);
-        if (fieldKind == BOOLEAN_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS);
+        if (fieldKind == ARRAY_OF_BOOLEANS) {
             boolean[] array = (boolean[]) objects.get(fieldName);
             Boolean[] result = new Boolean[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -435,8 +435,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, BYTE_ARRAY, NULLABLE_BYTE_ARRAY);
-        if (fieldKind == BYTE_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES);
+        if (fieldKind == ARRAY_OF_BYTES) {
             byte[] array = (byte[]) objects.get(fieldName);
             Byte[] result = new Byte[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -448,8 +448,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, DOUBLE_ARRAY, NULLABLE_DOUBLE_ARRAY);
-        if (fieldKind == DOUBLE_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_DOUBLES, ARRAY_OF_NULLABLE_DOUBLES);
+        if (fieldKind == ARRAY_OF_DOUBLES) {
             double[] array = (double[]) objects.get(fieldName);
             Double[] result = new Double[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -461,8 +461,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, FLOAT_ARRAY, NULLABLE_FLOAT_ARRAY);
-        if (fieldKind == FLOAT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOATS, ARRAY_OF_NULLABLE_FLOATS);
+        if (fieldKind == ARRAY_OF_FLOATS) {
             float[] array = (float[]) objects.get(fieldName);
             Float[] result = new Float[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -474,8 +474,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, INT_ARRAY, NULLABLE_INT_ARRAY);
-        if (fieldKind == INT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS);
+        if (fieldKind == ARRAY_OF_INTS) {
             int[] array = (int[]) objects.get(fieldName);
             Integer[] result = new Integer[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -487,8 +487,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, LONG_ARRAY, NULLABLE_LONG_ARRAY);
-        if (fieldKind == LONG_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS);
+        if (fieldKind == ARRAY_OF_LONGS) {
             long[] array = (long[]) objects.get(fieldName);
             Long[] result = new Long[array.length];
             Arrays.setAll(result, i -> array[i]);
@@ -500,8 +500,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, SHORT_ARRAY, NULLABLE_SHORT_ARRAY);
-        if (fieldKind == SHORT_ARRAY) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_SHORTS, ARRAY_OF_NULLABLE_SHORTS);
+        if (fieldKind == ARRAY_OF_SHORTS) {
             short[] array = (short[]) objects.get(fieldName);
             Short[] result = new Short[array.length];
             Arrays.setAll(result, i -> array[i]);
