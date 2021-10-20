@@ -289,7 +289,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onWatermark(WatermarkPhysicalRel rel) {
-        throw QueryException.error("Watermark function cannot be applied to input table");
+        throw QueryException.error("Ordering function cannot be applied to input table");
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {

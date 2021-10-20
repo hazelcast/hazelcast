@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -40,6 +41,8 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
@@ -70,30 +73,26 @@ final class WatermarkRules {
         private FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> toEventTimePolicyProvider(
                 LogicalTableFunctionScan function
         ) {
-            int timestampFieldIndex = timestampFieldIndex(function);
-            Expression<SqlDaySecondInterval> lagExpression = lagExpression(function);
-            return context -> {
-                long lagMillis = lagExpression.eval(EmptyRow.INSTANCE, context).getMillis();
-                return EventTimePolicy.eventTimePolicy(
-                        row -> ((OffsetDateTime) row[timestampFieldIndex]).toInstant().toEpochMilli(),
-                        (row, timestamp) -> row,
-                        WatermarkPolicy.limitingLag(lagMillis),
-                        0,
-                        0,
-                        0
-                );
-            };
+            int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
+            Expression<?> variationExpression = variationExpression(function);
+            return context -> EventTimePolicy.eventTimePolicy(
+                    row -> extractOrderingMillis(row[orderingColumnFieldIndex]),
+                    (row, timestamp) -> row,
+                    WatermarkPolicy.limitingLag(extractVariationMillis(variationExpression, context)),
+                    0,
+                    0,
+                    0
+            );
         }
 
-        private int timestampFieldIndex(LogicalTableFunctionScan function) {
-            return ((RexInputRef) ((RexCall) WatermarkRules.extractOperand(function, 1)).getOperands().get(0)).getIndex();
+        private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {
+            return ((RexInputRef) ((RexCall) extractOperand(function, 1)).getOperands().get(0)).getIndex();
         }
 
-        @SuppressWarnings("unchecked")
-        private Expression<SqlDaySecondInterval> lagExpression(LogicalTableFunctionScan function) {
+        private Expression<?> variationExpression(LogicalTableFunctionScan function) {
             QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) function.getCluster()).getParameterMetadata();
             RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
-            return (Expression<SqlDaySecondInterval>) WatermarkRules.extractOperand(function, 2).accept(visitor);
+            return extractOperand(function, 2).accept(visitor);
         }
     };
 
@@ -133,5 +132,24 @@ final class WatermarkRules {
 
     private static RexNode extractOperand(LogicalTableFunctionScan function, int index) {
         return ((RexCall) function.getCall()).getOperands().get(index);
+    }
+
+    private static long extractOrderingMillis(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof OffsetDateTime) {
+            return ((OffsetDateTime) value).toInstant().toEpochMilli();
+        } else if (value instanceof LocalDateTime) {
+            return QueryDataType.TIMESTAMP.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
+        } else if (value instanceof LocalDate) {
+            return QueryDataType.DATE.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
+        } else {
+            return QueryDataType.TIME.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
+        }
+    }
+
+    private static long extractVariationMillis(Expression<?> expression, ExpressionEvalContext evalContext) {
+        Object variation = expression.eval(EmptyRow.INSTANCE, evalContext);
+        return variation instanceof Number ? ((Number) variation).longValue() : ((SqlDaySecondInterval) variation).getMillis();
     }
 }

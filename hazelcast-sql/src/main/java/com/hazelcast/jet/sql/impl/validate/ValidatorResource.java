@@ -49,8 +49,11 @@ public interface ValidatorResource {
     @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
     ExInst<SqlValidatorException> streamingSourceOnWrongSide();
 
-    @BaseMessage("Multiple watermarks are not supported")
-    ExInst<SqlValidatorException> multipleWatermarksNotSupported();
+    @BaseMessage("Multiple ordering functions are not supported")
+    ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();
+
+    @BaseMessage("You must specify single ordering column")
+    ExInst<SqlValidatorException> mustUseSingleOrderingColumn();
 
     @BaseMessage("UPDATE FROM SELECT not supported")
     ExInst<SqlValidatorException> updateFromSelectNotSupported();

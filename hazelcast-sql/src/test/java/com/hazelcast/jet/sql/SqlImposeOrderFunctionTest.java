@@ -18,18 +18,38 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.date;
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.time;
 import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestamp;
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestampTz;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(JUnitParamsRunner.class)
 public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -40,27 +60,98 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         sqlService = instance().getSql();
     }
 
-    @Test
-    public void test_watermarks() {
-        String name = createTable(
-                row(timestamp(0), "Alice"),
-                row(timestamp(1), null),
-                row(timestamp(2), "Bob")
-        );
-
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))",
-                asList(
-                        new Row(timestamp(0), "Alice"),
-                        new Row(timestamp(1), null),
-                        new Row(timestamp(2), "Bob")
-                )
-        );
+    @SuppressWarnings("unused")
+    private Object[] validArguments() {
+        return new Object[]{
+                new Object[]{
+                        TINYINT,
+                        "1",
+                        row((byte) 0), row((Object) null), row((byte) 2)
+                },
+                new Object[]{
+                        SMALLINT,
+                        "2",
+                        row((short) 0), row((Object) null), row((short) 2)
+                },
+                new Object[]{
+                        INTEGER,
+                        "3",
+                        row(0), row((Object) null), row(2)
+                },
+                new Object[]{
+                        BIGINT,
+                        "4",
+                        row(0L), row((Object) null), row(2L)
+                },
+                new Object[]{
+                        TIME,
+                        "INTERVAL '0.005' SECOND",
+                        row(time(0)), row((Object) null), row(time(2))
+                },
+                new Object[]{
+                        DATE,
+                        "INTERVAL '0.006' SECOND",
+                        row(date(0)), row((Object) null), row(date(2))
+                },
+                new Object[]{
+                        TIMESTAMP,
+                        "INTERVAL '0.007' SECOND",
+                        row(timestamp(0)), row((Object) null), row(timestamp(2))
+                },
+                new Object[]{
+                        TIMESTAMP_WITH_TIME_ZONE,
+                        "INTERVAL '0.008' SECOND",
+                        row(timestampTz(0)), row((Object) null), row(timestampTz(2))
+                },
+        };
     }
 
     @Test
-    public void test_multipleWatermarks() {
+    @Parameters(method = "validArguments")
+    public void test_validArguments(QueryDataTypeFamily timestampType, String maxLag, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType), values);
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))",
+                Arrays.stream(values).map(Row::new).collect(toList())
+        );
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] invalidArguments() {
+        return new Object[]{
+                new Object[]{TINYINT, "INTERVAL '0.001' SECOND"},
+                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND"},
+                new Object[]{INTEGER, "INTERVAL '0.003' SECOND"},
+                new Object[]{BIGINT, "INTERVAL '0.004' SECOND"},
+                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND"},
+                new Object[]{DECIMAL, "6"},
+                new Object[]{REAL, "INTERVAL '0.007' SECOND"},
+                new Object[]{REAL, "8"},
+                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND"},
+                new Object[]{DOUBLE, "10"},
+                new Object[]{TIME, "11"},
+                new Object[]{DATE, "12"},
+                new Object[]{TIMESTAMP, "13"},
+                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14"},
+        };
+    }
+
+    @Test
+    @Parameters(method = "invalidArguments")
+    public void test_invalidArguments(QueryDataTypeFamily timestampType, String maxLag) {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))")
+        ).hasMessageContaining("Cannot apply 'IMPOSE_ORDER' function to [ROW, COLUMN_LIST");
+    }
+
+    @Test
+    public void test_layeredInvocations() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute(
@@ -76,15 +167,27 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))"
-        )).hasMessageContaining("Multiple watermarks are not supported");
+        )).hasMessageContaining("Multiple ordering functions are not supported");
     }
 
     @Test
-    public void test_watermarksWithFilteredInput() {
+    public void test_singleColumn() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(), INTERVAL '0.001' SECOND))")
+        ).hasMessageContaining("You must specify single ordering column");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
+        ).hasMessageContaining("You must specify single ordering column");
+    }
+
+    @Test
+    public void test_filteredInput() {
         String name = createTable(
-                row(timestamp(0), "Alice"),
-                row(timestamp(1), null),
-                row(timestamp(2), "Bob")
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Bob")
         );
 
         assertRowsEventuallyInAnyOrder(
@@ -94,16 +197,16 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
                         "))",
-                singletonList(new Row(timestamp(2), "Bob"))
+                singletonList(new Row(timestampTz(2), "Bob"))
         );
     }
 
     @Test
-    public void test_watermarksWithProjectedInput() {
+    public void test_projectedInput() {
         String name = createTable(
-                row(timestamp(0), "Alice"),
-                row(timestamp(1), null),
-                row(timestamp(2), "Bob")
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Bob")
         );
 
         assertRowsEventuallyInAnyOrder(
@@ -114,19 +217,19 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , INTERVAL '0.001' SECOND" +
                         "))",
                 asList(
-                        new Row(timestamp(0)),
-                        new Row(timestamp(1)),
-                        new Row(timestamp(2))
+                        new Row(timestampTz(0)),
+                        new Row(timestampTz(1)),
+                        new Row(timestampTz(2))
                 )
         );
     }
 
     @Test
-    public void test_watermarksWithFilteredAndProjectedInput() {
+    public void test_filteredAndProjectedInput() {
         String name = createTable(
-                row(timestamp(0), "Alice"),
-                row(timestamp(1), null),
-                row(timestamp(2), "Bob")
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Bob")
         );
 
         assertRowsEventuallyInAnyOrder(
@@ -136,12 +239,12 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
                         "))",
-                singletonList(new Row(timestamp(2)))
+                singletonList(new Row(timestampTz(2)))
         );
     }
 
     @Test
-    public void test_watermarksWithProjectionThatCannotBePushedDown() {
+    public void test_projectionThatCannotBePushedDown() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute(
@@ -151,28 +254,28 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.001' SECOND" +
                         "))"
-        )).hasMessageContaining("Watermark function cannot be applied to input table");
+        )).hasMessageContaining("Ordering function cannot be applied to input table");
     }
 
     @Test
     public void test_namedParameters() {
         String name = createTable(
-                row(timestamp(0), "Alice"),
-                row(timestamp(1), null),
-                row(timestamp(2), "Bob")
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Bob")
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
                         "TABLE(IMPOSE_ORDER(" +
-                        "  max_lag => INTERVAL '0.001' SECOND" +
+                        "  variation => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE " + name + ")" +
-                        "  , time_column => DESCRIPTOR(ts)" +
+                        "  , \"column\" => DESCRIPTOR(ts)" +
                         "))",
                 asList(
-                        new Row(timestamp(0), "Alice"),
-                        new Row(timestamp(1), null),
-                        new Row(timestamp(2), "Bob")
+                        new Row(timestampTz(0), "Alice"),
+                        new Row(timestampTz(1), null),
+                        new Row(timestampTz(2), "Bob")
                 )
         );
     }

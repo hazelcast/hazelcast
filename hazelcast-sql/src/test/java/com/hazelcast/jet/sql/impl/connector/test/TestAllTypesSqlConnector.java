@@ -148,7 +148,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
-            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+            throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
 
         BatchSource<Object[]> source = SourceBuilder

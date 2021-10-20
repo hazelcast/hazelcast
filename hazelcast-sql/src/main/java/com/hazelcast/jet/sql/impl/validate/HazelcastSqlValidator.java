@@ -183,15 +183,15 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
 
-        if (countWatermarks(node) > 1) {
-            throw newValidationError(node, RESOURCE.multipleWatermarksNotSupported());
+        if (countOrderingFunctions(node) > 1) {
+            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
         }
 
         isInfiniteRows = containsStreamingSource(node);
     }
 
-    private static int countWatermarks(SqlNode node) {
-        class WatermarksCounter extends SqlBasicVisitor<Void> {
+    private static int countOrderingFunctions(SqlNode node) {
+        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
             int count;
 
             @Override
@@ -204,9 +204,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             }
         }
 
-        WatermarksCounter visitor = new WatermarksCounter();
-        node.accept(visitor);
-        return visitor.count;
+        OrderingFunctionCounter counter = new OrderingFunctionCounter();
+        node.accept(counter);
+        return counter.count;
     }
 
     @Override

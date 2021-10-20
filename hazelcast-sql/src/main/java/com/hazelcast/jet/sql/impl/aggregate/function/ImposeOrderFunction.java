@@ -21,9 +21,10 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
+import com.hazelcast.jet.sql.impl.validate.operand.AnyOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.DescriptorOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.RowOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operand.SqlDaySecondIntervalOperandChecker;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -31,6 +32,7 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlValidator;
@@ -46,20 +48,8 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, RowOperandChecker.INSTANCE),
-            new HazelcastTableFunctionParameter(
-                    1,
-                    "time_column",
-                    SqlTypeName.COLUMN_LIST,
-                    false,
-                    DescriptorOperandChecker.INSTANCE
-            ),
-            new HazelcastTableFunctionParameter(
-                    2,
-                    "max_lag",
-                    SqlTypeName.INTERVAL_SECOND,
-                    false,
-                    SqlDaySecondIntervalOperandChecker.INSTANCE
-            )
+            new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, DescriptorOperandChecker.INSTANCE),
+            new HazelcastTableFunctionParameter(2, "variation", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
     private static final SqlReturnTypeInference RETURN_TYPE_INFERENCE = binding -> {
@@ -86,10 +76,11 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
         protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
             HazelcastSqlValidator validator = binding.getValidator();
             SqlNode input = binding.operand(0);
+            SqlNode variation = binding.operand(2);
             boolean result = binding.getCall().getOperandList().stream()
                     .filter(operand -> validator.deriveType(binding.getScope(), operand).getSqlTypeName() == COLUMN_LIST)
                     .map(operand -> operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand)
-                    .allMatch(operand -> checkTimeColumnDescriptorOperand(validator, input, (SqlCall) operand));
+                    .allMatch(operand -> checkColumnOperand(validator, input, (SqlCall) operand, variation));
 
             if (!result && throwOnFailure) {
                 throw binding.newValidationSignatureError();
@@ -97,28 +88,45 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
             return result;
         }
 
-        private static boolean checkTimeColumnDescriptorOperand(
-                SqlValidator validator,
-                SqlNode input,
-                SqlCall descriptor
-        ) {
+        private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall descriptor, SqlNode variation) {
+            SqlIdentifier descriptorIdentifier = checkDescriptorCardinality(descriptor);
+            RelDataTypeField columnField = checkColumnName(validator, input, descriptorIdentifier);
+            return checkColumnType(validator, columnField, variation);
+        }
+
+        private static SqlIdentifier checkDescriptorCardinality(SqlCall descriptor) {
             List<SqlNode> descriptorIdentifiers = descriptor.getOperandList();
             if (descriptorIdentifiers.size() != 1) {
-                return false;
+                throw SqlUtil.newContextException(
+                        descriptor.getParserPosition(),
+                        ValidatorResource.RESOURCE.mustUseSingleOrderingColumn()
+                );
             }
+            return (SqlIdentifier) descriptorIdentifiers.get(0);
+        }
 
+        private static RelDataTypeField checkColumnName(SqlValidator validator, SqlNode input, SqlIdentifier descriptorIdentifier) {
             SqlNameMatcher matcher = validator.getCatalogReader().nameMatcher();
-
-            SqlIdentifier timeColumnIdentifier = (SqlIdentifier) descriptorIdentifiers.get(0);
-            String timeColumnName = timeColumnIdentifier.getSimple();
-            RelDataTypeField timeColumnField = validator.getValidatedNodeType(input).getFieldList().stream()
-                    .filter(field -> matcher.matches(field.getName(), timeColumnName))
+            String columnName = descriptorIdentifier.getSimple();
+            return validator.getValidatedNodeType(input).getFieldList().stream()
+                    .filter(field -> matcher.matches(field.getName(), columnName))
                     .findFirst()
                     .orElseThrow(() -> SqlUtil.newContextException(
-                            timeColumnIdentifier.getParserPosition(),
-                            RESOURCE.unknownIdentifier(timeColumnName)
+                            descriptorIdentifier.getParserPosition(),
+                            RESOURCE.unknownIdentifier(columnName)
                     ));
-            return timeColumnField.getType().getSqlTypeName() == SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
+        }
+
+        private static boolean checkColumnType(SqlValidator validator, RelDataTypeField columnField, SqlNode variation) {
+            SqlTypeName timeColumnType = columnField.getType().getSqlTypeName();
+            SqlTypeName variationType = validator.getValidatedNodeType(variation).getSqlTypeName();
+            if (SqlTypeName.INT_TYPES.contains(timeColumnType)) {
+                return SqlTypeName.INT_TYPES.contains(variationType);
+            } else if (SqlTypeName.DATETIME_TYPES.contains(timeColumnType)) {
+                return variationType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
+            } else {
+                return false;
+            }
         }
     }
 }

@@ -135,7 +135,7 @@ public class FileSqlConnector implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
-            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
         FileTable table = (FileTable) table0;

@@ -126,9 +126,6 @@ public class KafkaSqlConnector implements SqlConnector {
     ) {
         KafkaTable table = (KafkaTable) table0;
 
-        EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
-                ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(null);
         return dag.newUniqueVertex(
                 table.toString(),
                 ProcessorMetaSupplier.of(
@@ -136,7 +133,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
                                 table.topicName(),
-                                eventTimePolicy,
+                                eventTimePolicyProvider,
                                 table.paths(),
                                 table.types(),
                                 table.keyQueryDescriptor(),
