@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.typeinference;
 
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInference {
 
@@ -28,15 +27,15 @@ public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInf
     public void inferOperandTypes(final SqlCallBinding callBinding,
                                   final RelDataType returnType,
                                   final RelDataType[] operandTypes) {
-        final RelDataType firstOperandType = callBinding.getOperandType(0);
+        for (int i = 0; i < callBinding.getOperandCount(); i++) {
+            operandTypes[i] = callBinding.getOperandType(i);
+            if (operandTypes[i].getSqlTypeName() == SqlTypeName.NULL) {
+                operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
+            }
+        }
 
-        operandTypes[0] = HazelcastTypeUtils.isJsonType(firstOperandType)
-                ? HazelcastJsonType.create(firstOperandType.isNullable())
-                : callBinding.getTypeFactory().createSqlType(firstOperandType.getSqlTypeName());
-
-        for (int i = 1; i < callBinding.getOperandCount(); i++) {
-            operandTypes[i] = callBinding.getTypeFactory()
-                    .createSqlType(callBinding.getOperandType(i).getSqlTypeName());
+        if (operandTypes[0].getSqlTypeName() == SqlTypeName.NULL) {
+            operandTypes[0] = callBinding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
         }
     }
 }

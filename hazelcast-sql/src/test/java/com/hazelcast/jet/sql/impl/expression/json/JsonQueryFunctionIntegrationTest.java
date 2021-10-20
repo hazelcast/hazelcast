@@ -179,13 +179,11 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_nullLiteral() {
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [UNKNOWN, UNKNOWN, SYMBOL, SYMBOL, SYMBOL]");
-        assertThatThrownBy(() -> query("SELECT JSON_QUERY('null', null)"))
+                .hasMessageContaining("JSONPath expression can not be null");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [VARCHAR, UNKNOWN, SYMBOL, SYMBOL, SYMBOL]");
-        assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, 'null')"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Cannot apply 'JSON_QUERY' function to [UNKNOWN, VARCHAR, SYMBOL, SYMBOL, SYMBOL]");
+                .hasMessageContaining("JSONPath expression can not be null");
+        assertNull(querySingleValue("SELECT JSON_QUERY(null, 'foo')"));
     }
 
     protected void initComplexObject() {
@@ -201,9 +199,6 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public static class ObjectWithJson implements Serializable {
         private Long id;
         private String jsonValue;
-
-        public ObjectWithJson() {
-        }
 
         public ObjectWithJson(final Long id, final String jsonValue) {
             this.id = id;

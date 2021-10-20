@@ -90,6 +90,12 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
+        // first evaluate the required parameter
+        final String path = (String) operands[1].eval(row, context);
+        if (path == null) {
+            throw QueryException.error("JSONPath expression can not be null");
+        }
+
         // needed for further checks, can be a dynamic expression, therefore can not be inlined as part of function args
         final Object defaultOnEmpty = operands[2].eval(row, context);
         final Object defaultOnError = operands[3].eval(row, context);
@@ -100,11 +106,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 : (String) operand0;
         if (isNullOrEmpty(json)) {
             return onEmptyResponse(onEmpty, defaultOnEmpty);
-        }
-
-        final String path = (String) operands[1].eval(row, context);
-        if (path == null) {
-            throw QueryException.error("JSONPath expression can not be null");
         }
 
         final JsonPath jsonPath;
