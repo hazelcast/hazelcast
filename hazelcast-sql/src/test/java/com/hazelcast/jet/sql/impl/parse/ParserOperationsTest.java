@@ -117,13 +117,19 @@ public class ParserOperationsTest extends SqlTestSupport {
     }
 
     @Test
+    public void testExists() {
+        checkSuccess("SELECT a, b FROM t WHERE EXISTS(SELECT 1 FROM t tt WHERE t.a = tt.a)");
+        checkSuccess("SELECT a, b FROM t WHERE EXISTS(SELECT * FROM t tt WHERE t.a = tt.a)");
+    }
+
+    @Test
     public void testSelectScalar() {
-        checkSuccess("SELECT (SELECT a FROM t) FROM t");
+        checkFailure("SELECT (SELECT a FROM t) FROM t", "SCALAR QUERY not supported");
     }
 
     @Test
     public void testWhereScalar() {
-        checkSuccess("SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL");
+        checkFailure("SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL", "SCALAR QUERY not supported");
     }
 
     @Test
