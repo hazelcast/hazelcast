@@ -781,6 +781,14 @@ public class SqlJoinTest {
                     ),
                     emptyList()
             );
+
+            assertRows("SELECT * FROM " + mainName + " m " +
+                            "WHERE " +
+                            whereClause() + " (SELECT * FROM " + subName + " s WHERE "
+                            + whereClause() + " (SELECT * FROM " + subSubName + " t WHERE t.a = s.v )) LIMIT 0",
+                    emptyList(),
+                    emptyList()
+            );
         }
 
         @Test

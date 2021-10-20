@@ -89,13 +89,13 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        while (offset > 0 && inbox.poll() != null) {
-            offset--;
-        }
-
         if (limit <= 0) {
             done.compareAndSet(null, new ResultLimitReachedException());
             ensureNotDone();
+        }
+
+        while (offset > 0 && inbox.poll() != null) {
+            offset--;
         }
 
         for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
