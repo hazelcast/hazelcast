@@ -14,28 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.SetOp;
 import org.apache.calcite.rel.core.Union;
 
 import java.util.List;
 
-public class UnionLogicalRel extends Union implements LogicalRel {
+public class UnionPhysicalRel extends Union implements PhysicalRel {
 
-    UnionLogicalRel(
+    UnionPhysicalRel(
             RelOptCluster cluster,
-            RelTraitSet traits,
+            RelTraitSet traitSet,
             List<RelNode> inputs,
             boolean all
     ) {
-        super(cluster, traits, inputs, all);
+        super(cluster, traitSet, inputs, all);
     }
 
     @Override
-    public final Union copy(RelTraitSet traitSet, List<RelNode> inputs, boolean all) {
-        return new UnionLogicalRel(getCluster(), traitSet, inputs, all);
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        return ((PhysicalRel) inputs.get(0)).schema(parameterMetadata);
+    }
+
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        return visitor.onUnion(this);
+    }
+
+    @Override
+    public SetOp copy(RelTraitSet traitSet, List<RelNode> inputs, boolean all) {
+        return new UnionPhysicalRel(getCluster(), traitSet, inputs, all);
     }
 }

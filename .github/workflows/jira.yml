@@ -1,0 +1,58 @@
+name: Create Issue in Jira when to-jira label added
+
+on:
+  issues:
+    types: labeled
+
+jobs:
+  jira:
+    if: ${{ github.event.label.name == 'to-jira' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Jira Login
+        id: login
+        uses: atlassian/gajira-login@v2.0.0
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Create Jira issue
+        id: create_jira_issue
+        uses: atlassian/gajira-create@v2.0.1
+        with:
+          project: HZ
+          issuetype: Task
+          summary: | 
+             ${{ github.event.issue.title }} [GH#${{ github.event.issue.number }}]
+          description: |
+            {panel}
+            *Created By:* ${{ github.event.issue.user.login }}
+            [Github permalink|${{ github.event.issue.html_url }}]
+            {panel}
+            
+          fields: '{"labels": ["from-gh"]}'
+
+      - name: Update title of GitHub issue
+        uses: actions/github-script@v4.0.2
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const newTitle = `${{ github.event.issue.title }} [${{ steps.create_jira_issue.outputs.issue }}]`
+            github.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: newTitle
+            })
+      - name: Add comment to GitHub issue
+        uses: actions/github-script@v4.0.2
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Internal Jira issue: [${{ steps.create_jira_issue.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.create_jira_issue.outputs.issue }})'
+            })

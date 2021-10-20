@@ -86,10 +86,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expirationTimeAfterPut = getExpirationTime(map, 1);
 
         // access
-        for (int i = 0; i < 2; i++) {
-            sleepSeconds(2);
-            map.get(1);
-        }
+        sleepSeconds(1);
+        map.get(1);
 
         long expirationTimeAfterGet = getExpirationTime(map, 1);
 

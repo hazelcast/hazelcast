@@ -47,6 +47,9 @@ public final class PhysicalRules {
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
 
+                // Union rules
+                UnionPhysicalRule.INSTANCE,
+
                 // Value rules
                 ValuesPhysicalRule.INSTANCE,
 
