@@ -32,7 +32,6 @@ import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
