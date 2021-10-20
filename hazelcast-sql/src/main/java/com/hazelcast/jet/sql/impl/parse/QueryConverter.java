@@ -61,11 +61,10 @@ public class QueryConverter {
     private static final SqlToRelConverter.Config CONFIG;
 
     static {
-        CONFIG = SqlToRelConverter.configBuilder()
+        CONFIG = SqlToRelConverter.config()
                 .withExpand(EXPAND)
                 .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
-                .withTrimUnusedFields(TRIM_UNUSED_FIELDS)
-                .build();
+                .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
     }
 
     private final SqlValidator validator;
