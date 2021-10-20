@@ -26,7 +26,7 @@ import com.hazelcast.internal.serialization.Data;
  * <p>
  * There are different types of OutboundFrame:
  * <ol>
- * <li> {@link Packet}: for member to member and old-client to member communication</li>
+ * <li> {@link Packet}: for member to member communication</li>
  * <li> {@link TextCommand}: for memcached and REST communication</li>
  * <li> {@link ClientMessage}: for the new client to member communication</li>
  * </ol>
