@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -42,6 +43,7 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -195,7 +197,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     Object getForUpdateInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis(), true);
-        addUnlockTransactionRecord(key, versionedValue.version);
+        addUnlockTransactionRecord(key, versionedValue.version, TxnReservedCapacityCounter.NULL_UUID);
         return versionedValue.value;
     }
 
@@ -321,9 +323,13 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     }
 
     private void addUnlockTransactionRecord(Data key, long version) {
+        addUnlockTransactionRecord(key, version, tx.getTxnId());
+    }
+
+    private void addUnlockTransactionRecord(Data key, long version, UUID txnId) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
-                operation, tx.getOwnerUuid(), tx.getTxnId(), NearCachingHook.EMPTY_HOOK));
+                operation, tx.getOwnerUuid(), txnId, NearCachingHook.EMPTY_HOOK));
     }
 
     /**

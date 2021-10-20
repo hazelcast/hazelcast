@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.MapService;
@@ -66,6 +67,55 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @Test
+    public void get_for_update_does_not_increment_node_wide_used_capacity() {
+        String mapName = "map";
+        long maxWbqCapacity = 100;
+
+        Config config = getConfig(mapName, maxWbqCapacity);
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        TransactionContext context = newTransactionContext(node, TWO_PHASE);
+        context.beginTransaction();
+
+        TransactionalMap map = context.getMap(mapName);
+
+        map.getForUpdate("key1");
+        map.getForUpdate("key2");
+
+        context.commitTransaction();
+
+        assertEquals(0, getNodeWideUsedCapacity(node));
+    }
+
+    @Test
+    public void values_does_not_increment_node_wide_used_capacity() {
+        String mapName = "map";
+        long maxWbqCapacity = 100;
+
+        Config config = getConfig(mapName, maxWbqCapacity);
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        IMap entries = node.getMap(mapName);
+        for (int i = 0; i < 100; i++) {
+            entries.set(i, i);
+        }
+
+        // what map-store insert of entries at prev step
+        assertTrueEventually(() -> assertEquals(0, getNodeWideUsedCapacity(node)));
+
+        TransactionContext context = newTransactionContext(node, TWO_PHASE);
+        context.beginTransaction();
+
+        TransactionalMap map = context.getMap(mapName);
+
+        map.values();
+
+        context.commitTransaction();
+
+        assertEquals(0, getNodeWideUsedCapacity(node));
+    }
 
     @Test
     public void prepare_step_throws_reached_max_size_exception_when_two_phase() {
