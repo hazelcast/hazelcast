@@ -197,7 +197,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final String name;
         private final String mappingName;
         private final String[] attributes;
-        Map<String, String> options;
+        private final Map<String, String> options;
         private final IndexType indexType;
         private final boolean replace;
         private final boolean ifNotExists;

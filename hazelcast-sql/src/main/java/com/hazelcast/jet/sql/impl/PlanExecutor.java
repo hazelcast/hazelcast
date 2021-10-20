@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -32,7 +33,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
-import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -74,6 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -118,14 +119,17 @@ public class PlanExecutor {
         IndexConfig indexConfig = new IndexConfig(plan.indexType(), plan.attributes())
                 .setName(plan.indexName());
 
-//        if (!plan.options().isEmpty()) {
-//            Map<String, String> options = plan.options();
-//            BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
-//            bitmapIndexOptions.setUniqueKey(options.get("BITMAP_UNIQUE_KEY"));
-//            bitmapIndexOptions.setUniqueKeyTransformation(
-//                    options.get("BITMAP_UNIQUE_KEY_TRANSFORMATION")
-//            );
-//        }
+        if (plan.indexType().equals(IndexType.BITMAP)) {
+            Map<String, String> options = plan.options();
+            String uniqueKey = options.get("unique_key");
+            String uniqueKeyTransform = options.get("unique_key_transformation");
+
+            BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
+            bitmapIndexOptions.setUniqueKey(uniqueKey);
+            bitmapIndexOptions.setUniqueKeyTransformation(UniqueKeyTransformation.fromName(uniqueKeyTransform));
+
+            indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
+        }
 
         hazelcastInstance.getMap(mapping.externalName()).addIndex(indexConfig);
 

@@ -37,14 +37,27 @@ public interface ParserResource {
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
 
+    @BaseMessage("Index attribute ''{0}'' specified more than once")
+    ExInst<SqlValidatorException> duplicateIndexAttribute(String columnName);
+
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
+
+    @BaseMessage("''{0}'' option missing in options list")
+    ExInst<SqlValidatorException> absentOption(String optionName);
 
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();
+
+    @BaseMessage("Unknown options for {0} index. Only BITMAP index requires an options")
+    ExInst<SqlValidatorException> unsupportedIndexType(String indexType);
+
+    @BaseMessage("Can't create BITMAP index : bitmap index config is empty. " +
+            "BITMAP index requires 'unique_key' and 'unique_key_transformation options")
+    ExInst<SqlValidatorException> bitmapIndexConfigEmpty();
 
     @BaseMessage("Unsupported value for {0}: {1}")
     ExInst<SqlValidatorException> processingGuaranteeBadValue(String key, String value);

@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
@@ -42,10 +43,18 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
+ * TYPE index_type
+ * [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
+ */
 public class SqlCreateIndex extends SqlCreate {
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("CREATE INDEX", SqlKind.CREATE_INDEX);
+
+    private static final String UNIQUE_KEY = "unique_key";
+    private static final String UNIQUE_KEY_TRANSFORMATION = "unique_key_transformation";
 
     private final SqlIdentifier name;
     private final SqlIdentifier mappingName;
@@ -75,8 +84,8 @@ public class SqlCreateIndex extends SqlCreate {
         return columns.getList().stream().filter(Objects::nonNull).map(SqlNode::toString);
     }
 
-    public String type() {
-        return type.toString();
+    public IndexType type() {
+        return getIndexType();
     }
 
     public Map<String, String> options() {
@@ -166,8 +175,18 @@ public class SqlCreateIndex extends SqlCreate {
         for (SqlNode column : columns.getList()) {
             String name = ((SqlIdentifier) requireNonNull(column)).getSimple();
             if (!columnNames.add(name)) {
-                throw validator.newValidationError(column, RESOURCE.duplicateColumn(name));
+                throw validator.newValidationError(column, RESOURCE.duplicateIndexAttribute(name));
             }
+        }
+
+        String stringType = type.toString().toLowerCase();
+        IndexType indexType = getIndexType();
+        if (!indexType.equals(IndexType.BITMAP) && !options.getList().isEmpty()) {
+            throw validator.newValidationError(type, RESOURCE.unsupportedIndexType(stringType));
+        }
+
+        if (indexType.equals(IndexType.BITMAP) && options.getList().isEmpty()) {
+            throw validator.newValidationError(type, RESOURCE.bitmapIndexConfigEmpty());
         }
 
         Set<String> optionNames = new HashSet<>();
@@ -178,5 +197,34 @@ public class SqlCreateIndex extends SqlCreate {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
             }
         }
+
+        if (indexType.equals(IndexType.BITMAP) && !optionNames.contains(UNIQUE_KEY)) {
+            throw validator.newValidationError(options, RESOURCE.absentOption(UNIQUE_KEY));
+        }
+
+        if (indexType.equals(IndexType.BITMAP) && !optionNames.contains(UNIQUE_KEY_TRANSFORMATION)) {
+            throw validator.newValidationError(options, RESOURCE.absentOption(UNIQUE_KEY_TRANSFORMATION));
+        }
+    }
+
+    private IndexType getIndexType() {
+        String indexType = type.toString().toLowerCase();
+        IndexType type;
+        switch (indexType) {
+            case "sorted":
+                type = IndexType.SORTED;
+                break;
+            case "hash":
+                type = IndexType.HASH;
+                break;
+            case "bitmap":
+                type = IndexType.BITMAP;
+                break;
+            default:
+                throw QueryException.error(
+                        "Can't create index : wrong index type. Only HASH, SORTED and BITMAP indices are supported."
+                );
+        }
+        return type;
     }
 }

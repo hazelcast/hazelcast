@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -42,9 +41,9 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
@@ -296,24 +295,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateIndexPlan(PlanKey planKey, SqlCreateIndex sqlCreateIndex) {
-        String indexType = sqlCreateIndex.type().toLowerCase();
-        IndexType type;
-        switch (indexType) {
-            case "sorted":
-                type = IndexType.SORTED;
-                break;
-            case "hash":
-                type = IndexType.HASH;
-                break;
-            default:
-                throw new AssertionError("Wrong index type name " + indexType);
-        }
-
         return new CreateIndexPlan(
                 planKey,
                 sqlCreateIndex.indexName(),
                 sqlCreateIndex.mappingName(),
-                type,
+                sqlCreateIndex.type(),
                 sqlCreateIndex.columns().collect(toList()),
                 sqlCreateIndex.options(),
                 sqlCreateIndex.getReplace(),
