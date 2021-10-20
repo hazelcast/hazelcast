@@ -533,7 +533,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     /**
      * Returns whether member with given identity (either {@code UUID} or {@code Address}
-     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     * depending on Persistence is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
      * @param uuid    Uuid of the missing member

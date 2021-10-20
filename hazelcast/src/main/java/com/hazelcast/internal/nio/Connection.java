@@ -100,7 +100,7 @@ public interface Connection {
     InetAddress getInetAddress();
 
     /**
-     * Writes a outbound frame so it can be received by the other side of the connection. No guarantees are
+     * Writes an outbound frame, so it can be received by the other side of the connection. No guarantees are
      * made that the frame is going to be received on the other side.
      * <p>
      * The frame could be stored in an internal queue before it actually is written, so this call
@@ -113,7 +113,7 @@ public interface Connection {
     boolean write(OutboundFrame frame);
 
     /**
-     * Writes an outbound frame so it can be received by the other side of the connection. Frame delivery is ordered
+     * Writes an outbound frame, so it can be received by the other side of the connection. Frame delivery is ordered
      * with respect to other calls to this method on the same connection instance. No guarantees are made that the frame
      * is going to be received on the other side. However, if the frame is delivered, then all previous ordered frames
      * sent through the same connection instance is guaranteed to be delivered.

@@ -77,7 +77,7 @@ public interface ServerConnectionManager
      *
      * @param remoteAddress - The remote address to register the connection under
      * @param connection    - The connection to be registered
-     * @param planeIndex the the index of the plane
+     * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
     boolean register(Address remoteAddress, ServerConnection connection, int planeIndex);

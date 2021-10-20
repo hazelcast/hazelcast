@@ -17,20 +17,21 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
- * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
- * for non blocking IO using {@link java.nio.channels.Selector} in combination
- * with a non blocking {@link SocketChannel}.
+ * A {@link Channel} implementation tailored for non-blocking IO using
+ * {@link Selector} in combination with a non-blocking {@link SocketChannel}.
  */
 public final class NioChannel extends AbstractChannel {
 
@@ -93,7 +94,7 @@ public final class NioChannel extends AbstractChannel {
     public void start() {
         try {
             // before starting the channel, the socketChannel need to be put in
-            // non blocking mode since that is mandatory for the NioChannel.
+            // non-blocking mode since that is mandatory for the NioChannel.
             socketChannel.configureBlocking(false);
             channelInitializer.initChannel(this);
         } catch (Exception e) {
