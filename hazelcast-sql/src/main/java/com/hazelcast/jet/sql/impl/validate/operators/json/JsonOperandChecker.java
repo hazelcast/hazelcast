@@ -17,13 +17,19 @@
 package com.hazelcast.jet.sql.impl.validate.operators.json;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.OperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class JsonFunctionUtil {
-    private JsonFunctionUtil() { }
-    public static boolean checkJsonOperandType(final HazelcastCallBinding callBinding,
+public final class JsonOperandChecker implements OperandChecker {
+    public static JsonOperandChecker INSTANCE = new JsonOperandChecker();
+
+    private JsonOperandChecker() {
+    }
+
+    @Override
+    public boolean check(final HazelcastCallBinding callBinding,
                                                final boolean throwOnFailure,
                                                final int operandIndex) {
         final RelDataType operandType = callBinding.getOperandType(operandIndex);

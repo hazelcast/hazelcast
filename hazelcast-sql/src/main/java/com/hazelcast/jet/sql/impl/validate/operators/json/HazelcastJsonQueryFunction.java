@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.validate.operators.json;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.OperandCheckerProgram;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.JsonFunctionOperandTypeInference;
@@ -25,8 +26,6 @@ import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-
-import static com.hazelcast.jet.sql.impl.validate.operators.json.JsonFunctionUtil.checkJsonOperandType;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class HazelcastJsonQueryFunction extends HazelcastFunction {
@@ -44,11 +43,13 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
-        return checkJsonOperandType(callBinding, throwOnFailure, 0)
-                && TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, 1)
-                && TypedOperandChecker.SYMBOL.check(callBinding, throwOnFailure, 2)
-                && TypedOperandChecker.SYMBOL.check(callBinding, throwOnFailure, 3)
-                && TypedOperandChecker.SYMBOL.check(callBinding, throwOnFailure, 4);
+        return new OperandCheckerProgram(
+                JsonOperandChecker.INSTANCE,
+                TypedOperandChecker.VARCHAR,
+                TypedOperandChecker.SYMBOL,
+                TypedOperandChecker.SYMBOL,
+                TypedOperandChecker.SYMBOL
+        ).check(callBinding, throwOnFailure);
     }
 
     @Override
