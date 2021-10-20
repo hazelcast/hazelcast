@@ -105,7 +105,11 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
             return (SqlIdentifier) descriptorIdentifiers.get(0);
         }
 
-        private static RelDataTypeField checkColumnName(SqlValidator validator, SqlNode input, SqlIdentifier descriptorIdentifier) {
+        private static RelDataTypeField checkColumnName(
+                SqlValidator validator,
+                SqlNode input,
+                SqlIdentifier descriptorIdentifier
+        ) {
             SqlNameMatcher matcher = validator.getCatalogReader().nameMatcher();
             String columnName = descriptorIdentifier.getSimple();
             return validator.getValidatedNodeType(input).getFieldList().stream()
