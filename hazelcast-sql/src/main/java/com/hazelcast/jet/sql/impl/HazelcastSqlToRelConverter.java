@@ -105,7 +105,6 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
-    private static final int JSON_VALUE_EXTENDED_SYNTAX_MIN_TOKENS = 4;
 
     /**
      * See {@link #convertCall(SqlNode, Blackboard)} for more information.
@@ -406,22 +405,11 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RexNode defaultValueOnError = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
         RexNode defaultValueOnEmpty = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
 
-        if (call.operandCount() == 2) {
-            return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
-                    target,
-                    path,
-                    defaultValueOnEmpty,
-                    defaultValueOnError,
-                    bb.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
-                    bb.convertLiteral(onError.symbol(SqlParserPos.ZERO))
-            ));
-        }
-
         // Start at 3rd Arg
         int tokenIndex = 2;
 
         // RETURNING can only be placed at the beginning, never in the middle or the end of the list of tokens.
-        if (isJsonValueReturningClause(call.operand(tokenIndex))) {
+        if (call.operandCount() > 2 && isJsonValueReturningClause(call.operand(tokenIndex))) {
             returning = validator.getValidatedNodeType(call.operand(tokenIndex + 1));
             tokenIndex += 2;
         }
