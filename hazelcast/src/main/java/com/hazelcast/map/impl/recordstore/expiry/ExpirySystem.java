@@ -226,7 +226,7 @@ public class ExpirySystem {
         }
 
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return;
         }
 
@@ -253,7 +253,7 @@ public class ExpirySystem {
     }
 
     private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return ExpiryReason.NOT_EXPIRED;
         }
 
@@ -280,7 +280,7 @@ public class ExpirySystem {
     }
 
     @Nonnull
-    public final ExpiryMetadata getExpiredMetadata(Data key) {
+    public final ExpiryMetadata getExpiryMetadata(Data key) {
         ExpiryMetadata expiryMetadata = getOrCreateExpireTimeByKeyMap(false).get(key);
         return expiryMetadata != null ? expiryMetadata : ExpiryMetadata.NULL;
     }
