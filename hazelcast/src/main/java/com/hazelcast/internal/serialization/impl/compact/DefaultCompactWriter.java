@@ -355,17 +355,17 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     protected <T> void writeArrayOfVariableSizes(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
-                                              @Nullable T[] values, @Nonnull Writer<T> writer) {
+                                                 @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
             setPositionAsNull(fieldName, fieldKind);
             return;
         }
         try {
             setPosition(fieldName, fieldKind);
-            int itemCount = values.length;
-            out.writeInt(itemCount);
             int dataLengthOffset = out.position();
             out.writeZeroBytes(INT_SIZE_IN_BYTES);
+            int itemCount = values.length;
+            out.writeInt(itemCount);
 
             int offset = out.position();
             int[] offsets = new int[itemCount];

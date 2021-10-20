@@ -850,7 +850,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getBooleanFromArray(fieldName, index);
+                return record.getNullableBooleanFromArray(fieldName, index);
             }
 
             @Override
@@ -882,7 +882,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_BYTE_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -893,7 +893,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getByteFromArray(fieldName, index);
+                return record.getNullableByteFromArray(fieldName, index);
             }
 
             @Override
@@ -924,7 +924,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_SHORT_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -935,7 +935,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getShortFromArray(fieldName, index);
+                return record.getNullableShortFromArray(fieldName, index);
             }
 
             @Override
@@ -966,7 +966,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_INT_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -977,7 +977,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getIntFromArray(fieldName, index);
+                return record.getNullableIntFromArray(fieldName, index);
             }
 
             @Override
@@ -1008,7 +1008,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_LONG_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -1019,7 +1019,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getLongFromArray(fieldName, index);
+                return record.getNullableLongFromArray(fieldName, index);
             }
 
             @Override
@@ -1050,7 +1050,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_FLOAT_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -1061,7 +1061,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getFloatFromArray(fieldName, index);
+                return record.getNullableFloatFromArray(fieldName, index);
             }
 
             @Override
@@ -1092,7 +1092,7 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-               stringBuilder.append(readObject(record, fieldName));
+                stringBuilder.append(readObject(record, fieldName));
             }
         };
         ALL[FieldKind.NULLABLE_DOUBLE_ARRAY.getId()] = new FieldKindBasedOperations() {
@@ -1103,7 +1103,7 @@ public final class FieldOperations {
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getDoubleFromArray(fieldName, index);
+                return record.getNullableDoubleFromArray(fieldName, index);
             }
 
             @Override

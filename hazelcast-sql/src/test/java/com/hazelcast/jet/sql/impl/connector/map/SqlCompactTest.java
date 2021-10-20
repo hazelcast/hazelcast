@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -82,12 +83,12 @@ public class SqlCompactTest extends SqlTestSupport {
     public static void beforeClass() {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
+        CompactSerializationConfig compactSerializationConfig =
+                config.getSerializationConfig().getCompactSerializationConfig();
+        compactSerializationConfig.setEnabled(true);
 //        Left commented deliberately. See https://github.com/hazelcast/hazelcast/issues/19427
-//        registering this class to the member to see it does not affect any of the tests.
-//        It has a different schema than all the tests
-//        CompactSerializationConfig compactSerializationConfig =
-//                config.getSerializationConfig().getCompactSerializationConfig();
-//        compactSerializationConfig.setEnabled(true);
+//        // registering this class to the member to see it does not affect any of the tests.
+//        // It has a different schema than all the tests
 //        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
 //            @Nonnull
 //            @Override
@@ -127,6 +128,69 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ")"
         ).updateCount()).hasMessageContaining("Cannot derive Compact type for 'OBJECT'");
     }
+
+
+    public static class Primitives {
+        boolean b;
+        byte bt;
+        short s;
+        int i;
+        long l;
+        float f;
+        double d;
+
+        public Primitives() {
+
+        }
+
+        public Primitives(boolean b, byte bt, short s, int i, long l, float f, double d) {
+            this.b = b;
+            this.bt = bt;
+            this.s = s;
+            this.i = i;
+            this.l = l;
+            this.f = f;
+            this.d = d;
+        }
+
+
+    }
+
+    @Test
+    public void test_readToClassWithNonNullPrimitive() throws IOException {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + " __key INT "
+                + ", b BOOLEAN "
+                + ", bt TINYINT "
+                + ", s SMALLINT "
+                + ", i INTEGER "
+                + ", l BIGINT "
+                + ", f REAL "
+                + ", d DOUBLE "
+                + ") "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='integer'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + Primitives.class.getName() + '\''
+                + ")"
+        ).updateCount();
+
+        sqlService.execute("SINK INTO " + name + " VALUES (1, true, 2, 3, 4, 5, 12.321, 124.311)").updateCount();
+
+        IMap<Object, Object> map = client().getMap(name);
+        Primitives primitives = (Primitives) map.get(1);
+
+        assertEquals(primitives.b, true);
+        assertEquals(primitives.bt, 2);
+        assertEquals(primitives.s, 3);
+        assertEquals(primitives.i, 4);
+        assertEquals(primitives.l, 5);
+        assertEquals(primitives.f, 12.321, 0.1);
+        assertEquals(primitives.d, 124.311, 0.1);
+    }
+
 
     @Test
     public void test_insertNullsForPrimitives() throws IOException {

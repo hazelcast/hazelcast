@@ -50,9 +50,7 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHO
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
@@ -60,29 +58,17 @@ import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.INT;
 import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.LONG;
 import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
@@ -194,8 +180,20 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public boolean getBoolean(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BOOLEAN:
+                return getBoolean(fd);
+            case NULLABLE_BOOLEAN:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readBoolean, "Boolean");
+            default:
+                throw unexpectedFieldKind(BOOLEAN, fieldName);
+        }
+    }
+
+    private boolean getBoolean(FieldDescriptor fd) {
         try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, BOOLEAN);
             int booleanOffset = fd.getOffset();
             int bitOffset = fd.getBitOffset();
             int getOffset = booleanOffset + dataStartPosition;
@@ -208,62 +206,117 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public byte getByte(@Nonnull String fieldName) {
-        try {
-            return in.readByte(readFixedSizePosition(fieldName, BYTE));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BYTE:
+                try {
+                    return in.readByte(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_BYTE:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readByte, "Byte");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public short getShort(@Nonnull String fieldName) {
-        try {
-            return in.readShort(readFixedSizePosition(fieldName, SHORT));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case SHORT:
+                try {
+                    return in.readShort(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_SHORT:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readShort, "Short");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public int getInt(@Nonnull String fieldName) {
-        try {
-            return in.readInt(readFixedSizePosition(fieldName, INT));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case INT:
+                try {
+                    return in.readInt(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_INT:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readInt, "Int");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public long getLong(@Nonnull String fieldName) {
-        try {
-            return in.readLong(readFixedSizePosition(fieldName, LONG));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case LONG:
+                try {
+                    return in.readLong(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_LONG:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readLong, "Long");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public float getFloat(@Nonnull String fieldName) {
-        try {
-            return in.readFloat(readFixedSizePosition(fieldName, FLOAT));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case FLOAT:
+                try {
+                    return in.readFloat(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_FLOAT:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readFloat, "Float");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public double getDouble(@Nonnull String fieldName) {
-        try {
-            return in.readDouble(readFixedSizePosition(fieldName, DOUBLE));
-        } catch (IOException e) {
-            throw illegalStateException(e);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case DOUBLE:
+                try {
+                    return in.readDouble(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_DOUBLE:
+                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readDouble, "Double");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
     @Override
     public char getChar(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
         try {
-            return in.readChar(readFixedSizePosition(fieldName, CHAR));
+            return in.readChar(readFixedSizePosition(fd));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -272,6 +325,32 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public String getString(@Nonnull String fieldName) {
         return getVariableSize(fieldName, STRING, BufferObjectDataInput::readString);
+    }
+
+    private <T> T getVariableSize(FieldDescriptor fieldDescriptor,
+                                  Reader<T> reader) {
+        int currentPos = in.position();
+        try {
+            int pos = readVariableSizeFieldPosition(fieldDescriptor);
+            if (pos == NULL_OFFSET) {
+                return null;
+            }
+            in.position(pos);
+            return reader.read(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    private <T> T getVariableSizeAsNonNull(@Nonnull String fieldName, FieldDescriptor fieldDescriptor,
+                                           Reader<T> reader, String primitiveName) {
+        T value = getVariableSize(fieldDescriptor, reader);
+        if (value == null) {
+            throw exceptionForUnexpectedNullValue(primitiveName);
+        }
+        return value;
     }
 
     private <T> T getVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
@@ -336,13 +415,22 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BOOLEAN_ARRAY:
+                return getVariableSize(fd, CompactInternalGenericRecord::readBooleanBits);
+            case NULLABLE_BOOLEAN_ARRAY:
+                return getNullableArrayAsPrimitiveArray(fd, ObjectDataInput::readBooleanArray, "Booleans");
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
     }
 
     @Override
     @Nullable
     public byte[] getArrayOfBytes(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readByteArray, BYTE_ARRAY, NULLABLE_BYTE_ARRAY, "Bytes");
     }
 
     @Override
@@ -353,32 +441,32 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     @Nullable
+    public short[] getArrayOfShorts(@Nonnull String fieldName) {
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readShortArray, SHORT_ARRAY, NULLABLE_SHORT_ARRAY, "Shorts");
+    }
+
+    @Override
+    @Nullable
     public int[] getArrayOfInts(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readIntArray, INT_ARRAY, NULLABLE_INT_ARRAY, "Ints");
     }
 
     @Override
     @Nullable
     public long[] getArrayOfLongs(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, LONG_ARRAY, ObjectDataInput::readLongArray);
-    }
-
-    @Override
-    @Nullable
-    public double[] getArrayOfDoubles(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readLongArray, LONG_ARRAY, NULLABLE_LONG_ARRAY, "Longs");
     }
 
     @Override
     @Nullable
     public float[] getArrayOfFloats(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, FLOAT_ARRAY, ObjectDataInput::readFloatArray);
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readFloatArray, FLOAT_ARRAY, NULLABLE_FLOAT_ARRAY, "Floats");
     }
 
     @Override
     @Nullable
-    public short[] getArrayOfShorts(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
+    public double[] getArrayOfDoubles(@Nonnull String fieldName) {
+        return getArrayOfPrimitives(fieldName, ObjectDataInput::readDoubleArray, DOUBLE_ARRAY, NULLABLE_DOUBLE_ARRAY, "Doubles");
     }
 
     @Override
@@ -425,88 +513,238 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
+    private <T> T getArrayOfPrimitives(@Nonnull String fieldName, Reader<T> reader, FieldKind primitiveKind,
+                                       FieldKind nullableKind, String methodSuffix) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        if (fieldKind == primitiveKind) {
+            return getVariableSize(fd, reader);
+        } else if (fieldKind == nullableKind) {
+            return getNullableArrayAsPrimitiveArray(fd, reader, methodSuffix);
+        }
+        throw unexpectedFieldKind(fieldKind, fieldName);
+    }
+
+    private <T> T getNullableArrayAsPrimitiveArray(FieldDescriptor fd, Reader<T> reader, String methodSuffix) {
+        int currentPos = in.position();
+        try {
+            int position = readVariableSizeFieldPosition(fd);
+            if (position == NULL_ARRAY_LENGTH) {
+                return null;
+            }
+            in.position(position);
+            int dataLength = in.readInt();
+            int itemCount = in.readInt();
+            int dataStartPosition = in.position();
+
+            OffsetReader offsetReader = getOffsetReader(dataLength);
+            int offsetsPosition = dataStartPosition + dataLength;
+            for (int i = 0; i < itemCount; i++) {
+                int offset = offsetReader.getOffset(in, offsetsPosition, i);
+                if (offset == NULL_ARRAY_LENGTH) {
+                    throw exceptionForUnexpectedNullValueInArray(methodSuffix);
+                }
+            }
+            in.position(dataStartPosition - INT_SIZE_IN_BYTES);
+            return reader.read(in);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
     @Nullable
     @Override
     public Boolean getNullableBoolean(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_BOOLEAN, ObjectDataInput::readBoolean);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BOOLEAN:
+                return getBoolean(fd);
+            case NULLABLE_BOOLEAN:
+                return getVariableSize(fd, ObjectDataInput::readBoolean);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
     }
 
     @Nullable
     @Override
     public Byte getNullableByte(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_BYTE, ObjectDataInput::readByte);
-    }
-
-    @Nullable
-    @Override
-    public Double getNullableDouble(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_DOUBLE, ObjectDataInput::readDouble);
-    }
-
-    @Nullable
-    @Override
-    public Float getNullableFloat(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_FLOAT, ObjectDataInput::readFloat);
-    }
-
-    @Nullable
-    @Override
-    public Integer getNullableInt(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_INT, ObjectDataInput::readInt);
-    }
-
-    @Nullable
-    @Override
-    public Long getNullableLong(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_LONG, ObjectDataInput::readLong);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BYTE:
+                try {
+                    return in.readByte(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_BYTE:
+                return getVariableSize(fd, ObjectDataInput::readByte);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
     }
 
     @Nullable
     @Override
     public Short getNullableShort(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, NULLABLE_SHORT, ObjectDataInput::readShort);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case SHORT:
+                try {
+                    return in.readShort(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_SHORT:
+                return getVariableSize(fd, ObjectDataInput::readShort);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case INT:
+                try {
+                    return in.readInt(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_INT:
+                return getVariableSize(fd, ObjectDataInput::readInt);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLong(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case LONG:
+                try {
+                    return in.readLong(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_LONG:
+                return getVariableSize(fd, ObjectDataInput::readLong);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case FLOAT:
+                try {
+                    return in.readFloat(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_FLOAT:
+                return getVariableSize(fd, ObjectDataInput::readFloat);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDouble(@Nonnull String fieldName) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case DOUBLE:
+                try {
+                    return in.readDouble(readFixedSizePosition(fd));
+                } catch (IOException e) {
+                    throw illegalStateException(e);
+                }
+            case NULLABLE_DOUBLE:
+                return getVariableSize(fd, ObjectDataInput::readDouble);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
     }
 
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        switch (fieldKind) {
+            case BOOLEAN_ARRAY:
+                return getVariableSize(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBitsAsNullables);
+            case NULLABLE_BOOLEAN_ARRAY:
+                return getArrayOfVariableSizes(fieldName, NULLABLE_BOOLEAN_ARRAY, Boolean[]::new, ObjectDataInput::readBoolean);
+            default:
+                throw unexpectedFieldKind(fieldKind, fieldName);
+        }
     }
 
     @Nullable
     @Override
     public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_BYTE_ARRAY, Byte[]::new, ObjectDataInput::readByte);
-    }
-
-    @Nullable
-    @Override
-    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_DOUBLE_ARRAY, Double[]::new, ObjectDataInput::readDouble);
-    }
-
-    @Nullable
-    @Override
-    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_FLOAT_ARRAY, Float[]::new, ObjectDataInput::readFloat);
-    }
-
-    @Nullable
-    @Override
-    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_INT_ARRAY, Integer[]::new, ObjectDataInput::readInt);
-    }
-
-    @Nullable
-    @Override
-    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_LONG_ARRAY, Long[]::new, ObjectDataInput::readLong);
+        return getArrayOfNullables(fieldName, ObjectDataInput::readByte, Byte[]::new, BYTE_ARRAY, NULLABLE_BYTE_ARRAY);
     }
 
     @Nullable
     @Override
     public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, NULLABLE_SHORT_ARRAY, Short[]::new, ObjectDataInput::readShort);
+        return getArrayOfNullables(fieldName, ObjectDataInput::readShort, Short[]::new, SHORT_ARRAY, NULLABLE_SHORT_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
+        return getArrayOfNullables(fieldName, ObjectDataInput::readInt, Integer[]::new, INT_ARRAY, NULLABLE_INT_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
+        return getArrayOfNullables(fieldName, ObjectDataInput::readLong, Long[]::new, LONG_ARRAY, NULLABLE_LONG_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
+        return getArrayOfNullables(fieldName, ObjectDataInput::readFloat, Float[]::new, FLOAT_ARRAY, NULLABLE_FLOAT_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
+        return getArrayOfNullables(fieldName, ObjectDataInput::readDouble, Double[]::new, DOUBLE_ARRAY, NULLABLE_DOUBLE_ARRAY);
+    }
+
+    private <T> T[] getArrayOfNullables(@Nonnull String fieldName, Reader<T> reader,
+                                        Function<Integer, T[]> constructor, FieldKind primitiveKind,
+                                        FieldKind nullableKind) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldKind fieldKind = fd.getKind();
+        if (fieldKind == primitiveKind) {
+            return getPrimitiveArrayAsNullableArray(fd, constructor, reader);
+        } else if (fieldKind == nullableKind) {
+            return getArrayOfVariableSizes(fd, constructor, reader);
+        }
+        throw unexpectedFieldKind(fieldKind, fieldName);
     }
 
     @Override
@@ -520,18 +758,42 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         R read(BufferObjectDataInput t) throws IOException;
     }
 
-    private <T> T[] getArrayOfVariableSizes(@Nonnull String fieldName, FieldKind fieldKind,
+    private <T> T[] getPrimitiveArrayAsNullableArray(FieldDescriptor fieldDescriptor,
+                                                     Function<Integer, T[]> constructor,
+                                                     Reader<T> reader) {
+        int currentPos = in.position();
+        try {
+            int pos = readVariableSizeFieldPosition(fieldDescriptor);
+            if (pos == NULL_OFFSET) {
+                return null;
+            }
+            in.position(pos);
+            int itemCount = in.readInt();
+            T[] values = constructor.apply(itemCount);
+
+            for (int i = 0; i < itemCount; i++) {
+                values[i] = reader.read(in);
+            }
+            return values;
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    private <T> T[] getArrayOfVariableSizes(FieldDescriptor fieldDescriptor,
                                             Function<Integer, T[]> constructor,
                                             Reader<T> reader) {
         int currentPos = in.position();
         try {
-            int position = readVariableSizeFieldPosition(fieldName, fieldKind);
+            int position = readVariableSizeFieldPosition(fieldDescriptor);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
             in.position(position);
-            int itemCount = in.readInt();
             int dataLength = in.readInt();
+            int itemCount = in.readInt();
             int dataStartPosition = in.position();
             T[] values = constructor.apply(itemCount);
 
@@ -552,6 +814,14 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+
+    private <T> T[] getArrayOfVariableSizes(@Nonnull String fieldName, FieldKind fieldKind,
+                                            Function<Integer, T[]> constructor,
+                                            Reader<T> reader) {
+        FieldDescriptor fieldDefinition = getFieldDefinition(fieldName, fieldKind);
+        return getArrayOfVariableSizes(fieldDefinition, constructor, reader);
+    }
+
     private static OffsetReader getOffsetReader(int dataLength) {
         if (dataLength < BYTE_OFFSET_READER_RANGE) {
             return BYTE_OFFSET_READER;
@@ -562,20 +832,25 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    private int readFixedSizePosition(@Nonnull String fieldName, FieldKind fieldKind) {
-        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+    private int readFixedSizePosition(FieldDescriptor fd) {
         int primitiveOffset = fd.getOffset();
         return primitiveOffset + dataStartPosition;
     }
 
     @Nonnull
-    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldKind fieldKind) {
+    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
+        return fd;
+    }
+
+    @Nonnull
+    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldKind fieldKind) {
+        FieldDescriptor fd = getFieldDefinition(fieldName);
         if (fd.getKind() != fieldKind) {
-            throw new HazelcastSerializationException("Not a '" + fieldKind + "' field: " + fieldName);
+            throw unexpectedFieldKind(fd.getKind(), fieldName);
         }
         return fd;
     }
@@ -583,6 +858,16 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldKind fieldKind) {
         try {
             FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+            int index = fd.getIndex();
+            int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
+            return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    private int readVariableSizeFieldPosition(FieldDescriptor fd) {
+        try {
             int index = fd.getIndex();
             int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
             return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
@@ -777,12 +1062,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             if (pos == NULL_OFFSET) {
                 return null;
             }
-            int itemCount = in.readInt(pos);
+            int dataLength = in.readInt(pos);
+            int itemCount = in.readInt(pos + +INT_SIZE_IN_BYTES);
             checkNotNegative(index, "Array index can not be negative");
             if (itemCount <= index) {
                 return null;
             }
-            int dataLength = in.readInt(pos + INT_SIZE_IN_BYTES);
             int dataStartPosition = pos + (2 * INT_SIZE_IN_BYTES);
             OffsetReader offsetReader = getOffsetReader(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
@@ -805,7 +1090,24 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     protected IllegalStateException illegalStateException(IOException e) {
-        return new IllegalStateException("IOException is not expected since we get from a well known format and position");
+        return new IllegalStateException("IOException is not expected since we get from a well known format and position", e);
+    }
+
+    private HazelcastSerializationException unexpectedFieldKind(FieldKind actualFieldKind,
+                                                                String fieldName) {
+        throw new HazelcastSerializationException("Unexpected fieldKind '" + actualFieldKind + "' for field: " + fieldName);
+    }
+
+    @Nonnull
+    private HazelcastSerializationException exceptionForUnexpectedNullValue(String primitiveName) {
+        return new HazelcastSerializationException("null value can not be read via get" + primitiveName + " methods. "
+                + "Use getNullable" + primitiveName + " instead");
+    }
+
+    @Nonnull
+    private HazelcastSerializationException exceptionForUnexpectedNullValueInArray(String primitiveName) {
+        return new HazelcastSerializationException("null value can not be read via getArrayOf" + primitiveName + " methods. "
+                + "Use getArrayOf" + primitiveName + " instead");
     }
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
@@ -831,6 +1133,28 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return values;
     }
 
+    private static Boolean[] readBooleanBitsAsNullables(BufferObjectDataInput input) throws IOException {
+        int len = input.readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len == 0) {
+            return new Boolean[0];
+        }
+        Boolean[] values = new Boolean[len];
+        int index = 0;
+        byte currentByte = input.readByte();
+        for (int i = 0; i < len; i++) {
+            if (index == Byte.SIZE) {
+                index = 0;
+                currentByte = input.readByte();
+            }
+            boolean result = ((currentByte >>> index) & 1) != 0;
+            index++;
+            values[i] = result;
+        }
+        return values;
+    }
 
     boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind kind) {
         FieldDescriptor field = schema.getField(fieldName);
@@ -839,5 +1163,4 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         return field.getKind() == kind;
     }
-
 }
