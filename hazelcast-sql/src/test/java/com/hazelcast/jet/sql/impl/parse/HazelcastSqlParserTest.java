@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -31,6 +32,7 @@ import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,7 +96,7 @@ public class HazelcastSqlParserTest {
                 + "index_name "
                 + "ON mapping_name "
                 + "(column_name1, column_name2) "
-                + "TYPE index_type "
+                + "TYPE SORTED "
                 + "OPTIONS ("
                 + "'option.key'='option.value'"
                 + ")";
@@ -111,7 +113,7 @@ public class HazelcastSqlParserTest {
         // then
         assertThat(node.mappingName()).isEqualTo("mapping_name");
         assertThat(node.indexName()).isEqualTo("index_name");
-        assertThat(node.type()).isEqualTo("index_type");
+        assertThat(node.type()).isEqualTo(IndexType.SORTED);
         assertThat(node.columns().findFirst())
                 .isNotEmpty()
                 .get()
@@ -133,7 +135,7 @@ public class HazelcastSqlParserTest {
                 + "index_name "
                 + "ON mapping_name "
                 + "(column_name1, column_name2) "
-                + "TYPE index_type ";
+                + "TYPE SORTED ";
 
         // when
         SqlNode parsedNode = parse(sql);
@@ -147,7 +149,7 @@ public class HazelcastSqlParserTest {
         // then
         assertThat(node.mappingName()).isEqualTo("mapping_name");
         assertThat(node.indexName()).isEqualTo("index_name");
-        assertThat(node.type()).isEqualTo("index_type");
+        assertThat(node.type()).isEqualTo(IndexType.SORTED);
         assertThat(node.columns().findFirst())
                 .isNotEmpty()
                 .get()
@@ -174,6 +176,11 @@ public class HazelcastSqlParserTest {
                         "    \".\" ...\n");
     }
 
+    @Test
+    @Parameters({
+            "true",
+            "false"
+    })
     public void test_createIndexRequiresIndexType(boolean ifNotExists) {
         // given
         String sql = "CREATE INDEX "
