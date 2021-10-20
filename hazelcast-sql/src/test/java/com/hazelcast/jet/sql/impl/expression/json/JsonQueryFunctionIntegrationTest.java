@@ -200,6 +200,8 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         private Long id;
         private String jsonValue;
 
+        public ObjectWithJson() { }
+
         public ObjectWithJson(final Long id, final String jsonValue) {
             this.id = id;
             this.jsonValue = jsonValue;
