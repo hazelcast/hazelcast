@@ -44,6 +44,21 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
         super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
     }
 
+    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
+        int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
+        int[] rightKeys = analyzeCondition().rightKeys.toIntArray();
+
+        Expression<Boolean> nonEquiCondition = filter(
+                schema(parameterMetadata),
+                analyzeCondition().getRemaining(getCluster().getRexBuilder()),
+                parameterMetadata
+        );
+
+        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
+
+        return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
+    }
+
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
@@ -66,20 +81,5 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinHashPhysicalRel(getCluster(), traitSet, left, right, conditionExpr, joinType);
-    }
-
-    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-        int[] rightKeys = analyzeCondition().rightKeys.toIntArray();
-
-        Expression<Boolean> nonEquiCondition = filter(
-                schema(parameterMetadata),
-                analyzeCondition().getRemaining(getCluster().getRexBuilder()),
-                parameterMetadata
-        );
-
-        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
-
-        return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
     }
 }

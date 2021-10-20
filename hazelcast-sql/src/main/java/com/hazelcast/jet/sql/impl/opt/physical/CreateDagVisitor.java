@@ -71,6 +71,7 @@ import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootR
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
 
@@ -291,8 +292,6 @@ public class CreateDagVisitor {
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
-        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
-
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
@@ -301,7 +300,7 @@ public class CreateDagVisitor {
                 rightTable,
                 rel.rightFilter(parameterMetadata),
                 rel.rightProjection(parameterMetadata),
-                joinInfo
+                rel.joinInfo(parameterMetadata)
         );
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
