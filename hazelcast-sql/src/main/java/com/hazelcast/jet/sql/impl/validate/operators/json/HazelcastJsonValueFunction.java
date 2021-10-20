@@ -64,17 +64,14 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
 
         @Override
         public RelDataType inferReturnType(final SqlOperatorBinding binding) {
-            // TODO: RETURNING can only follow first 2-args, no reason to check further args if its not there.
-            for (int i = 2; i < binding.getOperandCount(); i += 2) {
-                if (!binding.getOperandType(i).getSqlTypeName().equals(SqlTypeName.SYMBOL)) {
-                    continue;
+            // the returning clause is always the 3rd argument, if it's there
+            if (binding.getOperandCount() >= 4
+                    && binding.getOperandType(2).getSqlTypeName() == SqlTypeName.SYMBOL) {
+                final Object value = ((SqlLiteral) ((SqlCallBinding) binding).getCall().operand(2)).getValue();
+                if (value == SqlJsonValueReturning.RETURNING) {
+                    // the next operand contains the data type
+                    return binding.getOperandType(3);
                 }
-                final Object value = ((SqlLiteral) ((SqlCallBinding) binding).getCall().operand(i)).getValue();
-                if (!(value instanceof SqlJsonValueReturning)) {
-                    continue;
-                }
-
-                return binding.getOperandType(i + 1);
             }
 
             return binding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
