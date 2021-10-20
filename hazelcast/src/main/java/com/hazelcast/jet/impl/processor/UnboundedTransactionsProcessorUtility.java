@@ -54,6 +54,7 @@ public class UnboundedTransactionsProcessorUtility<TXN_ID extends TransactionId,
     private final Queue<TXN_ID> snapshotQueue = new ArrayDeque<>();
     private boolean initialized;
     private boolean snapshotInProgress;
+    private boolean unfinishedTransactionsAborted;
 
     /**
      * @param abortUnfinishedTransactionsAction when called, it should abort
@@ -85,7 +86,7 @@ public class UnboundedTransactionsProcessorUtility<TXN_ID extends TransactionId,
                 if (usesTransactionLifecycle()) {
                     try {
                         procContext().logger().fine("aborting unfinished transactions");
-                        abortUnfinishedTransactionsAction.run();
+                        abortUnfinishedTransactions();
                     } catch (Exception e) {
                         throw sneakyThrow(e);
                     }
@@ -176,6 +177,11 @@ public class UnboundedTransactionsProcessorUtility<TXN_ID extends TransactionId,
         pendingTransactions.clear();
     }
 
+    private void abortUnfinishedTransactions() {
+        abortUnfinishedTransactionsAction.run();
+        unfinishedTransactionsAborted = true;
+    }
+
     @Override
     public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         @SuppressWarnings("unchecked")
@@ -187,6 +193,9 @@ public class UnboundedTransactionsProcessorUtility<TXN_ID extends TransactionId,
 
     @Override
     public void close() {
+        if (!unfinishedTransactionsAborted) {
+            abortUnfinishedTransactions();
+        }
         if (activeTransaction != null) {
             activeTransaction.rollback();
             activeTransaction.release();

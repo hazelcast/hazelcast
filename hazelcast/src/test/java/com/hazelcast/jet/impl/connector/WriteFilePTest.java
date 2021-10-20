@@ -23,7 +23,12 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.test.TestInbox;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.connector.ReadFilesPTest.TestPerson;
@@ -334,6 +339,32 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void test_abortUnfinishedTransaction_whenNoItemsProcessed() throws Exception {
+        // test for https://github.com/hazelcast/hazelcast/issues/19774
+        ProcessorMetaSupplier metaSupplier = writeFileP(directory.toString(), StandardCharsets.UTF_8, null, DISABLE_ROLLING, true,
+                Objects::toString);
+        TestProcessorContext processorContext = new TestProcessorContext()
+                .setProcessingGuarantee(EXACTLY_ONCE);
+
+        @SuppressWarnings("unchecked")
+        WriteFileP<Integer> processor = (WriteFileP<Integer>) TestSupport.supplierFrom(metaSupplier).get();
+        processor.init(new TestOutbox(new int[]{128}, 128), processorContext);
+
+        processor.process(0, new TestInbox(singletonList(42)));
+        assertTrue(processor.snapshotCommitPrepare());
+        checkFileContents(0, 0, true, true, true);
+
+        // Now a tmp file is created. Let's simulate that the prepared snapshot wasn't successful and
+        // the job restarted
+        @SuppressWarnings("unchecked")
+        WriteFileP<Integer> processor2 = (WriteFileP<Integer>) TestSupport.supplierFrom(metaSupplier).get();
+        processor2.init(new TestOutbox(128), processorContext);
+        processor2.close();
+        // now there should be no temp files
+        checkFileContents(0, 0, true, false, true);
+    }
+
+    @Test
     public void stressTest_noSnapshot() throws Exception {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(rangeIterable(0, 10)))
@@ -437,13 +468,8 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
         waitForNextSnapshot(new JobRepository(instance()), job.getId(), 10, true);
         ditchJob(job, instances());
-
-        // In edge cases remaining temporary files are possible here. For example this scenario:
-        // - File is prepared, but phase1 isn't successful due to forceful cancellation
-        // - After restart, the processor that should abort the unfinished transaction, doesn't
-        // receive any more items - the transactions after first item is received.
-        // See https://github.com/hazelcast/hazelcast/issues/19774
-        checkFileContents(0, numItems, exactlyOnce, true, false);
+        // when the job is cancelled, there should be no temporary files
+        checkFileContents(0, numItems, exactlyOnce, false, false);
     }
 
     private void checkFileContents(int numFrom, int numTo, boolean exactlyOnce, boolean ignoreTempFiles,
