@@ -201,7 +201,7 @@
                         <hz:max-attempts>2</hz:max-attempts>
                         <hz:parallel-mode>true</hz:parallel-mode>
                         <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
-                        <hz:ttl>1</hz:ttl>
+                        <hz:ttl>${failure.detector.ttl}</hz:ttl>
                     </hz:icmp>
                 </hz:failure-detector>
                 <hz:rest-api enabled="false">
@@ -446,7 +446,7 @@
                 <hz:query-caches>
                     <hz:query-cache name="my-query-cache-1">
                         <hz:predicate type="sql">__key > 12</hz:predicate>
-                        <hz:batch-size>12</hz:batch-size>
+                        <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
                         <hz:buffer-size>33</hz:buffer-size>
                         <hz:coalesce>true</hz:coalesce>
                         <hz:populate>false</hz:populate>
@@ -580,7 +580,7 @@
                               use-native-byte-order="false">
 
                 <hz:data-serializable-factories>
-                    <hz:data-serializable-factory factory-id="1"
+                    <hz:data-serializable-factory factory-id="${test.factory.id}"
                                                   class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
 
                     <hz:data-serializable-factory factory-id="2" implementation="dummyDataSerializableFactory"/>
@@ -909,7 +909,7 @@
             </hz:security>
 
             <hz:member-attributes>
-                <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
+                <hz:attribute name="cluster.name">${cluster.name}</hz:attribute>
             </hz:member-attributes>
 
             <hz:split-brain-protection enabled="true" name="my-split-brain-protection">
