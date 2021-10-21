@@ -23,9 +23,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
-import org.objenesis.instantiator.ObjectInstantiator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
