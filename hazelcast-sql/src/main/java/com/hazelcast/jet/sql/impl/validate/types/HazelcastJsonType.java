@@ -33,7 +33,8 @@ public final class HazelcastJsonType extends RelDataTypeImpl {
     public static final HazelcastJsonType TYPE = new HazelcastJsonType(false);
     public static final HazelcastJsonType FAMILY = TYPE;
 
-    public static final SqlDataTypeSpec TYPE_SPEC = new SqlDataTypeSpec(new JsonSqlTypeNameSpec(SqlParserPos.ZERO), SqlParserPos.ZERO);
+    public static final SqlDataTypeSpec TYPE_SPEC =
+            new SqlDataTypeSpec(new JsonSqlTypeNameSpec(SqlParserPos.ZERO), SqlParserPos.ZERO);
 
     private final boolean nullable;
 

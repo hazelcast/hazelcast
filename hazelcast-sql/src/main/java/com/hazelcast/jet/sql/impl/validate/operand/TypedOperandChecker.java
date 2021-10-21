@@ -87,6 +87,7 @@ public class TypedOperandChecker extends AbstractOperandChecker {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     protected boolean coerce(
             HazelcastSqlValidator validator,
             HazelcastCallBinding callBinding,

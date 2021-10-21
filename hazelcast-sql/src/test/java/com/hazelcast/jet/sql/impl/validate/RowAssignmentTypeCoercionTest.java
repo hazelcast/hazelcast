@@ -912,7 +912,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field 'EXPR\\$\\d' of type OBJECT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field 'EXPR\\$\\d' of type OBJECT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but OBJECT was found"),
-                
+
                 // JSON
                 TestParams.failingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")

@@ -180,6 +180,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public boolean rowTypeElementCoercion(
             SqlValidatorScope scope,
             SqlNode rowElement,
