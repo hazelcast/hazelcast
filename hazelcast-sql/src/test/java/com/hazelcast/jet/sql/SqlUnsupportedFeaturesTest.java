@@ -63,26 +63,6 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_semiJoin() {
-        TestBatchSqlConnector.create(sqlService, "b", 0);
-
-        assertThatThrownBy(() -> sqlService.execute(
-                "SELECT 1 FROM b WHERE EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Function 'EXISTS' does not exist");
-    }
-
-    @Test
-    public void test_antiJoin() {
-        TestBatchSqlConnector.create(sqlService, "b", 0);
-
-        assertThatThrownBy(() -> sqlService.execute(
-                "SELECT 1 FROM b WHERE NOT EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Function 'EXISTS' does not exist");
-    }
-
-    @Test
     public void test_mapValueConstructor() {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 

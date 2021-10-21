@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 
@@ -24,9 +26,9 @@ import com.hazelcast.internal.serialization.Data;
  * <p>
  * There are different types of OutboundFrame:
  * <ol>
- * <li>Packet: for member to member and old-client to member communication</li>
- * <li>TextMessage: for memcached and REST communication</li>
- * <li>ClientMessage: for the new client to member communication</li>
+ * <li> {@link Packet}: for member to member communication</li>
+ * <li> {@link TextCommand}: for memcached and REST communication</li>
+ * <li> {@link ClientMessage}: for the new client to member communication</li>
  * </ol>
  * <p>
  * Currently, all communication over a single connection is of a single
@@ -45,7 +47,7 @@ public interface OutboundFrame {
      * Frames that are urgent, have priority above regular frames. This is useful
      * to implement system operations so that they can be sent faster than regular
      * operations; especially when the system is under load you want these operations
-     * tp have precedence.
+     * to have precedence.
      *
      * @return true if urgent, false otherwise.
      */

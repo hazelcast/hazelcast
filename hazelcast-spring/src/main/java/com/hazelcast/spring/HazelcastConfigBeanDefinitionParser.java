@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -75,7 +76,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
@@ -151,7 +151,10 @@ import org.w3c.dom.Node;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -164,8 +167,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -196,6 +197,18 @@ import static org.springframework.util.Assert.isTrue;
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastConfigBeanDefinitionParser.class);
+    private static final Map<String, String> ICMP_FAILURE_DETECTOR_CONFIG_PROPERTIES;
+
+    static {
+        Map<String, String> map = new HashMap<>();
+        map.put("ttl", "ttl");
+        map.put("timeout-milliseconds", "timeoutMilliseconds");
+        map.put("parallel-mode", "parallelMode");
+        map.put("fail-fast-on-startup", "failFastOnStartup");
+        map.put("max-attempts", "maxAttempts");
+        map.put("interval-milliseconds", "intervalMilliseconds");
+        ICMP_FAILURE_DETECTOR_CONFIG_PROPERTIES = Collections.unmodifiableMap(map);
+    }
 
     public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
@@ -935,31 +948,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
 
                 Node enabledNode = child.getAttributes().getNamedItem("enabled");
-                boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
                 BeanDefinitionBuilder icmpFailureDetectorConfigBuilder = createBeanBuilder(IcmpFailureDetectorConfig.class);
 
-                icmpFailureDetectorConfigBuilder.addPropertyValue("enabled", enabled);
+                icmpFailureDetectorConfigBuilder.addPropertyValue("enabled", getTextContent(enabledNode));
                 for (Node n : childElements(child)) {
                     String nodeName = cleanNodeName(n);
 
-                    if (nodeName.equals("ttl")) {
-                        int ttl = parseInt(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("ttl", ttl);
-                    } else if (nodeName.equals("timeout-milliseconds")) {
-                        int timeout = parseInt(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("timeoutMilliseconds", timeout);
-                    } else if (nodeName.equals("parallel-mode")) {
-                        boolean mode = parseBoolean(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("parallelMode", mode);
-                    } else if (nodeName.equals("fail-fast-on-startup")) {
-                        boolean failOnStartup = parseBoolean(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("failFastOnStartup", failOnStartup);
-                    } else if (nodeName.equals("max-attempts")) {
-                        int attempts = parseInt(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("maxAttempts", attempts);
-                    } else if (nodeName.equals("interval-milliseconds")) {
-                        int interval = parseInt(getTextContent(n));
-                        icmpFailureDetectorConfigBuilder.addPropertyValue("intervalMilliseconds", interval);
+                    String propertyName = ICMP_FAILURE_DETECTOR_CONFIG_PROPERTIES.get(nodeName);
+                    if (propertyName != null) {
+                        icmpFailureDetectorConfigBuilder.addPropertyValue(propertyName, getTextContent(n));
                     }
                 }
 
@@ -1341,29 +1338,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("include-value".equals(nodeName)) {
-                    boolean includeValue = getBooleanValue(textContent);
-                    builder.addPropertyValue("includeValue", includeValue);
+                    builder.addPropertyValue("includeValue", textContent);
                 } else if ("batch-size".equals(nodeName)) {
-                    int batchSize = getIntegerValue("batch-size", textContent.trim()
-                    );
-                    builder.addPropertyValue("batchSize", batchSize);
+                    builder.addPropertyValue("batchSize", textContent);
                 } else if ("buffer-size".equals(nodeName)) {
-                    int bufferSize = getIntegerValue("buffer-size", textContent.trim()
-                    );
-                    builder.addPropertyValue("bufferSize", bufferSize);
+                    builder.addPropertyValue("bufferSize", textContent);
                 } else if ("delay-seconds".equals(nodeName)) {
-                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
-                    );
-                    builder.addPropertyValue("delaySeconds", delaySeconds);
+                    builder.addPropertyValue("delaySeconds", textContent);
                 } else if ("in-memory-format".equals(nodeName)) {
                     String value = textContent.trim();
                     builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
                 } else if ("coalesce".equals(nodeName)) {
-                    boolean coalesce = getBooleanValue(textContent);
-                    builder.addPropertyValue("coalesce", coalesce);
+                    builder.addPropertyValue("coalesce", textContent);
                 } else if ("populate".equals(nodeName)) {
-                    boolean populate = getBooleanValue(textContent);
-                    builder.addPropertyValue("populate", populate);
+                    builder.addPropertyValue("populate", textContent);
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList<BeanDefinition> indexes = new ManagedList<>();
                     for (Node indexNode : childElements(node)) {
@@ -1830,29 +1818,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     continue;
                 }
                 String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-                String attributeType = getTextContent(n.getAttributes().getNamedItem("type")).trim();
                 String value = getTextContent(n);
-                Object oValue;
-                if ("string".equals(attributeType)) {
-                    oValue = value;
-                } else if ("boolean".equals(attributeType)) {
-                    oValue = Boolean.parseBoolean(value);
-                } else if ("byte".equals(attributeType)) {
-                    oValue = Byte.parseByte(value);
-                } else if ("double".equals(attributeType)) {
-                    oValue = Double.parseDouble(value);
-                } else if ("float".equals(attributeType)) {
-                    oValue = Float.parseFloat(value);
-                } else if ("int".equals(attributeType)) {
-                    oValue = Integer.parseInt(value);
-                } else if ("long".equals(attributeType)) {
-                    oValue = Long.parseLong(value);
-                } else if ("short".equals(attributeType)) {
-                    oValue = Short.parseShort(value);
-                } else {
-                    oValue = value;
-                }
-                attributes.put(attributeName, oValue);
+                attributes.put(attributeName, value);
             }
             memberAttributeConfigBuilder.addPropertyValue("attributes", attributes);
             configBuilder.addPropertyValue("memberAttributeConfig", beanDefinition);

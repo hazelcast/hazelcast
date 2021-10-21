@@ -29,6 +29,7 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
+import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Set;
@@ -36,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -89,16 +89,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     /**
      * Creates a MetricsRegistryImpl instance.
      *
-     * @param name Name of the registry
+     * @param name         Name of the registry
      * @param logger       the ILogger used
-     * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
-     *                     then the registration is skipped.
+     * @param minimumLevel the minimum ProbeLevel. If a
+     *                     probe is registered with a ProbeLevel lower than the
+     *                     minimum ProbeLevel, then the registration is skipped.
      * @throws NullPointerException if logger or minimumLevel is null
      */
     public MetricsRegistryImpl(String name, ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
-        this.scheduler = new ScheduledThreadPoolExecutor(2,
+        this.scheduler = new LoggingScheduledExecutor(logger, 2,
                 new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
@@ -114,8 +115,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public Set<String> getNames() {
         return unmodifiableSet(probeInstances.values().stream()
-                                             .map(probeInstance -> probeInstance.descriptor.metricString())
-                                             .collect(Collectors.toSet()));
+                .map(probeInstance -> probeInstance.descriptor.metricString())
+                .collect(Collectors.toSet()));
     }
 
     /**
@@ -297,7 +298,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             String prefix = name.substring(0, bracketOpenIdx);
             String discriminator = name.substring(bracketOpenIdx + 1, bracketCloseIdx);
             descriptor.withPrefix(prefix)
-                      .withDiscriminator("ignored", discriminator);
+                    .withDiscriminator("ignored", discriminator);
         } else {
             descriptor.withPrefix(name.substring(0, dotIdx));
         }
