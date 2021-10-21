@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.tenantcontrol.impl;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -137,24 +136,20 @@ public class TenantControlServiceImpl
         TenantControl tenantControl = tenantControlFactory.saveCurrentTenant();
         appendTenantControl(serviceName, objectName, tenantControl);
 
-        // RU_COMPAT_4_1
-        if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
-            try {
-                invokeOnStableClusterSerial(
-                        nodeEngine,
-                        () -> new TenantControlReplicationOperation(serviceName, objectName, tenantControl),
-                        MAX_RETRIES).get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+        try {
+            invokeOnStableClusterSerial(
+                    nodeEngine,
+                    () -> new TenantControlReplicationOperation(serviceName, objectName, tenantControl),
+                    MAX_RETRIES).get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
         return tenantControl;
     }
 
     @Override
     public void onClusterVersionChange(Version newVersion) {
-        // RU_COMPAT_4_1
-        if (isTenantControlEnabled() && newVersion.isEqualTo(Versions.V4_2)) {
+        if (isTenantControlEnabled()) {
             // async, we should not block transaction
             InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine,
                     () -> new TenantControlReplicationOperation(tenantControlMap), MAX_RETRIES);
@@ -215,9 +210,7 @@ public class TenantControlServiceImpl
 
     @Override
     public Operation getPreJoinOperation(UUID uuid) {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        // RU_COMPAT_4_1
-        return isTenantControlEnabled() && clusterVersion.isGreaterOrEqual(Versions.V4_2)
+        return isTenantControlEnabled()
                 ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;
     }

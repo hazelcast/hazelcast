@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -86,7 +86,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
-            .withSqlConformance(HazelcastSqlConformance.INSTANCE);
+            .withSqlConformance(HazelcastSqlConformance.INSTANCE)
+            .withTypeCoercionFactory(HazelcastTypeCoercion::new);
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
@@ -111,8 +112,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             MappingResolver mappingResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
-
-        setTypeCoercion(new HazelcastTypeCoercion(this));
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
@@ -225,8 +224,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        // the right side of a join must not be a subquery or a VALUES clause
-        join.getRight().accept(new SqlBasicVisitor<Void>() {
+        SqlBasicVisitor<Void> joinChecker = new SqlBasicVisitor<Void>() {
             @Override
             public Void visit(SqlCall call) {
                 if (call.getKind() == SqlKind.SELECT) {
@@ -237,7 +235,29 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
                 return call.getOperator().acceptCall(this, call);
             }
-        });
+        };
+
+        switch (join.getJoinType()) {
+            case INNER:
+            case COMMA:
+            case CROSS:
+                join.getRight().accept(joinChecker);
+                break;
+            case LEFT:
+                join.getRight().accept(joinChecker);
+                if (containsStreamingSource(join.getRight())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                }
+                break;
+            case RIGHT:
+                join.getLeft().accept(joinChecker);
+                if (containsStreamingSource(join.getLeft())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
@@ -368,8 +388,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof JetTableFunction) {
-                    if (((JetTableFunction) operator).isStream()) {
+                if (operator instanceof HazelcastTableFunction) {
+                    if (((HazelcastTableFunction) operator).isStream()) {
                         found = true;
                         return null;
                     }

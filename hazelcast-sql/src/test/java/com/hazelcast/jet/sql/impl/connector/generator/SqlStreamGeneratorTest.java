@@ -167,7 +167,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
         createMapping("m", int.class, int.class);
         instance().getMap("m").put(42, 43);
         assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_STREAM(null) FROM m"))
-                .hasMessage("unexpected SQL type: ROW");
+                .hasMessage("Cannot call table function here: 'GENERATE_STREAM'");
     }
 
     @Test

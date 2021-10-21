@@ -74,11 +74,7 @@ public class SqlClientResultTest extends SqlTestSupport {
 
     @Test
     public void testBadQuery() {
-        try (SqlResult result = execute(SQL_BAD)) {
-            checkSqlException(result::iterator, SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
-            checkSqlException(result::getRowMetadata, SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
-            checkSqlException(result::updateCount, SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
-        }
+        checkSqlException(() -> execute(SQL_BAD), SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

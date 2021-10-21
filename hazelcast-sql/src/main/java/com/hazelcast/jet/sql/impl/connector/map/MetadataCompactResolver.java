@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -126,40 +126,40 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
             String name = entry.getKey().getPath();
             QueryDataType type = entry.getValue().type();
-            schemaWriter.addField(new FieldDescriptor(name, resolveToCompactType(type.getTypeFamily())));
+            schemaWriter.addField(new FieldDescriptor(name, resolveToCompactKind(type.getTypeFamily())));
         }
         return schemaWriter.build();
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static FieldType resolveToCompactType(QueryDataTypeFamily type) {
+    private static FieldKind resolveToCompactKind(QueryDataTypeFamily type) {
         switch (type) {
             case BOOLEAN:
-                return FieldType.BOOLEAN;
+                return FieldKind.BOOLEAN;
             case TINYINT:
-                return FieldType.BYTE;
+                return FieldKind.BYTE;
             case SMALLINT:
-                return FieldType.SHORT;
+                return FieldKind.SHORT;
             case INTEGER:
-                return FieldType.INT;
+                return FieldKind.INT;
             case BIGINT:
-                return FieldType.LONG;
+                return FieldKind.LONG;
             case REAL:
-                return FieldType.FLOAT;
+                return FieldKind.FLOAT;
             case DOUBLE:
-                return FieldType.DOUBLE;
+                return FieldKind.DOUBLE;
             case DECIMAL:
-                return FieldType.DECIMAL;
+                return FieldKind.DECIMAL;
             case VARCHAR:
-                return FieldType.UTF;
+                return FieldKind.STRING;
             case TIME:
-                return FieldType.TIME;
+                return FieldKind.TIME;
             case DATE:
-                return FieldType.DATE;
+                return FieldKind.DATE;
             case TIMESTAMP:
-                return FieldType.TIMESTAMP;
+                return FieldKind.TIMESTAMP;
             case TIMESTAMP_WITH_TIME_ZONE:
-                return FieldType.TIMESTAMP_WITH_TIMEZONE;
+                return FieldKind.TIMESTAMP_WITH_TIMEZONE;
             default:
                 throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
         }

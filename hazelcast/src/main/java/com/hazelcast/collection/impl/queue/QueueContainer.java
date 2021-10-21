@@ -94,8 +94,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private long idGenerator;
     private String name;
 
-    private long minAge = Long.MAX_VALUE;
-    private long maxAge = Long.MIN_VALUE;
+    private long minAge = LocalQueueStatsImpl.DEFAULT_MIN_AGE;
+    private long maxAge = LocalQueueStatsImpl.DEFAULT_MAX_AGE;
     private long totalAge;
     private long totalAgedCount;
     private boolean isEvictionScheduled;
@@ -1107,7 +1107,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         totalAgedCount++;
         totalAge += elapsed;
-
         minAge = Math.min(minAge, elapsed);
         maxAge = Math.max(maxAge, elapsed);
     }
@@ -1249,5 +1248,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 + ", isEvictionScheduled=" + isEvictionScheduled
                 + ", lastIdLoaded=" + lastIdLoaded
                 + '}';
+    }
+
+    /**
+     * @since 5.1
+     */
+    public void resetAgeStats() {
+        minAge = LocalQueueStatsImpl.DEFAULT_MIN_AGE;
+        maxAge = LocalQueueStatsImpl.DEFAULT_MAX_AGE;
+        totalAge = 0;
+        totalAgedCount = 0;
     }
 }

@@ -29,7 +29,7 @@ import java.util.Map;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * An common abstract superclass for {@link DiscoveryStrategy} implementations,
+ * A common abstract superclass for {@link DiscoveryStrategy} implementations,
  * offering convenient access to configuration properties (which may be overridden
  * on the system's environment or JVM properties), as well as a {@link ILogger} instance.
  *

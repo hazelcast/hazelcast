@@ -22,8 +22,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.Test;
 
-import static com.tngtech.archunit.core.importer.ImportOption.Predefined.DO_NOT_INCLUDE_JARS;
-import static com.tngtech.archunit.core.importer.ImportOption.Predefined.DO_NOT_INCLUDE_TESTS;
+import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModule;
 
 public class Hz3ImplSerializableTest {
 
@@ -31,8 +30,7 @@ public class Hz3ImplSerializableTest {
     public void serializable_classes_should_have_valid_serialVersionUID() {
         String basePackage = MapReader.class.getPackage().getName();
         JavaClasses classes = new ClassFileImporter()
-                .withImportOption(DO_NOT_INCLUDE_JARS)
-                .withImportOption(DO_NOT_INCLUDE_TESTS)
+                .withImportOption(onlyCurrentModule())
                 .importPackages(basePackage);
 
         ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);

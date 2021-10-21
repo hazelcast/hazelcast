@@ -58,10 +58,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        int[] rightKeys = getKeysFromRightScan();
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
@@ -96,5 +93,12 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
+    }
+
+    private int[] getKeysFromRightScan() {
+        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
+        List<Integer> projects = table.getProjects();
+        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        return rightKeys;
     }
 }

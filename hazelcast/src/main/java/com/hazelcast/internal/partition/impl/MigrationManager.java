@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
@@ -66,7 +65,6 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -414,56 +412,6 @@ public class MigrationManager {
         } finally {
             partitionServiceLock.unlock();
         }
-    }
-
-    /**
-     * Sends a {@link MigrationCommitOperation} to the destination and returns {@code true} if the new partition state
-     * was applied on the destination.
-     */
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    //RU_COMPAT_4_0
-    private boolean commitMigrationToDestination(MigrationInfo migration) {
-        PartitionReplica destination = migration.getDestination();
-
-        if (destination.isIdentical(node.getLocalMember())) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Shortcutting migration commit, since destination is master. -> " + migration);
-            }
-            return true;
-        }
-
-        Member member = node.getClusterService().getMember(destination.address(), destination.uuid());
-        if (member == null) {
-            logger.warning("Cannot commit " + migration + ". Destination " + destination + " is not a member anymore");
-            return false;
-        }
-
-        try {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Sending migration commit operation to " + destination + " for " + migration);
-            }
-            migration.setStatus(MigrationStatus.SUCCESS);
-            UUID destinationUuid = member.getUuid();
-
-            MigrationCommitOperation operation = new MigrationCommitOperation(migration, destinationUuid);
-            Future<Boolean> future = nodeEngine.getOperationService()
-                    .createInvocationBuilder(SERVICE_NAME, operation, destination.address())
-                    .setTryCount(Integer.MAX_VALUE)
-                    .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
-
-            boolean result = future.get();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Migration commit result " + result + " from " + destination + " for " + migration);
-            }
-            return result;
-        } catch (Throwable t) {
-            logMigrationCommitFailure(migration, t);
-
-            if (t.getCause() instanceof OperationTimeoutException) {
-                return commitMigrationToDestination(migration);
-            }
-        }
-        return false;
     }
 
     /**
@@ -1036,23 +984,7 @@ public class MigrationManager {
 
         /** Schedules all migrations. */
         private void scheduleMigrations(List<Queue<MigrationInfo>> migrationQs) {
-            Version version = nodeEngine.getClusterService().getClusterVersion();
-            if (version.isGreaterOrEqual(Versions.V4_1)) {
-                schedule(new MigrationPlanTask(migrationQs));
-            } else {
-                //RU_COMPAT_4_0
-                boolean migrationScheduled;
-                do {
-                    migrationScheduled = false;
-                    for (Queue<MigrationInfo> queue : migrationQs) {
-                        MigrationInfo migration = queue.poll();
-                        if (migration != null) {
-                            migrationScheduled = true;
-                            scheduleMigration(migration);
-                        }
-                    }
-                } while (migrationScheduled);
-            }
+            schedule(new MigrationPlanTask(migrationQs));
         }
 
         private void logMigrationStatistics(int migrationCount) {
@@ -1471,7 +1403,7 @@ public class MigrationManager {
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     if (t instanceof ExecutionException && t.getCause() instanceof PartitionStateVersionMismatchException) {
                         level = Level.FINE;
                     }
@@ -1488,7 +1420,7 @@ public class MigrationManager {
                     }
                     return migrationOperationSucceeded();
                 } else {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     if (logger.isLoggable(level)) {
                         logger.log(level, "Migration failed: " + migration);
                     }
@@ -1504,7 +1436,7 @@ public class MigrationManager {
                         TimeUnit.NANOSECONDS.toMillis(elapsed));
 
                 if (t != null) {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     logger.log(level, "Error during " + migration, t);
                     return false;
                 }

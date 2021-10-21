@@ -17,31 +17,31 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapSelectPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
-import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
-import com.hazelcast.jet.sql.impl.opt.JetConventions;
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
+import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
@@ -108,12 +108,12 @@ import static java.util.stream.Collectors.toList;
  * properties.
  * <p>
  * The optimization process is split into two phases - logical and physical. During logical planning we normalize abstract
- * nodes and convert them to nodes with {@link JetConventions#LOGICAL} convention. These new nodes are Hazelcast-specific
+ * nodes and convert them to nodes with {@link Conventions#LOGICAL} convention. These new nodes are Hazelcast-specific
  * and hence may have additional properties. For example, at this stage we do filter pushdowns, introduce constrained scans,
  * etc.
  * <p>
  * During physical planning we look for specific physical implementations of logical nodes. Implementation nodes have
- * {@link JetConventions#PHYSICAL} convention. The process contains the following fundamental steps:
+ * {@link Conventions#PHYSICAL} convention. The process contains the following fundamental steps:
  * <ul>
  *     <li>Choosing proper access methods for scan (normal scan, index scan, etc)</li>
  *     <li>Propagating physical properties from children nodes to their parents</li>
@@ -129,7 +129,7 @@ import static java.util.stream.Collectors.toList;
  * fired in effectively uncontrollable fashion, thus making propagation of physical properties difficult. To overcome this
  * problem we use several techniques that helps us emulate at least some parts of Cascades-style optimization.
  * <p>
- * First, {@link JetConventions#PHYSICAL} convention overrides {@link Convention#canConvertConvention(Convention)} and
+ * First, {@link Conventions#PHYSICAL} convention overrides {@link Convention#canConvertConvention(Convention)} and
  * {@link Convention#useAbstractConvertersForConversion(RelTraitSet, RelTraitSet)} methods. Their implementations ensure that
  * whenever a new child node with {@code PHYSICAL} convention is created, the rule of the parent {@code LOGICAL} nodes
  * will be re-scheduled. Second, physical rules for {@code LOGICAL} nodes iterate over concrete physical implementations of
@@ -168,7 +168,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final MappingResolver mappingResolver;
     private final List<TableResolver> tableResolvers;
-    private final JetPlanExecutor planExecutor;
+    private final PlanExecutor planExecutor;
 
     private final ILogger logger;
 
@@ -179,7 +179,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(mappingCatalog);
-        this.planExecutor = new JetPlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
+        this.planExecutor = new PlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -292,7 +292,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
-        JetPlan dmlPlan = toPlan(
+        SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
@@ -338,7 +338,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
     }
 
-    private JetPlan toPlan(
+    private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
             RelNode rel,
@@ -431,7 +431,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -490,11 +490,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         context.setParameterMetadata(parameterMetadata);
         context.setRequiresJob(isCreateJob);
 
-        logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
+        boolean fineLogOn = logger.isFineEnabled();
+        if (fineLogOn) {
+            logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
+        }
         LogicalRel logicalRel = optimizeLogical(context, rel);
-        logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+        if (fineLogOn) {
+            logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+        }
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
-        logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+        if (fineLogOn) {
+            logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+        }
         return physicalRel;
     }
 

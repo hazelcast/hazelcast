@@ -43,8 +43,13 @@ public class SingleProtocolDecoder
 
     protected final InboundHandler[] inboundHandlers;
     protected final ProtocolType supportedProtocol;
-
-    private final SingleProtocolEncoder encoder;
+    /**
+     * This flag is used to ensure that {@link #verifyProtocol(String)} is called only once
+     * with initial bytes of connection. Formerly, this method would be called multiple times
+     * with new incoming data, although it failed after its first call.
+     */
+    protected volatile boolean verifyProtocolCalled;
+    final SingleProtocolEncoder encoder;
     private final boolean shouldSignalMemberProtocolEncoder;
 
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
@@ -80,6 +85,7 @@ public class SingleProtocolDecoder
         this.inboundHandlers = next;
         this.encoder = encoder;
         this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
+        this.verifyProtocolCalled = false;
     }
 
     @Override
@@ -96,8 +102,21 @@ public class SingleProtocolDecoder
                 // The protocol has not yet been fully received.
                 return CLEAN;
             }
-
-            verifyProtocol(loadProtocol());
+            boolean verifyProtocolPreviouslyCalled = verifyProtocolCalled;
+            if (verifyProtocolPreviouslyCalled || !verifyProtocol(loadProtocol())) {
+                // The exception that will close the Connection eventually thrown
+                // in SingleProtocolEncoder, since we send wrong protocol signal
+                // for this in verifyProtocol.
+                if (verifyProtocolPreviouslyCalled) {
+                    // We do this trick to clear buffer on compactOrClear(ByteBuffer)
+                    // which is called in the finally block below. Otherwise, the
+                    // previous handler may get stuck in a DIRTY loop even if the
+                    // channel closes. We observed this behavior in TLSDecoder
+                    // before.
+                    src.position(src.limit());
+                }
+                return CLEAN;
+            }
             encoder.signalProtocolVerified();
 
             // Initialize the connection
@@ -127,16 +146,25 @@ public class SingleProtocolDecoder
 
     // Verify that received protocol is expected one.
     // If not then signal SingleProtocolEncoder and throw exception.
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
+        verifyProtocolCalled = true;
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
-            encoder.signalWrongProtocol();
-            String message = "Unsupported protocol exchange detected, " + "expected protocol: "
-                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol;
-            if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
-                message = "Instance to be connected replied with HZX. "
-                        + "This means a different protocol than expected sent to target instance";
-            }
-            throw new ProtocolException(message);
+            handleUnexpectedProtocol(incomingProtocol);
+            encoder.signalWrongProtocol("Unsupported protocol exchange detected, expected protocol: "
+                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol);
+            return false;
+        }
+        return true;
+    }
+
+    protected void handleUnexpectedProtocol(String incomingProtocol) {
+        if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
+            // We can throw exception here, and we don't need to signal the
+            // encoder because when HZX is received there is no data to be
+            // sent.
+            throw new ProtocolException("Instance to be connected replied with"
+                    + " HZX. This means a different protocol than expected sent"
+                    + " to target instance");
         }
     }
 

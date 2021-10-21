@@ -16,16 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import org.apache.calcite.rel.rules.FilterAggregateTransposeRule;
-import org.apache.calcite.rel.rules.FilterJoinRule.FilterIntoJoinRule;
-import org.apache.calcite.rel.rules.FilterMergeRule;
-import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
-import org.apache.calcite.rel.rules.JoinProjectTransposeRule;
-import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
-import org.apache.calcite.rel.rules.ProjectMergeRule;
-import org.apache.calcite.rel.rules.ProjectRemoveRule;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
-import org.apache.calcite.rel.rules.ReduceExpressionsRule;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -37,19 +29,21 @@ public final class LogicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
+                PruneEmptyRules.FILTER_INSTANCE,
                 FilterLogicalRule.INSTANCE,
-                FilterMergeRule.INSTANCE,
-                FilterProjectTransposeRule.INSTANCE,
+                CoreRules.FILTER_MERGE,
+                CoreRules.FILTER_PROJECT_TRANSPOSE,
                 FilterIntoScanLogicalRule.INSTANCE,
-                FilterAggregateTransposeRule.INSTANCE,
-                FilterIntoJoinRule.FILTER_ON_JOIN,
-                ReduceExpressionsRule.FILTER_INSTANCE,
+                CoreRules.FILTER_AGGREGATE_TRANSPOSE,
+                CoreRules.FILTER_INTO_JOIN,
+                CoreRules.FILTER_REDUCE_EXPRESSIONS,
 
                 // Project rules
+                PruneEmptyRules.PROJECT_INSTANCE,
                 ProjectLogicalRule.INSTANCE,
-                ProjectMergeRule.INSTANCE,
-                ProjectRemoveRule.INSTANCE,
-                ProjectFilterTransposeRule.INSTANCE,
+                CoreRules.PROJECT_MERGE,
+                CoreRules.PROJECT_REMOVE,
+                CoreRules.PROJECT_FILTER_TRANSPOSE,
                 ProjectIntoScanLogicalRule.INSTANCE,
 
                 // Scan rules
@@ -65,10 +59,13 @@ public final class LogicalRules {
 
                 // Join rules
                 JoinLogicalRule.INSTANCE,
-                JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
-                ReduceExpressionsRule.JOIN_INSTANCE,
+                CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
+                CoreRules.JOIN_REDUCE_EXPRESSIONS,
 
                 // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
@@ -90,11 +87,7 @@ public final class LogicalRules {
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE,
-
-                // Miscellaneous
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE
+                DeleteByKeyMapLogicalRule.INSTANCE
         );
     }
 }

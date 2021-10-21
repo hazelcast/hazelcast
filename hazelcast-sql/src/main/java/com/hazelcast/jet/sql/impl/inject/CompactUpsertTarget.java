@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
@@ -58,9 +58,9 @@ class CompactUpsertTarget implements UpsertTarget {
             };
         }
 
-        FieldType type = schema.getField(path).getType();
-        switch (type) {
-            case UTF:
+        FieldKind kind = schema.getField(path).getKind();
+        switch (kind) {
+            case STRING:
                 return value -> builder.setString(path, (String) value);
             case BOOLEAN:
                 return value -> {
@@ -120,7 +120,7 @@ class CompactUpsertTarget implements UpsertTarget {
                     builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
                 };
             default:
-                throw QueryException.error(type + " type is not supported in SQL with Compact format!");
+                throw QueryException.error(kind + " kind is not supported in SQL with Compact format!");
         }
     }
 

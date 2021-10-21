@@ -47,6 +47,6 @@ public final class HazelcastToEpochMillisFunction extends HazelcastFunction {
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        return TypedOperandChecker.TIMESTAMP_WITH_LOCAL_TIME_ZONE.check(binding, throwOnFailure, 0);
+        return TypedOperandChecker.TIMESTAMP_WITH_TIME_ZONE.check(binding, throwOnFailure, 0);
     }
 }

@@ -71,7 +71,7 @@ public interface OutboundPipeline {
      *
      * It will cause at least one processing of the OutboundPipeline.
      *
-     * This method is threadsafe and can safely be called from any thread.
+     * This method is thread-safe and can safely be called from any thread.
      *
      * Calling it while there is nothing in the pipeline will not do any damage,
      * apart from consuming cpu cycles.

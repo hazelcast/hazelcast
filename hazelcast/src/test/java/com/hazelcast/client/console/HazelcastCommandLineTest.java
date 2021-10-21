@@ -513,7 +513,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         try {
             run("submit", testJarFile.toString());
             String actual = captureErr();
-            assertThat(actual).contains("WARNING: Hazelcast code detected in the jar: com/hazelcast/jet/testjob/HazelcastBootstrap.class. Hazelcast dependency should be set with the 'provided' scope or equivalent.");
+            String pathToClass = Paths.get("com", "hazelcast", "jet", "testjob", "HazelcastBootstrap.class").toString();
+            assertThat(actual).contains("WARNING: Hazelcast code detected in the jar: " + pathToClass + ". Hazelcast dependency should be set with the 'provided' scope or equivalent.");
         } finally {
             System.setErr(oldErr);
             IOUtil.deleteQuietly(testJarFile.toFile());

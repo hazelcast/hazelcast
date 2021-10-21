@@ -38,19 +38,19 @@ public final class Records {
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record,
-                                   Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
+                                   Data dataValue) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         out.writeByte(readerWriter.getId());
-        readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
+        readerWriter.writeRecord(out, record, dataValue);
     }
 
-    public static Record readRecord(ObjectDataInput in,
-                                    ExpiryMetadata expiryMetadata) throws IOException {
+    public static Record readRecord(ObjectDataInput in) throws IOException {
         byte matchingDataRecordId = in.readByte();
-        return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
+        return getById(matchingDataRecordId).readRecord(in);
     }
 
-    public static void writeExpiry(ObjectDataOutput out, ExpiryMetadata expiryMetadata) throws IOException {
+    public static void writeExpiry(ObjectDataOutput out,
+                                   ExpiryMetadata expiryMetadata) throws IOException {
         boolean hasExpiry = expiryMetadata.hasExpiry();
         out.writeBoolean(hasExpiry);
         if (hasExpiry) {
@@ -71,17 +71,17 @@ public final class Records {
     /**
      * Except transient field {@link com.hazelcast.query.impl.Metadata},
      * all record-metadata is copied from one record to another.
-     *
-     * @return populated record object with new metadata
      */
-    public static Record copyMetadataFrom(Record fromRecord, Record toRecord) {
+    public static void copyMetadataFrom(Record fromRecord, Record toRecord) {
+        if (fromRecord == null) {
+            return;
+        }
         toRecord.setHits(fromRecord.getHits());
         toRecord.setVersion(fromRecord.getVersion());
         toRecord.setCreationTime(fromRecord.getCreationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());
         toRecord.setLastStoredTime(fromRecord.getLastStoredTime());
         toRecord.setLastUpdateTime(fromRecord.getLastUpdateTime());
-        return toRecord;
     }
 
     /**

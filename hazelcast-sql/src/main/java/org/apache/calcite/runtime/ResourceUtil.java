@@ -16,6 +16,8 @@
 
 package org.apache.calcite.runtime;
 
+import javax.annotation.Nullable;
+
 /**
  * A class that enables access to protected {@link Resources} members.
  */
@@ -28,6 +30,7 @@ public final class ResourceUtil {
         return element.key;
     }
 
+    @Nullable
     public static Object[] args(Resources.Inst instance) {
         return instance.args;
     }

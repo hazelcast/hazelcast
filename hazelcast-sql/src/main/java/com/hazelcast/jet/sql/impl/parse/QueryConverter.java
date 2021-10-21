@@ -26,12 +26,19 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.rules.SubQueryRemoveRule;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.rules.CoreRules;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Converts a parse tree into a relational tree.
@@ -48,21 +55,23 @@ public class QueryConverter {
      */
     private static final boolean EXPAND = false;
 
-    /** Whether to trim unused fields. The trimming is needed after subquery elimination. */
+    /**
+     * Whether to trim unused fields. The trimming is needed after subquery elimination.
+     */
     private static final boolean TRIM_UNUSED_FIELDS = true;
 
-    /** Increase the maximum number of elements in the RHS to convert the IN operator to a sequence of OR comparisons. */
+    /**
+     * Increase the maximum number of elements in the RHS to convert the IN operator to a sequence of OR comparisons.
+     */
     private static final int HAZELCAST_IN_ELEMENTS_THRESHOLD = 10_000;
 
     private static final SqlToRelConverter.Config CONFIG;
 
     static {
-        SqlToRelConverter.ConfigBuilder configBuilder = SqlToRelConverter.configBuilder()
-                                                                         .withExpand(EXPAND)
-                                                                         .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
-                                                                         .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
-
-        CONFIG = configBuilder.build();
+        CONFIG = SqlToRelConverter.config()
+                .withExpand(EXPAND)
+                .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
+                .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
     }
 
     private final SqlValidator validator;
@@ -84,7 +93,6 @@ public class QueryConverter {
                 StandardConvertletTable.INSTANCE,
                 CONFIG
         );
-
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
@@ -94,14 +102,19 @@ public class QueryConverter {
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
         // See "Unnesting Arbitrary Queries", Thomas Neumann and Alfons Kemper.
-        RelNode relDecorrelated = converter.decorrelate(node, relNoSubqueries);
+        RelNode result = converter.decorrelate(node, relNoSubqueries);
 
         // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
         // primarily in projections. This steps removes unused fields from the tree.
-        RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
+        //
+        // NOTE: We are disabling if there is a chain of nested EXISTS in the query.
+        //       Calcite produces exception in this case.
+        if (countNestedExists(root.rel) == 0) {
+            result = converter.trimUnusedFields(true, result);
+        }
 
         // 5. Collect original field names.
-        return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
+        return new QueryConvertResult(result, Pair.right(root.fields));
     }
 
     /**
@@ -114,14 +127,66 @@ public class QueryConverter {
     private static RelNode rewriteSubqueries(RelNode rel) {
         HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
 
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.FILTER);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.PROJECT);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.JOIN);
+        hepPgmBldr.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
+        hepPgmBldr.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
+        hepPgmBldr.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+
+        hepPgmBldr.addRuleInstance(CoreRules.UNION_MERGE);
+        hepPgmBldr.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
         HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
 
         planner.setRoot(rel);
 
         return planner.findBestExp();
+    }
+
+    private static int countNestedExists(RelNode root) {
+        class NestedExistsCounter extends RelVisitor {
+
+            private boolean nested;
+            private int count;
+
+            @Override
+            public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+                if (node instanceof LogicalFilter) {
+                    RexSubQuery exists = getExists((LogicalFilter) node);
+                    if (exists != null) {
+                        if (nested) {
+                            count++;
+                        }
+                        nested = true;
+                        go(exists.rel);
+                        nested = false;
+                    }
+                }
+                super.visit(node, ordinal, parent);
+            }
+
+            private int count() {
+                go(root);
+                return count;
+            }
+
+            private RexSubQuery getExists(LogicalFilter filter) {
+                if (filter.getCondition().getKind() == SqlKind.EXISTS) {
+                    if (filter.getCondition() instanceof RexSubQuery) {
+                        return (RexSubQuery) filter.getCondition();
+                    }
+                }
+                if (filter.getCondition() instanceof RexCall) {
+                    RexCall call = ((RexCall) filter.getCondition());
+                    if (call.getOperator().getKind() == SqlKind.NOT) {
+                        RexNode operand = call.getOperands().get(0);
+                        if (operand instanceof RexSubQuery && operand.getKind() == SqlKind.EXISTS) {
+                            return (RexSubQuery) operand;
+                        }
+                    }
+                }
+                return null;
+            }
+        }
+
+        return new NestedExistsCounter().count();
     }
 }

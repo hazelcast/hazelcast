@@ -57,7 +57,7 @@
                 <executions>
                     <execution>
                         <id>unpack</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -67,14 +67,14 @@
                                     <groupId>com.hazelcast</groupId>
                                     <artifactId>hazelcast</artifactId>
                                     <outputDirectory>${configs.from.jar}</outputDirectory>
-                                    <includes>**/*.xml,**/*.yaml</includes>
+                                    <includes>**/*.xml,**/*.yaml,META-INF/NOTICE</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
                     <execution>
                         <id>copy-hz3</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>

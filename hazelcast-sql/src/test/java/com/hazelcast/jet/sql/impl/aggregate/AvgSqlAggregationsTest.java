@@ -105,7 +105,7 @@ public class AvgSqlAggregationsTest {
         aggregation.accumulate(BigDecimal.ONE);
         aggregation.accumulate(BigDecimal.ONE);
 
-        assertThat(aggregation.collect()).isEqualTo(new BigDecimal("0.66666666666666666666666666666666666667"));
+        assertThat(aggregation.collect()).isEqualTo(new BigDecimal("0.6666666666666666666666666666666666666666666666666666666666666666666666666667"));
     }
 
     @SuppressWarnings("unused")

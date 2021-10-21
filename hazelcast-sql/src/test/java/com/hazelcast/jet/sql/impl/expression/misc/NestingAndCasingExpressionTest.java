@@ -70,6 +70,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
                     || field.getName().equals("DESC")
+                    || field.getName().equals("UNION")
+                    || field.getName().equals("UNION_ALL")
                     || field.getName().equals("VALUES")
                     || field.getName().equals("ROW")
                     || field.getName().equals("COLLECTION_TABLE")
@@ -81,6 +83,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("JSON_FLAT_FILE")
                     || field.getName().equals("AVRO_FILE")
                     || field.getName().equals("PARQUET_FILE")
+                    || field.getName().equals("EXISTS")
             ) {
                 continue;
             }
@@ -129,7 +132,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_IN() {
-        check(sql("(1 IN (1)) || (1 IN (1)) "));
+        check(sql("(1 IN (1)) || (1 IN (1))"));
     }
 
     @Test

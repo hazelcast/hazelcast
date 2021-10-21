@@ -594,8 +594,12 @@ public class JobCoordinationService {
                     }
 
                     jobs.entrySet().stream()
-                            .sorted(comparing(Entry<Long, Long>::getValue).reversed())
-                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                        .sorted(
+                                comparing(Entry<Long, Long>::getValue)
+                                        .thenComparing(Entry::getKey)
+                                        .reversed()
+                        )
+                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));

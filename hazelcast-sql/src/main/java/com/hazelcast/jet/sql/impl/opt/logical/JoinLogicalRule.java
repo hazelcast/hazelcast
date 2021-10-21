@@ -21,9 +21,11 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.logical.LogicalJoin;
+import org.apache.calcite.rel.rules.JoinCommuteRule;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class JoinLogicalRule extends ConverterRule {
 
@@ -39,6 +41,12 @@ final class JoinLogicalRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         LogicalJoin join = (LogicalJoin) rel;
+
+        // We convert every RIGHT JOIN to LEFT JOIN to use already
+        // implemented LEFT JOIN operators.
+        if (join.getJoinType() == JoinRelType.RIGHT) {
+            return JoinCommuteRule.swap(join, true);
+        }
 
         return new JoinLogicalRel(
                 join.getCluster(),

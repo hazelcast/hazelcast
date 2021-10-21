@@ -78,7 +78,7 @@ public class SqlClientService implements SqlService {
         client.getCluster().addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent event) {
-            }
+    }
 
             @Override
             public void memberRemoved(MembershipEvent event) {
@@ -100,16 +100,14 @@ public class SqlClientService implements SqlService {
         QueryId id = QueryId.create(connection.getRemoteUuid());
         res.init(connection, id);
 
-        try {
-            List<Object> params = statement.getParameters();
+        List<Object> params = statement.getParameters();
+        List<Data> params0 = new ArrayList<>(params.size());
 
-            List<Data> params0 = new ArrayList<>(params.size());
+        for (Object param : params) {
+            params0.add(serializeParameter(param));
+        }
 
-            for (Object param : params) {
-                params0.add(serializeParameter(param));
-            }
-
-            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
+        ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
                 statement.getSql(),
                 params0,
                 statement.getTimeoutMillis(),
@@ -118,14 +116,15 @@ public class SqlClientService implements SqlService {
                 statement.getExpectedResultType().getId(),
                 id,
                 skipUpdateStatistics
-            );
+        );
 
-            ClientInvocationFuture future = invokeAsync(requestMessage, connection);
-
-            future.whenComplete(withTryCatch(logger,
-                    (message, error) -> handleExecuteResponse(connection, statement, res, message, error))).get();
+        try {
+            ClientMessage message = invoke(requestMessage, connection);
+            handleExecuteResponse(connection, statement, res, message);
         } catch (Exception e) {
-            throw rethrow(e, connection);
+            RuntimeException error = rethrow(e, connection);
+            res.onExecuteError(error);
+            throw error;
         }
     }
 
@@ -138,36 +137,32 @@ public class SqlClientService implements SqlService {
             ClientConnection connection,
             SqlStatement statement,
             SqlClientResult res,
-            ClientMessage message,
-            Throwable error
+            ClientMessage message
     ) {
-        if (error != null) {
-            res.onExecuteError(rethrow(error, connection));
-
-            return;
-        }
-
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
-
-        HazelcastSqlException responseError = handleResponseError(response.error);
-
-        if (responseError != null) {
-            if (responseError.getCode() == SqlErrorCode.MEMBER_SHUTTING_DOWN) {
+        SqlError sqlError = response.error;
+        if (sqlError != null) {
+            if (sqlError.getCode() == SqlErrorCode.MEMBER_SHUTTING_DOWN) {
                 shuttingDownMembers.add(connection.getRemoteUuid());
                 logger.fine("Client added a shutting-down member: " + connection.getRemoteUuid()
                         + " for query " + res.getQueryId());
                 executeInt(res, statement);
             } else {
-                res.onExecuteError(responseError);
+                throw new HazelcastSqlException(
+                        sqlError.getOriginatingMemberId(),
+                        sqlError.getCode(),
+                        sqlError.getMessage(),
+                        null,
+                        sqlError.getSuggestion()
+                );
             }
-            return;
+        } else {
+            res.onExecuteResponse(
+                    response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
+                    response.rowPage,
+                    response.updateCount
+            );
         }
-
-        res.onExecuteResponse(
-            response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
-            response.rowPage,
-            response.updateCount
-        );
     }
 
     public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
@@ -327,5 +322,5 @@ public class SqlClientService implements SqlService {
     // for tests
     public int numberOfShuttingDownMembers() {
         return shuttingDownMembers.size();
-    }
+}
 }

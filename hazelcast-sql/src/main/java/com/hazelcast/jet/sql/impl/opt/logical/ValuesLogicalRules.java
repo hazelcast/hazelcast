@@ -35,7 +35,7 @@ import org.apache.calcite.rel.logical.LogicalValues;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
@@ -152,13 +152,14 @@ final class ValuesLogicalRules {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
                     Union union = call.rel(0);
-
                     List<ExpressionValues> expressionValues = new ArrayList<>(union.getInputs().size());
                     for (RelNode input : union.getInputs()) {
                         ValuesLogicalRel values = OptUtils.findMatchingRel(input, VALUES_CHILD_OPERAND);
+                        if (values == null) {
+                            return;
+                        }
                         expressionValues.addAll(values.values());
                     }
-
                     RelNode rel = new ValuesLogicalRel(
                             union.getCluster(),
                             union.getTraitSet(),

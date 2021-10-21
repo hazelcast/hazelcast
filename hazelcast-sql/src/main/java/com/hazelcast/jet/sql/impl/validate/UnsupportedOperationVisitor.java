@@ -23,7 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources.ExInst;
@@ -82,6 +82,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IN);
         SUPPORTED_KINDS.add(SqlKind.NOT_IN);
         SUPPORTED_KINDS.add(SqlKind.BETWEEN);
+        SUPPORTED_KINDS.add(SqlKind.EXISTS);
 
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
@@ -100,7 +101,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
         SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
 
-        // Comparisons predicates
+        // Comparison predicates
         SUPPORTED_KINDS.add(SqlKind.EQUALS);
         SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
         SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
@@ -119,6 +120,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CASE);
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
+        SUPPORTED_KINDS.add(SqlKind.UNION);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -187,6 +189,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NOT_LIKE);
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
@@ -213,7 +216,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     @Override
     public Void visit(SqlCall call) {
         // remove the branch when MAP/MAP_VALUE_CONSTRUCTOR gets proper support
-        if (!(call.getOperator() instanceof JetDynamicTableFunction)) {
+        if (!(call.getOperator() instanceof HazelcastDynamicTableFunction)) {
             processCall(call);
 
             call.getOperator().acceptCall(this, call);
@@ -308,6 +311,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                         || symbolValue == JoinType.COMMA
                         || symbolValue == JoinType.CROSS
                         || symbolValue == JoinType.LEFT
+                        || symbolValue == JoinType.RIGHT
                 ) {
                     return null;
                 }
@@ -349,6 +353,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case OTHER_FUNCTION:
             case EXTRACT:
             case POSITION:
+            case EXISTS:
                 processOther(call);
                 break;
 
@@ -379,6 +384,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 && joinType != JoinType.COMMA
                 && joinType != JoinType.CROSS
                 && joinType != JoinType.LEFT
+                && joinType != JoinType.RIGHT
         ) {
             throw unsupported(join, joinType.name() + " join");
         }
