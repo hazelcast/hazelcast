@@ -1,13 +1,14 @@
 #!/bin/bash
+PROCESS_MATCHER="com.hazelcast.core.server.HazelcastMemberStarter"
 
 if [ "$1" = "help" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-  echo "Usage : hz-stop"
+  echo "Usage : $0"
   echo "Used to stop any running instances of HazelcastMemberStarter."
-  echo "Finds any processes matching com.hazelcast.core.server.HazelcastMemberStarter and stops all of them."
+  echo "Finds any processes matching \"$PROCESS_MATCHER\" and stops all of them."
   exit 1
 fi
 
-PIDS=$(ps ax | grep com.hazelcast.core.server.HazelcastMemberStarter | grep -v grep | awk '{print $1}')
+PIDS=$(ps ax | grep $PROCESS_MATCHER | grep -v grep | awk '{print $1}')
 
 if [ -z "$PIDS" ]; then
   echo "No Hazelcast server found to stop"
