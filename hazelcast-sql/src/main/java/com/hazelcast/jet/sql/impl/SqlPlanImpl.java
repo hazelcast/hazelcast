@@ -219,8 +219,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.name = name;
             this.mappingName = mappingName;
             this.indexType = indexType;
-            this.attributes = new String[attributes.size()];
-            attributes.toArray(this.attributes);
+            this.attributes = attributes.toArray(new String[0]);
             this.options = options;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
