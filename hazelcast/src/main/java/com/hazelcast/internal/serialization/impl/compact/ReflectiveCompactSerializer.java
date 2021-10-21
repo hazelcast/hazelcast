@@ -178,10 +178,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
         return fieldDescriptor != null && fieldDescriptor.getKind() == fieldKind;
     }
 
-    private void createFastReadWriteCaches(Class clazz) throws IOException {
-        //Create object to test if it is empty constructable to fail-fast on the write path
-        createObject(clazz);
-
+    private void createFastReadWriteCaches(Class clazz) {
         //get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
         Writer[] writers = new Writer[allFields.size()];
