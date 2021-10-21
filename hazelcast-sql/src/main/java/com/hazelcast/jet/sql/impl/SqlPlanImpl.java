@@ -199,7 +199,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final String[] attributes;
         private final Map<String, String> options;
         private final IndexType indexType;
-        private final boolean replace;
         private final boolean ifNotExists;
         private final PlanExecutor planExecutor;
 
@@ -210,7 +209,6 @@ abstract class SqlPlanImpl extends SqlPlan {
                 IndexType indexType,
                 List<String> attributes,
                 Map<String, String> options,
-                boolean replace,
                 boolean ifNotExists,
                 PlanExecutor planExecutor
         ) {
@@ -221,7 +219,6 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.indexType = indexType;
             this.attributes = attributes.toArray(new String[0]);
             this.options = options;
-            this.replace = replace;
             this.ifNotExists = ifNotExists;
             this.planExecutor = planExecutor;
         }
@@ -244,10 +241,6 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public Map<String, String> options() {
             return options;
-        }
-
-        boolean replace() {
-            return replace;
         }
 
         boolean ifNotExists() {
