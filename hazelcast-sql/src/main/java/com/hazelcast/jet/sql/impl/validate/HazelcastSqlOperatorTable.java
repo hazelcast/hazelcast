@@ -29,12 +29,6 @@ import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
@@ -52,12 +46,19 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCoalesceFunct
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastExistsOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastNotPredicate;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatWSOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
@@ -121,6 +122,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlInfixOperator NOT_BETWEEN_SYMMETRIC = HazelcastBetweenOperator.NOT_BETWEEN_SYMMETRIC;
     public static final SqlBinaryOperator IN = HazelcastInOperator.IN;
     public static final SqlBinaryOperator NOT_IN = HazelcastInOperator.NOT_IN;
+    public static final SqlOperator EXISTS = HazelcastExistsOperator.INSTANCE;
 
     //#endregion
 

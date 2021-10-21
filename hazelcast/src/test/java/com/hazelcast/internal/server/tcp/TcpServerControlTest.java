@@ -70,7 +70,7 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class MemberHandshakeHandlerTest {
+public class TcpServerControlTest {
 
     // client side socket address of the new connection
     private static final InetSocketAddress CLIENT_SOCKET_ADDRESS = new InetSocketAddress("127.0.0.1", 49152);
@@ -124,10 +124,10 @@ public class MemberHandshakeHandlerTest {
     public List<Address> expectedAddresses;
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+    private final UUID uuid = UUID.randomUUID();
 
     private InternalSerializationService serializationService;
     private TcpServerControl tcpServerControl;
-    private UUID uuid = UUID.randomUUID();
 
     // mocks
     private Channel channel;
@@ -186,7 +186,7 @@ public class MemberHandshakeHandlerTest {
 
     @Test
     public void process() {
-        tcpServerControl.process(bindMessage());
+        tcpServerControl.process(memberHandshakeMessage());
         assertExpectedAddressesRegistered();
     }
 
@@ -212,7 +212,7 @@ public class MemberHandshakeHandlerTest {
         }
     }
 
-    private Packet bindMessage() {
+    private Packet memberHandshakeMessage() {
         MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
