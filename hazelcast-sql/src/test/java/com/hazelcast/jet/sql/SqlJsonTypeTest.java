@@ -62,7 +62,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     }
 
     @Test
-    public void test_client() {
+    public void test_client_useJsonValue() {
         createMapping(client(), "test", "bigint", "json");
 
         final IMap<Long, HazelcastJsonValue> test = client().getMap("test");
@@ -74,6 +74,28 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
                 rows(2, 1L, json("[1,2,3]"), 2L, json("[4,5,6]")));
 
         executeClient("INSERT INTO test VALUES (3, ?)", json("[7,8,9]"));
+        assertRowsAnyOrder(client(),
+                "SELECT * FROM test" ,
+                rows(2,
+                        1L, json("[1,2,3]"),
+                        2L, json("[4,5,6]"),
+                        3L, json("[7,8,9]")
+                ));
+    }
+
+    @Test
+    public void test_client_useStringValue() {
+        createMapping(client(), "test", "bigint", "json");
+
+        final IMap<Long, HazelcastJsonValue> test = client().getMap("test");
+        test.put(1L, json("[1,2,3]"));
+
+        executeClient("INSERT INTO test VALUES (2, '[4,5,6]')");
+        assertRowsAnyOrder(client(),
+                "SELECT * FROM test" ,
+                rows(2, 1L, json("[1,2,3]"), 2L, json("[4,5,6]")));
+
+        executeClient("INSERT INTO test VALUES (3, ?)", "[7,8,9]");
         assertRowsAnyOrder(client(),
                 "SELECT * FROM test" ,
                 rows(2,

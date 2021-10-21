@@ -1000,7 +1000,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
     public void test_insertSelect() {
         // the TestBatchSource doesn't support OBJECT/NULL type
         assumeFalse(testParams.srcType == OBJECT || testParams.srcType == NULL);
+
         // HazelcastJsonValue isn't java-serializable, it doesn't work with TestBatchSqlConnector
+        // TODO we might replace test-batch-source with an imap which doesn't have this issue
         assumeFalse(testParams.srcValue instanceof HazelcastJsonValue);
 
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
