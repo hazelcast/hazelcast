@@ -121,11 +121,11 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     @Test
     public void testReadPosition() throws Exception {
         int read = in.read(1);
-        int readNegative = in.read(INIT_DATA.length - 1);
+        int readUnsigned = in.read(INIT_DATA.length - 1);
         int readEnd = in.read(INIT_DATA.length);
         assertEquals(1, read);
         // Map the expected negative value to unsigned byte range
-        assertEquals(-1 & 0xFF, readNegative);
+        assertEquals(-1 & 0xFF, readUnsigned);
         assertEquals(-1, readEnd);
     }
 
