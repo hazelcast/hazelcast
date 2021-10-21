@@ -22,11 +22,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Day-second interval.
  */
-public class SqlDaySecondInterval implements IdentifiedDataSerializable, Comparable<SqlDaySecondInterval> {
+public class SqlDaySecondInterval implements IdentifiedDataSerializable, Comparable<SqlDaySecondInterval>, Serializable {
 
     private long millis;
 

@@ -134,6 +134,7 @@ public class TimedMemberStateFactory {
 
         ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
         timedMemberState.setScriptingEnabled(managementCenterConfig.isScriptingEnabled());
+        timedMemberState.setConsoleEnabled(managementCenterConfig.isConsoleEnabled());
 
         return timedMemberState;
     }
@@ -229,15 +230,15 @@ public class TimedMemberStateFactory {
         Config config = instance.getConfig();
         for (StatisticsAwareService service : services) {
             if (service instanceof MapService) {
-                handleMap(memberState, config, ((MapService) service).getStats());
+                handleMap(memberState, ((MapService) service).getStats());
             } else if (service instanceof MultiMapService) {
-                handleMultiMap(memberState, config, ((MultiMapService) service).getStats());
+                handleMultiMap(memberState, ((MultiMapService) service).getStats());
             } else if (service instanceof QueueService) {
-                handleQueue(memberState, config, ((QueueService) service).getStats());
+                handleQueue(memberState, ((QueueService) service).getStats());
             } else if (service instanceof TopicService) {
-                handleTopic(memberState, config, ((TopicService) service).getStats());
+                handleTopic(memberState, ((TopicService) service).getStats());
             } else if (service instanceof ReliableTopicService) {
-                handleReliableTopic(memberState, config, ((ReliableTopicService) service).getStats());
+                handleReliableTopic(memberState, ((ReliableTopicService) service).getStats());
             } else if (service instanceof DistributedExecutorService) {
                 handleExecutorService(memberState, config, ((DistributedExecutorService) service).getStats());
             } else if (service instanceof DistributedScheduledExecutorService) {
@@ -309,15 +310,9 @@ public class TimedMemberStateFactory {
         memberState.setDurableExecutorsWithStats(executorsWithStats);
     }
 
-    private void handleMultiMap(MemberStateImpl memberState, Config config,
+    private void handleMultiMap(MemberStateImpl memberState,
                                 Map<String, LocalMultiMapStats> multiMaps) {
-        Set<String> mapsWithStats = createHashSet(multiMaps.size());
-        for (String name : multiMaps.keySet()) {
-            if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
-                mapsWithStats.add(name);
-            }
-        }
-        memberState.setMultiMapsWithStats(mapsWithStats);
+        memberState.setMultiMapsWithStats(multiMaps.keySet());
     }
 
     private void handleReplicatedMap(MemberStateImpl memberState, Config config,
@@ -342,45 +337,21 @@ public class TimedMemberStateFactory {
         memberState.setPNCountersWithStats(countersWithStats);
     }
 
-    private void handleReliableTopic(MemberStateImpl memberState, Config config,
+    private void handleReliableTopic(MemberStateImpl memberState,
                                      Map<String, LocalTopicStats> topics) {
-        Set<String> topicsWithStats = createHashSet(topics.size());
-        for (String name : topics.keySet()) {
-            if (config.findReliableTopicConfig(name).isStatisticsEnabled()) {
-                topicsWithStats.add(name);
-            }
-        }
-        memberState.setReliableTopicsWithStats(topicsWithStats);
+        memberState.setReliableTopicsWithStats(topics.keySet());
     }
 
-    private void handleTopic(MemberStateImpl memberState, Config config, Map<String, LocalTopicStats> topics) {
-        Set<String> topicsWithStats = createHashSet(topics.size());
-        for (String name : topics.keySet()) {
-            if (config.findTopicConfig(name).isStatisticsEnabled()) {
-                topicsWithStats.add(name);
-            }
-        }
-        memberState.setTopicsWithStats(topicsWithStats);
+    private void handleTopic(MemberStateImpl memberState, Map<String, LocalTopicStats> topics) {
+        memberState.setTopicsWithStats(topics.keySet());
     }
 
-    private void handleQueue(MemberStateImpl memberState, Config config, Map<String, LocalQueueStats> queues) {
-        Set<String> queuesWithStats = createHashSet(queues.size());
-        for (String name : queues.keySet()) {
-            if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                queuesWithStats.add(name);
-            }
-        }
-        memberState.setQueuesWithStats(queuesWithStats);
+    private void handleQueue(MemberStateImpl memberState, Map<String, LocalQueueStats> queues) {
+        memberState.setQueuesWithStats(queues.keySet());
     }
 
-    private void handleMap(MemberStateImpl memberState, Config config, Map<String, LocalMapStats> maps) {
-        Set<String> mapsWithStats = createHashSet(maps.size());
-        for (String name : maps.keySet()) {
-            if (config.findMapConfig(name).isStatisticsEnabled()) {
-                mapsWithStats.add(name);
-            }
-        }
-        memberState.setMapsWithStats(mapsWithStats);
+    private void handleMap(MemberStateImpl memberState, Map<String, LocalMapStats> maps) {
+        memberState.setMapsWithStats(maps.keySet());
     }
 
     private void handleCache(MemberStateImpl memberState, CacheService cacheService) {

@@ -97,6 +97,26 @@ public final class KubernetesProperties {
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
     /**
+     * <p>Configuration key: <code>expose-externally</code></p>
+     * Specifies if Hazelcast should try to find its public addresses exposed with a single service.
+     * If not set, Hazelcast tries to automatically find public addresses, but fails silently.
+     * If <code>true</code>false, Hazelcast crashes if it can't find its public address.
+     * If <code>false</code>, Hazelcast does not even try to find its public address.
+     */
+    public static final PropertyDefinition EXPOSE_EXTERNALLY = property("expose-externally", BOOLEAN);
+
+    /**
+     * <p>Configuration key: <code>service-per-pod-label-name</code></p>
+     * Defines the label name of the service used to expose one Hazelcast pod (for the external smart client use case).
+     */
+    public static final PropertyDefinition SERVICE_PER_POD_LABEL_NAME = property("service-per-pod-label-name", STRING);
+    /**
+     * <p>Configuration key: <code>service-per-pod-label-value</code></p>
+     * Defines the label value of the service used to expose one Hazelcast pod (for the external smart client use case).
+     */
+    public static final PropertyDefinition SERVICE_PER_POD_LABEL_VALUE = property("service-per-pod-label-value", STRING);
+
+    /**
      * <p>Configuration key: <code>resolve-not-ready-addresses</code></p>
      * Defines if not ready addresses should be evaluated to be discovered on startup.
      */

@@ -75,7 +75,7 @@ public class LightMasterContext {
 
     private final ILogger logger;
     private final String jobIdString;
-    private final long startTime = System.nanoTime();
+    private final long startTime = System.currentTimeMillis();
 
     private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();

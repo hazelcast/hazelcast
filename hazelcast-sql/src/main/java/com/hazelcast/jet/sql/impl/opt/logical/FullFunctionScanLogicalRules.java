@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSpecificTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import org.apache.calcite.plan.Convention;
@@ -52,7 +52,7 @@ final class FullFunctionScanLogicalRules {
         }
 
         private HazelcastTable extractTable(LogicalTableFunctionScan scan) {
-            JetSpecificTableFunction specificFunction = extractSpecificFunction(scan);
+            HazelcastSpecificTableFunction specificFunction = extractSpecificFunction(scan);
             List<RexNode> operands = ((RexCall) scan.getCall()).getOperands();
             RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(
                     PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
@@ -80,7 +80,7 @@ final class FullFunctionScanLogicalRules {
         }
 
         private HazelcastTable extractTable(LogicalTableFunctionScan scan) {
-            JetDynamicTableFunction dynamicFunction = extractDynamicFunction(scan);
+            HazelcastDynamicTableFunction dynamicFunction = extractDynamicFunction(scan);
             return dynamicFunction.toTable(scan.getRowType());
         }
     };
@@ -88,27 +88,27 @@ final class FullFunctionScanLogicalRules {
     private FullFunctionScanLogicalRules() {
     }
 
-    private static JetSpecificTableFunction extractSpecificFunction(LogicalTableFunctionScan scan) {
+    private static HazelcastSpecificTableFunction extractSpecificFunction(LogicalTableFunctionScan scan) {
         if (scan == null || !(scan.getCall() instanceof RexCall)) {
             return null;
         }
         RexCall call = (RexCall) scan.getCall();
 
-        if (!(call.getOperator() instanceof JetSpecificTableFunction)) {
+        if (!(call.getOperator() instanceof HazelcastSpecificTableFunction)) {
             return null;
         }
-        return (JetSpecificTableFunction) call.getOperator();
+        return (HazelcastSpecificTableFunction) call.getOperator();
     }
 
-    private static JetDynamicTableFunction extractDynamicFunction(LogicalTableFunctionScan scan) {
+    private static HazelcastDynamicTableFunction extractDynamicFunction(LogicalTableFunctionScan scan) {
         if (scan == null || !(scan.getCall() instanceof RexCall)) {
             return null;
         }
         RexCall call = (RexCall) scan.getCall();
 
-        if (!(call.getOperator() instanceof JetDynamicTableFunction)) {
+        if (!(call.getOperator() instanceof HazelcastDynamicTableFunction)) {
             return null;
         }
-        return (JetDynamicTableFunction) call.getOperator();
+        return (HazelcastDynamicTableFunction) call.getOperator();
     }
 }

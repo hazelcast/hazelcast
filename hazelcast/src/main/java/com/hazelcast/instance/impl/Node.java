@@ -259,6 +259,8 @@ public class Node {
             boolean isAutoDetectionEnabled = joinConfig.isAutoDetectionEnabled();
             discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled,
                     localMember);
+            new NodeSecurityBanner(config, properties, shouldUseMulticastJoiner(joinConfig), loggingService)
+                    .printSecurityInfo();
             clusterService = new ClusterServiceImpl(this, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();

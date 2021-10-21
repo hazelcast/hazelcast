@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelFieldCollation;
@@ -54,7 +55,6 @@ import java.util.function.BiPredicate;
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
@@ -63,7 +63,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @SuppressWarnings("rawtypes")
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
@@ -285,19 +285,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         );
     }
 
-    public static class Person implements Serializable {
+    private static QueryPath valuePath(String path) {
+        return path(path, false);
+    }
 
-        public String name;
-        public int age;
-
-        @SuppressWarnings("unused")
-        private Person() {
-        }
-
-        private Person(String name, int age) {
-            this.name = name;
-            this.age = age;
-        }
+    private static QueryPath path(String path, boolean key) {
+        return new QueryPath(path, key);
     }
 
     private static IndexFilterValue intValue(Integer value) {
@@ -313,5 +306,20 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     private static ConstantExpression constant(Object value, QueryDataType type) {
         return ConstantExpression.create(value, type);
+    }
+
+    public static class Person implements Serializable {
+
+        public String name;
+        public int age;
+
+        @SuppressWarnings("unused")
+        private Person() {
+        }
+
+        private Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
     }
 }

@@ -30,7 +30,7 @@ public class TriggerMemberListPublishOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         final ClusterServiceImpl clusterService = getService();
-        clusterService.getMembershipManager().sendMemberListToMember(getAllKnownAliases(getCallerAddress()));
+        clusterService.getMembershipManager().sendMemberListToMember(getCallerAddress());
     }
 
     @Override

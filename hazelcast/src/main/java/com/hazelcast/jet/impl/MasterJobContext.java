@@ -25,7 +25,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -34,7 +33,9 @@ import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
+import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -89,6 +90,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
@@ -104,6 +106,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.emptyList;
@@ -163,8 +166,7 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig()
-              .getInstanceConfig().getCooperativeThreadCount();
+        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
         this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
     }
@@ -280,11 +282,12 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
             }
-            ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
+            ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
+                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
             DAG dag;
-            JobExecutionService jobExecutionService = mc.coordinationService().getJetServiceBackend().getJobExecutionService();
+            JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             try {
-                jobExecutionService.prepareProcessorClassLoaders(mc.jobId(), mc.jobConfig());
+                jobClassLoaderService.prepareProcessorClassLoaders(mc.jobId());
                 dag = deserializeWithCustomClassLoader(
                         mc.nodeEngine().getSerializationService(),
                         classLoader,
@@ -293,7 +296,7 @@ public class MasterJobContext {
             } catch (Exception e) {
                 throw new JetException("DAG deserialization failed", e);
             } finally {
-                jobExecutionService.clearProcessorClassLoaders();
+                jobClassLoaderService.clearProcessorClassLoaders();
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
@@ -595,10 +598,16 @@ public class MasterJobContext {
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
             if (error instanceof ExecutionNotFoundException) {
-                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
-                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
-                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
-                error = new JobTerminateRequestedException(requestedTerminationMode);
+                // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
+                if (requestedTerminationMode != null) {
+                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                    // to JobTerminateRequestedException.
+                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
+                }
+                // The cancellation can also happen if some participant left and
+                // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
+                // We keep this (and possibly other) exceptions as they are
+                // and let the execution complete with failure.
             }
             finalizeJob(error);
         }
@@ -608,7 +617,10 @@ public class MasterJobContext {
         mc.nodeEngine().getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () ->
                 mc.invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, executionId, mode),
                         responses -> {
-                            if (responses.stream().map(Entry::getValue).anyMatch(Objects::nonNull)) {
+                            if (responses.stream()
+                                    .map(Entry::getValue)
+                                    .filter(value -> !(value instanceof JetDisabledException))
+                                    .anyMatch(Objects::nonNull)) {
                                 // log errors
                                 logger.severe(mc.jobIdString() + ": some TerminateExecutionOperation invocations " +
                                         "failed, execution might remain stuck: " + responses);
@@ -630,6 +642,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
+                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
@@ -701,6 +714,12 @@ public class MasterJobContext {
             logger.info(formatExecutionSummary("got terminated, reason=" + failure, completionTime));
             return false;
         }
+        if (failure instanceof JetDisabledException) {
+            logger.severe(formatExecutionSummary("failed. This is probably " +
+                    "because the Jet engine is not enabled on all cluster members. " +
+                    "Please enable the Jet engine for ALL members in the cluster.", completionTime), failure);
+            return false;
+        }
         logger.severe(formatExecutionSummary("failed", completionTime), failure);
         return false;
     }
@@ -756,15 +775,22 @@ public class MasterJobContext {
 
     private void completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
-            for (Vertex vertex : vertices) {
-                try {
-                    ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
-                    Util.doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.close(failure));
-                } catch (Throwable e) {
-                    logger.severe(mc.jobIdString()
-                            + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+            JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
+            JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
+            doWithClassLoader(jobCl, () -> {
+                for (Vertex v : vertices) {
+                    try {
+                        ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
+                        doWithClassLoader(
+                                processorCl,
+                                () -> v.getMetaSupplier().close(failure)
+                        );
+                    } catch (Throwable e) {
+                        logger.severe(mc.jobIdString()
+                                      + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                    }
                 }
-            }
+            });
         }
     }
 

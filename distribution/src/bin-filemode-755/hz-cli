@@ -1,12 +1,39 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(dirname "$0")"
+function findScriptDir() {
+  CURRENT=$PWD
+
+  DIR=$(dirname "$0")
+  cd "$DIR" || exit
+  TARGET_FILE=$(basename "$0")
+
+  # Iterate down a (possible) chain of symlinks
+  while [ -L "$TARGET_FILE" ]
+  do
+      TARGET_FILE=$(readlink "$TARGET_FILE")
+      DIR=$(dirname "$TARGET_FILE")
+      cd "$DIR" || exit
+      TARGET_FILE=$(basename "$TARGET_FILE")
+  done
+
+  SCRIPT_DIR=$(pwd -P)
+  # Restore current directory
+  cd "$CURRENT" || exit
+}
+
+findScriptDir
 . "$SCRIPT_DIR/common.sh"
+
+# HAZELCAST_CLIENT_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
+if [ -z "$HAZELCAST_CLIENT_CONFIG" ]; then
+    HAZELCAST_CLIENT_CONFIG="config/hazelcast-client.xml"
+fi
 
 readJvmOptionsFile "jvm-client.options"
 
 JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
+"-Dhazelcast.client.config=$HAZELCAST_HOME/$HAZELCAST_CLIENT_CONFIG" \
 $JVM_OPTIONS \
 $JAVA_OPTS \
 )

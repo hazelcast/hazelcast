@@ -34,10 +34,10 @@ public interface ValidatorResource {
     @BaseMessage("Grouping/aggregations not supported for a streaming query")
     ExInst<SqlValidatorException> streamingAggregationsNotSupported();
 
-    @BaseMessage("Sub-query not supported on the right side of a join")
+    @BaseMessage("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     ExInst<SqlValidatorException> joiningSubqueryNotSupported();
 
-    @BaseMessage("VALUES clause not supported on the right side of a join")
+    @BaseMessage("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     ExInst<SqlValidatorException> joiningValuesNotSupported();
 
     @BaseMessage("UPDATE FROM SELECT not supported")
@@ -51,4 +51,12 @@ public interface ValidatorResource {
 
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
+
+    @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
+    ExInst<SqlValidatorException> streamingSourceOnWrongSide();
+
+    static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
+        return originalMessage + " If you want to use the IMap named '" + identifier + "', execute this command first: "
+                + suggestion;
+    }
 }

@@ -281,46 +281,34 @@ public interface RecordStore<R extends Record> {
     R getRecord(Data key);
 
     /**
-     * Puts a data key and a record value to record-store.
-     * Used in replication operations: does not attempt
-     * loading from map store and is not intercepted by
+     * This method is used in replication operations.
+     *
+     * Puts a data key and a record into a record-store.
+     * Used in replication operations means does not attempt
+     * loading from map store and it is not intercepted by
      * {@code MapInterceptor}.
      *
-     *
-     * @param dataKey                the key to be put
-     * @param record                 the value for record store.
-     * @param nowInMillis            nowInMillis
-     * @param indexesMustBePopulated
-     * @return current record after put
-     * @see com.hazelcast.map.impl.operation.MapReplicationOperation
-     */
-    R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
-                          boolean indexesMustBePopulated, long now);
-
-    /**
-     * Similarly to {@link #putReplicatedRecord(Data, Record, ExpiryMetadata, boolean, long)},
-     * this method is used in replication operations.
      * If an existing record is located for the same key
      * (as defined in {@link Storage#getIfSameKey(Object)}),
      * then that record is updated instead of creating a
      * new one.
      *
-     * @param dataKey                   the key to put or update
-     * @param record                    the value for record store
-     * @param expiryMetadata            metadata relevant for expiry system
-     * @param indexesMustBePopulated    indicates if indexes must be updated
-     * @param now                       current time millis
-     * @return                          record after put or update
+     * @param dataKey                the key to put or update
+     * @param record                 the value for record store
+     * @param expiryMetadata         metadata relevant for expiry system
+     * @param indexesMustBePopulated indicates if indexes must be updated
+     * @param now                    current time millis
+     * @return record after put or update
+     * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    default R putOrUpdateReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
-                          boolean indexesMustBePopulated, long now) {
-        return putReplicatedRecord(dataKey, record, expiryMetadata, indexesMustBePopulated, now);
-    }
+    R putOrUpdateReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
+                                  boolean indexesMustBePopulated, long now);
 
     /**
      * Remove record for given key. Does not load from MapLoader,
      * does not intercept.
-     * @param dataKey   key to remove
+     *
+     * @param dataKey key to remove
      */
     void removeReplicatedRecord(Data dataKey);
 
@@ -509,13 +497,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Object value, long ttlMillis, long maxIdle, long now);
-
-    /**
-     * Creates a new record from a replicated record
-     * by making memory format related conversions.
-     */
-    R createRecord(R fromRecord, long nowInMillis);
+    R createRecord(Object value, long now);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
@@ -533,6 +515,7 @@ public interface RecordStore<R extends Record> {
      * Gets metadata store associated with the record store.
      * On the first call it initializes the store so
      * that the Json metadata store is created only when it is needed.
+     *
      * @return the Json metadata store
      */
     JsonMetadataStore getOrCreateMetadataStore();

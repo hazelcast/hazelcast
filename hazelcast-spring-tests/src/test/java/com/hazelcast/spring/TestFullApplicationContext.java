@@ -130,7 +130,6 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
@@ -727,7 +726,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testClusterNameConfig() {
-        assertEquals("spring-cluster", config.getClusterName());
+        assertEquals("spring-cluster-fullConfig", config.getClusterName());
     }
 
     @Test
@@ -799,7 +798,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
-        assertFalse(networkConfig.getJoin().getMulticastConfig().isLoopbackModeEnabled());
+        assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.10.10.*", tis.iterator().next());
@@ -1113,6 +1112,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isScriptingEnabled());
+        assertTrue(managementCenterConfig.isConsoleEnabled());
         Set<String> tis = managementCenterConfig.getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.1.2.*", tis.iterator().next());
@@ -1342,6 +1342,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(sslConfig.isEnabled());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
+        assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Test
@@ -1508,7 +1509,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(5, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 
@@ -1518,12 +1518,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(jetConfig.isEnabled());
         assertTrue(jetConfig.isResourceUploadEnabled());
 
-        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
-        assertEquals(4, instanceConfig.getCooperativeThreadCount());
-        assertEquals(2, instanceConfig.getBackupCount());
-        assertEquals(200, instanceConfig.getFlowControlPeriodMs());
-        assertEquals(20000, instanceConfig.getScaleUpDelayMillis());
-        assertFalse(instanceConfig.isLosslessRestartEnabled());
+        assertEquals(4, jetConfig.getCooperativeThreadCount());
+        assertEquals(2, jetConfig.getBackupCount());
+        assertEquals(200, jetConfig.getFlowControlPeriodMs());
+        assertEquals(20000, jetConfig.getScaleUpDelayMillis());
+        assertEquals(1000000, jetConfig.getMaxProcessorAccumulatedRecords());
+        assertFalse(jetConfig.isLosslessRestartEnabled());
 
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         assertEquals(2048, edgeConfig.getQueueSize());

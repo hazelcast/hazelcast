@@ -57,12 +57,6 @@ public final class ImdgUtil {
     private ImdgUtil() {
     }
 
-    public static boolean existsDistributedObject(NodeEngine nodeEngine, String serviceName, String objectName) {
-        return nodeEngine.getProxyService()
-                         .getDistributedObjectNames(serviceName)
-                         .contains(objectName);
-    }
-
     public static <K, V> EntryProcessor<K, V, V> entryProcessor(
             BiFunctionEx<? super K, ? super V, ? extends V> remappingFunction
     ) {
@@ -197,6 +191,9 @@ public final class ImdgUtil {
     }
 
     private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {
+
+        private static final long serialVersionUID = 1L;
+
         private final Predicate<T> wrapped;
 
         ImdgPredicateWrapper(Predicate<T> wrapped) {
@@ -210,6 +207,9 @@ public final class ImdgUtil {
     }
 
     private static final class ImdgFunctionWrapper<T, R> implements FunctionEx<T, R> {
+
+        private static final long serialVersionUID = 1L;
+
         private final Function<T, R> wrapped;
 
         ImdgFunctionWrapper(Function<T, R> wrapped) {

@@ -29,18 +29,23 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.QueryException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static java.util.Collections.singletonList;
 
 final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -60,7 +65,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     @Override
-    public void init(@Nonnull Context context) throws Exception {
+    public void init(@Nonnull Context context) {
         serializationService = ((Contexts.ProcSupplierCtx) context).serializationService();
     }
 
@@ -70,6 +75,11 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         assert count == 1;
 
         return singletonList(new InsertP(mapName, projectorSupplier.get(serializationService)));
+    }
+
+    @Override
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
     }
 
     @Override
@@ -103,7 +113,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         }
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
             maxAccumulatedKeys = context.maxProcessorAccumulatedRecords();
         }
@@ -115,9 +125,6 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
             }
 
             Entry<Object, Object> entry = projector.project((JetSqlRow) row);
-            if (entry.getKey() == null) {
-                throw QueryException.error("Key cannot be null");
-            }
             if (!seenKeys.add(entry.getKey())) {
                 throw QueryException.error("Duplicate key");
             }

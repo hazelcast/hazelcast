@@ -1,7 +1,7 @@
 # Hazelcast
 
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg)](https://slack.hazelcast.com/) 
-[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/5.0-BETA-1/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/5.0-BETA-1)
+[![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/5.0/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/5.0)
 [![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://img.shields.io/docker/pulls/hazelcast/hazelcast)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/alerts)
 [![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast/context:java)
@@ -26,7 +26,7 @@ processing guarantees.
 ## When to use Hazelcast
 
 Hazelcast provides a platform that can handle multiple types of workloads for
-building responsive applications.
+building real-time applications.
 
 * Stateful data processing over streaming data or data at rest
 * Querying streaming and batch data sources directly using SQL
@@ -35,7 +35,7 @@ building responsive applications.
 * Pushing updates to applications on events
 * Low-latency queue-based or pub-sub messaging  
 * Fast access to contextual and transactional data via caching patterns such as
-  read/write-through and write-behind)
+  read/write-through and write-behind
 * Distributed coordination for microservices
 * Replicating data from one region to another or between data centers in the
   same region
@@ -61,7 +61,7 @@ building responsive applications.
 * Data replication between data centers and geographic regions using WAN 
 * Microsecond performance for key-value point lookups and pub-sub
 * Unique data processing architecture results in 99.99% latency of under 10ms
-  for streaming queries with millions of events per second (link to blog post).
+  for streaming queries with millions of events per second.
 * Client libraries in [Java](https://github.com/hazelcast/hazelcast),
  [Python](https://github.com/hazelcast/hazelcast-python-client), [Node.js](https://github.com/hazelcast/hazelcast-nodejs-client), [.NET](https://github.com/hazelcast/hazelcast-csharp-client), [C++](https://github.com/hazelcast/hazelcast-cpp-client) and [Go](https://github.com/hazelcast/hazelcast-go-client)
 
@@ -202,9 +202,9 @@ Jet supports advanced streaming features such as [exactly-once processing](https
 
 #### Data Processing using SQL
 
-Jet also powers the [SQL engine](link to SQL) in Hazelcast which can execute
-both streaming and batch queries. Internally, all SQL queries are converted to
-Jet jobs.
+Jet also powers the [SQL engine](https://docs.hazelcast.com/hazelcast/latest/query/sql-overview.html)
+in Hazelcast which can execute both streaming and batch queries. Internally, all SQL queries
+are converted to Jet jobs.
 
 ```sql
 CREATE MAPPING trades (
@@ -333,8 +333,19 @@ take a considerable amount of time. Hazelcast has 3 testing profiles:
 
 When you create a pull request (PR), it must pass a build-and-test
 procedure. Maintainers will be notified about your PR, and they can
-trigger the build using special comments. So you may see some phrases
-like `run-lab-run` in your PR.
+trigger the build using special comments. These are the phrases you may
+see used in the comments on your PR:
+
+* `run-lab-run` - run the default PR builder
+* `run-windows` - run the tests on a Windows machine (HighFive is not
+  supported here)
+* `run-with-ibm-jdk-8` - run the tests with IBM JDK 8
+* `run-cdc-debezium-tests` - run all tests in the
+  `extensions/cdc-debezium` module
+* `run-cdc-mysql-tests` - run all tests in the `extensions/cdc-mysql`
+  module
+* `run-cdc-postgres-tests` - run all tests in the
+  `extensions/cdc-postgres` module
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK
 8.

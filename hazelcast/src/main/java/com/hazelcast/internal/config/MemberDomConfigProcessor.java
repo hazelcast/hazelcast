@@ -29,6 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -77,7 +78,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.PersistenceClusterDataRecoveryPolicy;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
@@ -448,6 +448,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String parallelismName = "parallelism";
         String validationTimeoutName = "validation-timeout-seconds";
         String dataLoadTimeoutName = "data-load-timeout-seconds";
+        String rebalanceDelaySecondsName = "rebalance-delay-seconds";
 
         for (Node n : childElements(prRoot)) {
             String name = cleanNodeName(n);
@@ -469,6 +470,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                             PersistenceClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
                 } else if (matches("auto-remove-stale-data", name)) {
                     prConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
+                } else if (matches("rebalance-delay-seconds", name)) {
+                    prConfig.setRebalanceDelaySeconds(getIntegerValue(rebalanceDelaySecondsName, getTextContent(n)));
                 }
             }
         }
@@ -1845,6 +1848,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
+        name = name == null ? NearCacheConfig.DEFAULT_NAME : name;
         NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
                 ? existingNearCacheConfig
                 : new NearCacheConfig(name);
@@ -2625,6 +2629,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
         }
 
+        Node consoleEnabledNode = getNamedItemNode(node, "console-enabled");
+        if (consoleEnabledNode != null) {
+            managementCenterConfig.setConsoleEnabled(getBooleanValue(getTextContent(consoleEnabledNode)));
+        }
+
         for (Node n : childElements(node)) {
             if (matches("trusted-interfaces", cleanNodeName(n))) {
                 handleTrustedInterfaces(managementCenterConfig, n);
@@ -2988,15 +2997,55 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
             }
         }
-
+        // if JetConfig contains InstanceConfig(deprecated) fields
+        // <instance> tag will be ignored.
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("instance", nodeName)) {
-                handleInstance(jetConfig, child);
+            if (matches("cooperative-thread-count", nodeName)) {
+                jetConfig.setCooperativeThreadCount(
+                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+            } else if (matches("flow-control-period", nodeName)) {
+                jetConfig.setFlowControlPeriodMs(
+                        getIntegerValue("flow-control-period", getTextContent(child)));
+            } else if (matches("backup-count", nodeName)) {
+                jetConfig.setBackupCount(
+                        getIntegerValue("backup-count", getTextContent(child)));
+            } else if (matches("scale-up-delay-millis", nodeName)) {
+                jetConfig.setScaleUpDelayMillis(
+                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+            } else if (matches("lossless-restart-enabled", nodeName)) {
+                jetConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("max-processor-accumulated-records", nodeName)) {
+                jetConfig.setMaxProcessorAccumulatedRecords(
+                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
             } else if (matches("edge-defaults", nodeName)) {
                 handleEdgeDefaults(jetConfig, child);
+            } else if (matches("instance", nodeName)) {
+                if (jetConfigContainsInstanceConfigFields(node)) {
+                    LOGGER.warning("<instance> tag will be ignored "
+                            + "since <jet> tag already contains the instance fields.");
+                } else {
+                    LOGGER.warning("<instance> tag is deprecated, use <jet> tag directly for configuration.");
+                    handleInstance(jetConfig, child);
+                }
             }
         }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private boolean jetConfigContainsInstanceConfigFields(Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("cooperative-thread-count".equals(nodeName)
+                    || "flow-control-period".equals(nodeName)
+                    || "backup-count".equals(nodeName)
+                    || "scale-up-delay-millis".equals(nodeName)
+                    || "lossless-restart-enabled".equals(nodeName)
+                    || "max-processor-accumulated-records".equals(nodeName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handleInstance(JetConfig jetConfig, Node node) {
@@ -3005,21 +3054,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("cooperative-thread-count", nodeName)) {
                 instanceConfig.setCooperativeThreadCount(
-                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+                                getIntegerValue("cooperative-thread-count", getTextContent(child)));
             } else if (matches("flow-control-period", nodeName)) {
                 instanceConfig.setFlowControlPeriodMs(
-                        getIntegerValue("flow-control-period", getTextContent(child)));
+                                getIntegerValue("flow-control-period", getTextContent(child)));
             } else if (matches("backup-count", nodeName)) {
                 instanceConfig.setBackupCount(
-                        getIntegerValue("backup-count", getTextContent(child)));
+                                getIntegerValue("backup-count", getTextContent(child)));
             } else if (matches("scale-up-delay-millis", nodeName)) {
                 instanceConfig.setScaleUpDelayMillis(
-                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+                                getLongValue("scale-up-delay-millis", getTextContent(child)));
             } else if (matches("lossless-restart-enabled", nodeName)) {
                 instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
             } else if (matches("max-processor-accumulated-records", nodeName)) {
                 instanceConfig.setMaxProcessorAccumulatedRecords(
-                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
+                                getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }
     }
@@ -3044,9 +3093,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("executor-pool-size", nodeName)) {
-                sqlConfig.setExecutorPoolSize(Integer.parseInt(getTextContent(child)));
-            } else if (matches("statement-timeout-millis", nodeName)) {
+            if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
         }

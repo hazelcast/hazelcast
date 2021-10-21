@@ -97,6 +97,9 @@ import java.util.StringJoiner;
  * @since Jet 4.0
  */
 public class PythonServiceConfig implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private static final String HANDLER_FUNCTION_DEFAULT = "transform_list";
 
     private File baseDir;

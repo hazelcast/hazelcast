@@ -829,8 +829,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
-                    && c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
         }
 
         @Override
@@ -1555,7 +1554,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
                     && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
                     && nullSafeEqual(c1.isAllowOverrideDefaultSerializers(), c2.isAllowOverrideDefaultSerializers())
-                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
+                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig())
+                    && nullSafeEqual(c1.getCompactSerializationConfig(), c2.getCompactSerializationConfig());
         }
 
         private static boolean isCompatible(GlobalSerializerConfig c1, GlobalSerializerConfig c2) {
@@ -1798,7 +1798,8 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(ManagementCenterConfig c1, ManagementCenterConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null
-                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled()))
+                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled())
+                    && (c1.isConsoleEnabled() == c2.isConsoleEnabled()))
                     && nullSafeEqual(c1.getTrustedInterfaces(), c2.getTrustedInterfaces());
         }
     }
@@ -1830,6 +1831,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getParallelism(), c2.getParallelism())
                     && nullSafeEqual(c1.getValidationTimeoutSeconds(), c2.getValidationTimeoutSeconds())
                     && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
+                    && nullSafeEqual(c1.getRebalanceDelaySeconds(), c2.getRebalanceDelaySeconds())
                     && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
                     && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
         }

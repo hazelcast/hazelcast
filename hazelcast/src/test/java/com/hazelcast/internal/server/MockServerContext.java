@@ -51,11 +51,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -192,19 +193,21 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public void onDisconnect(List<Address> endpointAddresses, Throwable cause) {
-        logger.warning("Disconnected address: " + endpointAddresses.get(0), cause);
+    public void onDisconnect(Address endpoint, Throwable cause) {
+        logger.warning("Disconnected address: " + endpoint, cause);
     }
 
     @Override
-    public void executeAsync(final Runnable runnable) {
-        new Thread(() -> {
+    public Future<Void> submitAsync(final Runnable runnable) {
+        FutureTask<Void> future = new FutureTask<>(() -> {
             try {
                 runnable.run();
             } catch (Throwable t) {
                 logger.severe(t);
             }
-        }).start();
+        }, null);
+        new Thread(() -> future.run()).start();
+        return future;
     }
 
     @Override

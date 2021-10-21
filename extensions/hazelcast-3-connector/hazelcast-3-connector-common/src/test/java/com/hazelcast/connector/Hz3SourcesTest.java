@@ -17,7 +17,10 @@
 package com.hazelcast.connector;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 public class Hz3SourcesTest extends BaseHz3Test {
@@ -103,4 +107,50 @@ public class Hz3SourcesTest extends BaseHz3Test {
         assertThat(result.entrySet()).isEqualTo(items.entrySet());
     }
 
+    @Test
+    public void when_readFromInstanceDown_then_shouldThrowJetException() {
+        HazelcastInstance hz = createHazelcastInstance();
+
+        Pipeline p = Pipeline.create();
+        BatchSource<Map.Entry<Integer, String>> source = Hz3Sources.remoteMap("test-map", HZ3_DOWN_CLIENT_CONFIG);
+        p.readFrom(source)
+         .map(Map.Entry::getValue)
+         .writeTo(Sinks.list("test-result"));
+
+        JobConfig config = getJobConfig(source.name());
+        Job job = hz.getJet().newJob(p, config);
+
+        assertThatThrownBy(() -> job.join())
+                .hasStackTraceContaining(JetException.class.getName())
+                .hasStackTraceContaining("Unable to connect to any cluster");
+    }
+
+    @Test
+    public void when_tryToReadFromHz5Cluster_then_shouldThrowJetException() {
+        Config hz5Config = new Config().setClusterName("hz3-test");
+        hz5Config.getNetworkConfig().setPort(15701);
+        HazelcastInstance hz5 = Hazelcast.newHazelcastInstance(hz5Config);
+
+        try {
+            HazelcastInstance hz = createHazelcastInstance();
+
+            Pipeline p = Pipeline.create();
+            BatchSource<Map.Entry<Integer, String>> source = Hz3Sources.remoteMap(
+                    "test-map",
+                    HZ3_CLIENT_CONFIG.replace("3210", "15701") // point to Hz 5 instance
+            );
+            p.readFrom(source)
+             .map(Map.Entry::getValue)
+             .writeTo(Sinks.list("test-result"));
+
+            JobConfig config = getJobConfig(source.name());
+            Job job = hz.getJet().newJob(p, config);
+
+            assertThatThrownBy(() -> job.join())
+                    .hasStackTraceContaining(JetException.class.getName())
+                    .hasStackTraceContaining("Unable to connect to any cluster");
+        } finally {
+            hz5.shutdown();
+        }
+    }
 }

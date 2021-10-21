@@ -83,7 +83,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     protected Config createConfig() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         onConfigCreated(config);

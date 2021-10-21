@@ -110,7 +110,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                                 SqlErrorCode.PARTITION_DISTRIBUTION,
                                 "Partition was migrated while a query was executed: "
                                         + "Partition is not owned by member: " + nextPart
-                        ).markInvalidate();
+                        );
                     }
 
                     if (first) {

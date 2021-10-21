@@ -39,12 +39,12 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false">
+    <management-center scripting-enabled="false" console-enabled="false">
         <trusted-interfaces>
             <interface>10.10.1.*</interface>
             <interface>10.10.2.*</interface>
@@ -920,6 +920,11 @@
                     <action>all</action>
                 </actions>
             </connector-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </sql-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -964,14 +969,15 @@
         <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
-    <hot-restart-persistence enabled="false">
+    <persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>
         <base-dir>base-dir</base-dir>
         <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
         <data-load-timeout-seconds>42</data-load-timeout-seconds>
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
-    </hot-restart-persistence>
+        <rebalance-delay-seconds>240</rebalance-delay-seconds>
+    </persistence>
 
     <lite-member enabled="true"/>
 
@@ -1038,7 +1044,6 @@
     </instance-tracking>
 
     <sql>
-        <executor-pool-size>16</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>

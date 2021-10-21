@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.json.JsonEscape;
+import com.hazelcast.internal.serialization.impl.FieldOperations;
+
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Set;
@@ -46,12 +49,12 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             return false;
         }
         for (String fieldName : thatFieldNames) {
-            FieldType thatFieldType = that.getFieldType(fieldName);
-            FieldType thisFieldType = getFieldType(fieldName);
-            if (!thatFieldType.equals(thisFieldType)) {
+            FieldKind thatKind = that.getFieldKind(fieldName);
+            FieldKind thisKind = getFieldKind(fieldName);
+            if (thatKind != thisKind) {
                 return false;
             }
-            if (thatFieldType.isArrayType()) {
+            if (FieldOperations.isArrayKind(thatKind)) {
                 if (!Objects.deepEquals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }
@@ -68,14 +71,37 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         int result = Objects.hash(getClassIdentifier());
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
-            FieldType fieldType = getFieldType(fieldName);
-            result = 31 * result + fieldOperations(fieldType).hashCode(this, fieldName);
+            FieldKind fieldKind = getFieldKind(fieldName);
+            result = 31 * result + fieldOperations(fieldKind).hashCode(this, fieldName);
         }
         return result;
     }
 
     public final <T> T readAny(@Nonnull String fieldName) {
-        FieldType type = getFieldType(fieldName);
-        return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
+        FieldKind kind = getFieldKind(fieldName);
+        return (T) fieldOperations(kind).readGenericRecordOrPrimitive(this, fieldName);
+    }
+
+    /**
+     * Utility method to build a json String representation of the fields together with field names
+     *
+     * @param stringBuilder to be populated via json representation
+     */
+    protected void writeFieldsToStringBuilder(StringBuilder stringBuilder) {
+        Set<String> fieldNames = getFieldNames();
+        stringBuilder.append("{");
+        int size = fieldNames.size();
+        int i = 0;
+        for (String fieldName : fieldNames) {
+            i++;
+            JsonEscape.writeEscaped(stringBuilder, fieldName);
+            stringBuilder.append(": ");
+            FieldKind fieldKind = getFieldKind(fieldName);
+            fieldOperations(fieldKind).writeJsonFormattedField(stringBuilder, this, fieldName);
+            if (size != i) {
+                stringBuilder.append(", ");
+            }
+        }
+        stringBuilder.append("}");
     }
 }

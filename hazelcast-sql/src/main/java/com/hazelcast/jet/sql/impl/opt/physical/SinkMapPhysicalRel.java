@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -78,7 +78,8 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
                     table.paths(),
                     table.types(),
                     (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                    (UpsertTargetDescriptor) table.getValueJetMetadata()
+                    (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                    true
             ).get(evalContext.getSerializationService());
 
             return values.stream()

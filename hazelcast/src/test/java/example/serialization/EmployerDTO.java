@@ -17,11 +17,13 @@
 package example.serialization;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class EmployerDTO {
 
     private String name;
     private int zcode;
+    private HiringStatus hiringStatus;
     private long[] ids;
     private EmployeeDTO singleEmployee;
     private EmployeeDTO[] otherEmployees;
@@ -29,9 +31,10 @@ public class EmployerDTO {
     public EmployerDTO() {
     }
 
-    public EmployerDTO(String name, int zcode, long[] ids, EmployeeDTO singleEmployee, EmployeeDTO[] otherEmployees) {
+    public EmployerDTO(String name, int zcode, HiringStatus hiringStatus, long[] ids, EmployeeDTO singleEmployee, EmployeeDTO[] otherEmployees) {
         this.name = name;
         this.zcode = zcode;
+        this.hiringStatus = hiringStatus;
         this.ids = ids;
         this.singleEmployee = singleEmployee;
         this.otherEmployees = otherEmployees;
@@ -43,6 +46,10 @@ public class EmployerDTO {
 
     public int getZcode() {
         return zcode;
+    }
+
+    public HiringStatus getHiringStatus() {
+        return hiringStatus;
     }
 
     public EmployeeDTO getSingleEmployee() {
@@ -71,13 +78,16 @@ public class EmployerDTO {
         if (zcode != that.zcode) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (hiringStatus != that.hiringStatus) {
+            return false;
+        }
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
         if (!Arrays.equals(ids, that.ids)) {
             return false;
         }
-        if (singleEmployee != null ? !singleEmployee.equals(that.singleEmployee) : that.singleEmployee != null) {
+        if (!Objects.equals(singleEmployee, that.singleEmployee)) {
             return false;
         }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
@@ -88,9 +98,22 @@ public class EmployerDTO {
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + zcode;
+        result = 31 * result + (hiringStatus == null ? 0 : hiringStatus.hashCode());
         result = 31 * result + Arrays.hashCode(ids);
         result = 31 * result + (singleEmployee != null ? singleEmployee.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(otherEmployees);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "EmployerDTO{"
+                + "name='" + name + '\''
+                + ", zcode=" + zcode
+                + ", hiringStatus=" + hiringStatus
+                + ", ids=" + Arrays.toString(ids)
+                + ", singleEmployee=" + singleEmployee
+                + ", otherEmployees=" + Arrays.toString(otherEmployees)
+                + '}';
     }
 }

@@ -29,15 +29,18 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.processors.HashJoinProcessor;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -56,6 +59,7 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
@@ -67,6 +71,9 @@ import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
 
+    private static final int LOW_PRIORITY = 10;
+    private static final int HIGH_PRIORITY = 1;
+
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final NodeEngine nodeEngine;
@@ -75,7 +82,7 @@ public class CreateDagVisitor {
 
     public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = nodeEngine;
-        this.localMemberAddress = nodeEngine.getLocalMember().getAddress();
+        this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
     }
 
@@ -299,13 +306,50 @@ public class CreateDagVisitor {
         return vertex;
     }
 
-    public Vertex onRoot(JetRootRel rootRel) {
+    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Hash Join",
+                HashJoinProcessor.supplier(
+                        joinInfo,
+                        rel.getRight().getRowType().getFieldCount()
+                )
+        );
+        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
+    }
+
+    public Vertex onUnion(UnionPhysicalRel rel) {
+        // Union[all=false] rel should be never be produced, and it is always replaced by
+        // UNION_TO_DISTINCT rule : Union[all=false] -> Union[all=true] + Aggregate.
+        if (!rel.all) {
+            throw new RuntimeException("Union[all=false] rel should never be produced");
+        }
+
+        Vertex merger = dag.newUniqueVertex(
+                "UnionMerger",
+                ProcessorSupplier.of(mapP(FunctionEx.identity()))
+        );
+
+        int ordinal = 0;
+        for (RelNode input : rel.getInputs()) {
+            Vertex inputVertex = ((PhysicalRel) input).accept(this);
+            Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
+            dag.edge(edge);
+        }
+        return merger;
+    }
+
+    public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel) {
-            SortPhysicalRel sortRel = (SortPhysicalRel) input;
+        if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
+            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
+                    ? (SortPhysicalRel) input
+                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -329,7 +373,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
+                rootResultConsumerSink(localMemberAddress, fetch, offset)
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
@@ -368,6 +412,31 @@ public class CreateDagVisitor {
         return inputVertex;
     }
 
+    private void connectJoinInput(
+            JetJoinInfo joinInfo,
+            RelNode leftInputRel,
+            RelNode rightInputRel,
+            Vertex joinVertex
+    ) {
+        Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
+        Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
+
+        Edge left = between(leftInput, joinVertex).priority(LOW_PRIORITY).broadcast().distributed();
+        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY).unicast().local();
+        if (joinInfo.isLeftOuter()) {
+            left = left.unicast().local();
+            right = right.broadcast().distributed();
+        }
+        if (joinInfo.isEquiJoin()) {
+            int[] leftIndices = joinInfo.leftEquiJoinIndices();
+            int[] rightIndices = joinInfo.rightEquiJoinIndices();
+            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
+            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
+        }
+        dag.edge(left);
+        dag.edge(right);
+    }
+
     /**
      * Same as {@link #connectInput(RelNode, Vertex, Consumer)}, but used for
      * vertices normally connected by an unicast or isolated edge, depending on
@@ -382,8 +451,7 @@ public class CreateDagVisitor {
                 preserveCollation ? Edge::isolated : null);
 
         if (preserveCollation) {
-            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig()
-                    .getInstanceConfig().getCooperativeThreadCount();
+            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
             // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
             // vertices indeed have the same LP
@@ -397,5 +465,10 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private boolean isProjectionWithSort(RelNode input) {
+        return input instanceof ProjectPhysicalRel &&
+                ((ProjectPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -58,10 +58,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        int[] rightKeys = getKeysFromRightScan();
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
@@ -96,5 +93,12 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
+    }
+
+    private int[] getKeysFromRightScan() {
+        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
+        List<Integer> projects = table.getProjects();
+        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
+        return rightKeys;
     }
 }

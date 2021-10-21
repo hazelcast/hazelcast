@@ -57,7 +57,6 @@ import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,7 +74,6 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static java.util.Collections.singletonList;
 
 /**
  * ClusterJoinManager manages member join process.
@@ -90,9 +88,8 @@ import static java.util.Collections.singletonList;
 public class ClusterJoinManager {
 
     public static final String STALE_JOIN_PREVENTION_DURATION_PROP = "hazelcast.stale.join.prevention.duration.seconds";
+    private static final int DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS = 30;
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
-    private static final int STALE_JOIN_PREVENTION_DURATION_SECONDS
-            = Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30);
 
     private final ILogger logger;
     private final Node node;
@@ -106,18 +103,19 @@ public class ClusterJoinManager {
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
-     * Recently left member UUIDs: when a recently crashed member is joining with same UUID,
-     * typically it will have Hot Restart enabled (otherwise it will restart
-     * probably on the same address but definitely with a new random UUID).
-     * In order to support crashed members recovery with Hot Restart, partition
-     * table validation does not expect an identical partition table.
+     * Recently left member UUIDs: when a recently crashed member is joining
+     * with same UUID, typically it will have Persistence feature enabled
+     * (otherwise it will restart probably on the same address but definitely
+     * with a new random UUID). In order to support crashed members recovery
+     * with Persistence, partition table validation does not expect an
+     * identical partition table.
      *
      * Accessed by operation & cluster heartbeat threads
      */
     private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
-    private final long staleJoinPreventionDuration;
+    private final long staleJoinPreventionDurationInMillis;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
@@ -135,7 +133,8 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
-        staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
+        staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(
+            Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS));
     }
 
     boolean isJoinInProgress() {
@@ -366,7 +365,7 @@ public class ClusterJoinManager {
 
     private void cleanupRecentlyJoinedMemberUuids() {
         long currentTime = Clock.currentTimeMillis();
-        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDuration);
+        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDurationInMillis);
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
@@ -519,26 +518,26 @@ public class ClusterJoinManager {
      * Set master address, if required.
      *
      * @param masterAddress address of cluster's master, as provided in {@link MasterResponseOp}
-     * @param callerAddresses all known addresses of node that sent the {@link MasterResponseOp}
+     * @param callerAddress address of node that sent the {@link MasterResponseOp}
      * @see MasterResponseOp
      */
-    public void handleMasterResponse(Address masterAddress, List<Address> callerAddresses) {
+    public void handleMasterResponse(Address masterAddress, Address callerAddress) {
         clusterServiceLock.lock();
         try {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddresses.get(0)));
+                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
             }
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
                     logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                            masterAddress, callerAddresses.get(0)));
+                            masterAddress, callerAddress));
                 }
                 return;
             }
 
             if (node.getThisAddress().equals(masterAddress)) {
-                logger.warning("Received my address as master address from " + callerAddresses.get(0));
+                logger.warning("Received my address as master address from " + callerAddress);
                 return;
             }
 
@@ -548,7 +547,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (callerAddresses.stream().anyMatch(currentMaster::equals)) {
+            if (currentMaster.equals(callerAddress)) {
                 logger.warning(format("Setting master to %s since %s says it is not master anymore", masterAddress,
                         currentMaster));
                 setMasterAndJoin(masterAddress);
@@ -558,13 +557,13 @@ public class ClusterJoinManager {
             Connection conn = node.getServer().getConnectionManager(MEMBER).get(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
-                        masterAddress, callerAddresses.get(0), currentMaster));
+                        masterAddress, callerAddress, currentMaster));
                 sendJoinRequest(currentMaster);
             } else {
                 logger.warning(format("Ambiguous master response! Received master response %s from %s. "
                                 + "This node has a master %s, but does not have an active connection to it. "
                                 + "Master field will be unset now.",
-                        masterAddress, callerAddresses.get(0), currentMaster));
+                        masterAddress, callerAddress, currentMaster));
                 clusterService.setMasterAddress(null);
             }
         } finally {
@@ -636,7 +635,7 @@ public class ClusterJoinManager {
         if (masterAddress.equals(node.getThisAddress())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
-            // I already know that I will do a force-start so I will not allow target to join me
+            // I already know that I will do a force-start, so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }
@@ -715,7 +714,8 @@ public class ClusterJoinManager {
                 // or it is still in member list because connection timeout hasn't been reached yet
                 || previousMembersMap.contains(memberUuid)
                 // or it is a known missing member
-                || clusterService.getMembershipManager().isMissingMember(address, memberUuid));
+                || clusterService.getMembershipManager().isMissingMember(address, memberUuid))
+                && (node.getPartitionService().getLeftMemberSnapshot(memberUuid) != null);
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
@@ -767,7 +767,7 @@ public class ClusterJoinManager {
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
                 UUID thisUuid = clusterService.getThisUuid();
-                if (!clusterService.updateMembers(newMembersView, singletonList(node.getThisAddress()), thisUuid, thisUuid)) {
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
 
@@ -782,9 +782,7 @@ public class ClusterJoinManager {
                 for (MemberInfo member : joiningMembers.values()) {
                     if (isMemberRestartingWithPersistence(member.getAttributes())
                         && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
-                        if (logger.isFineEnabled()) {
-                            logger.fine(member + " is rejoining the cluster");
-                        }
+                        logger.info(member + " is rejoining the cluster");
                         // do not trigger repartition immediately, wait for joining member to load hot-restart data
                         shouldTriggerRepartition = false;
                     }

@@ -25,31 +25,113 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExpirationTimeTest extends HazelcastTestSupport {
 
     private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
+
+    @Parameterized.Parameter
+    public boolean statisticsEnabled;
+    @Parameterized.Parameter(1)
+    public boolean perEntryStatsEnabled;
+
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true, true},
+                {false, true},
+                {true, false},
+                {false, false},
+        });
+    }
+
+    @Test
+    public void expire_based_on_ttl_when_when_ttl_is_smaller_than_max_idle() {
+        IMap<Integer, Integer> map = createMap();
+        final long ttlSeconds = 5;
+        final long maxIdleSeconds = 10;
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        // access
+        sleepSeconds(1);
+        map.get(1);
+
+        long expirationTimeAfterGet = getExpirationTime(map, 1);
+
+        assertEquals(expirationTimeAfterGet, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void ttl_limits_expiration_time_increase_when_max_idle_is_smaller_than_ttl() {
+        IMap<Integer, Integer> map = createMap();
+        final long ttlSeconds = 12;
+        final long maxIdleSeconds = 10;
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        // access
+        for (int i = 0; i < 2; i++) {
+            sleepSeconds(2);
+            map.get(1);
+        }
+
+        long expirationTimeAfterGet = getExpirationTime(map, 1);
+
+        long diff = expirationTimeAfterGet - expirationTimeAfterPut;
+        assertEquals(ttlSeconds - maxIdleSeconds, MILLISECONDS.toSeconds(diff));
+    }
+
+    @Test
+    public void last_update_time_as_version_when_both_ttl_and_max_idle_defined() {
+        assumeThat(perEntryStatsEnabled, is(false));
+
+        final long ttlSeconds = 12;
+        final long maxIdleSeconds = 10;
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+        long version1 = map.getEntryView(1).getVersion();
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+        long version2 = map.getEntryView(1).getVersion();
+
+        assertTrue(version2 > version1);
+    }
 
     @Test
     public void put_without_ttl_after_put_with_ttl_cancels_previous_ttl() {
@@ -123,6 +205,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL() {
+        assumeThat(perEntryStatsEnabled, is(true));
+
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
@@ -169,6 +253,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL_withShorterMaxIdle() {
+        assumeThat(perEntryStatsEnabled, is(true));
+
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS, 10, SECONDS);
@@ -182,6 +268,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withShorterTTL_andMaxIdle() {
+        assumeThat(perEntryStatsEnabled, is(true));
+
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, 10, SECONDS, 20, SECONDS);
@@ -249,6 +337,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withTTL_afterMultipleUpdates() {
+        assumeThat(perEntryStatsEnabled, is(true));
+
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
@@ -492,6 +582,23 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertTrue(msg, lastAccessTimeAfter > lastAccessTimeBefore);
     }
 
+    @Test
+    @Category(SlowTest.class)
+    public void get_after_multiple_put_with_ttl_shifts_expiration_time() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, 30, SECONDS);
+        sleepSeconds(10);
+        map.put(1, 1, 5, SECONDS, 2, SECONDS);
+
+        map.get(1);
+        Integer value = map.get(1);
+
+        if (value == null) {
+            fail("Expect second get is non-null");
+        }
+    }
+
     protected InMemoryFormat inMemoryFormat() {
         return BINARY;
     }
@@ -502,7 +609,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         config.getMetricsConfig().setEnabled(false);
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setInMemoryFormat(inMemoryFormat());
-        mapConfig.setPerEntryStatsEnabled(true);
+        mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+        mapConfig.setStatisticsEnabled(statisticsEnabled);
         return createHazelcastInstance(config).getMap(mapName);
     }
 

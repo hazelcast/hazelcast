@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -342,6 +342,39 @@
                                       tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
                                 <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
                                       tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-and-fill-hazelcast-assembly-xml</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-default-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="true" />
+                                        <filter token="FILTER_BIND_ANY" value="false" />
+                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ" />
+                                    </filterset>
+                                </copy>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-docker-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="false" />
+                                        <filter token="FILTER_BIND_ANY" value="true" />
+                                        <filter token="FILTER_DISTRO_NAME" value="Docker" />
+                                    </filterset>
+                                </copy>
                             </target>
                         </configuration>
                     </execution>
@@ -744,6 +777,13 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
             <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

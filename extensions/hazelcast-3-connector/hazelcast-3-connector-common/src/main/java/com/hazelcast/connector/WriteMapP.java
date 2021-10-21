@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,7 +39,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static java.lang.Integer.max;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -171,9 +169,6 @@ final class WriteMapP<T, K, V> implements Processor {
         private final String mapName;
         private final FunctionEx<? super T, ? extends K> toKeyFn;
         private final FunctionEx<? super T, ? extends V> toValueFn;
-        private int maxParallelAsyncOps;
-
-        private transient Hz3MapAdapter hz3MapAdapter;
 
         Supplier(@Nonnull String clientXml, @Nonnull String mapName,
                         @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
@@ -183,12 +178,6 @@ final class WriteMapP<T, K, V> implements Processor {
             this.mapName = mapName;
             this.toKeyFn = toKeyFn;
             this.toValueFn = toValueFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) throws Exception {
-            hz3MapAdapter = Hz3Util.createMapAdapter(clientXml);
-            maxParallelAsyncOps = max(1, MAX_PARALLELISM / context.localParallelism());
         }
 
         @Nonnull
@@ -202,9 +191,5 @@ final class WriteMapP<T, K, V> implements Processor {
                     .collect(toList());
         }
 
-        @Override
-        public void close(@Nullable Throwable error) throws Exception {
-            hz3MapAdapter.shutdown();
-        }
     }
 }

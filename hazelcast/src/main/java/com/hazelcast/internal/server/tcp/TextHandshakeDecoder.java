@@ -26,21 +26,30 @@ import java.nio.ByteBuffer;
 public class TextHandshakeDecoder
         extends SingleProtocolDecoder {
 
-    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next) {
-        super(supportedProtocol, new InboundHandler[] {next}, null);
+    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
+        super(supportedProtocol, next, encoder);
     }
 
     @Override
-    protected void verifyProtocol(String incomingProtocol) {
+    protected boolean verifyProtocol(String incomingProtocol) {
+        super.verifyProtocolCalled = true;
+        handleUnexpectedProtocol(incomingProtocol);
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, expected protocol: REST");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: REST"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
+                return false;
             }
         } else {
             if (!MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
-                throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: MEMCACHED");
+                encoder.signalWrongProtocol(
+                        "Unsupported protocol exchange detected, expected protocol: MEMCACHED"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
+                return false;
             }
         }
+        return true;
     }
 
     @Override

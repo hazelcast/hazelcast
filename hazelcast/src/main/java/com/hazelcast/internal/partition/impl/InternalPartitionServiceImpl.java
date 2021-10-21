@@ -49,6 +49,7 @@ import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
@@ -71,6 +72,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -366,39 +368,45 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
-    // react to member leaving unexpectedly -- members leaving with graceful shutdown
-    // have had their migrations already done before removal
     @Override
-    public void memberRemoved(Member member) {
-        logger.fine("Removing " + member);
+    public void memberRemoved(Member... members) {
+        if (members.length == 0) {
+            return;
+        }
+        logger.fine("Removing " + Arrays.toString(members));
         lock.lock();
         try {
-            migrationManager.onMemberRemove(member);
-            replicaManager.cancelReplicaSyncRequestsTo(member);
-
-            Address formerMaster = latestMaster;
-            latestMaster = node.getClusterService().getMasterAddress();
-
             ClusterState clusterState = node.getClusterService().getClusterState();
-            if (clusterState.isMigrationAllowed() || clusterState.isPartitionPromotionAllowed()) {
-                partitionStateManager.updateMemberGroupsSize();
+            for (Member member : members) {
+                migrationManager.onMemberRemove(member);
+                replicaManager.cancelReplicaSyncRequestsTo(member);
 
-                boolean isMaster = node.isMaster();
-                boolean isThisNodeNewMaster = isMaster && !node.getThisAddress().equals(formerMaster);
-                if (isThisNodeNewMaster) {
-                    assert !shouldFetchPartitionTables;
-                    shouldFetchPartitionTables = true;
-                }
-                // keep partition table snapshot as member leaves
-                if (logger.isFineEnabled()) {
-                    logger.fine("Storing partition assignments snapshot for " + member + " from memberRemoved");
-                }
-                partitionStateManager.storeSnapshot(member.getUuid());
-                if (isMaster) {
-                    migrationManager.triggerControlTaskWithDelay();
+                Address formerMaster = latestMaster;
+                latestMaster = node.getClusterService().getMasterAddress();
+
+                if (clusterState.isMigrationAllowed() || clusterState.isPartitionPromotionAllowed()) {
+                    partitionStateManager.updateMemberGroupsSize();
+
+                    boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(formerMaster);
+                    if (isThisNodeNewMaster) {
+                        assert !shouldFetchPartitionTables;
+                        shouldFetchPartitionTables = true;
+                    }
+                    // keep partition table snapshot as member leaves, unless
+                    // no partitions were assigned to it (member left with graceful shutdown)
+                    if (!partitionStateManager.isAbsentInPartitionTable(member)) {
+                        partitionStateManager.storeSnapshot(member.getUuid());
+                    }
                 }
             }
-
+            // the following call should be made outside the loop, otherwise if node.isMaster() == true
+            // current node might store partition assignment snapshot for some members but not the others,
+            // since migrationManager.triggerControlTaskWithDelay() might remove unknown members from
+            // the partition table before the above logic is executed for another removed member.
+            if (node.isMaster()
+                    && (clusterState.isMigrationAllowed() || clusterState.isPartitionPromotionAllowed())) {
+                migrationManager.triggerControlTaskWithDelay();
+            }
         } finally {
             lock.unlock();
         }
@@ -1247,16 +1255,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     /**
-     * Checks a collection of addresses if any one of them is the last known
-     * master, just as {@link #isMemberMaster(Address)} would. The addresses
-     * are supposed to represent the known addresses of the same member, ie.
-     * aliases.
-     */
-    public boolean isMemberMaster(Collection<Address> addresses) {
-        return addresses.stream().anyMatch(this::isMemberMaster);
-    }
-
-    /**
      * Returns true only if the member is the last known master by
      * {@code InternalPartitionServiceImpl} and {@code ClusterServiceImpl}.
      * <p>
@@ -1500,6 +1498,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyNewPartitionTable(latestPartitions, allCompletedMigrations, thisAddress);
                 }
                 shouldFetchPartitionTables = false;
+            } catch (Throwable rethrowed) {
+                String lineSeparator = System.lineSeparator();
+
+                StringBuilder sb = new StringBuilder()
+                        .append("latestPartitions:").append(lineSeparator)
+                        .append(StringUtil.toString(latestPartitions)).append(lineSeparator)
+                        .append("allCompletedMigrations:").append(lineSeparator)
+                        .append(StringUtil.toString(allCompletedMigrations)).append(lineSeparator)
+                        .append("allActiveMigrations:").append(lineSeparator)
+                        .append(StringUtil.toString((allActiveMigrations))).append(lineSeparator)
+                        .append(rethrowed);
+
+                logger.warning(sb.toString());
+                throw rethrowed;
             } finally {
                 lock.unlock();
             }

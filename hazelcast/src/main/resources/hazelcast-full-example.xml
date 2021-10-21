@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast member.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/config/hazelcast-config-5.0.xsd
+  https://hazelcast.com/schema/config/hazelcast-config-5.1.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -104,12 +104,15 @@
         * scripting-enabled:
         Set to true to allow scripting on the member, false to disallow.
         Default value is false.
+        * console-enabled:
+        Set to true to allow console commands execution on the member, false to disallow
+        Default value is false.
 
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center scripting-enabled="false"/>
+    <management-center scripting-enabled="false" console-enabled="false"/>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -771,8 +774,8 @@
           Operations which changes cluster or node state or their configurations.
         * HEALTH_CHECK - disabled
           Group of endpoints for HTTP health checking.
-        * HOT_RESTART - disabled
-          Group of HTTP REST APIs related to Hot Restart feature.
+        * PERSISTENCE - disabled
+          Group of HTTP REST APIs related to Persistence feature.
         * WAN - disabled
           Group of HTTP REST APIs related to WAN Replication feature.
         * DATA - disabled
@@ -782,9 +785,10 @@
             <endpoint-group name="CLUSTER_READ" enabled="true"/>
             <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
             <endpoint-group name="HEALTH_CHECK" enabled="false"/>
-            <endpoint-group name="HOT_RESTART" enabled="false"/>
+            <endpoint-group name="PERSISTENCE" enabled="false"/>
             <endpoint-group name="WAN" enabled="false"/>
             <endpoint-group name="DATA" enabled="false"/>
+            <endpoint-group name="CP" enabled="false"/>
         </rest-api>
 
         <!--
@@ -2509,6 +2513,22 @@
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </management-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                </actions>
+            </sql-permission>
+            <ring-buffer-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </ring-buffer-permission>
+            <connector-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </connector-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>
@@ -3055,8 +3075,8 @@
                   Operations which changes cluster or node state or their configurations.
                 * HEALTH_CHECK - disabled
                   Group of endpoints for HTTP health checking.
-                * HOT_RESTART - disabled
-                  Group of HTTP REST APIs related to Hot Restart feature.
+                * PERSISTENCE - disabled
+                  Group of HTTP REST APIs related to Persistence feature.
                 * WAN - disabled
                   Group of HTTP REST APIs related to WAN Replication feature.
                 * DATA - disabled
@@ -3596,15 +3616,11 @@
         Configuration element's name is <sql>.
 
         It has the following sub-elements:
-        * <executor-pool-sizer>:
-            Defines the number of threads responsible for query execution.
-
         * <statement-timeout-millis>
             Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
 
     -->
     <sql>
-        <executor-pool-size>8</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
@@ -3621,63 +3637,58 @@
             Enables or disables resource uploading for Jet jobs.
 
         It has the following sub-elements:
-
-        * <instance>:
-            General configuration options pertaining to a Jet instance.
-
-            It has the following sub-elements:
-            * <cooperative-thread-count>:
-                Sets the number of threads each cluster member will use to execute Jet
-                jobs. This refers only to threads executing `cooperative`
-                processors; each `blocking` processor is assigned its own thread.
-            * <flow-control-period>:
-                While executing a Jet job there is the issue of regulating the rate
-                at which one member of the cluster sends data to another member. The
-                receiver will regularly report to each sender how much more data it
-                is allowed to send over a given DAG edge. This method sets the length
-                (in milliseconds) of the interval between flow-control ("ack") packets.
-            * <backup-count>:
-                Sets the number of backups that Jet will maintain for the job metadata
-                and snapshots. Each backup is on another cluster member; all backup
-                write operations must complete before the overall write operation can
-                complete. The maximum allowed number of backups is 6 and the default is
-                1.
-                For example, if you set the backup count to 2, Jet will replicate all
-                the job metadata and snapshot data to two other members. If one or two
-                members of the cluster fail, Jet can recover the data from the snapshot
-                and continue executing the job on the remaining members without loss.
-            * <scale-up-delay-millis>:
-                Sets the delay after which auto-scaled jobs will restart if a new member
-                is added to the cluster. The default is 10 seconds. Has no effect on
-                jobs with auto scaling disabled.
-            * <lossless-restart-enabled>:
-                Sets whether lossless job restart is enabled for the node. With lossless
-                restart you can restart the whole cluster without losing the jobs and
-                their state. The feature is implemented on top of the Hot Restart
-                feature of Hazelcast which persists the data to disk. If enabled, you
-                have to also configure Hot Restart.
-                Note: the snapshots exported using `Job#exportSnapshot` will also have
-                Hot Restart storage enabled.
-                Feature is disabled by default. If you enable this option in open-source,
-                the member will fail to start, you need Enterprise to run it and obtain a
-                license from Hazelcast.
-            * <max-processor-accumulated-records>:
-                Sets the maximum number of records that can be accumulated by any single
-                processor instance.
-                Operations like grouping, sorting or joining require certain amount of
-                records to be accumulated before they can proceed. You can set this option
-                to reduce the probability of OutOfMemoryError.
-                This option applies to each processor instance separately, hence the
-                effective limit of records accumulated by each cluster member is influenced
-                by the vertex's localParallelism and the number of jobs in the cluster.
-                Currently, maxProcessorAccumulatedRecords limits:
-                1. number of items sorted by the sort operation
-                2. number of distinct keys accumulated by aggregation operations
-                3. number of entries in each hash-join lookup table
-                4. number of entries in stateful transforms
-                5. number of distinct items in distinct operation
-                Note: the limit does not apply to streaming aggregations.
-                The default value is Long.MAX_VALUE.
+        * <cooperative-thread-count>:
+            Sets the number of threads each cluster member will use to execute Jet
+            jobs. This refers only to threads executing `cooperative`
+            processors; each `blocking` processor is assigned its own thread.
+        * <flow-control-period>:
+            While executing a Jet job there is the issue of regulating the rate
+            at which one member of the cluster sends data to another member. The
+            receiver will regularly report to each sender how much more data it
+            is allowed to send over a given DAG edge. This method sets the length
+            (in milliseconds) of the interval between flow-control ("ack") packets.
+        * <backup-count>:
+            Sets the number of backups that Jet will maintain for the job metadata
+            and snapshots. Each backup is on another cluster member; all backup
+            write operations must complete before the overall write operation can
+            complete. The maximum allowed number of backups is 6 and the default is
+            1.
+            For example, if you set the backup count to 2, Jet will replicate all
+            the job metadata and snapshot data to two other members. If one or two
+            members of the cluster fail, Jet can recover the data from the snapshot
+            and continue executing the job on the remaining members without loss.
+        * <scale-up-delay-millis>:
+            Sets the delay after which auto-scaled jobs will restart if a new member
+            is added to the cluster. The default is 10 seconds. Has no effect on
+            jobs with auto scaling disabled.
+        * <lossless-restart-enabled>:
+            Sets whether lossless job restart is enabled for the node. With lossless
+            restart you can restart the whole cluster without losing the jobs and
+            their state. The feature is implemented on top of the Hot Restart
+            feature of Hazelcast which persists the data to disk. If enabled, you
+            have to also enable/configure Hazelcast Persistence.
+            Note: the snapshots exported using `Job#exportSnapshot` will also be
+            saved to the persistent storage.
+            This Lossless restart feature is disabled by default. If you enable this
+            option in open-source, the member will fail to start, you need Enterprise
+            to run it and obtain a license from Hazelcast.
+        * <max-processor-accumulated-records>:
+            Sets the maximum number of records that can be accumulated by any single
+            processor instance.
+            Operations like grouping, sorting or joining require certain amount of
+            records to be accumulated before they can proceed. You can set this option
+            to reduce the probability of OutOfMemoryError.
+            This option applies to each processor instance separately, hence the
+            effective limit of records accumulated by each cluster member is influenced
+            by the vertex's localParallelism and the number of jobs in the cluster.
+            Currently, maxProcessorAccumulatedRecords limits:
+            1. number of items sorted by the sort operation
+            2. number of distinct keys accumulated by aggregation operations
+            3. number of entries in each hash-join lookup table
+            4. number of entries in stateful transforms
+            5. number of distinct items in distinct operation
+            Note: the limit does not apply to streaming aggregations.
+            The default value is Long.MAX_VALUE.
 
         * <edge-defaults>
             A configuration object for a DAG `Edge` that holds fine-tuning parameters
@@ -3724,23 +3735,21 @@
                 This setting has no effect on a non-distributed edge.
     -->
     <jet enabled="true" resource-upload-enabled="true">
-        <instance>
-            <!-- number of threads in the cooperative thread pool -->
-            <cooperative-thread-count>8</cooperative-thread-count>
-            <!-- period between flow control packets in milliseconds -->
-            <flow-control-period>100</flow-control-period>
-            <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
-            <backup-count>1</backup-count>
-            <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
-                 cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
-            <scale-up-delay-millis>10000</scale-up-delay-millis>
-            <!-- Sets whether lossless job restart is enabled for the node. With
-                 lossless restart you can restart the whole cluster without losing the
-                 jobs and their state. The feature is implemented on top of the Hot
-                 Restart feature of Hazelcast IMDG which persists the data to disk. -->
-            <lossless-restart-enabled>false</lossless-restart-enabled>
-            <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
-        </instance>
+        <!-- number of threads in the cooperative thread pool -->
+        <cooperative-thread-count>8</cooperative-thread-count>
+        <!-- period between flow control packets in milliseconds -->
+        <flow-control-period>100</flow-control-period>
+        <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
+        <backup-count>1</backup-count>
+        <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
+             cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
+        <scale-up-delay-millis>10000</scale-up-delay-millis>
+        <!-- Sets whether lossless job restart is enabled for the node. With
+             lossless restart you can restart the whole cluster without losing the
+             jobs and their state. The feature is implemented on top of the Persistence
+             feature of Hazelcast which persists the data to disk. -->
+        <lossless-restart-enabled>false</lossless-restart-enabled>
+        <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
         <edge-defaults>
             <!-- capacity of the concurrent SPSC queue between each two processors -->
             <queue-size>1024</queue-size>

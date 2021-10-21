@@ -28,8 +28,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * An object stored in the internal storage for mappings created using DDL.
+ * A simplified, calcite-independent representation of {@link
+ * com.hazelcast.jet.sql.impl.parse.SqlCreateMapping}. It's stored in
+ * the internal storage for mappings, and also used internally to
+ * represent a mapping.
  */
+@SuppressWarnings("JavadocReference")
 public class Mapping implements IdentifiedDataSerializable {
 
     private String name;

@@ -159,7 +159,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("target");
+        return urlString.contains("hazelcast/target");
     }
 
     protected String getMajorVersion() {

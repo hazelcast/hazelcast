@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.ArrayList;
@@ -129,12 +129,12 @@ public abstract class InvalidationMetaDataFetcher {
 
     protected void handleExceptionWhileProcessingMetadata(Member member, Exception e) {
         if (e instanceof IllegalStateException
-            || (e instanceof ExecutionException && e.getCause() instanceof IllegalStateException)) {
+                || (e instanceof ExecutionException && e.getCause() instanceof IllegalStateException)) {
             // log at finest when
             // HazelcastInstanceNotActive, HazelcastClientNotActive or HazelcastClientOffline exception
             logger.finest(e);
         } else if (logger.isWarningEnabled()) {
-            logger.warning(format("Can't fetch or extract invalidation meta-data of %s", member), e);
+            logger.warning(format("Can't fetch or extract invalidation meta-data of %s", member) + ", reason: " + e);
         }
     }
 

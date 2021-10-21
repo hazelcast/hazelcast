@@ -21,7 +21,7 @@
   This XML file is used when no hazelcast.xml is present.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/config/hazelcast-config-5.0.xsd
+  https://hazelcast.com/schema/config/hazelcast-config-5.1.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -29,7 +29,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
 
     <!--
         The name of the cluster. All members of a single cluster must have the same cluster name
@@ -477,55 +477,48 @@
         <collection-frequency-seconds>5</collection-frequency-seconds>
     </metrics>
 
-    <instance-tracking enabled="false">
-
-    </instance-tracking>
-
     <sql>
-        <executor-pool-size>-1</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
     <jet enabled="false" resource-upload-enabled="false">
-        <instance>
-            <!-- time spacing of flow-control (ack) packets -->
-            <flow-control-period>100</flow-control-period>
-            <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
-            <backup-count>1</backup-count>
-            <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
-                 cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
-            <scale-up-delay-millis>10000</scale-up-delay-millis>
-            <!-- Sets whether Lossless Job Restart is enabled for the node. With
-                 Lossless Restart, Jet persists job snapshots to disk automatically
-                 and you can restart the whole cluster without losing the jobs and
-                 their state.
+        <!-- time spacing of flow-control (ack) packets -->
+        <flow-control-period>100</flow-control-period>
+        <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
+        <backup-count>1</backup-count>
+        <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
+             cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
+        <scale-up-delay-millis>10000</scale-up-delay-millis>
+        <!-- Sets whether Lossless Job Restart is enabled for the node. With
+             Lossless Restart, Jet persists job snapshots to disk automatically
+             and you can restart the whole cluster without losing the jobs and
+             their state.
 
-                 This feature requires Hazelcast Enterprise and is implemented on top of the
-                 Hot Restart feature. Therefore you should configure Hot Restart, especially
-                 the base directory where to store the recovery files.
-             -->
-            <lossless-restart-enabled>false</lossless-restart-enabled>
-            <!-- Sets the maximum number of records that can be accumulated by any single
-                 Processor instance.
-                 Operations like grouping, sorting or joining require certain amount of
-                 records to be accumulated before they can proceed. You can set this option
-                 to reduce the probability of OutOfMemoryError.
+             This feature requires Hazelcast Enterprise and is implemented on top of the
+             Persistence feature. Therefore you should enable and configure Persistence,
+             especially the base directory where to store the recovery files.
+         -->
+        <lossless-restart-enabled>false</lossless-restart-enabled>
+        <!-- Sets the maximum number of records that can be accumulated by any single
+             Processor instance.
+             Operations like grouping, sorting or joining require certain amount of
+             records to be accumulated before they can proceed. You can set this option
+             to reduce the probability of OutOfMemoryError.
 
-                 This option applies to each Processor instance separately, hence the
-                 effective limit of records accumulated by each cluster member is influenced
-                 by the vertex's localParallelism and the number of jobs in the cluster.
+             This option applies to each Processor instance separately, hence the
+             effective limit of records accumulated by each cluster member is influenced
+             by the vertex's localParallelism and the number of jobs in the cluster.
 
-                 Currently, maxProcessorAccumulatedRecords limits:
-                    - number of items sorted by the sort operation
-                    - number of distinct keys accumulated by aggregation operations
-                    - number of entries in the hash-join lookup tables
-                    - number of entries in stateful transforms
-                    - number of distinct items in distinct operation
+             Currently, maxProcessorAccumulatedRecords limits:
+                - number of items sorted by the sort operation
+                - number of distinct keys accumulated by aggregation operations
+                - number of entries in the hash-join lookup tables
+                - number of entries in stateful transforms
+                - number of distinct items in distinct operation
 
-                 Note: the limit does not apply to streaming aggregations.
-             -->
-            <max-processor-accumulated-records>9223372036854775807</max-processor-accumulated-records>
-        </instance>
+             Note: the limit does not apply to streaming aggregations.
+         -->
+        <max-processor-accumulated-records>9223372036854775807</max-processor-accumulated-records>
         <edge-defaults>
             <!-- capacity of the concurrent SPSC queue between each two processors -->
             <queue-size>1024</queue-size>

@@ -29,10 +29,6 @@
             <includes>
                 <include>com.hazelcast:hazelcast</include>
                 <include>com.hazelcast:hazelcast-sql</include>
-                <include>com.hazelcast:hazelcast-aws</include>
-                <include>com.hazelcast:hazelcast-kubernetes</include>
-                <include>com.hazelcast:hazelcast-gcp</include>
-                <include>com.hazelcast:hazelcast-azure</include>
                 <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-wm</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
@@ -93,7 +89,14 @@
             <outputDirectory>config</outputDirectory>
         </file>
         <file>
-            <source>${configs.from.jar}/hazelcast-client-default.xml</source>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.xml</source>
+            <destName>hazelcast-docker.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.xml</source>
             <destName>hazelcast-client.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
@@ -107,7 +110,14 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
         <file>
-            <source>${configs.from.jar}/hazelcast-client-default.yaml</source>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.yaml</source>
+            <destName>hazelcast-docker.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.yaml</source>
             <destName>hazelcast-client.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
@@ -129,6 +139,18 @@
             <source>${configs.from.jar}/hazelcast-security-hardened.yaml</source>
             <destName>hazelcast-security-hardened.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.xml</source>
+            <destName>hazelcast-security-hardened.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- NOTICE file from hazelcast.jar -->
+        <file>
+            <source>${configs.from.jar}/META-INF/NOTICE</source>
+            <destName>NOTICE</destName>
+            <outputDirectory>/</outputDirectory>
         </file>
     </files>
 
@@ -155,6 +177,12 @@
         <fileSet>
             <directory>${project.build.directory}/custom-lib</directory>
             <outputDirectory>custom-lib</outputDirectory>
+        </fileSet>
+        <fileSet> <!-- Create empty directory -->
+            <outputDirectory>bin/user-lib</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>

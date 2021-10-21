@@ -39,6 +39,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,6 +81,11 @@ public class PartitionStateManager {
     // before partition rebalancing
     private final ConcurrentMap<UUID, PartitionTableView> snapshotOnRemove;
 
+    // we keep a cached buffer because stamp calculation can happen many times
+    // during repartitioning and this introduces GC pressure, especially at high
+    // partition counts
+    private final byte[] stampCalculationBuffer;
+
     // updates will be done under lock, but reads will be multithreaded.
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
@@ -99,6 +105,7 @@ public class PartitionStateManager {
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
+        this.stampCalculationBuffer = new byte[partitionCount * Integer.BYTES];
 
         PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
@@ -376,7 +383,7 @@ public class PartitionStateManager {
     }
 
     public void updateStamp() {
-        stateStamp = calculateStamp(partitions);
+        stateStamp = calculateStamp(partitions, () -> stampCalculationBuffer);
         if (logger.isFinestEnabled()) {
             logger.finest("New calculated partition state stamp is: " + stateStamp);
         }
@@ -449,10 +456,12 @@ public class PartitionStateManager {
     }
 
     void storeSnapshot(UUID crashedMemberUuid) {
-        if (logger.isFineEnabled()) {
-            logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
-        }
+        logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
         snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
+    }
+
+    Collection<PartitionTableView> snapshots() {
+        return Collections.unmodifiableCollection(snapshotOnRemove.values());
     }
 
     PartitionTableView getSnapshot(UUID crashedMemberUuid) {

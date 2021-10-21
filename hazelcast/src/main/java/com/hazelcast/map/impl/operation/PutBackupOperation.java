@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -86,15 +85,15 @@ public class PutBackupOperation
         super.writeInternal(out);
 
         IOUtil.writeData(out, dataKey);
-        Records.writeRecord(out, record, dataValue, expiryMetadata);
+        Records.writeRecord(out, record, dataValue);
+        Records.writeExpiry(out, expiryMetadata);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
         dataKey = IOUtil.readData(in);
-        expiryMetadata = new ExpiryMetadataImpl();
-        record = Records.readRecord(in, expiryMetadata);
+        record = Records.readRecord(in);
+        expiryMetadata = Records.readExpiry(in);
     }
 }

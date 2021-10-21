@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobClassLoaderService.JobPhase;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
@@ -137,13 +138,15 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         // In the production code the plan#initialize is only called from places where we have already set up the
         // processor classloaders
         JetServiceBackend jetService = nodeEngineImpl.getService(JetServiceBackend.SERVICE_NAME);
+        jetService.getJobClassLoaderService().getOrCreateClassLoader(jobConfig, 0, JobPhase.EXECUTION);
         try {
-            jetService.getJobExecutionService().prepareProcessorClassLoaders(0, jobConfig);
+            jetService.getJobClassLoaderService().prepareProcessorClassLoaders(0);
             plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
                     (InternalSerializationService) nodeEngineImpl.getSerializationService());
         } finally {
-            jetService.getJobExecutionService().clearProcessorClassLoaders();
+            jetService.getJobClassLoaderService().clearProcessorClassLoaders();
         }
+        jetService.getJobClassLoaderService().tryRemoveClassloadersForJob(0, JobPhase.EXECUTION);
 
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
         String actualHigherPriorityVertices = plan.getVertices().stream()

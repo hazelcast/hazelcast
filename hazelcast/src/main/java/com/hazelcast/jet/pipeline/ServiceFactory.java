@@ -96,6 +96,8 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      */
     public static final boolean COOPERATIVE_DEFAULT = true;
 
+    private static final long serialVersionUID = 1L;
+
     private boolean isCooperative = COOPERATIVE_DEFAULT;
 
     @Nonnull

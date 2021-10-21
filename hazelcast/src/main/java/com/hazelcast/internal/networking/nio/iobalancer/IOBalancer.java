@@ -42,7 +42,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
 /**
  * It attempts to detect and fix a selector imbalance problem.
  *
- * By default Hazelcast uses 3 threads to read data from TCP connections and
+ * By default, Hazelcast uses 3 threads to read data from TCP connections and
  * 3 threads to write data to connections. We have measured significant fluctuations
  * of performance when the threads are not utilized equally.
  *

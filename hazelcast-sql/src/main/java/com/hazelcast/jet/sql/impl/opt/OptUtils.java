@@ -20,12 +20,13 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -57,7 +58,7 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,8 +67,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
  * Static utility classes for rules.
@@ -142,6 +143,25 @@ public final class OptUtils {
         return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
     }
 
+    public static LogicalTableScan createLogicalScan(
+            TableScan originalScan,
+            HazelcastTable newHazelcastTable
+    ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
+        HazelcastRelOptTable newTable = createRelTable(
+                originalRelTable,
+                newHazelcastTable,
+                originalScan.getCluster().getTypeFactory()
+        );
+
+        return LogicalTableScan.create(
+                originalScan.getCluster(),
+                newTable,
+                originalScan.getHints()
+        );
+    }
+
     public static HazelcastRelOptTable createRelTable(
             List<String> names,
             HazelcastTable hazelcastTable,
@@ -157,6 +177,22 @@ public final class OptUtils {
                 null
         );
         return new HazelcastRelOptTable(relTable);
+    }
+
+    public static HazelcastRelOptTable createRelTable(
+            HazelcastRelOptTable originalRelTable,
+            HazelcastTable newHazelcastTable,
+            RelDataTypeFactory typeFactory
+    ) {
+        RelOptTableImpl newTable = RelOptTableImpl.create(
+                originalRelTable.getRelOptSchema(),
+                newHazelcastTable.getRowType(typeFactory),
+                originalRelTable.getDelegate().getQualifiedName(),
+                newHazelcastTable,
+                null
+        );
+
+        return new HazelcastRelOptTable(newTable);
     }
 
     /**
@@ -185,19 +221,30 @@ public final class OptUtils {
     }
 
     private static boolean isPhysical(RelNode rel) {
-        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(JetConventions.PHYSICAL);
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
+    }
+
+    public static HazelcastRelOptCluster getCluster(RelNode rel) {
+        assert rel.getCluster() instanceof HazelcastRelOptCluster;
+
+        return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
     }
 
     /**
      * If the {@code node} is a {@link RelSubset}, finds the subset matching
-     * the {@code operandPredicate}. If multiple or no matches are found,
-     * throws an error.
+     * the {@code operandPredicate}.
+     * If multiple matches are found, it throws. If no match is found, it returns null.
      * <p>
-     * If the {@code node} isn't a {@code RelSubset}, check that it matches the
-     * predicate and returns it.
+     * If the {@code node} isn't a {@code RelSubset} and it matches the
+     * predicate, the {@code node} is returned. If it doesn't match,
+     * {@code null} is returned.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
+    @Nullable
     public static <T> T findMatchingRel(RelNode node, RelOptRuleOperand operandPredicate) {
         if (node instanceof RelSubset) {
             RelNode res = null;
@@ -209,14 +256,11 @@ public final class OptUtils {
                     res = rel;
                 }
             }
-            if (res != null) {
-                return (T) res;
-            }
+            return (T) res;
         } else if (operandPredicate.matches(node)) {
             return (T) node;
         }
-
-        throw new RuntimeException("expected rel not found: " + node);
+        return null;
     }
 
     public static PlanNodeSchema schema(RelDataType rowType) {

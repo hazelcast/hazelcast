@@ -18,6 +18,7 @@ package com.hazelcast.connector;
 
 import com.hazelcast.connector.map.Hz3MapAdapter;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.JetException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -30,10 +31,12 @@ final class Hz3Util {
     static Hz3MapAdapter createMapAdapter(String clientXml) {
         try {
             Class<?> clazz = Thread.currentThread().getContextClassLoader()
-                    .loadClass("com.hazelcast.connector.map.impl.MapAdapterImpl");
+                                   .loadClass("com.hazelcast.connector.map.impl.MapAdapterImpl");
             Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
             return (Hz3MapAdapter) constructor.newInstance(clientXml);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        } catch (InvocationTargetException e) {
+            throw new JetException("Could not create instance of MapAdapterImpl", e.getCause());
+        } catch (InstantiationException | IllegalAccessException
                 | ClassNotFoundException | NoSuchMethodException e) {
             throw new HazelcastException(e);
         }

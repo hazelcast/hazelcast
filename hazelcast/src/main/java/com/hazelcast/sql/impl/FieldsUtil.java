@@ -16,7 +16,10 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldKind;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
@@ -31,8 +34,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
- * Utilities to extract a list of properties from a {@link Class} object
- * using reflection or from {@link ClassDefinition} of a Portable.
+ * Utilities to extract a list of properties from a
+ * {@link Class} object using reflection
+ * or from {@link ClassDefinition} of a Portable.
+ * or from {@link Schema} of a Compact Serialized Object
  */
 public final class FieldsUtil {
 
@@ -41,7 +46,8 @@ public final class FieldsUtil {
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
 
-    private FieldsUtil() { }
+    private FieldsUtil() {
+    }
 
     /**
      * Return a list of fields and their types from a {@link Class}.
@@ -156,8 +162,26 @@ public final class FieldsUtil {
         for (String name : clazz.getFieldNames()) {
             FieldType portableType = clazz.getFieldType(name);
 
-            QueryDataType type = resolvePortableType(portableType);
+            QueryDataType type = resolveType(FieldTypeToFieldKind.toFieldKind(portableType));
 
+            fields.putIfAbsent(name, type);
+        }
+
+        return fields;
+    }
+
+    /**
+     * Resolve the list of fields from a schema {@link com.hazelcast.internal.serialization.impl.compact.Schema},
+     * along with their {@link QueryDataType}.
+     */
+    @Nonnull
+    public static SortedMap<String, QueryDataType> resolveCompact(@Nonnull Schema schema) {
+        SortedMap<String, QueryDataType> fields = new TreeMap<>();
+
+        // Add regular fields.
+        for (String name : schema.getFieldNames()) {
+            FieldKind compactKind = schema.getField(name).getKind();
+            QueryDataType type = resolveType(compactKind);
             fields.putIfAbsent(name, type);
         }
 
@@ -166,8 +190,8 @@ public final class FieldsUtil {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolvePortableType(@Nonnull FieldType portableType) {
-        switch (portableType) {
+    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+        switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
 
@@ -180,7 +204,7 @@ public final class FieldsUtil {
             case CHAR:
                 return QueryDataType.VARCHAR_CHARACTER;
 
-            case UTF:
+            case STRING:
                 return QueryDataType.VARCHAR;
 
             case INT:

@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.impl.operationservice.WrappableException;
 
-import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -29,19 +28,25 @@ import java.util.UUID;
 public final class QueryException extends HazelcastException implements WrappableException<QueryException> {
 
     private final int code;
-    private UUID originatingMemberId;
-    private boolean invalidatePlan;
+    private final String suggestion;
+    private final UUID originatingMemberId;
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
-        this(code, message, cause, originatingMemberId, false);
+        this(code, message, cause, null, originatingMemberId);
     }
 
-    private QueryException(int code, String message, Throwable cause, UUID originatingMemberId, boolean invalidatePlan) {
+    private QueryException(
+            int code,
+            String message,
+            Throwable cause,
+            String suggestion,
+            UUID originatingMemberId
+    ) {
         super(message, cause);
 
         this.code = code;
+        this.suggestion = suggestion;
         this.originatingMemberId = originatingMemberId;
-        this.invalidatePlan = invalidatePlan;
     }
 
     public static QueryException error(String message) {
@@ -49,7 +54,7 @@ public final class QueryException extends HazelcastException implements Wrappabl
     }
 
     public static QueryException error(String message, Throwable cause) {
-        return error(SqlErrorCode.GENERIC, message, cause, null);
+        return error(SqlErrorCode.GENERIC, message, cause);
     }
 
     public static QueryException error(int code, String message) {
@@ -60,6 +65,10 @@ public final class QueryException extends HazelcastException implements Wrappabl
         return new QueryException(code, message, cause, null);
     }
 
+    public static QueryException error(int code, String message, Throwable cause, String suggestion) {
+        return new QueryException(code, message, cause, suggestion, null);
+    }
+
     public static QueryException error(int code, String message, UUID originatingMemberId) {
         return new QueryException(code, message, null, originatingMemberId);
     }
@@ -68,19 +77,9 @@ public final class QueryException extends HazelcastException implements Wrappabl
         return new QueryException(code, message, cause, originatingMemberId);
     }
 
-    public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
-                + "Member cannot be reached: " + memberId).markInvalidate();
-    }
-
     public static QueryException memberConnection(Address address) {
         return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
-                + "Member cannot be reached: " + address).markInvalidate();
-    }
-
-    public static QueryException memberConnection(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
-                + "Members cannot be reached: " + memberIds).markInvalidate();
+                + "Member cannot be reached: " + address);
     }
 
     public static QueryException clientMemberConnection(UUID clientId) {
@@ -103,20 +102,18 @@ public final class QueryException extends HazelcastException implements Wrappabl
         return dataException(message, null);
     }
 
-    public QueryException markInvalidate() {
-        invalidatePlan = true;
-        return this;
-    }
-
-    public void setOriginatingMemberId(UUID uuid) {
-        originatingMemberId = uuid;
-    }
-
     /**
      * @return Code of the exception.
      */
     public int getCode() {
         return code;
+    }
+
+    /**
+     * @return Suggested SQL statement to remediate experienced error.
+     */
+    public String getSuggestion() {
+        return suggestion;
     }
 
     /**
@@ -129,16 +126,8 @@ public final class QueryException extends HazelcastException implements Wrappabl
         return originatingMemberId;
     }
 
-    /**
-     * If true, the plan that caused this exception should be invalidated from
-     * the plan cache.
-     */
-    public boolean isInvalidatePlan() {
-        return invalidatePlan;
-    }
-
     @Override
     public QueryException wrap() {
-        return new QueryException(code, getMessage(), this, originatingMemberId, invalidatePlan);
+        return new QueryException(code, getMessage(), this, suggestion, originatingMemberId);
     }
 }

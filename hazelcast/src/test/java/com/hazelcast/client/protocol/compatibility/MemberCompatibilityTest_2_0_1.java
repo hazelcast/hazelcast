@@ -7313,6 +7313,217 @@ public class MemberCompatibilityTest_2_0_1 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_JetSubmitJobCodec_decodeRequest() {
+        int fileClientMessageIndex = 823;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetSubmitJobCodec.RequestParameters parameters = JetSubmitJobCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aData, parameters.dag));
+        assertTrue(isEqual(aData, parameters.jobConfig));
+        assertFalse(parameters.isLightJobCoordinatorExists);
+    }
+
+    @Test
+    public void test_JetSubmitJobCodec_encodeResponse() {
+        int fileClientMessageIndex = 824;
+        ClientMessage encoded = JetSubmitJobCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetTerminateJobCodec_decodeRequest() {
+        int fileClientMessageIndex = 825;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetTerminateJobCodec.RequestParameters parameters = JetTerminateJobCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(anInt, parameters.terminateMode));
+        assertFalse(parameters.isLightJobCoordinatorExists);
+    }
+
+    @Test
+    public void test_JetTerminateJobCodec_encodeResponse() {
+        int fileClientMessageIndex = 826;
+        ClientMessage encoded = JetTerminateJobCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobStatusCodec_decodeRequest() {
+        int fileClientMessageIndex = 827;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetGetJobStatusCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetGetJobStatusCodec_encodeResponse() {
+        int fileClientMessageIndex = 828;
+        ClientMessage encoded = JetGetJobStatusCodec.encodeResponse(anInt);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobIdsCodec_decodeRequest() {
+        int fileClientMessageIndex = 829;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetGetJobIdsCodec.RequestParameters parameters = JetGetJobIdsCodec.decodeRequest(fromFile);
+        assertFalse(parameters.isOnlyNameExists);
+        assertFalse(parameters.isOnlyJobIdExists);
+    }
+
+    @Test
+    public void test_JetGetJobIdsCodec_encodeResponse() {
+        int fileClientMessageIndex = 830;
+        ClientMessage encoded = JetGetJobIdsCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetJoinSubmittedJobCodec_decodeRequest() {
+        int fileClientMessageIndex = 831;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetJoinSubmittedJobCodec.RequestParameters parameters = JetJoinSubmittedJobCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertFalse(parameters.isLightJobCoordinatorExists);
+    }
+
+    @Test
+    public void test_JetJoinSubmittedJobCodec_encodeResponse() {
+        int fileClientMessageIndex = 832;
+        ClientMessage encoded = JetJoinSubmittedJobCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobSubmissionTimeCodec_decodeRequest() {
+        int fileClientMessageIndex = 833;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetGetJobSubmissionTimeCodec.RequestParameters parameters = JetGetJobSubmissionTimeCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertFalse(parameters.isLightJobCoordinatorExists);
+    }
+
+    @Test
+    public void test_JetGetJobSubmissionTimeCodec_encodeResponse() {
+        int fileClientMessageIndex = 834;
+        ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeResponse(aLong);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 835;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetGetJobConfigCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetGetJobConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 836;
+        ClientMessage encoded = JetGetJobConfigCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetResumeJobCodec_decodeRequest() {
+        int fileClientMessageIndex = 837;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetResumeJobCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetResumeJobCodec_encodeResponse() {
+        int fileClientMessageIndex = 838;
+        ClientMessage encoded = JetResumeJobCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetExportSnapshotCodec_decodeRequest() {
+        int fileClientMessageIndex = 839;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetExportSnapshotCodec.RequestParameters parameters = JetExportSnapshotCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aString, parameters.name));
+        assertTrue(isEqual(aBoolean, parameters.cancelJob));
+    }
+
+    @Test
+    public void test_JetExportSnapshotCodec_encodeResponse() {
+        int fileClientMessageIndex = 840;
+        ClientMessage encoded = JetExportSnapshotCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobSummaryListCodec_decodeRequest() {
+        int fileClientMessageIndex = 841;
+    }
+
+    @Test
+    public void test_JetGetJobSummaryListCodec_encodeResponse() {
+        int fileClientMessageIndex = 842;
+        ClientMessage encoded = JetGetJobSummaryListCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetExistsDistributedObjectCodec_decodeRequest() {
+        int fileClientMessageIndex = 843;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetExistsDistributedObjectCodec.RequestParameters parameters = JetExistsDistributedObjectCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.serviceName));
+        assertTrue(isEqual(aString, parameters.objectName));
+    }
+
+    @Test
+    public void test_JetExistsDistributedObjectCodec_encodeResponse() {
+        int fileClientMessageIndex = 844;
+        ClientMessage encoded = JetExistsDistributedObjectCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobMetricsCodec_decodeRequest() {
+        int fileClientMessageIndex = 845;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetGetJobMetricsCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetGetJobMetricsCodec_encodeResponse() {
+        int fileClientMessageIndex = 846;
+        ClientMessage encoded = JetGetJobMetricsCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobSuspensionCauseCodec_decodeRequest() {
+        int fileClientMessageIndex = 847;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aLong, JetGetJobSuspensionCauseCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_JetGetJobSuspensionCauseCodec_encodeResponse() {
+        int fileClientMessageIndex = 848;
+        ClientMessage encoded = JetGetJobSuspensionCauseCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

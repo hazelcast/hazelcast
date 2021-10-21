@@ -19,11 +19,11 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
@@ -35,6 +35,7 @@ import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
@@ -49,6 +50,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.collection.IntHashSet;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
@@ -63,12 +65,12 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -79,6 +81,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -104,9 +107,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS;
 
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
@@ -181,9 +182,10 @@ public class MigrationManager {
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
         nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
-        this.autoRebalanceDelaySeconds = properties.getInteger(PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS);
-        checkNotNegative(autoRebalanceDelaySeconds,
-                PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS.getName() + " must be not negative");
+        this.autoRebalanceDelaySeconds =
+                node.getConfig().getPersistenceConfig().isEnabled()
+                ? node.getConfig().getPersistenceConfig().getRebalanceDelaySeconds()
+                : PersistenceConfig.DEFAULT_REBALANCE_DELAY;
         this.asyncExecutor = node.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
     }
 
@@ -410,56 +412,6 @@ public class MigrationManager {
         } finally {
             partitionServiceLock.unlock();
         }
-    }
-
-    /**
-     * Sends a {@link MigrationCommitOperation} to the destination and returns {@code true} if the new partition state
-     * was applied on the destination.
-     */
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    //RU_COMPAT_4_0
-    private boolean commitMigrationToDestination(MigrationInfo migration) {
-        PartitionReplica destination = migration.getDestination();
-
-        if (destination.isIdentical(node.getLocalMember())) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Shortcutting migration commit, since destination is master. -> " + migration);
-            }
-            return true;
-        }
-
-        Member member = node.getClusterService().getMember(destination.address(), destination.uuid());
-        if (member == null) {
-            logger.warning("Cannot commit " + migration + ". Destination " + destination + " is not a member anymore");
-            return false;
-        }
-
-        try {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Sending migration commit operation to " + destination + " for " + migration);
-            }
-            migration.setStatus(MigrationStatus.SUCCESS);
-            UUID destinationUuid = member.getUuid();
-
-            MigrationCommitOperation operation = new MigrationCommitOperation(migration, destinationUuid);
-            Future<Boolean> future = nodeEngine.getOperationService()
-                    .createInvocationBuilder(SERVICE_NAME, operation, destination.address())
-                    .setTryCount(Integer.MAX_VALUE)
-                    .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
-
-            boolean result = future.get();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Migration commit result " + result + " from " + destination + " for " + migration);
-            }
-            return result;
-        } catch (Throwable t) {
-            logMigrationCommitFailure(migration, t);
-
-            if (t.getCause() instanceof OperationTimeoutException) {
-                return commitMigrationToDestination(migration);
-            }
-        }
-        return false;
     }
 
     /**
@@ -838,7 +790,7 @@ public class MigrationManager {
      * this task has been scheduled, schedules migrations and syncs the partition state.
      * Also schedules a {@link ProcessShutdownRequestsTask}. Acquires partition service lock.
      */
-    private class RepartitioningTask implements MigrationRunnable {
+    class RepartitioningTask implements MigrationRunnable {
         @Override
         public void run() {
             if (!partitionService.isLocalMemberMaster()) {
@@ -879,7 +831,16 @@ public class MigrationManager {
                 return null;
             }
 
-            PartitionReplica[][] newState = partitionStateManager.repartition(shutdownRequestedMembers, null);
+            PartitionReplica[][] newState = null;
+            if (node.getNodeExtension().getInternalHotRestartService().isEnabled()) {
+                // check partition table snapshots when persistence is enabled
+                newState = checkSnapshots();
+            }
+            if (newState != null) {
+                logger.info("Identified a snapshot of left member for repartition");
+            } else {
+                newState = partitionStateManager.repartition(shutdownRequestedMembers, null);
+            }
             if (newState == null) {
                 migrationQueue.add(new ProcessShutdownRequestsTask());
                 return null;
@@ -889,6 +850,31 @@ public class MigrationManager {
                 return null;
             }
             return newState;
+        }
+
+        PartitionReplica[][] checkSnapshots() {
+            Set<UUID> shutdownRequestedReplicas = new HashSet<>();
+            Set<UUID> currentReplicas = new HashSet<>();
+            Map<UUID, Address> currentAddressMapping = new HashMap<>();
+            shutdownRequestedMembers.forEach(member -> shutdownRequestedReplicas.add(member.getUuid()));
+
+            Collection<Member> currentMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+            currentMembers.forEach(member -> currentReplicas.add(member.getUuid()));
+            currentMembers.forEach(member -> currentAddressMapping.put(member.getUuid(), member.getAddress()));
+
+            Set<PartitionTableView> candidates = new TreeSet<>(new
+                    PartitionTableViewDistanceComparator(partitionStateManager.getPartitionTable()));
+
+            for (PartitionTableView partitionTableView : partitionStateManager.snapshots()) {
+                if (partitionTableView.composedOf(currentReplicas, shutdownRequestedReplicas)) {
+                    candidates.add(partitionTableView);
+                }
+            }
+            if (candidates.isEmpty()) {
+                return null;
+            }
+            // find least distant
+            return candidates.iterator().next().toArray(currentAddressMapping);
         }
 
         /**
@@ -998,23 +984,7 @@ public class MigrationManager {
 
         /** Schedules all migrations. */
         private void scheduleMigrations(List<Queue<MigrationInfo>> migrationQs) {
-            Version version = nodeEngine.getClusterService().getClusterVersion();
-            if (version.isGreaterOrEqual(Versions.V4_1)) {
-                schedule(new MigrationPlanTask(migrationQs));
-            } else {
-                //RU_COMPAT_4_0
-                boolean migrationScheduled;
-                do {
-                    migrationScheduled = false;
-                    for (Queue<MigrationInfo> queue : migrationQs) {
-                        MigrationInfo migration = queue.poll();
-                        if (migration != null) {
-                            migrationScheduled = true;
-                            scheduleMigration(migration);
-                        }
-                    }
-                } while (migrationScheduled);
-            }
+            schedule(new MigrationPlanTask(migrationQs));
         }
 
         private void logMigrationStatistics(int migrationCount) {
@@ -1114,7 +1084,8 @@ public class MigrationManager {
          * Set of currently migrating partition IDs.
          * It's illegal to have concurrent migrations on the same partition.
          */
-        private final Set<Integer> migratingPartitions = new HashSet<>();
+        private final IntHashSet migratingPartitions;
+
         /**
          * Map of endpoint -> migration-count.
          * Only {@link #maxParallelMigrations} number of migrations are allowed on a single member.
@@ -1127,6 +1098,8 @@ public class MigrationManager {
         MigrationPlanTask(List<Queue<MigrationInfo>> migrationQs) {
             this.migrationQs = migrationQs;
             this.completed = new ArrayBlockingQueue<>(migrationQs.size());
+            this.migratingPartitions
+                    = new IntHashSet(migrationQs.stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override
@@ -1430,7 +1403,7 @@ public class MigrationManager {
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     if (t instanceof ExecutionException && t.getCause() instanceof PartitionStateVersionMismatchException) {
                         level = Level.FINE;
                     }
@@ -1447,7 +1420,7 @@ public class MigrationManager {
                     }
                     return migrationOperationSucceeded();
                 } else {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     if (logger.isLoggable(level)) {
                         logger.log(level, "Migration failed: " + migration);
                     }
@@ -1463,7 +1436,7 @@ public class MigrationManager {
                         TimeUnit.NANOSECONDS.toMillis(elapsed));
 
                 if (t != null) {
-                    Level level = nodeEngine.isRunning() && migration.isValid() ? Level.WARNING : Level.FINE;
+                    Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
                     logger.log(level, "Error during " + migration, t);
                     return false;
                 }
@@ -1971,6 +1944,38 @@ public class MigrationManager {
         public void run() {
             partitionService.getPartitionEventManager().sendMigrationProcessCompletedEvent(stats.toMigrationState());
             publishCompletedMigrations();
+        }
+    }
+
+    /**
+     * Comparator that compares distance of two {@link PartitionTableView}s against a base
+     * {@link PartitionTableView} that is provided at construction time.
+     * Distance of two {@link PartitionTableView}s is the sum of distances of their
+     * respective {link InternalPartition} distances. The distance between two
+     * {@link InternalPartition}s is calculated as follows:
+     * <ul>
+     *     <li>If a {@link PartitionReplica} occurs in both {@link InternalPartition}s, then
+     *     their distance is the absolute difference of their respective replica indices.</li>
+     *     <li>If {@code null} {@link PartitionReplica}s occur at the same replica index, then
+     *     their distance is 0.</li>
+     *     <li>If a non-{@code null} {@link PartitionReplica} is present in one {@link InternalPartition}
+     *     and not the other, then its distance is {@link InternalPartition#MAX_REPLICA_COUNT}.</li>
+     * </ul>
+     */
+    static class PartitionTableViewDistanceComparator implements Comparator<PartitionTableView> {
+        final PartitionTableView basePartitionTableView;
+
+        PartitionTableViewDistanceComparator(PartitionTableView basePartitionTableView) {
+            this.basePartitionTableView = basePartitionTableView;
+        }
+
+        @Override
+        public int compare(PartitionTableView o1, PartitionTableView o2) {
+            return distanceFromBase(o1) - distanceFromBase(o2);
+        }
+
+        int distanceFromBase(PartitionTableView partitionTableView) {
+            return partitionTableView.distanceOf(basePartitionTableView);
         }
     }
 }

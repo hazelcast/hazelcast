@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static java.util.Arrays.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 

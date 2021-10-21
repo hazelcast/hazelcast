@@ -881,6 +881,7 @@ public class YamlConfigBuilderTest
                 + "hazelcast:\n"
                 + "  management-center:\n"
                 + "    scripting-enabled: true\n"
+                + "    console-enabled: true\n"
                 + "    trusted-interfaces:\n"
                 + "      - 127.0.0.1\n"
                 + "      - 192.168.1.*\n";
@@ -889,6 +890,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isConsoleEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -904,6 +906,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -915,6 +918,7 @@ public class YamlConfigBuilderTest
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -1705,7 +1709,7 @@ public class YamlConfigBuilderTest
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
 
         assertFalse(multicastConfig.isEnabled());
-        assertTrue(multicastConfig.isLoopbackModeEnabled());
+        assertEquals(Boolean.TRUE, multicastConfig.getLoopbackModeEnabled());
         assertEquals("224.2.2.4", multicastConfig.getMulticastGroup());
         assertEquals(65438, multicastConfig.getMulticastPort());
         assertEquals(4, multicastConfig.getMulticastTimeoutSeconds());
@@ -2996,6 +3000,7 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  hot-restart-persistence:\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    enabled: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
@@ -3008,6 +3013,7 @@ public class YamlConfigBuilderTest
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertTrue(hotRestartPersistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
@@ -3024,28 +3030,33 @@ public class YamlConfigBuilderTest
         int parallelism = 3;
         int validationTimeout = 13131;
         int dataLoadTimeout = 45454;
+        int rebalanceDelaySeconds = 240;
         PersistenceClusterDataRecoveryPolicy policy = PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
         String yaml = ""
                 + "hazelcast:\n"
                 + "  persistence:\n"
                 + "    enabled: true\n"
+                + "    auto-remove-stale-data: true\n"
                 + "    base-dir: " + dir + "\n"
                 + "    backup-dir: " + backupDir + "\n"
                 + "    parallelism: " + parallelism + "\n"
                 + "    validation-timeout-seconds: " + validationTimeout + "\n"
                 + "    data-load-timeout-seconds: " + dataLoadTimeout + "\n"
-                + "    cluster-data-recovery-policy: " + policy + "\n";
+                + "    cluster-data-recovery-policy: " + policy + "\n"
+                + "    rebalance-delay-seconds: " + rebalanceDelaySeconds + "\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
         assertTrue(persistenceConfig.isEnabled());
+        assertTrue(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(new File(dir).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
         assertEquals(new File(backupDir).getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, persistenceConfig.getParallelism());
         assertEquals(validationTimeout, persistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertEquals(rebalanceDelaySeconds, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Override
@@ -3766,11 +3777,9 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    executor-pool-size: 10\n"
                 + "    statement-timeout-millis: 30\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 

@@ -24,17 +24,16 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.properties.ClusterProperty.BIND_SPOOFING_CHECKS;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 
 /**
@@ -45,7 +44,6 @@ public final class TcpServerControl {
     private final TcpServerConnectionManager connectionManager;
     private final ServerContext serverContext;
     private final ILogger logger;
-    private final boolean spoofingChecks;
     private final boolean unifiedEndpointManager;
     private final Set<ProtocolType> supportedProtocolTypes;
     private final int expectedPlaneCount;
@@ -57,7 +55,6 @@ public final class TcpServerControl {
         this.connectionManager = connectionManager;
         this.serverContext = serverContext;
         this.logger = logger;
-        this.spoofingChecks = serverContext.properties().getBoolean(BIND_SPOOFING_CHECKS);
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
         this.expectedPlaneCount = serverContext.properties().getInteger(CHANNEL_COUNT);
@@ -91,7 +88,7 @@ public final class TcpServerControl {
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
-        Set<Address> allAliases = new HashSet<>();
+        List<Address> allAliases = new ArrayList<Address>();
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -117,7 +114,7 @@ public final class TcpServerControl {
             // add the remote socket address as last alias. This way the intended public
             // address of the target member will be set correctly in TcpIpConnection.setEndpoint.
             if (mustRegisterRemoteSocketAddress) {
-                allAliases.addAll(AddressUtil.getAliases(connection.getRemoteSocketAddress()));
+                allAliases.add(new Address(connection.getRemoteSocketAddress()));
             }
         } else {
             // when not a member connection, register the remote socket address
@@ -145,10 +142,7 @@ public final class TcpServerControl {
                                        Address remoteEndpoint,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
-        Address remoteAddress = connection.getRemoteAddress();
-        if (remoteAddress == null) {
-            remoteAddress = new Address(connection.getRemoteSocketAddress());
-        }
+        final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
         if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
             remoteEndpoint = remoteAddress;

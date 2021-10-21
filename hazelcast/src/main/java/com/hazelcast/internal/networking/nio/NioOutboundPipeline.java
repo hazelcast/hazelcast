@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.util.Arrays;
 import java.util.Queue;
@@ -51,6 +52,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
@@ -242,8 +244,17 @@ public final class NioOutboundPipeline
         } else {
             SelectionKey selectionKey = this.selectionKey;
             if (selectionKeyWakeupEnabled && selectionKey != null) {
-                registerOp(OP_WRITE);
-                selectionKey.selector().wakeup();
+                try {
+                    registerOp(OP_WRITE);
+                    selectionKey.selector().wakeup();
+                } catch (CancelledKeyException t) {
+                    //this means that the selection key is cancelled via another thread, which can happen only
+                    //on connection close. Only thing we can do is to ignore the exception. The calling thread could be
+                    //user thread and this exception should not be propagated to the user.
+                    //From the caller of `com.hazelcast.internal.nio.Connection#write`s perspective,
+                    // this is the same situation as connection closed after connection.write() successfully returns.
+                    ignore(t);
+                }
             } else {
                 // the owner can be also null during the Pipeline migration, so let's use the helper method
                 ownerAddTaskAndWakeup(this);
@@ -258,7 +269,7 @@ public final class NioOutboundPipeline
             if (prevState == State.RESCHEDULE) {
                 break;
             } else {
-                  if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
+                if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
                     if (prevState == State.UNSCHEDULED || prevState == State.BLOCKED) {
                         ownerAddTaskAndWakeup(this);
                     }

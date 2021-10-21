@@ -65,7 +65,8 @@ public class PhoneHome {
         Collections.addAll(metricsCollectorList,
                 new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
-                new CacheInfoCollector());
+                new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
+                new SqlInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 

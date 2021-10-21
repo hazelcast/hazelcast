@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.internal.util.IterableUtil.asReadOnlyIterator;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
 
 /**
@@ -67,7 +68,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
-        return records.cachedEntrySet().iterator();
+        return asReadOnlyIterator(records.cachedEntrySet().iterator());
     }
 
     @Override

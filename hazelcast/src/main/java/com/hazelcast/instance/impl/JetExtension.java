@@ -27,12 +27,12 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.version.Version;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -42,21 +42,20 @@ public class JetExtension {
     private final Node node;
     private final ILogger logger;
     private final JetServiceBackend jetServiceBackend;
-    private volatile boolean activated;
-    private volatile boolean isAfterStartCalled;
+    private final AtomicBoolean activated = new AtomicBoolean();
+
+    private volatile Version startVersion;
 
     public JetExtension(Node node, JetServiceBackend jetServiceBackend) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetServiceBackend = jetServiceBackend;
-        this.activated = false;
-        this.isAfterStartCalled = false;
     }
 
     private void checkLosslessRestartAllowed() {
         Config config = node.config.getStaticConfig();
         JetConfig jetConfig = config.getJetConfig();
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+        if (jetConfig.isLosslessRestartEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
             }
@@ -70,18 +69,39 @@ public class JetExtension {
     }
 
     public void afterStart() {
-        if (node.isRunning() && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
-            activated = true;
-            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
-            logger.info("Jet is enabled");
-        } else {
+        startVersion = node.getClusterService().getClusterVersion();
+        if (!tryActivate() && node.isRunning()) {
             logger.info("Jet is disabled due to current cluster version being less than 5.0.");
         }
-        isAfterStartCalled = true;
+    }
+
+    /**
+     * @return true, if Jet is now active
+     */
+    private boolean tryActivate() {
+        if (activated.get()) {
+            // this is a shortcut for the hot path when called for each operation and Jet is already activated.
+            return true;
+        }
+        Version currentVersion = node.getClusterService().getClusterVersion();
+        if (node.isRunning()
+                && currentVersion.isGreaterOrEqual(Versions.V5_0)
+                && activated.compareAndSet(false, true)
+        ) {
+            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
+            if (startVersion != null && !startVersion.equals(currentVersion)) {
+                logger.info("Jet is enabled after the cluster version upgrade.");
+            } else {
+                logger.info("Jet is enabled");
+            }
+            return true;
+        } else {
+            return activated.get();
+        }
     }
 
     public void beforeClusterStateChange(ClusterState requestedState) {
-        if (!activated || requestedState != PASSIVE) {
+        if (!tryActivate() || requestedState != PASSIVE) {
             return;
         }
         logger.info("Jet is preparing to enter the PASSIVE cluster state");
@@ -95,24 +115,20 @@ public class JetExtension {
         }
     }
 
-    public void onClusterStateChange(ClusterState ignored) {
-        if (activated) {
+    public void onClusterStateChange() {
+        if (tryActivate()) {
             jetServiceBackend.getJobCoordinationService().clusterChangeDone();
         }
     }
 
-    public void onClusterVersionChange(Version newVersion) {
-        if (!activated && isAfterStartCalled && newVersion.isGreaterOrEqual(Versions.V5_0)) {
-            // Activate Jet after rolling upgrade in which the cluster
-            // version is upgraded from 4.x to 5.0
-            activated = true;
-            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
-            logger.info("Jet is enabled after the cluster version upgrade.");
-        }
+    public void onClusterVersionChange() {
+        // Activate Jet after rolling upgrade in which the cluster
+        // version is upgraded from 4.x to 5.0
+        tryActivate();
     }
 
     public void beforeShutdown(boolean terminate) {
-        if (!terminate && activated) {
+        if (!terminate && tryActivate()) {
             jetServiceBackend.shutDownJobs();
         }
     }
@@ -126,19 +142,14 @@ public class JetExtension {
 
         extensionServices.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
 
-        if (jetServiceBackend.getSqlCoreBackend() != null) {
-            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetServiceBackend.getSqlCoreBackend());
-        }
-
         return extensionServices;
     }
 
     public JetService getJet() {
-        if (activated) {
+        if (tryActivate()) {
             return jetServiceBackend.getJet();
         } else {
             throw new IllegalArgumentException("Jet is disabled because the current cluster version is less than 5.0");
         }
     }
-
 }

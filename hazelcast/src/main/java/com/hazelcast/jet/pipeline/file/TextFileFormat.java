@@ -36,6 +36,8 @@ public class TextFileFormat implements FileFormat<String> {
      */
     public static final String FORMAT_TXT = "txt";
 
+    private static final long serialVersionUID = 1L;
+
     private final String charset;
 
     /**

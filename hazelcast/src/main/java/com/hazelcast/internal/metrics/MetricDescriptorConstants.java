@@ -186,16 +186,6 @@ public final class MetricDescriptorConstants {
     public static final String HD_METRIC_ENTRY_COUNT = "entryCount";
     // ===[/HD]=========================================================
 
-    // ===[HOT-RESTART]=================================================
-    public static final String HOTRESTART_PREFIX = "hot-restart";
-    public static final String HOTRESTART_METRIC_VAL_OCCUPANCY = "valOccupancy";
-    public static final String HOTRESTART_METRIC_VAL_GARBAGE = "valGarbage";
-    public static final String HOTRESTART_METRIC_TOMB_OCCUPANCY = "tombOccupancy";
-    public static final String HOTRESTART_METRIC_TOMB_GARBAGE = "tombGarbage";
-    public static final String HOTRESTART_METRIC_GC_LIVE_VALUES = "liveValues";
-    public static final String HOTRESTART_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
-    // ===[/HOT-RESTART]================================================
-
     // ===[LIST]=======================================================
     public static final String LIST_PREFIX = "list";
     public static final String LIST_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
@@ -445,6 +435,16 @@ public final class MetricDescriptorConstants {
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE = "memberGroupsSize";
     // ===[/PARTITIONS]=================================================
 
+    // ===[PERSISTENCE]=================================================
+    public static final String PERSISTENCE_PREFIX = "persistence";
+    public static final String PERSISTENCE_METRIC_VAL_OCCUPANCY = "valOccupancy";
+    public static final String PERSISTENCE_METRIC_VAL_GARBAGE = "valGarbage";
+    public static final String PERSISTENCE_METRIC_TOMB_OCCUPANCY = "tombOccupancy";
+    public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
+    public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
+    public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    // ===[/PERSISTENCE]================================================
+
     // ===[PN COUNTER]==================================================
     public static final String PNCOUNTER_PREFIX = "pnCounter";
     public static final String PNCOUNTER_METRIC_CREATION_TIME = "creationTime";
@@ -612,6 +612,7 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_ACK_DELAY_CURRENT_MILLIS = "ackDelayCurrentMillis";
     public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
     public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
+    public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
     // ===[/WAN]========================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";

@@ -36,6 +36,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.Accessors;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -81,9 +82,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class TopologyChangeTest extends JetTestSupport {
 
@@ -122,14 +124,14 @@ public class TopologyChangeTest extends JetTestSupport {
         TestProcessors.reset(nodeCount * PARALLELISM);
 
         config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
 
         instances = new HazelcastInstance[NODE_COUNT];
 
         for (int i = 0; i < NODE_COUNT; i++) {
             Config config = smallInstanceConfig();
             config.setLiteMember(liteMemberFlags[i]);
-            config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+            config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
 
             instances[i] = createHazelcastInstance(config);
         }
@@ -272,8 +274,15 @@ public class TopologyChangeTest extends JetTestSupport {
             NoOutputSourceP.executionStarted.await();
 
             instances[0].getLifecycleService().terminate();
+            // Wait for job executions terminated in non-terminated instances
+            // before proceeding. Otherwise, job executions on these members
+            // may complete successfully without exception and without calling
+            // Processor#close.
+            for (int i = 1; i < instances.length; i++) {
+                JetServiceBackend jetServiceBackend = getJetServiceBackend(instances[i]);
+                jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
+            }
             NoOutputSourceP.proceedLatch.countDown();
-
             future.get();
             fail();
         } catch (ExecutionException expected) {

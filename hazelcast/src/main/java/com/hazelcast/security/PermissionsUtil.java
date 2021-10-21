@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.security.Permission;
+import java.util.List;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
@@ -80,11 +81,15 @@ public final class PermissionsUtil {
     public static void checkPermission(SecuredFunction function, ProcessorMetaSupplier.Context context) {
         if (context instanceof Contexts.MetaSupplierCtx) {
             Contexts.MetaSupplierCtx metaSupplierCtx = (Contexts.MetaSupplierCtx) context;
-            Permission permission = function.permission();
+            List<Permission> permissions = function.permissions();
             SecurityContext securityContext = metaSupplierCtx.nodeEngine().getNode().securityContext;
             Subject subject = metaSupplierCtx.subject();
-            if (securityContext != null && permission != null && subject != null) {
-                securityContext.checkPermission(subject, permission);
+            if (securityContext != null && permissions != null && !permissions.isEmpty() && subject != null) {
+                permissions.forEach(permission -> {
+                    if (permission != null) {
+                        securityContext.checkPermission(subject, permission);
+                    }
+                });
             }
         }
     }

@@ -22,47 +22,62 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provides a way to perform enrichment using a Map or ReplicatedMap from Hazelcast 3 cluster.
- * The usage is similar to {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)}
- * and other similarly named methods. The difference is that instead of providing a name of
- * the map, a {@link ServiceFactory} to Hazelcast 3 Map is used. This class provides a utility
- * methods to create and use this service factory.
+ * Provides a way to perform enrichment using a Map or ReplicatedMap from
+ * Hazelcast 3 cluster.
+ * <p>
+ * The usage is similar to
+ * {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)} and
+ * other similarly named methods. The difference is that instead of providing
+ * a name of the map, a {@link ServiceFactory} to Hazelcast 3 Map is used.
+ * This class provides utility methods to create and use this service factory.
+ * <p>
+ * Because of incompatible APIs the configuration is passed as an XML
+ * document in a string - note that the XML configuration must conform
+ * to 3.x schema - see <a href="https://www.hazelcast.com/schema/config/">
+ * https://www.hazelcast.com/schema/config/</a>.
  * <p>
  * Usage:
  * <p>
- * First you need to obtain a ServiceFactory for a Hazelcast 3 Map/ReplicatedMap:
+ * First you need to obtain a ServiceFactory for a Hazelcast 3
+ * Map/ReplicatedMap:
  * <pre>{@code
  * ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
  *     hz3MapServiceFactory("test-map", HZ3_CLIENT_CONFIG);
  * }</pre>
- * Then use this service factory in a pipeline step {@link GeneralStage#mapUsingService(ServiceFactory, BiFunctionEx)}:
+ * Then use this service factory in a pipeline step
+ * {@link GeneralStage#mapUsingService(ServiceFactory, BiFunctionEx)}:
  * <pre>{@code
  * BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
- *     .mapUsingService(
- *             hz3MapSF,
- *             mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
- *     );
+ *  .mapUsingService(
+ *    hz3MapSF,
+ *    mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
+ *  );
  * mapStage.writeTo(Sinks.list(results));
  * }</pre>
- * And finally, a custom classpath element for the {@code mapUsingService} stage must be set with the Hazelcast 3
- * client:
+ * And finally, a custom classpath element for the {@code mapUsingService}
+ * stage must be set with the Hazelcast 3 client:
  * <pre>{@code
  * List<String> jars = new ArrayList<>();
  * jars.add("hazelcast-3.12.12.jar");
  * jars.add("hazelcast-client-3.12.12.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
- * config.addCustomClasspaths(name, jars);
+ * config.addCustomClasspaths(mapStage.name(), jars);
  * } </pre>
  * The jars must exist in the directory specified by the
- * {@link com.hazelcast.jet.core.JetProperties#PROCESSOR_CUSTOM_LIB_DIR}
+ * {@link ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
  * directory. This is already set up for the regular zip distribution.
+ *
+ * @since 5.0
  */
+@Beta
 public final class Hz3Enrichment {
 
     private Hz3Enrichment() {
@@ -73,6 +88,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V> ServiceFactory<Hz3MapAdapter, AsyncMap<K, V>> hz3MapServiceFactory(
             String mapName, String clientXML
     ) {
@@ -89,6 +105,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V> ServiceFactory<Hz3MapAdapter, Map<K, V>> hz3ReplicatedMapServiceFactory(
             String mapName, String clientXML
     ) {
@@ -106,6 +123,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V, T, R> BiFunctionEx<? super AsyncMap<K, V>, ? super T, CompletableFuture<R>> mapUsingIMapAsync(
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
@@ -121,6 +139,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V, T, R> BiFunctionEx<? super Map<K, V>, ? super T, R> mapUsingIMap(
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn

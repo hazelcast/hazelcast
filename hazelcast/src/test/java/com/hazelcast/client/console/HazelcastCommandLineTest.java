@@ -56,8 +56,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.client.console.HazelcastCommandLine.runCommandLine;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -502,6 +502,23 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertNull(job.getName());
         IOUtil.deleteQuietly(testJarWithJetBootstrap.toFile());
+    }
+
+    @Test
+    public void test_submit_job_with_hazelcast_classes() throws IOException {
+        PrintStream oldErr = System.err;
+        System.setErr(new PrintStream(err));
+        Path testJarFile = Files.createTempFile("testjob-with-hazelcast-codebase-", ".jar");
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hazelcast-codebase.jar"), testJarFile.toFile());
+        try {
+            run("submit", testJarFile.toString());
+            String actual = captureErr();
+            String pathToClass = Paths.get("com", "hazelcast", "jet", "testjob", "HazelcastBootstrap.class").toString();
+            assertThat(actual).contains("WARNING: Hazelcast code detected in the jar: " + pathToClass + ". Hazelcast dependency should be set with the 'provided' scope or equivalent.");
+        } finally {
+            System.setErr(oldErr);
+            IOUtil.deleteQuietly(testJarFile.toFile());
+        }
     }
 
     @Test

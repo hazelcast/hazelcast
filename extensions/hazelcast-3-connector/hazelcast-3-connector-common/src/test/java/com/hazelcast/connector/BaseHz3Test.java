@@ -18,7 +18,7 @@ package com.hazelcast.connector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JetProperties;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.starter.hz3.Hazelcast3Starter;
 import org.junit.After;
@@ -68,6 +68,21 @@ public class BaseHz3Test extends HazelcastTestSupport {
             + "    </network>\n"
             + "</hazelcast-client>\n";
 
+    // Client configuration with port where there is no Hz 3 instance running
+    protected static final String HZ3_DOWN_CLIENT_CONFIG =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\"\n"
+            + "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+            + "                  xsi:schemaLocation=\"http://www.hazelcast.com/schema/client-config\n"
+            + "                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.12.xsd\">\n"
+            + "\n"
+            + "    <network>\n"
+            + "        <cluster-members>\n"
+            + "            <address>127.0.0.1:42000</address>\n"
+            + "        </cluster-members>\n"
+            + "    </network>\n"
+            + "</hazelcast-client>\n";
+
     protected HazelcastInstance hz3;
     protected Path customLibDir;
 
@@ -75,7 +90,7 @@ public class BaseHz3Test extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         customLibDir = Files.createTempDirectory("source");
-        System.setProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName(),
+        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(),
                 customLibDir.toAbsolutePath().toString());
 
         Files.copy(

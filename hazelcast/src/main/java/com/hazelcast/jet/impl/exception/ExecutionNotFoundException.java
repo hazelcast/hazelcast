@@ -25,6 +25,9 @@ import static com.hazelcast.jet.Util.idToString;
  * target doesn't know the execution.
  */
 public class ExecutionNotFoundException extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
     public ExecutionNotFoundException() {
     }
 

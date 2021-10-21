@@ -21,10 +21,10 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftSplitBrainTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.concurrent.Callable;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class SemaphoreSplitBrainTest extends RaftSplitBrainTestSupport {

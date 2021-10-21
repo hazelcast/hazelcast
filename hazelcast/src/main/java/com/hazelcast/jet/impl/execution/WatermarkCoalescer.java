@@ -26,15 +26,12 @@ import java.util.Arrays;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
- * Implements {@link Watermark} coalescing. Tracks WMs on queues and decides
- * when to forward the WM. The watermark should be forwarded:
- * <ul>
- *     <li>when it has been received from all input streams (ignoring idle streams)
- *     <li>if the maximum watermark retention time has elapsed
- * </ul>
+ * Implements {@link Watermark} coalescing. Tracks WMs on input queues and
+ * decides when to forward the WM. The watermark should be forwarded when
+ * it has been received from all input streams (ignoring idle streams).
  *
  * The class also handles idle messages from inputs (coming in the form of a
- * watermark equal to {@link #IDLE_MESSAGE}. When such a message is received,
+ * watermark equal to {@link #IDLE_MESSAGE}). When such a message is received,
  * that input is switched to <em>idle</em> and excluded from coalescing. Any
  * event or watermark from such input will turn the input back to
  * <em>active</em> state.
@@ -152,7 +149,7 @@ public abstract class WatermarkCoalescer {
      */
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
-        private Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private final Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
 
         @Override
         public long queueDone(int queueIndex) {
@@ -197,12 +194,12 @@ public abstract class WatermarkCoalescer {
     /**
      * Standard implementation for 1..n inputs.
      */
-    static final class StandardImpl extends WatermarkCoalescer {
+    private static final class StandardImpl extends WatermarkCoalescer {
 
         private final long[] queueWms;
         private final boolean[] isIdle;
-        private Counter lastEmittedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
-        private Counter topObservedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private final Counter lastEmittedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private final Counter topObservedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
         private boolean allInputsAreIdle;
         private boolean idleMessagePending;
 
@@ -236,7 +233,6 @@ public abstract class WatermarkCoalescer {
 
             if (wmValue == IDLE_MESSAGE.timestamp()) {
                 isIdle[queueIndex] = true;
-                return checkObservedWms();
             } else {
                 isIdle[queueIndex] = false;
                 allInputsAreIdle = false;
@@ -244,8 +240,8 @@ public abstract class WatermarkCoalescer {
                 if (wmValue > topObservedWm.get()) {
                     topObservedWm.set(wmValue);
                 }
-                return checkObservedWms();
             }
+            return checkObservedWms();
         }
 
         private long checkObservedWms() {

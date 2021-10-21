@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.Version;
 
@@ -87,6 +88,11 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public HotRestartService getHotRestartService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PersistenceService getPersistenceService() {
         throw new UnsupportedOperationException();
     }
 

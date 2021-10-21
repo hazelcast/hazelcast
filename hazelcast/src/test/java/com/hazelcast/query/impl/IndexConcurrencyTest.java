@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,22 +36,23 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.IndexType.BITMAP;
 import static com.hazelcast.config.IndexType.SORTED;
-import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.query.Predicates.greaterThan;
 import static com.hazelcast.query.Predicates.and;
-import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.Predicates.in;
-import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.between;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.greaterThan;
+import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
-import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.like;
+import static com.hazelcast.query.Predicates.or;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexConcurrencyTest extends AbstractIndexConcurrencyTest {
 

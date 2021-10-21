@@ -26,9 +26,10 @@ hazelcast:
     hazelcast.socket.bind.any: false
 
   management-center:
-    # Explicitly disable the scripting operations sent from the Management center.
-    # The default value is false already so this one is just to be sure and explicit.
+    # Explicitly disable the scripting operations and the console commands sent from the Management center.
+    # The default value for both attributes is false already so this one is just to be sure and explicit.
     scripting-enabled: false
+    console-enabled: false
 
   user-code-deployment:
     # Explicitly disable the user-code deployments. I.e. allow only code which already is on the classpath.
@@ -167,7 +168,7 @@ hazelcast:
           enabled: false
         WAN:
           enabled: false
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: false
         CP:
           enabled: false
@@ -230,7 +231,7 @@ hazelcast:
     # map the client protocol authentication to one of the defined realms
     client-authentication:
       realm: simpleRealm-clients
-    # Assing permissions to role names (principals) and remote addresses (endpoints).
+    # Assign permissions to role names (principals) and remote addresses (endpoints).
     # Follow the least privilege principle.
     client-permissions:
       # local clients with "admin" role assigned have full access to all operations
@@ -262,3 +263,16 @@ hazelcast:
             - read
             - remove
             - lock
+  # If you use persistence in Hazelcast, consider encrypting the data stored on the filesystem.
+  persistence:
+    enabled: false
+    base-dir: /path/to/persistence-data
+    encryption-at-rest:
+      enabled: true
+      algorithm: AES/CBC/PKCS5Padding
+      salt: YourSaltHerePlease
+      secure-store:
+        keystore:
+          type: PKCS12
+          path: /opt/persistence-master-key.p12
+          password: ACorrectPasswordGoesHere

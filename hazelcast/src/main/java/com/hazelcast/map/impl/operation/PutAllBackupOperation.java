@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -109,7 +108,8 @@ public class PutAllBackupOperation extends MapOperation
             ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
 
             IOUtil.writeData(out, dataKey);
-            Records.writeRecord(out, record, dataValue, expiryMetadata);
+            Records.writeRecord(out, record, dataValue);
+            Records.writeExpiry(out, expiryMetadata);
         }
         out.writeBoolean(disableWanReplicationEvent);
     }
@@ -121,10 +121,12 @@ public class PutAllBackupOperation extends MapOperation
         int size = in.readInt();
         List keyRecordExpiry = new ArrayList<>(size * 3);
         for (int i = 0; i < size; i++) {
-            keyRecordExpiry.add(IOUtil.readData(in));
+            Data dataKey = IOUtil.readData(in);
+            Record record = Records.readRecord(in);
+            ExpiryMetadata expiryMetadata = Records.readExpiry(in);
 
-            ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
-            keyRecordExpiry.add(Records.readRecord(in, expiryMetadata));
+            keyRecordExpiry.add(dataKey);
+            keyRecordExpiry.add(record);
             keyRecordExpiry.add(expiryMetadata);
         }
         this.keyRecordExpiry = keyRecordExpiry;

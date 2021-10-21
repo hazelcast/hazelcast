@@ -22,12 +22,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
@@ -467,6 +470,28 @@ public final class StringUtil {
             startIndex = sb.indexOf(placeholderPrefix, endIndex);
         }
         return sb.toString();
+    }
+
+    /**
+     * Converts the provided collection to string, joined by LINE_SEPARATOR
+     * @param collection collection to convert to string
+     * @return string
+     */
+    public static <T> String toString(Collection<T> collection) {
+        return collection.stream()
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
+    }
+
+    /**
+     * Converts the provided array to string, joined by LINE_SEPARATOR
+     * @param arr array to convert to string
+     * @return string
+     */
+    public static <T> String toString(T[] arr) {
+        return Arrays.stream(arr)
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
     }
 
     /**

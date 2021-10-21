@@ -2040,7 +2040,7 @@
         <xs:attribute name="multicast-port" type="xs:string" default="54327"/>
         <xs:attribute name="multicast-timeout-seconds" type="xs:string" default="2"/>
         <xs:attribute name="multicast-time-to-live" type="xs:string" default="32"/>
-        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean"/>
     </xs:complexType>
 
     <xs:complexType name="aliased-discovery-strategy">
@@ -2760,7 +2760,21 @@
             <xs:enumeration value="CLUSTER_READ"/>
             <xs:enumeration value="CLUSTER_WRITE"/>
             <xs:enumeration value="HEALTH_CHECK"/>
-            <xs:enumeration value="HOT_RESTART"/>
+            <xs:enumeration value="PERSISTENCE"/>
+            <xs:enumeration value="HOT_RESTART">
+                <xs:annotation>
+                    <xs:documentation>
+                        DEPRECATED. Please use PERSISTENCE endpoint group instead.
+                        Note: We define PERSISTENCE and HOT_RESTART endpoint group
+                        names as alias of each other and these names actually refer to
+                        the same endpoint group. We're using PERSISTENCE as canonical name
+                        for this group while listing enabled endpoint groups. If this
+                        group enabled by using any of these name, Hazelcast will activate
+                        this PERSISTENCE endpoint group. HOT_RESTART endpoint group name
+                        will be removed in a future release.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
             <xs:enumeration value="MEMCACHE"/>
@@ -2902,6 +2916,8 @@
                         <xs:element name="job-permission" type="job-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="connector-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="sql-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
@@ -4578,6 +4594,33 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="rebalance-delay-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Time (in seconds) to wait before triggering automatic partition rebalancing
+                    after a member leaves the cluster unexpectedly. Unexpectedly in this context
+                    means that a member leaves the cluster by means other than graceful shutdown:
+                    programmatic termination (eg LifecycleService.terminate()), a
+                    process crash or network partition.
+                    Default is 0, which means rebalancing is triggered immediately.
+                    Setting this to a higher value will allow some time for members that are gone
+                    to rejoin the cluster. The benefit is that partition rebalancing in this
+                    case will be avoided, saving the burden of migrating partition data over
+                    the network.
+                    Do not use this option if your cluster also stores in-memory data. This option
+                    stops the cluster from migrating in-memory data. As a result any data that is
+                    not persisted will be lost if the member restarts within the configured delay,
+                    including backups.
+                    While members are gone, operations on partitions for which the owner is missing
+                    may fail immediately or will be retried until the member rejoins or operation
+                    timeout is exceeded.
+                    Notice that this delay only applies when cluster members leave the cluster;
+                    when the cluster is being scaled up and members are being added, partition
+                    rebalancing will be triggered immediately (subject to limitations imposed
+                    by the current cluster state).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="event-journal">
@@ -5378,20 +5421,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" default="-1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the number of threads responsible for execution of SQL statements.
-                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
-                        for most workloads.
-                        Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
-                        subsystem. This may be beneficial if you would like to prioritize other CPU-intensive workloads on the
-                        same machine.
-                        It is not recommended to set the value of this parameter higher than the number of CPU cores because it
-                        may decrease the system's overall performance due to excessive context switches.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="statement-timeout-millis" type="xs:unsignedLong" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -5415,6 +5444,7 @@
             <xs:element name="instance" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
+                        Deprecated, use `jet` tag to configure the fields directly.
                         General configuration options pertaining to a Jet instance.
                     </xs:documentation>
                 </xs:annotation>
@@ -5504,6 +5534,88 @@
                         </xs:element>
                     </xs:all>
                 </xs:complexType>
+            </xs:element>
+            <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads each cluster member will use to execute Jet
+                        jobs. This refers only to threads executing `cooperative`
+                        processors; each `blocking` processor is assigned its own thread.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="flow-control-period" type="positive-int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        While executing a Jet job there is the issue of regulating the rate
+                        at which one member of the cluster sends data to another member. The
+                        receiver will regularly report to each sender how much more data it
+                        is allowed to send over a given DAG edge. This method sets the length
+                        (in milliseconds) of the interval between flow-control ("ack") packets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of backups that Jet will maintain for the job metadata
+                        and snapshots. Each backup is on another cluster member; all backup
+                        write operations must complete before the overall write operation can
+                        complete. The maximum allowed number of backups is 6 and the default is
+                        1.
+                        For example, if you set the backup count to 2, Jet will replicate all
+                        the job metadata and snapshot data to two other members. If one or two
+                        members of the cluster fail, Jet can recover the data from the snapshot
+                        and continue executing the job on the remaining members without loss.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="scale-up-delay-millis" type="non-negative-long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the delay after which auto-scaled jobs will restart if a new member
+                        is added to the cluster. The default is 10 seconds. Has no effect on
+                        jobs with auto scaling disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="lossless-restart-enabled" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether lossless job restart is enabled for the node. With lossless
+                        restart you can restart the whole cluster without losing the jobs and
+                        their state. The feature is implemented on top of the Hot Restart
+                        feature of Hazelcast which persists the data to disk. If enabled, you
+                        have to also configure Hot Restart.
+                        Note: the snapshots exported using `Job#exportSnapshot` will also have
+                        Hot Restart storage enabled.
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-processor-accumulated-records" type="xs:long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum number of records that can be accumulated by any single
+                        processor instance.
+                        Operations like grouping, sorting or joining require certain amount of
+                        records to be accumulated before they can proceed. You can set this option
+                        to reduce the probability of OutOfMemoryError.
+                        This option applies to each processor instance separately, hence the
+                        effective limit of records accumulated by each cluster member is influenced
+                        by the vertex's localParallelism and the number of jobs in the cluster.
+                        Currently, maxProcessorAccumulatedRecords limits:
+                        1. number of items sorted by the sort operation
+                        2. number of distinct keys accumulated by aggregation operations
+                        3. number of entries in each hash-join lookup table
+                        4. number of entries in stateful transforms
+                        5. number of distinct items in distinct operation
+                        Note: the limit does not apply to streaming aggregations.
+                        The default value is Long.MAX_VALUE.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="edge-defaults" minOccurs="0">
                 <xs:annotation>

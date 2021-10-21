@@ -18,14 +18,14 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.index.JetIndexResolver;
+import com.hazelcast.jet.sql.impl.opt.physical.index.IndexResolver;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class IndexScanMapPhysicalRule extends RelOptRule {
 
@@ -48,8 +48,7 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
         FullScanLogicalRel logicalScan = call.rel(0);
         PartitionedMapTable table = table(logicalScan);
 
-        // TODO: HD index scans will be added to this transforms list later.
-        for (RelNode indexScan : JetIndexResolver.createIndexScans(logicalScan, table.getIndexes())) {
+        for (RelNode indexScan : IndexResolver.createIndexScans(logicalScan, table.getIndexes())) {
             call.transformTo(indexScan);
         }
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -95,8 +96,16 @@ public class KvRowProjector implements Row {
     }
 
     public JetSqlRow project(Object key, Object value) {
-        keyTarget.setTarget(key, null);
-        valueTarget.setTarget(value, null);
+        return project(key, null, value, null);
+    }
+
+    public Object[] project(Data key, Data value) {
+        return project(null, key, null, value);
+    }
+
+    private Object[] project(Object key, Data keyData, Object value, Data valueData) {
+        keyTarget.setTarget(key, keyData);
+        valueTarget.setTarget(value, valueData);
 
         if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;

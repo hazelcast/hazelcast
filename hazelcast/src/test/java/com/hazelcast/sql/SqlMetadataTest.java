@@ -59,7 +59,8 @@ public class SqlMetadataTest extends SqlTestSupport {
 
         SqlRow row = new SqlRowImpl(
             new SqlRowMetadata(Arrays.asList(column0Metadata, column1Metadata)),
-            HeapRow.of(1, "2")
+            HeapRow.of(1, "2"),
+            null
         );
 
         assertEquals("[a INTEGER=1, b VARCHAR=2]", row.toString());

@@ -21,11 +21,11 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.pipeline.file.FileSources;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -137,11 +137,7 @@ public final class FileSourceBuilder {
         String charsetName = charset.name();
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
                 SourceProcessors.readFilesP(directory, glob, sharedFileSystem,
-                        path -> {
-                            String fileName = path.getFileName().toString();
-                            return Files.lines(path, Charset.forName(charsetName))
-                                        .map(l -> mapOutputFn.apply(fileName, l));
-                        }));
+                        SecuredFunctions.readFileFn(directory, charsetName, mapOutputFn)));
     }
 
     /**

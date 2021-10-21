@@ -23,18 +23,16 @@ import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlPlanCacheTest extends SqlTestSupport {
@@ -94,7 +92,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        createMapping("map", "m", "id", PersonId.class, JSON_FORMAT);
+        createMapping("map", "m", "id", PersonId.class, JSON_FLAT_FORMAT);
         assertThat(planCache(instance()).size()).isZero();
     }
 
@@ -110,7 +108,6 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] enable after IMDG engine removal
     public void test_index() {
         IMap<Object, Object> map = instance().getMap("m");
 
@@ -121,7 +118,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        getMapContainer(map).getIndexes().destroyIndexes();
+        mapContainer(map).getIndexes().destroyIndexes();
         map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
 
         assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
@@ -130,10 +127,10 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     @Test
     public void test_dmlCaching() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
-        sqlService.execute("INSERT INTO map VALUES(0, 'value-0')");
+        sqlService.execute("INSERT INTO map (id, this) VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
+        sqlService.execute("SINK INTO map (id, this) VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(2);
 
         sqlService.execute("UPDATE map SET this = 'value-1' WHERE id = 0");

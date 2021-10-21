@@ -882,7 +882,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='true'>"
+                + "<management-center scripting-enabled='true' console-enabled='true'>"
                 + "  <trusted-interfaces>\n"
                 + "    <interface>127.0.0.1</interface>\n"
                 + "    <interface>192.168.1.*</interface>\n"
@@ -894,6 +894,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isConsoleEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -910,6 +911,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -921,6 +923,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertFalse(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isConsoleEnabled());
     }
 
     @Override
@@ -1712,7 +1715,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
 
         assertFalse(multicastConfig.isEnabled());
-        assertTrue(multicastConfig.isLoopbackModeEnabled());
+        assertEquals(Boolean.TRUE, multicastConfig.getLoopbackModeEnabled());
         assertEquals("224.2.2.4", multicastConfig.getMulticastGroup());
         assertEquals(65438, multicastConfig.getMulticastPort());
         assertEquals(4, multicastConfig.getMulticastTimeoutSeconds());
@@ -3025,6 +3028,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
                 + "    <auto-remove-stale-data>false</auto-remove-stale-data>"
+                + "    <rebalance-delay-seconds>240</rebalance-delay-seconds>"
                 + "</persistence>\n"
                 + HAZELCAST_END_TAG;
 
@@ -3039,6 +3043,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(persistenceConfig.isAutoRemoveStaleData());
+        assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Override
@@ -4024,13 +4029,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testSqlConfig() {
         String xml = HAZELCAST_START_TAG
             + "<sql>\n"
-            + "  <executor-pool-size>10</executor-pool-size>\n"
             + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
             + "</sql>"
             + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 

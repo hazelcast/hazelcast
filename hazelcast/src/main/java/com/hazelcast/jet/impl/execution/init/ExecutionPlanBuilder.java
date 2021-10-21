@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -65,7 +65,7 @@ public final class ExecutionPlanBuilder {
             NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
-        final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
+        final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
         final Map<Address, int[]> partitionsByAddress =
                 partitionsByMember.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
@@ -100,8 +100,8 @@ public final class ExecutionPlanBuilder {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
             JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            JobExecutionService jobExecutionService = jetBackend.getJobExecutionService();
-            ClassLoader processorClassLoader = jobExecutionService.getClassLoader(jobConfig, jobId);
+            JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
+            ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
             try {
                 doWithClassLoader(processorClassLoader, () ->
                         metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
@@ -112,7 +112,7 @@ public final class ExecutionPlanBuilder {
             }
 
             Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =
-                    doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.get(addresses));
+                    doWithClassLoader(processorClassLoader, () -> metaSupplier.get(addresses));
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier =
                         doWithClassLoader(processorClassLoader, () -> procSupplierFn.apply(e.getKey().getAddress()));

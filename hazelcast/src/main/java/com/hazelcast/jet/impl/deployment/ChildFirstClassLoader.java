@@ -16,8 +16,14 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
@@ -33,8 +39,22 @@ import java.util.List;
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 
+    private static final ILogger LOG = Logger.getLogger(ChildFirstClassLoader.class);
+
+    private volatile boolean closed;
+
     public ChildFirstClassLoader(@Nonnull URL[] urls, @Nonnull ClassLoader parent) {
         super(urls, parent);
+
+        for (URL url : urls) {
+            try {
+                if (!new File(url.toURI()).exists()) {
+                    LOG.warning("URL '" + url + "' does not point to an existing local file.");
+                }
+            } catch (URISyntaxException e) {
+                throw new HazelcastException("URL has incorrect syntax", e);
+            }
+        }
 
         if (urls.length == 0) {
             throw new IllegalArgumentException("urls must not be null nor empty");
@@ -62,7 +82,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
             }
 
             if (loadedClass == null) {
-                loadedClass = loadFromParent(name);
+                loadedClass = getParent().loadClass(name);
             }
 
             if (loadedClass == null) {
@@ -70,25 +90,8 @@ public class ChildFirstClassLoader extends URLClassLoader {
             }
         }
 
-        if (resolve) {      // marked to resolve`
+        if (resolve) {
             resolveClass(loadedClass);
-        }
-        return loadedClass;
-    }
-
-    private Class<?> loadFromParent(String name) throws ClassNotFoundException {
-        Class<?> loadedClass;
-        ClassLoader parent = getParent();
-        if (parent instanceof JetClassLoader) {
-            // In case of JetClassLoader try to load from parent first
-            ClassLoader jetClassLoader = parent;
-            parent = parent.getParent();
-            loadedClass = parent.loadClass(name);
-            if (loadedClass == null) {
-                loadedClass = jetClassLoader.loadClass(name);
-            }
-        } else {
-            loadedClass = parent.loadClass(name);
         }
         return loadedClass;
     }
@@ -135,5 +138,21 @@ public class ChildFirstClassLoader extends URLClassLoader {
             res = super.getResource(name);
         }
         return res;
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        closed = true;
+    }
+
+    /**
+     * Returns if this classloader has been already closed.
+     * <p>
+     * Visible for testing because there is no easy way to find out if
+     * {@link URLClassLoader} has been closed.
+     */
+    public boolean isClosed() {
+        return closed;
     }
 }

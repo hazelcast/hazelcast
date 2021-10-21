@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -150,8 +149,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = configs.size();
         out.writeInt(confSize);
         for (CacheConfig config : configs) {
-            // RU_COMPAT_4_1
-            if (out.getVersion().isGreaterOrEqual(Versions.V4_2) && !classesAlwaysAvailable) {
+            if (!classesAlwaysAvailable) {
                 out.writeObject(PreJoinCacheConfig.of(config));
             } else {
                 out.writeObject(config);
@@ -188,8 +186,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = in.readInt();
         for (int i = 0; i < confSize; i++) {
             final CacheConfig config = in.readObject();
-            // RU_COMPAT_4_1
-            if (in.getVersion().isGreaterOrEqual(Versions.V4_2) && !classesAlwaysAvailable) {
+            if (!classesAlwaysAvailable) {
                 configs.add(PreJoinCacheConfig.asCacheConfig(config));
             } else {
                 configs.add(config);

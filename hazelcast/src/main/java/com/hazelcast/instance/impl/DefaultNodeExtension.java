@@ -127,6 +127,8 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
+import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
@@ -212,8 +214,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet is disabled. Enable it by setting the \"hz.jet.enabled\""
-                    + " property to true.");
+            systemLogger.info(JET_IS_DISABLED_MESSAGE);
         }
     }
 
@@ -471,7 +472,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             listener.onClusterStateChange(newState);
         }
         if (jetExtension != null) {
-            jetExtension.onClusterStateChange(newState);
+            jetExtension.onClusterStateChange();
         }
     }
 
@@ -497,7 +498,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             systemLogger.info("Cluster version set to " + newVersion);
         }
         if (jetExtension != null) {
-            jetExtension.onClusterVersionChange(newVersion);
+            jetExtension.onClusterVersionChange();
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
@@ -627,17 +628,13 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public JetService getJet() {
-        if (jetExtension == null) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
-        }
+        checkJetIsEnabled(node.nodeEngine);
         return jetExtension.getJet();
     }
 
     @Override
     public void accept(Packet packet) {
-        if (jetExtension == null) {
-            throw new IllegalArgumentException("Jet is disabled");
-        }
+        checkJetIsEnabled(node.nodeEngine);
         jetExtension.handlePacket(packet);
     }
 }
