@@ -32,7 +32,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNumericType;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isTemporalType;
 
-public final class TypedOperandChecker extends AbstractOperandChecker {
+public class TypedOperandChecker extends AbstractOperandChecker {
 
     public static final TypedOperandChecker BOOLEAN = new TypedOperandChecker(SqlTypeName.BOOLEAN);
     public static final TypedOperandChecker VARCHAR = new TypedOperandChecker(SqlTypeName.VARCHAR);
@@ -48,18 +48,17 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
     public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
     public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE);
-    public static final TypedOperandChecker JSON_NULLABLE = new TypedOperandChecker(HazelcastJsonType.TYPE_NULLABLE);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;
 
-    private TypedOperandChecker(SqlTypeName targetTypeName) {
+    protected TypedOperandChecker(SqlTypeName targetTypeName) {
         this.targetTypeName = targetTypeName;
 
         type = null;
     }
 
-    private TypedOperandChecker(RelDataType type) {
+    protected TypedOperandChecker(RelDataType type) {
         targetTypeName = type.getSqlTypeName();
 
         this.type = type;
@@ -98,9 +97,10 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         QueryDataType targetType0 = getTargetHazelcastType();
         QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType);
 
-        // Coerce only numeric or temporal types.
         boolean canCoerce = isTemporalType(operandType) && isTemporalType(targetTypeName)
-                || isNumericType(operandType) && isNumericType(targetTypeName);
+                || isNumericType(operandType) && isNumericType(targetTypeName)
+                // we can assign VARCHOR to JSON fields
+                || operandType.getSqlTypeName() == SqlTypeName.VARCHAR && type.getFamily() == HazelcastJsonType.FAMILY;
 
         if (!canCoerce) {
             return false;

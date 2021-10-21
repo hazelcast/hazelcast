@@ -50,7 +50,7 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
         return new OperandCheckerProgram(
-                JsonOperandChecker.INSTANCE,
+                TypedOperandChecker.JSON,
                 TypedOperandChecker.VARCHAR
         ).check(callBinding, throwOnFailure);
     }
