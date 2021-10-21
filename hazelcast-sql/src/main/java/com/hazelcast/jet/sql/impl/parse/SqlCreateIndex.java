@@ -49,18 +49,18 @@ import static java.util.Objects.requireNonNull;
  * [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
  */
 public class SqlCreateIndex extends SqlCreate {
+    public static final String UNIQUE_KEY = "unique_key";
+    public static final String UNIQUE_KEY_TRANSFORMATION = "unique_key_transformation";
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("CREATE INDEX", SqlKind.CREATE_INDEX);
-
-    private static final String UNIQUE_KEY = "unique_key";
-    private static final String UNIQUE_KEY_TRANSFORMATION = "unique_key_transformation";
 
     private final SqlIdentifier name;
     private final SqlIdentifier mappingName;
     private final SqlNodeList columns;
     private final SqlIdentifier type;
     private final SqlNodeList options;
+
 
     public SqlCreateIndex(
             SqlIdentifier name,

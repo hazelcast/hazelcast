@@ -58,50 +58,6 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     }
 }
 
-/**
- * Parses CREATE INDEX statement.
- */
-SqlCreate SqlCreateIndex(Span span, boolean required) :
-{
-    SqlParserPos startPos = span.pos();
-
-    SqlIdentifier name;
-    SqlIdentifier mappingName;
-    SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier type;
-    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
-    boolean ifNotExists = false;
-}
-{
-    <INDEX>
-    [
-        <IF> <NOT> <EXISTS> { ifNotExists = true; }
-    ]
-    name = CompoundIdentifier()
-
-    <ON>
-    mappingName = SimpleIdentifier()
-
-    columns = IndexAttributes()
-    <TYPE>
-    type = SimpleIdentifier()
-    [
-        <OPTIONS>
-        sqlOptions = SqlOptions()
-    ]
-    {
-        return new SqlCreateIndex(
-            name,
-            mappingName,
-            columns,
-            type,
-            sqlOptions,
-            ifNotExists,
-            startPos.plus(getPos())
-        );
-    }
-}
-
 SqlNodeList MappingColumns():
 {
     SqlParserPos pos = getPos();
@@ -120,33 +76,6 @@ SqlNodeList MappingColumns():
             <COMMA> column = MappingColumn()
             {
                 columns.add(column);
-            }
-        )*
-        <RPAREN>
-    ]
-    {
-        return new SqlNodeList(columns, pos.plus(getPos()));
-    }
-}
-
-SqlNodeList IndexAttributes():
-{
-    SqlParserPos pos = getPos();
-
-    SqlIdentifier columnName;
-    List<SqlNode> columns = new ArrayList<SqlNode>();
-}
-{
-    [
-        <LPAREN> {  pos = getPos(); }
-        columnName = SimpleIdentifier()
-        {
-            columns.add(columnName);
-        }
-        (
-            <COMMA> columnName = SimpleIdentifier()
-            {
-                columns.add(columnName);
             }
         )*
         <RPAREN>
@@ -300,6 +229,79 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
     name = CompoundIdentifier()
     {
         return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
+* Parses CREATE INDEX statement.
+*/
+SqlCreate SqlCreateIndex(Span span, boolean required) :
+{
+    SqlParserPos startPos = span.pos();
+
+    SqlIdentifier name;
+    SqlIdentifier mappingName;
+    SqlNodeList columns = SqlNodeList.EMPTY;
+    SqlIdentifier type;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+    {
+        <INDEX>
+        [
+            <IF> <NOT> <EXISTS> { ifNotExists = true; }
+        ]
+        name = CompoundIdentifier()
+
+        <ON>
+
+        mappingName = SimpleIdentifier()
+        columns = IndexAttributes()
+
+        <TYPE>
+        type = SimpleIdentifier()
+        [
+            <OPTIONS>
+            sqlOptions = SqlOptions()
+        ]
+        {
+            return new SqlCreateIndex(
+                name,
+                mappingName,
+                columns,
+                type,
+                sqlOptions,
+                ifNotExists,
+                startPos.plus(getPos())
+        );
+    }
+}
+
+
+SqlNodeList IndexAttributes():
+{
+    SqlParserPos pos = getPos();
+
+    SqlIdentifier columnName;
+    List<SqlNode> columns = new ArrayList<SqlNode>();
+}
+{
+    [
+        <LPAREN> {  pos = getPos(); }
+        columnName = SimpleIdentifier()
+        {
+            columns.add(columnName);
+        }
+        (
+            <COMMA> columnName = SimpleIdentifier()
+            {
+                columns.add(columnName);
+            }
+        )*
+        <RPAREN>
+    ]
+    {
+        return new SqlNodeList(columns, pos.plus(getPos()));
     }
 }
 

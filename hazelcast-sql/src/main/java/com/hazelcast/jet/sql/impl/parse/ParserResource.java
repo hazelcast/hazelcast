@@ -49,6 +49,9 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
+    @BaseMessage("Index does not exist: {0}")
+    ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);
+
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();
 

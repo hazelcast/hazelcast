@@ -77,6 +77,8 @@ import java.util.stream.Stream;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
@@ -107,10 +109,6 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateIndexPlan plan) {
-        if (!catalog.getMappingNamesSet().contains(plan.mappingName())) {
-            throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
-        }
-
         Mapping mapping = catalog.getMapping(plan.mappingName());
         if (mapping == null) {
             throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
@@ -121,8 +119,8 @@ public class PlanExecutor {
 
         if (plan.indexType().equals(IndexType.BITMAP)) {
             Map<String, String> options = plan.options();
-            String uniqueKey = options.get("unique_key");
-            String uniqueKeyTransform = options.get("unique_key_transformation");
+            String uniqueKey = options.get(UNIQUE_KEY);
+            String uniqueKeyTransform = options.get(UNIQUE_KEY_TRANSFORMATION);
 
             BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
             bitmapIndexOptions.setUniqueKey(uniqueKey);

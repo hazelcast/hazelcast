@@ -83,7 +83,7 @@ public class SqlDropIndex extends SqlDrop {
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         if (!SqlCreateMapping.isMappingNameValid(name)) {
-            throw validator.newValidationError(name, RESOURCE.droppedMappingDoesNotExist(name.toString()));
+            throw validator.newValidationError(name, RESOURCE.droppedIndexDoesNotExist(name.toString()));
         }
     }
 }
