@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT;
@@ -407,7 +408,7 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
     // this method is always invoked in this thread
     // after we have blocked for selector.select in #runSelectLoopWithSelectorFix
     private void rebuildSelector() {
-        selectorRebuildCount.inc();
+        long currentSelectorRebuildCount = selectorRebuildCount.inc();
         Selector newSelector = newSelector(logger);
         Selector oldSelector = this.selector;
 
@@ -431,7 +432,8 @@ public class NioThread extends HazelcastManagedThread implements OperationHostil
         // close the old selector and substitute with new one
         closeSelector();
         this.selector = newSelector;
-        logger.warning("Recreated Selector because of possible java/network stack bug.");
+        Level logLevel = currentSelectorRebuildCount == 1 ? Level.WARNING : Level.FINE;
+        logger.log(logLevel, "Selector was rebuilt, consider updating Java and/or your network stack drivers.");
     }
 
     @Override
