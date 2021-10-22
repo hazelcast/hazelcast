@@ -76,7 +76,7 @@ public class NodeMulticastListener implements MulticastListener {
             UUID uuidFromMaster = master.getUuid();
             UUID uuidInJoinRequest = joinMessage.getUuid();
             if (master != null && !uuidFromMaster.equals(uuidInJoinRequest)) {
-                String message = "New join request has been received from current master master address. "
+                String message = "New join request has been received from current master address. "
                         + "The UUID in the join request (" + uuidInJoinRequest + ") is different from the "
                         + "known master one (" + uuidFromMaster + "). Suspecting the master address: " + masterAddress;
                 logger.warning(message);
