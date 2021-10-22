@@ -24,6 +24,7 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -52,24 +54,34 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
+    private static final long DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = TimeUnit.MILLISECONDS.toNanos(1);
+    private static final String PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = "hazelcast.internal.map.expired.key.scan.timeout.nanos";
+    private static final HazelcastProperty EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = new HazelcastProperty(PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS,
+            DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS, NANOSECONDS);
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
     private static final ThreadLocal<List> SAMPLING_LIST
             = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME << 1));
 
+    protected final long expiredKeyScanTimeoutNanos;
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
+    protected final ILogger logger;
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
@@ -87,6 +99,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
         clearExpiredRecordsTask = mapServiceContext.getExpirationManager().getTask();
+        expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
+        logger = nodeEngine.getLogger(getClass());
     }
 
     /**
@@ -100,23 +114,45 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
+    public boolean isExpirable() {
+        return isRecordStoreExpirable();
+    }
+
+    @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
         long now = getNow();
-        int size = size();
-        int maxSample = getMaxSampleCount(size, percentage);
-        int maxRetry = 3;
-        int loop = 0;
-        int evictedEntryCount = 0;
-        while (loop++ < maxRetry && evictedEntryCount < maxSample) {
-            evictedEntryCount += evictExpiredEntriesInternal(maxSample, now, backup);
+
+        // 1. Find how many keys we can scan at max.
+        int maxScannableCount = getMaxSampleCount(size(), percentage);
+
+        // 2. Do scanning and evict expired keys.
+        int scannedCount = 0;
+        int expiredCount = 0;
+        long scanLoopStartNanos = System.nanoTime();
+        try {
+            do {
+                scannedCount += sampleForExpiry();
+                expiredCount += evictExpiredSamples(now, backup);
+            } while (scannedCount < maxScannableCount && getOrInitExpirationIterator().hasNext()
+                    && (System.nanoTime() - scanLoopStartNanos) < expiredKeyScanTimeoutNanos);
+        } catch (Exception e) {
+            SAMPLING_LIST.get().clear();
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        if (logger.isFinestEnabled()) {
+            logProgress(maxScannableCount, scannedCount, expiredCount, scanLoopStartNanos);
         }
 
         accumulateOrSendExpiredKey(null, null);
     }
 
-    @Override
-    public boolean isExpirable() {
-        return isRecordStoreExpirable();
+    private void logProgress(int maxScannableCount, int scannedCount,
+                             int expiredCount, long scanLoopStartNanos) {
+        logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
+                        + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, scanTookNanos: %d"
+                , getName(), getPartitionId(), size(), maxScannableCount, scannedCount,
+                expiredCount, (System.nanoTime() - scanLoopStartNanos)));
     }
 
     /**
@@ -136,26 +172,10 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return Math.max(MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN, numberOfKeysInPercentage);
     }
 
-    private int evictExpiredEntriesInternal(final int maxSample, long now, boolean backup) {
-        int evictedCount = 0;
-        int sampledCount = 0;
-        try {
-            Iterator<Map.Entry<Data, Record>> iterator = initExpirationIterator();
-            while (sampledCount < maxSample && iterator.hasNext()) {
-                sampledCount += sampleForExpiry();
-                evictedCount += evictExpiredSamples(now, backup);
-            }
-        } catch (Exception t) {
-            SAMPLING_LIST.get().clear();
-            throw ExceptionUtil.rethrow(t);
-        }
-        return evictedCount;
-    }
-
     private int sampleForExpiry() {
         List sampledPairs = SAMPLING_LIST.get();
         int sampledCount = 0;
-        Iterator<Map.Entry<Data, Record>> iterator = expirationIterator;
+        Iterator<Map.Entry<Data, Record>> iterator = getOrInitExpirationIterator();
         while (iterator.hasNext() && sampledCount++ < MAX_SAMPLE_AT_A_TIME) {
             Map.Entry<Data, Record> entry = iterator.next();
             sampledPairs.add(entry.getKey());
@@ -188,7 +208,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictedCount;
     }
 
-    private Iterator<Map.Entry<Data, Record>> initExpirationIterator() {
+    private Iterator<Map.Entry<Data, Record>> getOrInitExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
             expirationIterator = storage.mutationTolerantIterator();
         }
