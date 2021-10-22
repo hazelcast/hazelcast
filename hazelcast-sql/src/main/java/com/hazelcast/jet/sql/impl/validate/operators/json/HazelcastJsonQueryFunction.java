@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.validate.operators.json;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.MultiTypeOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.OperandCheckerProgram;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
@@ -44,7 +45,7 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
         return new OperandCheckerProgram(
-                TypedOperandChecker.JSON,
+                MultiTypeOperandChecker.JSON_OR_VARCHAR,
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.SYMBOL,
                 TypedOperandChecker.SYMBOL,

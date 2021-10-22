@@ -49,8 +49,8 @@ public class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
     public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE);
 
-    private final SqlTypeName targetTypeName;
-    private final RelDataType type;
+    protected final SqlTypeName targetTypeName;
+    protected final RelDataType type;
 
     protected TypedOperandChecker(SqlTypeName targetTypeName) {
         this.targetTypeName = targetTypeName;
@@ -71,7 +71,7 @@ public class TypedOperandChecker extends AbstractOperandChecker {
     @Override
     protected boolean matchesTargetType(RelDataType operandType) {
         if (type != null && type.getSqlTypeName().equals(SqlTypeName.OTHER)) {
-            return type.equals(operandType);
+            return type.getFamily().equals(operandType.getFamily());
         } else {
             return operandType.getSqlTypeName() == targetTypeName;
         }
