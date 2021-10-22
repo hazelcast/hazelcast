@@ -56,6 +56,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -97,6 +98,7 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -247,6 +249,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
+        } else if (node instanceof SqlExplainStatement) {
+            return toExplainStatementPlan(planKey, (SqlExplainStatement) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -336,6 +340,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
+    }
+
+    private SqlPlan toExplainStatementPlan(PlanKey planKey, SqlExplainStatement sqlNode) {
+        return new ExplainStatementPlan(planKey, planExecutor);
     }
 
     private SqlPlanImpl toPlan(

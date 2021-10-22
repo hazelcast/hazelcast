@@ -502,6 +502,41 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
+    static class ExplainStatementPlan extends SqlPlanImpl {
+        private final PlanExecutor planExecutor;
+
+        ExplainStatementPlan(
+                PlanKey planKey,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.planExecutor = planExecutor;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("EXPLAIN", arguments);
+            SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
     static class SelectPlan extends SqlPlanImpl {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;

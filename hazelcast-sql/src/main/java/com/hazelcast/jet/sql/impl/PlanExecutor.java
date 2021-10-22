@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
@@ -201,6 +202,25 @@ public class PlanExecutor {
                 metadata,
                 false,
                 serializationService
+        );
+    }
+
+    SqlResult execute(ExplainStatementPlan plan) {
+        Stream<String> rows;
+
+        SqlRowMetadata metadata = new SqlRowMetadata(
+                singletonList(
+                        new SqlColumnMetadata("name", VARCHAR, false)
+                )
+        );
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+
+        return new SqlResultImpl(
+                QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
+                new StaticQueryResultProducerImpl(new Object[0]),
+                null,
+                false,
+                null
         );
     }
 

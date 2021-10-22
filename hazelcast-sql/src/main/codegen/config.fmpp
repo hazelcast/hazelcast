@@ -35,6 +35,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
+      "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
       "org.apache.calcite.sql.SqlCreate"
@@ -414,6 +415,7 @@ data: {
       "SqlAlterJob()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
+      "SqlExplainStatement()"
     ]
 
     # List of methods for parsing custom literals.

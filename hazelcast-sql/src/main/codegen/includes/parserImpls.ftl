@@ -434,6 +434,23 @@ SqlShowStatement SqlShowStatement() :
 }
 
 /**
+ * Parses an EXPLAIN PLAN statement.
+ */
+SqlNode SqlExplainStatement() :
+{
+    SqlNode stmt;
+}
+{
+    <EXPLAIN> <PLAN> <FOR>
+    stmt = SqlQueryOrDml() {
+        return new SqlExplainStatement(
+            getPos(),
+            stmt
+        );
+    }
+}
+
+/**
  * Parses INSERT/SINK INTO statement.
  */
 SqlExtendedInsert SqlExtendedInsert() :
