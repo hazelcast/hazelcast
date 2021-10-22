@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -29,15 +28,12 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
-public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
+public class JoinHashPhysicalRel extends Join implements PhysicalRel {
 
-    JoinNestedLoopPhysicalRel(
+    JoinHashPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
@@ -48,17 +44,9 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
         super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
     }
 
-    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).filter(parameterMetadata);
-    }
-
-    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).projection(parameterMetadata);
-    }
-
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-        int[] rightKeys = getKeysFromRightScan();
+        int[] rightKeys = analyzeCondition().rightKeys.toIntArray();
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
@@ -80,7 +68,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onNestedLoopJoin(this);
+        return visitor.onHashJoin(this);
     }
 
     @Override
@@ -92,13 +80,6 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
             JoinRelType joinType,
             boolean semiJoinDone
     ) {
-        return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
-    }
-
-    private int[] getKeysFromRightScan() {
-        HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
-        int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
-        return rightKeys;
+        return new JoinHashPhysicalRel(getCluster(), traitSet, left, right, conditionExpr, joinType);
     }
 }

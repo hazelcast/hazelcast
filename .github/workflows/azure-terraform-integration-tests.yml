@@ -23,6 +23,7 @@ jobs:
       SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'hazelcast'
     strategy:
       matrix:
         java: [ '8' ]
