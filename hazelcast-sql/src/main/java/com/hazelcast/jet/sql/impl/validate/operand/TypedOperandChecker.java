@@ -100,8 +100,9 @@ public class TypedOperandChecker extends AbstractOperandChecker {
 
         boolean canCoerce = isTemporalType(operandType) && isTemporalType(targetTypeName)
                 || isNumericType(operandType) && isNumericType(targetTypeName)
-                // we can assign VARCHOR to JSON fields
-                || operandType.getSqlTypeName() == SqlTypeName.VARCHAR && type.getFamily() == HazelcastJsonType.FAMILY;
+                // we can assign VARCHAR to JSON fields
+                || operandType.getSqlTypeName() == SqlTypeName.VARCHAR
+                && type != null && type.getFamily() == HazelcastJsonType.FAMILY;
 
         if (!canCoerce) {
             return false;
