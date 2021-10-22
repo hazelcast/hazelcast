@@ -29,16 +29,16 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.rules.CoreRules;
-import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
-import org.checkerframework.checker.nullness.qual.Nullable;
+
+import javax.annotation.Nullable;
 
 /**
  * Converts a parse tree into a relational tree.
@@ -107,9 +107,9 @@ public class QueryConverter {
         // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
         // primarily in projections. This steps removes unused fields from the tree.
         //
-        // NOTE: We are disabling if there is a chain of nested EXISTS in the query.
-        //       Calcite produces exception in this case.
-        if (countNestedExists(root.rel) == 0) {
+        // Due to a (possible) Calcite bug, we're not doing it if there are nested EXISTS calls.
+        // The bug is likely in decorrelation which produces LogicalAggregate with 0 output columns.
+        if (!hasNestedExists(root.rel)) {
             result = converter.trimUnusedFields(true, result);
         }
 
@@ -141,52 +141,47 @@ public class QueryConverter {
         return planner.findBestExp();
     }
 
-    private static int countNestedExists(RelNode root) {
-        class NestedExistsCounter extends RelVisitor {
-
-            private boolean nested;
-            private int count;
+    private static boolean hasNestedExists(RelNode root) {
+        class NestedExistsFinder extends RelVisitor {
+            private boolean found;
+            private int depth;
 
             @Override
             public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
                 if (node instanceof LogicalFilter) {
                     RexSubQuery exists = getExists((LogicalFilter) node);
                     if (exists != null) {
-                        if (nested) {
-                            count++;
-                        }
-                        nested = true;
+                        found |= depth > 0;
+                        depth++;
                         go(exists.rel);
-                        nested = false;
+                        depth--;
                     }
                 }
                 super.visit(node, ordinal, parent);
             }
 
-            private int count() {
+            private boolean find() {
                 go(root);
-                return count;
+                return found;
             }
 
             private RexSubQuery getExists(LogicalFilter filter) {
-                if (filter.getCondition().getKind() == SqlKind.EXISTS) {
-                    if (filter.getCondition() instanceof RexSubQuery) {
-                        return (RexSubQuery) filter.getCondition();
-                    }
-                }
-                if (filter.getCondition() instanceof RexCall) {
-                    RexCall call = ((RexCall) filter.getCondition());
-                    if (call.getOperator().getKind() == SqlKind.NOT) {
-                        RexNode operand = call.getOperands().get(0);
-                        if (operand instanceof RexSubQuery && operand.getKind() == SqlKind.EXISTS) {
-                            return (RexSubQuery) operand;
+                RexSubQuery[] existsSubQuery = {null};
+
+                filter.getCondition().accept(new RexVisitorImpl<Void>(true) {
+                    @Override
+                    public Void visitSubQuery(RexSubQuery subQuery) {
+                        if (subQuery.getKind() == SqlKind.EXISTS) {
+                            existsSubQuery[0] = subQuery;
                         }
+                        return super.visitSubQuery(subQuery);
                     }
-                }
-                return null;
+                });
+
+                return existsSubQuery[0];
             }
         }
 
-        return new NestedExistsCounter().count();
+        return new NestedExistsFinder().find();
     }
 }
