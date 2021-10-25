@@ -268,7 +268,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
                         "TABLE(IMPOSE_ORDER(" +
-                        "  variation => INTERVAL '0.001' SECOND" +
+                        "  \"lag\" => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE " + name + ")" +
                         "  , \"column\" => DESCRIPTOR(ts)" +
                         "))",

@@ -49,7 +49,7 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, RowOperandChecker.INSTANCE),
             new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, DescriptorOperandChecker.INSTANCE),
-            new HazelcastTableFunctionParameter(2, "variation", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
+            new HazelcastTableFunctionParameter(2, "lag", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
     private static final SqlReturnTypeInference RETURN_TYPE_INFERENCE = binding -> {
@@ -76,11 +76,11 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
         protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
             HazelcastSqlValidator validator = binding.getValidator();
             SqlNode input = binding.operand(0);
-            SqlNode variation = binding.operand(2);
+            SqlNode lag = binding.operand(2);
             boolean result = binding.getCall().getOperandList().stream()
                     .filter(operand -> validator.deriveType(binding.getScope(), operand).getSqlTypeName() == COLUMN_LIST)
                     .map(operand -> operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand)
-                    .allMatch(operand -> checkColumnOperand(validator, input, (SqlCall) operand, variation));
+                    .allMatch(operand -> checkColumnOperand(validator, input, (SqlCall) operand, lag));
 
             if (!result && throwOnFailure) {
                 throw binding.newValidationSignatureError();
@@ -88,10 +88,10 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
             return result;
         }
 
-        private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall descriptor, SqlNode variation) {
+        private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall descriptor, SqlNode lag) {
             SqlIdentifier descriptorIdentifier = checkDescriptorCardinality(descriptor);
             RelDataTypeField columnField = checkColumnName(validator, input, descriptorIdentifier);
-            return checkColumnType(validator, columnField, variation);
+            return checkColumnType(validator, columnField, lag);
         }
 
         private static SqlIdentifier checkDescriptorCardinality(SqlCall descriptor) {
@@ -121,13 +121,13 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
                     ));
         }
 
-        private static boolean checkColumnType(SqlValidator validator, RelDataTypeField columnField, SqlNode variation) {
+        private static boolean checkColumnType(SqlValidator validator, RelDataTypeField columnField, SqlNode lag) {
             SqlTypeName timeColumnType = columnField.getType().getSqlTypeName();
-            SqlTypeName variationType = validator.getValidatedNodeType(variation).getSqlTypeName();
+            SqlTypeName lagType = validator.getValidatedNodeType(lag).getSqlTypeName();
             if (SqlTypeName.INT_TYPES.contains(timeColumnType)) {
-                return SqlTypeName.INT_TYPES.contains(variationType);
+                return SqlTypeName.INT_TYPES.contains(lagType);
             } else if (SqlTypeName.DATETIME_TYPES.contains(timeColumnType)) {
-                return variationType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
+                return lagType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
             } else {
                 return false;
             }

@@ -74,11 +74,11 @@ final class WatermarkRules {
                 LogicalTableFunctionScan function
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
-            Expression<?> variationExpression = variationExpression(function);
+            Expression<?> lagExpression = lagExpression(function);
             return context -> EventTimePolicy.eventTimePolicy(
                     row -> extractOrderingMillis(row[orderingColumnFieldIndex]),
                     (row, timestamp) -> row,
-                    WatermarkPolicy.limitingLag(extractVariationMillis(variationExpression, context)),
+                    WatermarkPolicy.limitingLag(extractLagMillis(lagExpression, context)),
                     0,
                     0,
                     0
@@ -89,7 +89,7 @@ final class WatermarkRules {
             return ((RexInputRef) ((RexCall) extractOperand(function, 1)).getOperands().get(0)).getIndex();
         }
 
-        private Expression<?> variationExpression(LogicalTableFunctionScan function) {
+        private Expression<?> lagExpression(LogicalTableFunctionScan function) {
             QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) function.getCluster()).getParameterMetadata();
             RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
             return extractOperand(function, 2).accept(visitor);
@@ -148,8 +148,8 @@ final class WatermarkRules {
         }
     }
 
-    private static long extractVariationMillis(Expression<?> expression, ExpressionEvalContext evalContext) {
-        Object variation = expression.eval(EmptyRow.INSTANCE, evalContext);
-        return variation instanceof Number ? ((Number) variation).longValue() : ((SqlDaySecondInterval) variation).getMillis();
+    private static long extractLagMillis(Expression<?> expression, ExpressionEvalContext evalContext) {
+        Object lag = expression.eval(EmptyRow.INSTANCE, evalContext);
+        return lag instanceof Number ? ((Number) lag).longValue() : ((SqlDaySecondInterval) lag).getMillis();
     }
 }
