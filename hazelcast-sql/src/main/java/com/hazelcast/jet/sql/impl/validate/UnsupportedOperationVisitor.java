@@ -32,9 +32,6 @@ import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
-import org.apache.calcite.sql.SqlExplain;
-import org.apache.calcite.sql.SqlExplainFormat;
-import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
@@ -310,30 +307,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 }
                 // `SELECT ALL` is the opposite of `SELECT DISTINCT` and it's the default if neither is used, we allow it
                 if (symbolValue == SqlSelectKeyword.DISTINCT || symbolValue == SqlSelectKeyword.ALL) {
-                    return null;
-                }
-
-                if (symbolValue == SqlExplainLevel.NO_ATTRIBUTES
-                        || symbolValue == SqlExplainLevel.EXPPLAN_ATTRIBUTES
-                        || symbolValue == SqlExplainLevel.DIGEST_ATTRIBUTES
-                        || symbolValue == SqlExplainLevel.NON_COST_ATTRIBUTES
-                        || symbolValue == SqlExplainLevel.ALL_ATTRIBUTES
-                ) {
-                    return null;
-                }
-
-                if (symbolValue == SqlExplain.Depth.TYPE
-                        || symbolValue == SqlExplain.Depth.LOGICAL
-                        || symbolValue == SqlExplain.Depth.PHYSICAL
-                ) {
-                    return null;
-                }
-
-                if (symbolValue == SqlExplainFormat.TEXT
-                        || symbolValue == SqlExplainFormat.XML
-                        || symbolValue == SqlExplainFormat.JSON
-                        || symbolValue == SqlExplainFormat.DOT
-                ) {
                     return null;
                 }
 

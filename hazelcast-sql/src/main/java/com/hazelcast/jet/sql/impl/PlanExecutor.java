@@ -59,6 +59,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -206,21 +207,21 @@ public class PlanExecutor {
     }
 
     SqlResult execute(ExplainStatementPlan plan) {
-        Stream<String> rows;
-
+        Stream<String> planRows;
         SqlRowMetadata metadata = new SqlRowMetadata(
                 singletonList(
-                        new SqlColumnMetadata("name", VARCHAR, false)
+                        new SqlColumnMetadata("rel", VARCHAR, false)
                 )
         );
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
+        planRows = Arrays.stream(plan.getRel().explain().split("\n"));
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new StaticQueryResultProducerImpl(new Object[0]),
-                null,
+                new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
+                metadata,
                 false,
-                null
+                serializationService
         );
     }
 

@@ -42,7 +42,6 @@ import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.SqlExplain;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
@@ -91,16 +90,24 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             .withSqlConformance(HazelcastSqlConformance.INSTANCE)
             .withTypeCoercionFactory(HazelcastTypeCoercion::new);
 
-    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
+    /**
+     * Visitor to rewrite Calcite operators to Hazelcast operators.
+     */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
 
-    /** Parameter converter that will be passed to parameter metadata. */
+    /**
+     * Parameter converter that will be passed to parameter metadata.
+     */
     private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
 
-    /** Parameter positions. */
+    /**
+     * Parameter positions.
+     */
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
-    /** Parameter values. */
+    /**
+     * Parameter values.
+     */
     private final List<Object> arguments;
 
     private final MappingResolver mappingResolver;
@@ -131,7 +138,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             return topNode;
         }
 
-        if (topNode instanceof SqlShowStatement || topNode instanceof SqlExplainStatement) {
+        if (topNode instanceof SqlShowStatement) {
+            return topNode;
+        }
+
+        if (topNode instanceof SqlExplainStatement) {
+            super.validate(((SqlExplainStatement) topNode).getExplicandum());
             return topNode;
         }
 

@@ -41,9 +41,9 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
@@ -250,7 +250,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else if (node instanceof SqlExplainStatement) {
-            return toExplainStatementPlan(planKey, (SqlExplainStatement) node);
+            return toExplainStatementPlan(planKey, context, parseResult);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -342,8 +342,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
     }
 
-    private SqlPlan toExplainStatementPlan(PlanKey planKey, SqlExplainStatement sqlNode) {
-        return new ExplainStatementPlan(planKey, planExecutor);
+    private SqlPlan toExplainStatementPlan(
+            PlanKey planKey,
+            OptimizerContext context,
+            QueryParseResult parseResult) {
+        SqlNode node = parseResult.getNode();
+        assert node instanceof SqlExplainStatement;
+        QueryConvertResult convertResult = context.convert(((SqlExplainStatement) node).getExplicandum());
+        PhysicalRel physicalRel = optimize(
+                parseResult.getParameterMetadata(),
+                convertResult.getRel(),
+                context,
+                false
+        );
+
+        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
     }
 
     private SqlPlanImpl toPlan(

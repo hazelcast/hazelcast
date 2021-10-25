@@ -16,47 +16,42 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastExplainOperator;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlExplain;
-import org.apache.calcite.sql.SqlExplainFormat;
-import org.apache.calcite.sql.SqlExplainLevel;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
 /*
  * EXPLAIN PLAN FOR query.
  */
-public class SqlExplainStatement extends SqlExplain {
-    public static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("EXPLAIN", SqlKind.EXPLAIN) {
-                @SuppressWarnings("argument.type.incompatible")
-                @Override
-                public SqlCall createCall(@Nullable SqlLiteral functionQualifier,
-                                          SqlParserPos pos, @Nullable SqlNode... operands) {
-                    return new SqlExplainStatement(pos, operands[0]);
-                }
-            };
+public class SqlExplainStatement extends SqlCall {
+    public static final SqlSpecialOperator OPERATOR = new HazelcastExplainOperator();
+
+    private final SqlNode explicandum;
 
     public SqlExplainStatement(
             SqlParserPos pos,
             SqlNode explicandum) {
-        super(pos,
-                explicandum,
-                SqlExplainLevel.EXPPLAN_ATTRIBUTES.symbol(pos),
-                Depth.PHYSICAL.symbol(pos),
-                SqlExplainFormat.TEXT.symbol(pos),
-                0
-        );
+        super(pos);
+        this.explicandum = explicandum;
+    }
+
+    public SqlNode getExplicandum() {
+        return explicandum;
     }
 
     @Override
     public SqlOperator getOperator() {
         return OPERATOR;
+    }
+
+    @Override
+    public List<SqlNode> getOperandList() {
+        return ImmutableList.of(explicandum);
     }
 }
