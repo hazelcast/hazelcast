@@ -384,7 +384,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (Byte.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES)) {
-                            field.set(o, reader.readArrayBytes(name));
+                            field.set(o, reader.readArrayOfBytes(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfBytes(name, (byte[]) field.get(o));
@@ -398,7 +398,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (Integer.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS)) {
-                            field.set(o, reader.readArrayInts(name));
+                            field.set(o, reader.readArrayOfInts(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfInts(name, (int[]) field.get(o));
@@ -482,7 +482,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (String.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_STRINGS)) {
-                            field.set(o, reader.readArrayStrings(name));
+                            field.set(o, reader.readArrayOfStrings(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfStrings(name, (String[]) field.get(o));
@@ -524,7 +524,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (componentType.isEnum()) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_STRINGS)) {
-                            String[] stringArray = reader.readArrayStrings(name);
+                            String[] stringArray = reader.readArrayOfStrings(name);
                             Enum[] enumArray = enumsFromString((Class<? extends Enum>) componentType, stringArray);
                             field.set(o, enumArray);
                         }

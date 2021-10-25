@@ -436,7 +436,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    byte[] readArrayBytes(@Nonnull String fieldName);
+    byte[] readArrayOfBytes(@Nonnull String fieldName);
 
     /**
      * Reads an array of 8-bit two's complement signed integers or returns the default value.
@@ -448,7 +448,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    byte[] readArrayBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue);
+    byte[] readArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue);
 
     /**
      * Reads an array of 16-bit unsigned integers.
@@ -509,7 +509,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    int[] readArrayInts(@Nonnull String fieldName);
+    int[] readArrayOfInts(@Nonnull String fieldName);
 
     /**
      * Reads an array of 32-bit two's complement signed integers or returns the default value.
@@ -521,7 +521,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    int[] readArrayInts(@Nonnull String fieldName, @Nullable int[] defaultValue);
+    int[] readArrayOfInts(@Nonnull String fieldName, @Nullable int[] defaultValue);
 
     /**
      * Reads an array of 64-bit two's complement signed integers.
@@ -605,7 +605,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    String[] readArrayStrings(@Nonnull String fieldName);
+    String[] readArrayOfStrings(@Nonnull String fieldName);
 
     /**
      * Reads an array of UTF-8 encoded strings or returns the default value.
@@ -617,7 +617,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    String[] readArrayStrings(@Nonnull String fieldName, @Nullable String[] defaultValue);
+    String[] readArrayOfStrings(@Nonnull String fieldName, @Nullable String[] defaultValue);
 
     /**
      * Reads an array of arbitrary precision and scale floating point numbers.

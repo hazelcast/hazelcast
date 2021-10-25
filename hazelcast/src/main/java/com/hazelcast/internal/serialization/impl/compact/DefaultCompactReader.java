@@ -242,13 +242,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public byte[] readArrayBytes(@Nonnull String fieldName) {
+    public byte[] readArrayOfBytes(@Nonnull String fieldName) {
         return getArrayOfBytes(fieldName);
     }
 
     @Nullable
     @Override
-    public byte[] readArrayBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
+    public byte[] readArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_BYTES) ? getArrayOfBytes(fieldName) : defaultValue;
     }
 
@@ -275,13 +275,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public int[] readArrayInts(@Nonnull String fieldName) {
+    public int[] readArrayOfInts(@Nonnull String fieldName) {
         return getArrayOfInts(fieldName);
     }
 
     @Nullable
     @Override
-    public int[] readArrayInts(@Nonnull String fieldName, @Nullable int[] defaultValue) {
+    public int[] readArrayOfInts(@Nonnull String fieldName, @Nullable int[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_INTS) ? getArrayOfInts(fieldName) : defaultValue;
     }
 
@@ -330,13 +330,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public String[] readArrayStrings(@Nonnull String fieldName) {
+    public String[] readArrayOfStrings(@Nonnull String fieldName) {
         return getArrayOfStrings(fieldName);
     }
 
     @Nullable
     @Override
-    public String[] readArrayStrings(@Nonnull String fieldName, @Nullable String[] defaultValue) {
+    public String[] readArrayOfStrings(@Nonnull String fieldName, @Nullable String[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_STRINGS) ? getArrayOfStrings(fieldName) : defaultValue;
     }
 
