@@ -412,7 +412,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    boolean[] readBooleanArray(@Nonnull String fieldName);
+    boolean[] readArrayOfBooleans(@Nonnull String fieldName);
 
     /**
      * Reads an array of booleans or returns the default value.
@@ -424,7 +424,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    boolean[] readBooleanArray(@Nonnull String fieldName, @Nullable boolean[] defaultValue);
+    boolean[] readArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] defaultValue);
 
     /**
      * Reads an array of 8-bit two's complement signed integers.
@@ -436,11 +436,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    byte[] readByteArray(@Nonnull String fieldName);
+    byte[] readArrayBytes(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 8-bit two's complement signed integers
-     * or returns the default value.
+     * Reads an array of 8-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -449,7 +448,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    byte[] readByteArray(@Nonnull String fieldName, @Nullable byte[] defaultValue);
+    byte[] readArrayBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue);
 
     /**
      * Reads an array of 16-bit unsigned integers.
@@ -461,11 +460,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    char[] readCharArray(@Nonnull String fieldName);
+    char[] readArrayOfChars(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 16-bit unsigned integers.
-     * or returns the default value.
+     * Reads an array of 16-bit unsigned integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -474,7 +472,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    char[] readCharArray(@Nonnull String fieldName, @Nullable char[] defaultValue);
+    char[] readArrayOfChars(@Nonnull String fieldName, @Nullable char[] defaultValue);
 
 
     /**
@@ -487,11 +485,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    short[] readShortArray(@Nonnull String fieldName);
+    short[] readArrayOfShorts(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 16-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads an array of 16-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -500,7 +497,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    short[] readShortArray(@Nonnull String fieldName, @Nullable short[] defaultValue);
+    short[] readArrayOfShorts(@Nonnull String fieldName, @Nullable short[] defaultValue);
 
     /**
      * Reads an array of 32-bit two's complement signed integers.
@@ -512,11 +509,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    int[] readIntArray(@Nonnull String fieldName);
+    int[] readArrayInts(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit two's complement signed integers
-     * or returns the default value.
+     * Reads an array of 32-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -525,7 +521,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    int[] readIntArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
+    int[] readArrayInts(@Nonnull String fieldName, @Nullable int[] defaultValue);
 
     /**
      * Reads an array of 64-bit two's complement signed integers.
@@ -537,11 +533,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    long[] readLongArray(@Nonnull String fieldName);
+    long[] readArrayOfLongs(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 64-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads an array of 64-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -550,7 +545,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    long[] readLongArray(@Nonnull String fieldName, @Nullable long[] defaultValue);
+    long[] readArrayOfLongs(@Nonnull String fieldName, @Nullable long[] defaultValue);
 
     /**
      * Reads an array of 32-bit IEEE 754 floating point numbers.
@@ -562,11 +557,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    float[] readFloatArray(@Nonnull String fieldName);
+    float[] readArrayOfFloats(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit IEEE 754 floating point numbers.
-     * or returns the default value.
+     * Reads an array of 32-bit IEEE 754 floating point numbers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -575,7 +569,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    float[] readFloatArray(@Nonnull String fieldName, @Nullable float[] defaultValue);
+    float[] readArrayOfFloats(@Nonnull String fieldName, @Nullable float[] defaultValue);
 
     /**
      * Reads an array of 64-bit IEEE 754 floating point numbers.
@@ -587,11 +581,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    double[] readDoubleArray(@Nonnull String fieldName);
+    double[] readArrayOfDoubles(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 64-bit IEEE 754 floating point numbers.
-     * or returns the default value.
+     * Reads an array of 64-bit IEEE 754 floating point numbers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -600,7 +593,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    double[] readDoubleArray(@Nonnull String fieldName, @Nullable double[] defaultValue);
+    double[] readArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] defaultValue);
 
     /**
      * Reads an array of UTF-8 encoded strings.
@@ -612,11 +605,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    String[] readStringArray(@Nonnull String fieldName);
+    String[] readArrayStrings(@Nonnull String fieldName);
 
     /**
-     * Reads an array of UTF-8 encoded strings.
-     * or returns the default value.
+     * Reads an array of UTF-8 encoded strings or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -625,7 +617,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    String[] readStringArray(@Nonnull String fieldName, @Nullable String[] defaultValue);
+    String[] readArrayStrings(@Nonnull String fieldName, @Nullable String[] defaultValue);
 
     /**
      * Reads an array of arbitrary precision and scale floating point numbers.
@@ -637,11 +629,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    BigDecimal[] readDecimalArray(@Nonnull String fieldName);
+    BigDecimal[] readArrayOfDecimals(@Nonnull String fieldName);
 
     /**
-     * Reads an array of arbitrary precision and scale floating point numbers.
-     * or returns the default value.
+     * Reads an array of arbitrary precision and scale floating point numbers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -650,10 +641,10 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    BigDecimal[] readDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] defaultValue);
+    BigDecimal[] readArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] defaultValue);
 
     /**
-     * Reads an array of times consisting of hour, minute, second, and nano seconds.
+     * Reads an array of times consisting of hour, minute, second, and nanoseconds
      *
      * @param fieldName name of the field.
      * @return the value of the field. The items in the array cannot be null.
@@ -662,11 +653,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    LocalTime[] readTimeArray(@Nonnull String fieldName);
+    LocalTime[] readArrayOfTimes(@Nonnull String fieldName);
 
     /**
-     * Reads an array of times consisting of hour, minute, second, and nano seconds.
-     * or returns the default value.
+     * Reads an array of times consisting of hour, minute, second, and nanoseconds or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -675,7 +665,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    LocalTime[] readTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] defaultValue);
+    LocalTime[] readArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] defaultValue);
 
     /**
      * Reads an array of dates consisting of year, month, and day.
@@ -687,11 +677,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    LocalDate[] readDateArray(@Nonnull String fieldName);
+    LocalDate[] readArrayOfDates(@Nonnull String fieldName);
 
     /**
-     * Reads an array of dates consisting of year, month, and day.
-     * or returns the default value.
+     * Reads an array of dates consisting of year, month, and day or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -700,7 +689,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    LocalDate[] readDateArray(@Nonnull String fieldName, @Nullable LocalDate[] defaultValue);
+    LocalDate[] readArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] defaultValue);
 
     /**
      * Reads an array of timestamps consisting of date and time.
@@ -712,11 +701,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    LocalDateTime[] readTimestampArray(@Nonnull String fieldName);
+    LocalDateTime[] readArrayOfTimestamps(@Nonnull String fieldName);
 
     /**
-     * Reads an array of timestamps consisting of date and time.
-     * or returns the default value.
+     * Reads an array of timestamps consisting of date and time or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -725,7 +713,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    LocalDateTime[] readTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
+    LocalDateTime[] readArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
 
     /**
      * Reads an array of timestamps with timezone consisting of date, time and timezone offset.
@@ -737,11 +725,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName);
+    OffsetDateTime[] readArrayOfTimestampWithTimezones(@Nonnull String fieldName);
 
     /**
-     * Reads an array of timestamps with timezone consisting of date, time and timezone offset.
-     * or returns the default value.
+     * Reads an array of timestamps with timezone consisting of date, time and timezone offset or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -750,7 +737,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
+    OffsetDateTime[] readArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
 
     /**
      * Reads an array of arbitrary objects.
@@ -762,11 +749,10 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    <T> T[] readCompactArray(@Nonnull String fieldName, @Nullable Class<T> componentType);
+    <T> T[] readArrayOfCompacts(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
     /**
-     * Reads an array of arbitrary objects.
-     * or returns the default value.
+     * Reads an array of arbitrary objects or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -775,10 +761,10 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    <T> T[] readCompactArray(@Nonnull String fieldName, @Nullable Class<T> componentType, @Nullable T[] defaultValue);
+    <T> T[] readArrayOfCompacts(@Nonnull String fieldName, @Nullable Class<T> componentType, @Nullable T[] defaultValue);
 
     /**
-     * Reads a boolean.
+     * Reads a nullable boolean.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -790,8 +776,7 @@ public interface CompactReader {
     Boolean readNullableBoolean(@Nonnull String fieldName);
 
     /**
-     * Reads a boolean.
-     * or returns the default value.
+     * Reads a nullable boolean or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -803,7 +788,7 @@ public interface CompactReader {
     Boolean readNullableBoolean(@Nonnull String fieldName, @Nullable Boolean defaultValue);
 
     /**
-     * Reads an 8-bit two's complement signed integer.
+     * Reads a nullable 8-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -815,8 +800,7 @@ public interface CompactReader {
     Byte readNullableByte(@Nonnull String fieldName);
 
     /**
-     * Reads an 8-bit two's complement signed integer.
-     * or returns the default value.
+     * Reads a nullable 8-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -828,7 +812,7 @@ public interface CompactReader {
     Byte readNullableByte(@Nonnull String fieldName, @Nullable Byte defaultValue);
 
     /**
-     * Reads a 16-bit two's complement signed integer.
+     * Reads a nullable 16-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -839,8 +823,7 @@ public interface CompactReader {
     Short readNullableShort(@Nonnull String fieldName);
 
     /**
-     * Reads a 16-bit two's complement signed integer.
-     * or returns the default value.
+     * Reads a nullable 16-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -851,7 +834,7 @@ public interface CompactReader {
     Short readNullableShort(@Nonnull String fieldName, @Nullable Short defaultValue);
 
     /**
-     * Reads a 32-bit two's complement signed integer.
+     * Reads a nullable 32-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -863,8 +846,7 @@ public interface CompactReader {
     Integer readNullableInt(@Nonnull String fieldName);
 
     /**
-     * Reads a 32-bit two's complement signed integer.
-     * or returns the default value.
+     * Reads a nullable 32-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -876,7 +858,7 @@ public interface CompactReader {
     Integer readNullableInt(@Nonnull String fieldName, @Nullable Integer defaultValue);
 
     /**
-     * Reads a 64-bit two's complement signed integer.
+     * Reads a nullable 64-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -888,8 +870,7 @@ public interface CompactReader {
     Long readNullableLong(@Nonnull String fieldName);
 
     /**
-     * Reads a 64-bit two's complement signed integer.
-     * or returns the default value.
+     * Reads a nullable 64-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -901,7 +882,7 @@ public interface CompactReader {
     Long readNullableLong(@Nonnull String fieldName, @Nullable Long defaultValue);
 
     /**
-     * Reads a 32-bit IEEE 754 floating point number.
+     * Reads a nullable 32-bit IEEE 754 floating point number.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -913,8 +894,7 @@ public interface CompactReader {
     Float readNullableFloat(@Nonnull String fieldName);
 
     /**
-     * Reads a 32-bit IEEE 754 floating point number.
-     * or returns the default value.
+     * Reads a nullable 32-bit IEEE 754 floating point number or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -926,7 +906,7 @@ public interface CompactReader {
     Float readNullableFloat(@Nonnull String fieldName, @Nullable Float defaultValue);
 
     /**
-     * Reads a 64-bit IEEE 754 floating point number.
+     * Reads a nullable 64-bit IEEE 754 floating point number.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -938,8 +918,7 @@ public interface CompactReader {
     Double readNullableDouble(@Nonnull String fieldName);
 
     /**
-     * Reads a 64-bit IEEE 754 floating point number.
-     * or returns the default value.
+     * Reads a nullable 64-bit IEEE 754 floating point number or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -951,7 +930,7 @@ public interface CompactReader {
     Double readNullableDouble(@Nonnull String fieldName, @Nullable Double defaultValue);
 
     /**
-     * Reads an array of booleans.
+     * Reads a nullable array of nullable booleans.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -963,8 +942,7 @@ public interface CompactReader {
     Boolean[] readArrayOfNullableBooleans(@Nonnull String fieldName);
 
     /**
-     * Reads an array of booleans.
-     * or returns the default value.
+     * Reads a nullable array of nullable booleans or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -976,7 +954,7 @@ public interface CompactReader {
     Boolean[] readArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] defaultValue);
 
     /**
-     * Reads an array of 8-bit two's complement signed integers.
+     * Reads a nullable array of nullable 8-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -988,8 +966,7 @@ public interface CompactReader {
     Byte[] readArrayOfNullableBytes(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 8-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 8-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -1001,7 +978,7 @@ public interface CompactReader {
     Byte[] readArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] defaultValue);
 
     /**
-     * Reads an array of 16-bit two's complement signed integers.
+     * Reads a nullable array of nullable 16-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -1013,8 +990,7 @@ public interface CompactReader {
     Short[] readArrayOfNullableShorts(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 16-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 16-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -1026,7 +1002,7 @@ public interface CompactReader {
     Short[] readArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] defaultValue);
 
     /**
-     * Reads an array of 32-bit two's complement signed integers.
+     * Reads a nullable array of nullable 32-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -1038,8 +1014,7 @@ public interface CompactReader {
     Integer[] readArrayOfNullableInts(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 32-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -1051,7 +1026,7 @@ public interface CompactReader {
     Integer[] readArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] defaultValue);
 
     /**
-     * Reads an array of 64-bit two's complement signed integers.
+     * Reads a nullable array of nullable 64-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -1063,8 +1038,7 @@ public interface CompactReader {
     Long[] readArrayOfNullableLongs(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 64-bit two's complement signed integers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 64-bit two's complement signed integers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -1076,7 +1050,7 @@ public interface CompactReader {
     Long[] readArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] defaultValue);
 
     /**
-     * Reads an array of 32-bit IEEE 754 floating point numbers.
+     * Reads a nullable array of nullable 32-bit IEEE 754 floating point numbers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -1088,8 +1062,7 @@ public interface CompactReader {
     Float[] readArrayOfNullableFloats(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 32-bit IEEE 754 floating point numbers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 32-bit IEEE 754 floating point numbers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name
@@ -1101,7 +1074,7 @@ public interface CompactReader {
     Float[] readArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] defaultValue);
 
     /**
-     * Reads an array of 64-bit IEEE 754 floating point numbers.
+     * Reads a nullable array of nullable 64-bit IEEE 754 floating point numbers.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -1113,8 +1086,7 @@ public interface CompactReader {
     Double[] readArrayOfNullableDoubles(@Nonnull String fieldName);
 
     /**
-     * Reads an array of 64-bit IEEE 754 floating point numbers.
-     * or returns the default value.
+     * Reads a nullable array of nullable 64-bit IEEE 754 floating point numbers or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name

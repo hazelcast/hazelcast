@@ -157,7 +157,7 @@ public class SqlCompactTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_readToClassWithNonNullPrimitive() throws IOException {
+    public void test_readToClassWithNonNulls() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + " __key INT "
@@ -193,7 +193,7 @@ public class SqlCompactTest extends SqlTestSupport {
 
 
     @Test
-    public void test_insertNullsForPrimitives() throws IOException {
+    public void test_insertNulls() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + "__key INT "
@@ -245,7 +245,7 @@ public class SqlCompactTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_readNonNullPrimitivesOfCompact() throws IOException {
+    public void test_readNonNullKindsOfCompactViaSQL() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + " __key INT "

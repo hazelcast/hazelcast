@@ -48,15 +48,11 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.NUL
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
-import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
-import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
-import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
-import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
@@ -70,14 +66,18 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
 
 /**
  * A base class that has the capability of representing Compact serialized
@@ -1070,7 +1070,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 return null;
             }
             int dataLength = in.readInt(pos);
-            int itemCount = in.readInt(pos + +INT_SIZE_IN_BYTES);
+            int itemCount = in.readInt(pos + INT_SIZE_IN_BYTES);
             checkNotNegative(index, "Array index can not be negative");
             if (itemCount <= index) {
                 return null;

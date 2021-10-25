@@ -214,9 +214,9 @@ public class CompactStreamSerializerTest {
                         String name = in.readString("n");
                         String status = in.readString("hs");
                         int age = in.readInt("a");
-                        long[] ids = in.readLongArray("ids");
+                        long[] ids = in.readArrayOfLongs("ids");
                         EmployeeDTO s = in.readCompact("s");
-                        EmployeeDTO[] ss = in.readCompactArray("ss", EmployeeDTO.class);
+                        EmployeeDTO[] ss = in.readArrayOfCompacts("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, status == null ? null : HiringStatus.valueOf(status), ids, s, ss);
                     }
 

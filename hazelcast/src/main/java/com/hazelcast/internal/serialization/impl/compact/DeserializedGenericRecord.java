@@ -123,12 +123,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Override
     public boolean getBoolean(@Nonnull String fieldName) {
-        return getNonnul(fieldName, BOOLEAN, NULLABLE_BOOLEAN, "Boolean");
+        return getNonNull(fieldName, BOOLEAN, NULLABLE_BOOLEAN, "Boolean");
     }
 
     @Override
     public byte getByte(@Nonnull String fieldName) {
-        return getNonnul(fieldName, BYTE, NULLABLE_BYTE, "Byte");
+        return getNonNull(fieldName, BYTE, NULLABLE_BYTE, "Byte");
     }
 
     @Override
@@ -138,27 +138,27 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Override
     public double getDouble(@Nonnull String fieldName) {
-        return getNonnul(fieldName, DOUBLE, NULLABLE_DOUBLE, "Double");
+        return getNonNull(fieldName, DOUBLE, NULLABLE_DOUBLE, "Double");
     }
 
     @Override
     public float getFloat(@Nonnull String fieldName) {
-        return getNonnul(fieldName, FLOAT, NULLABLE_FLOAT, "Float");
+        return getNonNull(fieldName, FLOAT, NULLABLE_FLOAT, "Float");
     }
 
     @Override
     public int getInt(@Nonnull String fieldName) {
-        return getNonnul(fieldName, INT, NULLABLE_INT, "Int");
+        return getNonNull(fieldName, INT, NULLABLE_INT, "Int");
     }
 
     @Override
     public long getLong(@Nonnull String fieldName) {
-        return getNonnul(fieldName, LONG, NULLABLE_LONG, "Long");
+        return getNonNull(fieldName, LONG, NULLABLE_LONG, "Long");
     }
 
     @Override
     public short getShort(@Nonnull String fieldName) {
-        return getNonnul(fieldName, SHORT, NULLABLE_SHORT, "Short");
+        return getNonNull(fieldName, SHORT, NULLABLE_SHORT, "Short");
     }
 
     @Override
@@ -516,8 +516,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (T) objects.get(fieldName);
     }
 
-    private <T> T getNonnul(@Nonnull String fieldName, @Nonnull FieldKind primitiveFieldKind,
-                            @Nonnull FieldKind nullableFieldKind, String methodSuffix) {
+    private <T> T getNonNull(@Nonnull String fieldName, @Nonnull FieldKind primitiveFieldKind,
+                             @Nonnull FieldKind nullableFieldKind, String methodSuffix) {
         check(fieldName, primitiveFieldKind, nullableFieldKind);
         T t = (T) objects.get(fieldName);
         if (t == null) {
