@@ -221,6 +221,10 @@
                                     <pattern>org.json</pattern>
                                     <shadedPattern>${relocation.root}.org.json</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.objenesis</pattern>
+                                    <shadedPattern>${relocation.root}.org.objenesis</shadedPattern>
+                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
@@ -249,6 +253,12 @@
                                 </filter>
                                 <filter>
                                     <artifact>com.github.erosb:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.objenesis:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
