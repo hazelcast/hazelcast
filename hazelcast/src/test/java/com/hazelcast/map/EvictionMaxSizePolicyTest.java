@@ -139,7 +139,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             IMap<Object, Object> map2 = nodes.get(2).getMap(mapName);
             long totalBackupEntryCount = getTotalBackupEntryCount(map1, map2);
             assertTrue("totalBackupEntryCount=" + totalBackupEntryCount, ((nodeCount - 1) * perNodeMaxSize)
-                    + (PARTITION_COUNT / nodeCount - 1) >= totalBackupEntryCount);
+                    + (PARTITION_COUNT / (nodeCount - 1)) >= totalBackupEntryCount);
         });
     }
 
