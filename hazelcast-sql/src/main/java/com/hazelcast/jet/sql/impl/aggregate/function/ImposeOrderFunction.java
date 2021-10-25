@@ -23,8 +23,7 @@ import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.jet.sql.impl.validate.operand.AnyOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operand.DescriptorOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operand.RowOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -46,8 +45,8 @@ import static org.apache.calcite.util.Static.RESOURCE;
 public class ImposeOrderFunction extends HazelcastTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
-            new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, RowOperandChecker.INSTANCE),
-            new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, DescriptorOperandChecker.INSTANCE),
+            new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
+            new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
             new HazelcastTableFunctionParameter(2, "lag", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
@@ -106,6 +105,10 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
             return (SqlIdentifier) columnIdentifiers.get(0);
         }
 
+        /**
+         * @return The field from {@code input} referenced by the {@code
+         *      descriptorIdentifier}
+         */
         private static RelDataTypeField checkColumnName(
                 SqlValidator validator,
                 SqlNode input,
