@@ -75,14 +75,17 @@ final class WatermarkRules {
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
-            return context -> EventTimePolicy.eventTimePolicy(
-                    row -> extractOrderingMillis(row[orderingColumnFieldIndex]),
-                    (row, timestamp) -> row,
-                    WatermarkPolicy.limitingLag(extractLagMillis(lagExpression, context)),
-                    0,
-                    0,
-                    0
-            );
+            return context -> {
+                long lagMs = extractLagMillis(lagExpression, context);
+                return EventTimePolicy.eventTimePolicy(
+                        row -> extractOrderingMillis(row[orderingColumnFieldIndex]),
+                        (row, timestamp) -> row,
+                        WatermarkPolicy.limitingLag(lagMs),
+                        lagMs,
+                        0,
+                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT
+                );
+            };
         }
 
         private int orderingColumnFieldIndex(LogicalTableFunctionScan function) {
