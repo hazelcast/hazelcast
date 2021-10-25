@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
