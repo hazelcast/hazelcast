@@ -26,12 +26,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.date;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.time;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestamp;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestampTz;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
@@ -294,5 +296,21 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 values
         );
         return name;
+    }
+
+    public static LocalTime time(long epochMillis) {
+        return timestampTz(epochMillis).toLocalTime();
+    }
+
+    public static LocalDate date(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDate();
+    }
+
+    public static LocalDateTime timestamp(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDateTime();
+    }
+
+    public static OffsetDateTime timestampTz(long epochMillis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
     }
 }
