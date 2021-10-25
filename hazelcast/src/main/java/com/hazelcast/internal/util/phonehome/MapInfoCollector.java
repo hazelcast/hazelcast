@@ -34,8 +34,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Collects information about IMap
  */
@@ -43,6 +41,7 @@ class MapInfoCollector
         implements MetricsCollector {
 
     private static final Predicate<MapConfig> IS_MAP_STORE_ENABLED = mapConfig -> mapConfig.getMapStoreConfig().isEnabled();
+
     private Map<String, MapConfig> mapConfigs;
 
     @Override
@@ -81,7 +80,7 @@ class MapInfoCollector
     }
 
     private void initMapConfigs(Node node) {
-        Collection<DistributedObject> objects = node.hazelcastInstance.getDistributedObjects()
+        Collection<DistributedObject> objects = node.hazelcastInstance.getDistributedObjects();
         mapConfigs = new HashMap<>();
         objects.stream()
                 .filter(obj -> obj.getServiceName().equals(MapService.SERVICE_NAME))
