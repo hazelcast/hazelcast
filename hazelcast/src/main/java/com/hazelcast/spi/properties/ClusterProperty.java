@@ -192,7 +192,7 @@ public final class ClusterProperty {
     /**
      * Socket connection timeout in seconds. Socket.connect() is blocked until
      * either connection is established or connection is refused or this timeout
-     * passes. Default is 0, means infinite.
+     * passes. Default is 10, 0 means infinite.
      */
     public static final HazelcastProperty SOCKET_CONNECT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 10, SECONDS);
