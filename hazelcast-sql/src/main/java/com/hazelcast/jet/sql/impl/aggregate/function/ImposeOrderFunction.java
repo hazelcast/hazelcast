@@ -41,7 +41,6 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
-import static org.apache.calcite.sql.type.SqlTypeName.COLUMN_LIST;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 public class ImposeOrderFunction extends HazelcastTableFunction {
@@ -76,11 +75,9 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
         protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
             HazelcastSqlValidator validator = binding.getValidator();
             SqlNode input = binding.operand(0);
+            SqlNode column = extractColumn(binding.operand(1));
             SqlNode lag = binding.operand(2);
-            boolean result = binding.getCall().getOperandList().stream()
-                    .filter(operand -> validator.deriveType(binding.getScope(), operand).getSqlTypeName() == COLUMN_LIST)
-                    .map(operand -> operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand)
-                    .allMatch(operand -> checkColumnOperand(validator, input, (SqlCall) operand, lag));
+            boolean result = checkColumnOperand(validator, input, (SqlCall) column, lag);
 
             if (!result && throwOnFailure) {
                 throw binding.newValidationSignatureError();
@@ -88,21 +85,25 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
             return result;
         }
 
-        private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall descriptor, SqlNode lag) {
-            SqlIdentifier descriptorIdentifier = checkDescriptorCardinality(descriptor);
-            RelDataTypeField columnField = checkColumnName(validator, input, descriptorIdentifier);
+        private static SqlNode extractColumn(SqlNode operand) {
+            return operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand;
+        }
+
+        private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall column, SqlNode lag) {
+            SqlIdentifier columnIdentifier = checkDescriptorCardinality(column);
+            RelDataTypeField columnField = checkColumnName(validator, input, columnIdentifier);
             return checkColumnType(validator, columnField, lag);
         }
 
         private static SqlIdentifier checkDescriptorCardinality(SqlCall descriptor) {
-            List<SqlNode> descriptorIdentifiers = descriptor.getOperandList();
-            if (descriptorIdentifiers.size() != 1) {
+            List<SqlNode> columnIdentifiers = descriptor.getOperandList();
+            if (columnIdentifiers.size() != 1) {
                 throw SqlUtil.newContextException(
                         descriptor.getParserPosition(),
                         ValidatorResource.RESOURCE.mustUseSingleOrderingColumn()
                 );
             }
-            return (SqlIdentifier) descriptorIdentifiers.get(0);
+            return (SqlIdentifier) columnIdentifiers.get(0);
         }
 
         private static RelDataTypeField checkColumnName(
