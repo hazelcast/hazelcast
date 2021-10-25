@@ -19,8 +19,8 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
-public class GhostMapTest {
+public class GhostMapTest extends HazelcastTestSupport {
 
     /**
      * Verifies that GH issue https://github.com/hazelcast/hazelcast/issues/19833 is fixed, and PhoneHome does not create a map
@@ -39,17 +39,17 @@ public class GhostMapTest {
      */
     @Test
     public void test_GH_19833() {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(new Config()
+        HazelcastInstance instance = createHazelcastInstance(new Config()
                 .addMapConfig(new MapConfig()
                         .setName("asterisk#team*")
                         .setTimeToLiveSeconds(10)
                 )
         );
-        instance1.getMap("asterisk#team1");
+        instance.getMap("asterisk#team1");
 
-        new PhoneHome(TestUtil.getNode(instance1)).phoneHome(true);
+        new PhoneHome(TestUtil.getNode(instance)).phoneHome(true);
 
-        List<String> actualObjNames = instance1.getDistributedObjects().stream().map(
+        List<String> actualObjNames = instance.getDistributedObjects().stream().map(
                 DistributedObject::getName).collect(toList());
         assertEquals(singletonList("asterisk#team1"), actualObjNames);
     }
