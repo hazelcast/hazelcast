@@ -57,7 +57,7 @@
                 <executions>
                     <execution>
                         <id>unpack</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -74,7 +74,7 @@
                     </execution>
                     <execution>
                         <id>copy-hz3</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
