@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.parse.SqlCreateMapping.isMappingNameValid;
 import static java.util.Objects.requireNonNull;
 
 /**

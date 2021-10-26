@@ -16,6 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
@@ -24,6 +28,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -39,6 +44,11 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,9 +149,29 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
         String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
         instance().getSql().execute(sql);
 
-        String sql2 = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
+        String sql2 = "CREATE INDEX " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
         assertThatThrownBy(() -> instance().getSql().execute(sql2))
-                .hasMessageContaining("Can't create index : index 'idx' already exists");
+                .hasMessageContaining("Can't create index: index 'idx' already exists");
+    }
+
+    @Test
+    public void unsupportedMappingTypeForIndexCreationTest() {
+        String indexName = "idx";
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + MAP_NAME
+                + " EXTERNAL NAME " + MAP_NAME + "\n"
+                + " TYPE " + KafkaSqlConnector.TYPE_NAME + "\n"
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "'\n"
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+            String sql = "CREATE INDEX " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
+            assertThatThrownBy(() -> instance().getSql().execute(sql))
+                    .hasMessageContaining("Can't create index: only IMap supports index creation");
+        }
     }
 
     @Test
@@ -150,13 +180,13 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
                 "OPTIONS ('unique_key' = '__key')";
 
         assertThatThrownBy(() -> instance().getSql().execute(sql1))
-                .hasMessageContaining("'unique_key_transformation' option missing in options list");
+                .hasMessageContaining("Required option missing: unique_key_transformation");
 
         String sql2 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (__key) TYPE BITMAP " +
                 "OPTIONS ('unique_key_transformation' = 'RAW')";
 
         assertThatThrownBy(() -> instance().getSql().execute(sql2))
-                .hasMessageContaining("'unique_key' option missing in options list");
+                .hasMessageContaining("Required option missing: unique_key");
     }
 
     @Test
@@ -174,7 +204,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     public void bitmapIndexDoesntContainOptionsTest() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
-                .hasMessageContaining("Cant create BITMAP index : bitmap index config is empty");
+                .hasMessageContaining("Cant create BITMAP index: bitmap index config is empty");
     }
 
     private void checkPlan(boolean withIndex, boolean sorted, String sql) {

@@ -118,11 +118,15 @@ public class PlanExecutor {
             throw QueryException.error("Can't create index: mapping '" + plan.mappingName() + "' doesn't exist");
         }
 
-        if (plan.ifNotExists()) {
+        if (!mapping.type().equals("IMap")) {
+            throw QueryException.error("Can't create index: only IMap supports index creation");
+        }
+
+        if (!plan.ifNotExists()) {
             String indexName = plan.indexName();
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(mapping.externalName()));
             if (mapContainer.getIndexes().getIndex(indexName) != null) {
-                throw QueryException.error("Can't create index : index '" + plan.indexName() + "' already exists.");
+                throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
         }
 
