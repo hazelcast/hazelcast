@@ -234,7 +234,7 @@ public class TestStreamSqlConnector implements SqlConnector {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                     EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
                             ? EventTimePolicy.noEventTime()
-                            : eventTimePolicyProvider.apply(null);
+                            : eventTimePolicyProvider.apply(evalContext);
                     return new TestStreamDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy);
                 })
                 .fillBufferFn(TestStreamDataGenerator::fillBuffer)

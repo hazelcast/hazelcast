@@ -77,8 +77,6 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("COLLECTION_TABLE")
                     || field.getName().equals("MAP_VALUE_CONSTRUCTOR")
                     || field.getName().equals("ARGUMENT_ASSIGNMENT")
-                    || field.getName().equals("TUMBLE")
-                    || field.getName().equals("DESCRIPTOR")
                     || field.getName().equals("GENERATE_SERIES")
                     || field.getName().equals("GENERATE_STREAM")
                     || field.getName().equals("CSV_FILE")
@@ -88,6 +86,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("EXISTS")
                     || field.getName().equals("DESCRIPTOR")
                     || field.getName().equals("IMPOSE_ORDER")
+                    || field.getName().equals("TUMBLE")
             ) {
                 continue;
             }

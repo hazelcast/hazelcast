@@ -52,11 +52,9 @@ public final class LogicalRules {
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
                 // Windowing rules
-                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
-
-                // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
