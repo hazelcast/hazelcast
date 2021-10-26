@@ -115,7 +115,7 @@ public class PlanExecutor {
     SqlResult execute(CreateIndexPlan plan) {
         Mapping mapping = catalog.getMapping(plan.mappingName());
         if (mapping == null) {
-            throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
+            throw QueryException.error("Can't create index: mapping '" + plan.mappingName() + "' doesn't exist");
         }
 
         if (plan.ifNotExists()) {

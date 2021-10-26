@@ -43,7 +43,7 @@ public interface ParserResource {
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
 
-    @BaseMessage("''{0}'' option missing in options list")
+    @BaseMessage("Required option missing: {0}")
     ExInst<SqlValidatorException> absentOption(String optionName);
 
     @BaseMessage("Mapping does not exist: {0}")
@@ -58,8 +58,8 @@ public interface ParserResource {
     @BaseMessage("Unknown options for {0} index. Only BITMAP index requires an options")
     ExInst<SqlValidatorException> unsupportedIndexType(String indexType);
 
-    @BaseMessage("Can't create BITMAP index : bitmap index config is empty. " +
-            "BITMAP index requires 'unique_key' and 'unique_key_transformation options")
+    @BaseMessage("Can't create BITMAP index: bitmap index config is empty. " +
+            "BITMAP index requires 'unique_key' and 'unique_key_transformation' options")
     ExInst<SqlValidatorException> bitmapIndexConfigEmpty();
 
     @BaseMessage("Unsupported value for {0}: {1}")
