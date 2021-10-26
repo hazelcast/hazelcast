@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-    compile 'org.mongodb:mongodb-driver-sync:3.12.2'
-    testCompile "org.testcontainers:testcontainers:${testContainersVersion}"
+    implementation 'org.mongodb:mongodb-driver-sync:3.12.2'
+    testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
 }
 
 
