@@ -17,10 +17,15 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,12 +35,15 @@ import java.util.stream.Collectors;
 /**
  * SQL row metadata.
  */
-public final class SqlRowMetadata implements Serializable {
+public final class SqlRowMetadata implements IdentifiedDataSerializable {
     /** Constant indicating that the column is not found. */
     public static final int COLUMN_NOT_FOUND = -1;
 
-    private final List<SqlColumnMetadata> columns;
-    private final Map<String, Integer> nameToIndex;
+    private List<SqlColumnMetadata> columns;
+    private Map<String, Integer> nameToIndex;
+
+    public SqlRowMetadata() {
+    }
 
     @PrivateApi
     @SuppressWarnings("ConstantConditions")
@@ -127,5 +135,37 @@ public final class SqlRowMetadata implements Serializable {
         return columns.stream()
             .map((column) -> column.getName() + ' ' + column.getType())
             .collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(columns.size());
+        for (SqlColumnMetadata metadata : columns) {
+            out.writeObject(metadata);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        columns = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            columns.add(in.readObject());
+        }
+
+        nameToIndex = new HashMap<>(columns.size());
+        for (int i = 0; i < columns.size(); i++) {
+            nameToIndex.put(columns.get(i).getName(), i);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.SQL_ROW_METADATA;
     }
 }

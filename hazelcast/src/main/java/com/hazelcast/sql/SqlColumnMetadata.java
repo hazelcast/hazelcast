@@ -16,19 +16,26 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
+import java.io.IOException;
 
 /**
  * SQL column metadata.
  */
-public final class SqlColumnMetadata implements Serializable {
+public final class SqlColumnMetadata implements IdentifiedDataSerializable {
 
-    private final String name;
-    private final SqlColumnType type;
-    private final boolean nullable;
+    private String name;
+    private SqlColumnType type;
+    private boolean nullable;
+
+    public SqlColumnMetadata() {
+    }
 
     @PrivateApi
     @SuppressWarnings("ConstantConditions")
@@ -100,5 +107,30 @@ public final class SqlColumnMetadata implements Serializable {
     @Override
     public String toString() {
         return name + ' ' + type;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(name);
+        out.writeObject(type);
+        out.writeBoolean(nullable);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readString();
+        type = in.readObject();
+        nullable = in.readBoolean();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.SQL_COLUMN_METADATA;
     }
 }

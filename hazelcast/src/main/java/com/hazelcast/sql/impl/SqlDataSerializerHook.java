@@ -22,6 +22,8 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -171,7 +173,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SEARCHABLE = 59;
     public static final int EXPRESSION_SEARCH = 60;
 
-    public static final int LEN = EXPRESSION_SEARCH + 1;
+    public static final int SQL_COLUMN_METADATA = 61;
+    public static final int SQL_ROW_METADATA = 62;
+
+    public static final int LEN = SQL_ROW_METADATA + 1;
 
     @Override
     public int getFactoryId() {
@@ -259,6 +264,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+
+        constructors[SQL_COLUMN_METADATA] = arg -> new SqlColumnMetadata();
+        constructors[SQL_ROW_METADATA] = arg -> new SqlRowMetadata();
 
         return new ArrayDataSerializableFactory(constructors);
     }
