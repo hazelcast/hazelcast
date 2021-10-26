@@ -251,7 +251,7 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
         [
             <IF> <NOT> <EXISTS> { ifNotExists = true; }
         ]
-        name = CompoundIdentifier()
+        name = SimpleIdentifier()
 
         <ON>
 

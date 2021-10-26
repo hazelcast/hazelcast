@@ -172,10 +172,6 @@ public class SqlCreateIndex extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        if (!isMappingNameValid(mappingName)) {
-            throw validator.newValidationError(mappingName, RESOURCE.mappingIncorrectSchema());
-        }
-
         Set<String> columnNames = new HashSet<>();
         for (SqlNode column : columns.getList()) {
             String name = ((SqlIdentifier) requireNonNull(column)).getSimple();
