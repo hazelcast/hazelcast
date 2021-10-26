@@ -41,6 +41,8 @@ import java.util.function.Function;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.INT_OFFSET_READER;
@@ -186,7 +188,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case BOOLEAN:
                 return getBoolean(fd);
             case NULLABLE_BOOLEAN:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readBoolean, "Boolean");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readBoolean, "Boolean");
             default:
                 throw unexpectedFieldKind(BOOLEAN, fieldName);
         }
@@ -216,7 +218,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_BYTE:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readByte, "Byte");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readByte, "Byte");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -234,7 +236,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_SHORT:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readShort, "Short");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readShort, "Short");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -252,7 +254,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_INT:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readInt, "Int");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readInt, "Int");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -270,7 +272,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_LONG:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readLong, "Long");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readLong, "Long");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -288,7 +290,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_FLOAT:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readFloat, "Float");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readFloat, "Float");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -306,7 +308,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_DOUBLE:
-                return getVariableSizeAsNonNull(fieldName, fd, ObjectDataInput::readDouble, "Double");
+                return getVariableSizeAsNonNull(fd, ObjectDataInput::readDouble, "Double");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -344,11 +346,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    private <T> T getVariableSizeAsNonNull(@Nonnull String fieldName, FieldDescriptor fieldDescriptor,
-                                           Reader<T> reader, String primitiveName) {
+    private <T> T getVariableSizeAsNonNull(FieldDescriptor fieldDescriptor,
+                                           Reader<T> reader, String methodSuffix) {
         T value = getVariableSize(fieldDescriptor, reader);
         if (value == null) {
-            throw exceptionForUnexpectedNullValue(primitiveName);
+            throw exceptionForUnexpectedNullValue(fieldDescriptor.getFieldName(), methodSuffix);
         }
         return value;
     }
@@ -545,7 +547,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             for (int i = 0; i < itemCount; i++) {
                 int offset = offsetReader.getOffset(in, offsetsPosition, i);
                 if (offset == NULL_ARRAY_LENGTH) {
-                    throw exceptionForUnexpectedNullValueInArray(methodSuffix);
+                    throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), methodSuffix);
                 }
             }
             in.position(dataStartPosition - INT_SIZE_IN_BYTES);
@@ -1105,17 +1107,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         throw new HazelcastSerializationException("Unexpected fieldKind '" + actualFieldKind + "' for field: " + fieldName);
     }
 
-    @Nonnull
-    private HazelcastSerializationException exceptionForUnexpectedNullValue(String primitiveName) {
-        return new HazelcastSerializationException("null value can not be read via get" + primitiveName + " methods. "
-                + "Use getNullable" + primitiveName + " instead");
-    }
-
-    @Nonnull
-    private HazelcastSerializationException exceptionForUnexpectedNullValueInArray(String primitiveName) {
-        return new HazelcastSerializationException("null value can not be read via getArrayOf" + primitiveName + " methods. "
-                + "Use getArrayOf" + primitiveName + " instead");
-    }
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
         int len = input.readInt();

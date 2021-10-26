@@ -152,7 +152,7 @@ public interface InternalGenericRecord extends GenericRecord {
     <T> T getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
+     * Reads same value {@link GenericRecord#getArrayOfGenericRecords(String)} (String)}, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field

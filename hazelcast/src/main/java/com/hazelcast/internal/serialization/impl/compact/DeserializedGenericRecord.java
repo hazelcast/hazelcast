@@ -32,50 +32,52 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
-import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
-import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
-import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.INT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.LONG;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_LONGS;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.INT;
+import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
 
 public class DeserializedGenericRecord extends CompactGenericRecord {
 
@@ -212,7 +214,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             boolean[] result = new boolean[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Booleans");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Booleans");
                 }
                 result[i] = array[i];
             }
@@ -230,7 +232,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             byte[] result = new byte[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Bytes");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Bytes");
                 }
                 result[i] = array[i];
             }
@@ -254,7 +256,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             double[] result = new double[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Doubles");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Doubles");
                 }
                 result[i] = array[i];
             }
@@ -272,7 +274,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             float[] result = new float[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Floats");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Floats");
                 }
                 result[i] = array[i];
             }
@@ -290,7 +292,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             int[] result = new int[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Ints");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Ints");
                 }
                 result[i] = array[i];
             }
@@ -308,7 +310,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             long[] result = new long[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Longs");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Longs");
                 }
                 result[i] = array[i];
             }
@@ -326,7 +328,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             short[] result = new short[array.length];
             for (int i = 0; i < array.length; i++) {
                 if (array[i] == null) {
-                    throw exceptionForUnexpectedNullValueInArray("Shorts");
+                    throw exceptionForUnexpectedNullValueInArray(fieldName, "Shorts");
                 }
                 result[i] = array[i];
             }
@@ -521,7 +523,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         check(fieldName, primitiveFieldKind, nullableFieldKind);
         T t = (T) objects.get(fieldName);
         if (t == null) {
-            throw exceptionForUnexpectedNullValue(methodSuffix);
+            throw exceptionForUnexpectedNullValue(fieldName, methodSuffix);
         }
         return t;
     }
@@ -551,18 +553,6 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     protected Object getClassIdentifier() {
         return schema.getTypeName();
-    }
-
-    @Nonnull
-    private HazelcastSerializationException exceptionForUnexpectedNullValue(String primitiveName) {
-        return new HazelcastSerializationException("null value can not be read via get" + primitiveName + " methods. "
-                + "Use getNullable" + primitiveName + " instead");
-    }
-
-    @Nonnull
-    private HazelcastSerializationException exceptionForUnexpectedNullValueInArray(String primitiveName) {
-        return new HazelcastSerializationException("null value can not be read via getArrayOf" + primitiveName + " methods. "
-                + "Use getArrayOf" + primitiveName + " instead");
     }
 
 }
