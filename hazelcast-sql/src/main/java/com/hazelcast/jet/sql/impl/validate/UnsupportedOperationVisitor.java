@@ -141,6 +141,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // Table functions
         SUPPORTED_KINDS.add(SqlKind.COLLECTION_TABLE);
         SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
+        SUPPORTED_KINDS.add(SqlKind.DESCRIPTOR);
 
         // Ordering
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
@@ -195,6 +196,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
+
+        // Windowing
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.IMPOSE_ORDER);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);

@@ -23,17 +23,12 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastExistsOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
+import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
@@ -51,12 +46,19 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCoalesceFunct
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastExistsOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastNotPredicate;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatWSOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
@@ -241,6 +243,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction NULLIF = HazelcastNullIfFunction.INSTANCE;
     public static final SqlFunction COALESCE = HazelcastCoalesceFunction.INSTANCE;
+
+    //#endregion
+
+    //#region Windowing functions.
+
+    public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
+    public static final SqlFunction IMPOSE_ORDER = new ImposeOrderFunction();
 
     //#endregion
 

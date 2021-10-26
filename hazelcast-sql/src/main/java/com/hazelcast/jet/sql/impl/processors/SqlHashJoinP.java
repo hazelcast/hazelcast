@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 
-public class HashJoinProcessor extends AbstractProcessor {
+public class SqlHashJoinP extends AbstractProcessor {
 
     private final JetJoinInfo joinInfo;
     private final int rightInputColumnCount;
@@ -54,7 +54,7 @@ public class HashJoinProcessor extends AbstractProcessor {
     private FlatMapper<Object[], Object[]> flatMapper;
     private long maxItemsInHashTable;
 
-    public HashJoinProcessor(JetJoinInfo joinInfo, int rightInputColumnCount) {
+    public SqlHashJoinP(JetJoinInfo joinInfo, int rightInputColumnCount) {
         this.joinInfo = joinInfo;
         this.rightInputColumnCount = rightInputColumnCount;
     }
@@ -68,21 +68,21 @@ public class HashJoinProcessor extends AbstractProcessor {
     }
 
     private Traverser<Object[]> join(Object[] leftRow) {
-            ObjectArrayKey joinKeys = ObjectArrayKey.project(leftRow, joinInfo.leftEquiJoinIndices());
-            Collection<Object[]> matchedRows = hashMap.get(joinKeys);
-            List<Object[]> output = matchedRows.stream()
-                    .map(right -> ExpressionUtil.join(
-                            leftRow,
-                            right,
-                            joinInfo.nonEquiCondition(),
-                            evalContext)
-                    )
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            if (joinInfo.isLeftOuter() && output.isEmpty()) {
-                return Traversers.singleton(extendArray(leftRow, rightInputColumnCount));
-            }
-            return Traversers.traverseIterable(output);
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(leftRow, joinInfo.leftEquiJoinIndices());
+        Collection<Object[]> matchedRows = hashMap.get(joinKeys);
+        List<Object[]> output = matchedRows.stream()
+                .map(right -> ExpressionUtil.join(
+                        leftRow,
+                        right,
+                        joinInfo.nonEquiCondition(),
+                        evalContext)
+                )
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (joinInfo.isLeftOuter() && output.isEmpty()) {
+            return Traversers.singleton(extendArray(leftRow, rightInputColumnCount));
+        }
+        return Traversers.traverseIterable(output);
     }
 
     @Override
@@ -126,9 +126,9 @@ public class HashJoinProcessor extends AbstractProcessor {
         @Nonnull
         @Override
         public Collection<? extends Processor> get(int count) {
-            List<HashJoinProcessor> processors = new ArrayList<>(count);
+            List<SqlHashJoinP> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                processors.add(new HashJoinProcessor(joinInfo, rightInputColumnCount));
+                processors.add(new SqlHashJoinP(joinInfo, rightInputColumnCount));
             }
             return processors;
         }

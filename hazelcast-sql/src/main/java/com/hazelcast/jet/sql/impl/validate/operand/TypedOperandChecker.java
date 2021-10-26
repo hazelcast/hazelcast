@@ -45,6 +45,8 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker TIMESTAMP_WITH_TIME_ZONE =
             new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
     public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
+    public static final TypedOperandChecker COLUMN_LIST = new TypedOperandChecker(SqlTypeName.COLUMN_LIST);
+    public static final TypedOperandChecker ROW = new TypedOperandChecker(SqlTypeName.ROW);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;
@@ -91,6 +93,10 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             RelDataType operandType,
             int operandIndex
     ) {
+        if (targetTypeName == SqlTypeName.ROW || targetTypeName == SqlTypeName.COLUMN_LIST) {
+            return false;
+        }
+
         QueryDataType targetType0 = getTargetHazelcastType();
         QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
 

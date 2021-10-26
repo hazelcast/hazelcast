@@ -51,6 +51,10 @@ public final class LogicalRules {
                 FullFunctionScanLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FullFunctionScanLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
+                // Windowing rules
+                WatermarkRules.IMPOSE_ORDER_INSTANCE,
+                WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
 

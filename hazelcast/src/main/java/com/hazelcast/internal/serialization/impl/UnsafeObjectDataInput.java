@@ -80,7 +80,7 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public int read(int position) {
-        return (position < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + position) : NULL_ARRAY_LENGTH;
+        return (position < size) ? MEM.getByte(data, ARRAY_BYTE_BASE_OFFSET + position) & 0xFF : NULL_ARRAY_LENGTH;
     }
 
     @Override
