@@ -258,12 +258,6 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.objenesis:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>**/module-info.class</exclude>
@@ -319,6 +313,7 @@
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
+                                <Embed-Transitive>true</Embed-Transitive>
                             </instructions>
                         </configuration>
                     </execution>
@@ -507,6 +502,7 @@
             <groupId>org.objenesis</groupId>
             <artifactId>objenesis</artifactId>
             <version>${objenesis.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>

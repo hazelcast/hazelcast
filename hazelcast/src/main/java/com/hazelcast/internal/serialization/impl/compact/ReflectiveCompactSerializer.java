@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.nio.InstanceCreationUtil.newInstanceBypassingConstructor;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
@@ -170,7 +171,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     @Nonnull
     private Object createObject(Class associatedClass) {
         try {
-            return ClassLoaderUtil.newInstanceBypassingConstructor(associatedClass);
+            return newInstanceBypassingConstructor(associatedClass);
         } catch (Exception e) {
             throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
