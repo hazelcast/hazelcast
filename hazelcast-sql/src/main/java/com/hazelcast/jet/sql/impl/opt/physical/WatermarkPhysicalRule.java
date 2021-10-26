@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -25,26 +25,25 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class FullScanPhysicalRule extends ConverterRule {
+final class WatermarkPhysicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new FullScanPhysicalRule();
+    static final RelOptRule INSTANCE = new WatermarkPhysicalRule();
 
-    private FullScanPhysicalRule() {
+    private WatermarkPhysicalRule() {
         super(
-                FullScanLogicalRel.class, LOGICAL, PHYSICAL,
-                FullScanPhysicalRule.class.getSimpleName()
+                WatermarkLogicalRel.class, LOGICAL, PHYSICAL,
+                WatermarkPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
+        WatermarkLogicalRel logicalWatermark = (WatermarkLogicalRel) rel;
 
-        return new FullScanPhysicalRel(
-                logicalScan.getCluster(),
-                OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),
-                logicalScan.getTable(),
-                logicalScan.eventTimePolicyProvider()
+        return new WatermarkPhysicalRel(
+                logicalWatermark.getCluster(),
+                OptUtils.toPhysicalConvention(logicalWatermark.getTraitSet()),
+                OptUtils.toPhysicalInput(logicalWatermark.getInput())
         );
     }
 }

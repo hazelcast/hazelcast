@@ -41,6 +41,7 @@ import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -145,8 +146,13 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        return getJetSqlConnector(table)
-                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+        return getJetSqlConnector(table).fullScanReader(
+                dag,
+                table,
+                rel.filter(parameterMetadata),
+                rel.projection(parameterMetadata),
+                rel.eventTimePolicyProvider()
+        );
     }
 
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
@@ -287,6 +293,10 @@ public class CreateDagVisitor {
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
         return vertex;
+    }
+
+    public Vertex onWatermark(WatermarkPhysicalRel rel) {
+        throw QueryException.error("Ordering function cannot be applied to input table");
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
