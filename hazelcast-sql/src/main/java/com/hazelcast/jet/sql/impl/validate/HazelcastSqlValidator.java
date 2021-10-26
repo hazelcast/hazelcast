@@ -280,8 +280,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
+            case FULL:
+                throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
             default:
-                break;
+                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
         }
     }
 
