@@ -82,8 +82,9 @@ public class HazelcastSqlOperatorTableTest {
                     || operator instanceof HazelcastWindowTableFunction
                     || operator == HazelcastSqlOperatorTable.IN
                     || operator == HazelcastSqlOperatorTable.NOT_IN
-                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT
-            ) {
+                    || operator == HazelcastSqlOperatorTable.UNION
+                    || operator == HazelcastSqlOperatorTable.UNION_ALL
+                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT) {
                 continue;
             }
             boolean valid = operator.getReturnTypeInference() instanceof HazelcastReturnTypeInference;

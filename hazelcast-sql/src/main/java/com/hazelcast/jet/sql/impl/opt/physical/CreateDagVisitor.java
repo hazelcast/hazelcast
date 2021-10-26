@@ -34,14 +34,18 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -64,6 +68,7 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
@@ -75,6 +80,9 @@ import static com.hazelcast.sql.impl.expression.datetime.DateTimeUtils.asTimesta
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+
+    private static final int LOW_PRIORITY = 10;
+    private static final int HIGH_PRIORITY = 1;
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
@@ -146,8 +154,13 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        return getJetSqlConnector(table)
-                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+        return getJetSqlConnector(table).fullScanReader(
+                dag,
+                table,
+                rel.filter(parameterMetadata),
+                rel.projection(parameterMetadata),
+                rel.eventTimePolicyProvider()
+        );
     }
 
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
@@ -290,6 +303,10 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onWatermark(WatermarkPhysicalRel rel) {
+        throw QueryException.error("Ordering function cannot be applied to input table");
+    }
+
     public Vertex onSlidingWindow(SlidingWindowPhysicalRel rel) {
         int timestampFieldIndex = rel.timestampFieldIndex();
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider(parameterMetadata);
@@ -401,6 +418,41 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Hash Join",
+                SqlHashJoinP.supplier(
+                        joinInfo,
+                        rel.getRight().getRowType().getFieldCount()
+                )
+        );
+        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
+    }
+
+    public Vertex onUnion(UnionPhysicalRel rel) {
+        // Union[all=false] rel should be never be produced, and it is always replaced by
+        // UNION_TO_DISTINCT rule : Union[all=false] -> Union[all=true] + Aggregate.
+        if (!rel.all) {
+            throw new RuntimeException("Union[all=false] rel should never be produced");
+        }
+
+        Vertex merger = dag.newUniqueVertex(
+                "UnionMerger",
+                ProcessorSupplier.of(mapP(FunctionEx.identity()))
+        );
+
+        int ordinal = 0;
+        for (RelNode input : rel.getInputs()) {
+            Vertex inputVertex = ((PhysicalRel) input).accept(this);
+            Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
+            dag.edge(edge);
+        }
+        return merger;
+    }
+
     public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
@@ -470,6 +522,31 @@ public class CreateDagVisitor {
         }
         dag.edge(edge);
         return inputVertex;
+    }
+
+    private void connectJoinInput(
+            JetJoinInfo joinInfo,
+            RelNode leftInputRel,
+            RelNode rightInputRel,
+            Vertex joinVertex
+    ) {
+        Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
+        Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
+
+        Edge left = between(leftInput, joinVertex).priority(LOW_PRIORITY).broadcast().distributed();
+        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY).unicast().local();
+        if (joinInfo.isLeftOuter()) {
+            left = left.unicast().local();
+            right = right.broadcast().distributed();
+        }
+        if (joinInfo.isEquiJoin()) {
+            int[] leftIndices = joinInfo.leftEquiJoinIndices();
+            int[] rightIndices = joinInfo.rightEquiJoinIndices();
+            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
+            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
+        }
+        dag.edge(left);
+        dag.edge(right);
     }
 
     /**

@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
@@ -46,9 +47,11 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCoalesceFunct
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastExistsOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastNotPredicate;
@@ -120,6 +123,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlInfixOperator NOT_BETWEEN_SYMMETRIC = HazelcastBetweenOperator.NOT_BETWEEN_SYMMETRIC;
     public static final SqlBinaryOperator IN = HazelcastInOperator.IN;
     public static final SqlBinaryOperator NOT_IN = HazelcastInOperator.NOT_IN;
+    public static final SqlOperator EXISTS = HazelcastExistsOperator.INSTANCE;
 
     //#endregion
 
@@ -144,6 +148,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
     public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;
+
+    //#endregion
+
+    //#region Relational operator
+
+    public static final SqlOperator UNION = HazelcastUnionOperator.UNION;
+    public static final SqlOperator UNION_ALL = HazelcastUnionOperator.UNION_ALL;
 
     //#endregion
 
@@ -239,6 +250,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     //#region Windowing functions.
 
     public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
+    public static final SqlFunction IMPOSE_ORDER = new ImposeOrderFunction();
     public static final SqlFunction TUMBLE = new HazelcastTumbleTableFunction();
 
     //#endregion

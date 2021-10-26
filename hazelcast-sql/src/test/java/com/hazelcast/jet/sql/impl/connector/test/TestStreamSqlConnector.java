@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
@@ -43,6 +46,9 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -52,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
@@ -72,7 +79,6 @@ public class TestStreamSqlConnector implements SqlConnector {
     private static final String DELIMITER = ",";
     private static final String VALUES_DELIMITER = "\n";
     private static final String NULL = "null";
-    private static final String WATERMARK = "WATERMARK";
 
     public static void create(
             SqlService sqlService,
@@ -122,12 +128,20 @@ public class TestStreamSqlConnector implements SqlConnector {
         sqlService.execute(sql).updateCount();
     }
 
-    public static OffsetDateTime timestamp(long epochMillis) {
-        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
+    public static LocalTime time(long epochMillis) {
+        return timestampTz(epochMillis).toLocalTime();
     }
 
-    public static String[] watermark(long watermark) {
-        return new String[]{TestStreamSqlConnector.WATERMARK, String.valueOf(watermark)};
+    public static LocalDate date(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDate();
+    }
+
+    public static LocalDateTime timestamp(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDateTime();
+    }
+
+    public static OffsetDateTime timestampTz(long epochMillis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
     }
 
     @Override
@@ -152,7 +166,6 @@ public class TestStreamSqlConnector implements SqlConnector {
 
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
-
         assert names.length == types.length;
 
         List<MappingField> fields = new ArrayList<>(names.length);
@@ -181,7 +194,7 @@ public class TestStreamSqlConnector implements SqlConnector {
             fields.add(new TableField(names[i], resolveTypeForTypeFamily(QueryDataTypeFamily.valueOf(types[i])), false));
         }
 
-        List<Object> rows = new ArrayList<>();
+        List<Object[]> rows = new ArrayList<>();
         String[] rowsSerialized = options.get(OPTION_VALUES).split(VALUES_DELIMITER);
         for (String rowSerialized : rowsSerialized) {
             if (rowSerialized.isEmpty()) {
@@ -189,25 +202,18 @@ public class TestStreamSqlConnector implements SqlConnector {
             }
 
             String[] values = rowSerialized.split(DELIMITER);
+            assert values.length == fields.size();
 
-            if (rowSerialized.contains(WATERMARK)) {
-                assert values.length == 2 && values[0].equals(WATERMARK);
-
-                rows.add(Long.parseLong(values[1]));
-            } else {
-                assert values.length == fields.size();
-
-                Object[] row = new Object[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    String value = values[i];
-                    if (NULL.equals(value)) {
-                        row[i] = null;
-                    } else {
-                        row[i] = fields.get(i).getType().convert(values[i]);
-                    }
+            Object[] row = new Object[values.length];
+            for (int i = 0; i < values.length; i++) {
+                String value = values[i];
+                if (NULL.equals(value)) {
+                    row[i] = null;
+                } else {
+                    row[i] = fields.get(i).getType().convert(values[i]);
                 }
-                rows.add(row);
             }
+            rows.add(row);
         }
 
         return new TestStreamTable(this, schemaName, mappingName, fields, rows);
@@ -218,33 +224,35 @@ public class TestStreamSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         TestStreamTable table = (TestStreamTable) table0;
-
-        List<Object> rows = table.rows;
-
+        List<Object[]> rows = table.rows;
         StreamSourceTransform<Object> source = (StreamSourceTransform<Object>) SourceBuilder
                 .stream("stream", ctx -> {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
-                    return new TestStreamDataGenerator(rows, predicate, projection, evalContext);
+                    EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
+                            ? EventTimePolicy.noEventTime()
+                            : eventTimePolicyProvider.apply(null);
+                    return new TestStreamDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy);
                 })
                 .fillBufferFn(TestStreamDataGenerator::fillBuffer)
                 .build();
-        ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
+        ProcessorMetaSupplier pms = source.metaSupplierFn.apply(null);
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
     private static final class TestStreamTable extends JetTable {
 
-        private final List<Object> rows;
+        private final List<Object[]> rows;
 
         private TestStreamTable(
                 @Nonnull SqlConnector sqlConnector,
                 @Nonnull String schemaName,
                 @Nonnull String name,
                 @Nonnull List<TableField> fields,
-                @Nonnull List<Object> rows
+                @Nonnull List<Object[]> rows
         ) {
             super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()));
             this.rows = rows;
@@ -260,9 +268,9 @@ public class TestStreamSqlConnector implements SqlConnector {
 
         private final String schemaName;
         private final String name;
-        private final List<Object> rows;
+        private final List<Object[]> rows;
 
-        private TestStreamPlanObjectKey(String schemaName, String name, List<Object> rows) {
+        private TestStreamPlanObjectKey(String schemaName, String name, List<Object[]> rows) {
             this.schemaName = schemaName;
             this.name = name;
             this.rows = rows;
@@ -295,16 +303,22 @@ public class TestStreamSqlConnector implements SqlConnector {
         private final Iterator<Object> iterator;
 
         private TestStreamDataGenerator(
-                List<Object> rows,
+                List<Object[]> rows,
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
-                ExpressionEvalContext evalContext
+                ExpressionEvalContext evalContext,
+                EventTimePolicy<Object[]> eventTimePolicy
         ) {
+            EventTimeMapper<Object[]> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+            eventTimeMapper.addPartitions(1);
             this.iterator = rows.stream()
-                    .map(row -> row instanceof Long
-                            ? new Watermark((long) row)
-                            : ExpressionUtil.evaluate(predicate, projections, (Object[]) row, evalContext)
-                    ).filter(Objects::nonNull)
+                    .flatMap(row -> {
+                        Object[] evaluated = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
+                        Traverser<Object> traverser = evaluated == null
+                                ? Traversers.empty()
+                                : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
+                        return toStream(traverser);
+                    })
                     .iterator();
         }
 
@@ -313,6 +327,15 @@ public class TestStreamSqlConnector implements SqlConnector {
             while (iterator.hasNext() && i++ < MAX_BATCH_SIZE) {
                 buffer.add(iterator.next());
             }
+        }
+
+        private static Stream<Object> toStream(Traverser<Object> traverser) {
+            List<Object> objects = new ArrayList<>();
+            Object object;
+            while ((object = traverser.next()) != null) {
+                objects.add(object);
+            }
+            return objects.stream();
         }
     }
 }

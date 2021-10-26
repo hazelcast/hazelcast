@@ -82,6 +82,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IN);
         SUPPORTED_KINDS.add(SqlKind.NOT_IN);
         SUPPORTED_KINDS.add(SqlKind.BETWEEN);
+        SUPPORTED_KINDS.add(SqlKind.EXISTS);
 
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
@@ -119,6 +120,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CASE);
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
+        SUPPORTED_KINDS.add(SqlKind.UNION);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -196,6 +198,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Windowing
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.IMPOSE_ORDER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TUMBLE);
 
         // Extensions
@@ -355,6 +358,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case OTHER_FUNCTION:
             case EXTRACT:
             case POSITION:
+            case EXISTS:
                 processOther(call);
                 break;
 

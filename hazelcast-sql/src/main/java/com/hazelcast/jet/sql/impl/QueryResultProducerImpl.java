@@ -89,6 +89,11 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
+        if (limit <= 0) {
+            done.compareAndSet(null, new ResultLimitReachedException());
+            ensureNotDone();
+        }
+
         while (offset > 0 && inbox.poll() != null) {
             offset--;
         }

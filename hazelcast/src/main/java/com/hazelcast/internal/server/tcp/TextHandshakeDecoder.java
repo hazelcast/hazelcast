@@ -32,17 +32,20 @@ public class TextHandshakeDecoder
 
     @Override
     protected boolean verifyProtocol(String incomingProtocol) {
+        super.verifyProtocolCalled = true;
         handleUnexpectedProtocol(incomingProtocol);
         if (ProtocolType.REST.equals(supportedProtocol)) {
             if (!RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
                 encoder.signalWrongProtocol(
-                        "Unsupported protocol exchange detected, expected protocol: REST");
+                        "Unsupported protocol exchange detected, expected protocol: REST"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
                 return false;
             }
         } else {
             if (!MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(incomingProtocol)) {
                 encoder.signalWrongProtocol(
-                        "Unsupported protocol exchange detected, expected protocol: MEMCACHED");
+                        "Unsupported protocol exchange detected, expected protocol: MEMCACHED"
+                                + ", actual protocol or first three bytes are: " + incomingProtocol);
                 return false;
             }
         }

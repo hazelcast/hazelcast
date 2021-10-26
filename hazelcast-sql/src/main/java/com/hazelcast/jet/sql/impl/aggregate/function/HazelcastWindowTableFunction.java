@@ -66,6 +66,7 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
         return ordinal != 0;
     }
 
+    // TODO: ImposeOrderFunction.WindowOperandMetadata
     protected static final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
         public WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {

@@ -1493,7 +1493,7 @@
 
     <xs:complexType name="serialization-factory">
         <xs:attributeGroup ref="class-or-bean-name"/>
-        <xs:attribute name="factory-id" type="xs:string" use="required"/>
+        <xs:attribute name="factory-id" type="parameterized-integer" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="global-serializer">
@@ -2346,12 +2346,12 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="timeout-milliseconds" type="xs:integer" minOccurs="0" default="1000">
+            <xs:element name="timeout-milliseconds" type="parameterized-integer" minOccurs="0" default="1000">
                 <xs:annotation>
                     <xs:documentation>Timeout in Milliseconds before declaring a failed ping</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="ttl" type="xs:integer" minOccurs="0" default="255">
+            <xs:element name="ttl" type="parameterized-integer" minOccurs="0" default="255">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of times the IP Datagram (ping) can be forwarded, in most cases
@@ -2360,12 +2360,12 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="parallel-mode" type="xs:boolean" minOccurs="0" default="true">
+            <xs:element name="parallel-mode" type="parameterized-boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="fail-fast-on-startup" type="xs:boolean" minOccurs="0" default="true">
+            <xs:element name="fail-fast-on-startup" type="parameterized-boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
                         Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
@@ -2373,20 +2373,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="max-attempts" type="xs:integer" minOccurs="0" default="2">
+            <xs:element name="max-attempts" type="parameterized-integer" minOccurs="0" default="2">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of consecutive failed attempts before declaring a member suspect
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="interval-milliseconds" type="xs:integer" minOccurs="0" default="1000">
+            <xs:element name="interval-milliseconds" type="parameterized-integer" minOccurs="0" default="1000">
                 <xs:annotation>
                     <xs:documentation>Time in milliseconds between each ICMP ping</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" default="false">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>Enables ICMP Pings to detect and suspect dead members</xs:documentation>
             </xs:annotation>
@@ -3174,7 +3174,7 @@
 
     <xs:simpleType name="parameterizedValueType">
         <xs:restriction base="xs:string">
-            <xs:pattern value="[$#]\{([^=^:]+)\}"/>
+            <xs:pattern value="[$#]\{([^=^:]+)(:.*)?\}"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -3225,6 +3225,10 @@
 
     <xs:simpleType name="parameterized-non-negative-integer">
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="parameterized-integer">
+        <xs:union memberTypes="xs:integer parameterizedValueType"/>
     </xs:simpleType>
 
     <xs:simpleType name="cp-group-size">
@@ -3670,7 +3674,7 @@
     <xs:complexType name="client-metrics">
         <xs:all>
             <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
-            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+            <xs:element name="collection-frequency-seconds" type="parameterized-unsigned-int" default="5" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the metrics collection frequency in seconds.
@@ -3681,7 +3685,7 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Master-switch for the metrics system. Controls whether
@@ -3876,7 +3880,7 @@
     </xs:simpleType>
 
     <xs:complexType name="eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="10000"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>
@@ -3884,7 +3888,7 @@
     </xs:complexType>
 
     <xs:complexType name="eviction-map">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="0"/>
         <xs:attribute name="max-size-policy" type="max-size-policy-map" default="PER_NODE"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>
@@ -3894,8 +3898,8 @@
     <xs:complexType name="preloader">
         <xs:attribute name="enabled" type="parameterized-boolean" default="false"/>
         <xs:attribute name="directory" type="xs:string" default=""/>
-        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600"/>
-        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600"/>
+        <xs:attribute name="store-initial-delay-seconds" type="parameterized-positive-integer" default="600"/>
+        <xs:attribute name="store-interval-seconds" type="parameterized-positive-integer" default="600"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
@@ -3963,6 +3967,10 @@
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
+        <xs:union memberTypes="memory-unit-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="memory-unit-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
@@ -4006,7 +4014,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
+        <xs:attribute name="enabled" default="false" type="parameterized-boolean">
             <xs:annotation>
                 <xs:documentation>
                     Sets if using persistent memory as Hazelcast native memory is enabled.
@@ -4024,6 +4032,10 @@
     </xs:complexType>
 
     <xs:simpleType name="persistent-memory-mode">
+            <xs:union memberTypes="persistent-memory-mode-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="persistent-memory-mode-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="MOUNTED">
                 <xs:annotation>
@@ -4042,6 +4054,7 @@
         </xs:restriction>
     </xs:simpleType>
 
+
     <xs:complexType name="persistent-memory-directory">
         <xs:annotation>
             <xs:documentation>
@@ -4056,7 +4069,7 @@
         </xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="numa-node" type="xs:int" default="-1">
+                <xs:attribute name="numa-node" type="parameterized-integer" default="-1">
                     <xs:annotation>
                         <xs:documentation>
                             The NUMA node that the persistent memory mounted
@@ -5401,7 +5414,7 @@
     </xs:complexType>
 
     <xs:complexType name="metrics-jmx">
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to

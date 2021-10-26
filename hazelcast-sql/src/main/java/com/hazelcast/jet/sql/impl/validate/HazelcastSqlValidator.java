@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -180,7 +181,31 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
+
+        if (countOrderingFunctions(node) > 1) {
+            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
+        }
+
         isInfiniteRows = containsStreamingSource(node);
+    }
+
+    private static int countOrderingFunctions(SqlNode node) {
+        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
+            int count;
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof ImposeOrderFunction) {
+                    count++;
+                }
+                return super.visit(call);
+            }
+        }
+
+        OrderingFunctionCounter counter = new OrderingFunctionCounter();
+        node.accept(counter);
+        return counter.count;
     }
 
     @Override

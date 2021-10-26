@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.sql.impl.aggregate;
+package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * A wrapper for Object[] supporting equals/hashCode.
+ * A wrapper for Object[] supporting equals/hashCode and hz-serialization.
  */
 public final class ObjectArrayKey implements DataSerializable {
 
@@ -72,6 +72,14 @@ public final class ObjectArrayKey implements DataSerializable {
         return Arrays.hashCode(array);
     }
 
+    public static ObjectArrayKey project(Object[] row, int[] indices) {
+        Object[] key = new Object[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            key[i] = row[indices[i]];
+        }
+        return new ObjectArrayKey(key);
+    }
+
     /**
      * Return a function that maps an input `Object[]` to an {@link
      * ObjectArrayKey}, extracting the fields given in {@code indices}.
@@ -80,12 +88,6 @@ public final class ObjectArrayKey implements DataSerializable {
      * @return the projection function
      */
     public static FunctionEx<Object[], ObjectArrayKey> projectFn(int[] indices) {
-        return row -> {
-            Object[] key = new Object[indices.length];
-            for (int i = 0; i < indices.length; i++) {
-                key[i] = row[indices[i]];
-            }
-            return new ObjectArrayKey(key);
-        };
+        return row -> project(row, indices);
     }
 }
