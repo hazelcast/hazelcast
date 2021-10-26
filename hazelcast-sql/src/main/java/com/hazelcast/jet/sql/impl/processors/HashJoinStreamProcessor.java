@@ -33,17 +33,15 @@ import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.SqlResultImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import javax.annotation.Nonnull;
@@ -52,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.extendArray;
@@ -65,25 +62,21 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
     private final JetJoinInfo joinInfo;
     private final int rightInputColumnCount;
     private final DAG subDag;
-    private final SqlRowMetadata rightRowMetadata;
 
     private ExpressionEvalContext evalContext;
     private Multimap<ObjectArrayKey, Object[]> hashMap;
     private FlatMapper<Object[], Object[]> flatMapper;
     private JetService jet;
     private QueryResultRegistry queryResultRegistry;
-    private UUID uuid;
 
     public HashJoinStreamProcessor(
             JetJoinInfo joinInfo,
             int rightInputColumnCount,
-            DAG subDag,
-            SqlRowMetadata rightRowMetadata
+            DAG subDag
     ) {
         this.joinInfo = joinInfo;
         this.rightInputColumnCount = rightInputColumnCount;
         this.subDag = subDag;
-        this.rightRowMetadata = rightRowMetadata;
     }
 
     @Override
@@ -96,7 +89,6 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
                 .getSqlService()
                 .getInternalService()
                 .getResultRegistry();
-        this.uuid = getNodeEngine(context.hazelcastInstance()).getClusterService().getLocalMember().getUuid();
     }
 
     private Traverser<Object[]> join(Object[] leftRow) {
@@ -117,7 +109,7 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
         return Traversers.traverseIterable(output);
     }
 
-    private SqlResult executeDag() {
+    private ResultIterator<Row> executeDag() {
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, evalContext.getArguments())
                 .setTimeoutMillis(TIMEOUT);
@@ -137,14 +129,7 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
             queryResultRegistry.remove(jobId);
             throw e;
         }
-        QueryId queryId = QueryId.create(uuid);
-        return new SqlResultImpl(
-                queryId,
-                queryResultProducer,
-                rightRowMetadata,
-                false,
-                evalContext.getSerializationService()
-        );
+        return queryResultProducer.iterator();
     }
 
     @Override
@@ -152,9 +137,9 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
         assert ordinal == 0;
 
         hashMap.clear();
-        SqlResult rightResult = executeDag();
-        int rightLen = rightResult.getRowMetadata().getColumnCount();
-        rightResult.iterator().forEachRemaining(row -> {
+        ResultIterator<Row> rightResult = executeDag();
+        rightResult.forEachRemaining(row -> {
+            int rightLen = row.getColumnCount();
             Object[] rightRow = rowToArray(row, rightLen);
             ObjectArrayKey joinKeys = ObjectArrayKey.project(rightRow, joinInfo.rightEquiJoinIndices());
             hashMap.put(joinKeys, rightRow);
@@ -162,10 +147,10 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
         super.process(ordinal, inbox);
     }
 
-    private static Object[] rowToArray(SqlRow row, int len) {
+    private static Object[] rowToArray(Row row, int len) {
         Object[] result = new Object[len];
         for (int i = 0; i < len; i++) {
-            result[i] = row.getObject(i);
+            result[i] = row.get(i);
         }
         return result;
     }
@@ -183,9 +168,9 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
     public static HashJoinStreamProcessorSupplier supplier(
             JetJoinInfo joinInfo,
             int rightInputColumnCount,
-            DAG dag,
-            SqlRowMetadata rowMetadata) {
-        return new HashJoinStreamProcessorSupplier(joinInfo, rightInputColumnCount, dag, rowMetadata);
+            DAG dag
+    ) {
+        return new HashJoinStreamProcessorSupplier(joinInfo, rightInputColumnCount, dag);
     }
 
     private static final class HashJoinStreamProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -201,13 +186,11 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
         private HashJoinStreamProcessorSupplier(
                 JetJoinInfo joinInfo,
                 int rightInputColumnCount,
-                DAG subDag,
-                SqlRowMetadata rowMetadata
+                DAG subDag
         ) {
             this.joinInfo = joinInfo;
             this.rightInputColumnCount = rightInputColumnCount;
             this.subDag = subDag;
-            this.rightRowMetadata = rowMetadata;
         }
 
         @Nonnull
@@ -215,7 +198,7 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
         public Collection<? extends Processor> get(int count) {
             List<HashJoinStreamProcessor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                processors.add(new HashJoinStreamProcessor(joinInfo, rightInputColumnCount, subDag, rightRowMetadata));
+                processors.add(new HashJoinStreamProcessor(joinInfo, rightInputColumnCount, subDag));
             }
             return processors;
         }
@@ -225,7 +208,6 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
             out.writeObject(joinInfo);
             out.writeInt(rightInputColumnCount);
             out.writeObject(subDag);
-            out.writeObject(rightRowMetadata);
         }
 
         @Override
@@ -233,7 +215,6 @@ public class HashJoinStreamProcessor extends AbstractProcessor {
             joinInfo = in.readObject();
             rightInputColumnCount = in.readInt();
             subDag = in.readObject();
-            rightRowMetadata = in.readObject();
         }
     }
 }

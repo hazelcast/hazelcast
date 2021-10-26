@@ -534,7 +534,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
-    public static SqlRowMetadata createRowMetadata(
+    private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
             List<QueryDataType> columnTypes,
             List<RelDataTypeField> fields

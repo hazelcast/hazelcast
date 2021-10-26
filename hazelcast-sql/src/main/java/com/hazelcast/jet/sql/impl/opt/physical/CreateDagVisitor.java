@@ -42,7 +42,6 @@ import com.hazelcast.jet.sql.impl.processors.HashJoinProcessor;
 import com.hazelcast.jet.sql.impl.processors.HashJoinStreamProcessor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -69,7 +68,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.sql.impl.CalciteSqlOptimizer.createRowMetadata;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -324,20 +322,13 @@ public class CreateDagVisitor {
         } else {
             CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
             visitor.onRoot(new RootRel(rel.getRight()));
-            SqlRowMetadata rowMetadata = createRowMetadata(
-                    rel.getRight().getRowType().getFieldNames(),
-                    ((PhysicalRel) rel.getRight()).schema(parameterMetadata).getTypes(),
-                    rel.getRight().getRowType().getFieldList()
-            );
             Vertex joinVertex = dag.newUniqueVertex(
                     "Hash Join (Streaming)",
                     forceTotalParallelismOne(
                             HashJoinStreamProcessor.supplier(
                                     joinInfo,
                                     rel.getRight().getRowType().getFieldCount(),
-                                    visitor.getDag(),
-                                    rowMetadata
-                                    ),
+                                    visitor.getDag()),
                             localMemberAddress
                     )
             );
