@@ -110,6 +110,21 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void sqlCreateIndexWithDefaultTypeTest() {
+        createMapping(MAP_NAME, Integer.class, Integer.class);
+
+        String indexName = SqlTestSupport.randomName();
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this)";
+        String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
+
+        checkPlan(false, true, selectSql);
+
+        instance().getSql().execute(sql);
+
+        checkPlan(true, true, selectSql);
+    }
+
+    @Test
     public void indexArgsCannotBeDuplicatedTest() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this, this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))

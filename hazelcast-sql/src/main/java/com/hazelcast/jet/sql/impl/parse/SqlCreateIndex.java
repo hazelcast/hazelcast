@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCreate;
@@ -41,11 +42,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateMapping.isMappingNameValid;
 import static java.util.Objects.requireNonNull;
 
 /**
  * CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
- * TYPE index_type
+ * [ TYPE index_type ]
  * [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
  */
 public class SqlCreateIndex extends SqlCreate {
@@ -76,7 +78,7 @@ public class SqlCreateIndex extends SqlCreate {
         this.name = requireNonNull(name, "Name should not be null");
         this.mappingName = requireNonNull(mappingName, "Mapping name should not be null");
         this.columns = requireNonNull(columns, "Columns should not be null");
-        this.type = requireNonNull(type, "Type should not be null");
+        this.type = type;
         this.options = requireNonNull(options, "Options should not be null");
     }
 
@@ -171,6 +173,10 @@ public class SqlCreateIndex extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (!isMappingNameValid(mappingName)) {
+            throw validator.newValidationError(mappingName, RESOURCE.mappingIncorrectSchema());
+        }
+
         Set<String> columnNames = new HashSet<>();
         for (SqlNode column : columns.getList()) {
             String name = ((SqlIdentifier) requireNonNull(column)).getSimple();
@@ -179,10 +185,9 @@ public class SqlCreateIndex extends SqlCreate {
             }
         }
 
-        String stringType = type.toString().toLowerCase();
         IndexType indexType = getIndexType();
         if (!indexType.equals(IndexType.BITMAP) && !options.getList().isEmpty()) {
-            throw validator.newValidationError(type, RESOURCE.unsupportedIndexType(stringType));
+            throw validator.newValidationError(type, RESOURCE.unsupportedIndexType(indexType.name()));
         }
 
         if (indexType.equals(IndexType.BITMAP) && options.getList().isEmpty()) {
@@ -207,7 +212,14 @@ public class SqlCreateIndex extends SqlCreate {
         }
     }
 
+    /**
+     * @return default index type if type is NULL, defined type otherwise.
+     * @see com.hazelcast.config.IndexConfig
+     */
     private IndexType getIndexType() {
+        if (type == null) {
+            return IndexConfig.DEFAULT_TYPE;
+        }
         String indexType = type.toString().toLowerCase();
         IndexType type;
         switch (indexType) {

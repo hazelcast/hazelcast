@@ -242,7 +242,7 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
     SqlIdentifier name;
     SqlIdentifier mappingName;
     SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier type;
+    SqlIdentifier type = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
 }
@@ -257,9 +257,10 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
 
         mappingName = SimpleIdentifier()
         columns = IndexAttributes()
-
-        <TYPE>
-        type = SimpleIdentifier()
+        [
+            <TYPE>
+            type = SimpleIdentifier()
+        ]
         [
             <OPTIONS>
             sqlOptions = SqlOptions()
