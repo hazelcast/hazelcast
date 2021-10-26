@@ -61,7 +61,6 @@ public class SqlCreateIndex extends SqlCreate {
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
-
     public SqlCreateIndex(
             SqlIdentifier name,
             SqlIdentifier mappingName,
@@ -222,7 +221,7 @@ public class SqlCreateIndex extends SqlCreate {
                 break;
             default:
                 throw QueryException.error(
-                        "Can't create index : wrong index type. Only HASH, SORTED and BITMAP indices are supported."
+                        "Can't create index: wrong index type. Only HASH, SORTED and BITMAP types are supported."
                 );
         }
         return type;
