@@ -37,6 +37,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -57,8 +58,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 
 import javax.annotation.Nullable;
-import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +75,6 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
-import static com.hazelcast.sql.impl.expression.datetime.DateTimeUtils.asTimestampWithTimezone;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
@@ -308,7 +306,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindow(SlidingWindowPhysicalRel rel) {
-        int timestampFieldIndex = rel.timestampFieldIndex();
+        int orderingFieldIndex = rel.orderingFieldIndex();
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider(parameterMetadata);
 
         Vertex vertex = dag.newUniqueVertex(
@@ -316,18 +314,7 @@ public class CreateDagVisitor {
                 mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
-                            return row -> {
-                                OffsetDateTime timestamp = (OffsetDateTime) row[timestampFieldIndex];
-                                long timestampMillis = timestamp.toInstant().toEpochMilli();
-                                long windowStartMillis = windowPolicy.floorFrameTs(timestampMillis);
-                                long windowEndMillis = windowPolicy.higherFrameTs(timestampMillis);
-
-                                Object[] result = Arrays.copyOf(row, row.length + 2);
-                                result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, timestamp.getOffset());
-                                result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, timestamp.getOffset());
-
-                                return result;
-                            };
+                            return row -> WindowUtils.enhanceWithWindowEdges(row, orderingFieldIndex, windowPolicy);
                         }),
                         (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
                 )
@@ -341,7 +328,7 @@ public class CreateDagVisitor {
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.timestampFn(null);
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(
@@ -365,7 +352,7 @@ public class CreateDagVisitor {
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.timestampFn(null);
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(

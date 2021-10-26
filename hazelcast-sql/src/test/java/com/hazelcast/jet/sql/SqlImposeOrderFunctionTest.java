@@ -108,9 +108,9 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
     @Test
     @Parameters(method = "validArguments")
-    public void test_validArguments(QueryDataTypeFamily timestampType, String maxLag, Object[]... values) {
+    public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType), values);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
@@ -141,9 +141,9 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
     @Test
     @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily timestampType, String maxLag) {
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType));
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))")

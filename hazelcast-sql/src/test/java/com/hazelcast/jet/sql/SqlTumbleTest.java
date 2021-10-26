@@ -18,24 +18,42 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.date;
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.time;
+import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestamp;
 import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestampTz;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(JUnitParamsRunner.class)
 public class SqlTumbleTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -46,18 +64,104 @@ public class SqlTumbleTest extends SqlTestSupport {
         sqlService = instance().getSql();
     }
 
+    @SuppressWarnings("unused")
+    private Object[] validArguments() {
+        return new Object[]{
+                new Object[]{
+                        TINYINT,
+                        "1",
+                        row((byte) 0), row((byte) 2)
+                },
+                new Object[]{
+                        SMALLINT,
+                        "2",
+                        row((short) 0), row((short) 2)
+                },
+                new Object[]{
+                        INTEGER,
+                        "3",
+                        row(0), row(2)
+                },
+                new Object[]{
+                        BIGINT,
+                        "4",
+                        row(0L), row(2L)
+                },
+                new Object[]{
+                        TIME,
+                        "INTERVAL '0.005' SECOND",
+                        row(time(0)), row(time(2))
+                },
+                new Object[]{
+                        DATE,
+                        "INTERVAL '0.006' SECOND",
+                        row(date(0)), row(date(2))
+                },
+                new Object[]{
+                        TIMESTAMP,
+                        "INTERVAL '0.007' SECOND",
+                        row(timestamp(0)), row(timestamp(2))
+                },
+                new Object[]{
+                        TIMESTAMP_WITH_TIME_ZONE,
+                        "INTERVAL '0.008' SECOND",
+                        row(timestampTz(0)), row(timestampTz(2))
+                },
+        };
+    }
+
     @Test
-    public void test_windowMetadata() {
-        String name = createTable();
+    @Parameters(method = "validArguments")
+    public void test_validArguments(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(
+                sqlService,
+                name,
+                singletonList("ts"),
+                singletonList(orderingColumnType),
+                values
+        );
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " +
-                "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), INTERVAL '1' DAY))")
+                "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), " + windowSize + "))")
         ) {
             assertThat(result.getRowMetadata().findColumn("window_start")).isGreaterThan(-1);
-            assertThat(result.getRowMetadata().getColumn(3).getType()).isEqualTo(SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
+            assertThat(result.getRowMetadata().getColumn(0).getType()).isEqualTo(orderingColumnType.getPublicType());
             assertThat(result.getRowMetadata().findColumn("window_end")).isGreaterThan(-1);
-            assertThat(result.getRowMetadata().getColumn(4).getType()).isEqualTo(SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
+            assertThat(result.getRowMetadata().getColumn(1).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.iterator()).hasNext();
         }
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] invalidArguments() {
+        return new Object[]{
+                new Object[]{TINYINT, "INTERVAL '0.001' SECOND"},
+                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND"},
+                new Object[]{INTEGER, "INTERVAL '0.003' SECOND"},
+                new Object[]{BIGINT, "INTERVAL '0.004' SECOND"},
+                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND"},
+                new Object[]{DECIMAL, "6"},
+                new Object[]{REAL, "INTERVAL '0.007' SECOND"},
+                new Object[]{REAL, "8"},
+                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND"},
+                new Object[]{DOUBLE, "10"},
+                new Object[]{TIME, "11"},
+                new Object[]{DATE, "12"},
+                new Object[]{TIMESTAMP, "13"},
+                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14"},
+        };
+    }
+
+    @Test
+    @Parameters(method = "invalidArguments")
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String windowSize) {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
+                "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), " + windowSize + "))")
+        ).hasMessageContaining("Cannot apply 'TUMBLE' function to [ROW, COLUMN_LIST");
     }
 
     @Test
@@ -357,7 +461,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "WHERE ts > '1970-01-01T00:00:00.000Z' " +
+                        "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
                 asList(
                         new Row(timestampTz(0L), "Bob", 1L),
@@ -505,7 +609,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "WHERE ts > '1970-01-01T00:00:00.000Z' " +
+                        "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY window_start, name",
                 asList(
                         new Row(timestampTz(0L), "Bob", 1),
@@ -652,7 +756,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "WHERE ts > '1970-01-01T00:00:00.000Z' " +
+                        "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY window_start, name",
                 asList(
                         new Row(timestampTz(0L), "Bob", 2),
@@ -827,7 +931,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "WHERE ts > '1970-01-01T00:00:00.000Z' " +
+                        "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
                 asList(
                         new Row(timestampTz(0L), "Bob", 1L),
@@ -1004,7 +1108,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "WHERE ts > '1970-01-01T00:00:00.000Z' " +
+                        "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
                 asList(
                         new Row(timestampTz(0L), "Bob", new BigDecimal(1)),
@@ -1056,6 +1160,77 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
+    @SuppressWarnings("unused")
+    private Object[] orderingColumnTypes() {
+        return new Object[]{
+                new Object[]{
+                        TINYINT,
+                        "2",
+                        row((byte) 0), row((byte) 4)
+                },
+                new Object[]{
+                        SMALLINT,
+                        "2",
+                        row((short) 0), row((short) 4)
+                },
+                new Object[]{
+                        INTEGER,
+                        "2",
+                        row(0), row(4)
+                },
+                new Object[]{
+                        BIGINT,
+                        "2",
+                        row(0L), row(4L)
+                },
+                new Object[]{
+                        TIME,
+                        "INTERVAL '0.002' SECOND",
+                        row(time(0)), row(time(4))
+                },
+                new Object[]{
+                        DATE,
+                        "INTERVAL '2' DAYS",
+                        row(date(0)), row(date(345_600_000))
+                },
+                new Object[]{
+                        TIMESTAMP,
+                        "INTERVAL '0.002' SECOND",
+                        row(timestamp(0)), row(timestamp(4))
+                },
+                new Object[]{
+                        TIMESTAMP_WITH_TIME_ZONE,
+                        "INTERVAL '0.002' SECOND",
+                        row(timestampTz(0)), row(timestampTz(4))
+                },
+        };
+    }
+
+    @Test
+    @Parameters(method = "orderingColumnTypes")
+    public void test_orderingColumnTypes(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(
+                sqlService,
+                name,
+                singletonList("ts"),
+                singletonList(orderingColumnType),
+                values
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT COUNT(*) FROM " +
+                        "TABLE(TUMBLE(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + windowSize + ")))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , " + windowSize +
+                        ")) " +
+                        "GROUP BY window_start",
+                singletonList(new Row(1L))
+        );
+    }
+
+
     @Test
     public void test_nested_filter() {
         String name = createTable(
@@ -1074,7 +1249,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
-                        "       )) WHERE ts > '1970-01-01T00:00:00.000Z'" +
+                        "       )) WHERE ts > '" + timestampTz(0) + "' " +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
                         "   , INTERVAL '0.003' SECOND" +

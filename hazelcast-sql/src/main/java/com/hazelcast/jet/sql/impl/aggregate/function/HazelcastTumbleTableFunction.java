@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
-import com.hazelcast.jet.sql.impl.validate.operand.SqlDaySecondIntervalOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operand.AnyOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -31,16 +31,10 @@ public class HazelcastTumbleTableFunction extends HazelcastWindowTableFunction {
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
             new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
-            new HazelcastTableFunctionParameter(
-                    2,
-                    "window_size",
-                    SqlTypeName.INTERVAL_SECOND,
-                    false,
-                    SqlDaySecondIntervalOperandChecker.INSTANCE
-            )
+            new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
     public HazelcastTumbleTableFunction() {
-        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS));
+        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS), 1);
     }
 }

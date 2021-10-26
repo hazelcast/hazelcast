@@ -19,10 +19,10 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nullable;
-import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -84,7 +84,7 @@ public final class WindowProperties {
 
         int index();
 
-        ToLongFunctionEx<Object[]> timestampFn(ExpressionEvalContext context);
+        ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context);
 
         SlidingWindowPolicy windowPolicy(ExpressionEvalContext context);
 
@@ -107,12 +107,9 @@ public final class WindowProperties {
         }
 
         @Override
-        public ToLongFunctionEx<Object[]> timestampFn(ExpressionEvalContext context) {
+        public ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context) {
             int index = this.index;
-            return row -> {
-                OffsetDateTime timestamp = (OffsetDateTime) row[index];
-                return timestamp.toInstant().toEpochMilli();
-            };
+            return row -> WindowUtils.extractMillis(row[index]);
         }
 
         @Override
@@ -142,12 +139,12 @@ public final class WindowProperties {
         }
 
         @Override
-        public ToLongFunctionEx<Object[]> timestampFn(ExpressionEvalContext context) {
+        public ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context) {
             int index = this.index;
             SlidingWindowPolicy windowPolicy = this.windowPolicyProvider.apply(context);
             return row -> {
-                OffsetDateTime timestamp = (OffsetDateTime) row[index];
-                return timestamp.toInstant().toEpochMilli() - windowPolicy.windowSize();
+                long millis = WindowUtils.extractMillis(row[index]);
+                return millis - windowPolicy.windowSize();
             };
         }
 

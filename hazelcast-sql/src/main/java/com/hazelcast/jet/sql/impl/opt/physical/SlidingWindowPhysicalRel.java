@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
@@ -26,8 +27,6 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -64,18 +63,17 @@ public class SlidingWindowPhysicalRel extends TableFunctionScan implements Physi
         checkTrue(operator == HazelcastSqlOperatorTable.TUMBLE, "Unsupported operator: " + operator);
     }
 
-    public int timestampFieldIndex() {
+    public int orderingFieldIndex() {
         return ((RexInputRef) ((RexCall) operand(1)).getOperands().get(0)).getIndex();
     }
 
-    @SuppressWarnings("unchecked")
     public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider(
             QueryParameterMetadata parameterMetadata
     ) {
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         if (operator() == HazelcastSqlOperatorTable.TUMBLE) {
-            Expression<SqlDaySecondInterval> windowSizeExpression = (Expression<SqlDaySecondInterval>) operand(2).accept(visitor);
-            return context -> tumblingWinPolicy(windowSizeExpression.eval(EmptyRow.INSTANCE, context).getMillis());
+            Expression<?> windowSizeExpression = operand(2).accept(visitor);
+            return context -> tumblingWinPolicy(WindowUtils.extractMillis(windowSizeExpression, context));
         } else {
             throw new IllegalArgumentException();
         }
