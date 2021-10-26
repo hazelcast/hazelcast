@@ -117,6 +117,19 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void indexExistsTest() {
+        createMapping(MAP_NAME, Integer.class, Integer.class);
+
+        String indexName = "idx";
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
+        instance().getSql().execute(sql);
+
+        String sql2 = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
+        assertThatThrownBy(() -> instance().getSql().execute(sql2))
+                .hasMessageContaining("Can't create index : index 'idx' already exists");
+    }
+
+    @Test
     public void indexOptionsAbsentTest() {
         String sql1 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (__key) TYPE BITMAP " +
                 "OPTIONS ('unique_key' = '__key')";

@@ -45,7 +45,11 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -112,6 +116,14 @@ public class PlanExecutor {
         Mapping mapping = catalog.getMapping(plan.mappingName());
         if (mapping == null) {
             throw QueryException.error("Can't create index : mapping '" + plan.mappingName() + "' doesn't exist.");
+        }
+
+        if (plan.ifNotExists()) {
+            String indexName = plan.indexName();
+            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(mapping.externalName()));
+            if (mapContainer.getIndexes().getIndex(indexName) != null) {
+                throw QueryException.error("Can't create index : index '" + plan.indexName() + "' already exists.");
+            }
         }
 
         IndexConfig indexConfig = new IndexConfig(plan.indexType(), plan.attributes())
@@ -416,5 +428,12 @@ public class PlanExecutor {
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
+    }
+
+    private static MapContainer getMapContainer(IMap map) {
+        MapProxyImpl mapProxy = (MapProxyImpl) map;
+        MapService mapService = (MapService) mapProxy.getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainers().get(map.getName());
     }
 }
