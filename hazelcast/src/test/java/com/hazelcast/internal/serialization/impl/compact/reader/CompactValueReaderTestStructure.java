@@ -61,7 +61,22 @@ public class CompactValueReaderTestStructure {
         LocalTimeArray("localTimes"),
         LocalDateArray("localDates"),
         LocalDateTimeArray("localDateTimes"),
-        OffsetDateTimeArray("offsetDateTimes");
+        OffsetDateTimeArray("offsetDateTimes"),
+
+        NullableBoolean("nullableBoolean_"),
+        NullableByte("nullableByte_"),
+        NullableShort("nullableShort_"),
+        NullableInteger("nullableInt_"),
+        NullableLong("nullableLong_"),
+        NullableFloat("nullableFloat_"),
+        NullableDouble("nullableDouble_"),
+        NullableBooleanArray("nullableBooleans"),
+        NullableByteArray("nullableBytes"),
+        NullableShortArray("nullableShorts"),
+        NullableIntegerArray("nullableInts"),
+        NullableLongArray("nullableLongs"),
+        NullableFloatArray("nullableFloats"),
+        NullableDoubleArray("nullableDoubles");
 
         PrimitiveFields(String field) {
             this.field = field;
@@ -70,26 +85,30 @@ public class CompactValueReaderTestStructure {
         final String field;
 
         static List<PrimitiveFields> getPrimitives() {
-            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
-                    LocalDate, LocalDateTime, OffsetDateTime);
+            return asList(Boolean, Byte, Char, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
+                    LocalDate, LocalDateTime, OffsetDateTime, NullableBoolean, NullableByte, NullableShort,
+                    NullableInteger, NullableInteger, NullableLong, NullableFloat, NullableDouble);
         }
 
         static List<PrimitiveFields> getPrimitiveArrays() {
-            return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray,
-                     BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray);
+            return asList(BooleanArray, ByteArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray,
+                    UTFArray, BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray,
+                    NullableBooleanArray, NullableByteArray, NullableShortArray, NullableIntegerArray, NullableLongArray,
+                    NullableFloatArray, NullableDoubleArray
+            );
         }
 
     }
 
     public static class PrimitiveObject {
 
+        boolean boolean_;
         byte byte_;
         short short_;
         int int_;
         long long_;
         float float_;
         double double_;
-        boolean boolean_;
         char char_;
         String string_;
         BigDecimal bigDecimal_;
@@ -98,13 +117,13 @@ public class CompactValueReaderTestStructure {
         LocalDateTime localDateTime_;
         OffsetDateTime offsetDateTime_;
 
+        boolean[] booleans;
         byte[] bytes;
         short[] shorts;
         int[] ints;
         long[] longs;
         float[] floats;
         double[] doubles;
-        boolean[] booleans;
         char[] chars;
         String[] strings;
         BigDecimal[] bigDecimals;
@@ -112,6 +131,20 @@ public class CompactValueReaderTestStructure {
         LocalDate[] localDates;
         LocalDateTime[] localDateTimes;
         OffsetDateTime[] offsetDateTimes;
+        Boolean nullableBoolean_;
+        Byte nullableByte_;
+        Short nullableShort_;
+        Integer nullableInt_;
+        Long nullableLong_;
+        Float nullableFloat_;
+        Double nullableDouble_;
+        Boolean[] nullableBooleans;
+        Byte[] nullableBytes;
+        Short[] nullableShorts;
+        Integer[] nullableInts;
+        Long[] nullableLongs;
+        Float[] nullableFloats;
+        Double[] nullableDoubles;
 
         enum Init {
             FULL, NONE, NULL
@@ -122,30 +155,30 @@ public class CompactValueReaderTestStructure {
         }
 
         PrimitiveObject(int seed, Init init) {
+            boolean_ = seed % 2 == 0;
             byte_ = (byte) (seed + 10);
             short_ = (short) (seed + 20);
             int_ = seed + 30;
             long_ = seed + 40;
             float_ = seed + 50.01f;
             double_ = seed + 60.01d;
-            boolean_ = seed % 2 == 0;
             char_ = (char) (seed + 'a');
-            localTime_ = LocalTime.of(17, 41, 47, 874000000);
-            localDate_ = LocalDate.of(1, 1, 1);
-            localDateTime_ = LocalDateTime.of(localDate_, localTime_);
-            offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
 
             Random rnd = new Random(seed);
             if (init == Init.FULL) {
                 bytes = new byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13)};
+                booleans = new boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0};
                 shorts = new short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23)};
                 ints = new int[]{seed + 31, seed + 32, seed + 33};
                 longs = new long[]{seed + 41, seed + 42, seed + 43};
                 floats = new float[]{seed + 51.01f, seed + 52.01f, seed + 53.01f};
                 doubles = new double[]{seed + 61.01f, seed + 62.01f, seed + 63.01f};
-                booleans = new boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0};
                 chars = new char[]{(char) (seed + 'b'), (char) (seed + 'c'), (char) (seed + 'd')};
                 strings = new String[]{seed + 81 + "text", seed + 82 + "text", seed + 83 + "text"};
+                localTime_ = LocalTime.of(17, 41, 47, 874000000);
+                localDate_ = LocalDate.of(1, 1, 1);
+                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+                offsetDateTime_ = OffsetDateTime.of(localDateTime_, ZoneOffset.ofHours(2));
 
                 string_ = seed + 80 + "text";
                 localTime_ = LocalTime.of(17, 41, 47, 874000000);
@@ -167,6 +200,23 @@ public class CompactValueReaderTestStructure {
                         OffsetDateTime.of(localDates[0], localTimes[0], ZoneOffset.ofHours(seed % 18)),
                         OffsetDateTime.of(localDates[1], localTimes[1], ZoneOffset.ofHours(seed % 18)),
                         OffsetDateTime.of(localDates[2], localTimes[2], ZoneOffset.ofHours(seed % 18))};
+
+                nullableBoolean_ = boolean_;
+                nullableByte_ = byte_;
+                nullableShort_ = short_;
+                nullableInt_ = int_;
+                nullableLong_ = long_;
+                nullableFloat_ = float_;
+                nullableDouble_ = double_;
+
+                nullableBytes = new Byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13), null};
+                nullableBooleans = new Boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0, null};
+                nullableShorts = new Short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23), null};
+                nullableInts = new Integer[]{null, seed + 31, seed + 32, seed + 33};
+                nullableLongs = new Long[]{(long) (seed + 41), null, (long) (seed + 42), (long) (seed + 43)};
+                nullableFloats = new Float[]{seed + 51.01f, seed + 52.01f, null, seed + 53.01f};
+                nullableDoubles = new Double[]{null, (double) (seed + 61.01f), (double) (seed + 62.01f), (double) (seed + 63.01f)};
+
             } else if (init == Init.NONE) {
                 bytes = new byte[]{};
                 shorts = new short[]{};
@@ -256,6 +306,20 @@ public class CompactValueReaderTestStructure {
                     return localDateTime_;
                 case OffsetDateTime:
                     return offsetDateTime_;
+                case NullableBoolean:
+                    return nullableBoolean_;
+                case NullableByte:
+                    return nullableByte_;
+                case NullableShort:
+                    return nullableShort_;
+                case NullableInteger:
+                    return nullableInt_;
+                case NullableLong:
+                    return nullableLong_;
+                case NullableFloat:
+                    return nullableFloat_;
+                case NullableDouble:
+                    return nullableDouble_;
                 default:
                     throw new RuntimeException("Unsupported method " + primitiveFields);
             }
@@ -320,6 +384,34 @@ public class CompactValueReaderTestStructure {
                     return localDateTimes;
                 case OffsetDateTimeArray:
                     return offsetDateTimes;
+                case NullableBoolean:
+                    return nullableBooleans;
+                case NullableByte:
+                    return nullableBytes;
+                case NullableShort:
+                    return nullableShorts;
+                case NullableInteger:
+                    return nullableInts;
+                case NullableLong:
+                    return nullableLongs;
+                case NullableFloat:
+                    return nullableFloats;
+                case NullableDouble:
+                    return nullableDoubles;
+                case NullableBooleanArray:
+                    return nullableBooleans;
+                case NullableByteArray:
+                    return nullableBytes;
+                case NullableShortArray:
+                    return nullableShorts;
+                case NullableIntegerArray:
+                    return nullableInts;
+                case NullableLongArray:
+                    return nullableLongs;
+                case NullableFloatArray:
+                    return nullableFloats;
+                case NullableDoubleArray:
+                    return nullableDoubles;
                 default:
                     throw new RuntimeException("Unsupported array method " + primitiveFields);
             }
