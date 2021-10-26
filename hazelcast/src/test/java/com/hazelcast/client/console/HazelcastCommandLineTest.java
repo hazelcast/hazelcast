@@ -33,6 +33,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -65,7 +66,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class HazelcastCommandLineTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
@@ -513,7 +514,8 @@ public class HazelcastCommandLineTest extends JetTestSupport {
         try {
             run("submit", testJarFile.toString());
             String actual = captureErr();
-            assertThat(actual).contains("WARNING: Hazelcast code detected in the jar: com/hazelcast/jet/testjob/HazelcastBootstrap.class. Hazelcast dependency should be set with the 'provided' scope or equivalent.");
+            String pathToClass = Paths.get("com", "hazelcast", "jet", "testjob", "HazelcastBootstrap.class").toString();
+            assertThat(actual).contains("WARNING: Hazelcast code detected in the jar: " + pathToClass + ". Hazelcast dependency should be set with the 'provided' scope or equivalent.");
         } finally {
             System.setErr(oldErr);
             IOUtil.deleteQuietly(testJarFile.toFile());

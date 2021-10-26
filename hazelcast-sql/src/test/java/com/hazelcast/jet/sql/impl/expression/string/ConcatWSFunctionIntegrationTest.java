@@ -44,7 +44,6 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         ExpressionType<?>[] allTypes = ExpressionTypes.all();
-
         for (int i = 0; i < allTypes.length; i++) {
             for (int j = i; j < allTypes.length; j++) {
                 ExpressionType<?> type1 = allTypes[i];

@@ -88,9 +88,8 @@ import static java.lang.String.format;
 public class ClusterJoinManager {
 
     public static final String STALE_JOIN_PREVENTION_DURATION_PROP = "hazelcast.stale.join.prevention.duration.seconds";
+    private static final int DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS = 30;
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
-    private static final int STALE_JOIN_PREVENTION_DURATION_SECONDS
-            = Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30);
 
     private final ILogger logger;
     private final Node node;
@@ -104,18 +103,19 @@ public class ClusterJoinManager {
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
-     * Recently left member UUIDs: when a recently crashed member is joining with same UUID,
-     * typically it will have Hot Restart enabled (otherwise it will restart
-     * probably on the same address but definitely with a new random UUID).
-     * In order to support crashed members recovery with Hot Restart, partition
-     * table validation does not expect an identical partition table.
+     * Recently left member UUIDs: when a recently crashed member is joining
+     * with same UUID, typically it will have Persistence feature enabled
+     * (otherwise it will restart probably on the same address but definitely
+     * with a new random UUID). In order to support crashed members recovery
+     * with Persistence, partition table validation does not expect an
+     * identical partition table.
      *
      * Accessed by operation & cluster heartbeat threads
      */
     private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
-    private final long staleJoinPreventionDuration;
+    private final long staleJoinPreventionDurationInMillis;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
@@ -133,7 +133,8 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
-        staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
+        staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(
+            Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, DEFAULT_STALE_JOIN_PREVENTION_DURATION_IN_SECS));
     }
 
     boolean isJoinInProgress() {
@@ -364,7 +365,7 @@ public class ClusterJoinManager {
 
     private void cleanupRecentlyJoinedMemberUuids() {
         long currentTime = Clock.currentTimeMillis();
-        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDuration);
+        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDurationInMillis);
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
@@ -634,7 +635,7 @@ public class ClusterJoinManager {
         if (masterAddress.equals(node.getThisAddress())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
-            // I already know that I will do a force-start so I will not allow target to join me
+            // I already know that I will do a force-start, so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }

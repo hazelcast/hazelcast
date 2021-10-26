@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
+import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -42,7 +42,7 @@ public final class RootResultConsumerSink implements Processor {
     private final Expression<?> limitExpression;
     private final Expression<?> offsetExpression;
 
-    private JetQueryResultProducer rootResultConsumer;
+    private QueryResultProducerImpl rootResultConsumer;
 
     private RootResultConsumerSink(Expression<?> limitExpression, Expression<?> offsetExpression) {
         this.limitExpression = limitExpression;

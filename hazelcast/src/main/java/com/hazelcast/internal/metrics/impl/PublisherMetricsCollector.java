@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -36,43 +37,53 @@ public class PublisherMetricsCollector implements MetricsCollector {
     }
 
     public void publishCollectedMetrics() {
-        for (MetricsPublisher publisher : publishers) {
+        for (int i = 0; i < publishers.length; i++) {
             try {
-                publisher.whenComplete();
-            } catch (Exception e) {
-                logger.severe("Error completing publication for publisher " + publisher, e);
+                publishers[i].whenComplete();
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable throwable) {
+                logger.severe("Error completing publication for publisher "
+                        + publishers[i].name(), throwable);
             }
         }
     }
 
     public void shutdown() {
-        for (MetricsPublisher publisher : publishers) {
+        for (int i = 0; i < publishers.length; i++) {
             try {
-                publisher.shutdown();
-            } catch (Exception e) {
-                logger.warning("Error shutting down metrics publisher " + publisher.name(), e);
+                publishers[i].shutdown();
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable throwable) {
+                logger.severe("Error shutting down metrics publisher "
+                        + publishers[i].name(), throwable);
             }
         }
     }
 
     @Override
     public void collectLong(MetricDescriptor descriptor, long value) {
-        for (MetricsPublisher publisher : publishers) {
+        for (int i = 0; i < publishers.length; i++) {
             try {
-                publisher.publishLong(descriptor, value);
-            } catch (Exception e) {
-                logError(descriptor, value, publisher, e);
+                publishers[i].publishLong(descriptor, value);
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable throwable) {
+                logError(descriptor, value, publishers[i], throwable);
             }
         }
     }
 
     @Override
     public void collectDouble(MetricDescriptor descriptor, double value) {
-        for (MetricsPublisher publisher : publishers) {
+        for (int i = 0; i < publishers.length; i++) {
             try {
-                publisher.publishDouble(descriptor, value);
-            } catch (Exception e) {
-                logError(descriptor, value, publisher, e);
+                publishers[i].publishDouble(descriptor, value);
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable throwable) {
+                logError(descriptor, value, publishers[i], throwable);
             }
         }
     }
@@ -87,9 +98,10 @@ public class PublisherMetricsCollector implements MetricsCollector {
         // noop
     }
 
-    private void logError(MetricDescriptor descriptor, Object value, MetricsPublisher publisher, Exception e) {
+    private void logError(MetricDescriptor descriptor, Object value,
+                          MetricsPublisher publisher, Throwable throwable) {
         logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
-                + ", value=" + value, e);
+                + ", value=" + value, throwable);
     }
 
 }

@@ -47,6 +47,8 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private boolean isDecoderReceivedProtocol;
     private boolean clusterProtocolBuffered;
 
+    private String exceptionMessage;
+
     public SingleProtocolEncoder(OutboundHandler next) {
         this(new OutboundHandler[]{next});
     }
@@ -72,6 +74,10 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
                 if (!sendProtocol()) {
                     return DIRTY;
                 }
+                // UNEXPECTED_PROTOCOL is sent (or at least in the socket
+                // buffer). We can now throw exception in the pipeline to close
+                // the channel.
+                throw new ProtocolException(exceptionMessage);
             }
 
             if (channel.isClientMode()) {
@@ -119,7 +125,8 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     }
 
     // Used by SingleProtocolDecoder in order to send HZX eventually
-    public void signalWrongProtocol() {
+    public void signalWrongProtocol(String exceptionMessage) {
+        this.exceptionMessage = exceptionMessage;
         isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
         channel.outboundPipeline().wakeup();

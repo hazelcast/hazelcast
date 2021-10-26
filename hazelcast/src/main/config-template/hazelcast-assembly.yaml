@@ -111,6 +111,14 @@ hazelcast:
     failure-detector:
       icmp:
         enabled: false
+    # Configuration for REST endpoints. When it's enabled, it will allow healthcheck calls over the HTTP protocol.
+    rest-api:
+      enabled: @FILTER_BIND_ANY@
+      endpoint-groups:
+        HEALTH_CHECK:
+          enabled: true
+        CLUSTER_READ:
+          enabled: false
   # When you enable partition grouping, Hazelcast presents three choices
   # for you to configure partition groups. These are:
   #

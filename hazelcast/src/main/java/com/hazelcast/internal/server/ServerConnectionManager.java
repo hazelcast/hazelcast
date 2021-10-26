@@ -24,6 +24,8 @@ import com.hazelcast.internal.nio.Packet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -75,7 +77,7 @@ public interface ServerConnectionManager
      *
      * @param remoteAddress - The remote address to register the connection under
      * @param connection    - The connection to be registered
-     * @param planeIndex the the index of the plane
+     * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
     boolean register(Address remoteAddress, ServerConnection connection, int planeIndex);
@@ -213,4 +215,18 @@ public interface ServerConnectionManager
      * @return the Server.
      */
     Server getServer();
+
+    /**
+     * blocks the caller thread until a connection is established (or failed)
+     * or the time runs out. Callers must ensure a connection is established after this method returns {@code true}.
+     * @param address
+     * @param millis
+     * @param streamId
+     * @return true if connected successfully, false if timed out
+     * @throws java.lang.InterruptedException
+     */
+    default boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(millis));
+        return false;
+    }
 }

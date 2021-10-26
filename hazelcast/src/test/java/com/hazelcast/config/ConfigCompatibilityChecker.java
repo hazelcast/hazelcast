@@ -1798,7 +1798,8 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(ManagementCenterConfig c1, ManagementCenterConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null
-                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled()))
+                    && (c1.isScriptingEnabled() == c2.isScriptingEnabled())
+                    && (c1.isConsoleEnabled() == c2.isConsoleEnabled()))
                     && nullSafeEqual(c1.getTrustedInterfaces(), c2.getTrustedInterfaces());
         }
     }

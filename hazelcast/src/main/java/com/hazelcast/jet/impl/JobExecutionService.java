@@ -381,6 +381,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
         Address thisAddress = nodeEngine.getThisAddress();
 
         if (coordinatorMemberListVersion > localMemberListVersion) {
+            if (masterAddress == null) {
+                // we expect that master will eventually be known to this member (a new master will be
+                // elected or split brain merge will happen).
+                throw new RetryableHazelcastException(String.format(
+                        "Cannot initialize %s for coordinator %s, local member list version %s," +
+                                " coordinator member list version %s. And also, since the master address" +
+                                " is not known to this member, cannot request a new member list from master.",
+                        jobIdAndExecutionId(jobId, executionId), coordinator, localMemberListVersion,
+                        coordinatorMemberListVersion));
+            }
             assert !masterAddress.equals(thisAddress) : String.format(
                     "Local node: %s is master but InitOperation has coordinator member list version: %s larger than "
                     + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
@@ -393,6 +403,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     jobIdAndExecutionId(jobId, executionId), coordinator, localMemberListVersion,
                     coordinatorMemberListVersion));
         }
+        // If the participant members can receive the new member list before the
+        // coordinator, and we can also get into the
+        // "coordinatorMemberListVersion < localMemberListVersion" case. If this
+        // situation occurs when a job participant leaves, then the job start will
+        // fail. Since the unknown participating member situation couldn't
+        // be resolved with retrying the InitExecutionOperation for this
+        // case, we do nothing here and let it fail below if some participant
+        // isn't found.
+        // The job start won't fail if this situation occurs when a new member
+        // is added to the cluster, because all job participants are known to the
+        // other participating members. The only disadvantage of this is that a
+        // newly added member will not be a job participant and partition mapping
+        // may not be completely proper in this case.
 
         boolean isLocalMemberParticipant = false;
         for (MemberInfo participant : participants) {
@@ -455,17 +478,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * Completes and cleans up execution of the given job
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
-        executionContexts.remove(executionContext.executionId());
-        JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
-        try {
-            doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
-        } finally {
-            if (!executionContext.isLightJob()) {
-                jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+        ExecutionContext removed = executionContexts.remove(executionContext.executionId());
+        if (removed != null) {
+            JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
+            try {
+                doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
+            } finally {
+                if (!executionContext.isLightJob()) {
+                    jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+                }
+                executionCompleted.inc();
+                executionContextJobIds.remove(executionContext.jobId());
+                logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
             }
-            executionCompleted.inc();
-            executionContextJobIds.remove(executionContext.jobId());
-            logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
         }
     }
 

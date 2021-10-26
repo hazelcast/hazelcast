@@ -71,7 +71,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
+public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     private static final String INDEX_NAME = "index";
 

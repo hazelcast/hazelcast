@@ -82,14 +82,14 @@ public interface InboundPipeline {
 
 
     /**
-     * Wakes up the inbound pipeline and lets it to start reading again from the
+     * Wakes up the inbound pipeline and lets it start reading again from the
      * network.
      *
      * Even if there is no data to be read, it will cause at least one processing
      * of the InboundPipeline. This will force any buffered data to be pushed
      * through the InboundPipeline.
      *
-     * This method is threadsafe and can safely be called from any thread.
+     * This method is thread-safe and can safely be called from any thread.
      *
      * Calling it while it is already waken up will not do any damage, it will
      * just cause some temporary overhead.

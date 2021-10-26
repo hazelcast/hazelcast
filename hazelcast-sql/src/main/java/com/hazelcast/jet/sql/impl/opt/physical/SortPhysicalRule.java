@@ -29,7 +29,7 @@ import org.apache.calcite.rel.RelNode;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class SortPhysicalRule extends RelOptRule {
 

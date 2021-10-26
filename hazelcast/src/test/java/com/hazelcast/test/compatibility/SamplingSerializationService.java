@@ -59,6 +59,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String DUMMY_CLASS_PREFIX = "Dummy";
     private static final String TEST_CLASS_SUFFIX = "Test";
     private static final String TEST_PACKAGE_INFIX = ".test";
+    private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
 
     protected final InternalSerializationService delegate;
 
@@ -152,6 +153,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder) {
+        return delegate.createObjectDataInput(data, byteOrder);
+    }
+
+    @Override
     public BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
         return delegate.createObjectDataInput(data, offset);
     }
@@ -164,6 +170,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public BufferObjectDataOutput createObjectDataOutput(int size) {
         return delegate.createObjectDataOutput(size);
+    }
+
+    @Override
+    public BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder) {
+        return createObjectDataOutput(byteOrder);
     }
 
     @Override
@@ -270,7 +281,7 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     public static boolean isTestClass(String className) {
         if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
-                || className.contains(DUMMY_CLASS_PREFIX)) {
+                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX)) {
             return true;
         }
         return false;

@@ -180,12 +180,12 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
             getExpirySystem().add(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime(), now, mergingEntry.getLastUpdateTime());
+                    maxIdle, mergingEntry.getExpirationTime(), mergingEntry.getLastUpdateTime(), now);
         } else {
-            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
+            ExpiryMetadata expiryMetadata = getExpirySystem().getExpiryMetadata(key);
             getExpirySystem().add(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
-                    now, mergingEntry.getLastUpdateTime());
+                    expiryMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
+                    mergingEntry.getLastUpdateTime(), now);
         }
     }
 

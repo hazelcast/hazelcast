@@ -25,7 +25,7 @@ import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.logical.LogicalUnion;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class UnionLogicalRule extends ConverterRule {
 

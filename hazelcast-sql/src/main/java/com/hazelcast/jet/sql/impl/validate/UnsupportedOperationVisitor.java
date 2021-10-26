@@ -23,7 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources.ExInst;
@@ -82,6 +82,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IN);
         SUPPORTED_KINDS.add(SqlKind.NOT_IN);
         SUPPORTED_KINDS.add(SqlKind.BETWEEN);
+        SUPPORTED_KINDS.add(SqlKind.EXISTS);
 
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
@@ -119,6 +120,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CASE);
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
+        SUPPORTED_KINDS.add(SqlKind.UNION);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -214,7 +216,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     @Override
     public Void visit(SqlCall call) {
         // remove the branch when MAP/MAP_VALUE_CONSTRUCTOR gets proper support
-        if (!(call.getOperator() instanceof JetDynamicTableFunction)) {
+        if (!(call.getOperator() instanceof HazelcastDynamicTableFunction)) {
             processCall(call);
 
             call.getOperator().acceptCall(this, call);
@@ -351,6 +353,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case OTHER_FUNCTION:
             case EXTRACT:
             case POSITION:
+            case EXISTS:
                 processOther(call);
                 break;
 
