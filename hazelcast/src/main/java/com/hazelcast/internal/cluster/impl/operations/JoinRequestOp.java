@@ -21,8 +21,13 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 public class JoinRequestOp extends AbstractClusterOperation {
 
@@ -38,7 +43,22 @@ public class JoinRequestOp extends AbstractClusterOperation {
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
+        preparePreOp(request.getPrejoinOperation());
         cm.getClusterJoinManager().handleJoinRequest(request, getConnection());
+    }
+
+    private void preparePreOp(Operation preOp) {
+        if (preOp == null) {
+            return;
+        }
+
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+
+        preOp.setNodeEngine(nodeEngine);
+        OperationAccessor.setCallerAddress(preOp, getCallerAddress());
+        OperationAccessor.setConnection(preOp, getConnection());
+        preOp.setOperationResponseHandler(createEmptyResponseHandler());
     }
 
     public JoinRequest getRequest() {

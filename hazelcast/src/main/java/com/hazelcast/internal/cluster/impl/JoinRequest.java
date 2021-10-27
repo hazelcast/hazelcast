@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.version.MemberVersion;
 
@@ -32,13 +34,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.internal.cluster.Versions.V5_0;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.unmodifiableSet;
 
-public class JoinRequest extends JoinMessage {
+public class JoinRequest extends JoinMessage implements Versioned {
 
     private Credentials credentials;
     private int tryCount;
@@ -46,6 +49,7 @@ public class JoinRequest extends JoinMessage {
     private Set<UUID> excludedMemberUuids = Collections.emptySet();
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
+    private OnJoinOp prejoinOperation;
 
     public JoinRequest() {
     }
@@ -53,7 +57,7 @@ public class JoinRequest extends JoinMessage {
     @SuppressWarnings("checkstyle:parameternumber")
     public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
                        boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, OnJoinOp prejoinOperation) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
@@ -61,6 +65,7 @@ public class JoinRequest extends JoinMessage {
             this.excludedMemberUuids = unmodifiableSet(new HashSet<>(excludedMemberUuids));
         }
         this.addresses = addresses;
+        this.prejoinOperation = prejoinOperation;
     }
 
     public Credentials getCredentials() {
@@ -81,6 +86,10 @@ public class JoinRequest extends JoinMessage {
 
     public Set<UUID> getExcludedMemberUuids() {
         return excludedMemberUuids;
+    }
+
+    public OnJoinOp getPrejoinOperation() {
+        return prejoinOperation;
     }
 
     public MemberInfo toMemberInfo() {
@@ -107,6 +116,9 @@ public class JoinRequest extends JoinMessage {
 
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
+        if (in.getVersion().isGreaterOrEqual(V5_0)) {
+            prejoinOperation = in.readObject();
+        }
     }
 
     @Override
@@ -124,6 +136,9 @@ public class JoinRequest extends JoinMessage {
             UUIDSerializationUtil.writeUUID(out, uuid);
         }
         writeMap(addresses, out);
+        if (out.getVersion().isGreaterOrEqual(V5_0)) {
+            out.writeObject(prejoinOperation);
+        }
     }
 
     @Override

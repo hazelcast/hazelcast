@@ -55,6 +55,7 @@ import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
@@ -93,6 +94,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
@@ -776,10 +778,13 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials(remoteAddress) : null;
         final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
+        Collection<Operation> preJoinOps = nodeEngine.getPreJoinOperations();
+        OnJoinOp onJoinOp = (preJoinOps != null && !preJoinOps.isEmpty()) ? new OnJoinOp(preJoinOps) : null;
+
         MemberImpl localMember = getLocalMember();
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap());
+                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), onJoinOp);
     }
 
     public ConfigCheck createConfigCheck() {
