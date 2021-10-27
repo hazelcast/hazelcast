@@ -17,7 +17,7 @@
 |---|---|
 |Related Jira|[HZ-566](https://hazelcast.atlassian.net/browse/HZ-566)|
 |Related Github issues|_-_|
-|Document Status / Completeness|IN PROGRESS|
+|Document Status / Completeness|DRAFT|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|
 |Quality Engineer|TBA|
@@ -28,19 +28,13 @@
 #### Description
 
 This document describes IMap index creation via SQL.
-It's logical step to improve Hazelcast SQL engine dynamic configuration possibilities and enrich available SQL syntax.
-
-```TODO: rephrase/end this section.```
-
-Proposed grammar :
-```
-CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
-[ TYPE ( SORTED | HASH | BITMAP ) ]
-[ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
-```
+It's a logical step to improve Hazelcast SQL engine dynamic configuration possibilities and enrich available SQL syntax.
 
 ### Functional Design
 #### Summary of Functionality
+
+`CREATE INDEX` query performs IMap index creation.
+⚠ : only IMap index creation supported.
 
 Proposed grammar:
 ```
@@ -49,22 +43,7 @@ CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
 
-Statement parameters:
-
-- **name** - index name.
-- **mapping_name** - mapping name for index creation. Mapping must have IMap type. 
-Design for this property still not finished, see [discussion](#notesquestionsissues) 
-- list of **column_name** - attribute(s) to be indexed. Composite indices are also supported.
-- **index type** : all IMap indices are supported for CREATE INDEX statement : `SORTED`, `HASH`,  `BITMAP`.
-- **options** - options are available only for BITMAP index since it has additional BitmapIndexConfig. 
-Those options are supported:
-  1. `unique_key`
-  2. `unique_key_transformation`
-
-In case of `SORTED`/`HASH` index, options usage causes `QueryException`.
-
-Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` method call, 
-where `indexConfig` is assembled by .  
+Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` method call.  
 
 ##### Notes/Questions/Issues
 
@@ -96,20 +75,38 @@ Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use 
 
 
 ### Technical Design
-```
-TODO
 
-- Questions about the change:
-  - What components in Hazelcast need to change? How do they change? This section outlines the implementation strategy: for each component affected, outline how it is changed.
-  - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
-  - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
-  - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled? Provide examples.
+Let's review proposed grammar:
+```
+CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
+[ TYPE ( SORTED | HASH | BITMAP ) ]
+[ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
+```
+
+Statement parameters:
+
+- **IF NOT EXISTS** -- index creation call would be performed only if index is not exists.
+- **name** - index name.
+- **mapping_name** - mapping name for index creation. Mapping must have IMap type.
+  Design for this property still not finished, see [discussion](#notesquestionsissues)
+- list of **column_name** - attribute(s) to be indexed. Composite indices are also supported.
+- **index_type**: all IMap indices are supported for CREATE INDEX statement : `SORTED`, `HASH`,  `BITMAP`.
+- **options** - options are available only for BITMAP index since it has additional `BitmapIndexConfig`.
+  Those options are supported:
+    1. `unique_key`
+    2. `unique_key_transformation`
+
+In case of `SORTED`/`HASH` index, options usage causes `QueryException`.
+
+Then, SQL engine collects  provided parameters `indexConfig` and perform 
+`IMap#addIndex(new IndexConfig(index_type, { column_name })).setName(name)` method call.
+
+⚠ : SQL engine doesn't support `BITMAP` index scans, but does support `BITMAP` index creation.
 
 - Security questions:
-  - 
-```
-The section should return to the user stories in the motivations section, and explain more fully how the detailed proposal makes those stories work.
-
+    - ❓ Should we use mapping name? If yes, ->
+    - ❓ Should we use different permissions for create mapping and create index?
+    
 ### Testing Criteria
 
 Unit tests and soak tests are enough.
