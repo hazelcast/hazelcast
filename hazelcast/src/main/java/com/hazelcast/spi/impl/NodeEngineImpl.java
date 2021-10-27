@@ -47,8 +47,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.tstore.Epoch;
-import com.hazelcast.internal.tstore.ThreadLocalIndexRegistry;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
@@ -133,9 +131,6 @@ public class NodeEngineImpl implements NodeEngine {
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
 
-    private final ThreadLocalIndexRegistry threadIndexRegistry;
-    private final Epoch epoch;
-
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -178,10 +173,6 @@ public class NodeEngineImpl implements NodeEngine {
 
             this.tenantControlService = new TenantControlServiceImpl(this);
 
-            int maxThreads = operationService.getPartitionThreadCount();
-            this.threadIndexRegistry = new ThreadLocalIndexRegistry(maxThreads);
-            this.epoch = new Epoch(maxThreads);
-
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
@@ -212,14 +203,6 @@ public class NodeEngineImpl implements NodeEngine {
             checkMapMergePolicy(mapConfig,
                     splitBrainMergePolicyClassName, splitBrainMergePolicyProvider);
         }
-    }
-
-    public ThreadLocalIndexRegistry getThreadIndexRegistry() {
-        return threadIndexRegistry;
-    }
-
-    public Epoch getEpoch() {
-        return epoch;
     }
 
     private ConcurrencyDetection newConcurrencyDetection() {
