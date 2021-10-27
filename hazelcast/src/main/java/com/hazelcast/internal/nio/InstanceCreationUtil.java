@@ -28,10 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class InstanceCreationUtil {
 
-    private InstanceCreationUtil() {}
-
     private static final Objenesis OBJENESIS = new ObjenesisStd();
     private static final Map<Class<?>, ObjectInstantiator<?>> OBJECT_INSTANTIATORS = new ConcurrentHashMap<>();
+
+    private InstanceCreationUtil() {
+    }
 
 
     /**
