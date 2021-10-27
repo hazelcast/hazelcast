@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,9 +59,12 @@ public class ExplainStatementTest extends SqlTestSupport {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 10);
         map.put(2, 10);
+        map.put(3, 10);
+        map.put(4, 10);
+        map.put(5, 10);
         map.addIndex(IndexType.HASH, "this");
 
-        String sql = "EXPLAIN PLAN FOR SELECT * FROM map WHERE this = 10 ";
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map WHERE this = 10";
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsAnyOrder(sql, singletonList(
@@ -81,6 +85,26 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("UnionPhysicalRel(all=[true])"),
                 new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
                 new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+        ));
+    }
+
+    @Test
+    public void test_explainStatementJoin() {
+        IMap<Integer, Integer> map1 = instance().getMap("map1");
+        map1.put(10, 1);
+        IMap<Integer, Person> map2 = instance().getMap("map2");
+        map2.put(1, new Person(10, "A"));
+
+        String sql = "EXPLAIN PLAN FOR SELECT map1.__key, map2.name FROM map1 INNER JOIN map2 ON map1.__key = map2.id";
+
+        createMapping("map1", Integer.class, Integer.class);
+        createMapping("map2", Integer.class, Person.class);
+
+        assertRowsAnyOrder(sql, asList(
+                new Row("ProjectPhysicalRel(__key=[$0], name=[$2])"),
+                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $1)], joinType=[inner])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[0]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[1, 2]]]])")
         ));
     }
 
