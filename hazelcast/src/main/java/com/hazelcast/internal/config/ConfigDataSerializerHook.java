@@ -155,8 +155,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int PERMISSION_CONFIG = 61;
     public static final int BITMAP_INDEX_OPTIONS = 62;
     public static final int DATA_PERSISTENCE_CONFIG = 63;
+    public static final int TIERED_STORE_CONFIG = 64;
 
-    private static final int LEN = DATA_PERSISTENCE_CONFIG + 1;
+    private static final int LEN = TIERED_STORE_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -230,6 +231,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
         constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
         constructors[DATA_PERSISTENCE_CONFIG] = arg -> new DataPersistenceConfig();
+        constructors[TIERED_STORE_CONFIG] = arg -> new MapConfig.TieredStoreConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

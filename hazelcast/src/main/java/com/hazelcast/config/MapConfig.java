@@ -136,6 +136,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
             .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
+    private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 
     public MapConfig() {
     }
@@ -173,6 +174,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
+        this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
     }
 
     /**
@@ -782,6 +784,15 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         return this;
     }
 
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfig;
+    }
+
+    public MapConfig setTieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
+        this.tieredStoreConfig = tieredStoreConfig;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -871,6 +882,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
             return false;
         }
+        if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
+            return false;
+        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -904,6 +918,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
         result = 31 * result + dataPersistenceConfig.hashCode();
+        result = 31 * result + tieredStoreConfig.hashCode();
         return result;
     }
 
@@ -935,6 +950,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
+                + ", tieredStoreConfig=" + tieredStoreConfig
                 + '}';
     }
 
@@ -982,6 +998,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             out.writeObject(dataPersistenceConfig);
         }
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeObject(tieredStoreConfig);
+        }
     }
 
     @Override
@@ -1018,5 +1037,76 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             setDataPersistenceConfig(in.readObject());
         }
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            setTieredStoreConfig(in.readObject());
+        }
     }
+
+    public static class TieredStoreConfig implements IdentifiedDataSerializable {
+        boolean enabled;
+
+        public TieredStoreConfig() {
+
+        }
+
+        public TieredStoreConfig(TieredStoreConfig that) {
+            this.enabled = that.isEnabled();
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public TieredStoreConfig setEnabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            TieredStoreConfig that = (TieredStoreConfig) o;
+
+            return enabled == that.enabled;
+        }
+
+        @Override
+        public int hashCode() {
+            return (enabled ? 1 : 0);
+        }
+
+        @Override
+        public String toString() {
+            return "TieredStoreConfig{" +
+                    "enabled=" + enabled +
+                    '}';
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeBoolean(enabled);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            enabled = in.readBoolean();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return ConfigDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return ConfigDataSerializerHook.TIERED_STORE_CONFIG;
+        }
+    }
+
 }
