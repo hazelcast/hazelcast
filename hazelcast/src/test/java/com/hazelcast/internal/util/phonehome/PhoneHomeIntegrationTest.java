@@ -68,7 +68,7 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
-    private static ContainsPattern containingParam(String paramName, String expectedValue) {
+    static ContainsPattern containingParam(String paramName, String expectedValue) {
         return new ContainsPattern(paramName + "=" + expectedValue);
     }
 

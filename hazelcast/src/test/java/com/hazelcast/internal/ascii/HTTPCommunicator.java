@@ -422,10 +422,10 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword);
     }
 
-    static class ConnectionResponse {
-        final String response;
-        final int responseCode;
-        final Map<String, List<String>> responseHeaders;
+    public static class ConnectionResponse {
+        public final String response;
+        public final int responseCode;
+        public final Map<String, List<String>> responseHeaders;
 
         ConnectionResponse(CloseableHttpResponse httpResponse) throws IOException {
             int responseCode = httpResponse.getStatusLine().getStatusCode();
@@ -444,6 +444,16 @@ public class HTTPCommunicator {
             this.responseCode = responseCode;
             this.response = responseStr;
             this.responseHeaders = responseHeaders;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder("HTTP ").append(responseCode).append("\r\n");
+            responseHeaders.forEach((name, values) -> {
+                values.forEach(headerValue -> str.append(name).append(": ").append(headerValue).append("\r\n"));
+            });
+            str.append("\r\n");
+            return str.append(response).toString();
         }
     }
 
