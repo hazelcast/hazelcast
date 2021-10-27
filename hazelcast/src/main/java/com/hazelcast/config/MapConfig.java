@@ -1083,9 +1083,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
         @Override
         public String toString() {
-            return "TieredStoreConfig{" +
-                    "enabled=" + enabled +
-                    '}';
+            return "TieredStoreConfig{"
+                    + "enabled=" + enabled
+                    + '}';
         }
 
         @Override
