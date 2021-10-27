@@ -32,7 +32,7 @@ import java.util.List;
 public class SqlExplainStatement extends SqlCall {
     public static final SqlSpecialOperator OPERATOR = new HazelcastExplainOperator();
 
-    private final SqlNode explicandum;
+    private SqlNode explicandum;
 
     public SqlExplainStatement(
             SqlParserPos pos,
@@ -43,6 +43,13 @@ public class SqlExplainStatement extends SqlCall {
 
     public SqlNode getExplicandum() {
         return explicandum;
+    }
+
+    /*
+     * Exists for only special edge case: extract SqlSelect or any SqlSetOp statement from SqlOrderBy.
+     */
+    public void setExplicandum(SqlNode explicandum) {
+        this.explicandum = explicandum;
     }
 
     @Override

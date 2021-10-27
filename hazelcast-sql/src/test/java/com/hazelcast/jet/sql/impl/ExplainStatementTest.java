@@ -74,6 +74,40 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explainStatementSortedIndexScan() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.addIndex(IndexType.SORTED, "this");
+
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map ORDER BY this";
+
+        createMapping("map", Integer.class, Integer.class);
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+        ));
+    }
+
+    @Test
+    public void test_explainStatementScanBelowUnion() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.addIndex(IndexType.SORTED, "this");
+
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map UNION ALL SELECT * FROM map ORDER BY this DESC";
+
+        createMapping("map", Integer.class, Integer.class);
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+        ));
+    }
+
+    @Test
     public void test_explainStatementSelectBelowUnion() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 10);

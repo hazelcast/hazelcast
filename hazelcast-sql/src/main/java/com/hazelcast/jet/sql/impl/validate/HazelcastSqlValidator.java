@@ -51,10 +51,12 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
@@ -67,6 +69,7 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,8 +146,21 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         if (topNode instanceof SqlExplainStatement) {
-            super.validate(((SqlExplainStatement) topNode).getExplicandum());
-            return topNode;
+            SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
+            SqlNode explicandum = explainStatement.getExplicandum();
+
+            /*
+              Known edge case: since validator doesn't extract SqlSelect/SqlSetOp from SqlOrderBy, we do it manually.
+              SqlOrderBy never participates in query analysis and optimization and exists only for semantics purposes,
+              but for EXPLAIN PLAN statement it has never been rewritten to SqlSelect/SqlSetOp being child of SqlExplainStatement.
+             */
+            if (explicandum instanceof SqlOrderBy) {
+                explicandum = transformOrderBy(explicandum);
+                // rewrite explicandum to SqlSelect or any SqlSetOp statement instead of SqlOrderBy.
+                explainStatement.setExplicandum(explicandum);
+            }
+            super.validate(explicandum);
+            return explainStatement;
         }
 
         return super.validate(topNode);
@@ -550,6 +566,36 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
+    }
+
+    /**
+     * Copied from SqlValidatorImpl.
+     *
+     * @param node
+     * @return
+     */
+    @Nonnull
+    private SqlNode transformOrderBy(SqlNode node) {
+        SqlOrderBy orderBy = (SqlOrderBy) node;
+        if (orderBy.offset instanceof SqlDynamicParam) {
+            setValidatedNodeType(orderBy.offset,
+                    typeFactory.createSqlType(SqlTypeName.INTEGER));
+        }
+        if (orderBy.fetch instanceof SqlDynamicParam) {
+            setValidatedNodeType(orderBy.fetch,
+                    typeFactory.createSqlType(SqlTypeName.INTEGER));
+        }
+        if (orderBy.query instanceof SqlSelect) {
+            SqlSelect select = (SqlSelect) orderBy.query;
+
+            // push ORDER BY into existing select
+            select.setOrderBy(orderBy.orderList);
+            select.setOffset(orderBy.offset);
+            select.setFetch(orderBy.fetch);
+            return select;
+        }
+        // TODO: case with SqlSetOp.
+        return node;
     }
 
     /**
