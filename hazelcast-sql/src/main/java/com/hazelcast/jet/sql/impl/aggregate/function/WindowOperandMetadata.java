@@ -36,7 +36,7 @@ import java.util.List;
 import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
+final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
     WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {
         super(parameters);

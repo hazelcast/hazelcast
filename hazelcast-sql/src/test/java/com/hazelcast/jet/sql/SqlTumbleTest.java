@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -1387,35 +1386,6 @@ public class SqlTumbleTest extends SqlTestSupport {
                 asList(
                         new Row(timestampTz(0L), timestampTz(2L), 1L),
                         new Row(timestampTz(2L), timestampTz(4L), 2L)
-                )
-        );
-    }
-
-    @Test
-    @Ignore("flaky") // TODO:
-    public void test_dropLateRows() {
-        String name = createTable(
-                row(timestampTz(3), "Alice", 1),
-                row(timestampTz(2), "Bob", 1),
-                row(timestampTz(1), "Alice", 1),
-                row(timestampTz(4), "Alice", 1),
-                row(timestampTz(0), "Alice", 1),
-                row(timestampTz(2), "Bob", 1),
-                row(timestampTz(10), null, null)
-        );
-
-        assertRowsEventuallyInAnyOrder(
-                "SELECT window_start, COUNT(*) FROM " +
-                        "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
-                        "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
-                        ")) " +
-                        "GROUP BY window_start",
-                asList(
-                        new Row(timestampTz(0L), 1L),
-                        new Row(timestampTz(2L), 3L),
-                        new Row(timestampTz(4L), 1L)
                 )
         );
     }

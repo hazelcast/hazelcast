@@ -40,9 +40,6 @@ public interface ValidatorResource {
     @BaseMessage("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     ExInst<SqlValidatorException> joiningValuesNotSupported();
 
-    @BaseMessage("Grouping/aggregations not supported for a streaming query")
-    ExInst<SqlValidatorException> streamingAggregationsNotSupported();
-
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
 
