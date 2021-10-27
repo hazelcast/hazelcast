@@ -33,8 +33,8 @@ It's a logical step to improve Hazelcast SQL engine dynamic configuration possib
 ### Functional Design
 #### Summary of Functionality
 
-`CREATE INDEX` query performs IMap index creation.
-⚠ : only IMap index creation supported.
+`CREATE INDEX` statement creates an IMap index
+⚠: only IMap index creation supported, index removal isn't implemented in IMDG.
 
 Proposed grammar:
 ```
@@ -47,23 +47,19 @@ Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` metho
 
 ##### Notes/Questions/Issues
 
-- ❓ Should we depend on mapping name or map name in index creation query?
-In current state index creation depends on mapping name.
-  1. **Pros** **of mapping name** usage : 
-     1. Consistent and clear UX: mappings are explicitly defined, they are visible to the user.
-     2. Security permissions sharing. 
+- ❓ Should the index be created based on the mapping name, or based on the IMap name?
+  1. **Advantages of using the mapping name:**
+     1. Simpler UX: the user uses the column names as defined in the mapping, not the column external names.
+     2. Security permissions sharing. ?? Sasha add details
      3. 
-  2. **Cons**:
-     1. Additional action required : user should create mapping to create an index.
-     2. Mapping are shared also for other connectors type, where sources don't support queries.
-     4. 
-  3. **Pros** of **map name** usage are opposite to mapping name usage: 
-     1. Simplicity: user just launch the SQL CLI and type query. Bingo.
-     2. Other connectors sources doesn't support indices, the only possible index creation target is IMap.
-  4. **Cons**:
-     1. Unclear UX: user don't know if map exists or not, they blindly create an index without any confirmation.
-     2. Security - no permissions involved.
-
+  2**Advantages of using the IMap name:**
+     1. There are much less edge cases that we can get wrong
+     2. Better matches the physical reality of IMaps: 
+        1. No translation of index attribute names is needed
+        2. If the user creates an index for mapping and drops the mapping, index is not dropped
+        3. If the user creates an index for a JSON field and the format in the mapping is native JSON, the user needs to use `JSON_VALUE` to use that index
+     3. No need to create mapping first before creating the index. Useful if SQL is used as a configuration tool. This point is also an instance of a "better matching to the physical reality"
+     4. We'll not suffer from similar issues if we in the future support index creation for other connectors.
 
 [TODO]: <> (@viliam, please, add your thoughts.)
 
@@ -90,7 +86,7 @@ Statement parameters:
 - **mapping_name** - mapping name for index creation. Mapping must have IMap type.
   Design for this property still not finished, see [discussion](#notesquestionsissues)
 - list of **column_name** - attribute(s) to be indexed. Composite indices are also supported.
-- **index_type**: all IMap indices are supported for CREATE INDEX statement : `SORTED`, `HASH`,  `BITMAP`.
+- **index_type**: all IMap indices are supported for CREATE INDEX statement: `SORTED`, `HASH`,  `BITMAP`.
 - **options** - options are available only for BITMAP index since it has additional `BitmapIndexConfig`.
   Those options are supported:
     1. `unique_key`
@@ -101,7 +97,7 @@ In case of `SORTED`/`HASH` index, options usage causes `QueryException`.
 Then, SQL engine collects  provided parameters `indexConfig` and perform 
 `IMap#addIndex(new IndexConfig(index_type, { column_name })).setName(name)` method call.
 
-⚠ : SQL engine doesn't support `BITMAP` index scans, but does support `BITMAP` index creation.
+⚠: SQL engine doesn't support `BITMAP` index scans, but does support `BITMAP` index creation.
 
 - Security questions:
     - ❓ Should we use mapping name? If yes, ->
