@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
@@ -30,8 +31,11 @@ import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -736,6 +740,30 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testListenerRegistrationWhileANewMemberJoining() {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Config masterConfig = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(masterConfig);
+
+        Config joiningConfig = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
+        EntryListenerConfig listenerConfig = new EntryListenerConfig();
+        CountDownLatch entryAddedLatch = new CountDownLatch(1);
+        listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
+        joiningConfig.getMapConfig("test").addEntryListenerConfig(listenerConfig);
+
+        factory.newHazelcastInstance(joiningConfig);
+
+        IMap<Object, Object> map = hz1.getMap("test");
+
+        map.put(1, 1);
+
+        //Let post join continue only after put happened
+        latch.countDown();
+        assertOpenEventually(entryAddedLatch);
+    }
+
+    @Test
     public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOpOnMaster() {
         Config masterConfig = new Config();
         Config joiningConfig = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
@@ -860,7 +888,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         return clusterService.getMembershipManager().getMemberMap();
     }
 
-    private static class PostJoinAwareServiceImpl implements PostJoinAwareService {
+    // This is made CoreService to make sure that it is running before EventService(which is not a core service)
+    private static class PostJoinAwareServiceImpl implements PostJoinAwareService, CoreService {
         static final String SERVICE_NAME = "post-join-service";
 
         final CountDownLatch latch;
