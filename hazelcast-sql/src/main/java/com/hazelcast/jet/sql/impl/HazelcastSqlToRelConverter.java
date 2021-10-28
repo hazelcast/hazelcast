@@ -437,15 +437,6 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return nonCharacterTypes;
     }
 
-    @Override
-    protected RelRoot convertQueryRecursive(SqlNode query, boolean top, @Nullable RelDataType targetRowType) {
-        final SqlKind kind = query.getKind();
-        if (kind == SqlKind.INSERT) {
-            return RelRoot.of(convertInsert((SqlInsert) query), kind);
-        }
-        return super.convertQueryRecursive(query, top, targetRowType);
-    }
-
     private static QueryException literalConversionException(
             SqlValidator validator,
             SqlCall call,
