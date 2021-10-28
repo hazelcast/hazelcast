@@ -21,8 +21,9 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 /**
  * Services which need to perform operations on a joining member just before the member is set as joined must implement
- * this interface. These operations are executed on the joining member before it is set as joined, in contrast to
- * {@link PostJoinAwareService#getPostJoinOperation()}s which are executed on the joining member after it is set as joined.
+ * this interface. These operations are executed on the joining & master member before the joining member is set as joined,
+ * in contrast to {@link PostJoinAwareService#getPostJoinOperation()}s which are executed on the joining & master member
+ * after the joining member is set as joined.
  * The practical outcome is that pre-join operations are already executed before the {@link com.hazelcast.core.HazelcastInstance}
  * is returned to the caller, while post-join operations may be still executing.
  *
@@ -31,18 +32,19 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 public interface PreJoinAwareService {
 
     /**
-     * An operation to be executed on the joining member before it is set as joined. As is the case with
+     * An operation to be executed on the joining & member before the joining member is set as joined. As is the case with
      * {@link PostJoinAwareService#getPostJoinOperation()}s, no partition locks, no key-based locks, no service level
      * locks, no database interaction are allowed. Additionally, a pre-join operation is executed while the cluster
      * lock is being held on the joining member, so it is important that the operation finishes quickly and does not
      * interact with other locks.
-     *
+     * <p>
      * The {@link Operation#getPartitionId()} method should return a negative value.
      * This means that the operations should not implement {@link PartitionAwareOperation}.
      * <p>
      * Pre join operations should return response, which may also be a {@code null} response.
      *
-     * @return an operation to be executed on joining member before it is set as joined. Can be {@code null}.
+     * @return an operation to be executed on joining & master member before joining member is set as joined.
+     * Can be {@code null}.
      */
     Operation getPreJoinOperation();
 }

@@ -44,6 +44,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -735,28 +736,51 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOp() {
-        Config config = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-
-        // joining member fails while deserializing pre-join op and should shutdown
-        try {
-            factory.newHazelcastInstance(config);
-            fail("Second HazelcastInstance should not have started");
-        } catch (IllegalStateException e) {
-            // expected
-        }
-        assertClusterSize(1, hz1);
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOpOnMaster() {
+        Config masterConfig = new Config();
+        Config joiningConfig = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
+        joiningMemberShouldShutdown_whenExceptionDeserializingOnJoinOp(masterConfig, joiningConfig);
     }
 
     @Test
-    public void joiningMemberShouldShutdown_whenExceptionDeserializingPostJoinOp() {
-        Config config = getConfigWithService(new FailingPostJoinOpService(), FailingPostJoinOpService.SERVICE_NAME);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOpOnJoiningMember() {
+        Config masterConfig = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
+        Config joiningConfig = new Config();
+        joiningMemberShouldShutdown_whenExceptionDeserializingOnJoinOp(masterConfig, joiningConfig);
+    }
 
-        // joining member fails while deserializing post-join op and should shutdown
+    /**
+     * This case is not handled and ignored on purpose
+     * PostJoin operations wil run on the cluster from joining member after join is finalized,
+     * where we can no longer fail the join.
+     */
+    @Test
+    @Ignore
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPostJoinOpOnMaster() {
+        Config masterConfig = new Config();
+        Config joiningConfig = getConfigWithService(new FailingPostJoinOpService(), FailingPostJoinOpService.SERVICE_NAME);
+        joiningMemberShouldShutdown_whenExceptionDeserializingOnJoinOp(masterConfig, joiningConfig);
+    }
+
+    @Test
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPostJoinOpOnJoiningMember() {
+        Config masterConfig = getConfigWithService(new FailingPostJoinOpService(), FailingPostJoinOpService.SERVICE_NAME);
+        Config joiningConfig = new Config();
+        joiningMemberShouldShutdown_whenExceptionDeserializingOnJoinOp(masterConfig, joiningConfig);
+    }
+
+    /**
+     * This test is written originally for the case where a member can not deserialize a class because it does not
+     * have it on the classpath. We test it both ways on the callers of this method via passing different config classes.
+     * Deserialization can fail on master/joining member because either side does not have needed classes on the classpath.
+     */
+    private void joiningMemberShouldShutdown_whenExceptionDeserializingOnJoinOp(Config masterConfig, Config joiningConfig) {
+        HazelcastInstance hz1 = factory.newHazelcastInstance(masterConfig);
+
+        // joining member fails because of deserializing problem on pre/post-join op on master/local
+        // and should shutdown
         try {
-            factory.newHazelcastInstance(config);
+            factory.newHazelcastInstance(joiningConfig);
             fail("Second HazelcastInstance should not have started");
         } catch (IllegalStateException e) {
             // expected

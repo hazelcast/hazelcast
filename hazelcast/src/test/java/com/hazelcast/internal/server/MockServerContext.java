@@ -328,11 +328,6 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public Operation getPostJoinOperation() {
-                return null;
-            }
-
-            @Override
             public Operation getPreJoinOperation() {
                 return null;
             }
