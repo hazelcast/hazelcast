@@ -18,23 +18,23 @@ package com.hazelcast.jet.sql.impl.validate.operand;
 
 import org.apache.calcite.rel.type.RelDataType;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 public class MultiTypeOperandChecker extends TypedOperandChecker {
-    public static final TypedOperandChecker JSON_OR_VARCHAR = new MultiTypeOperandChecker(
-            TypedOperandChecker.JSON,
-            Collections.singletonList(VARCHAR)
-    );
+    public static final TypedOperandChecker JSON_OR_VARCHAR = new MultiTypeOperandChecker(JSON, VARCHAR);
 
     private final List<TypedOperandChecker> secondaryOperandCheckers;
 
-    public MultiTypeOperandChecker(
+    private MultiTypeOperandChecker(
             final TypedOperandChecker primaryTypeChecker,
-            final List<TypedOperandChecker> secondaryOperandCheckers
+            final TypedOperandChecker ...secondaryOperandCheckers
     ) {
         super(primaryTypeChecker.type);
-        this.secondaryOperandCheckers = secondaryOperandCheckers;
+        if (secondaryOperandCheckers == null || secondaryOperandCheckers.length == 0) {
+            throw new IllegalArgumentException("SecondaryOperandCheckers argument can not be empty");
+        }
+        this.secondaryOperandCheckers = Arrays.asList(secondaryOperandCheckers);
 
     }
 
