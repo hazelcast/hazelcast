@@ -21,7 +21,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import java.util.Arrays;
 import java.util.List;
 
-public class MultiTypeOperandChecker extends TypedOperandChecker {
+public final class MultiTypeOperandChecker extends TypedOperandChecker {
     public static final TypedOperandChecker JSON_OR_VARCHAR = new MultiTypeOperandChecker(JSON, VARCHAR);
 
     private final List<TypedOperandChecker> secondaryOperandCheckers;
