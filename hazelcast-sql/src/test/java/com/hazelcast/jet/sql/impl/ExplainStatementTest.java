@@ -151,7 +151,25 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
 
-        assertRowsAnyOrder(sql, emptyList());
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=[{" +
+                        "expressions=[[" +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
+                )));
+
+        createMapping("map", Integer.class, Integer.class);
+
+        sql = "EXPLAIN PLAN FOR INSERT INTO map VALUES (3, 3), (4, 4)";
+        assertRowsAnyOrder(sql, asList(
+                new Row("InsertPhysicalRel(" +
+                        "table=[[hazelcast, public, map[projects=[0, 1]]]], operation=[INSERT], flattened=[false])"),
+                new Row("  ValuesPhysicalRel(values=[{expressions=[" +
+                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}, " +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=3}], " +
+                        "[ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}, " +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=4}]]}])")
+        ));
     }
 
     @Test

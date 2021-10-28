@@ -442,7 +442,7 @@ SqlNode SqlExplainStatement() :
 }
 {
     <EXPLAIN> <PLAN> <FOR>
-    stmt = SqlQueryOrDml() {
+    stmt = ExtendedSqlQueryOrDml() {
         return new SqlExplainStatement(
             getPos(),
             stmt
@@ -493,6 +493,26 @@ SqlExtendedInsert SqlExtendedInsert() :
             span.end(source)
         );
     }
+}
+
+/** Parses a query (SELECT or VALUES)
+ * or DML statement (extended INSERT, UPDATE, DELETE, MERGE). */
+SqlNode ExtendedSqlQueryOrDml() :
+{
+    SqlNode stmt;
+}
+{
+    (
+        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    |
+        stmt = SqlExtendedInsert()
+    |
+        stmt = SqlDelete()
+    |
+        stmt = SqlUpdate()
+    |
+        stmt = SqlMerge()
+    ) { return stmt; }
 }
 
 /**
