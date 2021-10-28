@@ -21,14 +21,14 @@ import com.google.common.collect.Lists;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.validate.HazelcastResources;
 import com.hazelcast.jet.sql.impl.validate.literal.Literal;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
@@ -36,6 +36,7 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -71,6 +72,7 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.Util;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -433,6 +435,15 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             }
         }
         return nonCharacterTypes;
+    }
+
+    @Override
+    protected RelRoot convertQueryRecursive(SqlNode query, boolean top, @Nullable RelDataType targetRowType) {
+        final SqlKind kind = query.getKind();
+        if (kind == SqlKind.INSERT) {
+            return RelRoot.of(convertInsert((SqlInsert) query), kind);
+        }
+        return super.convertQueryRecursive(query, top, targetRowType);
     }
 
     private static QueryException literalConversionException(

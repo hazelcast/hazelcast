@@ -29,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -38,8 +39,6 @@ public class ExplainStatementTest extends SqlTestSupport {
     public static void beforeClass() {
         initialize(1, null);
     }
-
-    // TODO: ORDER BY unsupported?
 
     @Test
     public void test_explainStatementBase() {
@@ -96,14 +95,15 @@ public class ExplainStatementTest extends SqlTestSupport {
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
-        map.addIndex(IndexType.SORTED, "this");
 
         String sql = "EXPLAIN PLAN FOR SELECT * FROM map UNION ALL SELECT * FROM map ORDER BY this DESC";
 
         createMapping("map", Integer.class, Integer.class);
-        assertRowsAnyOrder(sql, singletonList(
-                new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
-                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+        assertRowsAnyOrder(sql, asList(
+                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC], requiresSort=[true])"),
+                new Row("  UnionPhysicalRel(all=[true])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
     }
 
@@ -142,4 +142,68 @@ public class ExplainStatementTest extends SqlTestSupport {
         ));
     }
 
+    @Test
+    public void test_explainStatementInsert() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+
+        String sql = "EXPLAIN PLAN FOR INSERT INTO map VALUES (2, 2)";
+
+        createMapping("map", Integer.class, Integer.class);
+
+        assertRowsAnyOrder(sql, emptyList());
+    }
+
+    @Test
+    public void test_explainStatementUpdate() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 10);
+
+        createMapping("map", Integer.class, Integer.class);
+
+        // (Optimized) Update by single key
+        String sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1";
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1], " +
+                        "filter==($0, 1)]]], keyCondition=[1], updatedColumns=[[this]], sourceExpressions=[[2]])")
+        ));
+
+        createMapping("map", Integer.class, Integer.class);
+
+        // Update by multiple keys
+        sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1 AND __key = 2";
+        assertRowsAnyOrder(sql, asList(
+                new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], operation=[UPDATE], " +
+                        "updateColumnList=[[this]], sourceExpressionList=[[2]], flattened=[false])"),
+                new Row("  ValuesPhysicalRel(values=[{expressions=[]}])")
+        ));
+    }
+
+    @Test
+    public void test_explainStatementDelete() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        createMapping("map", Integer.class, Integer.class);
+
+        // (Optimized) Delete by single key
+        String sql = "EXPLAIN PLAN FOR DELETE FROM map WHERE __key = 1";
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("DeleteByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0], " +
+                        "filter==($0, 1)]]], keyCondition=[1])")
+        ));
+
+        createMapping("map", Integer.class, Integer.class);
+        // Common Delete by single key
+        sql = "EXPLAIN PLAN FOR DELETE FROM map";
+        assertRowsAnyOrder(sql, asList(
+                new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
+                        "operation=[DELETE], flattened=[false])"),
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0]]]])")
+
+        ));
+    }
 }

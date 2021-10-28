@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
@@ -55,10 +56,12 @@ import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.SqlWith;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
+import org.apache.calcite.sql.validate.SqlNonNullableAccessors;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorException;
@@ -66,8 +69,10 @@ import org.apache.calcite.sql.validate.SqlValidatorImplBridge;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -79,6 +84,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
+import static org.apache.calcite.sql.SqlUtil.stripAs;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -594,8 +600,32 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             select.setFetch(orderBy.fetch);
             return select;
         }
-        // TODO: case with SqlSetOp.
-        return node;
+
+        final SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
+        selectList.add(SqlIdentifier.star(SqlParserPos.ZERO));
+        final SqlNodeList orderList;
+        SqlSelect innerSelect = getInnerSelect(node);
+        if (innerSelect != null && isAggregate(innerSelect)) {
+            orderList = SqlNode.clone(orderBy.orderList);
+            // We assume that ORDER BY item does not have ASC etc.
+            // We assume that ORDER BY item is present in SELECT list.
+            for (int i = 0; i < orderList.size(); i++) {
+                SqlNode sqlNode = orderList.get(i);
+                SqlNodeList selectList2 = SqlNonNullableAccessors.getSelectList(innerSelect);
+                for (Ord<SqlNode> sel : Ord.zip(selectList2)) {
+                    if (stripAs(sel.e).equalsDeep(sqlNode, Litmus.IGNORE)) {
+                        orderList.set(i,
+                                SqlLiteral.createExactNumeric(Integer.toString(sel.i + 1),
+                                        SqlParserPos.ZERO));
+                    }
+                }
+            }
+        } else {
+            orderList = orderBy.orderList;
+        }
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, orderBy.query,
+                null, null, null, null, orderList, orderBy.offset,
+                orderBy.fetch, null);
     }
 
     /**
@@ -621,5 +651,25 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
         }
         return exception;
+    }
+
+    /**
+     * Copied from SqlValidatorImpl
+     *
+     * @param node
+     * @return
+     */
+    private static @Nullable SqlSelect getInnerSelect(SqlNode node) {
+        for (; ; ) {
+            if (node instanceof SqlSelect) {
+                return (SqlSelect) node;
+            } else if (node instanceof SqlOrderBy) {
+                node = ((SqlOrderBy) node).query;
+            } else if (node instanceof SqlWith) {
+                node = ((SqlWith) node).body;
+            } else {
+                return null;
+            }
+        }
     }
 }

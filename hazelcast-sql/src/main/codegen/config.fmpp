@@ -412,10 +412,10 @@ data: {
     # Return type of method implementation should be 'SqlNode'.
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
+      "SqlExplainStatement()"
       "SqlAlterJob()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
-      "SqlExplainStatement()"
     ]
 
     # List of methods for parsing custom literals.
