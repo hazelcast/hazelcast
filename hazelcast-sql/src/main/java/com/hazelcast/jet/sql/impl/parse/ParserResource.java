@@ -55,7 +55,7 @@ public interface ParserResource {
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();
 
-    @BaseMessage("Unknown options for {0} index. Only BITMAP index requires an options")
+    @BaseMessage("Unknown options for {0} index. Only BITMAP index requires options")
     ExInst<SqlValidatorException> unsupportedIndexType(String indexType);
 
     @BaseMessage("Can't create BITMAP index: bitmap index config is empty. " +

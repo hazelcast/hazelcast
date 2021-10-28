@@ -43,6 +43,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.IMap;
@@ -118,7 +119,7 @@ public class PlanExecutor {
             throw QueryException.error("Can't create index: mapping '" + plan.mappingName() + "' doesn't exist");
         }
 
-        if (!mapping.type().equals("IMap")) {
+        if (!mapping.type().equalsIgnoreCase(IMapSqlConnector.TYPE_NAME)) {
             throw QueryException.error("Can't create index: only IMap supports index creation");
         }
 

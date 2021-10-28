@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
@@ -193,15 +190,15 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     public void hashAndSortedIndicesMustNotContainOptionsTest() {
         String sql1 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE HASH OPTIONS ('a' = '1')";
         assertThatThrownBy(() -> instance().getSql().execute(sql1))
-                .hasMessageContaining("Only BITMAP index requires an options");
+                .hasMessageContaining("Only BITMAP index requires options");
 
-        String sql2 = "CREATE INDEX IF NOT EXISTS idxx ON " + MAP_NAME + " (this) TYPE SORTED OPTIONS ('a' = '1')";
+        String sql2 = "CREATE INDEX IF NOT EXISTS idx2 ON " + MAP_NAME + " (this) TYPE SORTED OPTIONS ('a' = '1')";
         assertThatThrownBy(() -> instance().getSql().execute(sql2))
-                .hasMessageContaining("Only BITMAP index requires an options");
+                .hasMessageContaining("Only BITMAP index requires options");
     }
 
     @Test
-    public void bitmapIndexDoesntContainOptionsTest() {
+    public void bitmapIndexDoesNotContainOptionsTest() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("Cant create BITMAP index: bitmap index config is empty");

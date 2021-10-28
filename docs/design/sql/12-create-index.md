@@ -27,8 +27,9 @@
 ### Background
 #### Description
 
-This document describes IMap index creation via SQL.
-It's a logical step to improve Hazelcast SQL engine dynamic configuration possibilities and enrich available SQL syntax.
+This document describes IMap index creation via SQL. It's a step to
+improve Hazelcast SQL engine dynamic configuration possibilities and
+enrich available SQL syntax.
 
 ### Functional Design
 #### Summary of Functionality
@@ -38,12 +39,12 @@ It's a logical step to improve Hazelcast SQL engine dynamic configuration possib
 
 Proposed grammar:
 ```
-CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
+CREATE INDEX [ IF NOT EXISTS ] index_name ON object_name ( column_name [, ...] )
 [ TYPE ( SORTED | HASH | BITMAP ) ]
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
 
-Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` method call.  
+Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` method call.
 
 ##### Notes/Questions/Issues
 
@@ -51,7 +52,7 @@ Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` metho
   1. **Advantages of using the mapping name:**
      1. Simpler UX: the user uses the column names as defined in the mapping, not the column external names.
      2. Security permissions sharing. ?? Sasha add details
-     3. 
+     3. Allows seamless use of function-based indexes
   2**Advantages of using the IMap name:**
      1. There are much less edge cases that we can get wrong
      2. Better matches the physical reality of IMaps: 
@@ -61,7 +62,44 @@ Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` metho
      3. No need to create mapping first before creating the index. Useful if SQL is used as a configuration tool. This point is also an instance of a "better matching to the physical reality"
      4. We'll not suffer from similar issues if we in the future support index creation for other connectors.
 
-[TODO]: <> (@viliam, please, add your thoughts.)
+The issue is also a bit wider: If we use the mapping name, then the
+expectation is that the index attributes will be the mapping columns.
+That for example means that if a column has a different external name,
+the external name will be used for the `addIndex` call. For example, the
+following `CREATE INDEX` command:
+
+```sql
+CREATE MAPPING m(
+  __key INT, 
+  a VARCHAR EXTERNAL NAME b
+)
+TYPE IMap
+OPTIONS ...;
+
+CREATE INDEX i ON m(a);
+```
+
+will translate to an `addIndex` call that will create an index on field
+`b`.
+
+But it also means that the following command:
+
+```sql
+CREATE MAPPING m(
+    __key INT, 
+    this JSON
+)
+TYPE IMap
+OPTIONS (
+    'valueFormat'='json', ...
+);
+
+CREATE INDEX i ON m(JSON_VALUE(this, '$.a'))
+```
+
+will translate to an `addIndex` call that will simply create an index on
+field `a`, because indexing of JSON values works like this.
+
 
 - ❓ State of json indexes?
 - ❓ What is permissible index names scope? 
@@ -69,6 +107,41 @@ Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` metho
 
 Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
 
+
+For the above reasons we propose to use IMap name for creating indexes.
+The indexes are a feature of IMap, SQL is just a new API to create them.
+
+### Future-Proofing
+
+We're considering possible future enhancements that we might do at some
+point to check, if the proposed syntax isn't at conflict.
+
+#### Creating indexes for other connectors
+
+It's unlikely that we'll support CREATE INDEX commands for non-Hazelcast
+data structures. Today the only HZ structure that supports indexes is
+IMap, the most likely future candidate is `ReplicatedMap`.
+
+We can support it by adding `CONNECTOR` clause to the command:
+
+```
+CREATE INDEX my_index  ON external_name(column_name, ...)
+CONNECTOR ReplicatedMap
+TYPE ...
+OPTIONS ...
+```
+
+If the `TYPE` doesn't apply to the connector, it will be unused, or
+different types can be specified.
+
+#### Function-Based Indexes
+
+Function-based indexes are used to index a derived value. Common example
+is to use it to create index for `UPPER(field)` to be able to perform
+case-insensitive index lookups. A function-based index can use any SQL
+expression.
+
+These index cannot be defined 
 
 ### Technical Design
 
@@ -78,6 +151,8 @@ CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
 [ TYPE ( SORTED | HASH | BITMAP ) ]
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
+
+TODO [IF NOT EXISTS]
 
 Statement parameters:
 
