@@ -44,7 +44,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -736,7 +735,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOp() {
         Config config = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

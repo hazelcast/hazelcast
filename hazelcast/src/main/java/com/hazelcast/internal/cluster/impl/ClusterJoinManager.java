@@ -52,6 +52,8 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -267,6 +269,10 @@ public class ClusterJoinManager {
     private void executeJoinRequest(JoinRequest joinRequest, ServerConnection connection) {
         clusterServiceLock.lock();
         try {
+            if (checkDeserializationFailure(joinRequest.getDeserializationFailure(), joinRequest.getAddress())) {
+                return;
+            }
+
             if (checkJoinRequest(joinRequest, connection)) {
                 return;
             }
@@ -283,6 +289,20 @@ public class ClusterJoinManager {
         } finally {
             clusterServiceLock.unlock();
         }
+    }
+
+    /**
+     * Handles the deserialization failure if it exists
+     *
+     * @param exception the deserialization exception to be handled
+     * @return true if there is a deserialization failure and join should not proceed
+     */
+    private boolean checkDeserializationFailure(@Nullable Exception exception, @Nonnull Address target) {
+        if (exception == null) {
+            return false;
+        }
+        nodeEngine.getOperationService().send(new BeforeJoinCheckFailureOp(exception.getMessage()), target);
+        return true;
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

@@ -50,6 +50,7 @@ public class JoinRequest extends JoinMessage implements Versioned {
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
     private OnJoinOp prejoinOperation;
+    private transient Exception deserializationFailure;
 
     public JoinRequest() {
     }
@@ -92,6 +93,10 @@ public class JoinRequest extends JoinMessage implements Versioned {
         return prejoinOperation;
     }
 
+    public Exception getDeserializationFailure() {
+        return deserializationFailure;
+    }
+
     public MemberInfo toMemberInfo() {
         return new MemberInfo(address, uuid, attributes, liteMember, memberVersion, addresses);
     }
@@ -117,7 +122,11 @@ public class JoinRequest extends JoinMessage implements Versioned {
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
         if (in.getVersion().isGreaterOrEqual(V5_0)) {
-            prejoinOperation = in.readObject();
+            try {
+                prejoinOperation = in.readObject();
+            } catch (Exception e) {
+                deserializationFailure = e;
+            }
         }
     }
 
