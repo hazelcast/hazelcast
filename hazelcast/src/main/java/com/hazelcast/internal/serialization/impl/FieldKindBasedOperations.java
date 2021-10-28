@@ -44,7 +44,6 @@ public interface FieldKindBasedOperations {
         throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");
     }
 
-
     default int hashCode(GenericRecord record, String fieldName) {
         return Objects.hashCode(readGenericRecordOrPrimitive(record, fieldName));
     }

@@ -25,7 +25,6 @@ import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSupport {
 
-    static final Car PORSCHE = new Car("Porsche", new Engine(300),
+    static final Car PORSCHE = new Car("Porsche", new Engine(300), null,
             Wheel.w("front", false), Wheel.w("rear", false));
 
     @Test(expected = IllegalArgumentException.class)
@@ -157,13 +156,18 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     }
 
     @Test
-    public void portableAttribute() throws IOException {
+    public void compactAttribute() throws IOException {
         Engine expected = PORSCHE.engine;
         assertEquals(expected, reader(PORSCHE).read("engine"));
     }
 
     @Test
-    public void nestedPortableAttribute() throws IOException {
+    public void compactNullablePrimitive() throws IOException {
+        assertEquals(PORSCHE.price, reader(PORSCHE).read("price"));
+    }
+
+    @Test
+    public void nestedcompactAttribute() throws IOException {
         Chip expected = PORSCHE.engine.chip;
         assertEquals(expected, reader(PORSCHE).read("engine.chip"));
     }
@@ -193,95 +197,95 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     }
 
     @Test
-    public void portableArray_wholeArrayFetched() throws IOException {
+    public void compactArray_wholeArrayFetched() throws IOException {
         Wheel[] expected = PORSCHE.wheels;
         assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels"));
     }
 
     @Test
-    public void portableArray_wholeArrayFetched_withAny() throws IOException {
+    public void compactArray_wholeArrayFetched_withAny() throws IOException {
         Wheel[] expected = PORSCHE.wheels;
         assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any]")).getResults());
     }
 
     @Test
-    public void portableArrayAtTheEnd_oneElementFetched() throws IOException {
+    public void compactArrayAtTheEnd_oneElementFetched() throws IOException {
         Wheel expected = PORSCHE.wheels[0];
         assertEquals(expected, reader(PORSCHE).read("wheels[0]"));
     }
 
     @Test
-    public void portableArrayAtTheEnd_lastElementFetched() throws IOException {
+    public void compactArrayAtTheEnd_lastElementFetched() throws IOException {
         Wheel expected = PORSCHE.wheels[1];
         assertEquals(expected, reader(PORSCHE).read("wheels[1]"));
     }
 
     @Test
-    public void portableArrayFirst_primitiveAtTheEnd() throws IOException {
+    public void compactArrayFirst_primitiveAtTheEnd() throws IOException {
         String expected = "rear";
         Assert.assertEquals(expected, reader(PORSCHE).read("wheels[1].name"));
     }
 
     @Test
-    public void portableArrayFirst_portableAtTheEnd() throws IOException {
+    public void compactArrayFirst_compactAtTheEnd() throws IOException {
         Chip expected = ((Wheel) PORSCHE.wheels[1]).chip;
         assertEquals(expected, reader(PORSCHE).read("wheels[1].chip"));
     }
 
     @Test
-    public void portableArrayFirst_portableArrayAtTheEnd_oneElementFetched() throws IOException {
+    public void compactArrayFirst_compactArrayAtTheEnd_oneElementFetched() throws IOException {
         Chip expected = ((Wheel) PORSCHE.wheels[0]).chips[1];
         assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[1]"));
     }
 
     @Test
-    public void portableArrayFirst_portableArrayAtTheEnd_wholeArrayFetched() throws IOException {
+    public void compactArrayFirst_compactArrayAtTheEnd_wholeArrayFetched() throws IOException {
         Chip[] expected = ((Wheel) PORSCHE.wheels[0]).chips;
         assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[0].chips"));
     }
 
     @Test
-    public void portableArrayFirst_portableArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
+    public void compactArrayFirst_compactArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[0].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_portableArrayInTheMiddle_primitiveAtTheEnd() throws IOException {
+    public void compactArrayFirst_compactArrayInTheMiddle_primitiveAtTheEnd() throws IOException {
         int expected = 20;
         Assert.assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[0].power"));
     }
 
     @Test
-    public void portableArrayFirst_primitiveArrayAtTheEnd() throws IOException {
+    public void compactArrayFirst_primitiveArrayAtTheEnd() throws IOException {
         int expected = 12 + 5;
         Assert.assertEquals(expected, reader(PORSCHE).read("wheels[0].serial[1]"));
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void portableArrayFirst_primitiveArrayAtTheEnd2() throws IOException {
+    public void compactArrayFirst_primitiveArrayAtTheEnd2() throws IOException {
         reader(PORSCHE).read("wheels[0].serial[1].x");
     }
 
     @Test
-    public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
+    public void compactArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
         int[] expected = ((Wheel) PORSCHE.wheels[0]).serial;
         assertArrayEquals(expected, (int[]) reader(PORSCHE).read("wheels[0].serial"));
     }
 
     @Test
-    public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
+    public void compactArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
         int[] expected = ((Wheel) PORSCHE.wheels[0]).serial;
         List<Integer> collect = Arrays.stream(expected).boxed().collect(Collectors.toList());
         assertCollection(collect, ((MultiResult) reader(PORSCHE).read("wheels[0].serial[any]")).getResults());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd() throws IOException {
         assertCollection(Arrays.asList(17, 16), ((MultiResult) reader(PORSCHE).read("wheels[any].serial[1]")).getResults());
     }
 
     @Test
-    public void portableArrayFirst_withAny_ObjectArrayAtTheEnd2() throws IOException {
+    public void compactArrayFirst_withAny_ObjectArrayAtTheEnd2() throws IOException {
         Chip[] expected = new Chip[]{
                 ((Wheel) PORSCHE.wheels[0]).chip,
                 ((Wheel) PORSCHE.wheels[1]).chip,
@@ -290,7 +294,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
         Chip[] expected = new Chip[]{
                 ((Wheel) PORSCHE.wheels[0]).chips[1],
                 ((Wheel) PORSCHE.wheels[1]).chips[1],
@@ -299,7 +303,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
         String[] expected = {
                 "front",
                 "rear",
@@ -308,38 +312,38 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd6() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd6() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].emptyChips[any].power")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].nullChips[any].power")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd8() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8a() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd8a() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[any].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd9() throws IOException {
-        Portable[] expected = {};
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd9() throws IOException {
+        Object[] expected = {};
         assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[1].emptyChips"));
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
         assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].nullChips[any]")).isNullEmptyTarget());
     }
 
     @Test
-    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
+    public void compactArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
         assertArrayEquals(null, (boolean[]) reader(PORSCHE).read("wheels[1].nullChips"));
     }
 
@@ -377,20 +381,20 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
         return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
     }
 
-
     static class Car {
 
         int power;
         String name;
         Engine engine;
         Wheel[] wheels;
+        Integer price;
 
         public String[] model;
 
         Car() {
         }
 
-        Car(String name, Engine engine, Wheel... wheels) {
+        Car(String name, Engine engine, Integer price, Wheel... wheels) {
             this.power = 100;
             this.name = name;
             this.engine = engine;
@@ -406,17 +410,35 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            Car that = (Car) o;
-            if (!Objects.equals(name, that.name)) {
+
+            Car car = (Car) o;
+
+            if (power != car.power) {
                 return false;
             }
-            return Objects.equals(engine, that.engine);
+            if (!Objects.equals(name, car.name)) {
+                return false;
+            }
+            if (!Objects.equals(engine, car.engine)) {
+                return false;
+            }
+            if (!Arrays.equals(wheels, car.wheels)) {
+                return false;
+            }
+            if (!Objects.equals(price, car.price)) {
+                return false;
+            }
+            return Arrays.equals(model, car.model);
         }
 
         @Override
         public int hashCode() {
-            int result = name != null ? name.hashCode() : 0;
+            int result = power;
+            result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (engine != null ? engine.hashCode() : 0);
+            result = 31 * result + Arrays.hashCode(wheels);
+            result = 31 * result + (price != null ? price.hashCode() : 0);
+            result = 31 * result + Arrays.hashCode(model);
             return result;
         }
     }

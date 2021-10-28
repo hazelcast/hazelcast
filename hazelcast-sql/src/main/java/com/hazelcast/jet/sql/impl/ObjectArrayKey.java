@@ -73,11 +73,11 @@ public final class ObjectArrayKey implements DataSerializable {
     }
 
     public static ObjectArrayKey project(Object[] row, int[] indices) {
-        Object[] hashKeys = new Object[indices.length];
+        Object[] key = new Object[indices.length];
         for (int i = 0; i < indices.length; i++) {
-            hashKeys[i] = row[indices[i]];
+            key[i] = row[indices[i]];
         }
-        return new ObjectArrayKey(hashKeys);
+        return new ObjectArrayKey(key);
     }
 
     /**
@@ -88,12 +88,6 @@ public final class ObjectArrayKey implements DataSerializable {
      * @return the projection function
      */
     public static FunctionEx<Object[], ObjectArrayKey> projectFn(int[] indices) {
-        return row -> {
-            Object[] key = new Object[indices.length];
-            for (int i = 0; i < indices.length; i++) {
-                key[i] = row[indices[i]];
-            }
-            return new ObjectArrayKey(key);
-        };
+        return row -> project(row, indices);
     }
 }
