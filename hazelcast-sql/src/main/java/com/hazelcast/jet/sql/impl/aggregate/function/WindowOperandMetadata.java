@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -33,7 +32,8 @@ import org.apache.calcite.sql.validate.SqlValidator;
 
 import java.util.List;
 
-import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
+import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
@@ -44,11 +44,10 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        HazelcastSqlValidator validator = binding.getValidator();
         SqlNode input = binding.operand(0);
-        SqlNode column = extractColumn(binding.operand(1));
+        SqlNode column = unwrapFunctionOperand(binding.operand(1));
         SqlNode lag = binding.operand(2);
-        boolean result = checkColumnOperand(validator, input, (SqlCall) column, lag);
+        boolean result = checkColumnOperand(binding, input, (SqlCall) column, lag);
 
         if (!result && throwOnFailure) {
             throw binding.newValidationSignatureError();
@@ -56,25 +55,10 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
         return result;
     }
 
-    private static SqlNode extractColumn(SqlNode operand) {
-        return operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand;
-    }
-
-    private static boolean checkColumnOperand(SqlValidator validator, SqlNode input, SqlCall column, SqlNode lag) {
-        SqlIdentifier columnIdentifier = checkDescriptorCardinality(column);
-        RelDataTypeField columnField = checkColumnName(validator, input, columnIdentifier);
-        return checkColumnType(validator, columnField, lag);
-    }
-
-    private static SqlIdentifier checkDescriptorCardinality(SqlCall descriptor) {
-        List<SqlNode> columnIdentifiers = descriptor.getOperandList();
-        if (columnIdentifiers.size() != 1) {
-            throw SqlUtil.newContextException(
-                    descriptor.getParserPosition(),
-                    ValidatorResource.RESOURCE.mustUseSingleOrderingColumn()
-            );
-        }
-        return (SqlIdentifier) columnIdentifiers.get(0);
+    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode input, SqlCall column, SqlNode lag) {
+        HazelcastSqlValidator validator = binding.getValidator();
+        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
+        return checkColumnType(validator, orderingColumnType, lag);
     }
 
     /**
@@ -93,12 +77,11 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
                 ));
     }
 
-    private static boolean checkColumnType(SqlValidator validator, RelDataTypeField columnField, SqlNode lag) {
-        SqlTypeName timeColumnType = columnField.getType().getSqlTypeName();
+    private static boolean checkColumnType(SqlValidator validator, SqlTypeName orderingColumnType, SqlNode lag) {
         SqlTypeName lagType = validator.getValidatedNodeType(lag).getSqlTypeName();
-        if (SqlTypeName.INT_TYPES.contains(timeColumnType)) {
+        if (SqlTypeName.INT_TYPES.contains(orderingColumnType)) {
             return SqlTypeName.INT_TYPES.contains(lagType);
-        } else if (SqlTypeName.DATETIME_TYPES.contains(timeColumnType)) {
+        } else if (SqlTypeName.DATETIME_TYPES.contains(orderingColumnType)) {
             return lagType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
         } else {
             return false;

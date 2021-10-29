@@ -132,7 +132,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateEmptyStream() {
-        assertEmptyResult("SELECT * FROM TABLE(GENERATE_STREAM(0))");
+        assertEmptyResultStream("SELECT * FROM TABLE(GENERATE_STREAM(0))");
     }
 
     @Test

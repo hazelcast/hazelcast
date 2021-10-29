@@ -18,18 +18,13 @@ package com.hazelcast.jet.sql.impl.aggregate.function;
 
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.sql.validate.SqlValidator;
 
-import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
+import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
 
 public abstract class HazelcastWindowTableFunction extends HazelcastTableFunction {
 
@@ -37,36 +32,24 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
         super(kind.name(), operandMetadata, returnTypeInference(orderingColumnIndex));
     }
 
-    private static SqlReturnTypeInference returnTypeInference(int orderingColumnIndex) {
+    /**
+     * @param orderingColumnParameterIndex The index of the DESCRIPTOR
+     *     parameter pointing to the ordering column.
+     */
+    private static SqlReturnTypeInference returnTypeInference(int orderingColumnParameterIndex) {
         return binding -> {
             SqlCallBinding callBinding = ((SqlCallBinding) binding);
-            SqlTypeName windowEdgeType = inferOrderingColumnType(callBinding, orderingColumnIndex);
+            // We'll use the original row type and append two columns: window start and end. These
+            // columns have the same type as the time column referenced by the descriptor.
+            SqlTypeName orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex);
             RelDataType inputRowType = callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
             return binding.getTypeFactory().builder()
                     .kind(inputRowType.getStructKind())
                     .addAll(inputRowType.getFieldList())
-                    .add("window_start", windowEdgeType)
-                    .add("window_end", windowEdgeType)
+                    .add("window_start", orderingColumnType)
+                    .add("window_end", orderingColumnType)
                     .build();
         };
-    }
-
-    private static SqlTypeName inferOrderingColumnType(SqlCallBinding binding, int orderingColumnIndex) {
-        SqlNode input = binding.operand(0);
-
-        SqlCall orderingColumn = (SqlCall) extractColumn(binding.operand(orderingColumnIndex));
-        SqlIdentifier orderingColumnIdentifier = (SqlIdentifier) orderingColumn.getOperandList().get(0);
-        String orderingColumnName = orderingColumnIdentifier.getSimple();
-
-        SqlValidator validator = binding.getValidator();
-        RelDataTypeField columnField = validator
-                .getValidatedNodeType(input)
-                .getField(orderingColumnName, validator.getCatalogReader().nameMatcher().isCaseSensitive(), false);
-        return columnField.getType().getSqlTypeName();
-    }
-
-    private static SqlNode extractColumn(SqlNode operand) {
-        return operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand;
     }
 
     @Override

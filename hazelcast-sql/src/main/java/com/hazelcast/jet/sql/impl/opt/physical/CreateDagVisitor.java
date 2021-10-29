@@ -314,7 +314,7 @@ public class CreateDagVisitor {
                 mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
-                            return row -> WindowUtils.enhanceWithWindowEdges(row, orderingFieldIndex, windowPolicy);
+                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),
                         (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
                 )

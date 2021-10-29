@@ -318,7 +318,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_groupByEmpty() {
         String name = createTable();
 
-        assertEmptyResult("SELECT window_start FROM " +
+        assertEmptyResultStream("SELECT window_start FROM " +
                 "TABLE(TUMBLE(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
@@ -505,7 +505,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_countEmpty() {
         String name = createTable();
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -652,7 +652,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_minEmpty() {
         String name = createTable();
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start, MIN(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -799,7 +799,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_maxEmpty() {
         String name = createTable();
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start, MAX(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -975,7 +975,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_sumEmpty() {
         String name = createTable();
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -1152,7 +1152,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     public void test_avgEmpty() {
         String name = createTable();
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start, AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -1407,7 +1407,7 @@ public class SqlTumbleTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_windowEdgeIsProjected_then_regularAggregationIsApplied() {
+    public void when_windowBoundIsProjected_then_regularAggregationIsApplied() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
                 row(timestampTz(1), null, 1),
@@ -1416,7 +1416,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(10), null, null)
         );
 
-        assertEmptyResult(
+        assertEmptyResultStream(
                 "SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +

@@ -181,7 +181,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         assertThat(actualRows).hasSameElementsAs(expectedRows);
     }
 
-    public static void assertEmptyResult(String sql) {
+    /**
+     * Runs a streaming query and checks that for a hard-coded time it
+     * doesn't return any results.
+     */
+    public static void assertEmptyResultStream(String sql) {
         Future<Boolean> future;
         try (SqlResult result = instance().getSql().execute(sql)) {
             future = spawn(() -> result.iterator().hasNext());

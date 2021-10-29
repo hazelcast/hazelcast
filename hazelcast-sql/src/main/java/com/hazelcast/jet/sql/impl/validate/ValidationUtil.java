@@ -20,6 +20,8 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
+import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
+
 public final class ValidationUtil {
 
     private ValidationUtil() {
@@ -33,5 +35,13 @@ public final class ValidationUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * If the operand is an ARGUMENT_ASSIGNMENT, returns its target.
+     * Otherwise return the operand.
+     */
+    public static SqlNode unwrapFunctionOperand(SqlNode operand) {
+        return operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand;
     }
 }

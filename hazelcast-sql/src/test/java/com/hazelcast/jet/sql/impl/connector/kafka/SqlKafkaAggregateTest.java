@@ -29,7 +29,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 
-public class SqlAggregateTest extends SqlTestSupport {
+public class SqlKafkaAggregateTest extends SqlTestSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 1;
 
