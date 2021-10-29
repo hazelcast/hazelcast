@@ -124,10 +124,10 @@ public class SqlTumbleTest extends SqlTestSupport {
         try (SqlResult result = sqlService.execute("SELECT * FROM " +
                 "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), " + windowSize + "))")
         ) {
-            assertThat(result.getRowMetadata().findColumn("window_start")).isGreaterThan(-1);
-            assertThat(result.getRowMetadata().getColumn(0).getType()).isEqualTo(orderingColumnType.getPublicType());
-            assertThat(result.getRowMetadata().findColumn("window_end")).isGreaterThan(-1);
+            assertThat(result.getRowMetadata().findColumn("window_start")).isEqualTo(1);
             assertThat(result.getRowMetadata().getColumn(1).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.getRowMetadata().findColumn("window_end")).isEqualTo(2);
+            assertThat(result.getRowMetadata().getColumn(2).getType()).isEqualTo(orderingColumnType.getPublicType());
             assertThat(result.iterator()).hasNext();
         }
     }
