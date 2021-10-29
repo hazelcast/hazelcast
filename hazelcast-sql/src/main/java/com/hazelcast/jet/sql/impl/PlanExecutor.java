@@ -77,6 +77,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
 public class PlanExecutor {
+    private static final String LE = System.lineSeparator();
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -215,7 +216,7 @@ public class PlanExecutor {
         );
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
-        planRows = Arrays.stream(plan.getRel().explain().split("\n"));
+        planRows = Arrays.stream(plan.getRel().explain().split(LE));
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
