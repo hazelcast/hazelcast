@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastCompositeType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -34,6 +35,8 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -300,12 +303,49 @@ public final class OptUtils {
                     + ", getSqlTypeName should never return null.");
         }
 
-        if (sqlTypeName == SqlTypeName.OTHER) {
+        if (sqlTypeName == SqlTypeName.ROW) {
+            return convertRowType(field, typeFactory);
+        } else if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
+    }
+
+    private static RelDataType convertRowType(final TableField field, final RelDataTypeFactory typeFactory) {
+        return convertRowTypeRecursively(field.getType(), typeFactory);
+    }
+
+    private static RelDataType convertRowTypeRecursively(final QueryDataType dataType, final RelDataTypeFactory typeFactory) {
+        if (!dataType.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+            throw new RuntimeException("convertRowType only support converting ROW dataType");
+        }
+
+        final List<QueryDataTypeField> subFields = dataType.getSubFields();
+        final List<HazelcastCompositeType.Field> fields = new ArrayList<>();
+        for (int index = 0; index < subFields.size(); index++) {
+            final QueryDataTypeField entry = subFields.get(index);
+            final HazelcastCompositeType.Field currentField;
+
+            if (entry.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+                currentField = new HazelcastCompositeType.Field(
+                        entry.getName(),
+                        index,
+                        convertRowTypeRecursively(entry.getType(), typeFactory)
+                );
+            } else {
+                currentField = new HazelcastCompositeType.Field(
+                        entry.getName(),
+                        index,
+                        typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(entry.getType()))
+                );
+            }
+
+            fields.add(currentField);
+        }
+
+        return new HazelcastCompositeType(fields);
     }
 
     private static RelDataType convertCustomType(QueryDataType fieldType) {

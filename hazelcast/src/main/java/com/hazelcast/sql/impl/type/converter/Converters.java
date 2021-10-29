@@ -70,7 +70,8 @@ public final class Converters {
             if (Calendar.class.isAssignableFrom(clazz)) {
                 res = CalendarConverter.INSTANCE;
             } else {
-                res = ObjectConverter.INSTANCE;
+                //res = ObjectConverter.INSTANCE;
+                res = RowConverter.INSTANCE;
             }
         }
 
@@ -135,6 +136,9 @@ public final class Converters {
 
         // JSON converter
         converters.add(JsonConverter.INSTANCE);
+
+        // ROW converter
+        converters.add(RowConverter.INSTANCE);
 
         return converters;
     }

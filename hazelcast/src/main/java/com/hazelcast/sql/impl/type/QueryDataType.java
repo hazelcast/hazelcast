@@ -43,12 +43,14 @@ import com.hazelcast.sql.impl.type.converter.MapConverter;
 import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
@@ -92,15 +94,37 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
+    public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
     private Converter converter;
+    private List<QueryDataTypeField> fields;
 
     public QueryDataType() {
         // No-op.
     }
 
+    public QueryDataType(List<QueryDataTypeField> fields) {
+        this.fields = fields;
+        this.converter = RowConverter.INSTANCE;
+    }
+
     QueryDataType(Converter converter) {
         this.converter = converter;
+    }
+
+    public List<QueryDataTypeField> getSubFields() {
+        return fields;
+    }
+
+    public QueryDataType getSubFieldType(String fieldName) {
+        if (fields == null || fields.size() == 0) {
+            return null;
+        }
+        return fields.stream()
+                .filter(field -> field.getName().equals(fieldName))
+                .findFirst()
+                .map(QueryDataTypeField::getType)
+                .orElse(null);
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -173,11 +197,13 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
+        out.writeObject(fields);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         converter = Converters.getConverter(in.readInt());
+        fields = in.readObject();
     }
 
     @Override

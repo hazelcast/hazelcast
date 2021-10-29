@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelReferentialConstraint;
@@ -150,13 +151,16 @@ public class HazelcastTable extends AbstractTable {
         for (Integer project : projects) {
             TableField field = target.getField(project);
 
+            if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+                processRowTypeFields(field, typeFactory, convertedFields);
+                continue;
+            }
+
             String fieldName = field.getName();
-
             RelDataType relType = OptUtils.convert(field, typeFactory);
-
             RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), relType);
-            convertedFields.add(convertedField);
 
+            convertedFields.add(convertedField);
             if (field.isHidden()) {
                 hiddenFieldNames.add(fieldName);
             }
@@ -165,6 +169,17 @@ public class HazelcastTable extends AbstractTable {
         rowType = new RelRecordType(StructKind.PEEK_FIELDS, convertedFields, false);
 
         return rowType;
+    }
+
+    private void processRowTypeFields(
+            final TableField field,
+            final RelDataTypeFactory typeFactory,
+            final List<RelDataTypeField> convertedFields
+    ) {
+        RelDataType relType = OptUtils.convert(field, typeFactory);
+        String fieldName = field.getName();
+        RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), relType);
+        convertedFields.add(convertedField);
     }
 
     @Override

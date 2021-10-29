@@ -28,6 +28,8 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -80,7 +83,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        if (type != QueryDataType.OBJECT) {
+        if (type != QueryDataType.OBJECT && type != QueryDataType.ROW) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
             return resolveObjectSchema(isKey, userFields, clazz);
@@ -144,17 +147,44 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         if (fieldsInClass.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
             String name = isKey ? KEY : VALUE;
-            return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
+            return Stream.of(new MappingField(name, QueryDataType.ROW, name));
         }
 
-        return fieldsInClass.entrySet().stream()
+        final List<MappingField> topLevelFields = fieldsInClass.entrySet().stream()
                 .map(classField -> {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
                     String name = classField.getKey();
+                    if (type.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+                        // Replace generic ROW type with actual metadata-rich ROW type.
+                        type = enhanceRowType(classField.getValue());
+                    }
 
                     return new MappingField(name, type, path.toString());
-                });
+                }).collect(Collectors.toList());
+
+        return topLevelFields.stream();
+    }
+
+    private QueryDataType enhanceRowType(Class<?> fieldClass) {
+        final Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(fieldClass);
+
+        final List<QueryDataTypeField> subFields = fieldsInClass.entrySet().stream()
+                .map(entry -> {
+                    final QueryDataTypeField field = new QueryDataTypeField(
+                            entry.getKey(),
+                            QueryDataTypeUtils.resolveTypeForClass(entry.getValue())
+                    );
+
+                    if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+                        field.setType(enhanceRowType(entry.getValue()));
+                    }
+
+                    return field;
+                })
+                .collect(Collectors.toList());
+
+        return new QueryDataType(subFields);
     }
 
     private Stream<MappingField> resolveAndValidateObjectFields(
@@ -196,7 +226,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
-        if (type != QueryDataType.OBJECT) {
+        if (type != QueryDataType.OBJECT && type != QueryDataType.ROW) {
             return resolvePrimitiveMetadata(isKey, resolvedFields, fields, type);
         } else {
             return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);

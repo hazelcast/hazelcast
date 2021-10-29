@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.SearchableExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
@@ -79,6 +80,7 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
@@ -170,8 +172,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_SEARCHABLE = 59;
     public static final int EXPRESSION_SEARCH = 60;
+    public static final int EXPRESSION_FIELD_ACCESS = 61;
+    public static final int QUERY_DATA_TYPE_FIELD = 62;
 
-    public static final int LEN = EXPRESSION_SEARCH + 1;
+    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -259,6 +263,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+        constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
+        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataTypeField();
 
         return new ArrayDataSerializableFactory(constructors);
     }
