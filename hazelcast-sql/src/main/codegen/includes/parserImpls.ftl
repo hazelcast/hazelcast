@@ -441,7 +441,7 @@ SqlNode SqlExplainStatement() :
     SqlNode stmt;
 }
 {
-    <EXPLAIN> <PLAN> <FOR>
+    <EXPLAIN> [ <PLAN> <FOR> ]
     stmt = ExtendedSqlQueryOrDml() {
         return new SqlExplainStatement(
             getPos(),

@@ -44,9 +44,16 @@ public class ExplainStatementTest extends SqlTestSupport {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 10);
 
-        String sql = "EXPLAIN PLAN FOR SELECT * FROM map";
+        String sql = "EXPLAIN SELECT * FROM map";
 
         createMapping("map", Integer.class, Integer.class);
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
+        ));
+
+        sql = "EXPLAIN PLAN FOR SELECT * FROM map";
+        createMapping("map", Integer.class, Integer.class);
+
         assertRowsAnyOrder(sql, singletonList(
                 new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
