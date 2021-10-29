@@ -29,7 +29,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import javax.annotation.Nullable;
 
 /**
- * Hazelcast implementation on EXPLAIN operator.
+ * Hazelcast implementation of EXPLAIN operator.
  */
 public class HazelcastExplainOperator extends HazelcastSpecialOperator {
     public HazelcastExplainOperator() {
