@@ -89,7 +89,7 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_explainStatementScanBelowUnion() {
+    public void test_explainStatementOrderedScanBelowUnion() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 1);
         map.put(2, 2);

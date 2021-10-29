@@ -510,8 +510,6 @@ SqlNode ExtendedSqlQueryOrDml() :
         stmt = SqlDelete()
     |
         stmt = SqlUpdate()
-    |
-        stmt = SqlMerge()
     ) { return stmt; }
 }
 
