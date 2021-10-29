@@ -21,11 +21,8 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -52,7 +49,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(JUnitParamsRunner.class)
 public class SqlTumbleTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -63,63 +59,49 @@ public class SqlTumbleTest extends SqlTestSupport {
         sqlService = instance().getSql();
     }
 
-    @SuppressWarnings("unused")
-    private Object[] validArguments() {
-        return new Object[]{
-                new Object[]{
-                        TINYINT,
-                        "1",
-                        row((byte) 0), row((byte) 2)
-                },
-                new Object[]{
-                        SMALLINT,
-                        "2",
-                        row((short) 0), row((short) 2)
-                },
-                new Object[]{
-                        INTEGER,
-                        "3",
-                        row(0), row(2)
-                },
-                new Object[]{
-                        BIGINT,
-                        "4",
-                        row(0L), row(2L)
-                },
-                new Object[]{
-                        TIME,
-                        "INTERVAL '0.005' SECOND",
-                        row(time(0)), row(time(2))
-                },
-                new Object[]{
-                        DATE,
-                        "INTERVAL '0.006' SECOND",
-                        row(date(0)), row(date(2))
-                },
-                new Object[]{
-                        TIMESTAMP,
-                        "INTERVAL '0.007' SECOND",
-                        row(timestamp(0)), row(timestamp(2))
-                },
-                new Object[]{
-                        TIMESTAMP_WITH_TIME_ZONE,
-                        "INTERVAL '0.008' SECOND",
-                        row(timestampTz(0)), row(timestampTz(2))
-                },
-        };
+    @Test
+    public void test_validArguments_tinyInt() {
+        checkValidArguments(TINYINT, "1", row((byte) 0), row((byte) 2));
     }
 
     @Test
-    @Parameters(method = "validArguments")
-    public void test_validArguments(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
+    public void test_validArguments_smallInt() {
+        checkValidArguments(SMALLINT, "2", row((short) 0), row((short) 2));
+    }
+
+    @Test
+    public void test_validArguments_int() {
+        checkValidArguments(INTEGER, "3", row(0), row(2));
+    }
+
+    @Test
+    public void test_validArguments_bigInt() {
+        checkValidArguments(BIGINT, "4", row(0L), row(2L));
+    }
+
+    @Test
+    public void test_validArguments_time() {
+        checkValidArguments(TIME, "INTERVAL '0.005' SECOND", row(time(0)), row(time(2)));
+    }
+
+    @Test
+    public void test_validArguments_bigDate() {
+        checkValidArguments(DATE, "INTERVAL '6' DAYS", row(date(0)), row(date(2)));
+    }
+
+    @Test
+    public void test_validArguments_bigTimestamp() {
+        checkValidArguments(TIMESTAMP, "INTERVAL '0.007' SECOND", row(timestamp(0)), row(timestamp(2)));
+    }
+
+    @Test
+    public void test_validArguments_timestampTz() {
+        checkValidArguments(TIMESTAMP_WITH_TIME_ZONE, "INTERVAL '0.008' SECOND", row(timestampTz(0)), row(timestampTz(2)));
+    }
+
+    private static void checkValidArguments(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
         String name = randomName();
-        TestStreamSqlConnector.create(
-                sqlService,
-                name,
-                singletonList("ts"),
-                singletonList(orderingColumnType),
-                values
-        );
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " +
                 "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), " + windowSize + "))")
@@ -132,29 +114,78 @@ public class SqlTumbleTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
-    private Object[] invalidArguments() {
-        return new Object[]{
-                new Object[]{TINYINT, "INTERVAL '0.001' SECOND"},
-                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND"},
-                new Object[]{INTEGER, "INTERVAL '0.003' SECOND"},
-                new Object[]{BIGINT, "INTERVAL '0.004' SECOND"},
-                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND"},
-                new Object[]{DECIMAL, "6"},
-                new Object[]{REAL, "INTERVAL '0.007' SECOND"},
-                new Object[]{REAL, "8"},
-                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND"},
-                new Object[]{DOUBLE, "10"},
-                new Object[]{TIME, "11"},
-                new Object[]{DATE, "12"},
-                new Object[]{TIMESTAMP, "13"},
-                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14"},
-        };
+
+    @Test
+    public void test_invalidArguments_tinyInt() {
+        checkInvalidArguments(TINYINT, "INTERVAL '0.001' SECOND");
     }
 
     @Test
-    @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String windowSize) {
+    public void test_invalidArguments_smallInt() {
+        checkInvalidArguments(SMALLINT, "INTERVAL '0.002' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_int() {
+        checkInvalidArguments(INTEGER, "INTERVAL '0.003' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_bigInt() {
+        checkInvalidArguments(BIGINT, "INTERVAL '0.004' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_decimal_interval() {
+        checkInvalidArguments(DECIMAL, "INTERVAL '0.005' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_decimal_number() {
+        checkInvalidArguments(DECIMAL, "6");
+    }
+
+    @Test
+    public void test_invalidArguments_real_interval() {
+        checkInvalidArguments(REAL, "INTERVAL '0.007' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_real_number() {
+        checkInvalidArguments(REAL, "8");
+    }
+
+    @Test
+    public void test_invalidArguments_double_interval() {
+        checkInvalidArguments(DOUBLE, "INTERVAL '0.009' SECOND");
+    }
+
+    @Test
+    public void test_invalidArguments_double_number() {
+        checkInvalidArguments(DOUBLE, "10");
+    }
+
+    @Test
+    public void test_invalidArguments_time() {
+        checkInvalidArguments(TIME, "11");
+    }
+
+    @Test
+    public void test_invalidArguments_date() {
+        checkInvalidArguments(DATE, "12");
+    }
+
+    @Test
+    public void test_invalidArguments_timestamp() {
+        checkInvalidArguments(TIMESTAMP, "13");
+    }
+
+    @Test
+    public void test_invalidArguments_timestampTz() {
+        checkInvalidArguments(TIMESTAMP_WITH_TIME_ZONE, "14");
+    }
+
+    private static void checkInvalidArguments(QueryDataTypeFamily orderingColumnType, String windowSize) {
         String name = randomName();
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
@@ -1159,63 +1190,49 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
-    @SuppressWarnings("unused")
-    private Object[] orderingColumnTypes() {
-        return new Object[]{
-                new Object[]{
-                        TINYINT,
-                        "2",
-                        row((byte) 0), row((byte) 4)
-                },
-                new Object[]{
-                        SMALLINT,
-                        "2",
-                        row((short) 0), row((short) 4)
-                },
-                new Object[]{
-                        INTEGER,
-                        "2",
-                        row(0), row(4)
-                },
-                new Object[]{
-                        BIGINT,
-                        "2",
-                        row(0L), row(4L)
-                },
-                new Object[]{
-                        TIME,
-                        "INTERVAL '0.002' SECOND",
-                        row(time(0)), row(time(4))
-                },
-                new Object[]{
-                        DATE,
-                        "INTERVAL '2' DAYS",
-                        row(date(0)), row(date(345_600_000))
-                },
-                new Object[]{
-                        TIMESTAMP,
-                        "INTERVAL '0.002' SECOND",
-                        row(timestamp(0)), row(timestamp(4))
-                },
-                new Object[]{
-                        TIMESTAMP_WITH_TIME_ZONE,
-                        "INTERVAL '0.002' SECOND",
-                        row(timestampTz(0)), row(timestampTz(4))
-                },
-        };
+    @Test
+    public void test_ordering_tinyInt() {
+        checkOrdering(TINYINT, "2", row((byte) 0), row((byte) 4));
     }
 
     @Test
-    @Parameters(method = "orderingColumnTypes")
-    public void test_orderingColumnTypes(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
+    public void test_ordering_smallInt() {
+        checkOrdering(SMALLINT, "2", row((short) 0), row((short) 4));
+    }
+
+    @Test
+    public void test_ordering_int() {
+        checkOrdering(INTEGER, "2", row(0), row(4));
+    }
+
+    @Test
+    public void test_ordering_bigInt() {
+        checkOrdering(BIGINT, "2", row(0L), row(4L));
+    }
+
+    @Test
+    public void test_ordering_time() {
+        checkOrdering(TIME, "INTERVAL '0.002' SECOND", row(time(0)), row(time(4)));
+    }
+
+    @Test
+    public void test_ordering_date() {
+        checkOrdering(DATE, "INTERVAL '2' DAYS", row(date(0)), row(date(345_600_000)));
+    }
+
+    @Test
+    public void test_ordering_timestamp() {
+        checkOrdering(TIMESTAMP, "INTERVAL '0.002' SECOND", row(timestamp(0)), row(timestamp(4)));
+    }
+
+    @Test
+    public void test_ordering_timestampTz() {
+        checkOrdering(TIMESTAMP_WITH_TIME_ZONE, "INTERVAL '0.002' SECOND", row(timestampTz(0)), row(timestampTz(4)));
+    }
+
+    private static void checkOrdering(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
         String name = randomName();
-        TestStreamSqlConnector.create(
-                sqlService,
-                name,
-                singletonList("ts"),
-                singletonList(orderingColumnType),
-                values
-        );
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT COUNT(*) FROM " +
@@ -1228,7 +1245,6 @@ public class SqlTumbleTest extends SqlTestSupport {
                 singletonList(new Row(1L))
         );
     }
-
 
     @Test
     public void test_nested_filter() {
