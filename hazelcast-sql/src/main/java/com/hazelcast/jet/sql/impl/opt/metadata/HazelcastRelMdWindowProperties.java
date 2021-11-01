@@ -22,10 +22,8 @@ import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowEndPropert
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowStartProperty;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.linq4j.tree.Types;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
@@ -38,12 +36,8 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitor;
-import org.apache.calcite.rex.RexVisitorImpl;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.util.Util;
 
 import java.lang.reflect.Method;
@@ -52,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
 import static java.util.Collections.emptyList;
 
 public final class HazelcastRelMdWindowProperties
@@ -103,35 +98,15 @@ public final class HazelcastRelMdWindowProperties
         }
     }
 
-    private Map<Integer, List<Integer>> toProjections(List<RexNode> projects) {
-        final class ProjectFieldVisitor extends RexVisitorImpl<Integer> {
-
-            private ProjectFieldVisitor() {
-                super(false);
-            }
-
-            @Override
-            public Integer visitInputRef(RexInputRef input) {
-                return input.getIndex();
-            }
-
-            @Override
-            public Integer visitCall(RexCall call) {
-                if (call.getKind() == SqlKind.AS) {
-                    return call.getOperands().get(0).accept(this);
-                }
-
-                // any operation on the window field loses the window attribute, even if it's a simple cast
-
-                return null;
-            }
-        }
-
-        RexVisitor<Integer> visitor = new ProjectFieldVisitor();
+    /**
+     * Returns a map mapping input index to output indexes for the given projection.
+     */
+    private static Map<Integer, List<Integer>> toProjections(List<RexNode> projects) {
         Map<Integer, List<Integer>> projections = new HashMap<>();
         for (int i = 0; i < projects.size(); i++) {
-            Integer index = projects.get(i).accept(visitor);
-            if (index != null) {
+            RexNode node = unwrapFunctionOperand(projects.get(i));
+            if (node instanceof RexInputRef) {
+                int index = ((RexInputRef) node).getIndex();
                 projections.computeIfAbsent(index, key -> new ArrayList<>()).add(i);
             }
         }

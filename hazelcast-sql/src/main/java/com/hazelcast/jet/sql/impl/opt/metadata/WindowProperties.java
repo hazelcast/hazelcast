@@ -88,6 +88,9 @@ public final class WindowProperties {
 
         SlidingWindowPolicy windowPolicy(ExpressionEvalContext context);
 
+        /**
+         * Returns a copy of this property, but with index changed.
+         */
         WindowProperty withIndex(int index);
     }
 
