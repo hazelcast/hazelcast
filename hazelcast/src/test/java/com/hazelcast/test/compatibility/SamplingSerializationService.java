@@ -24,11 +24,13 @@ import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -190,6 +192,16 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         return delegate.readAsInternalGenericRecord(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@NotNull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@NotNull Object object) {
+        return delegate.extractSchemaFromObject(object);
     }
 
     @Override

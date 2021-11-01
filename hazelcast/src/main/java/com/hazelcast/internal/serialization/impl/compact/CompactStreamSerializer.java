@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -162,9 +163,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
-            SchemaWriter writer = new SchemaWriter(registration.getTypeName());
-            registration.getSerializer().write(writer, o);
-            schema = writer.build();
+            schema = buildSchema(registration, o);
             putToSchemaService(includeSchemaOnBinary, schema);
             classToSchemaMap.put(aClass, schema);
         }
@@ -322,5 +321,32 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             classToRegistrationMap.put(clazz, registration);
             typeNameToRegistrationMap.put(typeName, registration);
         }
+    }
+
+    public Schema extractSchema(BufferObjectDataInput objectDataInput) throws IOException {
+        return getOrReadSchema(objectDataInput, false);
+    }
+
+    public Schema extractSchema(Object o) {
+        CompactSerializableRegistration registration = getOrCreateRegistration(o);
+        Class<?> aClass = o.getClass();
+
+        Schema schema = classToSchemaMap.get(aClass);
+        if (schema == null) {
+            schema = buildSchema(registration, o);
+            return schema;
+        }
+        return schema;
+    }
+
+    private static Schema buildSchema(CompactSerializableRegistration registration, Object o) {
+        SchemaWriter writer = new SchemaWriter(registration.getTypeName());
+        try {
+            registration.getSerializer().write(writer, o);
+        } catch (IOException e) {
+            //Schema writer does not throw IOException
+            EmptyStatement.ignore(e);
+        }
+        return writer.build();
     }
 }
