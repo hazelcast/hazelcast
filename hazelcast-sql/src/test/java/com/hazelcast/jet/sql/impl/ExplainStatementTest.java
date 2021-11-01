@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -31,7 +32,7 @@ import org.junit.runner.RunWith;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExplainStatementTest extends SqlTestSupport {
     @BeforeClass
@@ -52,8 +53,6 @@ public class ExplainStatementTest extends SqlTestSupport {
         ));
 
         sql = "EXPLAIN PLAN FOR SELECT * FROM map";
-        createMapping("map", Integer.class, Integer.class);
-
         assertRowsAnyOrder(sql, singletonList(
                 new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
@@ -179,6 +178,22 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explainStatementSink() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+
+        createMapping("map", Integer.class, Integer.class);
+
+        String sql = "EXPLAIN PLAN FOR SINK INTO map(__key, this) VALUES (2, 2)";
+        assertRowsAnyOrder(sql, singletonList(
+                new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=[{" +
+                        "expressions=[[" +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
+                )));
+    }
+
+    @Test
     public void test_explainStatementUpdate() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 1);
@@ -192,8 +207,6 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1], " +
                         "filter==($0, 1)]]], keyCondition=[1], updatedColumns=[[this]], sourceExpressions=[[2]])")
         ));
-
-        createMapping("map", Integer.class, Integer.class);
 
         // Update by multiple keys
         sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1 AND __key = 2";
@@ -220,7 +233,6 @@ public class ExplainStatementTest extends SqlTestSupport {
                         "filter==($0, 1)]]], keyCondition=[1])")
         ));
 
-        createMapping("map", Integer.class, Integer.class);
         // Common Delete by single key
         sql = "EXPLAIN PLAN FOR DELETE FROM map";
         assertRowsAnyOrder(sql, asList(
