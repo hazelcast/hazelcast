@@ -307,7 +307,7 @@ public class CreateDagVisitor {
 
     public Vertex onSlidingWindow(SlidingWindowPhysicalRel rel) {
         int orderingFieldIndex = rel.orderingFieldIndex();
-        FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider(parameterMetadata);
+        FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider();
 
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",

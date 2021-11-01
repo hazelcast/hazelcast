@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -67,9 +68,8 @@ public class SlidingWindowPhysicalRel extends TableFunctionScan implements Physi
         return ((RexInputRef) ((RexCall) operand(1)).getOperands().get(0)).getIndex();
     }
 
-    public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider(
-            QueryParameterMetadata parameterMetadata
-    ) {
+    public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider() {
+        QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         if (operator() == HazelcastSqlOperatorTable.TUMBLE) {
             Expression<?> windowSizeExpression = operand(2).accept(visitor);

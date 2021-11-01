@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowEndProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowStartProperty;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.volcano.RelSubset;
@@ -73,10 +76,11 @@ public final class HazelcastRelMdWindowProperties
         WindowProperties inputWindowProperties = query.extractWindowProperties(rel.getInput());
 
         int fieldCount = rel.getRowType().getFieldCount();
-        QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) rel.getCluster()).getParameterMetadata();
+        FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider = rel.windowPolicyProvider();
         WindowProperties windowProperties = new WindowProperties(
-                new WindowStartProperty(fieldCount - 2, rel.windowPolicyProvider(parameterMetadata)),
-                new WindowEndProperty(fieldCount - 1, rel.windowPolicyProvider(parameterMetadata))
+                // window_start and window_end are the last two fields in SlidingWindowPhysicalRel
+                new WindowStartProperty(fieldCount - 2, windowPolicyProvider),
+                new WindowEndProperty(fieldCount - 1, windowPolicyProvider)
         );
 
         return inputWindowProperties == null ? windowProperties : inputWindowProperties.merge(windowProperties);
