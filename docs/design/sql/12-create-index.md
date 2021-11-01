@@ -39,7 +39,7 @@ enrich available SQL syntax.
 
 Proposed grammar:
 ```
-CREATE INDEX [ IF NOT EXISTS ] index_name ON object_name ( column_name [, ...] )
+CREATE INDEX [ IF NOT EXISTS ] index_name ON object_name ( attribute_name [, ...] )
 [ TYPE ( SORTED | HASH | BITMAP ) ]
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
@@ -100,6 +100,16 @@ CREATE INDEX i ON m(JSON_VALUE(this, '$.a'))
 will translate to an `addIndex` call that will simply create an index on
 field `a`, because indexing of JSON values works like this.
 
+[Slack discussion](https://hazelcast.slack.com/archives/C02KC0PUPM1/p1635732750000100), by @Sandeep
+
+```
+...
+Since the migration path from the old engine to new one is not yet clearly defined, I would hold off on basing our decision on this!
+IMHO, creating an index on IMAP will suffice for this requirement. 
+Mappings seem like a promising approach going forward, however, it feels like we still need to iron out some kinks there.
+```
+
+According to this, **IMap name** option is the preferable way to create indexes.
 
 - ❓ State of json indexes?
 - ❓ What is permissible index names scope? 

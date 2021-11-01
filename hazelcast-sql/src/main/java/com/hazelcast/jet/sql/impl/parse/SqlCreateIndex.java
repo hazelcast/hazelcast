@@ -45,7 +45,7 @@ import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 /**
- * CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
+ * CREATE INDEX [ IF NOT EXISTS ] name ON map_name ( { attribute_name } )
  * [ TYPE index_type ]
  * [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
  */
@@ -57,7 +57,7 @@ public class SqlCreateIndex extends SqlCreate {
             new SqlSpecialOperator("CREATE INDEX", SqlKind.CREATE_INDEX);
 
     private final SqlIdentifier name;
-    private final SqlIdentifier mappingName;
+    private final SqlIdentifier mapName;
     private final SqlNodeList columns;
     private final SqlIdentifier type;
     private final SqlNodeList options;
@@ -74,7 +74,7 @@ public class SqlCreateIndex extends SqlCreate {
         super(OPERATOR, pos, false, ifNotExists);
 
         this.name = requireNonNull(name, "Name should not be null");
-        this.mappingName = requireNonNull(mappingName, "Mapping name should not be null");
+        this.mapName = requireNonNull(mappingName, "Map name should not be null");
         this.columns = requireNonNull(columns, "Columns should not be null");
         this.type = type;
         this.options = requireNonNull(options, "Options should not be null");
@@ -108,8 +108,8 @@ public class SqlCreateIndex extends SqlCreate {
         return OPERATOR;
     }
 
-    public String mappingName() {
-        return mappingName.toString();
+    public String mapName() {
+        return mapName.toString();
     }
 
     public String indexName() {
@@ -134,7 +134,7 @@ public class SqlCreateIndex extends SqlCreate {
 
         writer.keyword("ON");
 
-        mappingName.unparse(writer, leftPrec, rightPrec);
+        mapName.unparse(writer, leftPrec, rightPrec);
 
         if (columns.size() > 0) {
             SqlWriter.Frame frame = writer.startList("(", ")");

@@ -195,7 +195,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class CreateIndexPlan extends SqlPlanImpl {
         private final String name;
-        private final String mappingName;
+        private final String mapName;
         private final String[] attributes;
         private final Map<String, String> options;
         private final IndexType indexType;
@@ -205,7 +205,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         CreateIndexPlan(
                 PlanKey planKey,
                 String name,
-                String mappingName,
+                String mapName,
                 IndexType indexType,
                 List<String> attributes,
                 Map<String, String> options,
@@ -215,7 +215,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             super(planKey);
 
             this.name = name;
-            this.mappingName = mappingName;
+            this.mapName = mapName;
             this.indexType = indexType;
             this.attributes = attributes.toArray(new String[0]);
             this.options = options;
@@ -227,8 +227,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return name;
         }
 
-        public String mappingName() {
-            return mappingName;
+        public String mapName() {
+            return mapName;
         }
 
         public String[] attributes() {

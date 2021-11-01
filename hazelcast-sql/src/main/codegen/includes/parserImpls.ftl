@@ -240,8 +240,8 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
     SqlParserPos startPos = span.pos();
 
     SqlIdentifier name;
-    SqlIdentifier mappingName;
-    SqlNodeList columns = SqlNodeList.EMPTY;
+    SqlIdentifier objectName;
+    SqlNodeList attributes = SqlNodeList.EMPTY;
     SqlIdentifier type = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
@@ -255,8 +255,8 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
 
         <ON>
 
-        mappingName = SimpleIdentifier()
-        columns = IndexAttributes()
+        objectName = SimpleIdentifier()
+        attributes = IndexAttributes()
         [
             <TYPE>
             type = SimpleIdentifier()
@@ -268,8 +268,8 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
         {
             return new SqlCreateIndex(
                 name,
-                mappingName,
-                columns,
+                objectName,
+                attributes,
                 type,
                 sqlOptions,
                 ifNotExists,
@@ -283,26 +283,26 @@ SqlNodeList IndexAttributes():
 {
     SqlParserPos pos = getPos();
 
-    SqlIdentifier columnName;
-    List<SqlNode> columns = new ArrayList<SqlNode>();
+    SqlIdentifier attributeName;
+    List<SqlNode> attributes = new ArrayList<SqlNode>();
 }
 {
     [
         <LPAREN> {  pos = getPos(); }
-        columnName = SimpleIdentifier()
+        attributeName = SimpleIdentifier()
         {
-            columns.add(columnName);
+            attributes.add(attributeName);
         }
         (
-            <COMMA> columnName = SimpleIdentifier()
+            <COMMA> attributeName = SimpleIdentifier()
             {
-                columns.add(columnName);
+                attributes.add(attributeName);
             }
         )*
         <RPAREN>
     ]
     {
-        return new SqlNodeList(columns, pos.plus(getPos()));
+        return new SqlNodeList(attributes, pos.plus(getPos()));
     }
 }
 

@@ -298,7 +298,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new CreateIndexPlan(
                 planKey,
                 sqlCreateIndex.indexName(),
-                sqlCreateIndex.mappingName(),
+                sqlCreateIndex.mapName(),
                 sqlCreateIndex.type(),
                 sqlCreateIndex.columns().collect(toList()),
                 sqlCreateIndex.options(),

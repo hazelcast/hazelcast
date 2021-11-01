@@ -43,7 +43,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.IMap;
@@ -65,7 +64,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import java.util.List;
@@ -114,19 +112,9 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateIndexPlan plan) {
-        Mapping mapping = catalog.getMapping(plan.mappingName());
-        if (mapping == null) {
-            throw QueryException.error("Can't create index: mapping '" + plan.mappingName() + "' doesn't exist");
-        }
-
-        if (!mapping.type().equalsIgnoreCase(IMapSqlConnector.TYPE_NAME)) {
-            throw QueryException.error("Can't create index: only IMap supports index creation");
-        }
-
         if (!plan.ifNotExists()) {
-            String indexName = plan.indexName();
-            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(mapping.externalName()));
-            if (mapContainer.getIndexes().getIndex(indexName) != null) {
+            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+            if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
         }
@@ -146,7 +134,7 @@ public class PlanExecutor {
             indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
         }
 
-        hazelcastInstance.getMap(mapping.externalName()).addIndex(indexConfig);
+        hazelcastInstance.getMap(plan.mapName()).addIndex(indexConfig);
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

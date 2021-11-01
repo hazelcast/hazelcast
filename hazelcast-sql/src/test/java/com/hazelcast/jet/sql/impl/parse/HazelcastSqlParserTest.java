@@ -110,7 +110,7 @@ public class HazelcastSqlParserTest {
         SqlCreateIndex node = (SqlCreateIndex) parsedNode;
 
         // then
-        assertThat(node.mappingName()).isEqualTo("mapping_name");
+        assertThat(node.mapName()).isEqualTo("mapping_name");
         assertThat(node.indexName()).isEqualTo("index_name");
         assertThat(node.type()).isEqualTo(IndexType.SORTED);
         assertThat(node.columns().findFirst())
@@ -132,7 +132,7 @@ public class HazelcastSqlParserTest {
         String sql = "CREATE INDEX "
                 + (ifNotExists ? "IF NOT EXISTS " : "")
                 + "index_name "
-                + "ON mapping_name "
+                + "ON map_name "
                 + "(column_name1, column_name2) "
                 + "TYPE SORTED ";
 
@@ -146,7 +146,7 @@ public class HazelcastSqlParserTest {
         SqlCreateIndex node = (SqlCreateIndex) parsedNode;
 
         // then
-        assertThat(node.mappingName()).isEqualTo("mapping_name");
+        assertThat(node.mapName()).isEqualTo("map_name");
         assertThat(node.indexName()).isEqualTo("index_name");
         assertThat(node.type()).isEqualTo(IndexType.SORTED);
         assertThat(node.columns().findFirst())
@@ -162,7 +162,7 @@ public class HazelcastSqlParserTest {
             "true",
             "false"
     })
-    public void test_createIndexRequiresMapping(boolean ifNotExists) {
+    public void test_createIndexRequiresMapName(boolean ifNotExists) {
         // given
         String sql = "CREATE INDEX "
                 + (ifNotExists ? "IF NOT EXISTS " : "")
@@ -170,9 +170,10 @@ public class HazelcastSqlParserTest {
 
         // when & then
         assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Was expecting one of:\n" +
-                        "    \"ON\" ...\n" +
-                        "    \".\" ...\n");
+                .hasMessageContaining("Encountered \"<EOF>\" at line 1")
+                .hasMessageContaining(
+                        "Was expecting:\n" +
+                        "    \"ON\" ...\n");
     }
 
     @Test
@@ -190,7 +191,12 @@ public class HazelcastSqlParserTest {
 
         // when & then
         assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Was expecting:\n    \"TYPE\"");
+                .hasMessageContaining("Encountered \";\" at line 1")
+                .hasMessageContaining(
+                        "Was expecting one of:\n" +
+                        "    <EOF> \n" +
+                        "    \"OPTIONS\" ...\n" +
+                        "    \"TYPE\" ...");
     }
 
     @Test
