@@ -20,7 +20,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -186,10 +185,10 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         String sql = "EXPLAIN PLAN FOR SINK INTO map(__key, this) VALUES (2, 2)";
         assertRowsAnyOrder(sql, singletonList(
-                new Row("InsertMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=[{" +
-                        "expressions=[[" +
+                new Row("SinkMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], values=" +
+                        "[[{expressions=[[" +
                         "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}, " +
-                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}])"
+                        "ConstantExpression{type=QueryDataType {family=INTEGER}, value=2}]]}]])"
                 )));
     }
 

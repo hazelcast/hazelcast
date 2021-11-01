@@ -507,10 +507,10 @@ SqlNode ExtendedSqlQueryOrDml() :
 }
 {
     (
-        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
-    |
         LOOKAHEAD(2)
         stmt = SqlExtendedInsert()
+    |
+        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
     |
         stmt = SqlDelete()
     |
