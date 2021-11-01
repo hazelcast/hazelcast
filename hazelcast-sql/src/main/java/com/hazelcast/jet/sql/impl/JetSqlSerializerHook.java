@@ -36,9 +36,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(JET_SQL_DS_FACTORY, JET_SQL_DS_FACTORY_ID);
 
-    public static final int JSON_QUERY = 1;
-    public static final int JSON_PARSE = 2;
-    public static final int JSON_VALUE = 3;
+    public static final int JSON_QUERY = 0;
+    public static final int JSON_PARSE = 1;
+    public static final int JSON_VALUE = 2;
 
     public static final int LEN = JSON_VALUE + 1;
 
