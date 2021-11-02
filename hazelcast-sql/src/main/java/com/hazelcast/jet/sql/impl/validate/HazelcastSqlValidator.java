@@ -509,7 +509,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
             if (converter == null) {
                 QueryDataType targetType =
-                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName());
+                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
                 converter = AbstractParameterConverter.from(targetType, i, parameterPositionMap.get(i));
             }
 

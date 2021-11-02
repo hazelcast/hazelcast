@@ -205,7 +205,11 @@ QueryDataType ObjectTypes() :
     QueryDataType type;
 }
 {
-    <OBJECT> { type = QueryDataType.OBJECT; }
+    (
+        <OBJECT> { type = QueryDataType.OBJECT; }
+    |
+        <JSON> { type = QueryDataType.JSON; }
+    )
     {
         return type;
     }

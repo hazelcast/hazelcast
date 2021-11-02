@@ -106,6 +106,8 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
             return new TemporalPrecedenceParameterConverter(index, parserPosition, targetType);
         } else if (targetTypeFamily.isObject()) {
             return NoOpParameterConverter.INSTANCE;
+        } else if (targetTypeFamily == QueryDataTypeFamily.JSON) {
+            return new JsonParameterConverter(index, parserPosition, targetType);
         } else {
             return new StrictParameterConverter(index, parserPosition, targetType);
         }
