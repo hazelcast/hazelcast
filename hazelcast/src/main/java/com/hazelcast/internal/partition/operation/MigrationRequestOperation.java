@@ -33,8 +33,10 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParti
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.ChunkSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -74,12 +76,14 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
     private boolean fragmentedMigrationEnabled;
     private transient ServiceNamespacesContext namespacesContext;
+    private transient Map<ServiceNamespace, Collection<ChunkSupplier>>
+            namespaceToSuppliers = new HashMap<>();
 
     public MigrationRequestOperation() {
     }
 
     public MigrationRequestOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations,
-            int partitionStateVersion, boolean fragmentedMigrationEnabled) {
+                                     int partitionStateVersion, boolean fragmentedMigrationEnabled) {
         super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentedMigrationEnabled = fragmentedMigrationEnabled;
     }
@@ -215,10 +219,30 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * will be very cheap, instead of copying partition data on each retry.
      */
     private ReplicaFragmentMigrationState initialReplicaFragmentMigrationState() {
-        return createReplicaFragmentMigrationState(emptySet(), emptySet());
+        return createReplicaFragmentMigrationState(emptySet(), emptySet(), null);
     }
 
     private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
+        ServiceNamespace current = namespacesContext.current();
+        if (current != null) {
+            Collection<ChunkSupplier> chunkSuppliers = namespaceToSuppliers.get(current);
+            if (CollectionUtil.isNotEmpty(chunkSuppliers)) {
+                // remove finished suppliers
+                Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
+                while (iterator.hasNext()) {
+                    ChunkSupplier chunkSupplier = iterator.next();
+                    if (!chunkSupplier.hasMoreChunks()) {
+                        iterator.remove();
+                    }
+                }
+
+                // check if we still have unfinished suppliers
+                if (!chunkSuppliers.isEmpty()) {
+                    return createReplicaFragmentMigrationStateFor(current, chunkSuppliers);
+                }
+            }
+        }
+
         if (!namespacesContext.hasNext()) {
             return null;
         }
@@ -235,7 +259,17 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (namespace.equals(NonFragmentedServiceNamespace.INSTANCE)) {
             return createNonFragmentedReplicaFragmentMigrationState();
         }
-        return createReplicaFragmentMigrationStateFor(namespace);
+
+        // TODO store latest namespace and add check if supplier finished its chunks
+        Collection<ChunkSupplier> suppliers = namespaceToSuppliers.computeIfAbsent(namespace,
+                namespace1 -> {
+                    Collection<String> serviceNames = namespacesContext.getServiceNames(namespace1);
+                    return chunkSupplier(getPartitionReplicationEvent(), serviceNames, namespace1);
+                });
+        if (suppliers != null) {
+            return createReplicaFragmentMigrationStateFor(namespace, suppliers);
+        }
+        return createReplicaFragmentMigrationStateFor(namespace, null);
     }
 
     private ReplicaFragmentMigrationState createNonFragmentedReplicaFragmentMigrationState() {
@@ -243,26 +277,26 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
         Collection<ServiceNamespace> namespaces =
                 Collections.singleton(NonFragmentedServiceNamespace.INSTANCE);
-        return createReplicaFragmentMigrationState(namespaces, operations);
+        return createReplicaFragmentMigrationState(namespaces, operations, null);
     }
 
-    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns) {
+    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns,
+                                                                                 Collection<ChunkSupplier> suppliers) {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
-
         Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
-        return createReplicaFragmentMigrationState(singleton(ns), operations);
+        return createReplicaFragmentMigrationState(singleton(ns), operations, suppliers);
     }
 
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createAllReplicationOperations(event);
-        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations);
+        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations, null);
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationState(Collection<ServiceNamespace> namespaces,
-                                                                              Collection<Operation> operations) {
-
+                                                                              Collection<Operation> operations,
+                                                                              Collection<ChunkSupplier> suppliers) {
         InternalPartitionService partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
         Map<ServiceNamespace, long[]> versions = new HashMap<>(namespaces.size());
@@ -271,7 +305,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             versions.put(namespace, v);
         }
 
-        return new ReplicaFragmentMigrationState(versions, operations);
+        return new ReplicaFragmentMigrationState(versions, operations, suppliers);
     }
 
     @Override
@@ -360,6 +394,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private static class ServiceNamespacesContext {
         final Collection<ServiceNamespace> allNamespaces = new HashSet<>();
         final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<>();
+        ServiceNamespace current;
 
         final Iterator<ServiceNamespace> namespaceIterator;
 
@@ -400,8 +435,13 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             return namespaceIterator.hasNext();
         }
 
+        ServiceNamespace current() {
+            return current;
+        }
+
         ServiceNamespace next() {
-            return namespaceIterator.next();
+            current = namespaceIterator.next();
+            return current;
         }
 
         Collection<String> getServiceNames(ServiceNamespace ns) {
