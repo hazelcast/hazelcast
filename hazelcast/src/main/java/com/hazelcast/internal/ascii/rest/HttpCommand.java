@@ -18,14 +18,23 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.server.ServerConnection;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_204;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_400;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_403;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_404;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_503;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
@@ -35,14 +44,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
     public static final byte[] CONTENT_TYPE_JSON = stringToBytes("application/json");
     public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
-    public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
-    public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\n");
-    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n");
-    public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\n");
-    public static final byte[] RES_100 = stringToBytes("HTTP/1.1 100 Continue\r\n\r\n");
-    public static final byte[] RES_204 = stringToBytes("HTTP/1.1 204 No Content\r\n");
-    public static final byte[] RES_503 = stringToBytes("HTTP/1.1 503 Service Unavailable\r\n");
-    public static final byte[] RES_500 = stringToBytes("HTTP/1.1 500 Internal Server Error\r\n");
 
     static final String HEADER_CONTENT_TYPE = "content-type: ";
     static final String HEADER_CONTENT_LENGTH = "content-length: ";
@@ -56,13 +57,27 @@ public abstract class HttpCommand extends AbstractTextCommand {
     protected final String uri;
     protected ByteBuffer response;
     protected boolean nextLine;
+    protected final RestCallExecutionListener listener;
 
+    protected HttpCommand(TextCommandConstants.TextCommandType type, String uri, ServerConnection connection) {
+        this(type, uri, connection.getConnectionManager().getServer().getContext()
+                .getTextCommandService().createRestCallExecutionListener());
+    }
 
-    public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
+    void objectTypeDetermined(String objectType) {
+        listener.objectTypeDetermined(objectType);
+    }
+
+    void objectNameDetermined(String objectName){
+        listener.objectNameDetermined(objectName);
+    }
+
+    public HttpCommand(TextCommandConstants.TextCommandType type, String uri, RestCallExecutionListener listener) {
         super(type);
         this.uri = uri;
         // the command line was parsed already, let's start with clear next line
         this.nextLine = true;
+        this.listener = listener;
 
     }
 
@@ -79,60 +94,68 @@ public abstract class HttpCommand extends AbstractTextCommand {
      * Prepares a {@link HttpURLConnection#HTTP_NO_CONTENT} response.
      */
     public void send204() {
-        setResponse(RES_204, null, null);
+        setResponse(SC_204, null, null);
+        listener.responseSent(204);
     }
 
     /**
      * Prepares a {@link HttpURLConnection#HTTP_BAD_REQUEST} response.
      */
     public void send400() {
-        setResponse(RES_400, null, null);
+        setResponse(SC_400, null, null);
+        listener.responseSent(400);
     }
 
     /**
      * Prepares a {@link HttpURLConnection#HTTP_FORBIDDEN} response.
      */
     public void send403() {
-        setResponse(RES_403, null, null);
+        setResponse(SC_403, null, null);
+        listener.responseSent(403);
     }
 
     /**
      * Prepares a {@link HttpURLConnection#HTTP_NOT_FOUND} response.
      */
     public void send404() {
-        setResponse(RES_404, null, null);
+        setResponse(SC_404, null, null);
+        listener.responseSent(404);
     }
 
     /**
      * Prepares a {@link HttpURLConnection#HTTP_INTERNAL_ERROR} response.
      */
     public void send500() {
-        setResponse(RES_500, null, null);
+        setResponse(SC_500, null, null);
+        listener.responseSent(500);
     }
 
     /**
      * Prepares a {@link HttpURLConnection#HTTP_UNAVAILABLE} response.
      */
     public void send503() {
-        setResponse(RES_503, null, null);
+        setResponse(SC_503, null, null);
+        listener.responseSent(503);
     }
 
     /**
      * Prepares an empty {@link HttpURLConnection#HTTP_OK} response.
      */
     public void send200() {
-        setResponse(RES_200, null, null);
+        setResponse(SC_200, null, null);
+        listener.responseSent(200);
     }
 
     /**
      * Prepares a HTTP response with no content and the provided status line and
      * response headers.
      *
-     * @param statusLine the HTTP response status line
+     * @param statusCode the HTTP response status code
      * @param headers    the map of response headers
      */
-    public void setResponse(@Nonnull byte[] statusLine,
+    public void setResponse(HttpStatusCode statusCode,
                             @Nullable Map<String, Object> headers) {
+        byte[] statusLine = statusCode.statusLine;
         int size = statusLine.length;
         byte[] len = stringToBytes(String.valueOf(0));
         size += CONTENT_LENGTH.length;
@@ -173,14 +196,15 @@ public abstract class HttpCommand extends AbstractTextCommand {
      *       CRLF;
      *       response-body;
      *
-     * @param statusLine  the binary-encoded HTTP response status line
+     * @param statusCode the HTTP response status code
      * @param headers    the map of response headers (In addition to these, we also
      *                   add the content-length header)
      * @param value       binary-encoded response content value
      */
-    public void setResponseWithHeaders(@Nonnull byte[] statusLine,
+    public void setResponseWithHeaders(HttpStatusCode statusCode,
                             @Nullable Map<String, Object> headers,
                             @Nullable byte[] value) {
+        byte[] statusLine = statusCode.statusLine;
         int valueSize = (value == null) ? 0 : value.length;
         byte[] len = stringToBytes(String.valueOf(valueSize));
         int size = statusLine.length;
@@ -218,17 +242,19 @@ public abstract class HttpCommand extends AbstractTextCommand {
         response.flip();
     }
 
+
     /**
      * Prepares a response with the provided status line, binary-encoded
      * content type and response.
      *
-     * @param statusLine  the binary-encoded HTTP response status line
+     * @param statusCode  the HTTP response status code
      * @param contentType binary-encoded response content type
      * @param value       binary-encoded response content value
      */
-    public void setResponse(@Nonnull byte[] statusLine,
+    public void setResponse(HttpStatusCode statusCode,
                             @Nullable byte[] contentType,
                             @Nullable byte[] value) {
+        byte[] statusLine = statusCode.statusLine;
         int valueSize = (value == null) ? 0 : value.length;
         byte[] len = stringToBytes(String.valueOf(valueSize));
         int size = statusLine.length;

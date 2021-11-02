@@ -27,6 +27,7 @@ import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.Json;
@@ -44,6 +45,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 
@@ -102,7 +104,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             command.send400();
         } catch (Throwable e) {
             logger.warning("An error occurred while handling request " + command, e);
-            prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
+            prepareResponse(SC_500, command, exceptionResponse(e));
         }
 
         if (sendResponse) {
@@ -382,9 +384,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleMap(HttpGetCommand command, String uri) {
+        command.objectTypeDetermined("map");
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        command.objectNameDetermined(mapName);
         String key = uri.substring(indexEnd + 1);
         Object value = textCommandService.get(mapName, key);
         prepareResponse(command, value);

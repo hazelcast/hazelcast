@@ -39,11 +39,12 @@ import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_400;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_403;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -128,14 +129,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 command.send404();
             }
         } catch (HttpBadRequestException e) {
-            prepareResponse(RES_400, command, response(FAIL, "message", e.getMessage()));
+            prepareResponse(SC_400, command, response(FAIL, "message", e.getMessage()));
+            command.send400();
             sendResponse = true;
         } catch (HttpForbiddenException e) {
-            prepareResponse(RES_403, command, response(FAIL, "message", "unauthenticated"));
+            prepareResponse(SC_403, command, response(FAIL, "message", "unauthenticated"));
             sendResponse = true;
         } catch (Throwable e) {
             logger.warning("An error occurred while handling request " + command, e);
-            prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
+            prepareResponse(SC_500, command, exceptionResponse(e));
         }
 
         if (sendResponse) {
@@ -196,7 +198,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             headers.put("Deprecation", "true");
             headers.put("Warning", "299 - \"Deprecated API\". Please use /hazelcast/rest/management/cluster/backup"
                     + " instead. This API will be removed in future releases.");
-            cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
+            cmd.setResponseWithHeaders(SC_200, headers, stringToBytes(response(SUCCESS).toString()));
         } else {
             prepareResponse(cmd, response(SUCCESS));
         }
@@ -212,7 +214,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             headers.put("Warning", "299 - \"Deprecated API\". Please use"
                     + " /hazelcast/rest/management/cluster/backupInterrupt instead. This API will be removed"
                     + " in future releases.");
-            cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
+            cmd.setResponseWithHeaders(SC_200, headers, stringToBytes(response(SUCCESS).toString()));
         } else {
             prepareResponse(cmd, response(SUCCESS));
         }
@@ -280,12 +282,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleMap(HttpPostCommand command, String uri) {
+        command.objectTypeDetermined("map");
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             throw new HttpBadRequestException("Missing map name");
         }
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        command.objectNameDetermined(mapName);
         String key = uri.substring(indexEnd + 1);
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);

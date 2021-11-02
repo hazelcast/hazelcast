@@ -144,7 +144,14 @@ public enum PhoneHomeMetrics {
     SQL_QUERIES_SUBMITTED("sqlqs"),
 
     //CP SUBSYSTEM METRICS
-    CP_SUBSYSTEM_ENABLED("cp");
+    CP_SUBSYSTEM_ENABLED("cp"),
+
+    // REST API metrics
+    REST_ENABLED("restenabled"),
+    MAP_GET_COUNT("mapget200"),
+    MAP_POST_SUCCESS("restmappostsucc"),
+    MAP_POST_FAILURE("restmappostfail"),
+    MAP_REQUEST_COUNT("restrequestct");
 
     private final String query;
 

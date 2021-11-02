@@ -20,6 +20,7 @@ import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
+import com.hazelcast.internal.server.ServerConnection;
 
 import java.util.StringTokenizer;
 
@@ -29,6 +30,11 @@ public class HttpHeadCommandParser implements CommandParser {
 
     @Override
     public TextCommand parser(TextDecoder decoder, String cmd, int space) {
+        throw new UnsupportedOperationException("not implemented");
+    }
+
+    @Override
+    public TextCommand parser(TextDecoder decoder, String cmd, int space, ServerConnection connection) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String uri;
@@ -37,6 +43,6 @@ public class HttpHeadCommandParser implements CommandParser {
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpHeadCommand(uri);
+        return new HttpHeadCommand(uri, connection);
     }
 }

@@ -35,6 +35,8 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
+import com.hazelcast.internal.ascii.rest.RestCallExecutionListener;
+import com.hazelcast.internal.ascii.rest.RestCallCollector;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
@@ -230,6 +232,16 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public long incrementTouchCount() {
         return touches.incrementAndGet();
+    }
+
+    @Override
+    public RestCallCollector getRestCallCollector() {
+        return RestCallCollector.INSTANCE;
+    }
+
+    @Override
+    public RestCallExecutionListener createRestCallExecutionListener() {
+        return new RestCallExecutionListener(RestCallCollector.INSTANCE);
     }
 
     @Override

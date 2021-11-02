@@ -26,6 +26,7 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -49,9 +50,10 @@ public class HttpPostCommand extends HttpCommand {
     private ServerConnection connection;
 
     public HttpPostCommand(TextDecoder decoder, String uri, ServerConnection connection) {
-        super(HTTP_POST, uri);
+        super(HTTP_POST, uri, connection);
         this.decoder = decoder;
         this.connection = connection;
+        listener.httpMethodDetermined("post");
     }
 
     /**
@@ -237,7 +239,7 @@ public class HttpPostCommand extends HttpCommand {
         } else if (!chunked && currentLine.startsWith(HEADER_CHUNKED)) {
             chunked = true;
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
-            decoder.sendResponse(new NoOpCommand(RES_100));
+            decoder.sendResponse(new NoOpCommand(SC_100.statusLine));
         }
     }
 

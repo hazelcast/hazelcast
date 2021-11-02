@@ -59,7 +59,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.when;
@@ -73,7 +72,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().jettyHeaderBufferSize(16384));
+    public WireMockRule wireMockRule = new WireMockRule();
 
     private Node node;
     private PhoneHome phoneHome;

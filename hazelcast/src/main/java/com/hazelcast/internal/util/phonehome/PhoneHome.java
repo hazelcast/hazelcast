@@ -61,8 +61,9 @@ public class PhoneHome {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
-        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 7);
+        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 8);
         Collections.addAll(metricsCollectorList,
+                new RestApiMetricsCollector(),
                 new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
