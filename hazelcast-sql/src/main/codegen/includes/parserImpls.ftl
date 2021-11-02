@@ -434,7 +434,7 @@ SqlShowStatement SqlShowStatement() :
 }
 
 /**
- * Parses an EXPLAIN PLAN statement.
+ * Parses an EXPLAIN statement.
  */
 SqlNode SqlExplainStatement() :
 {
@@ -447,10 +447,7 @@ SqlNode SqlExplainStatement() :
         <PLAN> <FOR>
     ]
     stmt = ExtendedSqlQueryOrDml() {
-        return new SqlExplainStatement(
-            getPos(),
-            stmt
-        );
+        return new SqlExplainStatement(getPos(), stmt);
     }
 }
 
