@@ -49,4 +49,8 @@ class RestCallExecution {
     public void setStatusCode(int statusCode) {
         this.statusCode = statusCode;
     }
+
+    public boolean isSuccess() {
+        return statusCode < 400;
+    }
 }

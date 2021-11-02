@@ -24,8 +24,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nullable;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
@@ -95,7 +93,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send204() {
         setResponse(SC_204, null, null);
-        listener.responseSent(204);
     }
 
     /**
@@ -103,7 +100,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send400() {
         setResponse(SC_400, null, null);
-        listener.responseSent(400);
     }
 
     /**
@@ -111,7 +107,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send403() {
         setResponse(SC_403, null, null);
-        listener.responseSent(403);
     }
 
     /**
@@ -119,7 +114,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send404() {
         setResponse(SC_404, null, null);
-        listener.responseSent(404);
     }
 
     /**
@@ -127,7 +121,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send500() {
         setResponse(SC_500, null, null);
-        listener.responseSent(500);
     }
 
     /**
@@ -135,7 +128,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send503() {
         setResponse(SC_503, null, null);
-        listener.responseSent(503);
     }
 
     /**
@@ -143,7 +135,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void send200() {
         setResponse(SC_200, null, null);
-        listener.responseSent(200);
     }
 
     /**
@@ -183,6 +174,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         }
         response.put(TextCommandConstants.RETURN);
         response.flip();
+        listener.responseSent(statusCode.code);
     }
 
     /**
@@ -240,6 +232,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             response.put(value);
         }
         response.flip();
+        listener.responseSent(statusCode.code);
     }
 
 
@@ -283,6 +276,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             response.put(value);
         }
         response.flip();
+        listener.responseSent(statusCode.code);
     }
 
     @Override

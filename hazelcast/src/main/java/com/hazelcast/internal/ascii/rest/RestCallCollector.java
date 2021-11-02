@@ -20,19 +20,24 @@ import com.hazelcast.internal.util.counters.MwCounter;
 
 public class RestCallCollector {
 
-    public String getMapPutSuccessCount() {
-        return String.valueOf(mapPostSuccCount.get());
-    }
-
     private final MwCounter mapPostSuccCount = MwCounter.newMwCounter();
     private final MwCounter mapPostFailCount = MwCounter.newMwCounter();
+    private final MwCounter mapGetSuccCount = MwCounter.newMwCounter();
+    private final MwCounter mapGetFailCount = MwCounter.newMwCounter();
+
     private final MwCounter requestCount = MwCounter.newMwCounter();
 
     public void collectExecution(RestCallExecution execution) {
         requestCount.inc();
         if (execution.getMethod().equalsIgnoreCase("post")) {
             (execution.getStatusCode() < 400 ? mapPostSuccCount : mapPostFailCount).inc();
+        } else if (execution.getMethod().equalsIgnoreCase("get")) {
+            (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
         }
+    }
+
+    public String getMapPutSuccessCount() {
+        return String.valueOf(mapPostSuccCount.get());
     }
 
     public String getMapPutFailureCount() {
@@ -41,5 +46,13 @@ public class RestCallCollector {
 
     public String getRequestCount() {
         return String.valueOf(requestCount.get());
+    }
+
+    public String getMapGetSuccessCount() {
+        return String.valueOf(mapGetSuccCount.get());
+    }
+
+    public String getMapGetFailureCount() {
+        return String.valueOf(mapGetFailCount.get());
     }
 }

@@ -23,5 +23,6 @@ public class HttpGetCommand extends HttpCommand {
 
     public HttpGetCommand(String uri, ServerConnection connection) {
         super(TextCommandType.HTTP_GET, uri, connection);
+        listener.httpMethodDetermined("get");
     }
 }

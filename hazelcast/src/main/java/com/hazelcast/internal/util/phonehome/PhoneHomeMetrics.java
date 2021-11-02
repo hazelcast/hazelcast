@@ -148,10 +148,11 @@ public enum PhoneHomeMetrics {
 
     // REST API metrics
     REST_ENABLED("restenabled"),
-    MAP_GET_COUNT("mapget200"),
-    MAP_POST_SUCCESS("restmappostsucc"),
-    MAP_POST_FAILURE("restmappostfail"),
-    MAP_REQUEST_COUNT("restrequestct");
+    REST_MAP_GET_SUCCESS("restmapgetsucc"),
+    REST_MAP_GET_FAILURE("restmapgetfail"),
+    REST_MAP_POST_SUCCESS("restmappostsucc"),
+    REST_MAP_POST_FAILURE("restmappostfail"),
+    REST_REQUEST_COUNT("restrequestct");
 
     private final String query;
 

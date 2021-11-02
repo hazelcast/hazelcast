@@ -12,8 +12,10 @@ public class RestApiMetricsCollector implements MetricsCollector {
         RestCallCollector collector = node.getTextCommandService().getRestCallCollector();
         String enabled = node.getConfig().getNetworkConfig().getRestApiConfig().isEnabledAndNotEmpty() ? "1" : "0";
         metricsConsumer.accept(PhoneHomeMetrics.REST_ENABLED, enabled);
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_POST_SUCCESS, collector.getMapPutSuccessCount());
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_POST_FAILURE, collector.getMapPutFailureCount());
-        metricsConsumer.accept(PhoneHomeMetrics.MAP_REQUEST_COUNT, collector.getRequestCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_POST_SUCCESS, collector.getMapPutSuccessCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_POST_FAILURE, collector.getMapPutFailureCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_SUCCESS, collector.getMapGetSuccessCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_FAILURE, collector.getMapGetFailureCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_REQUEST_COUNT, collector.getRequestCount());
     }
 }

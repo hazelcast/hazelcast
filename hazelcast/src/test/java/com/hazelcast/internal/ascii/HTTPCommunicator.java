@@ -470,7 +470,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doGet(String url) throws IOException {
+    public ConnectionResponse doGet(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {

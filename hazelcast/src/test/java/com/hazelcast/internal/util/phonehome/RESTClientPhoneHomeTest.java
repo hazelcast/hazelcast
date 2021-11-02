@@ -65,7 +65,7 @@ public class RESTClientPhoneHomeTest {
     }
 
     @Test
-    public void mapPutsAreCounted()
+    public void mapOperations()
             throws IOException {
         stubFor(post(urlPathEqualTo("/ping"))
                 .willReturn(aResponse().withStatus(200)));
@@ -74,35 +74,22 @@ public class RESTClientPhoneHomeTest {
 
         HTTPCommunicator http = new HTTPCommunicator(instance);
         assertEquals(200, http.mapPut("my-map", "key", "value"));
+        assertEquals(200, http.mapPut("my-map", "key2", "value2"));
+        assertEquals(400, http.doPost(http.getUrl(URI_MAPS), "value").responseCode);
+        assertEquals(200, http.mapGet("my-map", "key").responseCode);
+        assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
+        assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
 
         PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("restenabled", "1"))
-                .withRequestBody(containingParam("restrequestct", "1"))
-                .withRequestBody(containingParam("restmappostsucc", "1"))
-        );
-    }
-
-    @Test
-    public void mapPuts_badRequestsAreCounted()
-            throws IOException {
-        stubFor(post(urlPathEqualTo("/ping"))
-                .willReturn(aResponse().withStatus(200)));
-
-        HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
-
-        HTTPCommunicator http = new HTTPCommunicator(instance);
-        assertEquals(400, http.doPost(http.getUrl(URI_MAPS), "value").responseCode);
-
-        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
-        phoneHome.phoneHome(false);
-
-        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
-                .withRequestBody(containingParam("restmappostsucc", "0"))
+                .withRequestBody(containingParam("restrequestct", "6"))
+                .withRequestBody(containingParam("restmappostsucc", "2"))
                 .withRequestBody(containingParam("restmappostfail", "1"))
-                .withRequestBody(containingParam("restrequestct", "1"))
+                .withRequestBody(containingParam("restmapgetsucc", "1"))
+                .withRequestBody(containingParam("restmapgetfail", "2"))
         );
     }
 
@@ -114,13 +101,5 @@ public class RESTClientPhoneHomeTest {
             assertEquals(expectedValue, object.getString(key, null));
         }
         return object;
-    }
-
-    private void assertSuccessJson(HTTPCommunicator.ConnectionResponse resp, String... attributesAndValues) {
-        assertEquals(HttpURLConnection.HTTP_OK, resp.responseCode);
-        assertJsonContains(resp.response, "status", "success");
-        if (attributesAndValues.length > 0) {
-            assertJsonContains(resp.response, attributesAndValues);
-        }
     }
 }

@@ -23,5 +23,6 @@ public class HttpHeadCommand extends HttpCommand {
 
     public HttpHeadCommand(String uri, ServerConnection connection) {
         super(TextCommandType.HTTP_HEAD, uri, connection);
+        listener.httpMethodDetermined("head");
     }
 }

@@ -130,7 +130,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             }
         } catch (HttpBadRequestException e) {
             prepareResponse(SC_400, command, response(FAIL, "message", e.getMessage()));
-            command.send400();
             sendResponse = true;
         } catch (HttpForbiddenException e) {
             prepareResponse(SC_403, command, response(FAIL, "message", "unauthenticated"));

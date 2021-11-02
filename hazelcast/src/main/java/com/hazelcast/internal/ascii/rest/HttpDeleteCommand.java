@@ -24,6 +24,7 @@ public class HttpDeleteCommand extends HttpCommand {
 
     public HttpDeleteCommand(String uri, ServerConnection connection) {
         super(HTTP_DELETE, uri, connection);
+        listener.httpMethodDetermined("delete");
     }
 
 }
