@@ -20,6 +20,10 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,8 +32,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,6 +65,22 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, singletonList(
                 new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
+    }
+
+    @Test
+    public void test_explainStatementDynamicParams() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 10);
+
+        createMapping("map", Integer.class, Integer.class);
+
+        String sql = "EXPLAIN SELECT * FROM map WHERE __key = ?";
+        SqlStatement statement = new SqlStatement(sql).addParameter(1);
+        SqlResult result = instance().getSql().execute(statement);
+
+        String expectedScanRes = "SelectByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1], " +
+                "filter==($0, ?0)]]], keyCondition=[?0], projections=[__key=[$0], this=[$1]])";
+        assertEquals(result.iterator().next().getObject(0), expectedScanRes);
     }
 
     @Test
@@ -240,5 +266,16 @@ public class ExplainStatementTest extends SqlTestSupport {
                 new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0]]]])")
 
         ));
+    }
+
+    @Test
+    public void test_explainStatementShowShouldThrowParserEx() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 10);
+
+        String sql = "EXPLAIN SHOW MAPPINGS";
+
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("Incorrect syntax near the keyword 'SHOW'");
     }
 }
