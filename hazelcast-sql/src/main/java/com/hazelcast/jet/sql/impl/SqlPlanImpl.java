@@ -538,7 +538,6 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("EXPLAIN", arguments);
             SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
             return planExecutor.execute(this);
         }

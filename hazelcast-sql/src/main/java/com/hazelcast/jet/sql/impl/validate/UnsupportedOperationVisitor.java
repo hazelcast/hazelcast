@@ -267,8 +267,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 throw error(type, ValidatorResource.RESOURCE.notSupported(typeName.getName()));
         }
     }
-
-    @SuppressWarnings("all")
+    
     @Override
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
