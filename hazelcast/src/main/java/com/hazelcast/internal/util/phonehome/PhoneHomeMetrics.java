@@ -152,8 +152,8 @@ public enum PhoneHomeMetrics {
     REST_MAP_GET_FAILURE("restmapgetfail"),
     REST_MAP_POST_SUCCESS("restmappostsucc"),
     REST_MAP_POST_FAILURE("restmappostfail"),
-    REST_REQUEST_COUNT("restrequestct");
-
+    REST_REQUEST_COUNT("restrequestct"),
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
     private final String query;
 
     PhoneHomeMetrics(String query) {

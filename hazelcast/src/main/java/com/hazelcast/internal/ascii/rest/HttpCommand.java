@@ -76,6 +76,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         // the command line was parsed already, let's start with clear next line
         this.nextLine = true;
         this.listener = listener;
+        listener.requestPathDetermined(uri);
 
     }
 

@@ -43,9 +43,8 @@ public class RestCallExecutionListener {
     }
 
     void responseSent(int statusCode) {
-        int existingStatusCode = executionDetails.getStatusCode();
-        if (existingStatusCode > 0) {
-            throw new IllegalStateException("can not set statusCode to " + statusCode + ", it is already " + existingStatusCode);
+        if (executionDetails.getStatusCode() > 0) {
+            throw new IllegalStateException("can not set statusCode to " + statusCode + ", it is already " + executionDetails.getStatusCode());
         }
         executionDetails.setStatusCode(statusCode);
         collector.collectExecution(executionDetails);

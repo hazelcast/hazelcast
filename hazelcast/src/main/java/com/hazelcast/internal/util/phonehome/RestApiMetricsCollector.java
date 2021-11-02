@@ -17,5 +17,6 @@ public class RestApiMetricsCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_SUCCESS, collector.getMapGetSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_FAILURE, collector.getMapGetFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_REQUEST_COUNT, collector.getRequestCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_UNIQUE_REQUEST_COUNT, collector.getUniqueRequestCount());
     }
 }

@@ -76,7 +76,7 @@ public class RESTClientPhoneHomeTest {
         assertEquals(200, http.mapPut("my-map", "key", "value"));
         assertEquals(200, http.mapPut("my-map", "key2", "value2"));
         assertEquals(400, http.doPost(http.getUrl(URI_MAPS), "value").responseCode);
-        assertEquals(200, http.mapGet("my-map", "key").responseCode);
+        assertEquals(204, http.mapGet("my-other-map", "key").responseCode);
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
 
@@ -86,6 +86,7 @@ public class RESTClientPhoneHomeTest {
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("restenabled", "1"))
                 .withRequestBody(containingParam("restrequestct", "6"))
+                .withRequestBody(containingParam("restuniqrequestct", "5"))
                 .withRequestBody(containingParam("restmappostsucc", "2"))
                 .withRequestBody(containingParam("restmappostfail", "1"))
                 .withRequestBody(containingParam("restmapgetsucc", "1"))
@@ -93,13 +94,4 @@ public class RESTClientPhoneHomeTest {
         );
     }
 
-    private JsonObject assertJsonContains(String json, String... attributesAndValues) {
-        JsonObject object = Json.parse(json).asObject();
-        for (int i = 0; i < attributesAndValues.length; ) {
-            String key = attributesAndValues[i++];
-            String expectedValue = attributesAndValues[i++];
-            assertEquals(expectedValue, object.getString(key, null));
-        }
-        return object;
-    }
 }
