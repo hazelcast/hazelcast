@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.nio.InstanceCreationUtil.newInstanceBypassingConstructor;
+import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 
@@ -260,7 +260,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 return null;
             }
             try {
-                Object object = newInstanceBypassingConstructor(clazz);
+                Object object = createNewInstance(clazz);
                 return getOrCreateRegistration(object);
             } catch (Exception e) {
                 throw new HazelcastSerializationException("Class " + clazz + " must have an empty constructor", e);

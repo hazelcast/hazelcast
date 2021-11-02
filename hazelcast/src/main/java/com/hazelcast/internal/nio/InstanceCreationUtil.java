@@ -22,6 +22,9 @@ import org.objenesis.instantiator.ObjectInstantiator;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Utility class to deal with creation of new object instances.
@@ -30,20 +33,46 @@ public final class InstanceCreationUtil {
 
     private static final Objenesis OBJENESIS = new ObjenesisStd();
     private static final Map<Class<?>, ObjectInstantiator<?>> OBJECT_INSTANTIATORS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Supplier<?>> OBJECT_SUPPLIERS = new ConcurrentHashMap<>();
 
     private InstanceCreationUtil() {
     }
 
 
     /**
-     * Creates a new instance of given class, bypassing constructors using Objenesis' instantiators.
+     * Creates a new instance of given class, bypassing constructors using Objenesis' instantiators if the default
+     * constructor does not exists.
      * @param klass class which instance will be created
      * @param <T> type of class {@code klass}
      * @return newly created blank object
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static <T> T newInstanceBypassingConstructor(Class klass) {
-        ObjectInstantiator instantiator = OBJECT_INSTANTIATORS.computeIfAbsent(klass, OBJENESIS::getInstantiatorOf);
-        return (T) instantiator.newInstance();
+    public static <T> T createNewInstance(Class klass) {
+        Supplier<T> supplier = (Supplier<T>) OBJECT_SUPPLIERS.computeIfAbsent(klass, clz -> {
+           if (canUseConstructor(clz)) {
+               return () -> (T) newInstanceUsingConstructor(clz);
+           } else {
+               ObjectInstantiator instantiator = OBJECT_INSTANTIATORS.computeIfAbsent(klass, OBJENESIS::getInstantiatorOf);
+               return () -> (T) instantiator.newInstance();
+           }
+        });
+
+        return supplier.get();
+    }
+
+    private static boolean canUseConstructor(Class<?> clz) {
+        try {
+            ClassLoaderUtil.newInstance(clz.getClassLoader(), clz);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    private static <T> T newInstanceUsingConstructor(Class<T> clz) {
+        try {
+            return ClassLoaderUtil.newInstance(clz.getClassLoader(), clz);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 }
