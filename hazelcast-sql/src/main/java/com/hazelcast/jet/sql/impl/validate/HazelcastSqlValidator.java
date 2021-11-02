@@ -51,7 +51,6 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
@@ -144,12 +143,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         if (topNode instanceof SqlExplainStatement) {
-            SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
-            SqlNode explicandum = explainStatement.getExplicandum();
-
             /*
+             * Just FYI, why do we do set validated explicandum back.
+             *
+             * There was a corner case with queries where ORDER BY is present.
              * SqlOrderBy is present as AST node (or SqlNode),
-             * but then it become embedded as part of SqlSelect,
+             * but then it becomes embedded as part of SqlSelect AST node,
              * and node itself is removed in `performUnconditionalRewrites().
              * As a result, ORDER BY is absent as operator
              * on the next validation & optimization phases
@@ -159,11 +158,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
              * performUnconditionalRewrites() doesn't rewrite anything for EXPLAIN.
              * It's a reason why we do it (extraction, validation & re-setting) manually.
              */
-            if (explicandum instanceof SqlOrderBy) {
-                explicandum = super.performUnconditionalRewrites(explicandum, false);
-                explainStatement.setExplicandum(explicandum);
-            }
-            super.validate(explicandum);
+
+            SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
+            SqlNode explicandum = explainStatement.getExplicandum();
+            explicandum = super.validate(explicandum);
+            explainStatement.setExplicandum(explicandum);
             return explainStatement;
         }
 
