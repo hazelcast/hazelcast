@@ -104,6 +104,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     private final AtomicLong decrementHits = new AtomicLong();
     private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
+    private final RestCallCollector restCallCollector = new RestCallCollector();
 
     private final Node node;
     private final HazelcastInstance hazelcast;
@@ -236,12 +237,12 @@ public class TextCommandServiceImpl implements TextCommandService {
 
     @Override
     public RestCallCollector getRestCallCollector() {
-        return RestCallCollector.INSTANCE;
+        return restCallCollector;
     }
 
     @Override
     public RestCallExecutionListener createRestCallExecutionListener() {
-        return new RestCallExecutionListener(RestCallCollector.INSTANCE);
+        return new RestCallExecutionListener(restCallCollector);
     }
 
     @Override

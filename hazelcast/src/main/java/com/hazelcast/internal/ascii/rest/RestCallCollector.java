@@ -19,7 +19,6 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.util.counters.MwCounter;
 
 public class RestCallCollector {
-    public static final RestCallCollector INSTANCE = new RestCallCollector();
 
     public String getMapPutSuccessCount() {
         return String.valueOf(mapPostSuccCount.get());
