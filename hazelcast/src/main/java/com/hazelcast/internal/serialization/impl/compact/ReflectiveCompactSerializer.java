@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
@@ -63,7 +62,6 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
@@ -266,13 +264,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     }
                 };
                 writers[index] = (w, o) -> w.writeBoolean(name, field.getBoolean(o));
-            } else if (Character.TYPE.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, CHAR)) {
-                        field.setChar(o, reader.readChar(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeChar(name, field.getChar(o));
             } else if (String.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, STRING)) {
@@ -427,13 +418,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfDoubles(name, (double[]) field.get(o));
-                } else if (Character.TYPE.equals(componentType)) {
-                    readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_CHARS)) {
-                            field.set(o, reader.readArrayOfChars(name));
-                        }
-                    };
-                    writers[index] = (w, o) -> w.writeArrayOfChars(name, (char[]) field.get(o));
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS)) {

@@ -29,7 +29,6 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
@@ -51,7 +50,6 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
@@ -148,16 +146,6 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Override
     public double readDouble(@Nonnull String fieldName, double defaultValue) {
         return isFieldExists(fieldName, DOUBLE) ? getDouble(fieldName) : defaultValue;
-    }
-
-    @Override
-    public char readChar(@Nonnull String fieldName) {
-        return getChar(fieldName);
-    }
-
-    @Override
-    public char readChar(@Nonnull String fieldName, char defaultValue) {
-        return isFieldExists(fieldName, CHAR) ? getChar(fieldName) : defaultValue;
     }
 
     @Override
@@ -261,17 +249,6 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Override
     public boolean[] readArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_BOOLEANS) ? getArrayOfBooleans(fieldName) : defaultValue;
-    }
-
-    @Override
-    public char[] readArrayOfChars(@Nonnull String fieldName) {
-        return getArrayOfChars(fieldName);
-    }
-
-    @Nullable
-    @Override
-    public char[] readArrayOfChars(@Nonnull String fieldName, @Nullable char[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_CHARS) ? getArrayOfChars(fieldName) : defaultValue;
     }
 
     @Override
