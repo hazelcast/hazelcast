@@ -30,8 +30,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -195,12 +195,12 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public Schema extractSchemaFromData(@NotNull Data data) throws IOException {
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
         return delegate.extractSchemaFromData(data);
     }
 
     @Override
-    public Schema extractSchemaFromObject(@NotNull Object object) {
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
         return delegate.extractSchemaFromObject(object);
     }
 

@@ -158,8 +158,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        CompactSerializableRegistration registration = getOrCreateRegistration(o);
         Class<?> aClass = o.getClass();
+        CompactSerializableRegistration registration = getOrCreateRegistration(o);
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
@@ -328,11 +328,11 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public Schema extractSchema(Object o) {
-        CompactSerializableRegistration registration = getOrCreateRegistration(o);
         Class<?> aClass = o.getClass();
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
+            CompactSerializableRegistration registration = getOrCreateRegistration(o);
             schema = buildSchema(registration, o);
             return schema;
         }
