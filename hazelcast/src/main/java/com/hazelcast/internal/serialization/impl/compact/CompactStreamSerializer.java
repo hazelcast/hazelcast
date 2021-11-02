@@ -334,6 +334,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         if (schema == null) {
             CompactSerializableRegistration registration = getOrCreateRegistration(o);
             schema = buildSchema(registration, o);
+            classToSchemaMap.put(aClass, schema);
             return schema;
         }
         return schema;
