@@ -26,17 +26,15 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.util.List;
 
-/*
- * EXPLAIN PLAN FOR query.
+/**
+ * AST class for EXPLAIN PLAN FOR clause.
  */
 public class SqlExplainStatement extends SqlCall {
     public static final SqlSpecialOperator OPERATOR = new HazelcastExplainOperator();
 
     private SqlNode explicandum;
 
-    public SqlExplainStatement(
-            SqlParserPos pos,
-            SqlNode explicandum) {
+    public SqlExplainStatement(SqlParserPos pos, SqlNode explicandum) {
         super(pos);
         this.explicandum = explicandum;
     }

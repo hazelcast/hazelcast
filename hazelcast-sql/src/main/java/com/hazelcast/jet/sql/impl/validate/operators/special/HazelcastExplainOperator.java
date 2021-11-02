@@ -42,8 +42,8 @@ public class HazelcastExplainOperator extends HazelcastSpecialOperator {
     }
 
     @Override
-    public SqlCall createCall(@Nullable SqlLiteral functionQualifier,
-                              SqlParserPos pos, @Nullable SqlNode... operands) {
+    public SqlCall createCall(@Nullable SqlLiteral functionQualifier, SqlParserPos pos, @Nullable SqlNode... operands) {
+        assert operands != null;
         return new SqlExplainStatement(pos, operands[0]);
     }
 

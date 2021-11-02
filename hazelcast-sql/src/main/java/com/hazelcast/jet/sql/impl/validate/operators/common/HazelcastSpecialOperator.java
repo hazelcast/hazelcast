@@ -43,10 +43,7 @@ public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implem
         super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, null);
     }
 
-    protected HazelcastSpecialOperator(
-            String name,
-            SqlKind kind
-    ) {
+    protected HazelcastSpecialOperator(String name, SqlKind kind) {
         super(name, kind);
     }
 

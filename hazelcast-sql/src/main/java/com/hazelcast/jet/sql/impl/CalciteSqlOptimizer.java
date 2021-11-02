@@ -345,7 +345,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private SqlPlan toExplainStatementPlan(
             PlanKey planKey,
             OptimizerContext context,
-            QueryParseResult parseResult) {
+            QueryParseResult parseResult
+    ) {
         SqlNode node = parseResult.getNode();
         assert node instanceof SqlExplainStatement;
         QueryConvertResult convertResult = context.convert(((SqlExplainStatement) node).getExplicandum());
