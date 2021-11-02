@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.client.impl.protocol.codec.custom.HazelcastJsonValueCodec;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
