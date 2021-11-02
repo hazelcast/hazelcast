@@ -147,6 +147,18 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
             SqlNode explicandum = explainStatement.getExplicandum();
 
+            /*
+             * SqlOrderBy is present as AST node (or SqlNode),
+             * but then it become embedded as part of SqlSelect,
+             * and node itself is removed in `performUnconditionalRewrites().
+             * As a result, ORDER BY is absent as operator
+             * on the next validation & optimization phases
+             * and also doesn't present in SUPPORTED_KINDS.
+             *
+             * Explain query contains explicandum query, and
+             * performUnconditionalRewrites() doesn't rewrite anything for EXPLAIN.
+             * It's a reason why we do it (extraction, validation & re-setting) manually.
+             */
             if (explicandum instanceof SqlOrderBy) {
                 explicandum = super.performUnconditionalRewrites(explicandum, false);
                 explainStatement.setExplicandum(explicandum);
