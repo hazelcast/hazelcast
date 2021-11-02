@@ -30,7 +30,7 @@ public class HazelcastTumbleTableFunction extends HazelcastWindowTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
-            new HazelcastTableFunctionParameter(1, "column", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
+            new HazelcastTableFunctionParameter(1, "timeCol", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
             new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 

@@ -20,21 +20,16 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
-import static org.apache.calcite.util.Static.RESOURCE;
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
@@ -59,22 +54,6 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
         HazelcastSqlValidator validator = binding.getValidator();
         SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
         return checkColumnType(validator, orderingColumnType, lag);
-    }
-
-    /**
-     * @return The field from {@code input} referenced by the {@code
-     * descriptorIdentifier}
-     */
-    private static RelDataTypeField checkColumnName(SqlValidator validator, SqlNode input, SqlIdentifier descriptorIdentifier) {
-        SqlNameMatcher matcher = validator.getCatalogReader().nameMatcher();
-        String columnName = descriptorIdentifier.getSimple();
-        return validator.getValidatedNodeType(input).getFieldList().stream()
-                .filter(field -> matcher.matches(field.getName(), columnName))
-                .findFirst()
-                .orElseThrow(() -> SqlUtil.newContextException(
-                        descriptorIdentifier.getParserPosition(),
-                        RESOURCE.unknownIdentifier(columnName)
-                ));
     }
 
     private static boolean checkColumnType(SqlValidator validator, SqlTypeName orderingColumnType, SqlNode lag) {

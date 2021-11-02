@@ -178,7 +178,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         List<Row> actualRows = new ArrayList<>(rows);
-        assertThat(actualRows).hasSameElementsAs(expectedRows);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
     /**

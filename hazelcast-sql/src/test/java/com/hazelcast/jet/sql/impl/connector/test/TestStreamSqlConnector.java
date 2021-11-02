@@ -53,12 +53,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
@@ -300,7 +298,7 @@ public class TestStreamSqlConnector implements SqlConnector {
 
         private static final int MAX_BATCH_SIZE = 1024;
 
-        private final Iterator<Object> iterator;
+        private final Traverser<Object> traverser;
 
         private TestStreamDataGenerator(
                 List<Object[]> rows,
@@ -311,31 +309,18 @@ public class TestStreamSqlConnector implements SqlConnector {
         ) {
             EventTimeMapper<Object[]> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
             eventTimeMapper.addPartitions(1);
-            this.iterator = rows.stream()
+            this.traverser = Traversers.traverseIterable(rows)
                     .flatMap(row -> {
                         Object[] evaluated = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
-                        Traverser<Object> traverser = evaluated == null
-                                ? Traversers.empty()
-                                : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
-                        return toStream(traverser);
-                    })
-                    .iterator();
+                        return evaluated == null ? Traversers.empty() : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
+                    });
         }
 
         private void fillBuffer(SourceBuffer<Object> buffer) {
-            int i = 0;
-            while (iterator.hasNext() && i++ < MAX_BATCH_SIZE) {
-                buffer.add(iterator.next());
+            Object o;
+            for (int i = 0; i < MAX_BATCH_SIZE && (o = traverser.next()) != null; i++) {
+                buffer.add(o);
             }
-        }
-
-        private static Stream<Object> toStream(Traverser<Object> traverser) {
-            List<Object> objects = new ArrayList<>();
-            Object object;
-            while ((object = traverser.next()) != null) {
-                objects.add(object);
-            }
-            return objects.stream();
         }
     }
 }

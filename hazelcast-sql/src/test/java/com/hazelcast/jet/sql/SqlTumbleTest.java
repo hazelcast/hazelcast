@@ -85,12 +85,12 @@ public class SqlTumbleTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_validArguments_bigDate() {
+    public void test_validArguments_date() {
         checkValidArguments(DATE, "INTERVAL '6' DAYS", row(date(0)), row(date(2)));
     }
 
     @Test
-    public void test_validArguments_bigTimestamp() {
+    public void test_validArguments_timestamp() {
         checkValidArguments(TIMESTAMP, "INTERVAL '0.007' SECOND", row(timestamp(0)), row(timestamp(2)));
     }
 
@@ -1395,7 +1395,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "SELECT window_start, window_end, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "   window_size => INTERVAL '0.002' SECOND" +
-                        "   , \"column\" => DESCRIPTOR(ts)" +
+                        "   , timeCol => DESCRIPTOR(ts)" +
                         "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start, window_end",
