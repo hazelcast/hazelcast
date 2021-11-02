@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.map.impl.ChunkSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
@@ -42,13 +43,22 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
 
     private Collection<Operation> migrationOperations;
 
+    private transient Collection<ChunkSupplier> chunkSuppliers;
+
     public ReplicaFragmentMigrationState() {
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
-            Collection<Operation> migrationOperations) {
+                                         Collection<Operation> migrationOperations) {
+        this(namespaces, migrationOperations, null);
+    }
+
+    public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
+                                         Collection<Operation> migrationOperations,
+                                         Collection<ChunkSupplier> chunkSuppliers) {
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
+        this.chunkSuppliers = chunkSuppliers;
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
@@ -80,6 +90,20 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         for (Operation operation : migrationOperations) {
             out.writeObject(operation);
         }
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            chunkSupplier.init();
+
+            while (chunkSupplier.hasMoreChunks()
+                    && !chunkSupplier.hasReachedMaxSize()) {
+                Operation chunk = chunkSupplier.nextChunk();
+                out.writeObject(chunk);
+            }
+
+            if (chunkSupplier.hasReachedMaxSize()) {
+                break;
+            }
+        }
+        out.writeObject(null);
     }
 
     @Override
@@ -97,6 +121,15 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             Operation migrationOperation = in.readObject();
             migrationOperations.add(migrationOperation);
         }
+
+        do {
+            Object operation = in.readObject();
+            if (operation == null) {
+                break;
+            }
+
+            migrationOperations.add(((Operation) operation));
+        } while (true);
     }
 
     @Override
