@@ -31,13 +31,12 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.List;
-import java.util.Objects;
 
 public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel implements PhysicalRel {
 
     private final ImmutableBitSet groupSet;
     private final AggregateOperation<?, Object[]> aggrOp;
-    private final WindowProperties windowProperties;
+    private final WindowProperties.WindowProperty windowProperty;
 
     SlidingWindowAggregateAccumulateByKeyPhysicalRel(
             RelOptCluster cluster,
@@ -45,13 +44,13 @@ public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel 
             RelNode input,
             ImmutableBitSet groupSet,
             AggregateOperation<?, Object[]> aggrOp,
-            WindowProperties windowProperties
+            WindowProperties.WindowProperty windowProperty
     ) {
         super(cluster, traits, input);
 
         this.groupSet = groupSet;
         this.aggrOp = aggrOp;
-        this.windowProperties = windowProperties;
+        this.windowProperty = windowProperty;
     }
 
     public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
@@ -63,7 +62,7 @@ public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel 
     }
 
     public WindowProperties.WindowProperty windowProperty() {
-        return Objects.requireNonNull(windowProperties.findFirst(groupSet.toList()));
+        return windowProperty;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel 
                 sole(inputs),
                 groupSet,
                 aggrOp,
-                windowProperties
+                windowProperty
         );
     }
 }

@@ -73,17 +73,17 @@ final class AggregatePhysicalRule extends RelOptRule {
     }
 
     private static RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        if (logicalAggregate.getGroupSet().cardinality() == 0) {
-            return toAggregate(logicalAggregate, physicalInput);
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(physicalInput.getCluster().getMetadataQuery());
+        WindowProperties windowProperties = query.extractWindowProperties(physicalInput);
+        if (windowProperties == null) {
+            return logicalAggregate.getGroupSet().cardinality() == 0
+                    ? toAggregate(logicalAggregate, physicalInput)
+                    : toAggregateByKey(logicalAggregate, physicalInput);
         } else {
-            HazelcastRelMetadataQuery query =
-                    HazelcastRelMetadataQuery.reuseOrCreate(physicalInput.getCluster().getMetadataQuery());
-            WindowProperties windowProperties = query.extractWindowProperties(physicalInput);
-            if (windowProperties == null || windowProperties.findFirst(logicalAggregate.getGroupSet().asList()) == null) {
-                return toAggregateByKey(logicalAggregate, physicalInput);
-            } else {
-                return toSlidingAggregateByKey(logicalAggregate, physicalInput, windowProperties);
-            }
+            WindowProperties.WindowProperty windowProperty = windowProperties.findFirst(logicalAggregate.getGroupSet().asList());
+            return windowProperty == null
+                    ? toStreamingAggregate(logicalAggregate, physicalInput)
+                    : toSlidingAggregateByKey(logicalAggregate, physicalInput, windowProperty);
         }
     }
 
@@ -162,10 +162,21 @@ final class AggregatePhysicalRule extends RelOptRule {
         }
     }
 
+    private static RelNode toStreamingAggregate(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
+        return new StreamingAggregatePhysicalRel(
+                physicalInput.getCluster(),
+                physicalInput.getTraitSet(),
+                physicalInput,
+                logicalAggregate.getGroupSet(),
+                logicalAggregate.getGroupSets(),
+                logicalAggregate.getAggCallList()
+        );
+    }
+
     private static RelNode toSlidingAggregateByKey(
             AggregateLogicalRel logicalAggregate,
             RelNode physicalInput,
-            WindowProperties windowProperties
+            WindowProperties.WindowProperty windowProperty
     ) {
         AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
@@ -182,7 +193,7 @@ final class AggregatePhysicalRule extends RelOptRule {
                     logicalAggregate.getGroupSets(),
                     logicalAggregate.getAggCallList(),
                     aggrOp,
-                    windowProperties
+                    windowProperty
             );
         } else {
             RelNode rel = new SlidingWindowAggregateAccumulateByKeyPhysicalRel(
@@ -191,7 +202,7 @@ final class AggregatePhysicalRule extends RelOptRule {
                     physicalInput,
                     logicalAggregate.getGroupSet(),
                     aggrOp,
-                    windowProperties
+                    windowProperty
             );
 
             return new SlidingWindowAggregateCombineByKeyPhysicalRel(
@@ -202,7 +213,7 @@ final class AggregatePhysicalRule extends RelOptRule {
                     logicalAggregate.getGroupSets(),
                     logicalAggregate.getAggCallList(),
                     aggrOp,
-                    windowProperties
+                    windowProperty
             );
         }
     }

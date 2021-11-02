@@ -323,6 +323,10 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onStreamingAggregate(StreamingAggregatePhysicalRel rel) {
+        throw QueryException.error("Streaming aggregation must be grouped by window_start/window_end");
+    }
+
     public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();

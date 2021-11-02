@@ -1407,24 +1407,49 @@ public class SqlTumbleTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_windowBoundIsProjected_then_regularAggregationIsApplied() {
-        String name = createTable(
-                row(timestampTz(0), "Alice", 1),
-                row(timestampTz(1), null, 1),
-                row(timestampTz(2), "Alice", 1),
-                row(timestampTz(3), "Bob", 1),
-                row(timestampTz(10), null, null)
-        );
+    public void test_groupByWithoutOrdering() {
+        String name = createTable();
 
-        assertEmptyResultStream(
-                "SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
-                        "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
-                        "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
-                        ")) " +
-                        "GROUP BY window_start + INTERVAL '0.001' SECOND"
-        );
+        assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
+                "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
+                "GROUP BY window_start")
+        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+    }
+
+    @Test
+    public void test_aggregationWithoutOrdering() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
+                "TABLE(TUMBLE(TABLE " + name + " , DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
+        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+    }
+
+    @Test
+    public void test_noGroupBy() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
+                "TABLE(TUMBLE(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  , DESCRIPTOR(ts)" +
+                "  , INTERVAL '0.002' SECOND" +
+                "))")
+        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+    }
+
+    @Test
+    public void test_groupByNonWindowBound() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
+                "TABLE(TUMBLE(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  , DESCRIPTOR(ts)" +
+                "  , INTERVAL '0.002' SECOND" +
+                ")) " +
+                "GROUP BY window_start + INTERVAL '0.001' SECOND")
+        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test

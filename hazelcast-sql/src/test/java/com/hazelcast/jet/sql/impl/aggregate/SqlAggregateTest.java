@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -999,6 +1000,40 @@ public class SqlAggregateTest extends SqlTestSupport {
                         new Row(new BigDecimal("3"))
                 )
         );
+    }
+
+    @Test
+    public void test_aggregatingNonOrderedStreamingSource() {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
+    }
+
+    @Test
+    public void test_aggregatingNonOrderedStreamingFunction() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
+    }
+
+    @Test
+    public void test_distinctNonOrderedStreamingSource() {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
+    }
+
+    @Test
+    public void test_distinctNonOrderedStreamingFunction() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
     }
 
     @Test

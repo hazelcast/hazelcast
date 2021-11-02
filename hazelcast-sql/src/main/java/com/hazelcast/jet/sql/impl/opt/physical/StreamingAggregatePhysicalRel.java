@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -32,62 +29,38 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate implements PhysicalRel {
+public class StreamingAggregatePhysicalRel extends Aggregate implements PhysicalRel {
 
-    private final AggregateOperation<?, Object[]> aggrOp;
-    private final WindowProperties.WindowProperty windowProperty;
-
-    SlidingWindowAggregateCombineByKeyPhysicalRel(
+    StreamingAggregatePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
             ImmutableBitSet groupSet,
             List<ImmutableBitSet> groupSets,
-            List<AggregateCall> aggCalls,
-            AggregateOperation<?, Object[]> aggrOp,
-            WindowProperties.WindowProperty windowProperty
+            List<AggregateCall> aggCalls
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
-
-        this.aggrOp = aggrOp;
-        this.windowProperty = windowProperty;
-    }
-
-    public AggregateOperation<?, Object[]> aggrOp() {
-        return aggrOp;
-    }
-
-    public WindowProperties.WindowProperty windowProperty() {
-        return windowProperty;
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getRowType());
+        // marker rel, schema should not be ever needed
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onSlidingWindowCombineByKey(this);
+        return visitor.onStreamingAggregate(this);
     }
 
     @Override
-    public final Aggregate copy(
-            RelTraitSet traitSet,
+    public Aggregate copy(
+            RelTraitSet traits,
             RelNode input,
             ImmutableBitSet groupSet,
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls
     ) {
-        return new SlidingWindowAggregateCombineByKeyPhysicalRel(
-                getCluster(),
-                traitSet,
-                input,
-                groupSet,
-                groupSets,
-                aggCalls,
-                aggrOp,
-                windowProperty
-        );
+        return new StreamingAggregatePhysicalRel(getCluster(), traits, input, groupSet, groupSets, aggCalls);
     }
 }
