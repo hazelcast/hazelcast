@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+ /*
+  * Copied from calcite-core to customize:
+  * - ExplicitTable
+  */
+
 <@pp.dropOutputFile />
 
 <@pp.changeOutputFile name="javacc/Parser.jj" />
