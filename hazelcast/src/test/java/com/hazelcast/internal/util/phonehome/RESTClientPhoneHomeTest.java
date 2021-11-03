@@ -6,13 +6,11 @@ import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,7 +18,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -29,6 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_MAPS;
+import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_QUEUES;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeIntegrationTest.containingParam;
 import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
@@ -40,12 +38,23 @@ public class RESTClientPhoneHomeTest {
 
     protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule();
-
     @BeforeClass
     public static void beforeClass() {
         Hazelcast.shutdownAll();
+    }
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule();
+
+    private HazelcastInstance instance;
+
+    private HTTPCommunicator http;
+
+    @Before
+    public void setUp() {
+        instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
+        http = new HTTPCommunicator(instance);
+        stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(200)));
     }
 
     @After
@@ -67,12 +76,6 @@ public class RESTClientPhoneHomeTest {
     @Test
     public void mapOperations()
             throws IOException {
-        stubFor(post(urlPathEqualTo("/ping"))
-                .willReturn(aResponse().withStatus(200)));
-
-        HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
-
-        HTTPCommunicator http = new HTTPCommunicator(instance);
         assertEquals(200, http.mapPut("my-map", "key", "value"));
         assertEquals(200, http.mapPut("my-map", "key2", "value2"));
         assertEquals(400, http.doPost(http.getUrl(URI_MAPS), "value").responseCode);
@@ -91,6 +94,29 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restmappostfail", "1"))
                 .withRequestBody(containingParam("restmapgetsucc", "1"))
                 .withRequestBody(containingParam("restmapgetfail", "2"))
+                .withRequestBody(containingParam("restmapct", "2"))
+                .withRequestBody(containingParam("restqueuepostsucc", "0"))
+                .withRequestBody(containingParam("restqueuepostfail", "0"))
+        );
+    }
+
+    @Test
+    public void queueOperations() throws IOException {
+        assertEquals(200, http.queueOffer("my-queue", "a"));
+        assertEquals(200, http.queueOffer("my-queue", "b"));
+        assertEquals(400, http.doPost(http.getUrl(URI_QUEUES)).responseCode);
+        assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
+        assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
+
+        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
+        phoneHome.phoneHome(false);
+
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("restmappostsucc", "0"))
+                .withRequestBody(containingParam("restmappostfail", "0"))
+                .withRequestBody(containingParam("restqueuepostsucc", "2"))
+                .withRequestBody(containingParam("restqueuepostfail", "1"))
+                .withRequestBody(containingParam("restqueuect", "1"))
         );
     }
 

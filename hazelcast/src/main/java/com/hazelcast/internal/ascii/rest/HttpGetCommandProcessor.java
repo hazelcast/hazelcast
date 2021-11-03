@@ -371,6 +371,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleQueue(HttpGetCommand command, String uri) {
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+        command.objectNameDetermined(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
 
         if (equalsIgnoreCase(QUEUE_SIZE_COMMAND, secondStr)) {

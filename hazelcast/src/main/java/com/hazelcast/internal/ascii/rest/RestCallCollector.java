@@ -55,27 +55,51 @@ public class RestCallCollector {
     private final MwCounter mapPostFailCount = MwCounter.newMwCounter();
     private final MwCounter mapGetSuccCount = MwCounter.newMwCounter();
     private final MwCounter mapGetFailCount = MwCounter.newMwCounter();
+    private final MwCounter queuePostSuccCount = MwCounter.newMwCounter();
+    private final MwCounter queuePostFailCount = MwCounter.newMwCounter();
+    private final MwCounter queueGetSuccCount = MwCounter.newMwCounter();
+    private final MwCounter queueGetFailCount = MwCounter.newMwCounter();
 
     private final MwCounter requestCount = MwCounter.newMwCounter();
     private final ConcurrentSkipListSet<RequestIdentifier> uniqueRequests = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<String> accessedMaps = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<String> accessedQueues = new ConcurrentSkipListSet<>();
 
     public void collectExecution(RestCallExecution execution) {
         if (uniqueRequests.size() < 1000) {
             uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
         }
         requestCount.inc();
+        boolean isMap = "map".equals(execution.getObjectType());
+        boolean isQueue = "queue".equals(execution.getObjectType());
+        String objectName = execution.getObjectName();
+        if (objectName != null) {
+            if (isMap) {
+                accessedMaps.add(objectName);
+            } else if (isQueue) {
+                accessedQueues.add(objectName);
+            }
+        }
         if (execution.getMethod().equalsIgnoreCase("post")) {
-            (execution.getStatusCode() < 400 ? mapPostSuccCount : mapPostFailCount).inc();
+            if (isMap) {
+                (execution.isSuccess() ? mapPostSuccCount : mapPostFailCount).inc();
+            } else if (isQueue) {
+                (execution.isSuccess() ? queuePostSuccCount : queuePostFailCount).inc();
+            }
         } else if (execution.getMethod().equalsIgnoreCase("get")) {
-            (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
+            if (isMap) {
+                (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
+            } else if (isQueue) {
+                (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
+            }
         }
     }
 
-    public String getMapPutSuccessCount() {
+    public String getMapPostSuccessCount() {
         return String.valueOf(mapPostSuccCount.get());
     }
 
-    public String getMapPutFailureCount() {
+    public String getMapPostFailureCount() {
         return String.valueOf(mapPostFailCount.get());
     }
 
@@ -93,6 +117,22 @@ public class RestCallCollector {
 
     public String getMapGetFailureCount() {
         return String.valueOf(mapGetFailCount.get());
+    }
+
+    public String getQueuePostSuccessCount() {
+        return String.valueOf(queuePostSuccCount.get());
+    }
+
+    public String getQueuePostFailureCount() {
+        return String.valueOf(queuePostFailCount.get());
+    }
+
+    public String getAccessedMapCount() {
+        return String.valueOf(accessedMaps.size());
+    }
+
+    public String getAccessedQueueCount() {
+        return String.valueOf(accessedQueues.size());
     }
 
 }

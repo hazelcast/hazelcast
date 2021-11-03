@@ -245,6 +245,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String simpleValue = null;
         String suffix;
         int baseUriLength = URI_QUEUES.length();
+        command.objectTypeDetermined("queue");
         if (uri.endsWith("/")) {
             int requestedUriLength = uri.length();
             if (baseUriLength == requestedUriLength) {
@@ -263,6 +264,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             queueName = suffix.substring(0, indexSlash);
             simpleValue = suffix.substring(indexSlash + 1);
         }
+        command.objectNameDetermined(queueName);
         byte[] data;
         byte[] contentType;
         if (simpleValue == null) {
