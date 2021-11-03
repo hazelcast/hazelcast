@@ -38,7 +38,6 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -155,14 +154,16 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService,
 
     private final class ChunkSupplierImpl implements ChunkSupplier {
 
+        private final int partitionId;
         private final MapChunkContext context;
         // TODO this should be configurable.
-        private final long maxChunkSize = MemoryUnit.MEGABYTES.toBytes(100);
+        private final long maxChunkSize = 10000;//MemoryUnit.MEGABYTES.toBytes(100);
         private final MutableInteger currentChunkSize = new MutableInteger();
 
         public ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
             context = new MapChunkContext(mapServiceContext, partitionId,
                     namespace, maxChunkSize, currentChunkSize);
+            this.partitionId = partitionId;
         }
 
         @Override
@@ -173,7 +174,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService,
         @Override
         public Operation nextChunk() {
             return new MapChunk(context)
-                    .setServiceName(MapService.SERVICE_NAME);
+                    .setPartitionId(partitionId)
+                    .setServiceName(MapService.SERVICE_NAME)
+                    .setNodeEngine(mapServiceContext.getNodeEngine());
         }
 
         @Override

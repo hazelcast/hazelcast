@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -37,18 +38,22 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
+    protected static final AtomicInteger count = new AtomicInteger();
+
+    private transient String mapName;
     private transient MapChunkContext context;
     private transient LinkedList keyRecordExpiry;
-    private transient String mapName;
 
     public MapChunk() {
     }
 
     public MapChunk(MapChunkContext context) {
         this.context = context;
+        System.err.println("Chunk number ----> " + count.incrementAndGet() + ", mapName: " + context.getMapName() + ", partitionId: " + context.getPartitionId());
     }
 
     @Override
@@ -93,6 +98,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
         out.writeString(mapName);
         Iterator<Map.Entry<Data, Record>> entries = context.getIterator();
+        int chunkedEntryCount = 0;
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
 
@@ -107,10 +113,13 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             currentChunkSize.value += Records.writeExpiry(out, recordStore.getExpirySystem()
                     .getExpiryMetadata(dataKey));
 
+            chunkedEntryCount++;
+
             if (context.hasReachedMaxSize()) {
                 break;
             }
         }
+        System.err.println("chunkedEntryCount: " + chunkedEntryCount);
 
         // indicates end of chunk
         IOUtil.writeData(out, null);
@@ -147,11 +156,12 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        throw new UnsupportedOperationException("To be implemented");
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        throw new UnsupportedOperationException("To be implemented");
+        return MapDataSerializerHook.MAP_CHUNK;
     }
+
 }

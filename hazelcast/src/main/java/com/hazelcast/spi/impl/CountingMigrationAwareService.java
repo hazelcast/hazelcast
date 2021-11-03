@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.map.impl.ChunkSupplier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
@@ -31,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A {@link MigrationAwareService} that delegates to another {@link MigrationAwareService} and keeps track of the number of
  * migrations concerning the partition owner (either as current or new replica index) currently in-flight.
  */
-public class CountingMigrationAwareService implements FragmentedMigrationAwareService, OffloadedReplicationPreparation {
+public class CountingMigrationAwareService implements FragmentedMigrationAwareService, OffloadedReplicationPreparation, ChunkedMigrationAwareService {
 
     static final int PRIMARY_REPLICA_INDEX = 0;
     static final int IN_FLIGHT_MIGRATION_STAMP = -1;
@@ -65,7 +67,7 @@ public class CountingMigrationAwareService implements FragmentedMigrationAwareSe
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         return migrationAwareService.prepareReplicationOperation(event, namespaces);
     }
 
@@ -103,6 +105,7 @@ public class CountingMigrationAwareService implements FragmentedMigrationAwareSe
 
     /**
      * Returns whether event involves primary replica migration.
+     *
      * @param event migration event
      * @return true if migration involves primary replica, false otherwise
      */
@@ -140,5 +143,14 @@ public class CountingMigrationAwareService implements FragmentedMigrationAwareSe
     public boolean shouldOffload() {
         return migrationAwareService instanceof OffloadedReplicationPreparation
                 && ((OffloadedReplicationPreparation) migrationAwareService).shouldOffload();
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespaces) {
+        if (migrationAwareService instanceof ChunkedMigrationAwareService) {
+            return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespaces);
+        } else {
+            return null;
+        }
     }
 }
