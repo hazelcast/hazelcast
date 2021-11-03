@@ -74,7 +74,7 @@ public class MapChunkContext {
     public boolean hasReachedMaxSize() {
         boolean reached = maxChunkSize <= currentChunkSize.value;
         if (reached) {
-            System.err.println("currentChunkSize.value: " + currentChunkSize.value);
+            System.err.println("Reached max chunkSize at: " + currentChunkSize.value);
         }
         return reached;
     }

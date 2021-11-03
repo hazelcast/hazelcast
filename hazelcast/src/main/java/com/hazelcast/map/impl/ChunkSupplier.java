@@ -20,11 +20,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 public interface ChunkSupplier {
 
+    void init();
+
     Operation nextChunk();
 
     boolean hasMoreChunks();
 
     boolean hasReachedMaxSize();
-
-    void init();
 }

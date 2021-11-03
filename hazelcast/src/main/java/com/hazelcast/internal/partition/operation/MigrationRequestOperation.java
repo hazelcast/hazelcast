@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -63,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -224,24 +226,9 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
-        ServiceNamespace current = namespacesContext.current();
-        if (current != null) {
-            Collection<ChunkSupplier> chunkSuppliers = namespaceToSuppliers.get(current);
-            if (CollectionUtil.isNotEmpty(chunkSuppliers)) {
-                // remove finished suppliers
-                Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
-                while (iterator.hasNext()) {
-                    ChunkSupplier chunkSupplier = iterator.next();
-                    if (!chunkSupplier.hasMoreChunks()) {
-                        iterator.remove();
-                    }
-                }
-
-                // check if we still have unfinished suppliers
-                if (!chunkSuppliers.isEmpty()) {
-                    return createReplicaFragmentMigrationStateFor(current, chunkSuppliers);
-                }
-            }
+        ReplicaFragmentMigrationState nextChunkedState = createNextChunkedState();
+        if (nextChunkedState != null) {
+            return nextChunkedState;
         }
 
         if (!namespacesContext.hasNext()) {
@@ -261,16 +248,69 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             return createNonFragmentedReplicaFragmentMigrationState();
         }
 
-        // TODO store latest namespace and add check if supplier finished its chunks
-        Collection<ChunkSupplier> suppliers = namespaceToSuppliers.computeIfAbsent(namespace,
-                namespace1 -> {
-                    Collection<String> serviceNames = namespacesContext.getServiceNames(namespace1);
-                    return chunkSupplier(getPartitionReplicationEvent(), serviceNames, namespace1);
-                });
-        if (suppliers != null) {
-            return createReplicaFragmentMigrationStateFor(namespace, suppliers);
+        Collection<ChunkSupplier> suppliers = createChunkSuppliersOf(namespace);
+        if (isNotEmpty(suppliers)) {
+            return createChunkedReplicaState(namespace, suppliers);
         }
-        return createReplicaFragmentMigrationStateFor(namespace, emptyList());
+
+        return createReplicaFragmentMigrationStateFor(namespace);
+    }
+
+    private Collection<ChunkSupplier> createChunkSuppliersOf(ServiceNamespace namespace) {
+        return namespaceToSuppliers.computeIfAbsent(namespace,
+                ns -> {
+                    Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
+                    return chunkSupplier(getPartitionReplicationEvent(), serviceNames, ns);
+                });
+    }
+
+    @Nullable
+    private ReplicaFragmentMigrationState createNextChunkedState() {
+        // if no current namespace exists, this is
+        // the start of migration process, just return
+        ServiceNamespace currentNS = namespacesContext.current();
+        if (currentNS == null) {
+            return null;
+        }
+
+        Collection<ChunkSupplier> chunkSuppliers = namespaceToSuppliers.get(currentNS);
+        if (chunkSuppliers == null) {
+            // this namespace does not support chunked
+            // migration, hence no chunk supplier.
+            return null;
+        }
+
+        // remove finished suppliers
+        Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
+        while (iterator.hasNext()) {
+            ChunkSupplier chunkSupplier = iterator.next();
+            if (!chunkSupplier.hasMoreChunks()) {
+                iterator.remove();
+            }
+        }
+
+        if (CollectionUtil.isEmpty(chunkSuppliers)) {
+            namespaceToSuppliers.remove(currentNS);
+            return null;
+        }
+
+        // we still have unfinished suppliers
+        return createReplicaFragmentMigrationStateFor(currentNS, chunkSuppliers);
+    }
+
+    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns) {
+        PartitionReplicationEvent event = getPartitionReplicationEvent();
+        Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
+        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
+        return createReplicaFragmentMigrationState(singleton(ns), operations, emptyList());
+    }
+
+    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns,
+                                                                                 Collection<ChunkSupplier> suppliers) {
+        PartitionReplicationEvent event = getPartitionReplicationEvent();
+        Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
+        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
+        return createReplicaFragmentMigrationState(singleton(ns), emptyList(), suppliers);
     }
 
     private ReplicaFragmentMigrationState createNonFragmentedReplicaFragmentMigrationState() {
@@ -281,13 +321,11 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         return createReplicaFragmentMigrationState(namespaces, operations, emptyList());
     }
 
-    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns,
-                                                                                 Collection<ChunkSupplier> suppliers) {
-        PartitionReplicationEvent event = getPartitionReplicationEvent();
-        Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
-//        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
+    private ReplicaFragmentMigrationState createChunkedReplicaState(ServiceNamespace ns,
+                                                                    Collection<ChunkSupplier> suppliers) {
         return createReplicaFragmentMigrationState(singleton(ns), emptyList(), suppliers);
     }
+
 
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
@@ -392,44 +430,79 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
+    /**
+     * A namespace is used to group single or multiple services'.
+     * <p>
+     * For instance, map-service uses same namespace with lock-service
+     * and ring-buffer-service when it needs to use their functionality.
+     *
+     * <p>
+     * To clarify the consept, this is a sketch of multiple
+     * services which are sharing the same namespace
+     *
+     * <pre>
+     *
+     * serviceName-1    serviceName-2    serviceName-3
+     * /---------\      /---------\      /---------\
+     * |         |      |         |      |         |
+     * |         |      |         |      |         |
+     * |         |      |         |      |         |
+     * /-------------------------------------------\
+     * | A SHARED NAMESPACE OF MULTIPLE SERVICES   |
+     * \-------------------------------------------/
+     * |         |      |         |      |         |
+     * |         |      |         |      |         |
+     * |         |      |         |      |         |
+     * \---------/      \---------/      \---------/
+     * </pre>
+     */
     private static class ServiceNamespacesContext {
-        final Collection<ServiceNamespace> allNamespaces = new HashSet<>();
-        final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<>();
-        ServiceNamespace current;
 
-        final Iterator<ServiceNamespace> namespaceIterator;
+        private final Iterator<ServiceNamespace> namespaceIterator;
+        private final Set<ServiceNamespace> allNamespaces = new HashSet<>();
+        private final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<>();
 
-        ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
-            Collection<ServiceInfo> services = nodeEngine.getServiceInfos(FragmentedMigrationAwareService.class);
-            for (ServiceInfo serviceInfo : services) {
-                FragmentedMigrationAwareService service = serviceInfo.getService();
-                Collection<ServiceNamespace> namespaces = service.getAllServiceNamespaces(event);
-                if (namespaces != null) {
-                    String serviceName = serviceInfo.getName();
+        private ServiceNamespace currentNamespace;
+
+        private ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
+            nodeEngine.forEachMatchingService(FragmentedMigrationAwareService.class, serviceInfo -> {
+                // get all namespaces of a service
+                Collection<ServiceNamespace> namespaces = getAllServiceNamespaces(serviceInfo, event);
+                if (isNotEmpty(namespaces)) {
+                    // update collection of unique namespaces
                     allNamespaces.addAll(namespaces);
-
-                    addNamespaceToServiceMappings(namespaces, serviceName);
+                    // map namespace to serviceName
+                    namespaces.forEach(ns -> mapNamespaceToService(ns, serviceInfo.getName()));
                 }
-            }
+            });
 
+            // add a namespace to represent non-fragmented services
             allNamespaces.add(NonFragmentedServiceNamespace.INSTANCE);
+
             namespaceIterator = allNamespaces.iterator();
         }
 
-        private void addNamespaceToServiceMappings(Collection<ServiceNamespace> namespaces, String serviceName) {
-            for (ServiceNamespace ns : namespaces) {
-                Collection<String> serviceNames = namespaceToServices.get(ns);
-                if (serviceNames == null) {
-                    // generally a namespace belongs to a single service only
-                    namespaceToServices.put(ns, singleton(serviceName));
-                } else if (serviceNames.size() == 1) {
-                    serviceNames = new HashSet<>(serviceNames);
-                    serviceNames.add(serviceName);
-                    namespaceToServices.put(ns, serviceNames);
-                } else {
-                    serviceNames.add(serviceName);
-                }
+        private void mapNamespaceToService(ServiceNamespace ns, String serviceName) {
+            Collection<String> existingServiceNames = namespaceToServices.get(ns);
+            if (existingServiceNames == null) {
+                // generally a namespace belongs to a single service only
+                namespaceToServices.put(ns, singleton(serviceName));
+                return;
             }
+
+            if (existingServiceNames.size() == 1) {
+                existingServiceNames = new HashSet<>(existingServiceNames);
+                namespaceToServices.put(ns, existingServiceNames);
+            }
+
+            existingServiceNames.add(serviceName);
+
+        }
+
+        private static Collection<ServiceNamespace> getAllServiceNamespaces(ServiceInfo serviceInfo,
+                                                                            PartitionReplicationEvent event) {
+            return ((FragmentedMigrationAwareService) serviceInfo
+                    .getService()).getAllServiceNamespaces(event);
         }
 
         boolean hasNext() {
@@ -437,12 +510,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         ServiceNamespace current() {
-            return current;
+            return currentNamespace;
         }
 
         ServiceNamespace next() {
-            current = namespaceIterator.next();
-            return current;
+            currentNamespace = namespaceIterator.next();
+            return currentNamespace;
         }
 
         Collection<String> getServiceNames(ServiceNamespace ns) {

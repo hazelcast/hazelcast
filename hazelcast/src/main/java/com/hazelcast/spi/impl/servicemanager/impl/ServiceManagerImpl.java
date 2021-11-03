@@ -25,7 +25,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -33,6 +32,7 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.locksupport.LockSupportService;
@@ -76,6 +76,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -374,5 +375,13 @@ public final class ServiceManagerImpl implements ServiceManager {
             }
         }
         return result;
+    }
+
+    @Override
+    public void forEachMatchingService(Class serviceClass, Consumer<ServiceInfo> consumer) {
+        services.values()
+                .stream()
+                .filter(serviceInfo -> serviceInfo.isInstanceOf(serviceClass))
+                .forEach(consumer);
     }
 }

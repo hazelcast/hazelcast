@@ -454,6 +454,10 @@ public class NodeEngineImpl implements NodeEngine {
         return serviceManager.getServiceInfos(serviceClass);
     }
 
+    public void forEachMatchingService(Class serviceClass, Consumer<ServiceInfo> consumer) {
+        serviceManager.forEachMatchingService(serviceClass, consumer);
+    }
+
     public Node getNode() {
         return node;
     }
