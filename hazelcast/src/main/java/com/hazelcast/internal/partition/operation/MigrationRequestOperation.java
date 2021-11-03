@@ -63,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
@@ -219,7 +220,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * will be very cheap, instead of copying partition data on each retry.
      */
     private ReplicaFragmentMigrationState initialReplicaFragmentMigrationState() {
-        return createReplicaFragmentMigrationState(emptySet(), emptySet(), null);
+        return createReplicaFragmentMigrationState(emptySet(), emptySet(), emptyList());
     }
 
     private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
@@ -269,7 +270,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (suppliers != null) {
             return createReplicaFragmentMigrationStateFor(namespace, suppliers);
         }
-        return createReplicaFragmentMigrationStateFor(namespace, null);
+        return createReplicaFragmentMigrationStateFor(namespace, emptyList());
     }
 
     private ReplicaFragmentMigrationState createNonFragmentedReplicaFragmentMigrationState() {
@@ -277,15 +278,15 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
         Collection<ServiceNamespace> namespaces =
                 Collections.singleton(NonFragmentedServiceNamespace.INSTANCE);
-        return createReplicaFragmentMigrationState(namespaces, operations, null);
+        return createReplicaFragmentMigrationState(namespaces, operations, emptyList());
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns,
                                                                                  Collection<ChunkSupplier> suppliers) {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
-        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
-        return createReplicaFragmentMigrationState(singleton(ns), operations, suppliers);
+//        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
+        return createReplicaFragmentMigrationState(singleton(ns), emptyList(), suppliers);
     }
 
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {

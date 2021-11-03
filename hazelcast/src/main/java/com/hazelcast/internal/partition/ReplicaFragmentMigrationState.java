@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,12 +51,13 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations) {
-        this(namespaces, migrationOperations, null);
+        this(namespaces, migrationOperations, Collections.emptyList());
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations,
                                          Collection<ChunkSupplier> chunkSuppliers) {
+        assert chunkSuppliers != null;
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
         this.chunkSuppliers = chunkSuppliers;
@@ -90,6 +92,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         for (Operation operation : migrationOperations) {
             out.writeObject(operation);
         }
+
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
             chunkSupplier.init();
 

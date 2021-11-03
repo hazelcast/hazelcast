@@ -29,6 +29,7 @@ import java.util.Map;
 
 public class MapChunkContext {
 
+    private final String mapName;
     private ServiceNamespace serviceNamespace;
     private Iterator<Map.Entry<Data, Record>> iterator;
 
@@ -45,7 +46,7 @@ public class MapChunkContext {
         this.maxChunkSize = maxChunkSize;
         this.serviceNamespace = namespaces;
         this.currentChunkSize = currentChunkSize;
-        String mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
+        this.mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
         this.iterator = getRecordStore(mapName).iterator();
     }
 
@@ -71,10 +72,22 @@ public class MapChunkContext {
     }
 
     public boolean hasReachedMaxSize() {
-        return maxChunkSize <= currentChunkSize.value;
+        boolean reached = maxChunkSize <= currentChunkSize.value;
+        if (reached) {
+            System.err.println("currentChunkSize.value: " + currentChunkSize.value);
+        }
+        return reached;
     }
 
     public void resetCurrentChunkSize() {
         currentChunkSize.value = 0;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 }

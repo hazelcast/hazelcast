@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
@@ -93,11 +94,12 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
 public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-                                   DynamicMetricsProvider, TenantContextAwareService, OffloadedReplicationPreparation {
+        EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
+        SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
+        NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
+        DynamicMetricsProvider, TenantContextAwareService, OffloadedReplicationPreparation,
+        ChunkedMigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -340,5 +342,10 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public boolean shouldOffload() {
         return migrationAwareService.shouldOffload();
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespaces) {
+        return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespaces);
     }
 }
