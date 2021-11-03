@@ -36,6 +36,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +45,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
+import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
@@ -95,23 +97,26 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
-    // TODO traverse services to create suppliers
     final Collection<ChunkSupplier> chunkSupplier(PartitionReplicationEvent event,
-                                                  Collection<String> serviceNames, ServiceNamespace namespace) {
+                                                  Collection<String> serviceNames,
+                                                  ServiceNamespace namespace) {
+        Collection<ChunkSupplier> suppliers = EMPTY_LIST;
 
-        Collection<ChunkSupplier> suppliers = new ArrayList<>();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
-
-        for (ServiceInfo serviceInfo : services) {
-            MigrationAwareService service = serviceInfo.getService();
+        for (String serviceName : serviceNames) {
+            Object service = nodeEngine.getService(serviceName);
             if (!(service instanceof ChunkedMigrationAwareService)) {
                 // skip not chunked services
                 continue;
             }
 
+            if (suppliers == EMPTY_LIST) {
+                suppliers = new LinkedList<>();
+            }
+
             suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, namespace));
         }
+
         return suppliers;
     }
 

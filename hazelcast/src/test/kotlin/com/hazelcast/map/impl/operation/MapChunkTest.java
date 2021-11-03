@@ -23,10 +23,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class MapChunkTest extends HazelcastTestSupport {
 
     @Test
-    public void name() {
+    public void smoke() {
         Config config = new Config();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -38,10 +40,6 @@ public class MapChunkTest extends HazelcastTestSupport {
         }
         HazelcastInstance node2 = factory.newHazelcastInstance(config);
 
-        sleepSeconds(10);
-
-        System.err.println(node2.getMap("test").size());
-
-
+        assertEquals(1_000, node2.getMap("test").size());
     }
 }
