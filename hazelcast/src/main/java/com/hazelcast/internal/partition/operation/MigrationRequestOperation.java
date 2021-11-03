@@ -48,8 +48,8 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -248,9 +248,9 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             return createNonFragmentedReplicaFragmentMigrationState();
         }
 
-        Collection<ChunkSupplier> suppliers = createChunkSuppliersOf(namespace);
-        if (isNotEmpty(suppliers)) {
-            return createChunkedReplicaState(namespace, suppliers);
+        Collection<ChunkSupplier> chunkSuppliers = createChunkSuppliersOf(namespace);
+        if (isNotEmpty(chunkSuppliers)) {
+            return createChunkedReplicaState(namespace, chunkSuppliers);
         }
 
         return createReplicaFragmentMigrationStateFor(namespace);
@@ -260,7 +260,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         return namespaceToSuppliers.computeIfAbsent(namespace,
                 ns -> {
                     Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
-                    return chunkSupplier(getPartitionReplicationEvent(), serviceNames, ns);
+                    return collectChunkSuppliers(getPartitionReplicationEvent(), serviceNames, ns);
                 });
     }
 
@@ -456,7 +456,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * \---------/      \---------/      \---------/
      * </pre>
      */
-    private static class ServiceNamespacesContext {
+    private final static class ServiceNamespacesContext {
 
         private final Iterator<ServiceNamespace> namespaceIterator;
         private final Set<ServiceNamespace> allNamespaces = new HashSet<>();

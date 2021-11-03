@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A {@link MigrationAwareService} that delegates to another {@link MigrationAwareService} and keeps track of the number of
  * migrations concerning the partition owner (either as current or new replica index) currently in-flight.
  */
-public class CountingMigrationAwareService implements FragmentedMigrationAwareService, OffloadedReplicationPreparation, ChunkedMigrationAwareService {
+public class CountingMigrationAwareService
+        implements ChunkedMigrationAwareService, OffloadedReplicationPreparation {
 
     static final int PRIMARY_REPLICA_INDEX = 0;
     static final int IN_FLIGHT_MIGRATION_STAMP = -1;
@@ -146,9 +147,9 @@ public class CountingMigrationAwareService implements FragmentedMigrationAwareSe
     }
 
     @Override
-    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespaces) {
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
         if (migrationAwareService instanceof ChunkedMigrationAwareService) {
-            return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespaces);
+            return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
         } else {
             return null;
         }

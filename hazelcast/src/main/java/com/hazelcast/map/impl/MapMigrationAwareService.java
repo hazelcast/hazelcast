@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -60,8 +59,8 @@ import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sen
  *
  * @see MapService
  */
-class MapMigrationAwareService implements FragmentedMigrationAwareService,
-        OffloadedReplicationPreparation, ChunkedMigrationAwareService {
+class MapMigrationAwareService
+        implements ChunkedMigrationAwareService, OffloadedReplicationPreparation {
 
     protected final PartitionContainer[] containers;
     protected final MapServiceContext mapServiceContext;
@@ -153,22 +152,19 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService,
     }
 
     private final class ChunkSupplierImpl implements ChunkSupplier {
-
         private final int partitionId;
         private final MapChunkContext context;
-        // TODO this should be configurable.
-        private final long maxChunkSize = 10000;//MemoryUnit.MEGABYTES.toBytes(100);
         private final MutableInteger currentChunkSize = new MutableInteger();
 
         public ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
             context = new MapChunkContext(mapServiceContext, partitionId,
-                    namespace, maxChunkSize, currentChunkSize);
+                    namespace, MAX_MIGRATING_DATA, currentChunkSize);
             this.partitionId = partitionId;
         }
 
         @Override
-        public void init() {
-            context.resetCurrentChunkSize();
+        public void useCounter(MutableInteger byteCounter) {
+            context.setByteCounter(byteCounter);
         }
 
         @Override

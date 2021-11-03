@@ -19,8 +19,9 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.ChunkSupplier;
 
-public interface ChunkedMigrationAwareService extends MigrationAwareService {
+public interface ChunkedMigrationAwareService
+        extends FragmentedMigrationAwareService {
 
    ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
-                                  ServiceNamespace namespaces);
+                                  ServiceNamespace namespace);
 }
