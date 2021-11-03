@@ -42,7 +42,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.apache.calcite.rel.core.JoinRelType.LEFT;
 
-public class HashJoinProcessorTest extends SqlTestSupport {
+public class SqlHashJoinPTest extends SqlTestSupport {
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
 
@@ -149,7 +149,7 @@ public class HashJoinProcessorTest extends SqlTestSupport {
             List<Object[]> output
     ) {
 
-        ProcessorSupplier processor = HashJoinProcessor.supplier(
+        ProcessorSupplier processor = SqlHashJoinP.supplier(
                 new JetJoinInfo(joinType, leftEquiJoinIndices, rightEquiJoinIndices, nonEquiCondition, null),
                 rightInputColumnCount
         );

@@ -158,6 +158,11 @@ public class ParserOperationsTest extends SqlTestSupport {
         checkFailure("select 1 + from t", "Was expecting one of");
     }
 
+    @Test
+    public void testHiddenFunctions() {
+        checkFailure("SELECT JSON_PARSE('[1,2,3]')", "Function 'JSON_PARSE' does not exist");
+    }
+
     private void checkSuccess(String sql) {
         context.parse(sql);
     }

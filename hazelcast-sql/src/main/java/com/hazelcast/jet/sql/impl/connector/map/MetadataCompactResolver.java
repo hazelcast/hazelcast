@@ -135,19 +135,19 @@ final class MetadataCompactResolver implements KvMetadataResolver {
     private static FieldKind resolveToCompactKind(QueryDataTypeFamily type) {
         switch (type) {
             case BOOLEAN:
-                return FieldKind.BOOLEAN;
+                return FieldKind.NULLABLE_BOOLEAN;
             case TINYINT:
-                return FieldKind.BYTE;
+                return FieldKind.NULLABLE_BYTE;
             case SMALLINT:
-                return FieldKind.SHORT;
+                return FieldKind.NULLABLE_SHORT;
             case INTEGER:
-                return FieldKind.INT;
+                return FieldKind.NULLABLE_INT;
             case BIGINT:
-                return FieldKind.LONG;
+                return FieldKind.NULLABLE_LONG;
             case REAL:
-                return FieldKind.FLOAT;
+                return FieldKind.NULLABLE_FLOAT;
             case DOUBLE:
-                return FieldKind.DOUBLE;
+                return FieldKind.NULLABLE_DOUBLE;
             case DECIMAL:
                 return FieldKind.DECIMAL;
             case VARCHAR:

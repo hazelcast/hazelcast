@@ -38,6 +38,9 @@ public final class PhysicalRules {
                 FullScanPhysicalRule.INSTANCE,
                 IndexScanMapPhysicalRule.INSTANCE,
 
+                // Windowing rules
+                WatermarkPhysicalRule.INSTANCE,
+
                 // Aggregate rules
                 AggregatePhysicalRule.INSTANCE,
 

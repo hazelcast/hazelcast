@@ -1005,7 +1005,7 @@ public class SqlAggregateTest extends SqlTestSupport {
     @Test
     public void test_aggregatingStreamingSource() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
                 .isInstanceOf(HazelcastSqlException.class)
@@ -1022,7 +1022,7 @@ public class SqlAggregateTest extends SqlTestSupport {
     @Test
     public void test_distinctStreamingSource() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
                 .isInstanceOf(HazelcastSqlException.class)

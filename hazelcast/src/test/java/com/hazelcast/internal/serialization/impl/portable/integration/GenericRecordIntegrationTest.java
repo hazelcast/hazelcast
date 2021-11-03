@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.genericrecord;
+package com.hazelcast.internal.serialization.impl.portable.integration;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.genericrecord.AbstractGenericRecordTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -32,13 +30,13 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientGenericRecordTest extends AbstractGenericRecordTest {
+public class GenericRecordIntegrationTest extends AbstractGenericRecordIntegrationTest {
 
-    private TestHazelcastFactory factory;
+    private TestHazelcastInstanceFactory factory;
 
     @Before
     public void before() {
-        factory = new TestHazelcastFactory();
+        factory = createHazelcastInstanceFactory();
     }
 
     @After
@@ -49,9 +47,10 @@ public class ClientGenericRecordTest extends AbstractGenericRecordTest {
 
     @Override
     protected HazelcastInstance createAccessorInstance(SerializationConfig serializationConfig) {
-        ClientConfig config = new ClientConfig();
+        Config config = new Config();
+        config.setLiteMember(true);
         config.setSerializationConfig(serializationConfig);
-        return factory.newHazelcastClient(config);
+        return factory.newHazelcastInstance(config);
     }
 
     @Override

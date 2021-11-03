@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -39,6 +38,7 @@ import example.serialization.EmployeeWithSerializerDTO;
 import example.serialization.EmployerDTO;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.HiringStatus;
+import example.serialization.MainDTO;
 import example.serialization.NodeDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,9 +46,10 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
 import static org.junit.Assert.assertEquals;
@@ -61,6 +62,16 @@ public class CompactStreamSerializerTest {
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
+    @Test
+    public void testAllTypesWithReflectiveSerializer() {
+        SerializationService serializationService = createSerializationService();
+        MainDTO expected = createMainDTO();
+
+        Data data = serializationService.toData(expected);
+        MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
     @Test
     public void testDefaultsReflection_insideCollection() {
         SerializationService serializationService = createSerializationService();
@@ -203,9 +214,9 @@ public class CompactStreamSerializerTest {
                         String name = in.readString("n");
                         String status = in.readString("hs");
                         int age = in.readInt("a");
-                        long[] ids = in.readLongArray("ids");
-                        EmployeeDTO s = in.readObject("s");
-                        EmployeeDTO[] ss = in.readObjectArray("ss", EmployeeDTO.class);
+                        long[] ids = in.readArrayOfLongs("ids");
+                        EmployeeDTO s = in.readCompact("s");
+                        EmployeeDTO[] ss = in.readArrayOfCompacts("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, status == null ? null : HiringStatus.valueOf(status), ids, s, ss);
                     }
 
@@ -214,9 +225,9 @@ public class CompactStreamSerializerTest {
                         out.writeString("n", object.getName());
                         out.writeString("hs", object.getHiringStatus() == null ? null : object.getHiringStatus().name());
                         out.writeInt("a", object.getZcode());
-                        out.writeLongArray("ids", object.getIds());
-                        out.writeObject("s", object.getSingleEmployee());
-                        out.writeObjectArray("ss", object.getOtherEmployees());
+                        out.writeArrayOfLongs("ids", object.getIds());
+                        out.writeCompact("s", object.getSingleEmployee());
+                        out.writeArrayOfCompacts("ss", object.getOtherEmployees());
                     }
                 });
 
@@ -308,25 +319,13 @@ public class CompactStreamSerializerTest {
     public void testGenericRecordHashcode_Equals() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
-        builder.setInt("foo", 1);
-        builder.setLong("bar", 1231L);
-        builder.setLongArray("barArray", new long[]{1L, 2L});
-        builder.setDecimal("dec", new BigDecimal(12131321));
-        builder.setGenericRecord("nestedField",
-                compact("nested").setInt("a", 2).build());
-        builder.setGenericRecordArray("nestedFieldArray", new GenericRecord[]{
-                compact("nested").setInt("a", 2).build(),
-                compact("nested").setInt("a", 3).build(),
-        });
-        GenericRecord expectedGenericRecord = builder.build();
+        MainDTO expectedDTO = createMainDTO();
+        GenericRecord expectedGenericRecord = createCompactGenericRecord(expectedDTO);
 
         Data data = serializationService.toData(expectedGenericRecord);
 
         Object object = serializationService.toObject(data);
         GenericRecord genericRecord = (GenericRecord) object;
-        AbstractGenericRecord abstractGenericRecord = (AbstractGenericRecord) object;
-        abstractGenericRecord.readAny("bar");
 
         assertTrue(expectedGenericRecord.equals(genericRecord));
         assertTrue(genericRecord.equals(expectedGenericRecord));
