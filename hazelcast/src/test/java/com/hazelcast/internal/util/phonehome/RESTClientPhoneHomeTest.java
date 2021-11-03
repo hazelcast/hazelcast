@@ -98,18 +98,20 @@ public class RESTClientPhoneHomeTest {
         assertEquals(204, http.mapGet("my-other-map", "key").responseCode);
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
         assertEquals(400, http.doGet(http.getUrl(URI_MAPS)).responseCode);
+        assertEquals(200, http.mapDelete("my-map", "key"));
 
         PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
         phoneHome.phoneHome(false);
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("restenabled", "1"))
-                .withRequestBody(containingParam("restrequestct", "6"))
-                .withRequestBody(containingParam("restuniqrequestct", "5"))
+                .withRequestBody(containingParam("restrequestct", "7"))
+                .withRequestBody(containingParam("restuniqrequestct", "6"))
                 .withRequestBody(containingParam("restmappostsucc", "2"))
                 .withRequestBody(containingParam("restmappostfail", "1"))
                 .withRequestBody(containingParam("restmapgetsucc", "1"))
                 .withRequestBody(containingParam("restmapgetfail", "2"))
+                .withRequestBody(containingParam("restmapdeletesucc", "1"))
                 .withRequestBody(containingParam("restmapct", "2"))
                 .withRequestBody(containingParam("restqueuepostsucc", "0"))
                 .withRequestBody(containingParam("restqueuepostfail", "0"))
@@ -132,6 +134,7 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restmappostfail", "0"))
                 .withRequestBody(containingParam("restqueuepostsucc", "2"))
                 .withRequestBody(containingParam("restqueuepostfail", "1"))
+                .withRequestBody(containingParam("restqueuegetsucc", "2"))
                 .withRequestBody(containingParam("restqueuect", "1"))
         );
     }

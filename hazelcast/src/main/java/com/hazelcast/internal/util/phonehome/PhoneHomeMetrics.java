@@ -152,10 +152,14 @@ public enum PhoneHomeMetrics {
     REST_MAP_GET_FAILURE("restmapgetfail"),
     REST_MAP_POST_SUCCESS("restmappostsucc"),
     REST_MAP_POST_FAILURE("restmappostfail"),
+    REST_MAP_DELETE_SUCCESS("restmapdeletesucc"),
+    REST_MAP_DELETE_FAILURE("restmapdeletefail"),
     REST_ACCESSED_MAP_COUNT("restmapct"),
 
     REST_QUEUE_POST_SUCCESS("restqueuepostsucc"),
     REST_QUEUE_POST_FAILURE("restqueuepostfail"),
+    REST_QUEUE_GET_SUCCESS("restqueuegetsucc"),
+    REST_QUEUE_GET_FAILURE("restqueuegetfail"),
     REST_ACCESSED_QUEUE_COUNT("restqueuect"),
 
     REST_REQUEST_COUNT("restrequestct"),

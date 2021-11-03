@@ -46,13 +46,16 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
     }
 
     private void handleMap(HttpDeleteCommand command, String uri) {
+        command.objectTypeDetermined("map");
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
+            command.objectNameDetermined(mapName);
             command.send200();
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+            command.objectNameDetermined(mapName);
             String key = uri.substring(indexEnd + 1);
             key = StringUtil.stripTrailingSlash(key);
             textCommandService.delete(mapName, key);
