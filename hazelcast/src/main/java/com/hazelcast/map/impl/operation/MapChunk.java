@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
-    protected static final AtomicInteger count = new AtomicInteger();
+    protected static final AtomicInteger COUNT = new AtomicInteger();
 
     private transient String mapName;
     private transient MapChunkContext context;
@@ -53,7 +53,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
     public MapChunk(MapChunkContext context) {
         this.context = context;
-        System.err.println("Chunk number ----> " + count.incrementAndGet() + ", mapName: " + context.getMapName() + ", partitionId: " + context.getPartitionId());
+        System.err.println("Chunk number ----> " + COUNT.incrementAndGet()
+                + ", mapName: " + context.getMapName() + ", partitionId: " + context.getPartitionId());
     }
 
     @Override
@@ -88,17 +89,13 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     }
 
     private void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
-        String mapName = ((ObjectNamespace) context.getServiceNamespace())
-                .getObjectName();
-        RecordStore recordStore = getRecordStore(mapName);
-        SerializationService ss = recordStore.getMapContainer()
-                .getMapServiceContext().getNodeEngine().getSerializationService();
-
+        String mapName = context.getMapName();
+        SerializationService ss = context.getSerializationService();
         MutableInteger currentChunkSize = context.getCurrentChunkSize();
 
         out.writeString(mapName);
         Iterator<Map.Entry<Data, Record>> entries = context.getIterator();
-        int chunkedEntryCount = 0;
+        int serializedEntryCount = 0;
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
 
@@ -106,20 +103,19 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             Record record = entry.getValue();
             Data dataValue = ss.toData(record.getValue());
 
-            currentChunkSize.value += dataKey.totalSize() + 4;
+            currentChunkSize.value += dataKey.totalSize() + Bits.INT_SIZE_IN_BYTES;
 
             IOUtil.writeData(out, dataKey);
             currentChunkSize.value += Records.writeRecord(out, record, dataValue);
-            currentChunkSize.value += Records.writeExpiry(out, recordStore.getExpirySystem()
-                    .getExpiryMetadata(dataKey));
+            currentChunkSize.value += Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
 
-            chunkedEntryCount++;
+            serializedEntryCount++;
 
             if (context.hasReachedMaxSize()) {
                 break;
             }
         }
-        System.err.println("chunkedEntryCount: " + chunkedEntryCount);
+        System.err.println("serializedEntryCount: " + serializedEntryCount);
 
         // indicates end of chunk
         IOUtil.writeData(out, null);

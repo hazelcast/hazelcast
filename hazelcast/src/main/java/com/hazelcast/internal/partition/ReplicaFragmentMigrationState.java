@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.impl.ChunkSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -88,13 +89,15 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             out.writeObject(e.getKey());
             out.writeLongArray(e.getValue());
         }
+
         out.writeInt(migrationOperations.size());
         for (Operation operation : migrationOperations) {
             out.writeObject(operation);
         }
 
+        MutableInteger byteCounter = new MutableInteger();
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-            chunkSupplier.init();
+            chunkSupplier.useCounter(byteCounter);
 
             while (chunkSupplier.hasMoreChunks()
                     && !chunkSupplier.hasReachedMaxSize()) {

@@ -97,9 +97,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
-    final Collection<ChunkSupplier> chunkSupplier(PartitionReplicationEvent event,
-                                                  Collection<String> serviceNames,
-                                                  ServiceNamespace namespace) {
+    final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
+                                                          Collection<String> serviceNames,
+                                                          ServiceNamespace namespace) {
+        getLogger().severe("Collecting chunk suppliers...");
+
         Collection<ChunkSupplier> suppliers = EMPTY_LIST;
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
@@ -115,6 +117,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             }
 
             suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, namespace));
+            getLogger().severe(String.format("Created chunk supplier:[%s, partitionId:%d]", namespace, event.getPartitionId()));
         }
 
         return suppliers;
@@ -144,7 +147,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     /**
      * used for offloaded replication op preparation while executing a migration request
      */
-    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event, ServiceNamespace ns,
+    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event,
+                                                                           ServiceNamespace ns,
                                                                            Collection<String> serviceNames) {
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
 
@@ -154,7 +158,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             FragmentedMigrationAwareService service = nodeEngine.getService(serviceName);
             assert service.isKnownServiceNamespace(ns) : ns + " should be known by " + service;
 
-            operations = collectReplicationOperations(event, ns, isRunningOnPartitionThread(), operations, serviceName, service);
+            operations = collectReplicationOperations(event, ns,
+                    isRunningOnPartitionThread(), operations, serviceName, service);
         }
 
         return operations;

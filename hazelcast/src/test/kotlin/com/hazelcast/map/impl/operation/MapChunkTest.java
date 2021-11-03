@@ -40,6 +40,8 @@ public class MapChunkTest extends HazelcastTestSupport {
         }
         HazelcastInstance node2 = factory.newHazelcastInstance(config);
 
+        node1.shutdown();
+
         assertEquals(1_000, node2.getMap("test").size());
     }
 }
