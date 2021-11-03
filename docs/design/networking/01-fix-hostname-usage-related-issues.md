@@ -263,6 +263,8 @@ Unit and integration tests should:
 - Verify the performance doesn't significantly drop in different environments (On premise, Kubernetes, GKE, AWS deployments etc.)
 - Verify cluster is correctly being formed, Persistence and WAN is working when `setPublicAdress` is applied
 
+It would definitely be better to test these scenarios also with hazelcast test containers as well.
+
 #### Stress test
 In the case where Hazelcast persistence is enabled, a new member can be
 started to replace a crashed member. And, it can use the same UUID as
