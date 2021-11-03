@@ -78,6 +78,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import org.apache.calcite.avatica.util.TimeUnitRange;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
@@ -122,7 +123,8 @@ public final class RexToExpression {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public static Expression<?> convertLiteral(RexLiteral literal) {
-        SqlTypeName type = literal.getType().getSqlTypeName();
+        final RelDataType type = literal.getType();
+        final SqlTypeName typeName = literal.getTypeName();
 
         if (literal.getValue() == null) {
             return ConstantExpression.create(null, HazelcastTypeUtils.toHazelcastType(type));
@@ -132,7 +134,7 @@ public final class RexToExpression {
             return convertSargLiteral(literal, type);
         }
 
-        switch (type) {
+        switch (typeName) {
             case BOOLEAN:
                 return convertBooleanLiteral(literal, type);
 
@@ -481,16 +483,16 @@ public final class RexToExpression {
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
     private static <CI extends Comparable<CI>, CO extends Comparable<CO>> Expression<?> convertSargLiteral(
             RexLiteral literal,
-            SqlTypeName type
+            RelDataType type
     ) {
         Sarg<CI> sarg = literal.getValueAs(Sarg.class);
-        RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type));
+        RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type.getSqlTypeName()));
         return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})
-    private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName type) {
-        switch (type) {
+    private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName typeName) {
+        switch (typeName) {
             case TINYINT:
                 return ((BigDecimal) value).byteValueExact();
             case SMALLINT:
@@ -522,16 +524,16 @@ public final class RexToExpression {
         }
     }
 
-    private static Expression<?> convertBooleanLiteral(RexLiteral literal, SqlTypeName type) {
-        assert type == SqlTypeName.BOOLEAN;
+    private static Expression<?> convertBooleanLiteral(RexLiteral literal, RelDataType type) {
+        assert type.getSqlTypeName() == SqlTypeName.BOOLEAN;
         Boolean value = literal.getValueAs(Boolean.class);
         return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
-    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName targetType) {
+    private static Expression<?> convertNumericLiteral(RexLiteral literal, RelDataType targetType) {
         Object value;
 
-        switch (targetType) {
+        switch (targetType.getSqlTypeName()) {
             case TINYINT:
                 value = literal.getValueAs(Byte.class);
                 break;
@@ -567,15 +569,15 @@ public final class RexToExpression {
                 break;
 
             default:
-                throw new IllegalArgumentException("Unsupported literal type: " + targetType);
+                throw new IllegalArgumentException("Unsupported literal type: " + targetType.getSqlTypeName());
         }
 
         return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(targetType));
     }
 
-    private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
+    private static Expression<?> convertStringLiteral(RexLiteral literal, RelDataType type) {
         Object value;
-        switch (type) {
+        switch (type.getSqlTypeName()) {
             case CHAR:
             case VARCHAR:
                 value = literal.getValueAs(String.class);

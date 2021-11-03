@@ -112,7 +112,7 @@ public final class HazelcastTypeUtils {
 
     public static QueryDataType toHazelcastType(RelDataType relDataType) {
         if (relDataType.getSqlTypeName() != OTHER) {
-            return toHazelcastType(relDataType.getSqlTypeName());
+            return toHazelcastTypeFromSqlTypeName(relDataType.getSqlTypeName());
         }
         final RelDataTypeFamily typeFamily = relDataType.getFamily();
 
@@ -123,7 +123,7 @@ public final class HazelcastTypeUtils {
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
     }
 
-    public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
+    public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {
         SqlTypeFamily sqlTypeNameFamily = sqlTypeName.getFamily();
         if (sqlTypeNameFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH) {
             return QueryDataType.INTERVAL_YEAR_MONTH;
@@ -312,14 +312,15 @@ public final class HazelcastTypeUtils {
 
     public static int precedenceOf(RelDataType type) {
         SqlTypeName typeName = type.getSqlTypeName();
+        QueryDataType hzType;
 
         if (YEAR_INTERVAL_TYPES.contains(typeName)) {
-            typeName = INTERVAL_YEAR_MONTH;
+            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(INTERVAL_YEAR_MONTH);
         } else if (DAY_INTERVAL_TYPES.contains(typeName)) {
-            typeName = INTERVAL_DAY_SECOND;
+            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(INTERVAL_DAY_SECOND);
+        } else {
+            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(typeName);
         }
-
-        QueryDataType hzType = HazelcastTypeUtils.toHazelcastType(typeName);
 
         return hzType.getTypeFamily().getPrecedence();
     }
