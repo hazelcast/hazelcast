@@ -20,9 +20,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,14 +30,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Iterator;
-
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
