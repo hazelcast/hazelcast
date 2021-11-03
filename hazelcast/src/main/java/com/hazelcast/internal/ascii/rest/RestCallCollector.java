@@ -17,12 +17,13 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.util.counters.MwCounter;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class RestCallCollector {
+
+    public static final int SET_SIZE_LIMIT = 1000;
 
     private static class RequestIdentifier implements Comparable<RequestIdentifier> {
 
@@ -32,13 +33,13 @@ public class RestCallCollector {
         private final String method;
         private final String path;
 
-        public RequestIdentifier(String method, String path) {
+        RequestIdentifier(String method, String path) {
             this.method = method;
             this.path = path;
         }
 
         @Override
-        public int compareTo(@NotNull RestCallCollector.RequestIdentifier o) {
+        public int compareTo(RestCallCollector.RequestIdentifier o) {
             return COMPARATOR.compare(this, o);
         }
 
@@ -65,21 +66,12 @@ public class RestCallCollector {
     private final ConcurrentSkipListSet<String> accessedMaps = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<String> accessedQueues = new ConcurrentSkipListSet<>();
 
-    public void collectExecution(RestCallExecution execution) {
-        if (uniqueRequests.size() < 1000) {
-            uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
-        }
-        requestCount.inc();
+    void collectExecution(RestCallExecution execution) {
+        updateRequestCounters(execution);
         boolean isMap = "map".equals(execution.getObjectType());
         boolean isQueue = "queue".equals(execution.getObjectType());
         String objectName = execution.getObjectName();
-        if (objectName != null) {
-            if (isMap) {
-                accessedMaps.add(objectName);
-            } else if (isQueue) {
-                accessedQueues.add(objectName);
-            }
-        }
+        updateAccessedObjectSets(isMap, isQueue, objectName);
         if (execution.getMethod().equalsIgnoreCase("post")) {
             if (isMap) {
                 (execution.isSuccess() ? mapPostSuccCount : mapPostFailCount).inc();
@@ -93,6 +85,23 @@ public class RestCallCollector {
                 (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
             }
         }
+    }
+
+    private void updateAccessedObjectSets(boolean isMap, boolean isQueue, String objectName) {
+        if (objectName != null) {
+            if (isMap) {
+                accessedMaps.add(objectName);
+            } else if (isQueue) {
+                accessedQueues.add(objectName);
+            }
+        }
+    }
+
+    private void updateRequestCounters(RestCallExecution execution) {
+        if (uniqueRequests.size() < SET_SIZE_LIMIT) {
+            uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
+        }
+        requestCount.inc();
     }
 
     public String getMapPostSuccessCount() {

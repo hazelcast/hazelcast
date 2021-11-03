@@ -20,11 +20,11 @@ public class RestCallExecutionListener {
 
     private final RestCallCollector collector;
 
+    private final RestCallExecution executionDetails = new RestCallExecution();
+
     public RestCallExecutionListener(RestCallCollector collector) {
         this.collector = collector;
     }
-
-    private final RestCallExecution executionDetails = new RestCallExecution();
 
     void requestPathDetermined(String requestPath) {
         executionDetails.setRequestPath(requestPath);
@@ -43,8 +43,9 @@ public class RestCallExecutionListener {
     }
 
     void responseSent(int statusCode) {
-        if (executionDetails.getStatusCode() > 0) {
-            throw new IllegalStateException("can not set statusCode to " + statusCode + ", it is already " + executionDetails.getStatusCode());
+        int existingStatusCode = executionDetails.getStatusCode();
+        if (existingStatusCode > 0) {
+            throw new IllegalStateException("can not set statusCode to " + statusCode + ", it is already " + existingStatusCode);
         }
         executionDetails.setStatusCode(statusCode);
         collector.collectExecution(executionDetails);

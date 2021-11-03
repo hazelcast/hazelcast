@@ -26,7 +26,8 @@ import java.util.StringTokenizer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-public class HttpGetCommandParser implements CommandParser {
+public class HttpGetCommandParser
+        implements CommandParser {
 
     @Override
     public TextCommand parser(TextDecoder decoder, String cmd, int space) {
@@ -43,6 +44,6 @@ public class HttpGetCommandParser implements CommandParser {
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpGetCommand(uri,connection);
+        return new HttpGetCommand(uri, connection);
     }
 }

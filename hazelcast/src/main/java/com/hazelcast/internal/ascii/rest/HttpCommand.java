@@ -62,14 +62,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
                 .getTextCommandService().createRestCallExecutionListener());
     }
 
-    void objectTypeDetermined(String objectType) {
-        listener.objectTypeDetermined(objectType);
-    }
-
-    void objectNameDetermined(String objectName){
-        listener.objectNameDetermined(objectName);
-    }
-
     public HttpCommand(TextCommandConstants.TextCommandType type, String uri, RestCallExecutionListener listener) {
         super(type);
         this.uri = uri;
@@ -78,6 +70,14 @@ public abstract class HttpCommand extends AbstractTextCommand {
         this.listener = listener;
         listener.requestPathDetermined(uri);
 
+    }
+
+    void objectTypeDetermined(String objectType) {
+        listener.objectTypeDetermined(objectType);
+    }
+
+    void objectNameDetermined(String objectName) {
+        listener.objectNameDetermined(objectName);
     }
 
     @Override
