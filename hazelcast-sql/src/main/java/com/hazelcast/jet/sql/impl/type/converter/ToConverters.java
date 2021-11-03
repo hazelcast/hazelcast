@@ -68,6 +68,7 @@ public final class ToConverters {
         converters.put(QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, ToCalendarConverter.INSTANCE);
 
         converters.put(QueryDataType.OBJECT, new ToCanonicalConverter(QueryDataType.OBJECT));
+        converters.put(QueryDataType.JSON, new ToCanonicalConverter(QueryDataType.JSON));
 
         return converters;
     }

@@ -18,7 +18,11 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -77,6 +81,9 @@ import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
@@ -178,10 +185,10 @@ public final class RexToExpression {
      *                        converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-            "checkstyle:NPathComplexity"})
+            "checkstyle:NPathComplexity", "checkstyle:MagicNumber"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
+        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType());
 
         switch (operator.getKind()) {
             case DEFAULT:
@@ -437,6 +444,30 @@ public final class RexToExpression {
                     return ToEpochMillisFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
+                } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
+                    final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[2])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[4])
+                            .getSymbol();
+
+                    return JsonQueryFunction.create(operands[0], operands[1], wrapperBehavior, onEmpty, onError);
+                } else if (function == HazelcastJsonParseFunction.INSTANCE) {
+                    return JsonParseFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
+                    final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
+
+                    return JsonValueFunction.create(
+                            operands[0],
+                            operands[1],
+                            operands[2],
+                            operands[3],
+                            resultType,
+                            onEmpty,
+                            onError
+                    );
                 }
 
                 break;

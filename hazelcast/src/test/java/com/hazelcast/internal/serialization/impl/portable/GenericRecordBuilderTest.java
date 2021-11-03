@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.genericrecord;
+package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;

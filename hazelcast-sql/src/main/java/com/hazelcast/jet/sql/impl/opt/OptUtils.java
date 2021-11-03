@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -294,18 +295,31 @@ public final class OptUtils {
         QueryDataType fieldType = field.getType();
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
-
         if (sqlTypeName == null) {
-            throw new IllegalStateException("Unexpected type family: " + fieldType);
+            throw new IllegalStateException("Unsupported type family: " + fieldType
+                    + ", getSqlTypeName should never return null.");
         }
 
-        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
-        return typeFactory.createTypeWithNullability(relType, true);
+        if (sqlTypeName == SqlTypeName.OTHER) {
+            return convertCustomType(fieldType);
+        } else {
+            RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+            return typeFactory.createTypeWithNullability(relType, true);
+        }
+    }
+
+    private static RelDataType convertCustomType(QueryDataType fieldType) {
+        switch (fieldType.getTypeFamily()) {
+            case JSON:
+                return HazelcastJsonType.create(true);
+            default:
+                throw new IllegalStateException("Unexpected type family: " + fieldType);
+        }
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
         return Util.toList(rowType.getFieldList(),
-                f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
+                f -> HazelcastTypeUtils.toHazelcastType(f.getType()));
     }
 
     public static boolean requiresJob(RelNode rel) {

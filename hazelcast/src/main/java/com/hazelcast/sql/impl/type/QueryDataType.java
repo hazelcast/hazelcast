@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
 import com.hazelcast.sql.impl.type.converter.IntervalConverter;
+import com.hazelcast.sql.impl.type.converter.JsonConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
@@ -90,6 +91,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType INTERVAL_DAY_SECOND = new QueryDataType(IntervalConverter.DAY_SECOND);
 
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
+    public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
 
     private Converter converter;
 

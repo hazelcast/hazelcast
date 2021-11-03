@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
@@ -52,15 +53,7 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
     );
 
     public FileTableFunction(String name, String format) {
-        super(
-                name,
-                new HazelcastSqlOperandMetadata(
-                        PARAMETERS,
-                        new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(ANY))
-                ),
-                arguments -> toTable(arguments, format),
-                FileSqlConnector.INSTANCE
-        );
+        super(name, FileOperandMetadata.INSTANCE, arguments -> toTable(arguments, format), FileSqlConnector.INSTANCE);
     }
 
     private static Table toTable(List<Object> arguments, String format) {
@@ -88,5 +81,22 @@ public final class FileTableFunction extends HazelcastDynamicTableFunction {
 
     private static String randomName() {
         return SCHEMA_NAME_FILES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    private static final class FileOperandMetadata extends HazelcastSqlOperandMetadata {
+
+        private static final FileOperandMetadata INSTANCE = new FileOperandMetadata();
+
+        private FileOperandMetadata() {
+            super(
+                    PARAMETERS,
+                    new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(ANY))
+            );
+        }
+
+        @Override
+        protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+            return true;
+        }
     }
 }
