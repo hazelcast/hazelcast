@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
@@ -58,6 +59,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -75,6 +77,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
 public class PlanExecutor {
+    private static final String LE = System.lineSeparator();
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -198,6 +201,25 @@ public class PlanExecutor {
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                metadata,
+                false,
+                serializationService
+        );
+    }
+
+    SqlResult execute(ExplainStatementPlan plan) {
+        Stream<String> planRows;
+        SqlRowMetadata metadata = new SqlRowMetadata(
+                singletonList(
+                        new SqlColumnMetadata("rel", VARCHAR, false)
+                )
+        );
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+
+        planRows = Arrays.stream(plan.getRel().explain().split(LE));
+        return new SqlResultImpl(
+                QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
+                new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
                 metadata,
                 false,
                 serializationService
