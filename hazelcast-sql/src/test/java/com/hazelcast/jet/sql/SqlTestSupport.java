@@ -222,7 +222,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         }
-        assertThat(actualRows).hasSameElementsAs(expectedRows);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
     /**
