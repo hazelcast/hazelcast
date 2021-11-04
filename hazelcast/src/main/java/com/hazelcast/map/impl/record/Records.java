@@ -37,13 +37,11 @@ public final class Records {
     private Records() {
     }
 
-    public static int writeRecord(ObjectDataOutput out, Record record,
-                                  Data dataValue) throws IOException {
+    public static void writeRecord(ObjectDataOutput out, Record record,
+                                   Data dataValue) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         out.writeByte(readerWriter.getId());
         readerWriter.writeRecord(out, record, dataValue);
-        // TODO
-        return 25;
     }
 
     public static Record readRecord(ObjectDataInput in) throws IOException {
@@ -51,17 +49,13 @@ public final class Records {
         return getById(matchingDataRecordId).readRecord(in);
     }
 
-    public static int writeExpiry(ObjectDataOutput out,
-                                  ExpiryMetadata expiryMetadata) throws IOException {
+    public static void writeExpiry(ObjectDataOutput out,
+                                   ExpiryMetadata expiryMetadata) throws IOException {
         boolean hasExpiry = expiryMetadata.hasExpiry();
         out.writeBoolean(hasExpiry);
         if (hasExpiry) {
             expiryMetadata.write(out);
-            // TODO
-            return 5;
         }
-        // TODO
-        return 1;
     }
 
     public static ExpiryMetadata readExpiry(ObjectDataInput in) throws IOException {

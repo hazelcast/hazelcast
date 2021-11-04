@@ -33,7 +33,6 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParti
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ChunkSupplier;
@@ -64,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -289,13 +289,14 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
 
-        if (CollectionUtil.isEmpty(chunkSuppliers)) {
+        if (isEmpty(chunkSuppliers)) {
             namespaceToSuppliers.remove(currentNS);
             return null;
         }
 
         // we still have unfinished suppliers
-        return createReplicaFragmentMigrationStateFor(currentNS, chunkSuppliers);
+        return createReplicaFragmentMigrationState(singleton(currentNS),
+                emptyList(), chunkSuppliers);
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns) {
@@ -303,14 +304,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
         Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
         return createReplicaFragmentMigrationState(singleton(ns), operations, emptyList());
-    }
-
-    private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns,
-                                                                                 Collection<ChunkSupplier> suppliers) {
-        PartitionReplicationEvent event = getPartitionReplicationEvent();
-        Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
-        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
-        return createReplicaFragmentMigrationState(singleton(ns), emptyList(), suppliers);
     }
 
     private ReplicaFragmentMigrationState createNonFragmentedReplicaFragmentMigrationState() {
@@ -325,7 +318,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                                                                     Collection<ChunkSupplier> suppliers) {
         return createReplicaFragmentMigrationState(singleton(ns), emptyList(), suppliers);
     }
-
 
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
