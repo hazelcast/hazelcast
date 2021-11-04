@@ -105,6 +105,8 @@ public class RESTClientPhoneHomeTest {
 
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("restenabled", "1"))
+                .withRequestBody(containingParam("restmaprequestct", "7"))
+                .withRequestBody(containingParam("restqueuerequestct", "0"))
                 .withRequestBody(containingParam("restrequestct", "7"))
                 .withRequestBody(containingParam("restuniqrequestct", "6"))
                 .withRequestBody(containingParam("restmappostsucc", "2"))
@@ -132,6 +134,8 @@ public class RESTClientPhoneHomeTest {
         verify(1, postRequestedFor(urlPathEqualTo("/ping"))
                 .withRequestBody(containingParam("restmappostsucc", "0"))
                 .withRequestBody(containingParam("restmappostfail", "0"))
+                .withRequestBody(containingParam("restmaprequestct", "0"))
+                .withRequestBody(containingParam("restqueuerequestct", "5"))
                 .withRequestBody(containingParam("restqueuepostsucc", "2"))
                 .withRequestBody(containingParam("restqueuepostfail", "1"))
                 .withRequestBody(containingParam("restqueuegetsucc", "2"))

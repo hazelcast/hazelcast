@@ -34,12 +34,14 @@ public class RestApiMetricsCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_DELETE_FAILURE, collector.getMapDeleteFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_SUCCESS, collector.getMapGetSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_GET_FAILURE, collector.getMapGetFailureCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_MAP_TOTAL_REQUEST_COUNT, collector.getTotalMapRequestCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_ACCESSED_MAP_COUNT, collector.getAccessedMapCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_POST_SUCCESS, collector.getQueuePostSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_POST_FAILURE, collector.getQueuePostFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_SUCCESS, collector.getQueuePostSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_FAILURE, collector.getQueuePostFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_ACCESSED_QUEUE_COUNT, collector.getAccessedQueueCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_TOTAL_REQUEST_COUNT, collector.getTotalQueueRequestCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_REQUEST_COUNT, collector.getRequestCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_UNIQUE_REQUEST_COUNT, collector.getUniqueRequestCount());
     }

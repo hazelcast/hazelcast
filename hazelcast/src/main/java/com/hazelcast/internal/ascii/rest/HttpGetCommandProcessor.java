@@ -368,6 +368,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {
+        command.objectTypeDetermined("queue");
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         command.objectNameDetermined(queueName);

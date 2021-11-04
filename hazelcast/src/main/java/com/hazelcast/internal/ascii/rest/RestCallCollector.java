@@ -58,10 +58,12 @@ public class RestCallCollector {
     private final MwCounter mapGetFailCount = MwCounter.newMwCounter();
     private final MwCounter mapDeleteSuccCount = MwCounter.newMwCounter();
     private final MwCounter mapDeleteFailCount = MwCounter.newMwCounter();
+    private final MwCounter mapTotalRequestCount = MwCounter.newMwCounter();
     private final MwCounter queuePostSuccCount = MwCounter.newMwCounter();
     private final MwCounter queuePostFailCount = MwCounter.newMwCounter();
     private final MwCounter queueGetSuccCount = MwCounter.newMwCounter();
     private final MwCounter queueGetFailCount = MwCounter.newMwCounter();
+    private final MwCounter queueTotalRequestCount = MwCounter.newMwCounter();
 
     private final MwCounter requestCount = MwCounter.newMwCounter();
     private final ConcurrentSkipListSet<RequestIdentifier> uniqueRequests = new ConcurrentSkipListSet<>();
@@ -112,6 +114,11 @@ public class RestCallCollector {
             uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
         }
         requestCount.inc();
+        if ("map".equals(execution.getObjectType())) {
+            mapTotalRequestCount.inc();
+        } else if ("queue".equals(execution.getObjectType())) {
+            queueTotalRequestCount.inc();
+        }
     }
 
     public String getMapPostSuccessCount() {
@@ -162,4 +169,11 @@ public class RestCallCollector {
         return String.valueOf(mapDeleteSuccCount.get());
     }
 
+    public String getTotalMapRequestCount() {
+        return String.valueOf(mapTotalRequestCount.get());
+    }
+
+    public String getTotalQueueRequestCount() {
+        return String.valueOf(queueTotalRequestCount.get());
+    }
 }
