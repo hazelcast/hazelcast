@@ -78,6 +78,10 @@ public class MapChunkContext {
         return iterator;
     }
 
+    public RecordStore getRecordStore() {
+        return recordStore;
+    }
+
     public int getPartitionId() {
         return partitionId;
     }
