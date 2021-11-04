@@ -323,7 +323,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createAllReplicationOperations(event);
-        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations, null);
+        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations, emptyList());
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationState(Collection<ServiceNamespace> namespaces,

@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -251,7 +250,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             firstChunk = false;
         }
 
-        writeChunk((BufferObjectDataOutput) out, context);
+        writeChunk(out, context);
     }
 
     public void writeNearCacheState(ObjectDataOutput out) throws IOException {
@@ -332,7 +331,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
     }
 
-    private void writeChunk(BufferObjectDataOutput out, MapChunkContext context) throws IOException {
+    private void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
         SerializationService ss = context.getSerializationService();
 
         out.writeString(context.getMapName());

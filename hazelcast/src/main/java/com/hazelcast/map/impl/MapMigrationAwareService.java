@@ -169,12 +169,11 @@ class MapMigrationAwareService
         @Override
         public Operation nextChunk(BooleanSupplier isEndOfChunk) {
             chunkNumber++;
-            Operation operation = new MapChunk(context, isEndOfChunk, chunkNumber)
+            return new MapChunk(context, isEndOfChunk, chunkNumber)
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex)
                     .setServiceName(MapService.SERVICE_NAME)
                     .setNodeEngine(mapServiceContext.getNodeEngine());
-            return operation;
         }
 
         @Override
