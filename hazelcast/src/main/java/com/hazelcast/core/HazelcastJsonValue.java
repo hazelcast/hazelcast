@@ -37,15 +37,19 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class HazelcastJsonValue {
 
-    private final String string;
+    private final String value;
 
     /**
      * Creates a HazelcastJsonValue from the given string.
      *
-     * @param string a non-null JSON string
+     * @param value a non-null JSON string
      */
-    public HazelcastJsonValue(String string) {
-        this.string = checkNotNull(string);
+    public HazelcastJsonValue(String value) {
+        this.value = checkNotNull(value);
+    }
+
+    public String getValue() {
+        return value;
     }
 
     /**
@@ -54,7 +58,7 @@ public final class HazelcastJsonValue {
      */
     @Override
     public String toString() {
-        return string;
+        return value;
     }
 
     @Override
@@ -67,11 +71,11 @@ public final class HazelcastJsonValue {
         }
 
         HazelcastJsonValue that = (HazelcastJsonValue) o;
-        return string.equals(that.string);
+        return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        return string.hashCode();
+        return value.hashCode();
     }
 }

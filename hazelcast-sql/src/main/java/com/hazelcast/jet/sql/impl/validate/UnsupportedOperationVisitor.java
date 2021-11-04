@@ -34,6 +34,11 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlJsonEmptyOrError;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonValueReturning;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -68,6 +73,12 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
      * A set of supported operators for functions.
      */
     private static final Set<SqlOperator> SUPPORTED_OPERATORS;
+
+    /**
+     * A set of supported parser symbols.
+     */
+    private static final Set<Enum<?>> SUPPORTED_SYMBOLS;
+
 
     static {
         // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
@@ -121,6 +132,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
         SUPPORTED_KINDS.add(SqlKind.UNION);
+
+        SUPPORTED_KINDS.add(SqlKind.EXPLAIN);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -201,6 +214,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.IMPOSE_ORDER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TUMBLE);
 
+        // JSON
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_QUERY);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_VALUE);
+
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
@@ -213,6 +230,45 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
+
+        // SYMBOLS
+        SUPPORTED_SYMBOLS = new HashSet<>();
+
+        SUPPORTED_SYMBOLS.add(SqlTrimFunction.Flag.LEADING);
+        SUPPORTED_SYMBOLS.add(SqlTrimFunction.Flag.TRAILING);
+        SUPPORTED_SYMBOLS.add(SqlTrimFunction.Flag.BOTH);
+
+        // `SELECT ALL` is the opposite of `SELECT DISTINCT` and it's the default if neither is used, we allow it
+        SUPPORTED_SYMBOLS.add(SqlSelectKeyword.DISTINCT);
+        SUPPORTED_SYMBOLS.add(SqlSelectKeyword.ALL);
+
+        SUPPORTED_SYMBOLS.add(JoinType.INNER);
+        SUPPORTED_SYMBOLS.add(JoinType.COMMA);
+        SUPPORTED_SYMBOLS.add(JoinType.CROSS);
+        SUPPORTED_SYMBOLS.add(JoinType.LEFT);
+        SUPPORTED_SYMBOLS.add(JoinType.RIGHT);
+
+        SUPPORTED_SYMBOLS.add(JoinConditionType.ON);
+        SUPPORTED_SYMBOLS.add(JoinConditionType.NONE);
+        SUPPORTED_SYMBOLS.add(JoinConditionType.USING);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryWrapperBehavior.WITHOUT_ARRAY);
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryWrapperBehavior.WITH_CONDITIONAL_ARRAY);
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryWrapperBehavior.WITH_UNCONDITIONAL_ARRAY);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryEmptyOrErrorBehavior.ERROR);
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryEmptyOrErrorBehavior.NULL);
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryEmptyOrErrorBehavior.EMPTY_ARRAY);
+        SUPPORTED_SYMBOLS.add(SqlJsonQueryEmptyOrErrorBehavior.EMPTY_OBJECT);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonValueReturning.RETURNING);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonValueEmptyOrErrorBehavior.ERROR);
+        SUPPORTED_SYMBOLS.add(SqlJsonValueEmptyOrErrorBehavior.NULL);
+        SUPPORTED_SYMBOLS.add(SqlJsonValueEmptyOrErrorBehavior.DEFAULT);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonEmptyOrError.EMPTY);
+        SUPPORTED_SYMBOLS.add(SqlJsonEmptyOrError.ERROR);
     }
 
     // The top level select is used to filter out nested selects with FETCH/OFFSET
@@ -238,6 +294,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
                 return null;
             }
+        }
+
+        if (HazelcastTypeUtils.isJsonIdentifier(type.getTypeName())) {
+            return null;
         }
 
         if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
@@ -272,6 +332,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:ReturnCount")
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 
@@ -302,32 +363,12 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 return null;
 
             case SYMBOL:
-                Object symbolValue = literal.getValue();
-
-                if (symbolValue instanceof SqlTrimFunction.Flag) {
-                    return null;
-                }
-                // `SELECT ALL` is the opposite of `SELECT DISTINCT` and it's the default if neither is used, we allow it
-                if (symbolValue == SqlSelectKeyword.DISTINCT || symbolValue == SqlSelectKeyword.ALL) {
+                Enum<?> symbolValue = (Enum<?>) literal.getValue();
+                if (SUPPORTED_SYMBOLS.contains(symbolValue)) {
                     return null;
                 }
 
-                if (symbolValue == JoinType.INNER
-                        || symbolValue == JoinType.COMMA
-                        || symbolValue == JoinType.CROSS
-                        || symbolValue == JoinType.LEFT
-                        || symbolValue == JoinType.RIGHT
-                ) {
-                    return null;
-                }
-                if (symbolValue == JoinConditionType.ON
-                        || symbolValue == JoinConditionType.NONE
-                        || symbolValue == JoinConditionType.USING
-                ) {
-                    return null;
-                }
-
-                throw error(literal, RESOURCE.error(symbolValue + " literal is not supported"));
+                throw error(literal, RESOURCE.error(symbolValue + " is not supported"));
 
             default:
                 throw error(literal, RESOURCE.error(typeName + " literals are not supported"));

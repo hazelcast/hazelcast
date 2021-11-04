@@ -740,7 +740,7 @@ public interface CompactReader {
     OffsetDateTime[] readArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
 
     /**
-     * Reads an array of arbitrary objects.
+     * Reads an array of compact objects.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -752,7 +752,7 @@ public interface CompactReader {
     <T> T[] readArrayOfCompacts(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
     /**
-     * Reads an array of arbitrary objects or returns the default value.
+     * Reads an array of compact objects or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name

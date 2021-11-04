@@ -68,7 +68,7 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(__key), 2)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2)))" +
                         "  , DESCRIPTOR(__key)" +
                         "  , 2" +
                         ")) " +
