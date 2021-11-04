@@ -153,11 +153,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
     @Override
     @Nonnull
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.CHAR);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeChar(fieldName, value)) != null) {
-            throw new HazelcastSerializationException("Field can only be written once");
-        }
-        return this;
+        throw new UnsupportedOperationException("Compact format does not support writing a char field");
     }
 
     @Override
@@ -353,11 +349,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
     @Override
     @Nonnull
     public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_CHARS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfChars(fieldName, value)) != null) {
-            throw new HazelcastSerializationException("Field can only be written once");
-        }
-        return this;
+        throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
     }
 
     @Override

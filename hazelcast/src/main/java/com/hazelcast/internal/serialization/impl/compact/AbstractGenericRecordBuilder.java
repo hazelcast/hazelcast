@@ -69,7 +69,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
-        return write(fieldName, value, FieldKind.CHAR);
+        throw new UnsupportedOperationException("Compact format does not support writing a char field");
     }
 
     @Nonnull
@@ -147,7 +147,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
-        return write(fieldName, value, FieldKind.ARRAY_OF_CHARS);
+        throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
     }
 
     @Nonnull
