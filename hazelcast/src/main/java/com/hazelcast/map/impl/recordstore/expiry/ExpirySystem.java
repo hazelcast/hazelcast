@@ -342,7 +342,7 @@ public class ExpirySystem {
                              int expiredCount, long scanLoopStartNanos) {
         logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
                         + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, "
-                        + "inThePipelineCount: %d, scanTookNanos: %d"
+                        + "remainedCount: %d, scanTookNanos: %d"
                 , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
                 , maxScannableCount, scannedCount, expiredCount, expireTimeByKey.size(),
                 (System.nanoTime() - scanLoopStartNanos)));
