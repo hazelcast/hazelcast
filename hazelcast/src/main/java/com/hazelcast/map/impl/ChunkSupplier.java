@@ -16,8 +16,9 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import java.util.function.BooleanSupplier;
 
 import static java.lang.Integer.getInteger;
 
@@ -25,15 +26,11 @@ public interface ChunkSupplier {
 
     String PROP_MAX_MIGRATING_DATA = "hazelcast.migrating.data.size";
 
-    int DEFAULT_MAX_MIGRATING_DATA = 2 << 11;
+    int DEFAULT_MAX_MIGRATING_DATA = 1 << 11;
 
     int MAX_MIGRATING_DATA = getInteger(PROP_MAX_MIGRATING_DATA, DEFAULT_MAX_MIGRATING_DATA);
 
-    void useCounter(MutableInteger byteCounter);
-
-    Operation nextChunk();
+    Operation nextChunk(BooleanSupplier isEndOfChunk);
 
     boolean hasMoreChunks();
-
-    boolean hasReachedMaxSize();
 }

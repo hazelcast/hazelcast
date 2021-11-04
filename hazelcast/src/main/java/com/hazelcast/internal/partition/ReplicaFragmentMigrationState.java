@@ -17,9 +17,9 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.impl.ChunkSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,6 +33,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
+
+import static java.lang.String.format;
 
 /**
  * Contains fragment namespaces along with their partition versions and migration data operations
@@ -95,21 +98,43 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             out.writeObject(operation);
         }
 
-        MutableInteger byteCounter = new MutableInteger();
+        BooleanSupplier isEndOfChunk = new IsEndOfChunk(out);
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-            chunkSupplier.useCounter(byteCounter);
-
-            while (chunkSupplier.hasMoreChunks()
-                    && !chunkSupplier.hasReachedMaxSize()) {
-                Operation chunk = chunkSupplier.nextChunk();
+            do {
+                Operation chunk = chunkSupplier.nextChunk(isEndOfChunk);
                 out.writeObject(chunk);
-            }
 
-            if (chunkSupplier.hasReachedMaxSize()) {
+            } while (!isEndOfChunk.getAsBoolean()
+                    && chunkSupplier.hasMoreChunks());
+
+            if (isEndOfChunk.getAsBoolean()) {
                 break;
             }
         }
+        // indicates end of chunked state
         out.writeObject(null);
+    }
+
+    private static class IsEndOfChunk implements BooleanSupplier {
+
+        private final int positionStart;
+        private final BufferObjectDataOutput out;
+
+        public IsEndOfChunk(ObjectDataOutput out) {
+            this.out = ((BufferObjectDataOutput) out);
+            this.positionStart = ((BufferObjectDataOutput) out).position();
+        }
+
+        @Override
+        public boolean getAsBoolean() {
+            int bytesWrittenSoFar = out.position() - positionStart;
+            boolean endOfChunk = bytesWrittenSoFar >= ChunkSupplier.MAX_MIGRATING_DATA;
+            if (endOfChunk) {
+                System.err.println(format("Reached maxChunkSize:%d, bytesWrittenSoFar:%d",
+                        ChunkSupplier.MAX_MIGRATING_DATA, bytesWrittenSoFar));
+            }
+            return endOfChunk;
+        }
     }
 
     @Override

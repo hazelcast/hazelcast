@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -39,6 +38,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
@@ -47,19 +47,21 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     private transient String mapName;
     private transient MapChunkContext context;
     private transient LinkedList keyRecordExpiry;
+    private transient BooleanSupplier isEndOfChunk;
 
     public MapChunk() {
     }
 
-    public MapChunk(MapChunkContext context) {
+    public MapChunk(MapChunkContext context, BooleanSupplier isEndOfChunk) {
         this.context = context;
+        this.isEndOfChunk = isEndOfChunk;
         System.err.println("Chunk number ----> " + COUNT.incrementAndGet()
                 + ", mapName: " + context.getMapName() + ", partitionId: " + context.getPartitionId());
     }
 
     @Override
     public void run() throws Exception {
-        assert !keyRecordExpiry.isEmpty() : "why did you send an empty operation?";
+        assert !keyRecordExpiry.isEmpty() : "no empty operation expected";
 
         RecordStore recordStore = getRecordStore(mapName);
 
@@ -85,17 +87,16 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        writeChunk(out, context);
+        writeChunk((BufferObjectDataOutput) out, context);
     }
 
-    private void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
+    private void writeChunk(BufferObjectDataOutput out, MapChunkContext context) throws IOException {
         String mapName = context.getMapName();
         SerializationService ss = context.getSerializationService();
-        MutableInteger currentChunkSize = context.getCurrentChunkSize();
 
         out.writeString(mapName);
         Iterator<Map.Entry<Data, Record>> entries = context.getIterator();
-        int serializedEntryCount = 0;
+
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
 
@@ -103,19 +104,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             Record record = entry.getValue();
             Data dataValue = ss.toData(record.getValue());
 
-            currentChunkSize.value += dataKey.totalSize() + Bits.INT_SIZE_IN_BYTES;
-
             IOUtil.writeData(out, dataKey);
-            currentChunkSize.value += Records.writeRecord(out, record, dataValue);
-            currentChunkSize.value += Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
+            Records.writeRecord(out, record, dataValue);
+            Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
 
-            serializedEntryCount++;
-
-            if (context.hasReachedMaxSize()) {
+            if (isEndOfChunk.getAsBoolean()) {
                 break;
             }
         }
-        System.err.println("serializedEntryCount: " + serializedEntryCount);
 
         // indicates end of chunk
         IOUtil.writeData(out, null);

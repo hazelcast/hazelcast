@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -30,30 +29,22 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import java.util.Iterator;
 import java.util.Map;
 
-import static java.lang.String.format;
-
 public class MapChunkContext {
 
     private final String mapName;
     private final SerializationService ss;
     private final ExpirySystem expirySystem;
+    private final int partitionId;
+    private final MapServiceContext mapServiceContext;
+
     private ServiceNamespace serviceNamespace;
     private Iterator<Map.Entry<Data, Record>> iterator;
 
-    private final int partitionId;
-    private final long maxChunkSize;
-    private final MapServiceContext mapServiceContext;
-
-    private MutableInteger currentChunkSize;
-
     public MapChunkContext(MapServiceContext mapServiceContext,
-                           int partitionId, ServiceNamespace namespaces,
-                           long maxChunkSize, MutableInteger currentChunkSize) {
+                           int partitionId, ServiceNamespace namespaces) {
         this.mapServiceContext = mapServiceContext;
         this.partitionId = partitionId;
-        this.maxChunkSize = maxChunkSize;
         this.serviceNamespace = namespaces;
-        this.currentChunkSize = currentChunkSize;
         this.mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
         RecordStore recordStore = getRecordStore(mapName);
         this.iterator = recordStore.iterator();
@@ -78,19 +69,6 @@ public class MapChunkContext {
         return iterator;
     }
 
-    public MutableInteger getCurrentChunkSize() {
-        return currentChunkSize;
-    }
-
-    public boolean hasReachedMaxSize() {
-        boolean reached = maxChunkSize <= currentChunkSize.value;
-        if (reached) {
-            System.err.println(format("Reached maxChunkSize at:%d, partitionId:%d, mapName:%s",
-                    currentChunkSize.value, partitionId, mapName));
-        }
-        return reached;
-    }
-
     public int getPartitionId() {
         return partitionId;
     }
@@ -105,9 +83,5 @@ public class MapChunkContext {
 
     public ExpiryMetadata getExpiryMetadata(Data dataKey) {
         return expirySystem.getExpiryMetadata(dataKey);
-    }
-
-    public void setByteCounter(MutableInteger byteCounter) {
-        this.currentChunkSize = byteCounter;
     }
 }
