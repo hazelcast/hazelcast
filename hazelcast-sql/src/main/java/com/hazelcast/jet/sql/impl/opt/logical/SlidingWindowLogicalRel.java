@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -28,7 +29,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Set;
 
-public class SlidingWindowLogicalRel extends TableFunctionScan implements LogicalRel {
+public class SlidingWindowLogicalRel extends SlidingWindow implements LogicalRel {
 
     SlidingWindowLogicalRel(
             RelOptCluster cluster,

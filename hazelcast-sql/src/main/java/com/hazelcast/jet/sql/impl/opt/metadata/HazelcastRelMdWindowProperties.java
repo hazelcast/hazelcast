@@ -18,10 +18,10 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowEndProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowStartProperty;
-import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.volcano.RelSubset;
@@ -66,14 +66,14 @@ public final class HazelcastRelMdWindowProperties
     }
 
     @SuppressWarnings("unused")
-    public WindowProperties extractWindowProperties(SlidingWindowPhysicalRel rel, RelMetadataQuery mq) {
+    public WindowProperties extractWindowProperties(SlidingWindow rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         WindowProperties inputWindowProperties = query.extractWindowProperties(rel.getInput());
 
         int fieldCount = rel.getRowType().getFieldCount();
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider = rel.windowPolicyProvider();
         WindowProperties windowProperties = new WindowProperties(
-                // window_start and window_end are the last two fields in SlidingWindowPhysicalRel
+                // window_start and window_end are the last two fields in SlidingWindow
                 new WindowStartProperty(fieldCount - 2, windowPolicyProvider),
                 new WindowEndProperty(fieldCount - 1, windowPolicyProvider)
         );

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness.BoundednessMetadata;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties.WindowPropertiesMetadata;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
@@ -23,9 +24,11 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
 
+    private BoundednessMetadata.Handler boundednessHandler;
     private WindowPropertiesMetadata.Handler windowPropertiesHandler;
 
     private HazelcastRelMetadataQuery() {
+        this.boundednessHandler = initialHandler(BoundednessMetadata.Handler.class);
         this.windowPropertiesHandler = initialHandler(WindowPropertiesMetadata.Handler.class);
     }
 
@@ -34,6 +37,16 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
             return (HazelcastRelMetadataQuery) mq;
         } else {
             return new HazelcastRelMetadataQuery();
+        }
+    }
+
+    public Boundedness extractBoundedness(RelNode rel) {
+        for (; ; ) {
+            try {
+                return boundednessHandler.extractBoundedness(rel, this);
+            } catch (JaninoRelMetadataProvider.NoHandler e) {
+                boundednessHandler = revise(e.relClass, BoundednessMetadata.DEF);
+            }
         }
     }
 

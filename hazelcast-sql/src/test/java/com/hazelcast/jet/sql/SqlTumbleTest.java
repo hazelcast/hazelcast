@@ -1481,6 +1481,60 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
+    @Test
+    public void test_batchSource_noGroupBy() {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                asList("ts", "name"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Alice"),
+                row(timestampTz(3), "Bob")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT COUNT(name) FROM " +
+                        "TABLE(TUMBLE(" +
+                        "  TABLE(" + name + ")" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "))",
+                singletonList(new Row(3L))
+        );
+    }
+
+    @Test
+    public void test_batchSource_groupByNonWindowBound() {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                asList("ts", "name"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
+                row(timestampTz(0), "Alice"),
+                row(timestampTz(1), null),
+                row(timestampTz(2), "Alice"),
+                row(timestampTz(3), "Bob")
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start + INTERVAL '0.001' SECOND FROM " +
+                        "TABLE(TUMBLE(" +
+                        "  TABLE(" + name + ")" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        ")) " +
+                        "GROUP BY window_start + INTERVAL '0.001' SECOND",
+                asList(
+                        new Row(timestampTz(1L)),
+                        new Row(timestampTz(3L))
+                )
+        );
+    }
+
     private static Object[] row(Object... values) {
         return values;
     }
