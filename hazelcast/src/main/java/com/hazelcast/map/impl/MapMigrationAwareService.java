@@ -148,17 +148,20 @@ class MapMigrationAwareService
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
                                           ServiceNamespace namespace) {
-        return new ChunkSupplierImpl(namespace, event.getPartitionId());
+        return new ChunkSupplierImpl(namespace, event.getPartitionId(),
+                event.getReplicaIndex());
     }
 
     private final class ChunkSupplierImpl implements ChunkSupplier {
 
         private final int partitionId;
+        private final int replicaIndex;
         private final MapChunkContext context;
 
         private int chunkNumber;
 
-        private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
+        private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId, int replicaIndex) {
+            this.replicaIndex = replicaIndex;
             this.context = new MapChunkContext(mapServiceContext, partitionId, namespace);
             this.partitionId = partitionId;
         }
@@ -168,6 +171,7 @@ class MapMigrationAwareService
             chunkNumber++;
             Operation operation = new MapChunk(context, isEndOfChunk, chunkNumber)
                     .setPartitionId(partitionId)
+                    .setReplicaIndex(replicaIndex)
                     .setServiceName(MapService.SERVICE_NAME)
                     .setNodeEngine(mapServiceContext.getNodeEngine());
             return operation;
@@ -180,17 +184,18 @@ class MapMigrationAwareService
 
         @Override
         public String toString() {
-            return "ChunkSupplierImpl{" +
-                    "partitionId=" + partitionId +
-                    ", chunkNumber=" + chunkNumber +
-                    ", mapName=" + context.getMapName() +
-                    '}';
+            return "ChunkSupplierImpl{"
+                    + "partitionId=" + partitionId
+                    + ", chunkNumber=" + chunkNumber
+                    + ", mapName=" + context.getMapName()
+                    + '}';
         }
     }
 
     boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
         for (ServiceNamespace namespace : namespaces) {
-            assert isKnownServiceNamespace(namespace) : namespace + " is not a MapService namespace!";
+            assert isKnownServiceNamespace(namespace)
+                    : namespace + " is not a MapService namespace!";
         }
         return true;
     }
@@ -214,8 +219,9 @@ class MapMigrationAwareService
         PartitionContainer partitionContainer
                 = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
-            // in case the record store has been created without loading during migration trigger again
-            // if loading has been already started this call will do nothing
+            // in case the record store has been created without
+            // loading during migration trigger again if loading
+            // has been already started this call will do nothing
             recordStore.startLoading();
         }
         mapServiceContext.nullifyOwnedPartitions();
