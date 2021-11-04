@@ -100,7 +100,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
                                                           Collection<String> serviceNames,
                                                           ServiceNamespace namespace) {
-        getLogger().severe("Collecting chunk suppliers...");
+        getLogger().fine("Collecting chunk suppliers...");
 
         Collection<ChunkSupplier> suppliers = EMPTY_LIST;
 
@@ -117,7 +117,10 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             }
 
             suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, namespace));
-            getLogger().severe(String.format("Created chunk supplier:[%s, partitionId:%d]", namespace, event.getPartitionId()));
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
+                        namespace, event.getPartitionId()));
+            }
         }
 
         return suppliers;

@@ -24,11 +24,12 @@ import static java.lang.Integer.getInteger;
 
 public interface ChunkSupplier {
 
-    String PROP_MAX_MIGRATING_DATA = "hazelcast.migrating.data.size";
+    String PROP_MAX_MIGRATING_DATA_IN_BYTES = "hazelcast.migrating.data.size.in.bytes";
 
-    int DEFAULT_MAX_MIGRATING_DATA = 1 << 11;
+    int DEFAULT_MAX_MIGRATING_DATA_IN_BYTES = 1 << 10;
 
-    int MAX_MIGRATING_DATA = getInteger(PROP_MAX_MIGRATING_DATA, DEFAULT_MAX_MIGRATING_DATA);
+    int MAX_MIGRATING_DATA_IN_BYTES = getInteger(PROP_MAX_MIGRATING_DATA_IN_BYTES,
+            DEFAULT_MAX_MIGRATING_DATA_IN_BYTES);
 
     Operation nextChunk(BooleanSupplier isEndOfChunk);
 

@@ -98,8 +98,13 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             out.writeObject(operation);
         }
 
-        BooleanSupplier isEndOfChunk = new IsEndOfChunk(out);
+        writeChunkedOperations(out);
+    }
+
+    private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
+        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out);
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            System.err.println(chunkSupplier);
             do {
                 Operation chunk = chunkSupplier.nextChunk(isEndOfChunk);
                 out.writeObject(chunk);
@@ -108,14 +113,29 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
                     && chunkSupplier.hasMoreChunks());
 
             if (isEndOfChunk.getAsBoolean()) {
+                System.err.println(format("Reached maxChunkSize:%d, bytesWrittenSoFar:%d",
+                        ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES, isEndOfChunk.bytesWrittenSoFar()));
                 break;
             }
         }
         // indicates end of chunked state
         out.writeObject(null);
+
+        boolean allDone = true;
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            if (chunkSupplier.hasMoreChunks()) {
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone) {
+            System.err.println(format("allDone maxChunkSize:%d, bytesWrittenSoFar:%d",
+                    ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES, isEndOfChunk.bytesWrittenSoFar()));
+        }
     }
 
-    private static class IsEndOfChunk implements BooleanSupplier {
+    private static final class IsEndOfChunk implements BooleanSupplier {
 
         private final int positionStart;
         private final BufferObjectDataOutput out;
@@ -127,13 +147,11 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
 
         @Override
         public boolean getAsBoolean() {
-            int bytesWrittenSoFar = out.position() - positionStart;
-            boolean endOfChunk = bytesWrittenSoFar >= ChunkSupplier.MAX_MIGRATING_DATA;
-            if (endOfChunk) {
-                System.err.println(format("Reached maxChunkSize:%d, bytesWrittenSoFar:%d",
-                        ChunkSupplier.MAX_MIGRATING_DATA, bytesWrittenSoFar));
-            }
-            return endOfChunk;
+            return bytesWrittenSoFar() >= ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES;
+        }
+
+        public int bytesWrittenSoFar() {
+            return out.position() - positionStart;
         }
     }
 
@@ -153,12 +171,15 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             migrationOperations.add(migrationOperation);
         }
 
+        readChunkedOperations(in);
+    }
+
+    private void readChunkedOperations(ObjectDataInput in) throws IOException {
         do {
             Object operation = in.readObject();
             if (operation == null) {
                 break;
             }
-
             migrationOperations.add(((Operation) operation));
         } while (true);
     }

@@ -256,6 +256,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         return createReplicaFragmentMigrationStateFor(namespace);
     }
 
+    // TODO add other services data with same namespace
     private Collection<ChunkSupplier> createChunkSuppliersOf(ServiceNamespace namespace) {
         return namespaceToSuppliers.computeIfAbsent(namespace,
                 ns -> {
@@ -429,7 +430,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * and ring-buffer-service when it needs to use their functionality.
      *
      * <p>
-     * To clarify the consept, this is a sketch of multiple
+     * To clarify the concept, this is a sketch of multiple
      * services which are sharing the same namespace
      *
      * <pre>
@@ -497,20 +498,20 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                     .getService()).getAllServiceNamespaces(event);
         }
 
-        boolean hasNext() {
+        private boolean hasNext() {
             return namespaceIterator.hasNext();
         }
 
-        ServiceNamespace current() {
+        private ServiceNamespace current() {
             return currentNamespace;
         }
 
-        ServiceNamespace next() {
+        private ServiceNamespace next() {
             currentNamespace = namespaceIterator.next();
             return currentNamespace;
         }
 
-        Collection<String> getServiceNames(ServiceNamespace ns) {
+        private Collection<String> getServiceNames(ServiceNamespace ns) {
             return namespaceToServices.get(ns);
         }
     }

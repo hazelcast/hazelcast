@@ -157,7 +157,7 @@ class MapMigrationAwareService
         private final MapChunkContext context;
 
         private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
-            context = new MapChunkContext(mapServiceContext, partitionId, namespace);
+            this.context = new MapChunkContext(mapServiceContext, partitionId, namespace);
             this.partitionId = partitionId;
         }
 
@@ -172,6 +172,14 @@ class MapMigrationAwareService
         @Override
         public boolean hasMoreChunks() {
             return context.hasMoreChunks();
+        }
+
+        @Override
+        public String toString() {
+            return "ChunkSupplierImpl{" +
+                    "partitionId=" + partitionId +
+                    ", mapName=" + context.getMapName() +
+                    '}';
         }
     }
 

@@ -144,6 +144,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         } while (true);
 
         this.keyRecordExpiry = keyRecordExpiry;
+
+        System.err.println("Read chunk: " + keyRecordExpiry.size() / 3);
     }
 
     @Override
