@@ -30,7 +30,7 @@ public class MapChunkTest extends HazelcastTestSupport {
     @Test
     public void smoke() {
         Config config = new Config();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
