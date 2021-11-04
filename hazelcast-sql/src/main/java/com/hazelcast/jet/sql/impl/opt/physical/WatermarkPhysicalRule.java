@@ -29,10 +29,14 @@ final class WatermarkPhysicalRule extends RelOptRule {
 
     private WatermarkPhysicalRule() {
         super(
-                operand(WatermarkLogicalRel.class, LOGICAL, node -> {
-                    // if we end up here it means watermarks were not pushed down into scan during logical phase
-                    throw QueryException.error("Ordering function cannot be applied to input table");
-                }, any()),
+                operand(
+                        WatermarkLogicalRel.class,
+                        LOGICAL, node -> {
+                            // if we end up here it means watermarks were not pushed down into scan during logical phase
+                            throw QueryException.error("Ordering function cannot be applied to input table");
+                        },
+                        any()
+                ),
                 WatermarkPhysicalRule.class.getSimpleName()
         );
     }
