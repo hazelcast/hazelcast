@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static java.lang.String.format;
 
 /**
@@ -62,6 +63,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
                                          Collection<Operation> migrationOperations,
                                          Collection<ChunkSupplier> chunkSuppliers) {
         assert chunkSuppliers != null;
+
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
         this.chunkSuppliers = chunkSuppliers;
@@ -121,6 +123,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         // indicates end of chunked state
         out.writeObject(null);
 
+        // TODO remove allDone, it is here for only logging purposes
         boolean allDone = true;
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
             if (chunkSupplier.hasMoreChunks()) {
@@ -129,7 +132,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             }
         }
 
-        if (allDone) {
+        if (isNotEmpty(chunkSuppliers) && allDone) {
             System.err.println(format("allDone maxChunkSize:%d, bytesWrittenSoFar:%d",
                     ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES, isEndOfChunk.bytesWrittenSoFar()));
         }
