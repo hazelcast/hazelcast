@@ -156,6 +156,8 @@ class MapMigrationAwareService
         private final int partitionId;
         private final MapChunkContext context;
 
+        private int chunkNumber;
+
         private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
             this.context = new MapChunkContext(mapServiceContext, partitionId, namespace);
             this.partitionId = partitionId;
@@ -163,10 +165,12 @@ class MapMigrationAwareService
 
         @Override
         public Operation nextChunk(BooleanSupplier isEndOfChunk) {
-            return new MapChunk(context, isEndOfChunk)
+            chunkNumber++;
+            Operation operation = new MapChunk(context, isEndOfChunk, chunkNumber)
                     .setPartitionId(partitionId)
                     .setServiceName(MapService.SERVICE_NAME)
                     .setNodeEngine(mapServiceContext.getNodeEngine());
+            return operation;
         }
 
         @Override
@@ -178,6 +182,7 @@ class MapMigrationAwareService
         public String toString() {
             return "ChunkSupplierImpl{" +
                     "partitionId=" + partitionId +
+                    ", chunkNumber=" + chunkNumber +
                     ", mapName=" + context.getMapName() +
                     '}';
         }

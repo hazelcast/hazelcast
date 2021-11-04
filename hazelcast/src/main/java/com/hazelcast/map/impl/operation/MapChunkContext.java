@@ -16,26 +16,35 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.MapIndexInfo;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class MapChunkContext {
 
+    private final int partitionId;
     private final String mapName;
     private final SerializationService ss;
     private final ExpirySystem expirySystem;
-    private final int partitionId;
     private final MapServiceContext mapServiceContext;
+    private final RecordStore recordStore;
 
     private ServiceNamespace serviceNamespace;
     private Iterator<Map.Entry<Data, Record>> iterator;
@@ -46,7 +55,7 @@ public class MapChunkContext {
         this.partitionId = partitionId;
         this.serviceNamespace = namespaces;
         this.mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
-        RecordStore recordStore = getRecordStore(mapName);
+        this.recordStore = getRecordStore(mapName);
         this.iterator = recordStore.iterator();
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
@@ -83,5 +92,37 @@ public class MapChunkContext {
 
     public ExpiryMetadata getExpiryMetadata(Data dataKey) {
         return expirySystem.getExpiryMetadata(dataKey);
+    }
+
+    public boolean isRecordStoreLoaded() {
+        return recordStore.isLoaded();
+    }
+
+    public LocalRecordStoreStatsImpl getStats() {
+        return recordStore.getStats();
+    }
+
+    public MapIndexInfo createMapIndexInfo() {
+        MapContainer mapContainer = recordStore.getMapContainer();
+        Set<IndexConfig> indexConfigs = new HashSet<>();
+        if (mapContainer.isGlobalIndexEnabled()) {
+            // global-index
+            final Indexes indexes = mapContainer.getIndexes();
+            for (Index index : indexes.getIndexes()) {
+                indexConfigs.add(index.getConfig());
+            }
+            indexConfigs.addAll(indexes.getIndexDefinitions());
+        } else {
+            // partitioned-index
+            final Indexes indexes = mapContainer.getIndexes(partitionId);
+            if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
+                for (Index index : indexes.getIndexes()) {
+                    indexConfigs.add(index.getConfig());
+                }
+                indexConfigs.addAll(indexes.getIndexDefinitions());
+            }
+        }
+        return new MapIndexInfo(mapName)
+                .addIndexCofigs(indexConfigs);
     }
 }

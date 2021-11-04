@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -26,8 +28,6 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_NEAR_CACHE_STATE_HOLDER;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.EMPTY_LIST;
 
 /**
  * Holder for Near Cache metadata.
@@ -45,7 +45,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
     // keep this `protected`, extended in another context
     protected UUID partitionUuid;
-    protected List<Object> mapNameSequencePairs = emptyList();
+    protected List<Object> mapNameSequencePairs = EMPTY_LIST;
 
     private MapReplicationOperation mapReplicationOperation;
 
@@ -69,7 +69,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
         for (ServiceNamespace namespace : namespaces) {
-            if (mapNameSequencePairs == emptyList()) {
+            if (mapNameSequencePairs == EMPTY_LIST) {
                 mapNameSequencePairs = new ArrayList(namespaces.size());
             }
 
