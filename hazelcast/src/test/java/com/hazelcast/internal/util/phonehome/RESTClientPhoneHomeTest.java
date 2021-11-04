@@ -138,6 +138,8 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restqueuerequestct", "5"))
                 .withRequestBody(containingParam("restqueuepostsucc", "2"))
                 .withRequestBody(containingParam("restqueuepostfail", "1"))
+                .withRequestBody(containingParam("restqueuedeletesucc", "0"))
+                .withRequestBody(containingParam("restqueuedeletefail", "0"))
                 .withRequestBody(containingParam("restqueuegetsucc", "2"))
                 .withRequestBody(containingParam("restqueuect", "1"))
         );

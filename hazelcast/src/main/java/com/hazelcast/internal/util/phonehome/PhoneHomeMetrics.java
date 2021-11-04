@@ -161,6 +161,8 @@ public enum PhoneHomeMetrics {
     REST_QUEUE_POST_FAILURE("restqueuepostfail"),
     REST_QUEUE_GET_SUCCESS("restqueuegetsucc"),
     REST_QUEUE_GET_FAILURE("restqueuegetfail"),
+    REST_QUEUE_DELETE_SUCCESS("restqueuedeletesucc"),
+    REST_QUEUE_DELETE_FAILURE("restqueuedeletefail"),
     REST_QUEUE_TOTAL_REQUEST_COUNT("restqueuerequestct"),
     REST_ACCESSED_QUEUE_COUNT("restqueuect"),
 

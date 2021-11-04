@@ -63,6 +63,8 @@ public class RestCallCollector {
     private final MwCounter queuePostFailCount = MwCounter.newMwCounter();
     private final MwCounter queueGetSuccCount = MwCounter.newMwCounter();
     private final MwCounter queueGetFailCount = MwCounter.newMwCounter();
+    private final MwCounter queueDeleteSuccCount = MwCounter.newMwCounter();
+    private final MwCounter queueDeleteFailCount = MwCounter.newMwCounter();
     private final MwCounter queueTotalRequestCount = MwCounter.newMwCounter();
 
     private final MwCounter requestCount = MwCounter.newMwCounter();
@@ -87,6 +89,8 @@ public class RestCallCollector {
         } else if (execution.getMethod().equalsIgnoreCase("delete")) {
             if (isMap) {
                 (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
+            } else if (isQueue) {
+                (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
             }
         }
     }
@@ -151,6 +155,14 @@ public class RestCallCollector {
 
     public String getQueuePostFailureCount() {
         return String.valueOf(queuePostFailCount.get());
+    }
+
+    public String getQueueDeleteSuccessCount() {
+        return String.valueOf(queueDeleteSuccCount.get());
+    }
+
+    public String getQueueDeleteFailureCount() {
+        return String.valueOf(queueDeleteFailCount.get());
     }
 
     public String getAccessedMapCount() {
