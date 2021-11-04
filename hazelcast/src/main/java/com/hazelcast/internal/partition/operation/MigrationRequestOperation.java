@@ -448,7 +448,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * \---------/      \---------/      \---------/
      * </pre>
      */
-    private final static class ServiceNamespacesContext {
+    private final class ServiceNamespacesContext {
 
         private final Iterator<ServiceNamespace> namespaceIterator;
         private final Set<ServiceNamespace> allNamespaces = new HashSet<>();
@@ -491,8 +491,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
         }
 
-        private static Collection<ServiceNamespace> getAllServiceNamespaces(ServiceInfo serviceInfo,
-                                                                            PartitionReplicationEvent event) {
+        private Collection<ServiceNamespace> getAllServiceNamespaces(ServiceInfo serviceInfo,
+                                                                     PartitionReplicationEvent event) {
             return ((FragmentedMigrationAwareService) serviceInfo
                     .getService()).getAllServiceNamespaces(event);
         }

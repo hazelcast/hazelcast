@@ -152,10 +152,11 @@ class MapMigrationAwareService
     }
 
     private final class ChunkSupplierImpl implements ChunkSupplier {
+
         private final int partitionId;
         private final MapChunkContext context;
 
-        public ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
+        private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId) {
             context = new MapChunkContext(mapServiceContext, partitionId, namespace);
             this.partitionId = partitionId;
         }

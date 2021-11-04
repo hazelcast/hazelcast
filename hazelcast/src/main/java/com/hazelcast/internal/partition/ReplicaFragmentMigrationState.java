@@ -120,7 +120,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         private final int positionStart;
         private final BufferObjectDataOutput out;
 
-        public IsEndOfChunk(ObjectDataOutput out) {
+        private IsEndOfChunk(ObjectDataOutput out) {
             this.out = ((BufferObjectDataOutput) out);
             this.positionStart = ((BufferObjectDataOutput) out).position();
         }
