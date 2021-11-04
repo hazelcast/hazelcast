@@ -114,7 +114,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))",
+                        "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))",
                 Arrays.stream(values).map(Row::new).collect(toList())
         );
     }
@@ -146,7 +146,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
         ).hasMessageContaining("Cannot apply 'IMPOSE_ORDER' function to [ROW, COLUMN_LIST");
     }
 
@@ -159,7 +159,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT * FROM" +
                         "    TABLE(IMPOSE_ORDER(" +
-                        "      TABLE " + name +
+                        "      TABLE(" + name + ")" +
                         "      , DESCRIPTOR(ts)" +
                         "      , INTERVAL '0.001' SECOND" +
                         "    ))" +
@@ -175,10 +175,10 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
     }
 
@@ -269,7 +269,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 "SELECT * FROM " +
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
-                        "  , input => (TABLE " + name + ")" +
+                        "  , input => (TABLE(" + name + "))" +
                         "  , \"column\" => DESCRIPTOR(ts)" +
                         "))",
                 asList(
