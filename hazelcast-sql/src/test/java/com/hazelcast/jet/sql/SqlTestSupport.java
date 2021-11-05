@@ -45,6 +45,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -482,6 +488,22 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         return rowList;
+    }
+
+    public static LocalTime time(long epochMillis) {
+        return timestampTz(epochMillis).toLocalTime();
+    }
+
+    public static LocalDate date(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDate();
+    }
+
+    public static LocalDateTime timestamp(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDateTime();
+    }
+
+    public static OffsetDateTime timestampTz(long epochMillis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
     }
 
     /**
