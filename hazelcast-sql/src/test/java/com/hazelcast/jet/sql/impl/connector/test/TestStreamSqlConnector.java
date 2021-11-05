@@ -66,11 +66,11 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
             FunctionEx<Context, TestDataGenerator> createContextFn,
             EventTimePolicy<Object[]> eventTimePolicy
     ) {
-        StreamSource<Object[]> source = SourceBuilder
+        StreamSource<Object> source = SourceBuilder
                 .stream("stream", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)
                 .build();
-        return ((StreamSourceTransform<Object[]>) source).metaSupplierFn.apply(eventTimePolicy);
+        return ((StreamSourceTransform<Object>) source).metaSupplierFn.apply(null);
     }
 
     @Override

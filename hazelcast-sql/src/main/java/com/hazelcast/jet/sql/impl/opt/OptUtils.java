@@ -21,6 +21,8 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.metadata.Boundedness;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -67,6 +69,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
@@ -204,12 +207,42 @@ public final class OptUtils {
      * @return Physical rels.
      */
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
+        return extractRelsFromSubset(input, OptUtils::isPhysical);
+    }
+
+    private static boolean isPhysical(RelNode rel) {
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
+    }
+
+    /**
+     * Get possible logical rels from the given subset.
+     * Every returned input is guaranteed to have a unique trait set.
+     *
+     * @param input Subset.
+     * @return Logical rels.
+     */
+    public static Collection<RelNode> extractLogicalRelsFromSubset(RelNode input) {
+        return extractRelsFromSubset(input, OptUtils::isLogical);
+    }
+
+    private static boolean isLogical(RelNode rel) {
+        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.LOGICAL);
+    }
+
+    /**
+     * Get possible rels from the given subset matching given predicate.
+     * Every returned input will match the given predicate.
+     *
+     * @param input Subset.
+     * @return matching rels.
+     */
+    private static Collection<RelNode> extractRelsFromSubset(RelNode input, Predicate<RelNode> predicate) {
         Set<RelTraitSet> traitSets = new HashSet<>();
 
         Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
 
         for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
-            if (!isPhysical(rel)) {
+            if (!predicate.test(rel)) {
                 continue;
             }
 
@@ -221,8 +254,16 @@ public final class OptUtils {
         return res;
     }
 
-    private static boolean isPhysical(RelNode rel) {
-        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
+    public static boolean isBounded(RelNode rel) {
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.BOUNDED;
+    }
+
+    public static boolean isUnbounded(RelNode rel) {
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
+    }
+
+    public static HazelcastRelMetadataQuery metadataQuery(RelNode rel) {
+        return HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
     }
 
     public static HazelcastRelOptCluster getCluster(RelNode rel) {

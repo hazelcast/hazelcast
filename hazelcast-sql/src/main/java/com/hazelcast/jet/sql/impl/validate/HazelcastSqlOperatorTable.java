@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
@@ -255,6 +256,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlOperator DESCRIPTOR = new HazelcastDescriptorOperator();
     public static final SqlFunction IMPOSE_ORDER = new ImposeOrderFunction();
+    public static final SqlFunction TUMBLE = new HazelcastTumbleTableFunction();
 
     //#endregion
 

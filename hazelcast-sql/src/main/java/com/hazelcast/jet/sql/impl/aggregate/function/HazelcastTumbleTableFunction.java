@@ -16,37 +16,25 @@
 
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.operand.AnyOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.List;
 
 import static java.util.Arrays.asList;
 
-public class ImposeOrderFunction extends HazelcastTableFunction {
+public class HazelcastTumbleTableFunction extends HazelcastWindowTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
             new HazelcastTableFunctionParameter(1, "timeCol", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
-            new HazelcastTableFunctionParameter(2, "lag", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
+            new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
-    private static final SqlReturnTypeInference RETURN_TYPE_INFERENCE = binding -> {
-        SqlCallBinding callBinding = ((SqlCallBinding) binding);
-        return callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
-    };
-
-    public ImposeOrderFunction() {
-        super("IMPOSE_ORDER", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
-    }
-
-    @Override
-    public boolean argumentMustBeScalar(int ordinal) {
-        return ordinal != 0;
+    public HazelcastTumbleTableFunction() {
+        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS), 1);
     }
 }
