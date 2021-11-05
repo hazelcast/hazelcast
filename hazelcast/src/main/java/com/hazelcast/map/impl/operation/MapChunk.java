@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
@@ -33,6 +34,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -40,6 +42,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -61,12 +64,16 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
 
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
+
+    private static final int DISPOSE_AT_COUNT = 1024;
 
     private transient ILogger logger;
     private transient String mapName;
@@ -83,6 +90,9 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     private transient Map counterByTxnId;
     private transient UUID partitionUuid;
     private transient long currentSequence;
+
+    private transient boolean populateIndexes;
+    private transient InternalIndex[] indexesSnapshot;
 
     private boolean firstChunk;
 
@@ -103,9 +113,6 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
     @Override
     public void run() throws Exception {
-        boolean populateIndexes = false;
-        InternalIndex[] indexesSnapshot = null;
-
         RecordStore recordStore = getRecordStore(mapName);
         if (firstChunk) {
             addIndexes(recordStore, mapIndexInfo.getIndexConfigs());
@@ -113,58 +120,155 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             recordStore.setStats(stats);
             recordStore.setPreMigrationLoadedStatus(loaded);
 
-            MapContainer mapContainer = recordStore.getMapContainer();
-            PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
-                    .getPartitionContainer(getPartitionId());
-            for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-                Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                indexes.addOrGetIndex(indexDefinition.getValue());
-            }
-
-            final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-            populateIndexes = indexesMustBePopulated(indexes);
-
-            if (populateIndexes) {
-                // defensively clear possible stale
-                // leftovers in non-global indexes from
-                // the previous failed promotion attempt
-                indexesSnapshot = indexes.getIndexes();
-                Indexes.beginPartitionUpdate(indexesSnapshot);
-                indexes.clearAll();
-            }
+            applyIndexStateBefore(recordStore);
         }
 
-        if (CollectionUtil.isNotEmpty(keyRecordExpiry)) {
-            long nowInMillis = Clock.currentTimeMillis();
-            do {
-                Data dataKey = (Data) keyRecordExpiry.poll();
-                Record record = (Record) keyRecordExpiry.poll();
-                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.poll();
-
-                // TODO add indexesMustBePopulated check into IndexingObserver
-                recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
-                        getReplicaIndex() == 0, nowInMillis);
-
-            } while (!keyRecordExpiry.isEmpty());
-
-            ILogger logger = recordStore.getMapContainer().getMapServiceContext()
-                    .getNodeEngine().getLogger(getClass().getName());
-            if (logger.isFinestEnabled()) {
-                logger.finest(String.format("mapName:%s, partitionId:%d, numberOfEntriesMigrated:%d",
-                        mapName, getPartitionId(), (keyRecordExpiry.size() / 3)));
-            }
-
+        if (isNotEmpty(keyRecordExpiry)) {
+            putInto(recordStore);
+            logProgress(recordStore);
         }
 
         // TODO check if this is problematic or we need a flag to indicate end of chunks
         if (firstChunk) {
-            if (populateIndexes) {
-                Indexes.markPartitionAsIndexed(getPartitionId(), indexesSnapshot);
-            }
-
+            applyIndexStateAfter();
             applyWriteBehindState(recordStore);
             applyNearCacheState(recordStore);
         }
+    }
+
+    private void putInto(RecordStore recordStore) {
+        if (hasPerNodeEviction(recordStore)) {
+            putOrUpdateReplicatedDataWithPerNodeEviction(recordStore);
+        } else {
+            putOrUpdateReplicatedData(recordStore);
+        }
+    }
+
+    private void logProgress(RecordStore recordStore) {
+        ILogger logger = recordStore.getMapContainer().getMapServiceContext()
+                .getNodeEngine().getLogger(getClass().getName());
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("mapName:%s, partitionId:%d,"
+                            + " numberOfEntriesMigrated:%d", mapName,
+                    getPartitionId(), (keyRecordExpiry.size() / 3)));
+        }
+    }
+
+    private void applyIndexStateAfter() {
+        if (populateIndexes) {
+            Indexes.markPartitionAsIndexed(getPartitionId(), indexesSnapshot);
+        }
+    }
+
+    private void applyIndexStateBefore(RecordStore recordStore) {
+        MapContainer mapContainer = recordStore.getMapContainer();
+        PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
+                .getPartitionContainer(getPartitionId());
+
+        for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+            Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+            indexes.addOrGetIndex(indexDefinition.getValue());
+        }
+
+        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+        populateIndexes = indexesMustBePopulated(indexes);
+
+        if (populateIndexes) {
+            // defensively clear possible stale
+            // leftovers in non-global indexes from
+            // the previous failed promotion attempt
+            indexesSnapshot = indexes.getIndexes();
+            Indexes.beginPartitionUpdate(indexesSnapshot);
+            indexes.clearAll();
+        }
+    }
+
+    private void putOrUpdateReplicatedData(RecordStore recordStore) {
+        long nowInMillis = Clock.currentTimeMillis();
+        int count = 0;
+        do {
+            Data dataKey = (Data) keyRecordExpiry.poll();
+            Record record = (Record) keyRecordExpiry.poll();
+            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.poll();
+
+            // TODO add indexesMustBePopulated check into IndexingObserver
+            recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
+                    getReplicaIndex() == 0, nowInMillis);
+            if (recordStore.shouldEvict()) {
+                // No need to continue replicating records anymore.
+                // We are already over eviction threshold, each put record will cause another eviction.
+                recordStore.evictEntries(dataKey);
+                break;
+            }
+
+            if (++count % DISPOSE_AT_COUNT == 0) {
+                recordStore.disposeDeferredBlocks();
+            }
+
+        } while (!keyRecordExpiry.isEmpty());
+
+        recordStore.disposeDeferredBlocks();
+    }
+
+    // owned or backup
+    private void putOrUpdateReplicatedDataWithPerNodeEviction(RecordStore recordStore) {
+        MapContainer mapContainer = recordStore.getMapContainer();
+        EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
+        long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
+
+        int count = 0;
+        long nowInMillis = Clock.currentTimeMillis();
+        do {
+            Data dataKey = (Data) keyRecordExpiry.poll();
+            Record record = (Record) keyRecordExpiry.poll();
+            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.poll();
+
+            if (ownedEntryCountOnThisNode >= evictionConfig.getSize()) {
+                if (getReplicaIndex() == 0) {
+                    recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
+                }
+            } else {
+                // TODO add indexesMustBePopulated check into IndexingObserver
+                recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
+                        getReplicaIndex() == 0, nowInMillis);
+                ownedEntryCountOnThisNode++;
+            }
+
+            if (++count % DISPOSE_AT_COUNT == 0) {
+                recordStore.disposeDeferredBlocks();
+            }
+        } while (!keyRecordExpiry.isEmpty());
+
+        recordStore.disposeDeferredBlocks();
+    }
+
+    private long entryCountOnThisNode(MapContainer mapContainer) {
+        int replicaIndex = getReplicaIndex();
+        long owned = 0;
+        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            if (replicaIndex == 0 ? partitionService.isPartitionOwner(partitionId)
+                    : !partitionService.isPartitionOwner(partitionId)) {
+                RecordStore store = mapServiceContext.getExistingRecordStore(partitionId, mapContainer.getName());
+                if (store != null) {
+                    owned += store.size();
+                }
+            }
+        }
+
+        return owned;
+    }
+
+    private static boolean hasPerNodeEviction(RecordStore recordStore) {
+        MapContainer mapContainer = recordStore.getMapContainer();
+        EvictionConfig evictionConfig = mapContainer
+                .getMapConfig().getEvictionConfig();
+        return mapContainer.getEvictor() != Evictor.NULL_EVICTOR
+                && evictionConfig.getMaxSizePolicy() == PER_NODE;
+
     }
 
     private void applyNearCacheState(RecordStore recordStore) {
