@@ -48,7 +48,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             operandTypes[i] = binding.getOperandType(i);
 
             if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
-                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+                if (hasParameters && toHazelcastType(operandTypes[i]).getTypeFamily().isNumericInteger()) {
                     // If we are here, the operands are a parameter and a numeric expression.
                     // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`

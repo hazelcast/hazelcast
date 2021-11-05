@@ -203,7 +203,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 // The operand of the outer cast is validated as a SMALLINT, however the operand, thanks to the
                 // simplification in RexBuilder.makeCast(), is converted to a literal [42:SMALLINT]. And LiteralUtils converts
                 // this operand to [42:TINYINT] - we have to use the literal's type instead of the validated operand type.
-                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastType(literal.getTypeName());
+                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(literal.getTypeName());
                 toType.getConverter().convertToSelf(actualFromType.getConverter(), literal.getValue());
             } catch (Exception e) {
                 throw literalConversionException(validator, call, literal, toType, e);
