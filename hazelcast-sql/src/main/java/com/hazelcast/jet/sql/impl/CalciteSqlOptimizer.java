@@ -53,9 +53,11 @@ import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -232,6 +234,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             QueryParseResult parseResult,
             OptimizerContext context
     ) {
+        // TODO [sasha] : refactor this.
         SqlNode node = parseResult.getNode();
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
@@ -249,6 +252,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateSnapshotPlan(planKey, (SqlCreateSnapshot) node);
         } else if (node instanceof SqlDropSnapshot) {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
+        } else if (node instanceof SqlCreateView) {
+            return toCreateViewPlan(planKey, (SqlCreateView) node);
+        } else if (node instanceof SqlDropView) {
+            return toDropViewPlan(planKey, (SqlDropView) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else if (node instanceof SqlExplainStatement) {
@@ -338,6 +345,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toDropSnapshotPlan(PlanKey planKey, SqlDropSnapshot sqlNode) {
         return new DropSnapshotPlan(planKey, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
+    }
+
+    private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
+        throw new UnsupportedOperationException("toCreateViewPlan not yet implemented");
+    }
+
+    private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {
+        throw new UnsupportedOperationException("toDropViewPlan not yet implemented");
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {

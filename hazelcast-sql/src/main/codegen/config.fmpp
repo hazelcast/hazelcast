@@ -26,9 +26,11 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropView"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
@@ -450,6 +452,7 @@ data: {
       "SqlCreateMapping"
       "SqlCreateJob"
       "SqlCreateSnapshot"
+      "SqlCreateView"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
@@ -459,6 +462,7 @@ data: {
       "SqlDropMapping"
       "SqlDropJob"
       "SqlDropSnapshot"
+      "SqlDropView"
     ]
 
     # Binary operators tokens.
