@@ -159,6 +159,7 @@ class MapMigrationAwareService
         private final MapChunkContext context;
 
         private int chunkNumber;
+        private BooleanSupplier isEndOfChunk;
 
         private MapChunkSupplier(ServiceNamespace namespace, int partitionId, int replicaIndex) {
             this.replicaIndex = replicaIndex;
@@ -167,9 +168,14 @@ class MapMigrationAwareService
         }
 
         @Override
-        public Operation nextChunk(BooleanSupplier isEndOfChunk) {
+        public void inject(BooleanSupplier isEndOfChunk) {
+            this.isEndOfChunk = isEndOfChunk;
+        }
+
+        @Override
+        public Operation next() {
             chunkNumber++;
-            return new MapChunk(context, isEndOfChunk, chunkNumber)
+            return new MapChunk(context, chunkNumber, isEndOfChunk)
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex)
                     .setServiceName(MapService.SERVICE_NAME)
@@ -177,7 +183,7 @@ class MapMigrationAwareService
         }
 
         @Override
-        public boolean hasMoreChunks() {
+        public boolean hasNext() {
             return context.hasMoreChunks();
         }
 

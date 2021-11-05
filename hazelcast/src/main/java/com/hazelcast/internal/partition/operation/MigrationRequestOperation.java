@@ -285,7 +285,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
         while (iterator.hasNext()) {
             ChunkSupplier chunkSupplier = iterator.next();
-            if (!chunkSupplier.hasMoreChunks()) {
+            if (!chunkSupplier.hasNext()) {
                 iterator.remove();
             }
         }

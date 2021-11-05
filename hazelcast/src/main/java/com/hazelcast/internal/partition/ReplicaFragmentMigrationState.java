@@ -106,16 +106,21 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
         IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out);
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            chunkSupplier.inject(isEndOfChunk);
+
             System.err.println(chunkSupplier);
-            do {
-                Operation chunk = chunkSupplier.nextChunk(isEndOfChunk);
+
+            while (chunkSupplier.hasNext()) {
+                Operation chunk = chunkSupplier.next();
                 if (chunk == null) {
                     break;
                 }
                 out.writeObject(chunk);
 
-            } while (!isEndOfChunk.getAsBoolean()
-                    && chunkSupplier.hasMoreChunks());
+                if (isEndOfChunk.getAsBoolean()) {
+                    break;
+                }
+            }
 
             if (isEndOfChunk.getAsBoolean()) {
                 System.err.println(format("Reached maxChunkSize:%d, bytesWrittenSoFar:%d",
@@ -129,7 +134,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         // TODO remove allDone, it is here for only logging purposes
         boolean allDone = true;
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-            if (chunkSupplier.hasMoreChunks()) {
+            if (chunkSupplier.hasNext()) {
                 allDone = false;
                 break;
             }
