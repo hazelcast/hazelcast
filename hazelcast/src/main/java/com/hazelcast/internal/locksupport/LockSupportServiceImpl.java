@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.locksupport.operations.LocalLockCleanupOperation;
 import com.hazelcast.internal.locksupport.operations.LockReplicationOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockOperation;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -33,6 +33,8 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.map.impl.ChunkSupplier;
+import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -42,6 +44,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.UUID;
@@ -49,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public final class LockSupportServiceImpl implements LockSupportService, ManagedService, MembershipAwareService,
-        FragmentedMigrationAwareService, ClientAwareService {
+        ChunkedMigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
@@ -233,6 +236,13 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
         int replicaIndex = event.getReplicaIndex();
         LockReplicationOperation op = new LockReplicationOperation(container, partitionId, replicaIndex, namespaces);
         return op.isEmpty() ? null : op;
+    }
+
+    // TODO method should receive collection of namespace
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
+        return ChunkSuppliers.newSingleChunkSupplier(
+                () -> prepareReplicationOperation(event, Collections.singleton(namespace)));
     }
 
     @Override

@@ -109,6 +109,9 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             System.err.println(chunkSupplier);
             do {
                 Operation chunk = chunkSupplier.nextChunk(isEndOfChunk);
+                if (chunk == null) {
+                    break;
+                }
                 out.writeObject(chunk);
 
             } while (!isEndOfChunk.getAsBoolean()
