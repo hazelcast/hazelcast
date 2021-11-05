@@ -17,6 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
 public enum Boundedness {
-    BATCH,
-    STREAM,
+    BOUNDED,
+    UNBOUNDED
 }

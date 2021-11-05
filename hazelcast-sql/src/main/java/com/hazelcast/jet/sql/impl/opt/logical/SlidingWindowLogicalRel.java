@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableFunctionScan;
 import org.apache.calcite.rel.metadata.RelColumnMapping;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
@@ -44,7 +43,7 @@ public class SlidingWindowLogicalRel extends SlidingWindow implements LogicalRel
     }
 
     @Override
-    public TableFunctionScan copy(
+    public SlidingWindowLogicalRel copy(
             RelTraitSet traitSet,
             List<RelNode> inputs,
             RexNode rexCall,

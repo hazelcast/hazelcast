@@ -51,8 +51,8 @@ public final class HazelcastRelMdBoundedness
     @SuppressWarnings("unused")
     public Boundedness extractBoundedness(TableScan rel, RelMetadataQuery mq) {
         return SqlConnectorUtil.getJetSqlConnector(rel.getTable().unwrap(HazelcastTable.class).getTarget()).isStream()
-                ? Boundedness.STREAM
-                : Boundedness.BATCH;
+                ? Boundedness.UNBOUNDED
+                : Boundedness.BOUNDED;
     }
 
     @SuppressWarnings("unused")
@@ -66,11 +66,11 @@ public final class HazelcastRelMdBoundedness
     public Boundedness extractBoundedness(RelNode rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         for (RelNode input : rel.getInputs()) {
-            if (query.extractBoundedness(input) == Boundedness.STREAM) {
-                return Boundedness.STREAM;
+            if (query.extractBoundedness(input) == Boundedness.UNBOUNDED) {
+                return Boundedness.UNBOUNDED;
             }
         }
-        return Boundedness.BATCH;
+        return Boundedness.BOUNDED;
     }
 
     public interface BoundednessMetadata extends Metadata {

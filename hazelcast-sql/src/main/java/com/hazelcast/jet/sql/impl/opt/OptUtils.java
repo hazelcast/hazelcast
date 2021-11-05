@@ -231,7 +231,7 @@ public final class OptUtils {
 
     /**
      * Get possible rels from the given subset matching given predicate.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Every returned input will match the given predicate.
      *
      * @param input Subset.
      * @return matching rels.
@@ -255,11 +255,11 @@ public final class OptUtils {
     }
 
     public static boolean isBounded(RelNode rel) {
-        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.BATCH;
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.BOUNDED;
     }
 
     public static boolean isUnbounded(RelNode rel) {
-        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.STREAM;
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
     }
 
     public static HazelcastRelMetadataQuery metadataQuery(RelNode rel) {
