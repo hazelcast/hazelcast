@@ -29,6 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -44,6 +45,7 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.HybridLogConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -107,6 +109,7 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
@@ -417,7 +420,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
             if (matches("encryption-at-rest", name)) {
-                handleEncryptionAtRest(n, hrConfig);
+                hrConfig.setEncryptionAtRestConfig(createEncryptionAtRestConfig(n, hrConfig));
             } else {
                 if (matches("base-dir", name)) {
                     hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
@@ -453,7 +456,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(prRoot)) {
             String name = cleanNodeName(n);
             if (matches("encryption-at-rest", name)) {
-                handleEncryptionAtRest(n, prConfig);
+                prConfig.setEncryptionAtRestConfig(createEncryptionAtRestConfig(n, prConfig));
             } else {
                 if (matches("base-dir", name)) {
                     prConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
@@ -478,24 +481,76 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setPersistenceConfig(prConfig);
     }
 
-    private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
-            throws Exception {
-        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
-        handleViaReflection(encryptionAtRestRoot, hrConfig, encryptionAtRestConfig, "secure-store");
-        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store", strict)) {
-            handleSecureStore(secureStore, encryptionAtRestConfig);
+    private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
+        TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+
+        Node attrEnabled = getNamedItemNode(tsRoot, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        tieredStoreConfig.setEnabled(enabled);
+
+        for (Node n : childElements(tsRoot)) {
+            String name = cleanNodeName(n);
+
+            if (matches("hybridlog", name)) {
+                tieredStoreConfig.setHybridLogConfig(createHybridLogConfig(n));
+            } else if (matches("device", name)) {
+                tieredStoreConfig.setDeviceConfig(createDeviceConfig(n));
+            }
         }
-        hrConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+        return tieredStoreConfig;
     }
 
-    private void handleEncryptionAtRest(Node encryptionAtRestRoot, PersistenceConfig prConfig)
+    private HybridLogConfig createHybridLogConfig(Node node) {
+        HybridLogConfig hlogConfig = new HybridLogConfig();
+
+        String pageSizeName = "page-size";
+        String inMemoryPageCountName = "in-memory-page-count";
+        String mutableRegionRatioName = "mutable-region-ratio";
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches(pageSizeName, name)) {
+                hlogConfig.setPageSize(getIntegerValue(pageSizeName, getTextContent(n)));
+            } else if (matches(inMemoryPageCountName, name)) {
+                hlogConfig.setInMemoryPageCount(getIntegerValue(inMemoryPageCountName, getTextContent(n)));
+            } else if (matches(mutableRegionRatioName, name)) {
+                hlogConfig.setMutableRegionRatio(getDoubleValue(mutableRegionRatioName, getTextContent(n)));
+            }
+        }
+        return hlogConfig;
+    }
+
+    private DeviceConfig createDeviceConfig(Node node) {
+        DeviceConfig deviceConfig = new DeviceConfig();
+
+        String deviceName = "name";
+        String baseDirName = "base-dir";
+        String blockSizeName = "block-size";
+        String capacityName = "capacity";
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches(deviceName, name)) {
+                deviceConfig.setName(getTextContent(n));
+            } else if (matches(baseDirName, name)) {
+                deviceConfig.setBaseDir(getTextContent(n));
+            } else if (matches(blockSizeName, name)) {
+                deviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+            } else if (matches(capacityName, name)) {
+                deviceConfig.setCapacity(getLongValue(capacityName, getTextContent(n)));
+            }
+        }
+        return deviceConfig;
+    }
+
+    private EncryptionAtRestConfig createEncryptionAtRestConfig(Node encryptionAtRestRoot, Object config)
             throws Exception {
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
-        handleViaReflection(encryptionAtRestRoot, prConfig, encryptionAtRestConfig, "secure-store");
+        handleViaReflection(encryptionAtRestRoot, config, encryptionAtRestConfig, "secure-store");
         for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store", strict)) {
             handleSecureStore(secureStore, encryptionAtRestConfig);
         }
-        prConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+        return encryptionAtRestConfig;
     }
 
     private void handleSecureStore(Node secureStoreRoot, EncryptionAtRestConfig encryptionAtRestConfig) {
@@ -1841,6 +1896,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if (matches("tiered-store", nodeName)) {
+                mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             }
         }
         config.addMapConfig(mapConfig);

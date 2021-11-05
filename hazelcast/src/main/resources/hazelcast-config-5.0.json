@@ -1458,6 +1458,65 @@
                 }
               }
             }
+          },
+          "tiered-store": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "hybridlog": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "page-size": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "default": 4096,
+                    "description": "page size in bytes"
+                  },
+                  "in-memory-page-count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 65536,
+                    "description": "in memory page count"
+                  },
+                  "mutable-region-ratio": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "default": 0.9,
+                    "description": "(approximate) fraction of mutable region in the in-memory part of the hybrid log."
+                  }
+                }
+              },
+              "device": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "hz-device",
+                    "description": "The device name"
+                  },
+                  "base-dir": {
+                    "type": "string",
+                    "description": "Base directory for local device or prefix for the remote objects of this device"
+                  },
+                  "block-size": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "default": 4096,
+                    "description": "Device block/sector size in bytes. The default is 4096."
+                  },
+                  "capacity": {
+                    "type": "number",
+                    "description": "Device capacity in KB."
+                  }
+                }
+              }
+            }
           }
         }
       }

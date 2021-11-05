@@ -136,6 +136,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
             .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
+    private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 
     public MapConfig() {
     }
@@ -173,6 +174,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
+        this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
     }
 
     /**
@@ -764,6 +766,26 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     /**
+     * Gets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @return tiered-store config
+     */
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfig;
+    }
+
+    /**
+     * Sets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @param tieredStoreConfig tiered-store config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setTieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
+        this.tieredStoreConfig = checkNotNull(tieredStoreConfig, "tieredStoreConfig cannot be null");
+        return this;
+    }
+
+    /**
      * Get current value cache settings
      *
      * @return current value cache settings
@@ -871,6 +893,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
             return false;
         }
+        if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
+            return false;
+        }
 
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
@@ -904,6 +929,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
         result = 31 * result + dataPersistenceConfig.hashCode();
+        result = 31 * result + tieredStoreConfig.hashCode();
         return result;
     }
 
@@ -935,6 +961,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
+                + ", tieredStoreConfig=" + tieredStoreConfig
                 + '}';
     }
 
@@ -982,6 +1009,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             out.writeObject(dataPersistenceConfig);
         }
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeObject(tieredStoreConfig);
+        }
     }
 
     @Override
@@ -1017,6 +1047,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         }
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             setDataPersistenceConfig(in.readObject());
+        }
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            setTieredStoreConfig(in.readObject());
         }
     }
 }

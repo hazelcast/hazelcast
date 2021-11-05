@@ -3048,6 +3048,55 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testTieredStore() {
+        // hybridlog parameters
+        int pageSize = 8192;
+        long inMemoryPageCount = 100_000L;
+        double mutableFraction = 0.85;
+
+        // device parameters
+        String deviceName = "ext4_device";
+        String baseDir = "/";
+        int blockSize = 2048;
+        long capacity = 1L << 15;
+
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"my-map\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <hybridlog>"
+                + "            <page-size>" + pageSize + "</page-size>"
+                + "            <in-memory-page-count>" + inMemoryPageCount + "</in-memory-page-count>"
+                + "            <mutable-region-ratio>" + mutableFraction + "</mutable-region-ratio>"
+                + "        </hybridlog>"
+                + "        <device>"
+                + "            <name>" + deviceName + "</name>"
+                + "            <base-dir>" + baseDir + "</base-dir>"
+                + "            <block-size>" + blockSize + "</block-size>"
+                + "            <capacity>" + capacity + "</capacity>"
+                + "        </device>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+
+        Config config = new InMemoryXmlConfig(xml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        HybridLogConfig hlogConfig = tieredStoreConfig.getHybridLogConfig();
+        assertEquals(pageSize, hlogConfig.getPageSize());
+        assertEquals(inMemoryPageCount, hlogConfig.getInMemoryPageCount());
+        assertEquals(mutableFraction, hlogConfig.getMutableRegionRatio(), 0.001);
+
+        DeviceConfig deviceConfig = tieredStoreConfig.getDeviceConfig();
+        assertEquals(deviceName, deviceConfig.getName());
+        assertEquals(baseDir, deviceConfig.getBaseDir());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(capacity, deviceConfig.getCapacity());
+    }
+
+    @Override
+    @Test
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
         int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";

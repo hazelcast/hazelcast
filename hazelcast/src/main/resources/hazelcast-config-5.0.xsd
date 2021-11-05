@@ -293,6 +293,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
+            <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -4083,6 +4084,105 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="hybridlog">
+        <xs:annotation>
+            <xs:documentation>
+                todo:
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="page-size" type="xs:unsignedInt" minOccurs="0" default="4096">
+                <xs:annotation>
+                    <xs:documentation>
+                        page size in bytes
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="in-memory-page-count" type="xs:unsignedInt" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        in memory page count
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="mutable-region-ratio" type="xs:double" minOccurs="0" default="0.9">
+                <xs:annotation>
+                    <xs:documentation>
+                        (approximate) fraction of mutable region in the in-memory part of the hybrid log.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="device">
+        <xs:annotation>
+            <xs:documentation>
+                todo:
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="name" type="xs:string" minOccurs="0" default="hz-device">
+                <xs:annotation>
+                    <xs:documentation>
+                        The device name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for local device or prefix for the remote objects of this device
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block-size" type="xs:unsignedInt" minOccurs="0" default="4096">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device block/sector size in bytes. The default is 4096.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="capacity" type="xs:unsignedLong" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device capacity in KB.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="tiered-store">
+        <xs:annotation>
+            <xs:documentation>
+                todo
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="hybridlog" type="hybridlog">
+                <xs:annotation>
+                    <xs:documentation>
+                        todo:
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="device">
+                <xs:annotation>
+                    <xs:documentation>
+                        todo:
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if Tiered-Store is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="crdt-replication">
         <xs:all>
             <xs:element name="replication-period-millis" type="xs:unsignedInt" minOccurs="0">
