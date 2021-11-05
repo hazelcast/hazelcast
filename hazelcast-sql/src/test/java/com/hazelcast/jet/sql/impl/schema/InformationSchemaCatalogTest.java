@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver.TableListener;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,15 +50,18 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MappingCatalogTest {
+public class InformationSchemaCatalogTest {
 
-    private MappingCatalog catalog;
+    private InformationSchemaCatalog catalog;
 
     @Mock
     private NodeEngine nodeEngine;
 
     @Mock
-    private MappingStorage storage;
+    private MappingStorage mappingStorage;
+
+    @Mock
+    private ViewStorage viewStorage;
 
     @Mock
     private SqlConnectorCache connectorCache;
@@ -72,9 +76,11 @@ public class MappingCatalogTest {
     public void before() {
         MockitoAnnotations.openMocks(this);
 
-        catalog = new MappingCatalog(nodeEngine, storage, connectorCache);
+        catalog = new InformationSchemaCatalog(nodeEngine, mappingStorage, viewStorage, connectorCache);
         catalog.registerListener(listener);
     }
+
+    // region mapping storage tests
 
     @Test
     public void when_createsInvalidMapping_then_throws() {
@@ -89,8 +95,8 @@ public class MappingCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, true, true))
                 .hasMessageContaining("expected test exception");
-        verify(storage, never()).putIfAbsent(anyString(), any());
-        verify(storage, never()).put(anyString(), any());
+        verify(mappingStorage, never()).putIfAbsent(anyString(), any());
+        verify(mappingStorage, never()).put(anyString(), any());
         verifyNoInteractions(listener);
     }
 
@@ -102,7 +108,7 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(mappingStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         // then
@@ -120,7 +126,7 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(mappingStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         catalog.createMapping(mapping, false, true);
@@ -142,7 +148,7 @@ public class MappingCatalogTest {
         catalog.createMapping(mapping, true, false);
 
         // then
-        verify(storage).put(eq(mapping.name()), isA(Mapping.class));
+        verify(mappingStorage).put(eq(mapping.name()), isA(Mapping.class));
         verify(listener).onTableChanged();
     }
 
@@ -151,7 +157,7 @@ public class MappingCatalogTest {
         // given
         String name = "name";
 
-        given(storage.remove(name)).willReturn(mapping());
+        given(mappingStorage.remove(name)).willReturn(mapping());
 
         // when
         // then
@@ -164,7 +170,7 @@ public class MappingCatalogTest {
         // given
         String name = "name";
 
-        given(storage.remove(name)).willReturn(null);
+        given(mappingStorage.remove(name)).willReturn(null);
 
         // when
         // then
@@ -179,7 +185,7 @@ public class MappingCatalogTest {
         // given
         String name = "name";
 
-        given(storage.remove(name)).willReturn(null);
+        given(mappingStorage.remove(name)).willReturn(null);
 
         // when
         // then
@@ -187,7 +193,69 @@ public class MappingCatalogTest {
         verifyNoInteractions(listener);
     }
 
+    // endregion
+
+    // region view storage tests
+
+    @Test
+    public void when_createsView_then_succeeds() {
+        // given
+        View view = view();
+        given(viewStorage.putIfAbsent(view.name(), view)).willReturn(true);
+
+        // when
+        catalog.createView(view, false);
+
+        // then
+        verify(viewStorage).putIfAbsent(eq(view.name()), isA(View.class));
+    }
+
+    @Test
+    public void when_createsDuplicateViewsIfReplace_then_succeeds() {
+        // given
+        View view = view();
+
+        // when
+        catalog.createView(view, true);
+
+        // then
+        verify(viewStorage).put(eq(view.name()), isA(View.class));
+    }
+
+    @Test
+    public void when_createsDuplicateViews_then_throws() {
+        // given
+        View view = view();
+        given(viewStorage.putIfAbsent(eq(view.name()), isA(View.class))).willReturn(false);
+
+        // when
+        // then
+        assertThatThrownBy(() -> catalog.createView(view, false))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("View already exists: name");
+        verifyNoInteractions(listener);
+    }
+
+    @Test
+    public void when_removesNonExistingViewWithIfExists_then_succeeds() {
+        // given
+        String name = "name";
+
+        given(viewStorage.remove(name)).willReturn(null);
+
+        // when
+        // then
+        catalog.removeView(name, true);
+        verifyNoInteractions(listener);
+    }
+
+    // endregion
+
     private static Mapping mapping() {
         return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
+    }
+
+    private static View view() {
+        return new View("name", "SELECT * FROM map");
     }
 }

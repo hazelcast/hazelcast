@@ -20,23 +20,23 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
 
-public class MappingStorage extends AbstractMetadataStorage<Mapping> {
+public class ViewStorage extends AbstractMetadataStorage<View> {
 
-    private static final String CATALOG_MAP_NAME = "__sql.catalog";
+    private static final String CATALOG_MAP_NAME = "__sql.views";
 
-    public MappingStorage(NodeEngine nodeEngine) {
+    public ViewStorage(NodeEngine nodeEngine) {
        super(nodeEngine, CATALOG_MAP_NAME);
     }
 
-    Collection<Mapping> values() {
+    Collection<View> values() {
         return storage().values();
     }
 
-    void registerListener(EntryListener<String, Mapping> listener) {
+    void registerListener(EntryListener<String, View> listener) {
         // do not try to implicitly create ReplicatedMap
         // TODO: perform this check in a single place i.e. SqlService ?
         if (!nodeEngine.getLocalMember().isLiteMember()) {
@@ -44,25 +44,25 @@ public class MappingStorage extends AbstractMetadataStorage<Mapping> {
         }
     }
 
-    abstract static class EntryListenerAdapter implements EntryListener<String, Mapping> {
+    abstract static class EntryListenerAdapter implements EntryListener<String, View> {
 
         @Override
-        public final void entryAdded(EntryEvent<String, Mapping> event) {
+        public final void entryAdded(EntryEvent<String, View> event) {
         }
 
         @Override
-        public abstract void entryUpdated(EntryEvent<String, Mapping> event);
+        public abstract void entryUpdated(EntryEvent<String, View> event);
 
         @Override
-        public abstract void entryRemoved(EntryEvent<String, Mapping> event);
+        public abstract void entryRemoved(EntryEvent<String, View> event);
 
         @Override
-        public final void entryEvicted(EntryEvent<String, Mapping> event) {
+        public final void entryEvicted(EntryEvent<String, View> event) {
             throw new UnsupportedOperationException("SQL catalog entries must never be evicted - " + event);
         }
 
         @Override
-        public void entryExpired(EntryEvent<String, Mapping> event) {
+        public void entryExpired(EntryEvent<String, View> event) {
             throw new UnsupportedOperationException("SQL catalog entries must never be expired - " + event);
         }
 

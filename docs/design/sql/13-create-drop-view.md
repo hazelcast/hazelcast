@@ -1,4 +1,4 @@
-# CREATE VIEW statement
+# CREATE VIEW, DROP VIEW statements
 
 ### Table of Contents
 
@@ -28,16 +28,18 @@
 
 #### Description
 
-This document describes SQL `CREATE VIEW` statement. It's a next step to improve Hazelcast ANSI SQL standard
-compatibility and enrich available SQL features.
+This document describes SQL `CREATE VIEW` and `DROP VIEW` statements semantics and design. It's a next step to improve
+Hazelcast ANSI SQL standard compatibility and enrich available SQL features.
 
 ### Functional Design
 
 #### Summary of Functionality
 
-Simply said, `CREATE VIEW` statement creates an alias for the query and saves it in special service table. This table
-spreads its content across all cluster members (same behaviour as for SQL mappings). Then, aliased query (view) text may
-be inlined into query which uses the view.
+##### CREATE VIEW
+
+Simply said, `CREATE VIEW` statement creates virtual table based on the result-set of an SQL statement. We stores all
+view it in special service table. This table spreads its content across all cluster members (same behaviour as for SQL
+mappings). Then, aliased query (view) text may be inlined into query which uses the view.
 
 Proposed grammar:
 
@@ -70,6 +72,16 @@ SELECT * FROM m WHERE __key > 10 AND __key < 20;
 Optimizer eliminates one redundant projection (since they are equal) and merge bounds
 check (`__key > 10 AND __key < 20`).
 
+##### DROP VIEW
+
+Proposed grammar:
+
+ ```
+DROP [ OR REPLACE ] VIEW name
+ ```
+
+```TODO```
+
 ### Future-Proofing
 
 We're considering possible future enhancements that we might do at some point to check, if the proposed syntax isn't at
@@ -98,14 +110,12 @@ Statement parameters:
 #### Views Storage
 
 **information_schema.views** is another service table to store metadata for cluster views. Table should be present as
-separate catalog stored in `ReplicatedMap` (similar to `MappingStorage` and `MappingCatalog`).
+separate catalog stored in dedicated `ReplicatedMap` (similar to `MappingStorage` and `MappingCatalog`).
 
 |     Column     |  Type   |
 |----------------|---------|
 | table_catalog  | VARCHAR |
 | table_schema   | VARCHAR |
-| table_name     | VARCHAR |
-| table_name     | VARCHAR |
 | view_name      | VARCHAR |
 | view_query     | VARCHAR |
 
