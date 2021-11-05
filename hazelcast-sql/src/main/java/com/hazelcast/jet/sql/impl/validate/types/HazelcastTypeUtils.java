@@ -311,18 +311,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static int precedenceOf(RelDataType type) {
-        SqlTypeName typeName = type.getSqlTypeName();
-        QueryDataType hzType;
-
-        if (YEAR_INTERVAL_TYPES.contains(typeName)) {
-            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(INTERVAL_YEAR_MONTH);
-        } else if (DAY_INTERVAL_TYPES.contains(typeName)) {
-            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(INTERVAL_DAY_SECOND);
-        } else {
-            hzType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(typeName);
-        }
-
-        return hzType.getTypeFamily().getPrecedence();
+        return toHazelcastType(type).getTypeFamily().getPrecedence();
     }
 
     public static boolean canCast(RelDataType sourceType, RelDataType targetType) {
