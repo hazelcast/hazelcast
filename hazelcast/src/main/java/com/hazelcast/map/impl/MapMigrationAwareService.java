@@ -184,6 +184,11 @@ class MapMigrationAwareService
 
         @Override
         public boolean hasNext() {
+            if (chunkNumber == 0) {
+                // First chunk must be sent regardless of map has data
+                // because in first chunk we also migrate metadata.
+                return true;
+            }
             return context.hasMoreChunks();
         }
 
