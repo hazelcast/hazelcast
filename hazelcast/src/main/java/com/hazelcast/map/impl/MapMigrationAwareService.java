@@ -148,11 +148,11 @@ class MapMigrationAwareService
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
                                           ServiceNamespace namespace) {
-        return new ChunkSupplierImpl(namespace, event.getPartitionId(),
+        return new MapChunkSupplier(namespace, event.getPartitionId(),
                 event.getReplicaIndex());
     }
 
-    private final class ChunkSupplierImpl implements ChunkSupplier {
+    private final class MapChunkSupplier implements ChunkSupplier {
 
         private final int partitionId;
         private final int replicaIndex;
@@ -160,7 +160,7 @@ class MapMigrationAwareService
 
         private int chunkNumber;
 
-        private ChunkSupplierImpl(ServiceNamespace namespace, int partitionId, int replicaIndex) {
+        private MapChunkSupplier(ServiceNamespace namespace, int partitionId, int replicaIndex) {
             this.replicaIndex = replicaIndex;
             this.context = new MapChunkContext(mapServiceContext, partitionId, namespace);
             this.partitionId = partitionId;
@@ -183,7 +183,7 @@ class MapMigrationAwareService
 
         @Override
         public String toString() {
-            return "ChunkSupplierImpl{"
+            return "MapChunkSupplier{"
                     + "partitionId=" + partitionId
                     + ", chunkNumber=" + chunkNumber
                     + ", mapName=" + context.getMapName()

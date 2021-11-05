@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -35,6 +35,8 @@ import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.map.impl.ChunkSupplier;
+import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
@@ -70,7 +72,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.
  */
-public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
+public class RingbufferService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService {
 
     /**
@@ -271,7 +273,13 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
             return null;
         }
         return new ReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+    }
 
+    // TODO method should receive collection of namespace
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
+        return ChunkSuppliers.newSingleChunkSupplier(
+                () -> prepareReplicationOperation(event, Collections.singleton(namespace)));
     }
 
     @Override
