@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -59,6 +60,10 @@ public class MapChunkContext {
         this.iterator = recordStore.iterator();
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
+    }
+
+    public ILogger getLogger(String className) {
+        return mapServiceContext.getNodeEngine().getLogger(className);
     }
 
     // TODO do we need to create a new record-store if there is no?

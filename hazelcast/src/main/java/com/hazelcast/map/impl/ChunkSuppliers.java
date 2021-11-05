@@ -18,8 +18,11 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.function.BooleanSupplier;
+import javax.annotation.Nullable;
+import java.util.NoSuchElementException;
 import java.util.function.Supplier;
+
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public final class ChunkSuppliers {
 
@@ -29,22 +32,36 @@ public final class ChunkSuppliers {
     /**
      * Used for cases in which one single chunk is needed.
      */
-    public static ChunkSupplier newSingleChunkSupplier(Supplier<Operation> operationSupplier) {
+    public static ChunkSupplier newSingleChunkSupplier(String className,
+                                                       Supplier<Operation> operationSupplier) {
+        isNotNull(className, "className");
+        isNotNull(operationSupplier, "operationSupplier");
+
         return new ChunkSupplier() {
             private boolean hasMoreChunks = true;
 
+            @Nullable
             @Override
-            public Operation nextChunk(BooleanSupplier ignored) {
+            public Operation next() {
+                if (!hasMoreChunks) {
+                    throw new NoSuchElementException();
+                }
                 Operation operation = operationSupplier.get();
                 hasMoreChunks = false;
                 return operation;
             }
 
             @Override
-            public boolean hasMoreChunks() {
+            public boolean hasNext() {
                 return hasMoreChunks;
             }
 
+            @Override
+            public String toString() {
+                return className + "{"
+                        + "hasMoreChunks=" + hasMoreChunks
+                        + '}';
+            }
         };
     }
 }

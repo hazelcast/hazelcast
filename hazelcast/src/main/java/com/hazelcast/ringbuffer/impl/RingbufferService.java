@@ -278,7 +278,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
     // TODO method should receive collection of namespace
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
-        return ChunkSuppliers.newSingleChunkSupplier(
+        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
                 () -> prepareReplicationOperation(event, Collections.singleton(namespace)));
     }
 

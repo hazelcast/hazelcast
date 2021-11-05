@@ -28,7 +28,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -47,6 +47,8 @@ import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.ChunkSupplier;
+import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -96,9 +98,10 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.EMPTY_MAP;
+import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
-public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
+public class MultiMapService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService,
         StatisticsAwareService<LocalMultiMapStats>,
         SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data>,
@@ -343,7 +346,15 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             map.put(ns.getObjectName(), container.getMultiMapValues());
         }
 
-        return map.isEmpty() ? null : new MultiMapReplicationOperation(map);
+        return map.isEmpty() ? null : new MultiMapReplicationOperation(map).
+                setServiceName(MultiMapService.SERVICE_NAME)
+                .setNodeEngine(nodeEngine);
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
+        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
+                () -> prepareReplicationOperation(event, singleton(namespace)));
     }
 
     public void insertMigratedData(int partitionId, Map<String, Map<Data, MultiMapValue>> map) {

@@ -27,6 +27,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -67,6 +68,7 @@ import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.n
 
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
+    private transient ILogger logger;
     private transient String mapName;
     private transient MapChunkContext context;
     private transient LinkedList keyRecordExpiry;
@@ -87,15 +89,16 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     public MapChunk() {
     }
 
-    public MapChunk(MapChunkContext context, BooleanSupplier isEndOfChunk, int chunkNumber) {
+    public MapChunk(MapChunkContext context, int chunkNumber, BooleanSupplier isEndOfChunk) {
         this.context = context;
         this.isEndOfChunk = isEndOfChunk;
         this.firstChunk = (chunkNumber == 1);
+        this.logger = context.getLogger(getClass().getName());
 
-        System.err.println("Chunk number ----> " + chunkNumber
-                + ", mapName: " + context.getMapName()
-                + ", partitionId: " + context.getPartitionId()
-                + ", firstChunk: " + firstChunk);
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("mapName:%s, chunkNumber:%d, partitionId:%d",
+                    context.getMapName(), chunkNumber, context.getPartitionId()));
+        }
     }
 
     @Override
@@ -143,6 +146,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
                         getReplicaIndex() == 0, nowInMillis);
 
             } while (!keyRecordExpiry.isEmpty());
+
+            ILogger logger = recordStore.getMapContainer().getMapServiceContext()
+                    .getNodeEngine().getLogger(getClass().getName());
+            if (logger.isFinestEnabled()) {
+                logger.finest(String.format("mapName:%s, partitionId:%d, numberOfEntriesMigrated:%d",
+                        mapName, getPartitionId(), (keyRecordExpiry.size() / 3)));
+            }
+
         }
 
         // TODO check if this is problematic or we need a flag to indicate end of chunks
@@ -239,8 +250,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
         out.writeBoolean(firstChunk);
         if (firstChunk) {
-            MapIndexInfo mapIndexInfo = context.createMapIndexInfo();
-            out.writeObject(mapIndexInfo);
+            out.writeObject(context.createMapIndexInfo());
             out.writeBoolean(context.isRecordStoreLoaded());
             context.getStats().writeData(out);
 
@@ -429,8 +439,6 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         } while (true);
 
         this.keyRecordExpiry = keyRecordExpiry;
-
-        System.err.println("Read chunk: " + keyRecordExpiry.size() / 3);
     }
 
     @Override
@@ -442,5 +450,4 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     public int getClassId() {
         return MapDataSerializerHook.MAP_CHUNK;
     }
-
 }

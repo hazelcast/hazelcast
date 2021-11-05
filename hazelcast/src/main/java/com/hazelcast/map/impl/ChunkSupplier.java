@@ -18,11 +18,15 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.Iterator;
 import java.util.function.BooleanSupplier;
 
 import static java.lang.Integer.getInteger;
 
-public interface ChunkSupplier {
+/**
+ *
+ */
+public interface ChunkSupplier extends Iterator<Operation> {
 
     String PROP_MAX_MIGRATING_DATA_IN_BYTES = "hazelcast.migrating.data.size.in.bytes";
 
@@ -31,7 +35,10 @@ public interface ChunkSupplier {
     int MAX_MIGRATING_DATA_IN_BYTES = getInteger(PROP_MAX_MIGRATING_DATA_IN_BYTES,
             DEFAULT_MAX_MIGRATING_DATA_IN_BYTES);
 
-    Operation nextChunk(BooleanSupplier isEndOfChunk);
+    /**
+     * @param isEndOfChunk boolean supplier to signal end of chunk.
+     */
+    default void inject(BooleanSupplier isEndOfChunk) {
 
-    boolean hasMoreChunks();
+    }
 }
