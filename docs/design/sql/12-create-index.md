@@ -1,15 +1,5 @@
 # CREATE INDEX statement
 
-### Table of Contents
-
-+ [Background](#background)
-  - [Description](#description)
-+ [Functional Design](#functional-design)
-  * [Summary of Functionality](#summary-of-functionality)
-  * [Notes/Questions/Issues](#notesquestionsissues)
-+ [Technical Design](#technical-design)
-+ [Testing Criteria](#testing-criteria)
-
 |ℹ️ Since: 5.1|
 |-------------|
 
@@ -24,170 +14,179 @@
 |Support Engineer|TBA|
 |Technical Reviewers|Viliam Durina, TBA|
 
-### Background
-#### Description
+## Background
+### Description
 
 This document describes IMap index creation via SQL. It's a step to
 improve Hazelcast SQL engine dynamic configuration possibilities and
 enrich available SQL syntax.
 
-### Functional Design
-#### Summary of Functionality
+## Functional Design
+### Summary of Functionality
 
-`CREATE INDEX` statement creates an IMap index
-⚠: only IMap index creation supported, index removal isn't implemented in IMDG.
+`CREATE INDEX` statement creates an IMap index.
 
-Proposed grammar:
+⚠: only creation index supported for now, index removal isn't
+implemented in IMDG.
+
+Proposed syntax:
 ```
-CREATE INDEX [ IF NOT EXISTS ] index_name ON object_name ( attribute_name [, ...] )
+CREATE INDEX [ IF NOT EXISTS ] index_name 
+ON imap_name ( attribute_name [, ...] )
 [ TYPE ( SORTED | HASH | BITMAP ) ]
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
 
-Generally, `CREATE INDEX` query translates to `IMap#addIndex(indexConfig)` method call.
-
-##### Notes/Questions/Issues
-
-- ❓ Should the index be created based on the mapping name, or based on the IMap name?
-  1. **Advantages of using the mapping name:**
-     1. Simpler UX: the user uses the column names as defined in the mapping, not the column external names.
-     2. Security permissions sharing. ?? Sasha add details
-     3. Allows seamless use of function-based indexes
-  2**Advantages of using the IMap name:**
-     1. There are much less edge cases that we can get wrong
-     2. Better matches the physical reality of IMaps: 
-        1. No translation of index attribute names is needed
-        2. If the user creates an index for mapping and drops the mapping, index is not dropped
-        3. If the user creates an index for a JSON field and the format in the mapping is native JSON, the user needs to use `JSON_VALUE` to use that index
-     3. No need to create mapping first before creating the index. Useful if SQL is used as a configuration tool. This point is also an instance of a "better matching to the physical reality"
-     4. We'll not suffer from similar issues if we in the future support index creation for other connectors.
-
-The issue is also a bit wider: If we use the mapping name, then the
-expectation is that the index attributes will be the mapping columns.
-That for example means that if a column has a different external name,
-the external name will be used for the `addIndex` call. For example, the
-following `CREATE INDEX` command:
-
-```sql
-CREATE MAPPING m(
-  __key INT, 
-  a VARCHAR EXTERNAL NAME b
-)
-TYPE IMap
-OPTIONS ...;
-
-CREATE INDEX i ON m(a);
+```
+DROP INDEX [ IF EXISTS ] index_name
+ON imap_name
 ```
 
-will translate to an `addIndex` call that will create an index on field
-`b`.
+Generally, `CREATE INDEX` query translates to
+`IMap#addIndex(indexConfig)` method call.
 
-But it also means that the following command:
+The `attribute_name` is the name as IMDG index API defines it. It might
+not be exactly the same as SQL maps it, because there's no link to SQL
+mapping. For example, if the attribute refers to an array, the index
+contains the array elements as individual index entries, all referring
+to the containing entry. On the other hand, in SQL, arrays are not
+currently supported at all.
 
-```sql
-CREATE MAPPING m(
-    __key INT, 
-    this JSON
-)
-TYPE IMap
-OPTIONS (
-    'valueFormat'='json', ...
-);
+The created index doesn't become an object in the catalog. It cannot
+have schema specified, it directly refers to the IMap. The `index_name`
+is scoped to the map, that's why we need the unusual `ON` clause also in
+the `DROP INDEX` command.
 
-CREATE INDEX i ON m(JSON_VALUE(this, '$.a'))
-```
+The indexes will not be visible in the `information_schema` for now.
 
-will translate to an `addIndex` call that will simply create an index on
-field `a`, because indexing of JSON values works like this.
+### Future Changes
 
-[Slack discussion](https://hazelcast.slack.com/archives/C02KC0PUPM1/p1635732750000100), by @Sandeep
+#### Indexes on different connectors
 
-```
-...
-Since the migration path from the old engine to new one is not yet clearly defined, I would hold off on basing our decision on this!
-IMHO, creating an index on IMAP will suffice for this requirement. 
-Mappings seem like a promising approach going forward, however, it feels like we still need to iron out some kinks there.
-```
-
-According to this, **IMap name** option is the preferable way to create indexes.
-
-- ❓ State of json indexes?
-- ❓ What is permissible index names scope? 
-- ⚠ CREATE INDEX does support for BITMAP index, when scans are not supported for this index type. 
-
-Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
-
-
-For the above reasons we propose to use IMap name for creating indexes.
-The indexes are a feature of IMap, SQL is just a new API to create them.
-
-### Future-Proofing
-
-We're considering possible future enhancements that we might do at some
-point to check, if the proposed syntax isn't at conflict.
-
-#### Creating indexes for other connectors
-
-It's unlikely that we'll support CREATE INDEX commands for non-Hazelcast
-data structures. Today the only HZ structure that supports indexes is
-IMap, the most likely future candidate is `ReplicatedMap`.
-
-We can support it by adding `CONNECTOR` clause to the command:
+We expect that we'll need to create indexes for `ReplicatedMap`. For
+this we envision adding `CONNECTOR` clause after `ON`:
 
 ```
-CREATE INDEX my_index  ON external_name(column_name, ...)
-CONNECTOR ReplicatedMap
-TYPE ...
-OPTIONS ...
+CREATE INDEX index_name
+ON imap_name ( attribute_name, ...)
+[ CONNECTOR IMap ]
 ```
 
-If the `TYPE` doesn't apply to the connector, it will be unused, or
-different types can be specified.
+The clause will be optional, the `IMap` connector will be the default.
+The `CONNECTOR` clause will need to be added also to the `DROP INDEX`
+command. We're not implementing this for now.
 
-#### Function-Based Indexes
+#### Function-based indexes
 
-Function-based indexes are used to index a derived value. Common example
-is to use it to create index for `UPPER(field)` to be able to perform
-case-insensitive index lookups. A function-based index can use any SQL
-expression.
+In SQL world, function-based indexes (FBIs) are indexes where the
+indexed value is a result of an SQL expression. Common use case is
+case-insensitive search where instead of the original value,
+`UPPER(column)` is indexed. Later when doing the search we do `WHERE
+UPPER(column)=UPPER(?)`.
 
-These index cannot be defined 
+IMap doesn't support this, but it supports derived attributes which can
+be used to a similar end. A derived attribute can be specified in two
+ways:
+
+- for java-serialized and `DataSerializable` objects, the user can add a
+  getter that will return the derived value. Later, instead of using the
+  original field, the derived field will be used to do the search.
+
+- specify an extractor: this works for all serialization types,
+  including Portable and Compact serialization
+
+SQL engine already supports the 1st approach because custom getters are
+already mapped as fields. We plan to also map extractors and add ability
+to use the index, if these columns appear in queries.
+
+The implementation is not a true FBI where the SQL expression appears in
+the index definition and in the queries.
+
+### Rejected Alternatives
+
+We considered creating the indexes also based on the mapping name. The
+idea was rejected for these reasons:
+
+- the index lifecycle will be unclear: the index is created for a
+  mapping, but if the mapping is dropped, the index remains
+
+- there will be a dependency between the mapping and the index, which we
+  cannot correctly implement due to the lack of transactions in the
+  catalog storage. Also, if the mapping is altered, the index might need
+  to be rebuilt (e.g. when a field type is changed from INT to VARCHAR,
+  the index should be rebuilt), or we should prevent the alteration of the
+  mapping.
+
+- the index created for a mapping will not be usable for other mappings
+  of the same imap, or through the old predicate API
+
+- it will blur the idea that mapping is just a lightweight reference to
+  actual data object
+
+In the future we might add index support based on mappings. It can be
+incorporated in the syntax in several ways:
+
+```
+CREATE INDEX index_name
+ON MAPPING mapping_name ...
+```
+
+```
+CREATE INDEX index_name
+ON mapping_name(...)
+CONNECTOR mapping ...
+```
+
+```
+CREATE MAPPING INDEX index_name
+ON mapping_name ...
+```
 
 ### Technical Design
 
 Let's review proposed grammar:
 ```
-CREATE INDEX [ IF NOT EXISTS ] name ON mapping_name ( { column_name } )
-[ TYPE ( SORTED | HASH | BITMAP ) ]
+CREATE INDEX [ IF NOT EXISTS ] index_name 
+ON imap_name ( attribute_name [, ...] )
+[ TYPE index_type ]
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
 
-TODO [IF NOT EXISTS]
-
 Statement parameters:
 
-- **IF NOT EXISTS** -- index creation call would be performed only if index is not exists.
-- **name** - index name.
-- **mapping_name** - mapping name for index creation. Mapping must have IMap type.
-  Design for this property still not finished, see [discussion](#notesquestionsissues)
+- **IF NOT EXISTS** -- if `addIndex` throws an exception because the index already exists, this exception will be ignored.
 - list of **column_name** - attribute(s) to be indexed. Composite indices are also supported.
-- **index_type**: all IMap indices are supported for CREATE INDEX statement: `SORTED`, `HASH`,  `BITMAP`.
+- **index_type**: all IMap indices are supported for CREATE INDEX statement: `SORTED`, `HASH`,  `BITMAP`. `SORTED` is the default.
 - **options** - options are available only for BITMAP index since it has additional `BitmapIndexConfig`.
   Those options are supported:
     1. `unique_key`
     2. `unique_key_transformation`
 
-In case of `SORTED`/`HASH` index, options usage causes `QueryException`.
+Unknown options will cause an error to be thrown.
 
-Then, SQL engine collects  provided parameters `indexConfig` and perform 
-`IMap#addIndex(new IndexConfig(index_type, { column_name })).setName(name)` method call.
+Then, SQL engine collects provided parameters into an `IndexConfig` and
+performs `IMap#addIndex(new IndexConfig(index_type, { column_name
+})).setName(name)` method call.
 
-⚠: SQL engine doesn't support `BITMAP` index scans, but does support `BITMAP` index creation.
+⚠: SQL engine doesn't support `BITMAP` index scans, but does support
+`BITMAP` index creation.
 
-- Security questions:
-    - ❓ Should we use mapping name? If yes, ->
-    - ❓ Should we use different permissions for create mapping and create index?
-    
+#### Backwards Compatibility
+
+There feature is only an API to existing implementations. Older clients
+will seamlessly support it. In mixed-version clusters, if the command
+lands at 5.0 members, they will throw syntax exception (something like
+`unexpected token: INDEX` after the `CREATE` keyword). If the command
+lands at a 5.1 member, even 5.0 members will be able to use it. No
+special handling of versions is needed.
+
+#### Permissions
+
+We propose to cover the index creation with a new permission
+`CREATE_INDEX` and `DROP_INDEX`. The `CREATE_MAPPING` permission will
+also be needed, because the command will implicitly create the IMap if
+it doesn't exist.
+
 ### Testing Criteria
 
 Unit tests and soak tests are enough.
