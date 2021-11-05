@@ -298,19 +298,19 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         return name;
     }
 
-    public static LocalTime time(long epochMillis) {
+    private static LocalTime time(long epochMillis) {
         return timestampTz(epochMillis).toLocalTime();
     }
 
-    public static LocalDate date(long epochMillis) {
+    private static LocalDate date(long epochMillis) {
         return timestampTz(epochMillis).toLocalDate();
     }
 
-    public static LocalDateTime timestamp(long epochMillis) {
+    private static LocalDateTime timestamp(long epochMillis) {
         return timestampTz(epochMillis).toLocalDateTime();
     }
 
-    public static OffsetDateTime timestampTz(long epochMillis) {
+    private static OffsetDateTime timestampTz(long epochMillis) {
         return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
     }
 }

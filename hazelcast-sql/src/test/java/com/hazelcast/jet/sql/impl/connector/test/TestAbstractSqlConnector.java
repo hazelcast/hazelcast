@@ -22,11 +22,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
-import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
-import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -192,7 +188,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         }
 
         boolean streaming = Boolean.parseBoolean(options.get(OPTION_STREAMING));
-        return new TestBatchTable(this, schemaName, mappingName, fields, rows, streaming);
+        return new TestTable(this, schemaName, mappingName, fields, rows, streaming);
     }
 
     @Nonnull
@@ -208,38 +204,27 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 ? EventTimePolicy.noEventTime()
                 : eventTimePolicyProvider.apply(null);
 
-        TestBatchTable table = (TestBatchTable) table_;
+        TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
 
-        FunctionEx<Context, TestBatchDataGenerator> createContextFn = ctx -> {
+        FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
-            return new TestBatchDataGenerator(rows, predicate, projection, evalContext, streaming);
+            return new TestDataGenerator(rows, predicate, projection, evalContext, streaming);
         };
 
-        ProcessorMetaSupplier pms;
-        if (table.streaming) {
-            StreamSource<Object[]> source = SourceBuilder
-                    .stream("stream", createContextFn)
-                    .fillBufferFn(TestBatchDataGenerator::fillBuffer)
-                    .build();
-            pms = ((StreamSourceTransform<Object[]>) source).metaSupplierFn.apply(eventTimePolicy);
-        } else {
-            BatchSource<Object[]> source = SourceBuilder
-                    .batch("batch", createContextFn)
-                    .fillBufferFn(TestBatchDataGenerator::fillBuffer)
-                    .build();
-            pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
-        }
+        ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn, eventTimePolicy);
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    private static final class TestBatchTable extends JetTable {
+    protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn, EventTimePolicy<Object[]> eventTimePolicy);
+
+    private static final class TestTable extends JetTable {
 
         private final List<Object[]> rows;
         private final boolean streaming;
 
-        private TestBatchTable(
+        private TestTable(
                 @Nonnull SqlConnector sqlConnector,
                 @Nonnull String schemaName,
                 @Nonnull String name,
@@ -254,17 +239,17 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
 
         @Override
         public PlanObjectKey getObjectKey() {
-            return new TestBatchPlanObjectKey(getSchemaName(), getSqlName(), rows);
+            return new TestTablePlanObjectKey(getSchemaName(), getSqlName(), rows);
         }
     }
 
-    private static final class TestBatchPlanObjectKey implements PlanObjectKey {
+    private static final class TestTablePlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String name;
         private final List<Object[]> rows;
 
-        private TestBatchPlanObjectKey(String schemaName, String name, List<Object[]> rows) {
+        private TestTablePlanObjectKey(String schemaName, String name, List<Object[]> rows) {
             this.schemaName = schemaName;
             this.name = name;
             this.rows = rows;
@@ -278,7 +263,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            TestBatchPlanObjectKey that = (TestBatchPlanObjectKey) o;
+            TestTablePlanObjectKey that = (TestTablePlanObjectKey) o;
             return Objects.equals(schemaName, that.schemaName)
                     && Objects.equals(name, that.name)
                     && Objects.equals(rows, that.rows);
@@ -290,14 +275,14 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         }
     }
 
-    private static final class TestBatchDataGenerator {
+    static final class TestDataGenerator {
 
         private static final int MAX_BATCH_SIZE = 1024;
 
         private final Iterator<Object[]> iterator;
         private final boolean streaming;
 
-        private TestBatchDataGenerator(
+        private TestDataGenerator(
                 List<Object[]> rows,
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
@@ -311,7 +296,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                     .iterator();
         }
 
-        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+        void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
             for (int i = 0; i < MAX_BATCH_SIZE; i++) {
                 if (iterator.hasNext()) {
                     buffer.add(iterator.next());
