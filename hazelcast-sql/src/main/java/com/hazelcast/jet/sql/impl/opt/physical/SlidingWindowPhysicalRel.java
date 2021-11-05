@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableFunctionScan;
 import org.apache.calcite.rel.metadata.RelColumnMapping;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
@@ -58,7 +57,7 @@ public class SlidingWindowPhysicalRel extends SlidingWindow implements PhysicalR
     }
 
     @Override
-    public TableFunctionScan copy(
+    public SlidingWindowPhysicalRel copy(
             RelTraitSet traitSet,
             List<RelNode> inputs,
             RexNode rexCall,
