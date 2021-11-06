@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -55,6 +56,8 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public String comparatorClassName;
+
+    private HazelcastInstance instance;
 
     @Test
     public void testItemCount() {
@@ -149,17 +152,22 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAge() {
+    public void testAge()
+            throws InterruptedException {
         IQueue<VersionedObject<String>> queue = newQueue();
         queue.offer(new VersionedObject<>("maxAgeItem", 0));
         queue.offer(new VersionedObject<>("minAgeItem", 1));
+        queue.poll();
+        queue.poll();
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
+        QueueService queueService = getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
+        LocalQueueStats stats = queueService.getStats().get(queue.getName());
+
         long maxAge = stats.getMaxAge();
         long minAge = stats.getMinAge();
-        long testAge = (maxAge + minAge) / 2;
+        long expectedAverageAge = (maxAge + minAge) / 2;
         long avgAge = stats.getAverageAge();
-        assertEquals(testAge, avgAge);
+        assertEquals(expectedAverageAge, avgAge);
     }
 
     @Test
@@ -191,7 +199,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         config.getQueueConfig(name)
               .setPriorityComparatorClassName(comparatorClassName)
               .setMaxSize(maxSize);
-        HazelcastInstance instance = createHazelcastInstance(config);
+        instance = createHazelcastInstance(config);
         return instance.getQueue(name);
     }
 
