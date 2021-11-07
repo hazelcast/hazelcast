@@ -57,17 +57,13 @@ public abstract class HttpCommand extends AbstractTextCommand {
     protected boolean nextLine;
     protected final RestCallExecutionListener listener;
 
-    protected HttpCommand(TextCommandConstants.TextCommandType type, String uri, ServerConnection connection) {
-        this(type, uri, connection.getConnectionManager().getServer().getContext()
-                .getTextCommandService().createRestCallExecutionListener());
-    }
-
-    public HttpCommand(TextCommandConstants.TextCommandType type, String uri, RestCallExecutionListener listener) {
+    public HttpCommand(TextCommandConstants.TextCommandType type, String uri, ServerConnection connection) {
         super(type);
         this.uri = uri;
         // the command line was parsed already, let's start with clear next line
         this.nextLine = true;
-        this.listener = listener;
+        this.listener = connection.getConnectionManager().getServer().getContext()
+                .getTextCommandService().createRestCallExecutionListener();
         listener.requestPathDetermined(uri);
 
     }
