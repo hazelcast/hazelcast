@@ -16,33 +16,13 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.CommandParser;
-import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.server.ServerConnection;
 
-import java.util.StringTokenizer;
-
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-
-public class HttpDeleteCommandParser implements CommandParser {
+public class HttpDeleteCommandParser extends HttpCommandParser<HttpDeleteCommand> {
 
     @Override
-    public TextCommand parser(TextDecoder decoder, String cmd, int space) {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    @Override
-    public TextCommand parser(TextDecoder decoder, String cmd, int space, ServerConnection connection) {
-        StringTokenizer st = new StringTokenizer(cmd);
-        st.nextToken();
-        String uri;
-        if (st.hasMoreTokens()) {
-            uri = st.nextToken();
-        } else {
-            return new ErrorCommand(ERROR_CLIENT);
-        }
+    HttpDeleteCommand createHttpCommand(TextDecoder decoder, String uri, ServerConnection connection) {
         return new HttpDeleteCommand(uri, connection);
     }
 }
