@@ -19,12 +19,13 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.server.ServerConnection;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_DELETE;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.HttpMethod.DELETE;
 
 public class HttpDeleteCommand extends HttpCommand {
 
     public HttpDeleteCommand(String uri, ServerConnection connection) {
         super(HTTP_DELETE, uri, connection);
-        listener.httpMethodDetermined("delete");
+        listener.httpMethodDetermined(DELETE);
     }
 
 }

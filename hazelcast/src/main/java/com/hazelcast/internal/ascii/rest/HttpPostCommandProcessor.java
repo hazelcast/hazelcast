@@ -45,6 +45,8 @@ import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_400;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_403;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -245,7 +247,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String simpleValue = null;
         String suffix;
         int baseUriLength = URI_QUEUES.length();
-        command.objectTypeDetermined("queue");
+        command.objectTypeDetermined(QUEUE);
         if (uri.endsWith("/")) {
             int requestedUriLength = uri.length();
             if (baseUriLength == requestedUriLength) {
@@ -283,7 +285,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleMap(HttpPostCommand command, String uri) {
-        command.objectTypeDetermined("map");
+        command.objectTypeDetermined(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {

@@ -45,6 +45,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 
@@ -368,7 +370,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {
-        command.objectTypeDetermined("queue");
+        command.objectTypeDetermined(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         command.objectNameDetermined(queueName);
@@ -385,7 +387,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleMap(HttpGetCommand command, String uri) {
-        command.objectTypeDetermined("map");
+        command.objectTypeDetermined(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);

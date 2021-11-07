@@ -18,10 +18,11 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.util.counters.MwCounter;
 
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 
 public class RestCallCollector {
 
@@ -29,10 +30,10 @@ public class RestCallCollector {
 
     private static class RequestIdentifier {
 
-        private final String method;
+        private final RestCallExecution.HttpMethod method;
         private final String path;
 
-        RequestIdentifier(String method, String path) {
+        RequestIdentifier(RestCallExecution.HttpMethod method, String path) {
             this.method = method;
             this.path = path;
         }
@@ -54,7 +55,7 @@ public class RestCallCollector {
             return Objects.hash(method, path);
         }
 
-        public String getMethod() {
+        public RestCallExecution.HttpMethod getMethod() {
             return method;
         }
 
@@ -85,24 +86,30 @@ public class RestCallCollector {
 
     void collectExecution(RestCallExecution execution) {
         updateRequestCounters(execution);
-        boolean isMap = "map".equals(execution.getObjectType());
-        boolean isQueue = "queue".equals(execution.getObjectType());
+        boolean isMap = execution.getObjectType() == MAP;
+        boolean isQueue = execution.getObjectType() == QUEUE;
         String objectName = execution.getObjectName();
         updateAccessedObjectSets(isMap, isQueue, objectName);
-        if (execution.getMethod().equalsIgnoreCase("post")) {
-            handlePost(execution.isSuccess(), isMap, isQueue);
-        } else if (execution.getMethod().equalsIgnoreCase("get")) {
-            if (isMap) {
-                (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
-            } else if (isQueue) {
-                (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
-            }
-        } else if (execution.getMethod().equalsIgnoreCase("delete")) {
-            if (isMap) {
-                (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
-            } else if (isQueue) {
-                (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
-            }
+        switch (execution.getMethod()) {
+            case POST:
+                handlePost(execution.isSuccess(), isMap, isQueue);
+                break;
+            case GET:
+                if (isMap) {
+                    (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
+                } else if (isQueue) {
+                    (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
+                }
+                break;
+            case DELETE:
+                if (isMap) {
+                    (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
+                } else if (isQueue) {
+                    (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
+                }
+                break;
+            default:
+                // no-op
         }
     }
 
@@ -129,9 +136,9 @@ public class RestCallCollector {
             uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
         }
         requestCount.inc();
-        if ("map".equals(execution.getObjectType())) {
+        if (execution.getObjectType() == MAP) {
             mapTotalRequestCount.inc();
-        } else if ("queue".equals(execution.getObjectType())) {
+        } else if (execution.getObjectType() == QUEUE) {
             queueTotalRequestCount.inc();
         }
     }

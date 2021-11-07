@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.HttpMethod.POST;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -53,7 +54,7 @@ public class HttpPostCommand extends HttpCommand {
         super(HTTP_POST, uri, connection);
         this.decoder = decoder;
         this.connection = connection;
-        listener.httpMethodDetermined("post");
+        listener.httpMethodDetermined(POST);
     }
 
     /**

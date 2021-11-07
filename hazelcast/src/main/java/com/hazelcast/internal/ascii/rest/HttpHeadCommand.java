@@ -19,10 +19,12 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.server.ServerConnection;
 
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.HttpMethod.HEAD;
+
 public class HttpHeadCommand extends HttpCommand {
 
     public HttpHeadCommand(String uri, ServerConnection connection) {
         super(TextCommandType.HTTP_HEAD, uri, connection);
-        listener.httpMethodDetermined("head");
+        listener.httpMethodDetermined(HEAD);
     }
 }

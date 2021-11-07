@@ -30,7 +30,7 @@ public class RestCallExecutionListener {
         executionDetails.setRequestPath(requestPath);
     }
 
-    void objectTypeDetermined(String objectType) {
+    void objectTypeDetermined(RestCallExecution.ObjectType objectType) {
         executionDetails.setObjectType(objectType);
     }
 
@@ -38,7 +38,7 @@ public class RestCallExecutionListener {
         executionDetails.setObjectName(objectName);
     }
 
-    void httpMethodDetermined(String method) {
+    void httpMethodDetermined(RestCallExecution.HttpMethod method) {
         executionDetails.setMethod(method);
     }
 

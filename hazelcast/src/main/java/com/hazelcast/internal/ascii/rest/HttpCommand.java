@@ -68,7 +68,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     }
 
-    void objectTypeDetermined(String objectType) {
+    void objectTypeDetermined(RestCallExecution.ObjectType objectType) {
         listener.objectTypeDetermined(objectType);
     }
 
