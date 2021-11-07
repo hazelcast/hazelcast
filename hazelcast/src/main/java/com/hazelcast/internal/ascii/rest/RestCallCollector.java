@@ -19,16 +19,15 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.util.counters.MwCounter;
 
 import java.util.Comparator;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class RestCallCollector {
 
     public static final int SET_SIZE_LIMIT = 1000;
 
-    private static class RequestIdentifier implements Comparable<RequestIdentifier> {
-
-        public static final Comparator<RequestIdentifier> COMPARATOR = Comparator.comparing(RequestIdentifier::getMethod)
-                .thenComparing(RequestIdentifier::getPath);
+    private static class RequestIdentifier {
 
         private final String method;
         private final String path;
@@ -39,8 +38,20 @@ public class RestCallCollector {
         }
 
         @Override
-        public int compareTo(RestCallCollector.RequestIdentifier o) {
-            return COMPARATOR.compare(this, o);
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            RequestIdentifier that = (RequestIdentifier) o;
+            return method.equals(that.method) && path.equals(that.path);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(method, path);
         }
 
         public String getMethod() {
@@ -68,9 +79,9 @@ public class RestCallCollector {
     private final MwCounter queueTotalRequestCount = MwCounter.newMwCounter();
 
     private final MwCounter requestCount = MwCounter.newMwCounter();
-    private final ConcurrentSkipListSet<RequestIdentifier> uniqueRequests = new ConcurrentSkipListSet<>();
-    private final ConcurrentSkipListSet<String> accessedMaps = new ConcurrentSkipListSet<>();
-    private final ConcurrentSkipListSet<String> accessedQueues = new ConcurrentSkipListSet<>();
+    private final ConcurrentHashMap.KeySetView<RequestIdentifier, Boolean> uniqueRequests = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap.KeySetView<String, Boolean> accessedMaps = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap.KeySetView<String, Boolean> accessedQueues = ConcurrentHashMap.newKeySet();
 
     void collectExecution(RestCallExecution execution) {
         updateRequestCounters(execution);
