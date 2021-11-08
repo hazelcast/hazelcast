@@ -94,8 +94,8 @@ public final class HazelcastComparisonPredicateUtils {
             RelDataType lowType,
             int lowIndex
     ) {
-        QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
-        QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
+        QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType);
+        QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType);
 
         if (highHZType.getTypeFamily().isNumeric()) {
             // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions

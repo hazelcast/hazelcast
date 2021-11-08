@@ -58,6 +58,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -101,6 +102,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -255,6 +257,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
+        } else if (node instanceof SqlExplainStatement) {
+            return toExplainStatementPlan(planKey, context, parseResult);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -361,6 +365,24 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
+    }
+
+    private SqlPlan toExplainStatementPlan(
+            PlanKey planKey,
+            OptimizerContext context,
+            QueryParseResult parseResult
+    ) {
+        SqlNode node = parseResult.getNode();
+        assert node instanceof SqlExplainStatement;
+        QueryConvertResult convertResult = context.convert(((SqlExplainStatement) node).getExplicandum());
+        PhysicalRel physicalRel = optimize(
+                parseResult.getParameterMetadata(),
+                convertResult.getRel(),
+                context,
+                false
+        );
+
+        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
     }
 
     private SqlPlanImpl toPlan(
@@ -515,11 +537,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         context.setParameterMetadata(parameterMetadata);
         context.setRequiresJob(isCreateJob);
 
-        logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
+        boolean fineLogOn = logger.isFineEnabled();
+        if (fineLogOn) {
+            logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
+        }
         LogicalRel logicalRel = optimizeLogical(context, rel);
-        logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+        if (fineLogOn) {
+            logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
+        }
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
-        logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+        if (fineLogOn) {
+            logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
+        }
         return physicalRel;
     }
 

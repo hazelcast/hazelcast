@@ -497,7 +497,7 @@ public final class IndexResolver {
 
         int columnIndex = ((RexInputRef) operand).getIndex();
 
-        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType().getSqlTypeName());
+        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType());
 
         // Create a value with "allowNulls=true"
         IndexFilterValue filterValue = new IndexFilterValue(
@@ -1349,8 +1349,8 @@ public final class IndexResolver {
                     return from;
                 }
 
-                QueryDataTypeFamily fromFamily = HazelcastTypeUtils.toHazelcastType(fromType.getSqlTypeName()).getTypeFamily();
-                QueryDataTypeFamily toFamily = HazelcastTypeUtils.toHazelcastType(toType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily fromFamily = HazelcastTypeUtils.toHazelcastType(fromType).getTypeFamily();
+                QueryDataTypeFamily toFamily = HazelcastTypeUtils.toHazelcastType(toType).getTypeFamily();
 
                 if (QueryDataTypeUtils.isNumeric(fromFamily) && QueryDataTypeUtils.isNumeric(toFamily)) {
                     // Converting between numeric types

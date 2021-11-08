@@ -16,15 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -88,10 +92,14 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections
+            @Nonnull List<Expression<?>> projections,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
-        SeriesTable table = (SeriesTable) table0;
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
+        }
 
+        SeriesTable table = (SeriesTable) table0;
         BatchSource<Object[]> source = table.items(predicate, projections);
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);

@@ -205,7 +205,11 @@ QueryDataType ObjectTypes() :
     QueryDataType type;
 }
 {
-    <OBJECT> { type = QueryDataType.OBJECT; }
+    (
+        <OBJECT> { type = QueryDataType.OBJECT; }
+    |
+        <JSON> { type = QueryDataType.JSON; }
+    )
     {
         return type;
     }
@@ -315,6 +319,7 @@ SqlDrop SqlDropIndex(Span span, boolean required) :
     SqlParserPos pos = span.pos();
 
     SqlIdentifier name;
+    SqlIdentifier objectName;
     boolean ifExists = false;
 }
 {
@@ -322,9 +327,12 @@ SqlDrop SqlDropIndex(Span span, boolean required) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = CompoundIdentifier()
+    name = SimpleIdentifier()
+
+    <ON>
+    objectName = SimpleIdentifier()
     {
-        return new SqlDropIndex(name, ifExists, pos.plus(getPos()));
+        return new SqlDropIndex(name, objectName, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -530,6 +538,24 @@ SqlShowStatement SqlShowStatement() :
 }
 
 /**
+ * Parses an EXPLAIN statement.
+ */
+SqlNode SqlExplainStatement() :
+{
+    SqlNode stmt;
+}
+{
+    <EXPLAIN>
+    [
+        LOOKAHEAD(2)
+        <PLAN> <FOR>
+    ]
+    stmt = ExtendedSqlQueryOrDml() {
+        return new SqlExplainStatement(getPos(), stmt);
+    }
+}
+
+/**
  * Parses INSERT/SINK INTO statement.
  */
 SqlExtendedInsert SqlExtendedInsert() :
@@ -572,6 +598,25 @@ SqlExtendedInsert SqlExtendedInsert() :
             span.end(source)
         );
     }
+}
+
+/** Parses a query (SELECT or VALUES)
+ * or DML statement (extended INSERT, UPDATE, DELETE). */
+SqlNode ExtendedSqlQueryOrDml() :
+{
+    SqlNode stmt;
+}
+{
+    (
+        LOOKAHEAD(2)
+        stmt = SqlExtendedInsert()
+    |
+        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    |
+        stmt = SqlDelete()
+    |
+        stmt = SqlUpdate()
+    ) { return stmt; }
 }
 
 /**
@@ -617,4 +662,3 @@ boolean HazelcastTimeZoneOpt() :
 |
     { return false; }
 }
-

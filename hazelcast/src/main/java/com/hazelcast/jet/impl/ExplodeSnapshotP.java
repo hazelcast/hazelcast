@@ -53,6 +53,11 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         serializationService = ((ProcCtx) context).serializationService();
     }
 
+    /* We can't close the BufferObjectDataInput cleanly. We close it when the returned traverser is fully iterated,
+    but the caller might not fully iterate it and we have no opportunity to close it.
+    On the other hand, the returned object doesn't hold any resources, so relying on the GC is sufficient.
+    See #19799 */
+    @SuppressWarnings("squid:S2095")
     private Traverser<Object> traverser(byte[] data) {
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
 

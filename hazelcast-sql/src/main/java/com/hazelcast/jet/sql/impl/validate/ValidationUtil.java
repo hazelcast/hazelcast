@@ -16,9 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+
+import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
+import static org.apache.calcite.sql.SqlKind.AS;
 
 public final class ValidationUtil {
 
@@ -33,5 +38,21 @@ public final class ValidationUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * If the operand is an ARGUMENT_ASSIGNMENT, returns its target.
+     * Otherwise return the operand.
+     */
+    public static SqlNode unwrapFunctionOperand(SqlNode operand) {
+        return operand.getKind() == ARGUMENT_ASSIGNMENT ? ((SqlCall) operand).operand(0) : operand;
+    }
+
+    /**
+     * If the operand is an AS call, returns its target. Otherwise
+     * return the operand.
+     */
+    public static RexNode unwrapFunctionOperand(RexNode operand) {
+        return operand.getKind() == AS ? ((RexCall) operand).getOperands().get(0) : operand;
     }
 }

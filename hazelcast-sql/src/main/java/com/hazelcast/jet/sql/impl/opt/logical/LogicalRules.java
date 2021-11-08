@@ -29,6 +29,7 @@ public final class LogicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
+                PruneEmptyRules.FILTER_INSTANCE,
                 FilterLogicalRule.INSTANCE,
                 CoreRules.FILTER_MERGE,
                 CoreRules.FILTER_PROJECT_TRANSPOSE,
@@ -38,6 +39,7 @@ public final class LogicalRules {
                 CoreRules.FILTER_REDUCE_EXPRESSIONS,
 
                 // Project rules
+                PruneEmptyRules.PROJECT_INSTANCE,
                 ProjectLogicalRule.INSTANCE,
                 CoreRules.PROJECT_MERGE,
                 CoreRules.PROJECT_REMOVE,
@@ -46,8 +48,13 @@ public final class LogicalRules {
 
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
-                FullFunctionScanLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
-                FullFunctionScanLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
+                FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
+                FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
+
+                // Windowing rules
+                WatermarkRules.IMPOSE_ORDER_INSTANCE,
+                WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -61,6 +68,9 @@ public final class LogicalRules {
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 
                 // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
@@ -82,11 +92,7 @@ public final class LogicalRules {
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE,
-
-                // Miscellaneous
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE
+                DeleteByKeyMapLogicalRule.INSTANCE
         );
     }
 }
