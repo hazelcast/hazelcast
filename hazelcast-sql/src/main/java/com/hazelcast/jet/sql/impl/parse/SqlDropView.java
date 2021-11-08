@@ -35,16 +35,19 @@ public class SqlDropView extends SqlDrop {
     private static final SqlSpecialOperator DROP_VIEW =
             new SqlSpecialOperator("DROP VIEW", SqlKind.DROP_VIEW);
 
-    private final SqlIdentifier name;
+    private final SqlIdentifier viewName;
 
-    public SqlDropView(SqlIdentifier name, boolean ifExists, SqlParserPos pos
-    ) {
+    public SqlDropView(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
         super(DROP_VIEW, pos, ifExists);
-        this.name = requireNonNull(name, "Name should not be null");
+        this.viewName = requireNonNull(name, "View name should not be null");
     }
 
     public boolean ifExists() {
         return ifExists;
+    }
+
+    public String viewName() {
+        return viewName.toString();
     }
 
     @Nonnull
@@ -56,7 +59,7 @@ public class SqlDropView extends SqlDrop {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name);
+        return ImmutableNullableList.of(viewName);
     }
 
     @Override
@@ -65,6 +68,6 @@ public class SqlDropView extends SqlDrop {
         if (ifExists) {
             writer.keyword("IF EXISTS");
         }
-        name.unparse(writer, leftPrec, rightPrec);
+        viewName.unparse(writer, leftPrec, rightPrec);
     }
 }

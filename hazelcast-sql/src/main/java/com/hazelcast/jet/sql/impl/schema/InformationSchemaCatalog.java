@@ -155,7 +155,7 @@ public class InformationSchemaCatalog implements TableResolver {
     }
 
     public void removeView(String name, boolean ifExists) {
-        if (mappingStorage.remove(name) != null) {
+        if (viewStorage.remove(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("View does not exist: " + name);

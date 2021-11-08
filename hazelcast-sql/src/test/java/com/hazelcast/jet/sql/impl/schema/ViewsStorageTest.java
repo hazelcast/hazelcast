@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,13 +25,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ViewsStorageTest extends SimpleTestInClusterSupport {
+public class ViewsStorageTest extends SqlTestSupport {
 
     private static final String QUERY = "SELECT 1";
     private static final String QUERY2 = "SELECT 2";

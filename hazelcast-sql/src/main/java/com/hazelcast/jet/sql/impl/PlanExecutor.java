@@ -28,10 +28,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
@@ -180,6 +182,16 @@ public class PlanExecutor {
             throw QueryException.error("The snapshot doesn't exist: " + plan.getSnapshotName());
         }
         snapshot.destroy();
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateViewPlan plan) {
+        catalog.createView(plan.view(), plan.isReplace());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(DropViewPlan plan) {
+        catalog.removeView(plan.viewName(), plan.isIfExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
