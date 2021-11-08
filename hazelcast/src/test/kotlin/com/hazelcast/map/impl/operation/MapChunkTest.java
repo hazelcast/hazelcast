@@ -19,18 +19,26 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapChunkTest extends HazelcastTestSupport {
 
     @Test
     public void smoke() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance node1 = factory.newHazelcastInstance(config);

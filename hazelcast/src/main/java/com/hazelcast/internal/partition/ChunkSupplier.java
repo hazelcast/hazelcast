@@ -21,20 +21,15 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.Iterator;
 import java.util.function.BooleanSupplier;
 
-import static java.lang.Integer.getInteger;
-
 /**
+ * An iterator over collection of {@link Operation} which has
+ * ability to be signaled to indicate end of iteration.
  *
+ * @see ChunkedMigrationAwareService
+ * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_CHUNKED_MIGRATION_ENABLED
+ * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_MAX_TOTAL_CHUNKED_MIGRATION_DATA
  */
 public interface ChunkSupplier extends Iterator<Operation> {
-
-    String PROP_MAX_MIGRATING_DATA_IN_BYTES = "hazelcast.migrating.data.size.in.bytes";
-
-    // TODO change this to a makes sense value, might be 250MB as a default?
-    int DEFAULT_MAX_MIGRATING_DATA_IN_BYTES = 1 << 10;
-
-    int MAX_MIGRATING_DATA_IN_BYTES = getInteger(PROP_MAX_MIGRATING_DATA_IN_BYTES,
-            DEFAULT_MAX_MIGRATING_DATA_IN_BYTES);
 
     /**
      * @param isEndOfChunk boolean supplier to signal end of chunk.
