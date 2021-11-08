@@ -40,12 +40,11 @@ fi
 # By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml
 if [ -z "$HAZELCAST_CONFIG" ]; then
     HAZELCAST_CONFIG="$HAZELCAST_HOME/config/hazelcast.xml"
-else
-    # if the first character is /, then this is an absolute path, use as is
-    # otherwise prepend (HAZELCAST_HOME)
-    if [ "${HAZELCAST_CONFIG:0:1}" != "/" ]; then
-      HAZELCAST_CONFIG="$HAZELCAST_HOME/$HAZELCAST_CONFIG"
-    fi
+fi
+# if the first character is /, then this is an absolute path, use as is
+# otherwise prepend (HAZELCAST_HOME)
+if [ "${HAZELCAST_CONFIG:0:1}" != "/" ]; then
+  HAZELCAST_CONFIG="$HAZELCAST_HOME/$HAZELCAST_CONFIG"
 fi
 
 if [ "${PROMETHEUS_PORT}" ]; then
