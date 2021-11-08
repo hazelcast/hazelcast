@@ -31,7 +31,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 public interface Compactable<T> {
 
     /**
-     * Returns the compact serializer that will be used the serialize
+     * Returns the compact serializer that will be used to serialize
      * instances of class {@code T}.
      */
     CompactSerializer<T> getCompactSerializer();
