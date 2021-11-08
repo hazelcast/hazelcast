@@ -39,7 +39,7 @@ fi
 # The path can be absolute.
 # By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml
 if [ -z "$HAZELCAST_CONFIG" ]; then
-    HAZELCAST_CONFIG="$HAZELCAST_HOME/config/hazelcast.xml"
+    HAZELCAST_CONFIG="config/hazelcast.xml"
 fi
 # if the first character is /, then this is an absolute path, use as is
 # otherwise prepend (HAZELCAST_HOME)
