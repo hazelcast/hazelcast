@@ -17,20 +17,37 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.map.impl.ChunkSupplier;
-import com.hazelcast.map.impl.ChunkSuppliers;
 
 import java.util.Collection;
 
 /**
- * Data migration can be done lazily, by using this interface's functionality.
+ * Contract to be used to lazily migrate data in chunks.
+ * <p>
+ * Wins are more controlled heap usage and less pressure over network.
+ * <p>
+ * These wins come with potential trade-off of longer migration times.
+ *
+ * @see ChunkSupplier
+ * @see ChunkSuppliers
  */
 public interface ChunkedMigrationAwareService
         extends FragmentedMigrationAwareService {
 
+    /**
+     * By default, a {@link ChunkedMigrationAwareService} behaves
+     * identical with a {@link FragmentedMigrationAwareService}.
+     * <p>
+     * In other words, a chunk equals a fragment. To divide
+     * a fragment further, services can implement their own
+     * {@link ChunkSupplier} by implementing this method.
+     *
+     * @param event      partition replication event
+     * @param namespaces collection of namespaces
+     * @return a new {@link ChunkSupplier} object.
+     */
     default ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
                                            Collection<ServiceNamespace> namespaces) {
-        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
+        return ChunkSuppliers.newSingleChunkSupplier(
                 () -> prepareReplicationOperation(event, namespaces));
     }
 }

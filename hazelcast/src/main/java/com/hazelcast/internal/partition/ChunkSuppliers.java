@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -29,61 +29,80 @@ import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
+/**
+ * Helper methods to create various {@link ChunkSupplier} objects
+ */
 public final class ChunkSuppliers {
 
     private ChunkSuppliers() {
     }
 
     /**
-     * Used for cases in which one single chunk is needed.
+     * Intended use cases:
+     * <ul>
+     * <li>When migration data fits in one single chunk</li>
+     * <li>When a service doesn't support data migration in chunks</li>
+     * </ul>
      */
-    public static ChunkSupplier newSingleChunkSupplier(String className,
-                                                       Supplier<Operation> operationSupplier) {
-        isNotNull(className, "className");
+    public static ChunkSupplier newSingleChunkSupplier(Supplier<Operation> operationSupplier) {
         isNotNull(operationSupplier, "operationSupplier");
 
-        return new ChunkSupplier() {
-            private boolean hasMoreChunks = true;
-
-            @Nullable
-            @Override
-            public Operation next() {
-                if (!hasMoreChunks) {
-                    throw new NoSuchElementException();
-                }
-                Operation operation = operationSupplier.get();
-                hasMoreChunks = false;
-                return operation;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return hasMoreChunks;
-            }
-
-            @Override
-            public String toString() {
-                return className + "{"
-                        + "hasMoreChunks=" + hasMoreChunks
-                        + '}';
-            }
-        };
+        return new SingleChunkSupplier(operationSupplier);
     }
 
-    public static ChunkSupplier newChainedChunkSuppliers(List<ChunkSupplier> chain) {
-        return new ChunkSupplierChain(chain);
+    private static final class SingleChunkSupplier implements ChunkSupplier {
+
+        private final Supplier<Operation> operationSupplier;
+
+        private boolean hasMoreChunks = true;
+
+        private SingleChunkSupplier(Supplier<Operation> operationSupplier) {
+            this.operationSupplier = operationSupplier;
+        }
+
+        @Nullable
+        @Override
+        public Operation next() {
+            if (!hasMoreChunks) {
+                throw new NoSuchElementException();
+            }
+            Operation operation = operationSupplier.get();
+            hasMoreChunks = false;
+            return operation;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasMoreChunks;
+        }
+
+        @Override
+        public String toString() {
+            return "SingleChunkSupplier{"
+                    + "operationSupplier=" + operationSupplier
+                    + ", hasMoreChunks=" + hasMoreChunks
+                    + '}';
+        }
     }
 
-    private static final class ChunkSupplierChain implements ChunkSupplier {
+    /**
+     * @param chain chain of {@link ChunkSupplier}
+     * @return wrapper {@link ChunkSupplier}
+     */
+    public static ChunkSupplier newChainedChunkSupplier(List<ChunkSupplier> chain) {
+        isNotNull(chain, "chain");
+        checkTrue(CollectionUtil.isNotEmpty(chain), "chain cannot be an empty list");
+        checkNoNullInside(chain, "chain cannot have null value inside");
+
+        return new ChainedChunkSupplier(chain);
+    }
+
+    private static final class ChainedChunkSupplier implements ChunkSupplier {
 
         private final int length;
         private final List<ChunkSupplier> chain;
 
-        private ChunkSupplierChain(List<ChunkSupplier> chain) {
-            isNotNull(chain, "chain");
-            checkTrue(CollectionUtil.isNotEmpty(chain), "chain cannot be an empty list");
-            checkNoNullInside(chain, "chain cannot have null value inside");
-
+        private ChainedChunkSupplier(List<ChunkSupplier> chain) {
             this.chain = chain;
             this.length = chain.size();
         }
