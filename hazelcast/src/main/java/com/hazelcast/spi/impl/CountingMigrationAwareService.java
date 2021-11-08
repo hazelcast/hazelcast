@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.map.impl.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;

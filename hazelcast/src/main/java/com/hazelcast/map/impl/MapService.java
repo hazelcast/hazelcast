@@ -49,6 +49,7 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;

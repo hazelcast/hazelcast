@@ -36,6 +36,8 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkSuppliers;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -156,7 +158,7 @@ class MapMigrationAwareService
                     event.getReplicaIndex()));
         }
 
-        return ChunkSuppliers.newChainedChunkSuppliers(chain);
+        return ChunkSuppliers.newChainedChunkSupplier(chain);
     }
 
     private final class MapChunkSupplier implements ChunkSupplier {
