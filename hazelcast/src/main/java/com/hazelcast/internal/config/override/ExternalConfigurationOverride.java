@@ -83,7 +83,7 @@ public class ExternalConfigurationOverride {
                   properties.entrySet().stream()
                     .filter(e -> !unprocessed.containsKey(e.getKey()))
                     .map(e -> {
-                        if (e.getKey().equals("hazelcast.licensekey")) {
+                        if (e.getKey().equals("hazelcast.licensekey") && !e.getValue().isEmpty()) {
                             String[] licenceKeyParts = e.getValue().split("#");
                             String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
                             return e.getKey() + "=" + originalKeyPart.substring(0, 5) + "*********"
