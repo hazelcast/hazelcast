@@ -21,15 +21,25 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class GhostMapTest extends HazelcastTestSupport {
 
     /**
@@ -53,5 +63,22 @@ public class GhostMapTest extends HazelcastTestSupport {
         List<String> actualObjNames = instance.getDistributedObjects().stream().map(
                 DistributedObject::getName).collect(toList());
         assertEquals(singletonList("asterisk#team1"), actualObjNames);
+    }
+
+    @Test
+    public void phone_home_does_not_create_new_map_config() {
+        String mapName = "hello";
+
+        HazelcastInstance instance = createHazelcastInstance(new Config());
+        instance.getMap(mapName);
+
+        new PhoneHome(TestUtil.getNode(instance)).phoneHome(true);
+
+        Set<String> mapNames = instance.getConfig().getMapConfigs().keySet();
+
+        String failureMessage = "expected: [default] found: " + mapNames;
+        assertEquals(failureMessage, 1, mapNames.size());
+        assertTrue(failureMessage, mapNames.contains("default"));
+        assertFalse(failureMessage, mapNames.contains(mapName));
     }
 }
