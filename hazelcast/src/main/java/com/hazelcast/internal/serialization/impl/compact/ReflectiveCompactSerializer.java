@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -25,7 +24,6 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -103,7 +101,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     private final Map<Class, Reader[]> readersCache = new ConcurrentHashMap<>();
 
     @Override
-    public void write(@Nonnull CompactWriter writer, @Nonnull T object) throws IOException {
+    public void write(@Nonnull CompactWriter writer, @Nonnull T object) {
         Class<?> clazz = object.getClass();
         if (writeFast(clazz, writer, object)) {
             return;
@@ -112,7 +110,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         writeFast(clazz, writer, object);
     }
 
-    private boolean writeFast(Class clazz, CompactWriter compactWriter, Object object) throws IOException {
+    private boolean writeFast(Class clazz, CompactWriter compactWriter, Object object) {
         Writer[] writers = writersCache.get(clazz);
         if (writers == null) {
             return false;
@@ -121,13 +119,13 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             try {
                 writer.write(compactWriter, object);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e, IOException.class);
+                throw new HazelcastSerializationException(e);
             }
         }
         return true;
     }
 
-    private boolean readFast(Class clazz, DefaultCompactReader compactReader, Object object) throws IOException {
+    private boolean readFast(Class clazz, DefaultCompactReader compactReader, Object object) {
         Reader[] readers = readersCache.get(clazz);
         Schema schema = compactReader.getSchema();
         if (readers == null) {
@@ -137,7 +135,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             try {
                 reader.read(compactReader, schema, object);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e, IOException.class);
+                throw new HazelcastSerializationException(e);
             }
         }
         return true;
@@ -145,7 +143,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
     @Nonnull
     @Override
-    public T read(@Nonnull CompactReader reader) throws IOException {
+    public T read(@Nonnull CompactReader reader) {
         // We always fed DefaultCompactReader to this serializer.
         DefaultCompactReader compactReader = (DefaultCompactReader) reader;
         Class associatedClass = requireNonNull(compactReader.getAssociatedClass(),
@@ -153,16 +151,12 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
         T object;
         object = (T) createObject(associatedClass);
-        try {
-            if (readFast(associatedClass, compactReader, object)) {
-                return object;
-            }
-            createFastReadWriteCaches(associatedClass);
-            readFast(associatedClass, compactReader, object);
+        if (readFast(associatedClass, compactReader, object)) {
             return object;
-        } catch (Exception e) {
-            throw new IOException(e);
         }
+        createFastReadWriteCaches(associatedClass);
+        readFast(associatedClass, compactReader, object);
+        return object;
     }
 
     @Nonnull
@@ -201,7 +195,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         return false;
     }
 
-    private void createFastReadWriteCaches(Class clazz) throws IOException {
+    private void createFastReadWriteCaches(Class clazz) {
         //Create object to test if it is empty constructable to fail-fast on the write path
         createObject(clazz);
 
