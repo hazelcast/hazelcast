@@ -28,7 +28,7 @@ import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ManagedService;
@@ -67,7 +67,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class WanReplicationServiceImpl implements WanReplicationService,
-        FragmentedMigrationAwareService, ManagedService {
+        ChunkedMigrationAwareService, ManagedService {
 
     private final Node node;
 

@@ -33,8 +33,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.map.impl.ChunkSupplier;
-import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -44,7 +42,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.UUID;
@@ -236,13 +233,6 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
         int replicaIndex = event.getReplicaIndex();
         LockReplicationOperation op = new LockReplicationOperation(container, partitionId, replicaIndex, namespaces);
         return op.isEmpty() ? null : op;
-    }
-
-    // TODO method should receive collection of namespace
-    @Override
-    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
-        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
-                () -> prepareReplicationOperation(event, Collections.singleton(namespace)));
     }
 
     @Override

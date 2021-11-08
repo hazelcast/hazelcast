@@ -30,6 +30,7 @@ public interface ChunkSupplier extends Iterator<Operation> {
 
     String PROP_MAX_MIGRATING_DATA_IN_BYTES = "hazelcast.migrating.data.size.in.bytes";
 
+    // TODO change this to a makes sense value, might be 250MB as a default?
     int DEFAULT_MAX_MIGRATING_DATA_IN_BYTES = 1 << 10;
 
     int MAX_MIGRATING_DATA_IN_BYTES = getInteger(PROP_MAX_MIGRATING_DATA_IN_BYTES,

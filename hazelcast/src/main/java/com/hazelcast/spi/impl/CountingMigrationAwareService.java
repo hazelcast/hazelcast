@@ -147,11 +147,10 @@ public class CountingMigrationAwareService
     }
 
     @Override
-    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
-        if (migrationAwareService instanceof ChunkedMigrationAwareService) {
-            return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
-        } else {
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
+        if (!(migrationAwareService instanceof ChunkedMigrationAwareService)) {
             return null;
         }
+        return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
     }
 }

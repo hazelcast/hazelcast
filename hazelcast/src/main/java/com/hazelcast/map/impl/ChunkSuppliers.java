@@ -16,12 +16,17 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public final class ChunkSuppliers {
@@ -63,5 +68,64 @@ public final class ChunkSuppliers {
                         + '}';
             }
         };
+    }
+
+    public static ChunkSupplier newChainedChunkSuppliers(List<ChunkSupplier> chain) {
+        return new ChunkSupplierChain(chain);
+    }
+
+    private static final class ChunkSupplierChain implements ChunkSupplier {
+
+        private final int length;
+        private final List<ChunkSupplier> chain;
+
+        private ChunkSupplierChain(List<ChunkSupplier> chain) {
+            isNotNull(chain, "chain");
+            checkTrue(CollectionUtil.isNotEmpty(chain), "chain cannot be an empty list");
+            checkNoNullInside(chain, "chain cannot have null value inside");
+
+            this.chain = chain;
+            this.length = chain.size();
+        }
+
+        @Override
+        public void inject(BooleanSupplier isEndOfChunk) {
+            for (ChunkSupplier chunkSupplier : chain) {
+                chunkSupplier.inject(isEndOfChunk);
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            for (int i = 0; i < length; i++) {
+                ChunkSupplier chunkSupplier = chain.get(i);
+                if (chunkSupplier.hasNext()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Nullable
+        @Override
+        public Operation next() {
+            for (int i = 0; i < length; i++) {
+                ChunkSupplier chunkSupplier = chain.get(i);
+                if (chunkSupplier.hasNext()) {
+                    return chunkSupplier.next();
+                }
+            }
+
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public String toString() {
+            return "ChunkSupplierChain{"
+                    + "length=" + length
+                    + ", chain=" + chain
+                    + '}';
+        }
     }
 }

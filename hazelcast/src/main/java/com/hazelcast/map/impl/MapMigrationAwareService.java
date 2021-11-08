@@ -43,7 +43,9 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
@@ -147,9 +149,14 @@ class MapMigrationAwareService
 
     @Override
     public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
-                                          ServiceNamespace namespace) {
-        return new MapChunkSupplier(namespace, event.getPartitionId(),
-                event.getReplicaIndex());
+                                          Collection<ServiceNamespace> namespaces) {
+        List<ChunkSupplier> chain = new ArrayList<>(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            chain.add(new MapChunkSupplier(namespace, event.getPartitionId(),
+                    event.getReplicaIndex()));
+        }
+
+        return ChunkSuppliers.newChainedChunkSuppliers(chain);
     }
 
     private final class MapChunkSupplier implements ChunkSupplier {

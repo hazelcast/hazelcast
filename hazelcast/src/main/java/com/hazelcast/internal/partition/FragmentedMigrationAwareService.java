@@ -80,5 +80,4 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
      * @see #prepareReplicationOperation(PartitionReplicationEvent)
      */
     Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces);
-
 }
