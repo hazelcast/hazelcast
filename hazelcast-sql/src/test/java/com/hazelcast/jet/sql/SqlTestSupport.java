@@ -45,6 +45,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +61,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
@@ -75,6 +82,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -178,6 +186,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         List<Row> actualRows = new ArrayList<>(rows);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    /**
+     * Runs a streaming query and checks that for a hard-coded time it
+     * doesn't return any results.
+     */
+    public static void assertEmptyResultStream(String sql) {
+        Future<Boolean> future;
+        try (SqlResult result = instance().getSql().execute(sql)) {
+            future = spawn(() -> result.iterator().hasNext());
+            assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
+        }
+        assertTrueEventually(() -> assertTrue(future.isDone()));
     }
 
     /**
@@ -467,6 +488,22 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         return rowList;
+    }
+
+    public static LocalTime time(long epochMillis) {
+        return timestampTz(epochMillis).toLocalTime();
+    }
+
+    public static LocalDate date(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDate();
+    }
+
+    public static LocalDateTime timestamp(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDateTime();
+    }
+
+    public static OffsetDateTime timestampTz(long epochMillis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
     }
 
     /**

@@ -21,16 +21,16 @@ import com.google.common.collect.Lists;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.validate.HazelcastResources;
 import com.hazelcast.jet.sql.impl.validate.literal.Literal;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
-import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
@@ -203,7 +203,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 // The operand of the outer cast is validated as a SMALLINT, however the operand, thanks to the
                 // simplification in RexBuilder.makeCast(), is converted to a literal [42:SMALLINT]. And LiteralUtils converts
                 // this operand to [42:TINYINT] - we have to use the literal's type instead of the validated operand type.
-                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastType(literal.getTypeName());
+                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(literal.getTypeName());
                 toType.getConverter().convertToSelf(actualFromType.getConverter(), literal.getValue());
             } catch (Exception e) {
                 throw literalConversionException(validator, call, literal, toType, e);

@@ -23,13 +23,14 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
-      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
       "com.hazelcast.jet.sql.impl.parse.SqlMappingColumn"
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
@@ -412,6 +413,7 @@ data: {
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
+      "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
     ]

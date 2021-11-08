@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -43,21 +44,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+abstract class AggregateAbstractPhysicalRule extends RelOptRule {
 
-final class AggregatePhysicalRule extends RelOptRule {
-
-    static final RelOptRule INSTANCE = new AggregatePhysicalRule();
-
-    private AggregatePhysicalRule() {
-        super(
-                operand(AggregateLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()))),
-                AggregatePhysicalRule.class.getSimpleName()
-        );
+    protected AggregateAbstractPhysicalRule(RelOptRuleOperand operand, String description) {
+        super(operand, description);
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public final void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel logicalAggregate = call.rel(0);
         RelNode input = logicalAggregate.getInput();
 
@@ -70,88 +64,9 @@ final class AggregatePhysicalRule extends RelOptRule {
         }
     }
 
-    private static RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        return logicalAggregate.getGroupSet().cardinality() == 0
-                ? toAggregate(logicalAggregate, physicalInput)
-                : toAggregateByKey(logicalAggregate, physicalInput);
-    }
+    protected abstract RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput);
 
-    private static RelNode toAggregate(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
-                physicalInput.getRowType(),
-                logicalAggregate.getGroupSet(),
-                logicalAggregate.getAggCallList()
-        );
-
-        if (logicalAggregate.containsDistinctCall()) {
-            return new AggregatePhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp
-            );
-        } else {
-            RelNode rel = new AggregateAccumulatePhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    aggrOp
-            );
-
-            return new AggregateCombinePhysicalRel(
-                    rel.getCluster(),
-                    rel.getTraitSet(),
-                    rel,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp
-            );
-        }
-    }
-
-    private static RelNode toAggregateByKey(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
-                physicalInput.getRowType(),
-                logicalAggregate.getGroupSet(),
-                logicalAggregate.getAggCallList()
-        );
-
-        if (logicalAggregate.containsDistinctCall()) {
-            return new AggregateByKeyPhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp
-            );
-        } else {
-            RelNode rel = new AggregateAccumulateByKeyPhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    logicalAggregate.getGroupSet(),
-                    aggrOp
-            );
-
-            return new AggregateCombineByKeyPhysicalRel(
-                    rel.getCluster(),
-                    rel.getTraitSet(),
-                    rel,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp
-            );
-        }
-    }
-
-    private static AggregateOperation<?, Object[]> aggregateOperation(
+    protected static AggregateOperation<?, Object[]> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls

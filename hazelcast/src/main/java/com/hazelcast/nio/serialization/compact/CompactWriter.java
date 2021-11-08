@@ -91,14 +91,6 @@ public interface CompactWriter {
     void writeDouble(@Nonnull String fieldName, double value);
 
     /**
-     * Writes a 16-bit unsigned integer.
-     *
-     * @param fieldName name of the field.
-     * @param value     to be written.
-     */
-    void writeChar(@Nonnull String fieldName, char value);
-
-    /**
      * Writes an UTF-8 encoded string.
      *
      * @param fieldName name of the field.
@@ -169,14 +161,6 @@ public interface CompactWriter {
      * @param value     to be written.
      */
     void writeArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value);
-
-    /**
-     * Writes an array of 16-bit unsigned integers.
-     *
-     * @param fieldName name of the field.
-     * @param value     to be written.
-     */
-    void writeArrayOfChars(@Nonnull String fieldName, @Nullable char[] value);
 
     /**
      * Writes an array of 16-bit two's complement signed integers.

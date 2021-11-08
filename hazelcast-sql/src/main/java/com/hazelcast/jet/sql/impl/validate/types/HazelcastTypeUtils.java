@@ -34,7 +34,6 @@ import java.util.Map;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
@@ -114,7 +113,7 @@ public final class HazelcastTypeUtils {
 
     public static QueryDataType toHazelcastType(RelDataType relDataType) {
         if (relDataType.getSqlTypeName() != OTHER) {
-            return toHazelcastType(relDataType.getSqlTypeName());
+            return toHazelcastTypeFromSqlTypeName(relDataType.getSqlTypeName());
         }
         final RelDataTypeFamily typeFamily = relDataType.getFamily();
 
@@ -125,7 +124,7 @@ public final class HazelcastTypeUtils {
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
     }
 
-    public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
+    public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {
         SqlTypeFamily sqlTypeNameFamily = sqlTypeName.getFamily();
         if (sqlTypeNameFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH) {
             return QueryDataType.INTERVAL_YEAR_MONTH;
@@ -313,17 +312,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static int precedenceOf(RelDataType type) {
-        SqlTypeName typeName = type.getSqlTypeName();
-
-        if (YEAR_INTERVAL_TYPES.contains(typeName)) {
-            typeName = INTERVAL_YEAR_MONTH;
-        } else if (DAY_INTERVAL_TYPES.contains(typeName)) {
-            typeName = INTERVAL_DAY_SECOND;
-        }
-
-        QueryDataType hzType = HazelcastTypeUtils.toHazelcastType(typeName);
-
-        return hzType.getTypeFamily().getPrecedence();
+        return toHazelcastType(type).getTypeFamily().getPrecedence();
     }
 
     public static boolean canCast(RelDataType sourceType, RelDataType targetType) {

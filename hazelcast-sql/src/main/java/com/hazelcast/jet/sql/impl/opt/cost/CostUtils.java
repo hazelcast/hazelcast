@@ -112,7 +112,7 @@ public final class CostUtils {
         int res = 0;
 
         for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-            res += HazelcastTypeUtils.toHazelcastType(field.getType().getSqlTypeName()).getTypeFamily().getEstimatedSize();
+            res += HazelcastTypeUtils.toHazelcastType(field.getType()).getTypeFamily().getEstimatedSize();
         }
 
         return res;
