@@ -186,7 +186,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         out.writeBoolean(enabled);
         out.writeString(baseDir.getAbsolutePath());
         out.writeInt(blockSize);
-        out.writeLong(capacity.bytes());
+        out.writeObject(capacity != null ? capacity.bytes() : null);
     }
 
     @Override
@@ -194,7 +194,8 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         enabled = in.readBoolean();
         baseDir = new File(in.readString()).getAbsoluteFile();
         blockSize = in.readInt();
-        capacity = new MemorySize(in.readLong(), MemoryUnit.BYTES);
+        Long cap = in.readObject();
+        capacity = cap != null ? new MemorySize(cap, MemoryUnit.BYTES) : null;
     }
 
     @Override
