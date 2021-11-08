@@ -129,8 +129,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         int clusterSize = clusterService.getMembers().size();
 
         InternalPartitionService partitionService = node.getPartitionService();
-        boolean memberStateSafe = partitionService.isMemberStateSafe();
-        boolean clusterSafe = memberStateSafe && !partitionService.hasOnGoingMigration();
         long migrationQueueSize = partitionService.getMigrationQueueSize();
 
         String healthParameter = uri.substring(URI_HEALTH_URL.length());
@@ -143,7 +141,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_STATE)) {
             prepareResponse(command, Json.value(clusterState.toString()));
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_SAFE)) {
-            if (clusterSafe) {
+            if (isClusterSafe()) {
                 command.send200();
             } else {
                 command.send503();
@@ -156,7 +154,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             JsonObject response = new JsonObject()
                     .add("nodeState", nodeState.toString())
                     .add("clusterState", clusterState.toString())
-                    .add("clusterSafe", clusterSafe)
+                    .add("clusterSafe", isClusterSafe())
                     .add("migrationQueueSize", migrationQueueSize)
                     .add("clusterSize", clusterSize);
             prepareResponse(command, response);
@@ -165,8 +163,10 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         }
     }
 
-    private static String booleanToString(boolean b) {
-        return Boolean.toString(b).toUpperCase(StringUtil.LOCALE_INTERNAL);
+    private boolean isClusterSafe() {
+        InternalPartitionService partitionService = textCommandService.getNode().getPartitionService();
+        boolean memberStateSafe = partitionService.isMemberStateSafe();
+        return memberStateSafe && !partitionService.hasOnGoingMigration();
     }
 
     private void handleGetClusterVersion(HttpGetCommand command) {
