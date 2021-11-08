@@ -28,11 +28,13 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -142,6 +144,42 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
             Throwable cause = peel(ce);
             assertTrue(cause instanceof JetException);
             assertTrue(cause.getCause() instanceof AssertionCompletedException);
+        }
+    }
+
+    @Test
+    @Category(SerialTest.class)
+    public void customProjection() {
+        HELPER.createStream(1);
+
+        sendMessages();
+
+        Pipeline pipeline = Pipeline.create();
+        StreamSource<Map.Entry<String, Data>> source = kinesisSource().build(r -> {
+            byte[] payload = new byte[r.getData().remaining()];
+            r.getData().get(payload);
+            return new Data(payload, r.getSequenceNumber());
+        });
+        IMap<String, Long> resultMap = hz().getMap("customProjectionResult");
+        pipeline.readFrom(source)
+                .withoutTimestamps()
+                .groupingKey(data -> data.getValue().sequenceNo)
+                .rollingAggregate(counting())
+                .writeTo(Sinks.map(resultMap));
+
+        hz().getJet().newJob(pipeline).join();
+        assertEquals(MESSAGES, resultMap.size());
+        Long expectedPerSequenceNo = 1L;
+        resultMap.values().forEach(v -> assertEquals(expectedPerSequenceNo, v));
+    }
+
+    private static final class Data {
+        byte[] payload;
+        String sequenceNo;
+
+        public Data(byte[] payload, String sequenceNo) {
+            this.payload = payload;
+            this.sequenceNo = sequenceNo;
         }
     }
 
