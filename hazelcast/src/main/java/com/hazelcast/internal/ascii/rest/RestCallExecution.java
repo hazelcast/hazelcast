@@ -21,10 +21,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 class RestCallExecution {
 
-    enum HttpMethod {
-        GET, POST, DELETE, HEAD
-    }
-
     enum ObjectType {
         MAP, QUEUE
     }
@@ -32,7 +28,6 @@ class RestCallExecution {
     private String requestPath;
     private ObjectType objectType;
     private String objectName;
-    private HttpMethod method;
     private int statusCode;
 
     public String getRequestPath() {
@@ -57,14 +52,6 @@ class RestCallExecution {
 
     public void setObjectType(ObjectType objectType) {
         this.objectType = objectType;
-    }
-
-    public HttpMethod getMethod() {
-        return method;
-    }
-
-    public void setMethod(HttpMethod method) {
-        this.method = method;
     }
 
     public int getStatusCode() {

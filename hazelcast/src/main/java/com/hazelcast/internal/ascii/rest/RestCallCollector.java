@@ -16,13 +16,11 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.util.counters.MwCounter;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
-import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 
 public class RestCallCollector {
 
@@ -30,10 +28,10 @@ public class RestCallCollector {
 
     private static class RequestIdentifier {
 
-        private final RestCallExecution.HttpMethod method;
+        private final TextCommandConstants.TextCommandType method;
         private final String path;
 
-        RequestIdentifier(RestCallExecution.HttpMethod method, String path) {
+        RequestIdentifier(TextCommandConstants.TextCommandType method, String path) {
             this.method = method;
             this.path = path;
         }
@@ -53,10 +51,6 @@ public class RestCallCollector {
         @Override
         public int hashCode() {
             return Objects.hash(method, path);
-        }
-
-        public RestCallExecution.HttpMethod getMethod() {
-            return method;
         }
 
         public String getPath() {
@@ -84,62 +78,96 @@ public class RestCallCollector {
     private final ConcurrentHashMap.KeySetView<String, Boolean> accessedMaps = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap.KeySetView<String, Boolean> accessedQueues = ConcurrentHashMap.newKeySet();
 
-    void collectExecution(RestCallExecution execution) {
-        updateRequestCounters(execution);
-        boolean isMap = execution.getObjectType() == MAP;
-        boolean isQueue = execution.getObjectType() == QUEUE;
+    void collectExecution(HttpCommand command) {
+        RestCallExecution execution = command.getExecutionDetails();
+        TextCommandConstants.TextCommandType type = command.getType();
+        updateRequestCounters(type, execution);
         String objectName = execution.getObjectName();
-        updateAccessedObjectSets(isMap, isQueue, objectName);
-        switch (execution.getMethod()) {
-            case POST:
-                handlePost(execution.isSuccess(), isMap, isQueue);
+        updateAccessedObjectSets(execution, objectName);
+        switch (type) {
+            case HTTP_POST:
+                handlePost(execution);
                 break;
-            case GET:
-                if (isMap) {
-                    (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
-                } else if (isQueue) {
-                    (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
-                }
+            case HTTP_GET:
+                handleGet(execution);
                 break;
-            case DELETE:
-                if (isMap) {
-                    (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
-                } else if (isQueue) {
-                    (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
-                }
+            case HTTP_DELETE:
+                handleDelete(execution);
                 break;
             default:
                 // no-op
         }
     }
 
-    private void handlePost(boolean isSuccess, boolean isMap, boolean isQueue) {
-        if (isMap) {
-            (isSuccess ? mapPostSuccCount : mapPostFailCount).inc();
-        } else if (isQueue) {
-            (isSuccess ? queuePostSuccCount : queuePostFailCount).inc();
+    private void handleDelete(RestCallExecution execution) {
+        switch (execution.getObjectType()) {
+            case MAP:
+                (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
+                break;
+            case QUEUE:
+                (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
         }
     }
 
-    private void updateAccessedObjectSets(boolean isMap, boolean isQueue, String objectName) {
-        if (objectName != null) {
-            if (isMap) {
+    private void handleGet(RestCallExecution execution) {
+        switch (execution.getObjectType()) {
+            case MAP:
+                (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
+                break;
+            case QUEUE:
+                (execution.isSuccess() ? queueGetSuccCount : queueGetFailCount).inc();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
+        }
+    }
+
+    private void handlePost(RestCallExecution execution) {
+        switch (execution.getObjectType()) {
+            case MAP:
+                (execution.isSuccess() ? mapPostSuccCount : mapPostFailCount).inc();
+                break;
+            case QUEUE:
+                (execution.isSuccess() ? queuePostSuccCount : queuePostFailCount).inc();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
+        }
+    }
+
+    private void updateAccessedObjectSets(RestCallExecution execution, String objectName) {
+        if (objectName == null) {
+            return;
+        }
+        switch (execution.getObjectType()) {
+            case MAP:
                 accessedMaps.add(objectName);
-            } else if (isQueue) {
+                break;
+            case QUEUE:
                 accessedQueues.add(objectName);
-            }
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
         }
     }
 
-    private void updateRequestCounters(RestCallExecution execution) {
+    private void updateRequestCounters(TextCommandConstants.TextCommandType type, RestCallExecution execution) {
         if (uniqueRequests.size() < SET_SIZE_LIMIT) {
-            uniqueRequests.add(new RequestIdentifier(execution.getMethod(), execution.getRequestPath()));
+            uniqueRequests.add(new RequestIdentifier(type, execution.getRequestPath()));
         }
         requestCount.inc();
-        if (execution.getObjectType() == MAP) {
-            mapTotalRequestCount.inc();
-        } else if (execution.getObjectType() == QUEUE) {
-            queueTotalRequestCount.inc();
+        switch (execution.getObjectType()) {
+            case MAP:
+                mapTotalRequestCount.inc();
+                break;
+            case QUEUE:
+                queueTotalRequestCount.inc();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
         }
     }
 

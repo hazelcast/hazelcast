@@ -17,12 +17,11 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.nio.ascii.TextDecoder;
-import com.hazelcast.internal.server.ServerConnection;
 
 public class HttpDeleteCommandParser extends HttpCommandParser<HttpDeleteCommand> {
 
     @Override
-    HttpDeleteCommand createHttpCommand(TextDecoder decoder, String uri, ServerConnection connection) {
-        return new HttpDeleteCommand(uri, connection);
+    HttpDeleteCommand createHttpCommand(TextDecoder decoder, String uri) {
+        return new HttpDeleteCommand(uri);
     }
 }
