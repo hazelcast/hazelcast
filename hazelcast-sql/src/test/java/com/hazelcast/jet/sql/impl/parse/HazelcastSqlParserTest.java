@@ -169,29 +169,6 @@ public class HazelcastSqlParserTest {
     }
 
     @Test
-    @Parameters({
-            "true",
-            "false"
-    })
-    public void test_createIndexRequiresIndexType(boolean ifNotExists) {
-        // given
-        String sql = "CREATE INDEX "
-                + (ifNotExists ? "IF NOT EXISTS " : "")
-                + "index_name "
-                + "ON mapping_name "
-                + "(column_name1, column_name2);";
-
-        // when & then
-        assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Encountered \";\" at line 1")
-                .hasMessageContaining(
-                        "Was expecting one of:\n" +
-                        "    <EOF> \n" +
-                        "    \"OPTIONS\" ...\n" +
-                        "    \"TYPE\" ...");
-    }
-
-    @Test
     public void test_createExternalMapping() throws SqlParseException {
         // given
         String sql = "CREATE EXTERNAL MAPPING "

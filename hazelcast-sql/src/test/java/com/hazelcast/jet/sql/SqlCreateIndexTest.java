@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -123,6 +125,16 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void indexOptionsCannotBeDuplicatedTest() {
+        String indexName = SqlTestSupport.randomName();
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (__key) TYPE BITMAP " +
+                "OPTIONS ('unique_key' = '__key' , 'unique_key' = 'OBJECT'); ";
+
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("Option 'unique_key' specified more than once");
+    }
+
+    @Test
     public void indexExistsTest() {
         createMapping(MAP_NAME, Integer.class, Integer.class);
 
@@ -133,6 +145,18 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
         String sql2 = "CREATE INDEX " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
         assertThatThrownBy(() -> instance().getSql().execute(sql2))
                 .hasMessageContaining("Can't create index: index 'idx' already exists");
+    }
+
+    @Test
+    public void indexExistsWithExistingIndexTest() {
+        createMapping(MAP_NAME, Integer.class, Integer.class);
+
+        String indexName = "idx";
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName(indexName));
+
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
+
+        assertThat(instance().getSql().execute(sql)).isNotNull();
     }
 
     @Test
