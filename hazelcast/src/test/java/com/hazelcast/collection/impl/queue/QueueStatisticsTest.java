@@ -157,6 +157,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         IQueue<VersionedObject<String>> queue = newQueue();
         queue.offer(new VersionedObject<>("maxAgeItem", 0));
         queue.offer(new VersionedObject<>("minAgeItem", 1));
+        sleepAtLeastMillis(100);
         queue.poll();
         queue.poll();
 
