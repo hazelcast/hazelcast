@@ -55,10 +55,6 @@ public class MappingStorage {
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    Mapping get(String name) {
-        return storage().get(name);
-    }
-
     void put(String name, Mapping mapping) {
         storage().put(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
@@ -112,9 +108,9 @@ public class MappingStorage {
 
     private Collection<Address> getMemberAddresses() {
         return nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).stream()
-                .filter(member -> !member.localMember() && !member.isLiteMember())
-                .map(Member::getAddress)
-                .collect(toSet());
+                         .filter(member -> !member.localMember() && !member.isLiteMember())
+                         .map(Member::getAddress)
+                         .collect(toSet());
     }
 
     Collection<Mapping> values() {

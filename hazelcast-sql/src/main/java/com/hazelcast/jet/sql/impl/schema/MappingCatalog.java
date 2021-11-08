@@ -103,10 +103,6 @@ public class MappingCatalog implements TableResolver {
         }
     }
 
-    public Mapping getMapping(String name) {
-        return storage.get(name);
-    }
-
     private Mapping resolveMapping(Mapping mapping) {
         String type = mapping.type();
         Map<String, String> options = mapping.options();

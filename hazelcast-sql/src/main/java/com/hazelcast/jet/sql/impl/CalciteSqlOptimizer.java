@@ -304,7 +304,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateIndex.indexName(),
                 sqlCreateIndex.mapName(),
                 sqlCreateIndex.type(),
-                sqlCreateIndex.columns().collect(toList()),
+                sqlCreateIndex.columns(),
                 sqlCreateIndex.options(),
                 sqlCreateIndex.ifNotExists(),
                 planExecutor

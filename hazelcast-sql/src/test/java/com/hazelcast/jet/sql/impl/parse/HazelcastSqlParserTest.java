@@ -113,11 +113,7 @@ public class HazelcastSqlParserTest {
         assertThat(node.mapName()).isEqualTo("mapping_name");
         assertThat(node.indexName()).isEqualTo("index_name");
         assertThat(node.type()).isEqualTo(IndexType.SORTED);
-        assertThat(node.columns().findFirst())
-                .isNotEmpty()
-                .get()
-                .extracting(column -> new Object[]{column})
-                .isEqualTo(new Object[]{"column_name1"});
+        assertThat(node.columns().get(0)).isEqualTo("column_name1");
         assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
     }
@@ -149,11 +145,7 @@ public class HazelcastSqlParserTest {
         assertThat(node.mapName()).isEqualTo("map_name");
         assertThat(node.indexName()).isEqualTo("index_name");
         assertThat(node.type()).isEqualTo(IndexType.SORTED);
-        assertThat(node.columns().findFirst())
-                .isNotEmpty()
-                .get()
-                .extracting(column -> new Object[]{column})
-                .isEqualTo(new Object[]{"column_name1"});
+        assertThat(node.columns().get(0)).isEqualTo("column_name1");
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
     }
 

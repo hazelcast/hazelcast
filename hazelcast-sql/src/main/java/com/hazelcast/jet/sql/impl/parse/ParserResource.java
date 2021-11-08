@@ -44,7 +44,7 @@ public interface ParserResource {
     ExInst<SqlValidatorException> duplicateOption(String optionName);
 
     @BaseMessage("Required option missing: {0}")
-    ExInst<SqlValidatorException> absentOption(String optionName);
+    ExInst<SqlValidatorException> missingOption(String optionName);
 
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
@@ -55,10 +55,10 @@ public interface ParserResource {
     @BaseMessage("Writing to top-level fields of type OBJECT not supported")
     ExInst<SqlValidatorException> insertToTopLevelObject();
 
-    @BaseMessage("Unknown options for {0} index. Only BITMAP index requires options")
-    ExInst<SqlValidatorException> unsupportedIndexType(String indexType);
+    @BaseMessage("Unknown option for {0} index: {1}")
+    ExInst<SqlValidatorException> unsupportedIndexType(String indexType, String option);
 
-    @BaseMessage("Can't create BITMAP index: bitmap index config is empty. " +
+    @BaseMessage("Can't create BITMAP index: " +
             "BITMAP index requires 'unique_key' and 'unique_key_transformation' options")
     ExInst<SqlValidatorException> bitmapIndexConfigEmpty();
 
