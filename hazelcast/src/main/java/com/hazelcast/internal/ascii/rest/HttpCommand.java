@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.ascii.TextCommandService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nullable;
@@ -55,25 +55,14 @@ public abstract class HttpCommand extends AbstractTextCommand {
     protected final String uri;
     protected ByteBuffer response;
     protected boolean nextLine;
-    protected final RestCallExecutionListener listener;
+    private final RestCallExecution executionDetails = new RestCallExecution();
 
-    public HttpCommand(TextCommandConstants.TextCommandType type, String uri, ServerConnection connection) {
+    public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
         super(type);
         this.uri = uri;
         // the command line was parsed already, let's start with clear next line
         this.nextLine = true;
-        this.listener = connection.getConnectionManager().getServer().getContext()
-                .getTextCommandService().createRestCallExecutionListener();
-        listener.requestPathDetermined(uri);
-
-    }
-
-    void objectTypeDetermined(RestCallExecution.ObjectType objectType) {
-        listener.objectTypeDetermined(objectType);
-    }
-
-    void objectNameDetermined(String objectName) {
-        listener.objectNameDetermined(objectName);
+        executionDetails.setRequestPath(uri);
     }
 
     @Override
@@ -171,7 +160,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         }
         response.put(TextCommandConstants.RETURN);
         response.flip();
-        listener.responseSent(statusCode.code);
+        setStatusCode(statusCode.code);
     }
 
     /**
@@ -191,8 +180,8 @@ public abstract class HttpCommand extends AbstractTextCommand {
      * @param value       binary-encoded response content value
      */
     public void setResponseWithHeaders(HttpStatusCode statusCode,
-                            @Nullable Map<String, Object> headers,
-                            @Nullable byte[] value) {
+                                       @Nullable Map<String, Object> headers,
+                                       @Nullable byte[] value) {
         byte[] statusLine = statusCode.statusLine;
         int valueSize = (value == null) ? 0 : value.length;
         byte[] len = stringToBytes(String.valueOf(valueSize));
@@ -229,7 +218,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             response.put(value);
         }
         response.flip();
-        listener.responseSent(statusCode.code);
+        setStatusCode(statusCode.code);
     }
 
 
@@ -273,7 +262,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             response.put(value);
         }
         response.flip();
-        listener.responseSent(statusCode.code);
+        setStatusCode(statusCode.code);
     }
 
     @Override
@@ -307,5 +296,23 @@ public abstract class HttpCommand extends AbstractTextCommand {
                 + '\''
                 + '}'
                 + super.toString();
+    }
+
+    public RestCallExecution getExecutionDetails() {
+        return executionDetails;
+    }
+
+    void setStatusCode(int statusCode) {
+        int existingStatusCode = executionDetails.getStatusCode();
+        if (existingStatusCode > 0) {
+            throw new IllegalStateException("can not set statusCode to " + statusCode + ", it is already " + existingStatusCode);
+        }
+        executionDetails.setStatusCode(statusCode);
+    }
+
+    @Override
+    public void beforeSendResponse(TextCommandService textCommandService) {
+        RestCallCollector collector = textCommandService.getRestCallCollector();
+        collector.collectExecution(this);
     }
 }

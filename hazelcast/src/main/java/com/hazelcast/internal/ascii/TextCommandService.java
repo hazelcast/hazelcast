@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.ascii.memcache.Stats;
-import com.hazelcast.internal.ascii.rest.RestCallExecutionListener;
 import com.hazelcast.internal.ascii.rest.RestCallCollector;
 
 import java.util.Map;
@@ -78,8 +77,6 @@ public interface TextCommandService {
     long incrementTouchCount();
 
     RestCallCollector getRestCallCollector();
-
-    RestCallExecutionListener createRestCallExecutionListener();
 
     /**
      * Returns the size of the distributed queue instance with the specified name

@@ -71,6 +71,13 @@ public abstract class AbstractTextCommand implements TextCommand {
         return true;
     }
 
+    /**
+     * Called from TextCommandService right before TextCommand is put to outboundQueue
+     */
+    protected void beforeSendResponse(TextCommandService textCommandService) {
+
+    }
+
     @Override
     public String toString() {
         return "AbstractTextCommand[" + type + "]{"

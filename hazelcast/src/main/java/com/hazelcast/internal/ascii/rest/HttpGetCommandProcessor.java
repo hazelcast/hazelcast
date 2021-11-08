@@ -370,10 +370,10 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {
-        command.objectTypeDetermined(QUEUE);
+        command.getExecutionDetails().setObjectType(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
-        command.objectNameDetermined(queueName);
+        command.getExecutionDetails().setObjectName(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
 
         if (equalsIgnoreCase(QUEUE_SIZE_COMMAND, secondStr)) {
@@ -387,11 +387,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleMap(HttpGetCommand command, String uri) {
-        command.objectTypeDetermined(MAP);
+        command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-        command.objectNameDetermined(mapName);
+        command.getExecutionDetails().setObjectName(mapName);
         String key = uri.substring(indexEnd + 1);
         Object value = textCommandService.get(mapName, key);
         prepareResponse(command, value);

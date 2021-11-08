@@ -17,12 +17,11 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.nio.ascii.TextDecoder;
-import com.hazelcast.internal.server.ServerConnection;
 
 public class HttpHeadCommandParser extends HttpCommandParser<HttpHeadCommand> {
 
     @Override
-    HttpHeadCommand createHttpCommand(TextDecoder decoder, String uri, ServerConnection connection) {
-        return new HttpHeadCommand(uri, connection);
+    HttpHeadCommand createHttpCommand(TextDecoder decoder, String uri) {
+        return new HttpHeadCommand(uri);
     }
 }

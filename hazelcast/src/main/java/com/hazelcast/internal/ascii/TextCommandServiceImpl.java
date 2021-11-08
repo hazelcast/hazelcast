@@ -35,7 +35,6 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
-import com.hazelcast.internal.ascii.rest.RestCallExecutionListener;
 import com.hazelcast.internal.ascii.rest.RestCallCollector;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.nio.Protocols;
@@ -241,11 +240,6 @@ public class TextCommandServiceImpl implements TextCommandService {
     }
 
     @Override
-    public RestCallExecutionListener createRestCallExecutionListener() {
-        return new RestCallExecutionListener(restCallCollector);
-    }
-
-    @Override
     public void processRequest(TextCommand command) {
         startResponseThreadIfNotRunning();
         node.nodeEngine.getExecutionService().execute("hz:text", new CommandExecutor(command));
@@ -372,6 +366,7 @@ public class TextCommandServiceImpl implements TextCommandService {
 
     @Override
     public void sendResponse(TextCommand textCommand) {
+        ((AbstractTextCommand) textCommand).beforeSendResponse(this);
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);
         }
