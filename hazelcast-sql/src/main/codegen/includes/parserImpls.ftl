@@ -235,13 +235,13 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 /**
 * Parses CREATE INDEX statement.
 */
-SqlCreate SqlCreateIndex(Span span, boolean required) :
+SqlCreate SqlCreateIndex(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
 
     SqlIdentifier name;
     SqlIdentifier objectName;
-    SqlNodeList attributes = SqlNodeList.EMPTY;
+    SqlNodeList attributes;
     SqlIdentifier type = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
@@ -272,6 +272,7 @@ SqlCreate SqlCreateIndex(Span span, boolean required) :
                 attributes,
                 type,
                 sqlOptions,
+                replace,
                 ifNotExists,
                 startPos.plus(getPos())
         );

@@ -68,10 +68,11 @@ public class SqlCreateIndex extends SqlCreate {
             SqlNodeList columns,
             SqlIdentifier type,
             SqlNodeList options,
+            boolean replace,
             boolean ifNotExists,
             SqlParserPos pos
     ) {
-        super(OPERATOR, pos, false, ifNotExists);
+        super(OPERATOR, pos, replace, ifNotExists);
 
         this.name = requireNonNull(name, "Name should not be null");
         this.mapName = requireNonNull(mappingName, "Map name should not be null");
@@ -171,6 +172,10 @@ public class SqlCreateIndex extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (getReplace()) {
+            throw validator.newValidationError(this, RESOURCE.notSupported("OR REPLACE", "CREATE INDEX"));
+        }
+
         Set<String> columnNames = new HashSet<>();
         for (SqlNode column : columns.getList()) {
             String name = ((SqlIdentifier) requireNonNull(column)).getSimple();
