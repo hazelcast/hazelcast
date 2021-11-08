@@ -314,6 +314,7 @@ SqlDrop SqlDropIndex(Span span, boolean required) :
     SqlParserPos pos = span.pos();
 
     SqlIdentifier name;
+    SqlIdentifier objectName;
     boolean ifExists = false;
 }
 {
@@ -321,9 +322,12 @@ SqlDrop SqlDropIndex(Span span, boolean required) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = CompoundIdentifier()
+    name = SimpleIdentifier()
+
+    <ON>
+    objectName = SimpleIdentifier()
     {
-        return new SqlDropIndex(name, ifExists, pos.plus(getPos()));
+        return new SqlDropIndex(name, objectName, ifExists, pos.plus(getPos()));
     }
 }
 

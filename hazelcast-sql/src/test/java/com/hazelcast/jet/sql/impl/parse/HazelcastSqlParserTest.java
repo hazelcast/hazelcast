@@ -319,13 +319,14 @@ public class HazelcastSqlParserTest {
     })
     public void test_dropIndex(boolean ifExists) throws SqlParseException {
         // given
-        String sql = "DROP INDEX " + (ifExists ? "IF EXISTS " : "") + "index_name";
+        String sql = "DROP INDEX " + (ifExists ? "IF EXISTS " : "") + "index_name ON object_name";
 
         // when
         SqlDropIndex node = (SqlDropIndex) parse(sql);
 
         // then
         assertThat(node.indexName()).isEqualTo("index_name");
+        assertThat(node.objectName()).isEqualTo("object_name");
         assertThat(node.ifExists()).isEqualTo(ifExists);
     }
 

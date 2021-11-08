@@ -40,19 +40,26 @@ public class SqlDropIndex extends SqlDrop {
             new SqlSpecialOperator("DROP INDEX", SqlKind.DROP_INDEX);
 
     private final SqlIdentifier name;
+    private final SqlIdentifier objectName;
 
     public SqlDropIndex(
             SqlIdentifier name,
+            SqlIdentifier objectName,
             boolean ifExists,
             SqlParserPos pos
     ) {
         super(OPERATOR, pos, ifExists);
 
         this.name = requireNonNull(name, "Name should not be null");
+        this.objectName = requireNonNull(objectName, "Object name should not be null");
     }
 
     public String indexName() {
         return name.toString();
+    }
+
+    public String objectName() {
+        return objectName.toString();
     }
 
     public boolean ifExists() {
@@ -68,7 +75,7 @@ public class SqlDropIndex extends SqlDrop {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name);
+        return ImmutableNullableList.of(name, objectName);
     }
 
     @Override
@@ -78,6 +85,8 @@ public class SqlDropIndex extends SqlDrop {
             writer.keyword("IF EXISTS");
         }
         name.unparse(writer, leftPrec, rightPrec);
+        writer.keyword("ON");
+        objectName.unparse(writer, leftPrec, rightPrec);
     }
 
     @Override
