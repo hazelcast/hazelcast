@@ -42,8 +42,6 @@ import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
@@ -191,16 +189,6 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeChar(@Nonnull String fieldName, char value) {
-        int position = getFixedSizeFieldPosition(fieldName, CHAR);
-        try {
-            out.writeChar(position, value);
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
     public void writeShort(@Nonnull String fieldName, short value) {
         int position = getFixedSizeFieldPosition(fieldName, SHORT);
         try {
@@ -313,11 +301,6 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] values) {
         writeVariableSizeField(fieldName, ARRAY_OF_BOOLEANS, values, DefaultCompactWriter::writeBooleanBits);
-    }
-
-    @Override
-    public void writeArrayOfChars(@Nonnull String fieldName, @Nullable char[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_CHARS, values, ObjectDataOutput::writeCharArray);
     }
 
     @Override

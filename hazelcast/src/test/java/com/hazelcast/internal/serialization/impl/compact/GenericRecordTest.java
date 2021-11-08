@@ -44,6 +44,7 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -199,6 +200,30 @@ public class GenericRecordTest {
 
         assertEquals(2, newRecord.getInt("foo"));
         assertEquals(100, newRecord.getLong("bar"));
+    }
+
+    @Test
+    public void testReadWriteChar() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            compact("writeChar").setChar("c", 'a');
+        });
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            GenericRecord record = compact("readChar").build();
+            record.getChar("c");
+        });
+    }
+
+    @Test
+    public void testReadWriteCharArray() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            compact("writeCharArray").setArrayOfChars("ca", new char[]{'c'});
+        });
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            GenericRecord record = compact("readCharArray").build();
+            record.getArrayOfChars("ca");
+        });
     }
 
     private String trySetAndGetMessage(String fieldName, int value, GenericRecordBuilder cloneBuilder) {

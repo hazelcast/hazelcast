@@ -21,15 +21,13 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
@@ -40,10 +38,6 @@ import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
@@ -76,9 +70,9 @@ final class WatermarkRules {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
             return context -> {
-                long lagMs = extractLagMillis(lagExpression, context);
+                long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
-                        row -> extractOrderingMillis(row[orderingColumnFieldIndex]),
+                        row -> WindowUtils.extractMillis(row[orderingColumnFieldIndex]),
                         (row, timestamp) -> row,
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,
@@ -135,24 +129,5 @@ final class WatermarkRules {
 
     private static RexNode extractOperand(LogicalTableFunctionScan function, int index) {
         return ((RexCall) function.getCall()).getOperands().get(index);
-    }
-
-    private static long extractOrderingMillis(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        } else if (value instanceof OffsetDateTime) {
-            return ((OffsetDateTime) value).toInstant().toEpochMilli();
-        } else if (value instanceof LocalDateTime) {
-            return QueryDataType.TIMESTAMP.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
-        } else if (value instanceof LocalDate) {
-            return QueryDataType.DATE.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
-        } else {
-            return QueryDataType.TIME.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
-        }
-    }
-
-    private static long extractLagMillis(Expression<?> expression, ExpressionEvalContext evalContext) {
-        Object lag = expression.eval(EmptyRow.INSTANCE, evalContext);
-        return lag instanceof Number ? ((Number) lag).longValue() : ((SqlDaySecondInterval) lag).getMillis();
     }
 }

@@ -146,6 +146,6 @@ public class TypedOperandChecker extends AbstractOperandChecker {
     private QueryDataType getTargetHazelcastType() {
         return type != null
                 ? HazelcastTypeUtils.toHazelcastType(type)
-                : HazelcastTypeUtils.toHazelcastType(targetTypeName);
+                : HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(targetTypeName);
     }
 }
