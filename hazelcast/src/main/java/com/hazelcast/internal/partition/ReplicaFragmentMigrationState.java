@@ -45,27 +45,29 @@ import static java.lang.String.format;
 public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable, TargetAware {
 
     private Map<ServiceNamespace, long[]> namespaces;
-
     private Collection<Operation> migrationOperations;
 
     private transient Collection<ChunkSupplier> chunkSuppliers;
+    private transient int maxTotalChunkedDataInBytes;
 
     public ReplicaFragmentMigrationState() {
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations) {
-        this(namespaces, migrationOperations, Collections.emptyList());
+        this(namespaces, migrationOperations, Collections.emptyList(), Integer.MAX_VALUE);
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations,
-                                         Collection<ChunkSupplier> chunkSuppliers) {
+                                         Collection<ChunkSupplier> chunkSuppliers,
+                                         int maxTotalChunkedDataInBytes) {
         assert chunkSuppliers != null;
 
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
         this.chunkSuppliers = chunkSuppliers;
+        this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
@@ -103,7 +105,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     }
 
     private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
-        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out);
+        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
             chunkSupplier.inject(isEndOfChunk);
 
@@ -122,8 +124,8 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             }
 
             if (isEndOfChunk.getAsBoolean()) {
-                System.err.println(format("Reached maxChunkSize:%d, bytesWrittenSoFar:%d",
-                        ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES, isEndOfChunk.bytesWrittenSoFar()));
+                System.err.println(format("Reached maxTotalChunkedDataInBytes:%d, bytesWrittenSoFar:%d",
+                        maxTotalChunkedDataInBytes, isEndOfChunk.bytesWrittenSoFar()));
                 break;
             }
         }
@@ -140,24 +142,26 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         }
 
         if (isNotEmpty(chunkSuppliers) && allDone) {
-            System.err.println(format("allDone maxChunkSize:%d, bytesWrittenSoFar:%d",
-                    ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES, isEndOfChunk.bytesWrittenSoFar()));
+            System.err.println(format("allDone maxTotalChunkedDataInBytes:%d, bytesWrittenSoFar:%d",
+                    maxTotalChunkedDataInBytes, isEndOfChunk.bytesWrittenSoFar()));
         }
     }
 
     private static final class IsEndOfChunk implements BooleanSupplier {
 
         private final int positionStart;
+        private final int maxTotalChunkedDataInBytes;
         private final BufferObjectDataOutput out;
 
-        private IsEndOfChunk(ObjectDataOutput out) {
+        private IsEndOfChunk(ObjectDataOutput out, int maxTotalChunkedDataInBytes) {
             this.out = ((BufferObjectDataOutput) out);
             this.positionStart = ((BufferObjectDataOutput) out).position();
+            this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
         }
 
         @Override
         public boolean getAsBoolean() {
-            return bytesWrittenSoFar() >= ChunkSupplier.MAX_MIGRATING_DATA_IN_BYTES;
+            return bytesWrittenSoFar() >= maxTotalChunkedDataInBytes;
         }
 
         public int bytesWrittenSoFar() {

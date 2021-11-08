@@ -65,11 +65,12 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        Operation op = new MigrationRequestOperation(migration, Collections.emptyList(), 0, true);
+        Operation op = new MigrationRequestOperation(migration, Collections.emptyList(),
+                0, true, true, Integer.MAX_VALUE);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
+                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -103,8 +104,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
         Operation op = new MigrationOperation(migration, Collections.emptyList(), 0, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
+                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -126,8 +127,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<Object> future =
                 getOperationService(member2).createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(),
-                                                                    getAddress(member3))
-                                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
+                                getAddress(member3))
+                        .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
 
         try {
             future.get();
