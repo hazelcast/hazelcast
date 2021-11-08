@@ -27,6 +27,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Disk tier configuration of Tiered-Store.
+ *
+ * @since 5.1
+ */
 public class TSDiskTierConfig implements IdentifiedDataSerializable {
 
     /**
@@ -56,37 +61,79 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         capacity = tsDiskTierConfig.getCapacity();
     }
 
+    /**
+     * Returns whether disk tier is enabled on the related tiered-store.
+     *
+     * @return true if disk tier is enabled, false otherwise.
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Sets whether disk tier is enabled on the related tiered-store.
+     *
+     * @param enabled enabled parameter.
+     * @return this TSDiskTierConfig
+     */
     public TSDiskTierConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Base directory for this disk tier.
+     * Can be an absolute or relative path to the node startup directory.
+     */
     public File getBaseDir() {
         return baseDir;
     }
 
+    /**
+     * Sets the base directory for this disk tier.
+     *
+     * @param baseDir base directory.
+     * @return this TSDiskTierConfig
+     */
     public TSDiskTierConfig setBaseDir(File baseDir) {
         this.baseDir = baseDir;
         return this;
     }
 
+    /**
+     * Returns disk block/sector size in bytes.
+     *
+     * @return block size
+     */
     public int getBlockSize() {
         return blockSize;
     }
 
+    /**
+     * Sets the disk block/sector size in bytes.
+     * @param blockSize block size.
+     * @return this TSDiskTierConfig
+     */
     public TSDiskTierConfig setBlockSize(int blockSize) {
         this.blockSize = blockSize;
         return this;
     }
 
+    /**
+     * Returns the capacity of this disk tier.
+     *
+     * @return disk tier capacity.
+     */
     public MemorySize getCapacity() {
         return capacity;
     }
 
+    /**
+     * Sets the capacity of this disk tier.
+     *
+     * @param capacity capacity.
+     * @return this TSDiskTierConfig
+     */
     public TSDiskTierConfig setCapacity(MemorySize capacity) {
         this.capacity = capacity;
         return this;

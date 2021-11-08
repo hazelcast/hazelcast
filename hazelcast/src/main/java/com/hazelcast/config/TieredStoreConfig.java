@@ -24,6 +24,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Tiered-Store configuration.
+ *
+ * @since 5.1
+ */
 public class TieredStoreConfig implements IdentifiedDataSerializable {
 
     /**
@@ -45,28 +50,61 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
         this.diskTierConfig = tieredStoreConfig.getDiskTierConfig();
     }
 
+    /**
+     * Returns whether tiered-store is enabled on the related data structure.
+     *
+     * @return true if tiered-store is enabled, false otherwise.
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Sets whether tiered-store is enabled on the related data structure.
+     *
+     * @param enabled enabled parameter.
+     * @return this TieredStoreConfig
+     */
     public TieredStoreConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Returns the in-memory tier config of this tiered-store configuration.
+     *
+     * @return {@code TSInMemoryTierConfig} of this tiered-store configuration.
+     */
     public TSInMemoryTierConfig getInMemoryTierConfig() {
         return inMemoryTierConfig;
     }
 
+    /**
+     * Sets the in-memory tier config of this tiered-store configuration.
+     *
+     * @param inMemoryTierConfig in-memory tier configuration.
+     * @return this TieredStoreConfig
+     */
     public TieredStoreConfig setInMemoryTierConfig(TSInMemoryTierConfig inMemoryTierConfig) {
         this.inMemoryTierConfig = inMemoryTierConfig;
         return this;
     }
 
+    /**
+     * Returns the disk tier config of this tiered-store configuration.
+     *
+     * @return {@code TSDiskTierConfig} of this tiered-store configuration.
+     */
     public TSDiskTierConfig getDiskTierConfig() {
         return diskTierConfig;
     }
 
+    /**
+     * Sets the disk tier config of this tiered-store configuration.
+     *
+     * @param diskTierConfig disk tier configuration.
+     * @return this TieredStoreConfig
+     */
     public TieredStoreConfig setDiskTierConfig(TSDiskTierConfig diskTierConfig) {
         this.diskTierConfig = diskTierConfig;
         return this;

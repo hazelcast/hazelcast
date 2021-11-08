@@ -28,6 +28,11 @@ import java.util.Objects;
 
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 
+/**
+ * In-Memory tier configuration of Tiered-Store.
+ *
+ * @since 5.1
+ */
 public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     /**
@@ -45,11 +50,21 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
         capacity = tsInMemoryTierConfig.getCapacity();
     }
 
-
+    /**
+     * Returns the capacity of this in-memory tier.
+     *
+     * @return in-memory tier capacity.
+     */
     public MemorySize getCapacity() {
         return capacity;
     }
 
+    /**
+     * Sets the capacity of this in-memory tier.
+     *
+     * @param capacity capacity.
+     * @return this TSInMemoryTierConfig
+     */
     public TSInMemoryTierConfig setCapacity(MemorySize capacity) {
         this.capacity = capacity;
         return this;
