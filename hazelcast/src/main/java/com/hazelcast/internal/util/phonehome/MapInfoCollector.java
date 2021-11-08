@@ -85,7 +85,7 @@ class MapInfoCollector
         objects.stream()
                 .filter(obj -> obj.getServiceName().equals(MapService.SERVICE_NAME))
                 .forEach(obj -> {
-                    MapConfig config = node.getConfig().getMapConfig(obj.getName());
+                    MapConfig config = node.getConfig().findMapConfig(obj.getName());
                     if (config != null) {
                         mapConfigs.put(obj.getName(), config);
                     }

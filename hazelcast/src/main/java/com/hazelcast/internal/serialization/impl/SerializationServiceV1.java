@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayBlockingQueueStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayDequeStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayListStreamSerializer;
@@ -65,6 +66,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -199,6 +201,22 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data));
         }
         throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        if (!data.isCompact()) {
+            throw new IllegalArgumentException("Can not extract schema from given data type " + data.getType());
+        }
+        return compactStreamSerializer.extractSchema(createObjectDataInput(data));
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        if (!isCompactSerializable(object)) {
+            throw new IllegalArgumentException("Can not extract schema from given class " + object.getClass());
+        }
+        return compactStreamSerializer.extractSchema(object);
     }
 
     public PortableContext getPortableContext() {

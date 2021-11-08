@@ -86,6 +86,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("EXISTS")
                     || field.getName().equals("DESCRIPTOR")
                     || field.getName().equals("IMPOSE_ORDER")
+                    || field.getName().equals("TUMBLE")
             ) {
                 continue;
             }
@@ -523,6 +524,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_MAX() {
         check(sql("MAX(?) || MAX(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_JSON_QUERY() {
+        check(sql("JSON_QUERY(CAST(? AS JSON), '$') || JSON_QUERY(CAST(? AS JSON), '$')"), "[1]", "[1]");
+    }
+
+    @Test
+    public void test_JSON_VALUE() {
+        check(sql("JSON_VALUE(CAST(? AS JSON), '$[0]') || JSON_VALUE(CAST(? AS JSON), '$[0]')"), "[1]", "[1]");
     }
 
     private void check(String sql, Object... params) {

@@ -121,9 +121,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     @Override
     @Nonnull
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
-        checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeChar(fieldName, value);
-        return this;
+        throw new UnsupportedOperationException("Compact format does not support writing a char field");
     }
 
     @Override
@@ -281,9 +279,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     @Override
     @Nonnull
     public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
-        checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfChars(fieldName, value);
-        return this;
+        throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
     }
 
     @Override

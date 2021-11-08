@@ -36,7 +36,6 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exce
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
@@ -58,7 +57,6 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
@@ -135,7 +133,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Override
     public char getChar(@Nonnull String fieldName) {
-        return get(fieldName, CHAR);
+        throw new UnsupportedOperationException("Compact format does not support reading a char field");
     }
 
     @Override
@@ -244,7 +242,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public char[] getArrayOfChars(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_CHARS);
+        throw new UnsupportedOperationException("Compact format does not support reading an array of chars field");
     }
 
     @Override

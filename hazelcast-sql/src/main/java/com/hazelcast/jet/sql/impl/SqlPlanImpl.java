@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.security.permission.MapPermission;
@@ -498,6 +499,46 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("SHOW " + showTarget, arguments);
             SqlPlanImpl.ensureNoTimeout("SHOW " + showTarget, timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class ExplainStatementPlan extends SqlPlanImpl {
+        private final PhysicalRel rel;
+        private final PlanExecutor planExecutor;
+
+        ExplainStatementPlan(
+                PlanKey planKey,
+                PhysicalRel rel,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+            this.rel = rel;
+            this.planExecutor = planExecutor;
+        }
+
+        public PhysicalRel getRel() {
+            return rel;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoTimeout("EXPLAIN", timeout);
             return planExecutor.execute(this);
         }
     }
