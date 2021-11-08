@@ -56,7 +56,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
 
     public TSDiskTierConfig(TSDiskTierConfig tsDiskTierConfig) {
         enabled = tsDiskTierConfig.isEnabled();
-        baseDir = tsDiskTierConfig.getBaseDir();
+        baseDir = new File(tsDiskTierConfig.getBaseDir().getAbsolutePath());
         blockSize = tsDiskTierConfig.getBlockSize();
         capacity = tsDiskTierConfig.getCapacity();
     }

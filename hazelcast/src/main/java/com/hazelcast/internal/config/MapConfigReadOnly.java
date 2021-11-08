@@ -33,6 +33,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.util.CollectionUtil;
 
@@ -63,6 +64,7 @@ public class MapConfigReadOnly extends MapConfig {
     private final List<MapPartitionLostListenerConfig> partitionLostListenerConfigsReadOnly;
     private final List<QueryCacheConfig> queryCacheConfigsReadOnly;
     private final List<EntryListenerConfig> entryListenerConfigsReadOnly;
+    private final TieredStoreConfigReadOnly tieredStoreConfigReadOnly;
 
     public MapConfigReadOnly(MapConfig config) {
         super(config);
@@ -102,6 +104,9 @@ public class MapConfigReadOnly extends MapConfig {
         partitionLostListenerConfigsReadOnly = getPartitionLostListenerConfigsReadOnly();
         queryCacheConfigsReadOnly = getQueryCacheConfigsReadOnly();
         entryListenerConfigsReadOnly = getEntryListenerConfigsReadOnly();
+
+        TieredStoreConfig tieredStoreConfig = super.getTieredStoreConfig();
+        tieredStoreConfigReadOnly = new TieredStoreConfigReadOnly(tieredStoreConfig);
     }
 
     private List<EntryListenerConfig> getEntryListenerConfigsReadOnly() {

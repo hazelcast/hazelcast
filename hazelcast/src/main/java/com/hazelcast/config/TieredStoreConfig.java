@@ -46,8 +46,8 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
 
     public TieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
         this.enabled = tieredStoreConfig.isEnabled();
-        this.inMemoryTierConfig = tieredStoreConfig.getInMemoryTierConfig();
-        this.diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        this.inMemoryTierConfig = new TSInMemoryTierConfig(tieredStoreConfig.getInMemoryTierConfig());
+        this.diskTierConfig = new TSDiskTierConfig(tieredStoreConfig.getDiskTierConfig());
     }
 
     /**
