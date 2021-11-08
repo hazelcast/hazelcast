@@ -205,7 +205,11 @@ QueryDataType ObjectTypes() :
     QueryDataType type;
 }
 {
-    <OBJECT> { type = QueryDataType.OBJECT; }
+    (
+        <OBJECT> { type = QueryDataType.OBJECT; }
+    |
+        <JSON> { type = QueryDataType.JSON; }
+    )
     {
         return type;
     }
@@ -533,6 +537,24 @@ SqlShowStatement SqlShowStatement() :
 }
 
 /**
+ * Parses an EXPLAIN statement.
+ */
+SqlNode SqlExplainStatement() :
+{
+    SqlNode stmt;
+}
+{
+    <EXPLAIN>
+    [
+        LOOKAHEAD(2)
+        <PLAN> <FOR>
+    ]
+    stmt = ExtendedSqlQueryOrDml() {
+        return new SqlExplainStatement(getPos(), stmt);
+    }
+}
+
+/**
  * Parses INSERT/SINK INTO statement.
  */
 SqlExtendedInsert SqlExtendedInsert() :
@@ -575,6 +597,25 @@ SqlExtendedInsert SqlExtendedInsert() :
             span.end(source)
         );
     }
+}
+
+/** Parses a query (SELECT or VALUES)
+ * or DML statement (extended INSERT, UPDATE, DELETE). */
+SqlNode ExtendedSqlQueryOrDml() :
+{
+    SqlNode stmt;
+}
+{
+    (
+        LOOKAHEAD(2)
+        stmt = SqlExtendedInsert()
+    |
+        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    |
+        stmt = SqlDelete()
+    |
+        stmt = SqlUpdate()
+    ) { return stmt; }
 }
 
 /**
@@ -620,4 +661,3 @@ boolean HazelcastTimeZoneOpt() :
 |
     { return false; }
 }
-

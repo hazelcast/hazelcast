@@ -102,6 +102,7 @@
         <jackson.version>2.12.1</jackson.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
+        <json-path.version>2.4.0</json-path.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
@@ -550,6 +551,24 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc.plugin.version}</version>
+                    <configuration>
+                        <maxmemory>1024</maxmemory>
+                        <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
+                        <doclint>-missing</doclint>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
                 </plugin>
@@ -973,20 +992,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <maxmemory>1024</maxmemory>
-                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>-missing</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
 
                     <plugin>
@@ -1015,22 +1020,30 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>-missing</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>release-devel</id>
+            <properties>
+                <javadoc>true</javadoc>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <repository>
+                    <id>devel-repository</id>
+                    <url>https://hazelcast.jfrog.io/artifactory/devel</url>
+                </repository>
+            </distributionManagement>
         </profile>
 
         <profile>
@@ -1237,10 +1250,11 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
                                 <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
-                                <!-- wrapper ClassRecordingSerializationService -->
-                                <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
+                                <!-- sampling serialization service -->
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/jet/**/*.java</exclude>
+                                <exclude>**/*Jet*.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,

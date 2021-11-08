@@ -48,6 +48,6 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
         return (E) new LazyEvictableEntryView<>(key, record,
-                expirySystem.getExpiredMetadata(key), serializationService);
+                expirySystem.getExpiryMetadata(key), serializationService);
     }
 }

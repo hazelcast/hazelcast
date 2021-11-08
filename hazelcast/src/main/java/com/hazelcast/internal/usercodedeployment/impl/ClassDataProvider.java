@@ -103,21 +103,33 @@ public final class ClassDataProvider {
 
     private Map<String, byte[]> loadAnonymousClasses(String className, Map<String, byte[]> innerClassDefinitions) {
         int i = 1;
+
         while (true) {
-            try {
-                String innerClassName = className + "$" + i;
-                parent.loadClass(innerClassName);
-                byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
-                if (innerClassDefinitions == null) {
-                    innerClassDefinitions = new HashMap<String, byte[]>();
-                }
-                innerClassDefinitions.put(innerClassName, innerByteCode);
-                i++;
-            } catch (ClassNotFoundException e) {
+            String innerClassName = className + "$" + i;
+            boolean shouldContinue = attemptToLoadClass(innerClassName);
+
+            if (!shouldContinue) {
                 break;
             }
+
+            byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
+            if (innerClassDefinitions == null) {
+                innerClassDefinitions = new HashMap<String, byte[]>();
+            }
+            innerClassDefinitions.put(innerClassName, innerByteCode);
+            i++;
         }
         return innerClassDefinitions;
+    }
+
+    private boolean attemptToLoadClass(String innerClassName) {
+        try {
+            parent.loadClass(innerClassName);
+        } catch (ClassNotFoundException exception) {
+            return false;
+        }
+
+        return true;
     }
 
     private Map<String, byte[]> loadInnerClasses(String className) {

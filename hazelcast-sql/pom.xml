@@ -38,7 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.27.0</calcite.version>
+        <calcite.version>1.28.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
@@ -62,51 +62,6 @@
 
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>unpack-parser-template</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <includeGroupIds>org.apache.calcite</includeGroupIds>
-                            <includeArtifactIds>calcite-core</includeArtifactIds>
-                            <includes>**/Parser.jj</includes>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <overWriteReleases>true</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${maven.resources.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>copy-fmpp-resources</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/codegen</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>src/main/codegen</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>com.googlecode.fmpp-maven-plugin</groupId>
                 <artifactId>fmpp-maven-plugin</artifactId>
                 <version>1.0</version>
@@ -125,9 +80,9 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <cfgFile>${project.build.directory}/codegen/config.fmpp</cfgFile>
+                            <cfgFile>src/main/codegen/config.fmpp</cfgFile>
+                            <templateDirectory>src/main/codegen/templates</templateDirectory>
                             <outputDirectory>target/generated-sources</outputDirectory>
-                            <templateDirectory>${project.build.directory}/codegen/templates</templateDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -222,9 +177,11 @@
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
                                     <include>com.jayway.jsonpath:json-path</include>
+                                    <include>net.minidev:json-smart</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
@@ -264,6 +221,10 @@
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>net.minidev</pattern>
+                                    <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.apache.commons</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
                                 </relocation>
@@ -290,7 +251,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                             </transformers>
@@ -309,8 +270,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
-                                        <!-- TODO: Remove when Calcite is released with the bug fixed -->
-                                        <exclude>org/apache/calcite/linq4j/tree/ConstantExpression.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -331,6 +290,18 @@
                                 </filter>
                                 <filter>
                                     <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>net.minidev:json-smart</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.code.gson:gson</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -499,7 +470,15 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${json-path.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

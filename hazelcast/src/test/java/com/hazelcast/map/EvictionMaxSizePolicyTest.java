@@ -74,6 +74,7 @@ import static org.junit.Assert.assertTrue;
 public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     private static final int PARTITION_COUNT = 271;
+    private static final int PARTITION_MAX_PARALLEL_MIGRATIONS = 1;
 
     @Test
     public void testPerNodePolicy() {
@@ -129,7 +130,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                     assertEquals(message, initialMapSize, evictedKeyCount + currentMapSize);
                     // current map size should approximately be around (nodeCount - 1) * perNodeMaxSize.
                     assertTrue(message, ((nodeCount - 1) * perNodeMaxSize)
-                            + (PARTITION_COUNT / nodeCount) >= currentMapSize);
+                            + (PARTITION_COUNT / (nodeCount - 1)) >= currentMapSize);
                 }
             }
 
@@ -138,7 +139,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             IMap<Object, Object> map2 = nodes.get(2).getMap(mapName);
             long totalBackupEntryCount = getTotalBackupEntryCount(map1, map2);
             assertTrue("totalBackupEntryCount=" + totalBackupEntryCount, ((nodeCount - 1) * perNodeMaxSize)
-                    + (PARTITION_COUNT / nodeCount) >= totalBackupEntryCount);
+                    + (PARTITION_COUNT / (nodeCount - 1)) >= totalBackupEntryCount);
         });
     }
 
@@ -436,6 +437,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         Config config = getConfig();
         config.getMetricsConfig().setEnabled(false);
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS.getName(), String.valueOf(PARTITION_MAX_PARALLEL_MIGRATIONS));
 
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setBackupCount(1);
