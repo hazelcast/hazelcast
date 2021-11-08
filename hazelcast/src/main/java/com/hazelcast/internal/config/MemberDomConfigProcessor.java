@@ -145,8 +145,6 @@ import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.memory.MemorySize;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -502,15 +500,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return tieredStoreConfig;
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private TSInMemoryTierConfig createTSInMemoryTierConfig(Node node) {
-        MemorySize capacity = new MemorySize(
-                getLongValue("capacity", getTextContent(childElements(node).iterator().next())),
-                MemoryUnit.MEGABYTES
-        );
+        long capacityInMB = getLongValue("capacity", getTextContent(childElements(node).iterator().next()));
         return new TSInMemoryTierConfig()
-                .setCapacity(capacity);
+                .setCapacity(capacityInMB << 20);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private TSDiskTierConfig createTSDiskTierConfig(Node node) {
         TSDiskTierConfig diskTierConfig = new TSDiskTierConfig();
 
@@ -519,11 +516,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         diskTierConfig.setEnabled(enabled);
 
         Node attrCapacity = getNamedItemNode(node, "capacity");
-        MemorySize capacity = new MemorySize(
-                getLongValue("capacity", getTextContent(attrCapacity)),
-                MemoryUnit.GIGABYTES
-        );
-        diskTierConfig.setCapacity(capacity);
+        long capacityInGB = getLongValue("capacity", getTextContent(attrCapacity));
+        diskTierConfig.setCapacity(capacityInGB << 30);
 
         String baseDirName = "base-dir";
         String blockSizeName = "block-size";

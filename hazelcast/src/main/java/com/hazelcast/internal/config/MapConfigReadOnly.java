@@ -230,6 +230,12 @@ public class MapConfigReadOnly extends MapConfig {
         return dataPersistenceConfigReadOnly;
     }
 
+    @Nonnull
+    @Override
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfigReadOnly;
+    }
+
     @Override
     public MapConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
         throw throwReadOnly();

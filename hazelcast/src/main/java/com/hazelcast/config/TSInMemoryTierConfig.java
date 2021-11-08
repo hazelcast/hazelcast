@@ -17,16 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.memory.MemorySize;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Objects;
-
-import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 
 /**
  * In-Memory tier configuration of Tiered-Store.
@@ -36,11 +32,11 @@ import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     /**
-     * Default capacity.
+     * Default capacity in bytes.
      */
-    public static final MemorySize DEFAULT_CAPACITY = new MemorySize(256, MEGABYTES);
+    public static final long DEFAULT_CAPACITY = 256L << 20;
 
-    private MemorySize capacity = DEFAULT_CAPACITY;
+    private long capacity = DEFAULT_CAPACITY;
 
     public TSInMemoryTierConfig() {
 
@@ -55,7 +51,7 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
      *
      * @return in-memory tier capacity.
      */
-    public MemorySize getCapacity() {
+    public long getCapacity() {
         return capacity;
     }
 
@@ -65,7 +61,7 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
      * @param capacity capacity.
      * @return this TSInMemoryTierConfig
      */
-    public TSInMemoryTierConfig setCapacity(MemorySize capacity) {
+    public TSInMemoryTierConfig setCapacity(long capacity) {
         this.capacity = capacity;
         return this;
     }
@@ -86,7 +82,7 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public final int hashCode() {
-        return capacity != null ? capacity.hashCode() : 0;
+        return (int) (capacity ^ (capacity >>> 32));
     }
 
     @Override
@@ -98,12 +94,12 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(capacity.bytes());
+        out.writeLong(capacity);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        capacity = new MemorySize(in.readLong(), MemoryUnit.BYTES);
+        capacity = in.readLong();
     }
 
     @Override

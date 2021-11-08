@@ -17,8 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.memory.MemorySize;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -44,11 +42,10 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
      */
     public static final int DEFAULT_BLOCK_SIZE_IN_BYTES = 4096;
 
-
     private boolean enabled;
-    private File baseDir = new File(DEFAULT_TSTORE_BASE_DIR);
+    private File baseDir = new File(DEFAULT_TSTORE_BASE_DIR).getAbsoluteFile();
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
-    private MemorySize capacity;
+    private long capacity;
 
     public TSDiskTierConfig() {
 
@@ -124,7 +121,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
      *
      * @return disk tier capacity.
      */
-    public MemorySize getCapacity() {
+    public long getCapacity() {
         return capacity;
     }
 
@@ -134,7 +131,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
      * @param capacity capacity.
      * @return this TSDiskTierConfig
      */
-    public TSDiskTierConfig setCapacity(MemorySize capacity) {
+    public TSDiskTierConfig setCapacity(long capacity) {
         this.capacity = capacity;
         return this;
     }
@@ -167,7 +164,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
         result = 31 * result + blockSize;
-        result = 31 * result + (capacity != null ? capacity.hashCode() : 0);
+        result = 31 * result + (int) (capacity ^ (capacity >>> 32));
         return result;
     }
 
@@ -186,7 +183,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         out.writeBoolean(enabled);
         out.writeString(baseDir.getAbsolutePath());
         out.writeInt(blockSize);
-        out.writeObject(capacity != null ? capacity.bytes() : null);
+        out.writeLong(capacity);
     }
 
     @Override
@@ -194,8 +191,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         enabled = in.readBoolean();
         baseDir = new File(in.readString()).getAbsoluteFile();
         blockSize = in.readInt();
-        Long cap = in.readObject();
-        capacity = cap != null ? new MemorySize(cap, MemoryUnit.BYTES) : null;
+        capacity = in.readLong();
     }
 
     @Override

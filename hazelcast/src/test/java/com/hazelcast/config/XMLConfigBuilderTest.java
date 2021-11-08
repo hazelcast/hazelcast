@@ -3050,20 +3050,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testTieredStore() {
         // in-memory-tier parameter(s)
-        long inMemoryTierCapacity = 1024;
+        long inMemoryTierCapacityMB = 1024;
 
         // disk-tier parameters
         String baseDir = "/";
         int blockSize = 2048;
-        long diskTierCapacity = 1L << 12;
+        long diskTierCapacityGB = 1L << 12;
 
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"my-map\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <in-memory-tier>"
-                + "            <capacity>" + inMemoryTierCapacity + "</capacity>"
+                + "            <capacity>" + inMemoryTierCapacityMB + "</capacity>"
                 + "        </in-memory-tier>"
-                + "        <disk-tier enabled=\"true\" capacity=\"" + diskTierCapacity + "\">"
+                + "        <disk-tier enabled=\"true\" capacity=\"" + diskTierCapacityGB + "\">"
                 + "            <base-dir>" + baseDir + "</base-dir>"
                 + "            <block-size>" + blockSize + "</block-size>"
                 + "        </disk-tier>"
@@ -3076,11 +3076,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(tieredStoreConfig.isEnabled());
 
         TSInMemoryTierConfig inMemoryTierConfig = tieredStoreConfig.getInMemoryTierConfig();
-        assertEquals(inMemoryTierCapacity, inMemoryTierConfig.getCapacity().megaBytes());
+        assertEquals(inMemoryTierCapacityMB << 20, inMemoryTierConfig.getCapacity());
 
         TSDiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
-        assertEquals(diskTierCapacity, diskTierConfig.getCapacity().gigaBytes());
+        assertEquals(diskTierCapacityGB << 30, diskTierConfig.getCapacity());
         assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
         assertEquals(blockSize, diskTierConfig.getBlockSize());
     }
