@@ -116,7 +116,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 suppliers = new LinkedList<>();
             }
 
-            suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, namespace));
+            suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, singleton(namespace)));
             if (getLogger().isFineEnabled()) {
                 getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
                         namespace, event.getPartitionId()));

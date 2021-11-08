@@ -47,8 +47,6 @@ import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.map.impl.ChunkSupplier;
-import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -98,7 +96,6 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.EMPTY_MAP;
-import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class MultiMapService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
@@ -349,12 +346,6 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
         return map.isEmpty() ? null : new MultiMapReplicationOperation(map).
                 setServiceName(MultiMapService.SERVICE_NAME)
                 .setNodeEngine(nodeEngine);
-    }
-
-    @Override
-    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
-        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
-                () -> prepareReplicationOperation(event, singleton(namespace)));
     }
 
     public void insertMigratedData(int partitionId, Map<String, Map<Data, MultiMapValue>> map) {

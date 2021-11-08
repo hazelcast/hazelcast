@@ -35,8 +35,6 @@ import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.map.impl.ChunkSupplier;
-import com.hazelcast.map.impl.ChunkSuppliers;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
@@ -273,13 +271,6 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
             return null;
         }
         return new ReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-    }
-
-    // TODO method should receive collection of namespace
-    @Override
-    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, ServiceNamespace namespace) {
-        return ChunkSuppliers.newSingleChunkSupplier(getClass().getSimpleName(),
-                () -> prepareReplicationOperation(event, Collections.singleton(namespace)));
     }
 
     @Override
