@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
@@ -67,11 +66,11 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     @Test
     public void basicSqlCreateIndexTest_hash() {
         String indexName = SqlTestSupport.randomName();
-        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
         String selectSql = "SELECT * FROM " + MAP_NAME + " WHERE this = 100";
 
         checkPlan(false, false, selectSql);
 
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE HASH";
         instance().getSql().execute(sql);
 
         checkPlan(true, false, selectSql);
@@ -80,11 +79,11 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     @Test
     public void basicSqlCreateIndexTest_sorted() {
         String indexName = SqlTestSupport.randomName();
-        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE SORTED";
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
 
         checkPlan(false, true, selectSql);
 
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this) TYPE SORTED";
         instance().getSql().execute(sql);
 
         checkPlan(true, true, selectSql);
@@ -106,11 +105,11 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     @Test
     public void sqlCreateIndexWithDefaultTypeTest() {
         String indexName = SqlTestSupport.randomName();
-        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this)";
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
 
         checkPlan(false, true, selectSql);
 
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (this)";
         instance().getSql().execute(sql);
 
         checkPlan(true, true, selectSql);
@@ -155,18 +154,18 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     public void hashAndSortedIndicesMustNotContainOptionsTest() {
         String sql1 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE HASH OPTIONS ('a' = '1')";
         assertThatThrownBy(() -> instance().getSql().execute(sql1))
-                .hasMessageContaining("Only BITMAP index requires options");
+                .hasMessageContaining("Unknown option for HASH index: a");
 
         String sql2 = "CREATE INDEX IF NOT EXISTS idx2 ON " + MAP_NAME + " (this) TYPE SORTED OPTIONS ('a' = '1')";
         assertThatThrownBy(() -> instance().getSql().execute(sql2))
-                .hasMessageContaining("Only BITMAP index requires options");
+                .hasMessageContaining("Unknown option for SORTED index: a");
     }
 
     @Test
     public void bitmapIndexDoesNotContainOptionsTest() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
-                .hasMessageContaining("Cant create BITMAP index: bitmap index config is empty");
+                .hasMessageContaining("BITMAP index requires unique_key and unique_key_transformation options");
     }
 
     private void checkPlan(boolean withIndex, boolean sorted, String sql) {
@@ -183,10 +182,6 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
         if (sorted) {
-            plan(
-                    planRow(0, SortLogicalRel.class),
-                    planRow(1, FullScanLogicalRel.class)
-            );
             if (withIndex) {
                 assertPlan(
                         optimizationResult.getPhysical(),

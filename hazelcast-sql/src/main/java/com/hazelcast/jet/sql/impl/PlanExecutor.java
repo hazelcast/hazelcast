@@ -116,6 +116,10 @@ public class PlanExecutor {
 
     SqlResult execute(CreateIndexPlan plan) {
         if (!plan.ifNotExists()) {
+            // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
+            // OK if two clients concurrently try to create the index (they could both succeed), but covers the
+            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
+            // implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
@@ -137,6 +141,8 @@ public class PlanExecutor {
             indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
         }
 
+        // The `addIndex()` call does nothing, if an index with the same name already exists. Even if its config
+        // is different.
         hazelcastInstance.getMap(plan.mapName()).addIndex(indexConfig);
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
@@ -445,9 +451,9 @@ public class PlanExecutor {
         }
     }
 
-    private static MapContainer getMapContainer(IMap map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapService mapService = (MapService) mapProxy.getService();
+    private static <K, V> MapContainer getMapContainer(IMap<K, V> map) {
+        MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
+        MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainers().get(map.getName());
     }

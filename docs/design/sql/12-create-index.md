@@ -182,10 +182,8 @@ special handling of versions is needed.
 
 #### Permissions
 
-We propose to cover the index creation with a new permission
-`CREATE_INDEX` and `DROP_INDEX`. The `CREATE_MAPPING` permission will
-also be needed, because the command will implicitly create the IMap if
-it doesn't exist.
+The index creation should be protected by `ACTION_INDEX` permission
+given to the target IMap.
 
 ### Testing Criteria
 
