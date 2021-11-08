@@ -3048,6 +3048,45 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testTieredStore() {
+        // in-memory-tier parameter(s)
+        long inMemoryTierCapacity = 1024;
+
+        // disk-tier parameters
+        String baseDir = "/";
+        int blockSize = 2048;
+        long diskTierCapacity = 1L << 12;
+
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"my-map\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <in-memory-tier>"
+                + "            <capacity>" + inMemoryTierCapacity + "</capacity>"
+                + "        </in-memory-tier>"
+                + "        <disk-tier enabled=\"true\" capacity=\"" + diskTierCapacity + "\">"
+                + "            <base-dir>" + baseDir + "</base-dir>"
+                + "            <block-size>" + blockSize + "</block-size>"
+                + "        </disk-tier>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        TSInMemoryTierConfig inMemoryTierConfig = tieredStoreConfig.getInMemoryTierConfig();
+        assertEquals(inMemoryTierCapacity, inMemoryTierConfig.getCapacity().megaBytes());
+
+        TSDiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(diskTierConfig.isEnabled());
+        assertEquals(diskTierCapacity, diskTierConfig.getCapacity().gigaBytes());
+        assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
+        assertEquals(blockSize, diskTierConfig.getBlockSize());
+    }
+
+    @Override
+    @Test
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
         int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";

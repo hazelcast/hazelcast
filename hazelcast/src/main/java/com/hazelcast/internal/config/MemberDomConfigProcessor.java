@@ -107,7 +107,10 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.TSDiskTierConfig;
+import com.hazelcast.config.TSInMemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -142,6 +145,8 @@ import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -476,6 +481,62 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.setPersistenceConfig(prConfig);
+    }
+
+    private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
+        TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+
+        Node attrEnabled = getNamedItemNode(tsRoot, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        tieredStoreConfig.setEnabled(enabled);
+
+        for (Node n : childElements(tsRoot)) {
+            String name = cleanNodeName(n);
+
+            if (matches("in-memory-tier", name)) {
+                tieredStoreConfig.setInMemoryTierConfig(createTSInMemoryTierConfig(n));
+            } else if (matches("disk-tier", name)) {
+                tieredStoreConfig.setDiskTierConfig(createTSDiskTierConfig(n));
+            }
+        }
+        return tieredStoreConfig;
+    }
+
+    private TSInMemoryTierConfig createTSInMemoryTierConfig(Node node) {
+        MemorySize capacity = new MemorySize(
+                getLongValue("capacity", getTextContent(childElements(node).iterator().next())),
+                MemoryUnit.MEGABYTES
+        );
+        return new TSInMemoryTierConfig()
+                .setCapacity(capacity);
+    }
+
+    private TSDiskTierConfig createTSDiskTierConfig(Node node) {
+        TSDiskTierConfig diskTierConfig = new TSDiskTierConfig();
+
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        diskTierConfig.setEnabled(enabled);
+
+        Node attrCapacity = getNamedItemNode(node, "capacity");
+        MemorySize capacity = new MemorySize(
+                getLongValue("capacity", getTextContent(attrCapacity)),
+                MemoryUnit.GIGABYTES
+        );
+        diskTierConfig.setCapacity(capacity);
+
+        String baseDirName = "base-dir";
+        String blockSizeName = "block-size";
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches(baseDirName, name)) {
+                diskTierConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches(blockSizeName, name)) {
+                diskTierConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+            }
+        }
+        return diskTierConfig;
     }
 
     private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
@@ -1841,6 +1902,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if (matches("tiered-store", nodeName)) {
+                mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             }
         }
         config.addMapConfig(mapConfig);

@@ -293,6 +293,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
+            <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -4090,6 +4091,91 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="in-memory-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the in-memory tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="capacity" type="xs:unsignedLong" minOccurs="0" default="256">
+                <xs:annotation>
+                    <xs:documentation>
+                        Capacity in MB, i.e., how much main memory should this tier consume at most.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="disk-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the disk tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tstore">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for storing files.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block-size" type="xs:unsignedInt" minOccurs="0" default="4096">
+                <xs:annotation>
+                    <xs:documentation>
+                        Disk block/sector size in bytes. The default is 4096.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable using disk as the second memory tier, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="capacity" type="xs:unsignedLong" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Disk capacity in GB, i.e., how much disk space should be consumed at most.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="tiered-store">
+        <xs:annotation>
+            <xs:documentation>
+                Tiered-Store enables to stack up multiple (currently two) stores in tiers.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="in-memory-tier" type="in-memory-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        In-memory tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="disk-tier" type="disk-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        Disk tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True if Tiered-Store is enabled, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="crdt-replication">
         <xs:all>
             <xs:element name="replication-period-millis" type="xs:unsignedInt" minOccurs="0">

@@ -1463,6 +1463,53 @@
                 }
               }
             }
+          },
+          "tiered-store": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "True if Tiered-Store is enabled, false otherwise."
+              },
+              "in-memory-tier": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "capacity": {
+                    "type": "number",
+                    "default": 256,
+                    "description": "Capacity in MB, i.e., how much main memory should this tier consume at most."
+                  }
+                }
+              },
+              "disk-tier": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "True to enable using disk as the second memory tier, false otherwise."
+                  },
+                  "base-dir": {
+                    "type": "string",
+                    "default": "tstore",
+                    "description": "Base directory for storing files."
+                  },
+                  "block-size": {
+                    "type": "integer",
+                    "default": 4096,
+                    "description": "Device block/sector size in bytes. The default is 4096."
+                  },
+                  "capacity": {
+                    "type": "number",
+                    "description": "Disk capacity in GB, i.e., how much disk space should be consumed at most."
+                  }
+                },
+                "required": ["enabled", "capacity"]
+              }
+            },
+            "required": ["enabled"]
           }
         }
       }

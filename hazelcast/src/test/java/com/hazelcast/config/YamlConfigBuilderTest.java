@@ -3061,6 +3061,45 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    public void testTieredStore() {
+        // in-memory-tier parameter(s)
+        long inMemoryTierCapacity = 1024;
+
+        // disk-tier parameters
+        String baseDir = "/";
+        int blockSize = 2048;
+        long diskTierCapacity = 1L << 12;
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    my-map:\n"
+                + "      tiered-store:\n"
+                + "        enabled: true\n"
+                + "        in-memory-tier:\n"
+                + "          capacity: " + inMemoryTierCapacity + "\n"
+                + "        disk-tier:\n"
+                + "          enabled: true\n"
+                + "          base-dir: " + baseDir + "\n"
+                + "          block-size: " + blockSize + "\n"
+                + "          capacity: " + diskTierCapacity + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        TSInMemoryTierConfig inMemoryTierConfig = tieredStoreConfig.getInMemoryTierConfig();
+        assertEquals(inMemoryTierCapacity, inMemoryTierConfig.getCapacity().megaBytes());
+
+        TSDiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(diskTierConfig.isEnabled());
+        assertEquals(diskTierCapacity, diskTierConfig.getCapacity().gigaBytes());
+        assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
+        assertEquals(blockSize, diskTierConfig.getBlockSize());
+    }
+
+    @Override
+    @Test
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
         int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";

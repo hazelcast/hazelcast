@@ -394,6 +394,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testPersistence();
 
     @Test
+    public abstract void testTieredStore();
+
+    @Test
     public abstract void testPersistenceEncryptionAtRest_whenJavaKeyStore();
 
     @Test
