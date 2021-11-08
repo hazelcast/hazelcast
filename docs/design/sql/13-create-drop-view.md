@@ -10,7 +10,7 @@
     * [Notes/Questions/Issues](#notesquestionsissues)
 + [Testing Criteria](#testing-criteria)
 
-|ℹ️ Since: 5.1|
+ |ℹ️ Since: 5.1|
  |-------------|
 
 |||
@@ -77,7 +77,7 @@ check (`__key > 10 AND __key < 20`).
 Proposed grammar:
 
  ```
-DROP [ OR REPLACE ] VIEW name
+DROP [ IF EXISTS ] VIEW name
  ```
 
 ```TODO```
