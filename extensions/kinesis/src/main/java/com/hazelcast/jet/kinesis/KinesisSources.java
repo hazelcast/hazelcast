@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.kinesis;
 
+import com.amazonaws.services.kinesis.model.Record;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.kinesis.impl.source.InitialShardIterators;
 import com.hazelcast.jet.kinesis.impl.source.KinesisSourcePMetaSupplier;
@@ -27,6 +29,8 @@ import com.hazelcast.jet.retry.RetryStrategy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -290,12 +294,42 @@ public final class KinesisSources {
             AwsConfig awsConfig = this.awsConfig;
             RetryStrategy retryStrategy = this.retryStrategy;
             InitialShardIterators initialShardIterators = this.initialShardIterators;
+            FunctionEx<? super Record, byte[]> projectionFn = Builder::toArray;
+
             return Sources.streamFromProcessorWithWatermarks(
                     "Kinesis Source (" + stream + ")",
                     true,
-                    eventTimePolicy -> new KinesisSourcePMetaSupplier(awsConfig, stream, retryStrategy,
-                            initialShardIterators, eventTimePolicy));
+                    eventTimePolicy -> new KinesisSourcePMetaSupplier<>(awsConfig, stream, retryStrategy,
+                            initialShardIterators, eventTimePolicy, projectionFn));
         }
+
+        /**
+         * Constructs the source based on the options provided so far and with user-specified projection function.
+         */
+        @Nonnull
+        public <T> StreamSource<Map.Entry<String, T>> build(FunctionEx<? super Record, ? extends T> projectionFn) {
+            String stream = this.stream;
+            AwsConfig awsConfig = this.awsConfig;
+            RetryStrategy retryStrategy = this.retryStrategy;
+            InitialShardIterators initialShardIterators = this.initialShardIterators;
+            return Sources.streamFromProcessorWithWatermarks(
+                    "Kinesis Source (" + stream + ")",
+                    true,
+                    eventTimePolicy -> new KinesisSourcePMetaSupplier<>(awsConfig, stream, retryStrategy,
+                            initialShardIterators, eventTimePolicy, projectionFn));
+        }
+
+        private static byte[] toArray(com.amazonaws.services.kinesis.model.Record record) {
+            ByteBuffer buffer = record.getData();
+            int position = buffer.position();
+            int limit = buffer.limit();
+            if (position == 0 && limit == buffer.capacity()) {
+                return buffer.array();
+            } else {
+                return Arrays.copyOfRange(buffer.array(), position, limit);
+            }
+        }
+
     }
 
 }

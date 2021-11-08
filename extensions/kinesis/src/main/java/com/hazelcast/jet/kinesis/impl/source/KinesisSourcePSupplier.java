@@ -17,6 +17,8 @@
 package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
+import com.amazonaws.services.kinesis.model.Record;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -33,7 +35,7 @@ import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
-public class KinesisSourcePSupplier implements ProcessorSupplier {
+public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
 
     private static final long serialVersionUID = 1L;
 
@@ -42,13 +44,15 @@ public class KinesisSourcePSupplier implements ProcessorSupplier {
     @Nonnull
     private final String stream;
     @Nonnull
-    private final EventTimePolicy<? super Map.Entry<String, byte[]>> eventTimePolicy;
+    private final EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy;
     @Nonnull
     private final HashRange hashRange;
     @Nonnull
     private final RetryStrategy retryStrategy;
     @Nonnull
     private final InitialShardIterators initialShardIterators;
+    @Nonnull
+    private final FunctionEx<? super Record, ? extends T> projectionFn;
 
     private transient int memberCount;
     private transient ILogger logger;
@@ -57,10 +61,11 @@ public class KinesisSourcePSupplier implements ProcessorSupplier {
     public KinesisSourcePSupplier(
             @Nonnull AwsConfig awsConfig,
             @Nonnull String stream,
-            @Nonnull EventTimePolicy<? super Map.Entry<String, byte[]>> eventTimePolicy,
+            @Nonnull EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy,
             @Nonnull HashRange hashRange,
             @Nonnull RetryStrategy retryStrategy,
-            @Nonnull InitialShardIterators initialShardIterators
+            @Nonnull InitialShardIterators initialShardIterators,
+            @Nonnull FunctionEx<? super Record, ? extends T> projectionFn
     ) {
         this.awsConfig = awsConfig;
         this.stream = stream;
@@ -68,6 +73,7 @@ public class KinesisSourcePSupplier implements ProcessorSupplier {
         this.hashRange = hashRange;
         this.retryStrategy = retryStrategy;
         this.initialShardIterators = initialShardIterators;
+        this.projectionFn = projectionFn;
     }
 
     @Override
@@ -95,7 +101,7 @@ public class KinesisSourcePSupplier implements ProcessorSupplier {
 
         return IntStream.range(0, count)
                 .mapToObj(i ->
-                        new KinesisSourceP(
+                        new KinesisSourceP<>(
                                 client,
                                 stream,
                                 eventTimePolicy,
@@ -104,7 +110,8 @@ public class KinesisSourcePSupplier implements ProcessorSupplier {
                                 shardQueues[i],
                                 i == 0 ? rangeMonitor : null,
                                 retryStrategy,
-                                initialShardIterators
+                                initialShardIterators,
+                                projectionFn
                         ))
                 .collect(toList());
     }
