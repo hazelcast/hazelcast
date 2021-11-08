@@ -290,17 +290,8 @@ public final class KinesisSources {
          */
         @Nonnull
         public StreamSource<Map.Entry<String, byte[]>> build() {
-            String stream = this.stream;
-            AwsConfig awsConfig = this.awsConfig;
-            RetryStrategy retryStrategy = this.retryStrategy;
-            InitialShardIterators initialShardIterators = this.initialShardIterators;
             FunctionEx<? super Record, byte[]> projectionFn = Builder::toArray;
-
-            return Sources.streamFromProcessorWithWatermarks(
-                    "Kinesis Source (" + stream + ")",
-                    true,
-                    eventTimePolicy -> new KinesisSourcePMetaSupplier<>(awsConfig, stream, retryStrategy,
-                            initialShardIterators, eventTimePolicy, projectionFn));
+            return build(projectionFn);
         }
 
         /**
