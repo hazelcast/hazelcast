@@ -305,6 +305,9 @@ public final class KinesisSources {
 
         /**
          * Constructs the source based on the options provided so far and with user-specified projection function.
+         * @param projectionFn projection function that will convert Amazon's {@link Record} into some user-defined type
+         *                     as the map value.
+         * @since 5.1
          */
         @Nonnull
         public <T> StreamSource<Map.Entry<String, T>> build(FunctionEx<? super Record, ? extends T> projectionFn) {
