@@ -16,12 +16,19 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.Objects;
 
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 
-public class TSInMemoryTierConfig {
+public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     /**
      * Default capacity.
@@ -72,5 +79,25 @@ public class TSInMemoryTierConfig {
         return "TSInMemoryTierConfig{"
                 + "capacity=" + capacity
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(capacity.bytes());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        capacity = new MemorySize(in.readLong(), MemoryUnit.BYTES);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.TS_IN_MEMORY_TIER_CONFIG;
     }
 }

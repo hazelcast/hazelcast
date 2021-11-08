@@ -16,12 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
-public class TSDiskTierConfig {
+public class TSDiskTierConfig implements IdentifiedDataSerializable {
 
     /**
      * Default base directory for the tiered-store.
@@ -126,5 +132,31 @@ public class TSDiskTierConfig {
                 + ", blockSize=" + blockSize
                 + ", capacity=" + capacity
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeString(baseDir.getAbsolutePath());
+        out.writeInt(blockSize);
+        out.writeLong(capacity.bytes());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        baseDir = new File(in.readString()).getAbsoluteFile();
+        blockSize = in.readInt();
+        capacity = new MemorySize(in.readLong(), MemoryUnit.BYTES);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.TS_DISK_TIER_CONFIG;
     }
 }

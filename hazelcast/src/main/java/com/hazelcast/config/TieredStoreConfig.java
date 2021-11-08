@@ -16,9 +16,15 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.Objects;
 
-public class TieredStoreConfig {
+public class TieredStoreConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value for if tiered-store is enabled.
@@ -101,5 +107,29 @@ public class TieredStoreConfig {
                 + ", inMemoryTierConfig=" + inMemoryTierConfig
                 + ", diskTierConfig=" + diskTierConfig
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeObject(inMemoryTierConfig);
+        out.writeObject(diskTierConfig);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        inMemoryTierConfig = in.readObject();
+        diskTierConfig = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.TIERED_STORE_CONFIG;
     }
 }
