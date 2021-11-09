@@ -617,7 +617,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void cardinalityEstimatorXmlGenerator(XmlGenerator gen, Config config) {
+    static void cardinalityEstimatorXmlGenerator(XmlGenerator gen, Config config) {
         for (CardinalityEstimatorConfig ex : config.getCardinalityEstimatorConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
 

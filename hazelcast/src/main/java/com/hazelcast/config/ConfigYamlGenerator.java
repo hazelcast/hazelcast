@@ -36,6 +36,7 @@ public class ConfigYamlGenerator {
 
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
+        cardinalityEstimatorYamlGenerator(root, config);
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
@@ -61,6 +62,26 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+    static void cardinalityEstimatorYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getCardinalityEstimatorConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (CardinalityEstimatorConfig subConfigAsObject : config.getCardinalityEstimatorConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "backup-count", subConfigAsObject.getBackupCount());
+            addNonNullToMap(subConfigAsMap, "async-backup-count", subConfigAsObject.getAsyncBackupCount());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "merge-policy", mergePolicyGenerator(subConfigAsObject.getMergePolicyConfig()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("cardinality-estimator", child);
+    }
 
     static void flakeIdGeneratorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getFlakeIdGeneratorConfigs().isEmpty()) {
@@ -103,6 +124,19 @@ public class ConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    private static Map<String, Object> mergePolicyGenerator(MergePolicyConfig mergePolicyConfig) {
+        if (mergePolicyConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> mergePolicyConfigAsMap = new LinkedHashMap<>();
+
+        mergePolicyConfigAsMap.put("batch-size", mergePolicyConfig.getBatchSize());
+        mergePolicyConfigAsMap.put("class-name", mergePolicyConfig.getPolicy());
+
+        return mergePolicyConfigAsMap;
     }
 
     private static <K, V> void addNonNullToMap(Map<K, V> map, K key, V value) {

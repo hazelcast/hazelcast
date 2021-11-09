@@ -24,6 +24,31 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
+    public void testCardinalityEstimator() {
+        Config cfg = new Config();
+        CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig()
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setName("Existing")
+                .setSplitBrainProtectionName("splitBrainProtection")
+                .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
+        cfg.addCardinalityEstimatorConfig(estimatorConfig);
+
+        CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();
+        cfg.addCardinalityEstimatorConfig(defaultCardinalityEstConfig);
+
+        CardinalityEstimatorConfig existing = getNewConfigViaGenerator(cfg).getCardinalityEstimatorConfig("Existing");
+        assertEquals(estimatorConfig, existing);
+
+        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
+                .getCardinalityEstimatorConfig("NotExisting/Default");
+        assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
+        assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallsbackToDefault.getAsyncBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getSplitBrainProtectionName(), fallsbackToDefault.getSplitBrainProtectionName());
+    }
+
+    @Test
     public void testPNCounter() {
         PNCounterConfig expectedConfig = new PNCounterConfig()
                 .setName("testPNCounter")

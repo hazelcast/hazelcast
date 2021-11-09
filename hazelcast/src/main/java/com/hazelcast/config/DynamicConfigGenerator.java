@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String cardinalityEstimatorGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "cardinality-estimator",
+                Config::addCardinalityEstimatorConfig,
+                ConfigXmlGenerator::cardinalityEstimatorXmlGenerator,
+                ConfigYamlGenerator::cardinalityEstimatorYamlGenerator
+        );
+    }
+
     static String flakeIdGeneratorGenerator(FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "flake-id-generator",
