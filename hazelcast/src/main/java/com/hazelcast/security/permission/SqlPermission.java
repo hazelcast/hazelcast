@@ -20,7 +20,9 @@ public class SqlPermission extends InstancePermission {
 
     private static final int CREATE_MAPPING = CREATE;
     private static final int DROP_MAPPING = DESTROY;
-    private static final int ALL = CREATE_MAPPING | DROP_MAPPING;
+    private static final int CREATE_VIEW = DROP_MAPPING << 1;
+    private static final int DROP_VIEW = CREATE_VIEW << 1;
+    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_VIEW | DROP_VIEW;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);
@@ -37,6 +39,10 @@ public class SqlPermission extends InstancePermission {
                     mask |= CREATE_MAPPING;
                 } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
                     mask |= DROP_MAPPING;
+                } else if (ActionConstants.ACTION_CREATE_VIEW.equals(action)) {
+                    mask |= CREATE_VIEW;
+                } else if (ActionConstants.ACTION_DROP_VIEW.equals(action)) {
+                    mask |= DROP_VIEW;
                 }
             }
         }

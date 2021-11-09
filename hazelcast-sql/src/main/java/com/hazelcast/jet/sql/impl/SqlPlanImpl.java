@@ -52,7 +52,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
@@ -499,6 +501,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(view.name(), ACTION_CREATE_VIEW));
+        }
+
+        @Override
         public boolean producesRows() {
             return false;
         }
@@ -550,6 +557,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean producesRows() {
             return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(viewName, ACTION_DROP_VIEW));
         }
 
         @Override
