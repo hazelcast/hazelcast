@@ -39,4 +39,11 @@ public interface TextCommand extends OutboundFrame {
     boolean readFrom(ByteBuffer src);
 
     boolean writeTo(ByteBuffer dst);
+
+    /**
+     * Called from TextCommandService right before TextCommand is put to outboundQueue
+     */
+    default void beforeSendResponse(TextCommandService textCommandService) {
+
+    }
 }

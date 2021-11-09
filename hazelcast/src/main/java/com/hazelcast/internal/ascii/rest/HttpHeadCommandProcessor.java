@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
 
 public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadCommand> {
 
@@ -72,7 +72,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         headervals.put("MigrationQueueSize", migrationQueueSize);
         headervals.put("ClusterSize", clusterSize);
 
-        command.setResponse(RES_200, headervals);
+        command.setResponse(SC_200, headervals);
     }
 
     @Override

@@ -17,12 +17,8 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.internal.nio.ascii.TextDecoder;
-import com.hazelcast.internal.server.ServerConnection;
 
 public interface CommandParser  {
-    TextCommand parser(TextDecoder decoder, String cmd, int space);
 
-    default TextCommand parser(TextDecoder decoder, String cmd, int space, ServerConnection connection) {
-        return parser(decoder, cmd, space);
-    }
+    TextCommand parser(TextDecoder decoder, String cmd, int space);
 }

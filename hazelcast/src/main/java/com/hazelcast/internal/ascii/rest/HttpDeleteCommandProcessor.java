@@ -19,6 +19,8 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.util.StringUtil;
 
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
     public HttpDeleteCommandProcessor(TextCommandService textCommandService) {
@@ -46,13 +48,16 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
     }
 
     private void handleMap(HttpDeleteCommand command, String uri) {
+        command.getExecutionDetails().setObjectType(MAP);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
+            command.getExecutionDetails().setObjectName(mapName);
             command.send200();
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+            command.getExecutionDetails().setObjectName(mapName);
             String key = uri.substring(indexEnd + 1);
             key = StringUtil.stripTrailingSlash(key);
             textCommandService.delete(mapName, key);
