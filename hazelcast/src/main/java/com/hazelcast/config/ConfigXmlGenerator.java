@@ -578,7 +578,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void executorXmlGenerator(XmlGenerator gen, Config config) {
+    static void executorXmlGenerator(XmlGenerator gen, Config config) {
         for (ExecutorConfig ex : config.getExecutorConfigs().values()) {
             gen.open("executor-service", "name", ex.getName())
                     .node("statistics-enabled", ex.isStatisticsEnabled())

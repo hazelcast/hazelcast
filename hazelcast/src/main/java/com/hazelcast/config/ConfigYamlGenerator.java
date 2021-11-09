@@ -34,6 +34,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        executorYamlGenerator(root, config);
         durableExecutorYamlGenerator(root, config);
         scheduledExecutorYamlGenerator(root, config);
         cardinalityEstimatorYamlGenerator(root, config);
@@ -65,6 +66,26 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+        static void executorYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getExecutorConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ExecutorConfig subConfigAsObject : config.getExecutorConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "pool-size", subConfigAsObject.getPoolSize());
+            addNonNullToMap(subConfigAsMap, "queue-capacity", subConfigAsObject.getQueueCapacity());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("executor-service", child);
+    }
 
     static void durableExecutorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getDurableExecutorConfigs().isEmpty()) {

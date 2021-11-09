@@ -1073,24 +1073,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testExecutor() {
-        ExecutorConfig expectedConfig = new ExecutorConfig()
-                .setName("testExecutor")
-                .setStatisticsEnabled(true)
-                .setPoolSize(10)
-                .setQueueCapacity(100)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addExecutorConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        ExecutorConfig actualConfig = xmlConfig.getExecutorConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testMultiMap() {
         MultiMapConfig expectedConfig = new MultiMapConfig()
                 .setName("testMultiMap")

@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String executorConfigGenerator(ExecutorConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "executor-service",
+                Config::addExecutorConfig,
+                ConfigXmlGenerator::executorXmlGenerator,
+                ConfigYamlGenerator::executorYamlGenerator
+        );
+    }
+
     static String durableExecutorConfigGenerator(DurableExecutorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "durable-executor-service",
