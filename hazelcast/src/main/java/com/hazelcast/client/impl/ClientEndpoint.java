@@ -118,4 +118,9 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      * @return client attributes string for the client
      */
     String getClientAttributes();
+
+    /**
+     * @return the time this endpoint is created
+     */
+    long getCreationTime();
 }

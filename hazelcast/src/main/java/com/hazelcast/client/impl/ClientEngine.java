@@ -90,13 +90,39 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     ClusterViewListenerService getClusterListenerService();
 
     /**
-     * Returns Map which contains number of connected clients to the cluster.
-     * <p>
-     * The returned map can be used to get information about connected clients to the cluster.
-     *
-     * @return {@code Map&lt;String, Integer&gt;}.
+     * Returns the map of the active clients connected to
+     * the cluster. Mapping is from the client type to
+     * client count.
      */
-    Map<String, Integer> getConnectedClientStats();
+    Map<String, Long> getActiveClientsInCluster();
+
+    /**
+     * Returns the map of the statistics related to the
+     * clients connected to this node since the last time
+     * this method is called. Mapping is from the client
+     * type to statistics snapshot.
+     */
+    Map<String, ClientEndpointStatisticsSnapshot> getEndpointStatisticsSnapshots();
+
+    /**
+     * Called when the given client endpoint is successfully authenticated.
+     * <p>
+     * This call performs necessary statistics collection for the given
+     * endpoint type.
+     *
+     * @param endpoint authenticated endpoint.
+     */
+    void onEndpointAuthenticated(ClientEndpoint endpoint);
+
+    /**
+     * Called when the given client endpoint is destroyed.
+     * <p>
+     * This call performs necessary statistics collection for the given
+     * endpoint type if the endpoint is already authenticated.
+     *
+     * @param endpoint destroyed endpoint.
+     */
+    void onEndpointDestroyed(ClientEndpoint endpoint);
 
     /**
      * Returns the latest client statistics mapped to the client UUIDs.
