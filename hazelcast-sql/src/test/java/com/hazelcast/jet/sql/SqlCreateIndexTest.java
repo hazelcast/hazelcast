@@ -66,7 +66,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void basicSqlCreateIndexTest_hash() {
+    public void when_basicHashIndexCreated_then_succeeds() {
         String indexName = SqlTestSupport.randomName();
         String selectSql = "SELECT * FROM " + MAP_NAME + " WHERE this = 100";
 
@@ -79,7 +79,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void basicSqlCreateIndexTest_sorted() {
+    public void when_basicSortedIndexCreated_then_succeeds() {
         String indexName = SqlTestSupport.randomName();
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
 
@@ -92,7 +92,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void basicSqlCreateIndexTest_bitmap() {
+    public void when_basicBitmapIndexCreated_then_succeeds() {
         assertThat(mapContainer(map).getIndexes().getIndex(MAP_NAME)).isNull();
 
         String indexName = SqlTestSupport.randomName();
@@ -105,7 +105,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void sqlCreateIndexWithDefaultTypeTest() {
+    public void when_indexCreatedWithDefaultType_then_succeeds() {
         String indexName = SqlTestSupport.randomName();
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
 
@@ -118,14 +118,14 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void indexArgsCannotBeDuplicatedTest() {
+    public void when_indexCreatedWithDuplicatedArguments_then_throws() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this, this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("specified more than once");
     }
 
     @Test
-    public void indexOptionsCannotBeDuplicatedTest() {
+    public void when_indexCreatedWithDuplicatedOptions_then_throws() {
         String indexName = SqlTestSupport.randomName();
         String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + MAP_NAME + " (__key) TYPE BITMAP " +
                 "OPTIONS ('unique_key' = '__key' , 'unique_key' = 'OBJECT'); ";
@@ -135,7 +135,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void indexExistsTest() {
+    public void when_indexCreatedWithIfNotExistsAndCreatedAgain_then_throws() {
         createMapping(MAP_NAME, Integer.class, Integer.class);
 
         String indexName = "idx";
@@ -148,7 +148,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void indexExistsWithExistingIndexTest() {
+    public void when_indexExistsAndCreatedAgainWithIfNotExists_then_succeeds() {
         createMapping(MAP_NAME, Integer.class, Integer.class);
 
         String indexName = "idx";
@@ -160,7 +160,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void indexOptionsAbsentTest() {
+    public void when_indexCreatedWithMissingOptions_then_throws() {
         String sql1 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (__key) TYPE BITMAP " +
                 "OPTIONS ('unique_key' = '__key')";
 
@@ -175,7 +175,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void hashAndSortedIndicesMustNotContainOptionsTest() {
+    public void when_hashOrSortedIndexCreatedWithOptions_then_throws() {
         String sql1 = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE HASH OPTIONS ('a' = '1')";
         assertThatThrownBy(() -> instance().getSql().execute(sql1))
                 .hasMessageContaining("Unknown option for HASH index: a");
@@ -186,7 +186,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void bitmapIndexDoesNotContainOptionsTest() {
+    public void when_bitmapIndexCreatedWithoutOptions_then_throws() {
         String sql = "CREATE INDEX IF NOT EXISTS idx ON " + MAP_NAME + " (this) TYPE BITMAP";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("BITMAP index requires unique_key and unique_key_transformation options");
