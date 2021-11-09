@@ -52,4 +52,28 @@ public class MapChunkTest extends HazelcastTestSupport {
 
         assertEquals(1_000, node2.getMap("test").size());
     }
+
+    @Test
+    public void smoke_multiple_map() {
+        Config config = getConfig();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        for (int j = 0; j < 10; j++) {
+            IMap test = node1.getMap("test-" + j);
+            for (int i = 0; i < 1_000; i++) {
+                test.set(i, i);
+            }
+        }
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+
+        node1.shutdown();
+
+        for (int j = 0; j < 10; j++) {
+            IMap test = node2.getMap("test-" + j);
+            assertEquals(1_000, test.size());
+        }
+    }
 }
