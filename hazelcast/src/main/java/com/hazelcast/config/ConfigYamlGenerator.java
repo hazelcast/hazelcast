@@ -37,6 +37,7 @@ public class ConfigYamlGenerator {
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
         cardinalityEstimatorYamlGenerator(root, config);
+        scheduledExecutorYamlGenerator(root, config);
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
@@ -62,6 +63,29 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+        static void scheduledExecutorYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getScheduledExecutorConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ScheduledExecutorConfig subConfigAsObject : config.getScheduledExecutorConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "pool-size", subConfigAsObject.getPoolSize());
+            addNonNullToMap(subConfigAsMap, "durability", subConfigAsObject.getDurability());
+            addNonNullToMap(subConfigAsMap, "capacity", subConfigAsObject.getCapacity());
+            addNonNullToMap(subConfigAsMap, "capacity-policy", subConfigAsObject.getCapacityPolicy().name());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "merge-policy", mergePolicyGenerator(subConfigAsObject.getMergePolicyConfig()));
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("scheduled-executor-service", child);
+    }
 
     static void cardinalityEstimatorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getCardinalityEstimatorConfigs().isEmpty()) {

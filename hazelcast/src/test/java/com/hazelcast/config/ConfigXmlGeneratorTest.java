@@ -1110,39 +1110,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testScheduledExecutor() {
-        Config cfg = new Config();
-
-        ScheduledExecutorConfig scheduledExecutorConfig =
-                new ScheduledExecutorConfig()
-                        .setCapacity(1)
-                        .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
-                        .setDurability(2)
-                        .setName("Existing")
-                        .setPoolSize(3)
-                        .setSplitBrainProtectionName("splitBrainProtection")
-                        .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23))
-                        .setStatisticsEnabled(false);
-
-        cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
-
-        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
-        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
-
-        ScheduledExecutorConfig existing = getNewConfigViaGenerator(cfg).getScheduledExecutorConfig("Existing");
-        assertEquals(scheduledExecutorConfig, existing);
-
-        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
-                .getScheduledExecutorConfig("NotExisting/Default");
-        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
-        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
-        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
-        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
-        assertEquals(defaultSchedExecConfig.isStatisticsEnabled(), fallsbackToDefault.isStatisticsEnabled());
-    }
-
-    @Test
     public void testMultiMap() {
         MultiMapConfig expectedConfig = new MultiMapConfig()
                 .setName("testMultiMap")

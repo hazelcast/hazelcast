@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String scheduledExecutorGenerator(ScheduledExecutorConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "scheduled-executor-service",
+                Config::addScheduledExecutorConfig,
+                ConfigXmlGenerator::scheduledExecutorXmlGenerator,
+                ConfigYamlGenerator::scheduledExecutorYamlGenerator
+        );
+    }
+
     static String cardinalityEstimatorGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "cardinality-estimator",

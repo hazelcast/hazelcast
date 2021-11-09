@@ -601,7 +601,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void scheduledExecutorXmlGenerator(XmlGenerator gen, Config config) {
+    static void scheduledExecutorXmlGenerator(XmlGenerator gen, Config config) {
         for (ScheduledExecutorConfig ex : config.getScheduledExecutorConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
 
