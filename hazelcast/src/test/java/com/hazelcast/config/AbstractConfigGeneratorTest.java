@@ -26,6 +26,39 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
+    public void testTopicGlobalOrdered() {
+        Config cfg = new Config();
+
+        TopicConfig expectedConfig = new TopicConfig()
+                .setName("TestTopic")
+                .setGlobalOrderingEnabled(true)
+                .setStatisticsEnabled(true)
+                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
+        cfg.addTopicConfig(expectedConfig);
+
+        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig("TestTopic");
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testTopicMultiThreaded() {
+        String testTopic = "TestTopic";
+        Config cfg = new Config();
+
+        TopicConfig expectedConfig = new TopicConfig()
+                .setName(testTopic)
+                .setMultiThreadingEnabled(true)
+                .setStatisticsEnabled(true)
+                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
+        cfg.addTopicConfig(expectedConfig);
+
+        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig(testTopic);
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testReliableTopic() {
         String testTopic = "TestTopic";
         Config cfg = new Config();

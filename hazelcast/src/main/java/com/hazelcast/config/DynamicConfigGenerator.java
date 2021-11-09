@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String topicConfigGenerator(TopicConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "topic",
+                Config::addTopicConfig,
+                ConfigXmlGenerator::topicXmlGenerator,
+                ConfigYamlGenerator::topicYamlGenerator
+        );
+    }
+
     static String reliableTopicConfigGenerator(ReliableTopicConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "reliable-topic",

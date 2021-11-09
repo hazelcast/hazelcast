@@ -64,7 +64,6 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1700,39 +1699,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
                 xmlConfig.getWanReplicationConfigs());
-    }
-
-    @Test
-    public void testTopicGlobalOrdered() {
-        Config cfg = new Config();
-
-        TopicConfig expectedConfig = new TopicConfig()
-                .setName("TestTopic")
-                .setGlobalOrderingEnabled(true)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-        cfg.addTopicConfig(expectedConfig);
-
-        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig("TestTopic");
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testTopicMultiThreaded() {
-        String testTopic = "TestTopic";
-        Config cfg = new Config();
-
-        TopicConfig expectedConfig = new TopicConfig()
-                .setName(testTopic)
-                .setMultiThreadingEnabled(true)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-        cfg.addTopicConfig(expectedConfig);
-
-        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig(testTopic);
-
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test

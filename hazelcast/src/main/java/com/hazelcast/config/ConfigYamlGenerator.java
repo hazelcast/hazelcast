@@ -38,6 +38,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        topicYamlGenerator(root, config);
         reliableTopicYamlGenerator(root, config);
         executorYamlGenerator(root, config);
         durableExecutorYamlGenerator(root, config);
@@ -72,7 +73,27 @@ public class ConfigYamlGenerator {
 //        parent.put(xxx, child);
 //    }
 
-        static void reliableTopicYamlGenerator(Map<String, Object> parent, Config config) {
+    static void topicYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getTopicConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (TopicConfig subConfigAsObject : config.getTopicConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "global-ordering-enabled", subConfigAsObject.isGlobalOrderingEnabled());
+            addNonNullToMap(subConfigAsMap, "message-listeners", listenerConfigsGenerator(subConfigAsObject.getMessageListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "multi-threading-enabled", subConfigAsObject.isMultiThreadingEnabled());
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("topic", child);
+    }
+
+    static void reliableTopicYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReliableTopicConfigs().isEmpty()) {
             return;
         }
@@ -84,14 +105,7 @@ public class ConfigYamlGenerator {
             addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "read-batch-size", subConfigAsObject.getReadBatchSize());
             addNonNullToMap(subConfigAsMap, "topic-overload-policy", subConfigAsObject.getTopicOverloadPolicy().name());
-
-            if (!subConfigAsObject.getMessageListenerConfigs().isEmpty()) {
-                List<String> listenerConfigsAsList = new LinkedList<>();
-                for (ListenerConfig listenerConfig : subConfigAsObject.getMessageListenerConfigs()) {
-                    listenerConfigsAsList.add(classNameOrImplClass(listenerConfig.getClassName(), listenerConfig.getImplementation()));
-                }
-                addNonNullToMap(subConfigAsMap, "message-listeners", listenerConfigsAsList);
-            }
+            addNonNullToMap(subConfigAsMap, "message-listeners", listenerConfigsGenerator(subConfigAsObject.getMessageListenerConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -99,7 +113,7 @@ public class ConfigYamlGenerator {
         parent.put("reliable-topic", child);
     }
 
-        static void executorYamlGenerator(Map<String, Object> parent, Config config) {
+    static void executorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getExecutorConfigs().isEmpty()) {
             return;
         }
@@ -224,6 +238,19 @@ public class ConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    private static List<String> listenerConfigsGenerator(List<ListenerConfig> listenerConfigs) {
+        if (listenerConfigs == null || listenerConfigs.isEmpty()) {
+            return null;
+        }
+
+        List<String> listenerConfigsAsList = new LinkedList<>();
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            listenerConfigsAsList.add(classNameOrImplClass(listenerConfig.getClassName(), listenerConfig.getImplementation()));
+        }
+
+        return listenerConfigsAsList;
     }
 
     private static Map<String, Object> mergePolicyGenerator(MergePolicyConfig mergePolicyConfig) {

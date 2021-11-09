@@ -640,7 +640,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void topicXmlGenerator(XmlGenerator gen, Config config) {
+    static void topicXmlGenerator(XmlGenerator gen, Config config) {
         for (TopicConfig t : config.getTopicConfigs().values()) {
             gen.open("topic", "name", t.getName())
                     .node("statistics-enabled", t.isStatisticsEnabled())
