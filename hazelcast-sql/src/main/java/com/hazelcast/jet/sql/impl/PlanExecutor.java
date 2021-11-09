@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.BitmapIndexOptions;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
@@ -25,6 +28,7 @@ import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
@@ -44,7 +48,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog;
+import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -73,8 +82,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
@@ -102,6 +114,40 @@ public class PlanExecutor {
 
     SqlResult execute(DropMappingPlan plan) {
         catalog.removeMapping(plan.name(), plan.ifExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateIndexPlan plan) {
+        if (!plan.ifNotExists()) {
+            // If `IF NOT EXISTS` isn't specified, we do a simple check for the existence of the index. This is not
+            // OK if two clients concurrently try to create the index (they could both succeed), but covers the
+            // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
+            // implement.
+            MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+            if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
+                throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
+            }
+        }
+
+        IndexConfig indexConfig = new IndexConfig(plan.indexType(), plan.attributes())
+                .setName(plan.indexName());
+
+        if (plan.indexType().equals(IndexType.BITMAP)) {
+            Map<String, String> options = plan.options();
+            String uniqueKey = options.get(UNIQUE_KEY);
+            String uniqueKeyTransform = options.get(UNIQUE_KEY_TRANSFORMATION);
+
+            BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
+            bitmapIndexOptions.setUniqueKey(uniqueKey);
+            bitmapIndexOptions.setUniqueKeyTransformation(UniqueKeyTransformation.fromName(uniqueKeyTransform));
+
+            indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
+        }
+
+        // The `addIndex()` call does nothing, if an index with the same name already exists. Even if its config
+        // is different.
+        hazelcastInstance.getMap(plan.mapName()).addIndex(indexConfig);
+
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -416,5 +462,12 @@ public class PlanExecutor {
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
+    }
+
+    private static <K, V> MapContainer getMapContainer(IMap<K, V> map) {
+        MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
+        MapService mapService = mapProxy.getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainers().get(map.getName());
     }
 }

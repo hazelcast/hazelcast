@@ -272,4 +272,18 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("Incorrect syntax near the keyword 'SHOW'");
     }
+
+    @Test
+    public void test_explainInvalidOrderingQuery() {
+        createMapping("map", Integer.class, Integer.class);
+
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "EXPLAIN SELECT * FROM " +
+                        "TABLE(IMPOSE_ORDER(" +
+                        "  (SELECT __key + 1 AS ts FROM map)" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , 1" +
+                        "))"
+        )).hasMessageContaining("Ordering function cannot be applied to input table");
+    }
 }

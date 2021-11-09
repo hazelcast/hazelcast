@@ -26,12 +26,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -68,51 +62,51 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 new Object[]{
                         TINYINT,
                         "1",
-                        row((byte) 0), row((Object) null), row((byte) 2)
+                        row((byte) 0), row((byte) 2)
                 },
                 new Object[]{
                         SMALLINT,
                         "2",
-                        row((short) 0), row((Object) null), row((short) 2)
+                        row((short) 0), row((short) 2)
                 },
                 new Object[]{
                         INTEGER,
                         "3",
-                        row(0), row((Object) null), row(2)
+                        row(0), row(2)
                 },
                 new Object[]{
                         BIGINT,
                         "4",
-                        row(0L), row((Object) null), row(2L)
+                        row(0L), row(2L)
                 },
                 new Object[]{
                         TIME,
                         "INTERVAL '0.005' SECOND",
-                        row(time(0)), row((Object) null), row(time(2))
+                        row(time(0)), row(time(2))
                 },
                 new Object[]{
                         DATE,
                         "INTERVAL '0.006' SECOND",
-                        row(date(0)), row((Object) null), row(date(2))
+                        row(date(0)), row(date(2))
                 },
                 new Object[]{
                         TIMESTAMP,
                         "INTERVAL '0.007' SECOND",
-                        row(timestamp(0)), row((Object) null), row(timestamp(2))
+                        row(timestamp(0)), row(timestamp(2))
                 },
                 new Object[]{
                         TIMESTAMP_WITH_TIME_ZONE,
                         "INTERVAL '0.008' SECOND",
-                        row(timestampTz(0)), row((Object) null), row(timestampTz(2))
+                        row(timestampTz(0)), row(timestampTz(2))
                 },
         };
     }
 
     @Test
     @Parameters(method = "validArguments")
-    public void test_validArguments(QueryDataTypeFamily timestampType, String maxLag, Object[]... values) {
+    public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType), values);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
@@ -143,9 +137,9 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
     @Test
     @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily timestampType, String maxLag) {
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType));
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
@@ -272,7 +266,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE(" + name + "))" +
-                        "  , \"column\" => DESCRIPTOR(ts)" +
+                        "  , timeCol => DESCRIPTOR(ts)" +
                         "))",
                 asList(
                         new Row(timestampTz(0), "Alice"),
@@ -296,21 +290,5 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 values
         );
         return name;
-    }
-
-    private static LocalTime time(long epochMillis) {
-        return timestampTz(epochMillis).toLocalTime();
-    }
-
-    private static LocalDate date(long epochMillis) {
-        return timestampTz(epochMillis).toLocalDate();
-    }
-
-    private static LocalDateTime timestamp(long epochMillis) {
-        return timestampTz(epochMillis).toLocalDateTime();
-    }
-
-    private static OffsetDateTime timestampTz(long epochMillis) {
-        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
     }
 }

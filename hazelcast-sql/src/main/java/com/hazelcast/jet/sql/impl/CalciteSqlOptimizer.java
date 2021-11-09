@@ -52,9 +52,11 @@ import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
@@ -106,6 +108,8 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -247,6 +251,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
             return toDropMappingPlan(planKey, (SqlDropMapping) node);
+        } else if (node instanceof SqlCreateIndex) {
+            return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
+        } else if (node instanceof SqlDropIndex) {
+            return toDropIndexPlan(planKey, (SqlDropIndex) node);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context);
         } else if (node instanceof SqlAlterJob) {
@@ -302,6 +310,23 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toDropMappingPlan(PlanKey planKey, SqlDropMapping sqlDropMapping) {
         return new DropMappingPlan(planKey, sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
+    }
+
+    private SqlPlan toCreateIndexPlan(PlanKey planKey, SqlCreateIndex sqlCreateIndex) {
+        return new CreateIndexPlan(
+                planKey,
+                sqlCreateIndex.indexName(),
+                sqlCreateIndex.mapName(),
+                sqlCreateIndex.type(),
+                sqlCreateIndex.columns(),
+                sqlCreateIndex.options(),
+                sqlCreateIndex.ifNotExists(),
+                planExecutor
+        );
+    }
+
+    private SqlPlan toDropIndexPlan(PlanKey planKey, SqlDropIndex sqlDropIndex) {
+        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
     }
 
     private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context) {

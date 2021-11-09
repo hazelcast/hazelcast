@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSpecificTableFunction;
@@ -37,12 +39,12 @@ import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
-final class FullFunctionScanLogicalRules {
+final class FunctionLogicalRules {
 
     static final RelOptRule SPECIFIC_FUNCTION_INSTANCE = new ConverterRule(
             LogicalTableFunctionScan.class, scan -> extractSpecificFunction(scan) != null,
             Convention.NONE, Convention.NONE,
-            FullFunctionScanLogicalRules.class.getSimpleName() + "(Specific)"
+            FunctionLogicalRules.class.getSimpleName() + "(Specific)"
     ) {
         @Override
         public RelNode convert(RelNode rel) {
@@ -70,7 +72,7 @@ final class FullFunctionScanLogicalRules {
     static final RelOptRule DYNAMIC_FUNCTION_INSTANCE = new ConverterRule(
             LogicalTableFunctionScan.class, scan -> extractDynamicFunction(scan) != null,
             Convention.NONE, Convention.NONE,
-            FullFunctionScanLogicalRules.class.getSimpleName() + "(Dynamic)"
+            FunctionLogicalRules.class.getSimpleName() + "(Dynamic)"
     ) {
         @Override
         public RelNode convert(RelNode rel) {
@@ -85,7 +87,28 @@ final class FullFunctionScanLogicalRules {
         }
     };
 
-    private FullFunctionScanLogicalRules() {
+    static final RelOptRule TUMBLE_WINDOW_FUNCTION_INSTANCE = new ConverterRule(
+            LogicalTableFunctionScan.class, scan -> extractTumbleWindowFunction(scan) != null,
+            Convention.NONE, Convention.NONE,
+            FunctionLogicalRules.class.getSimpleName() + "(Tumble-Window)"
+    ) {
+        @Override
+        public RelNode convert(RelNode rel) {
+            LogicalTableFunctionScan scan = (LogicalTableFunctionScan) rel;
+
+            return new SlidingWindowLogicalRel(
+                    scan.getCluster(),
+                    OptUtils.toLogicalConvention(scan.getTraitSet()),
+                    Util.toList(scan.getInputs(), OptUtils::toLogicalInput),
+                    scan.getCall(),
+                    scan.getElementType(),
+                    scan.getRowType(),
+                    scan.getColumnMappings()
+            );
+        }
+    };
+
+    private FunctionLogicalRules() {
     }
 
     private static HazelcastSpecificTableFunction extractSpecificFunction(LogicalTableFunctionScan scan) {
@@ -110,5 +133,17 @@ final class FullFunctionScanLogicalRules {
             return null;
         }
         return (HazelcastDynamicTableFunction) call.getOperator();
+    }
+
+    private static HazelcastTumbleTableFunction extractTumbleWindowFunction(LogicalTableFunctionScan scan) {
+        if (scan == null || !(scan.getCall() instanceof RexCall)) {
+            return null;
+        }
+        RexCall call = (RexCall) scan.getCall();
+
+        if (!(call.getOperator() instanceof HazelcastTumbleTableFunction)) {
+            return null;
+        }
+        return (HazelcastTumbleTableFunction) call.getOperator();
     }
 }

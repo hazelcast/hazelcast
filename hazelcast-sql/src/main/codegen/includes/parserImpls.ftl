@@ -237,6 +237,106 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
+* Parses CREATE INDEX statement.
+*/
+SqlCreate SqlCreateIndex(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+
+    SqlIdentifier name;
+    SqlIdentifier objectName;
+    SqlNodeList attributes;
+    SqlIdentifier type = null;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+    {
+        <INDEX>
+        [
+            <IF> <NOT> <EXISTS> { ifNotExists = true; }
+        ]
+        name = SimpleIdentifier()
+
+        <ON>
+
+        objectName = SimpleIdentifier()
+        attributes = IndexAttributes()
+        [
+            <TYPE>
+            type = SimpleIdentifier()
+        ]
+        [
+            <OPTIONS>
+            sqlOptions = SqlOptions()
+        ]
+        {
+            return new SqlCreateIndex(
+                name,
+                objectName,
+                attributes,
+                type,
+                sqlOptions,
+                replace,
+                ifNotExists,
+                startPos.plus(getPos())
+        );
+    }
+}
+
+
+SqlNodeList IndexAttributes():
+{
+    SqlParserPos pos = getPos();
+
+    SqlIdentifier attributeName;
+    List<SqlNode> attributes = new ArrayList<SqlNode>();
+}
+{
+    [
+        <LPAREN> {  pos = getPos(); }
+        attributeName = SimpleIdentifier()
+        {
+            attributes.add(attributeName);
+        }
+        (
+            <COMMA> attributeName = SimpleIdentifier()
+            {
+                attributes.add(attributeName);
+            }
+        )*
+        <RPAREN>
+    ]
+    {
+        return new SqlNodeList(attributes, pos.plus(getPos()));
+    }
+}
+
+/**
+ * Parses DROP INDEX statement.
+ */
+SqlDrop SqlDropIndex(Span span, boolean required) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    SqlIdentifier objectName;
+    boolean ifExists = false;
+}
+{
+    <INDEX>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+
+    <ON>
+    objectName = SimpleIdentifier()
+    {
+        return new SqlDropIndex(name, objectName, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
  * Parses CREATE JOB statement.
  */
 SqlCreate SqlCreateJob(Span span, boolean replace) :

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
@@ -76,6 +77,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
@@ -253,8 +255,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateGroupClause(SqlSelect select) {
         super.validateGroupClause(select);
 
-        if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
+        if (isInfiniteRows(select)
+                && containsGroupingOrAggregation(select)
+                && !containsOrderedWindow(requireNonNull(select.getFrom()))) {
+            throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
         }
     }
 
@@ -274,6 +278,30 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return false;
+    }
+
+    private static boolean containsOrderedWindow(SqlNode node) {
+        class OrderedWindowFinder extends SqlBasicVisitor<Void> {
+            boolean windowingFunctionFound;
+            boolean orderedInputToWindowingFunctionFound;
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastWindowTableFunction) {
+                    windowingFunctionFound = true;
+                    orderedInputToWindowingFunctionFound = false;
+                } else if (operator instanceof ImposeOrderFunction && windowingFunctionFound) {
+                    orderedInputToWindowingFunctionFound = true;
+                    windowingFunctionFound = false;
+                }
+                return super.visit(call);
+            }
+        }
+
+        OrderedWindowFinder finder = new OrderedWindowFinder();
+        node.accept(finder);
+        return finder.orderedInputToWindowingFunctionFound;
     }
 
     @Override

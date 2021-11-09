@@ -27,6 +27,9 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.stream;
 
 /**
  * A test batch-data connector. It emits rows of provided types and values.
@@ -49,6 +52,19 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
             String tableName,
             List<String> names,
             List<QueryDataTypeFamily> types,
+            Object[]... values
+    ) {
+        List<String[]> stringValues = stream(values)
+                .map(row -> stream(row).map(value -> value == null ? null : value.toString()).toArray(String[]::new))
+                .collect(Collectors.toList());
+        create(sqlService, tableName, names, types, stringValues);
+    }
+
+    public static void create(
+            SqlService sqlService,
+            String tableName,
+            List<String> names,
+            List<QueryDataTypeFamily> types,
             List<String[]> values
     ) {
         TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, values);
@@ -59,11 +75,11 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
             FunctionEx<Context, TestDataGenerator> createContextFn,
             EventTimePolicy<Object[]> eventTimePolicy
     ) {
-        BatchSource<Object[]> source = SourceBuilder
+        BatchSource<Object> source = SourceBuilder
                 .batch("batch", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)
                 .build();
-        return  ((BatchSourceTransform<Object[]>) source).metaSupplier;
+        return  ((BatchSourceTransform<Object>) source).metaSupplier;
     }
 
     @Override

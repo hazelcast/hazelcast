@@ -17,7 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -43,7 +46,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -210,7 +212,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
-            return new TestDataGenerator(rows, predicate, projection, evalContext, streaming);
+            return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 
         ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn, eventTimePolicy);
@@ -279,7 +281,8 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
 
         private static final int MAX_BATCH_SIZE = 1024;
 
-        private final Iterator<Object[]> iterator;
+        private final Traverser<Object> traverser;
+        //private final Iterator<Object[]> iterator;
         private final boolean streaming;
 
         private TestDataGenerator(
@@ -287,19 +290,25 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
                 ExpressionEvalContext evalContext,
+                EventTimePolicy<Object[]> eventTimePolicy,
                 boolean streaming
         ) {
+            EventTimeMapper<Object[]> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+            eventTimeMapper.addPartitions(1);
+            this.traverser = Traversers.traverseIterable(rows)
+                    .flatMap(row -> {
+                        Object[] evaluated = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
+                        return evaluated == null ? Traversers.empty() : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
+                    });
+
             this.streaming = streaming;
-            this.iterator = rows.stream()
-                    .map(row -> ExpressionUtil.evaluate(predicate, projections, row, evalContext))
-                    .filter(Objects::nonNull)
-                    .iterator();
         }
 
-        void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+        void fillBuffer(SourceBuilder.SourceBuffer<Object> buffer) {
             for (int i = 0; i < MAX_BATCH_SIZE; i++) {
-                if (iterator.hasNext()) {
-                    buffer.add(iterator.next());
+                Object o;
+                if ((o = traverser.next()) != null) {
+                    buffer.add(o);
                 } else {
                     if (!streaming) {
                         buffer.close();
