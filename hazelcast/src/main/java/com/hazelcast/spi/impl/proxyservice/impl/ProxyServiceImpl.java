@@ -40,6 +40,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -222,6 +223,12 @@ public class ProxyServiceImpl
             registry.getDistributedObjects(result);
         }
         return result;
+    }
+
+    @Override
+    public long getCreatedCount(@Nonnull String serviceName) {
+        ProxyRegistry registry = registries.get(serviceName);
+        return registry == null ? 0 : registry.getCreatedCount();
     }
 
     @Override

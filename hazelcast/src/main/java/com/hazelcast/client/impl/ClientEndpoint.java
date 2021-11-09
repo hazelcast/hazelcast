@@ -91,6 +91,11 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
     boolean isAuthenticated();
 
     /**
+     * @return the version string as obtained from the environment
+     */
+    String getClientVersion();
+
+    /**
      * @param version the version string as obtained from the environment
      */
     void setClientVersion(String version);
@@ -113,4 +118,9 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      * @return client attributes string for the client
      */
     String getClientAttributes();
+
+    /**
+     * @return the time this endpoint is created
+     */
+    long getCreationTime();
 }

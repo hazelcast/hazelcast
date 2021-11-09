@@ -62,7 +62,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         }
 
         Node node = getNode(h1);
-        Map<String, Integer> clientStats = node.clientEngine.getConnectedClientStats();
+        Map<String, Long> clientStats = node.clientEngine.getActiveClientsInCluster();
 
         assertEquals(numberOfClients, clientStats.get(ConnectionType.JAVA_CLIENT).intValue());
         assertNull(clientStats.get(ConnectionType.CPP_CLIENT));
