@@ -100,6 +100,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
@@ -340,7 +341,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
                 .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
-        assertEquals(26, mapConfigSize);
+        assertEquals(27, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -474,6 +475,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+
+        MapConfig testMapConfig5 = config.getMapConfig("testMap5");
+        TieredStoreConfig tieredStoreConfig = testMapConfig5.getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+        assertEquals(128L << 20, tieredStoreConfig.getInMemoryTierConfig().getCapacity());
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals(108L << 30, tieredStoreConfig.getDiskTierConfig().getCapacity());
+        assertEquals("tiered-store_base_dir", tieredStoreConfig.getDiskTierConfig().getBaseDir().getName());
+        assertEquals(256, tieredStoreConfig.getDiskTierConfig().getBlockSize());
     }
 
     @Test
