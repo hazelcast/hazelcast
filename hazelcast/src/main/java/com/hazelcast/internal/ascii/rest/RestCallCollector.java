@@ -100,7 +100,11 @@ public class RestCallCollector {
     }
 
     private void handleDelete(RestCallExecution execution) {
-        switch (execution.getObjectType()) {
+        RestCallExecution.ObjectType objectType = execution.getObjectType();
+        if (objectType == null) {
+            return;
+        }
+        switch (objectType) {
             case MAP:
                 (execution.isSuccess() ? mapDeleteSuccCount : mapDeleteFailCount).inc();
                 break;
@@ -108,12 +112,16 @@ public class RestCallCollector {
                 (execution.isSuccess() ? queueDeleteSuccCount : queueDeleteFailCount).inc();
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
+                throw new IllegalStateException("Unexpected value: " + objectType);
         }
     }
 
     private void handleGet(RestCallExecution execution) {
-        switch (execution.getObjectType()) {
+        RestCallExecution.ObjectType objectType = execution.getObjectType();
+        if (objectType == null) {
+            return;
+        }
+        switch (objectType) {
             case MAP:
                 (execution.isSuccess() ? mapGetSuccCount : mapGetFailCount).inc();
                 break;
@@ -126,7 +134,11 @@ public class RestCallCollector {
     }
 
     private void handlePost(RestCallExecution execution) {
-        switch (execution.getObjectType()) {
+        RestCallExecution.ObjectType objectType = execution.getObjectType();
+        if (objectType == null) {
+            return;
+        }
+        switch (objectType) {
             case MAP:
                 (execution.isSuccess() ? mapPostSuccCount : mapPostFailCount).inc();
                 break;
@@ -142,7 +154,11 @@ public class RestCallCollector {
         if (objectName == null) {
             return;
         }
-        switch (execution.getObjectType()) {
+        RestCallExecution.ObjectType objectType = execution.getObjectType();
+        if (objectType == null) {
+            return;
+        }
+        switch (objectType) {
             case MAP:
                 accessedMaps.add(objectName);
                 break;
@@ -150,7 +166,7 @@ public class RestCallCollector {
                 accessedQueues.add(objectName);
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
+                throw new IllegalStateException("Unexpected value: " + objectType);
         }
     }
 
@@ -159,7 +175,11 @@ public class RestCallCollector {
             uniqueRequests.add(new RequestIdentifier(type, execution.getRequestPath()));
         }
         requestCount.inc();
-        switch (execution.getObjectType()) {
+        RestCallExecution.ObjectType objectType = execution.getObjectType();
+        if (objectType == null) {
+            return;
+        }
+        switch (objectType) {
             case MAP:
                 mapTotalRequestCount.inc();
                 break;
@@ -167,7 +187,7 @@ public class RestCallCollector {
                 queueTotalRequestCount.inc();
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + execution.getObjectType());
+                throw new IllegalStateException("Unexpected value: " + objectType);
         }
     }
 
