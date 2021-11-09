@@ -17,11 +17,32 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testReliableTopic() {
+        String testTopic = "TestTopic";
+        Config cfg = new Config();
+
+        ReliableTopicConfig expectedConfig = new ReliableTopicConfig()
+                .setName(testTopic)
+                .setReadBatchSize(10)
+                .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
+                .setStatisticsEnabled(true)
+                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
+
+        cfg.addReliableTopicConfig(expectedConfig);
+
+        ReliableTopicConfig actualConfig = getNewConfigViaGenerator(cfg).getReliableTopicConfig(testTopic);
+
+        assertEquals(expectedConfig, actualConfig);
+    }
 
     @Test
     public void testExecutor() {

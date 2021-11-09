@@ -1736,25 +1736,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testReliableTopic() {
-        String testTopic = "TestTopic";
-        Config cfg = new Config();
-
-        ReliableTopicConfig expectedConfig = new ReliableTopicConfig()
-                .setName(testTopic)
-                .setReadBatchSize(10)
-                .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-
-        cfg.addReliableTopicConfig(expectedConfig);
-
-        ReliableTopicConfig actualConfig = getNewConfigViaGenerator(cfg).getReliableTopicConfig(testTopic);
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testSplitBrainProtectionConfig_configByClassName() {
         Config config = new Config();
         SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig("test-splitBrainProtection", true, 3);

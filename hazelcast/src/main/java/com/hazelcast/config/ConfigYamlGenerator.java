@@ -21,7 +21,11 @@ import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.config.ConfigXmlGenerator.classNameOrImplClass;
 
 public class ConfigYamlGenerator {
 
@@ -34,6 +38,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        reliableTopicYamlGenerator(root, config);
         executorYamlGenerator(root, config);
         durableExecutorYamlGenerator(root, config);
         scheduledExecutorYamlGenerator(root, config);
@@ -66,6 +71,33 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+        static void reliableTopicYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getReliableTopicConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ReliableTopicConfig subConfigAsObject : config.getReliableTopicConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "read-batch-size", subConfigAsObject.getReadBatchSize());
+            addNonNullToMap(subConfigAsMap, "topic-overload-policy", subConfigAsObject.getTopicOverloadPolicy().name());
+
+            if (!subConfigAsObject.getMessageListenerConfigs().isEmpty()) {
+                List<String> listenerConfigsAsList = new LinkedList<>();
+                for (ListenerConfig listenerConfig : subConfigAsObject.getMessageListenerConfigs()) {
+                    listenerConfigsAsList.add(classNameOrImplClass(listenerConfig.getClassName(), listenerConfig.getImplementation()));
+                }
+                addNonNullToMap(subConfigAsMap, "message-listeners", listenerConfigsAsList);
+            }
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("reliable-topic", child);
+    }
 
         static void executorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getExecutorConfigs().isEmpty()) {

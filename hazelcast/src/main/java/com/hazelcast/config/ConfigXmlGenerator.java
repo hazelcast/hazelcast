@@ -552,7 +552,7 @@ public class ConfigXmlGenerator {
                 : null;
     }
 
-    private static String classNameOrImplClass(String className, Object impl) {
+    static String classNameOrImplClass(String className, Object impl) {
         return !isNullOrEmpty(className) ? className
                 : impl != null ? impl.getClass().getName()
                 : null;
@@ -658,7 +658,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void reliableTopicXmlGenerator(XmlGenerator gen, Config config) {
+    static void reliableTopicXmlGenerator(XmlGenerator gen, Config config) {
         for (ReliableTopicConfig t : config.getReliableTopicConfigs().values()) {
             gen.open("reliable-topic", "name", t.getName())
                     .node("statistics-enabled", t.isStatisticsEnabled())
