@@ -38,6 +38,7 @@ import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -457,6 +458,104 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class CreateViewPlan extends SqlPlanImpl {
+        private final View view;
+        private final boolean replace;
+        private final PlanExecutor planExecutor;
+
+        CreateViewPlan(
+                PlanKey planKey,
+                View view,
+                boolean replace,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.view = view;
+            this.replace = replace;
+            this.planExecutor = planExecutor;
+        }
+
+        View view() {
+            return view;
+        }
+
+        boolean isReplace() {
+            return replace;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE VIEW", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE VIEW", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropViewPlan extends SqlPlanImpl {
+        private final String viewName;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropViewPlan(
+                PlanKey planKey,
+                String viewName,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.viewName = viewName;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String viewName() {
+            return viewName;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("DROP VIEW", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP VIEW", timeout);
             return planExecutor.execute(this);
         }
     }

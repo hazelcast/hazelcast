@@ -21,10 +21,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
@@ -81,6 +83,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -95,6 +98,8 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
+import org.apache.calcite.sql.util.SqlString;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -348,11 +353,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
-        throw new UnsupportedOperationException("toCreateViewPlan not yet implemented");
+        // TODO: should we create our own sql dialect or we may use PSQL dialect to unparse query as SQL string?
+        SqlString sqlString = sqlNode.getQuery().toSqlString(PostgresqlSqlDialect.DEFAULT);
+        String sql = sqlString.getSql();
+
+        return new CreateViewPlan(planKey, new View(sqlNode.name(), sql), sqlNode.getReplace(), planExecutor);
     }
 
     private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {
-        throw new UnsupportedOperationException("toDropViewPlan not yet implemented");
+        return new DropViewPlan(planKey, sqlNode.viewName(), sqlNode.ifExists(), planExecutor);
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {

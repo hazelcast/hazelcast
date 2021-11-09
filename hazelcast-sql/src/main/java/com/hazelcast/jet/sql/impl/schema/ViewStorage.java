@@ -36,6 +36,7 @@ public class ViewStorage extends AbstractMetadataStorage<View> {
         return storage().values();
     }
 
+    // TODO: [sasha] consider listeners
     void registerListener(EntryListener<String, View> listener) {
         // do not try to implicitly create ReplicatedMap
         // TODO: perform this check in a single place i.e. SqlService ?

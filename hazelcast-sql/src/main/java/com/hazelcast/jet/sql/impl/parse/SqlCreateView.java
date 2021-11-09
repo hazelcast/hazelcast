@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
@@ -12,14 +28,27 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import java.util.List;
 
 public class SqlCreateView extends SqlCreate {
+    private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
+
     private final SqlIdentifier name;
     private SqlNode query;
 
-    private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
 
     public SqlCreateView(SqlParserPos pos, boolean replace, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, false);
         this.name = name;
+        this.query = query;
+    }
+
+    public String name() {
+        return name.toString();
+    }
+
+    public SqlNode getQuery() {
+        return query;
+    }
+
+    public void setQuery(SqlNode query) {
         this.query = query;
     }
 
@@ -31,14 +60,6 @@ public class SqlCreateView extends SqlCreate {
     @Override
     public SqlOperator getOperator() {
         return CREATE_VIEW;
-    }
-
-    public SqlNode getQuery() {
-        return query;
-    }
-
-    public void setQuery(SqlNode query) {
-        this.query = query;
     }
 
     /**
