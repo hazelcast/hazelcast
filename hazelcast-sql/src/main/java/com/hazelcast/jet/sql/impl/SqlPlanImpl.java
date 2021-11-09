@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -52,6 +53,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
@@ -190,6 +192,140 @@ abstract class SqlPlanImpl extends SqlPlan {
             SqlPlanImpl.ensureNoArguments("DROP MAPPING", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
+        }
+    }
+
+    static class CreateIndexPlan extends SqlPlanImpl {
+        private final String name;
+        private final String mapName;
+        private final String[] attributes;
+        private final Map<String, String> options;
+        private final IndexType indexType;
+        private final boolean ifNotExists;
+        private final PlanExecutor planExecutor;
+
+        CreateIndexPlan(
+                PlanKey planKey,
+                String name,
+                String mapName,
+                IndexType indexType,
+                List<String> attributes,
+                Map<String, String> options,
+                boolean ifNotExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.mapName = mapName;
+            this.indexType = indexType;
+            this.attributes = attributes.toArray(new String[0]);
+            this.options = options;
+            this.ifNotExists = ifNotExists;
+            this.planExecutor = planExecutor;
+        }
+
+        public String indexName() {
+            return name;
+        }
+
+        public String mapName() {
+            return mapName;
+        }
+
+        public String[] attributes() {
+            return attributes;
+        }
+
+        public IndexType indexType() {
+            return indexType;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_INDEX));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE INDEX", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE INDEX", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropIndexPlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropIndexPlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean ifExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_DESTROY));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            throw QueryException.error("DROP INDEX is not supported.");
         }
     }
 
