@@ -24,6 +24,25 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
+    public void testDurableExecutor() {
+        DurableExecutorConfig expectedConfig = new DurableExecutorConfig()
+                .setName("testDurableExecutor")
+                .setPoolSize(10)
+                .setCapacity(100)
+                .setDurability(2)
+                .setStatisticsEnabled(false)
+                .setSplitBrainProtectionName("splitBrainProtection");
+
+        Config config = new Config()
+                .addDurableExecutorConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testScheduledExecutor() {
         Config cfg = new Config();
 

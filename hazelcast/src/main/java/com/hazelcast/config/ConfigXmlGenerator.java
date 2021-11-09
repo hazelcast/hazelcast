@@ -589,7 +589,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void durableExecutorXmlGenerator(XmlGenerator gen, Config config) {
+    static void durableExecutorXmlGenerator(XmlGenerator gen, Config config) {
         for (DurableExecutorConfig ex : config.getDurableExecutorConfigs().values()) {
             gen.open("durable-executor-service", "name", ex.getName())
                     .node("pool-size", ex.getPoolSize())

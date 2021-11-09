@@ -31,7 +31,16 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
-    static String scheduledExecutorGenerator(ScheduledExecutorConfig subConfig, boolean configIsXml, int indent) {
+    static String durableExecutorConfigGenerator(DurableExecutorConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "durable-executor-service",
+                Config::addDurableExecutorConfig,
+                ConfigXmlGenerator::durableExecutorXmlGenerator,
+                ConfigYamlGenerator::durableExecutorYamlGenerator
+        );
+    }
+
+    static String scheduledExecutorConfigGenerator(ScheduledExecutorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "scheduled-executor-service",
                 Config::addScheduledExecutorConfig,
@@ -40,7 +49,7 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    static String cardinalityEstimatorGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
+    static String cardinalityEstimatorConfigGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "cardinality-estimator",
                 Config::addCardinalityEstimatorConfig,
@@ -49,7 +58,7 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    static String flakeIdGeneratorGenerator(FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent) {
+    static String flakeIdGeneratorConfigGenerator(FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "flake-id-generator",
                 Config::addFlakeIdGeneratorConfig,

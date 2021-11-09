@@ -34,10 +34,12 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        durableExecutorYamlGenerator(root, config);
+        scheduledExecutorYamlGenerator(root, config);
+        cardinalityEstimatorYamlGenerator(root, config);
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
-        cardinalityEstimatorYamlGenerator(root, config);
-        scheduledExecutorYamlGenerator(root, config);
+
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
@@ -64,7 +66,28 @@ public class ConfigYamlGenerator {
 //        parent.put(xxx, child);
 //    }
 
-        static void scheduledExecutorYamlGenerator(Map<String, Object> parent, Config config) {
+    static void durableExecutorYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getDurableExecutorConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (DurableExecutorConfig subConfigAsObject : config.getDurableExecutorConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "pool-size", subConfigAsObject.getPoolSize());
+            addNonNullToMap(subConfigAsMap, "durability", subConfigAsObject.getDurability());
+            addNonNullToMap(subConfigAsMap, "capacity", subConfigAsObject.getCapacity());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("durable-executor-service", child);
+    }
+
+    static void scheduledExecutorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getScheduledExecutorConfigs().isEmpty()) {
             return;
         }
