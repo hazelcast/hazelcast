@@ -39,13 +39,13 @@ import java.net.URLDecoder;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_200;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 
-public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
+public abstract class HttpCommandProcessor<T extends HttpCommand> extends AbstractTextCommandProcessor<T> {
     public static final String URI_MAPS = "/hazelcast/rest/maps/";
     public static final String URI_QUEUES = "/hazelcast/rest/queues/";
     public static final String URI_WAN_BASE_URL = "/hazelcast/rest/wan";
@@ -99,10 +99,12 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_LOG_LEVEL_RESET = "/hazelcast/rest/log-level/reset";
 
     protected final ILogger logger;
+    protected final RestCallCollector restCallCollector;
 
     protected HttpCommandProcessor(TextCommandService textCommandService, ILogger logger) {
         super(textCommandService);
         this.logger = logger;
+        this.restCallCollector = textCommandService.getRestCallCollector();
     }
 
     /**
@@ -118,31 +120,31 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
         if (value == null) {
             command.send204();
         } else {
-            prepareResponse(RES_200, command, value);
+            prepareResponse(SC_200, command, value);
         }
     }
 
     /**
      * Prepares a response with the provided status line and response value.
      *
-     * @param statusLine the binary-encoded HTTP response status line
+     * @param statusCode the HTTP response status code
      * @param command    the HTTP request
      * @param value      the response value to send
      */
-    protected void prepareResponse(@Nonnull byte[] statusLine,
+    protected void prepareResponse(HttpStatusCode statusCode,
                                    @Nonnull HttpCommand command,
                                    @Nonnull Object value) {
         if (value instanceof byte[]) {
-            command.setResponse(statusLine, CONTENT_TYPE_BINARY, (byte[]) value);
+            command.setResponse(statusCode, CONTENT_TYPE_BINARY, (byte[]) value);
         } else if (value instanceof RestValue) {
             RestValue restValue = (RestValue) value;
-            command.setResponse(statusLine, restValue.getContentType(), restValue.getValue());
+            command.setResponse(statusCode, restValue.getContentType(), restValue.getValue());
         } else if (value instanceof HazelcastJsonValue || value instanceof JsonValue) {
-            command.setResponse(statusLine, CONTENT_TYPE_JSON, stringToBytes(value.toString()));
+            command.setResponse(statusCode, CONTENT_TYPE_JSON, stringToBytes(value.toString()));
         } else if (value instanceof String) {
-            command.setResponse(statusLine, CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
+            command.setResponse(statusCode, CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
         } else {
-            command.setResponse(statusLine, CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
+            command.setResponse(statusCode, CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
         }
     }
 

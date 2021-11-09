@@ -44,6 +44,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -101,7 +104,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             command.send400();
         } catch (Throwable e) {
             logger.warning("An error occurred while handling request " + command, e);
-            prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
+            prepareResponse(SC_500, command, exceptionResponse(e));
         }
 
         if (sendResponse) {
@@ -366,8 +369,10 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {
+        command.getExecutionDetails().setObjectType(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+        command.getExecutionDetails().setObjectName(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
 
         if (QUEUE_SIZE_COMMAND.equalsIgnoreCase(secondStr)) {
@@ -381,9 +386,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleMap(HttpGetCommand command, String uri) {
+        command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        command.getExecutionDetails().setObjectName(mapName);
         String key = uri.substring(indexEnd + 1);
         Object value = textCommandService.get(mapName, key);
         prepareResponse(command, value);
