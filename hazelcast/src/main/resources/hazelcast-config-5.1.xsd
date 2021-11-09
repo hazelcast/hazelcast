@@ -4125,7 +4125,7 @@
             <xs:element name="block-size" type="xs:unsignedInt" minOccurs="0" default="4096">
                 <xs:annotation>
                     <xs:documentation>
-                        Disk block/sector size in bytes. The default is 4096.
+                        Disk block/sector size in bytes. The default is 4096. The minimum is 64.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

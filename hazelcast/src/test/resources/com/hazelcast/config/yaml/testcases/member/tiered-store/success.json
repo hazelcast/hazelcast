@@ -1,0 +1,45 @@
+{
+  "instance": {
+    "hazelcast": {
+      "map": {
+        "my-map-0": {
+          "tiered-store": {
+            "enabled": true
+          }
+        },
+        "my-map-1": {
+          "tiered-store": {
+            "enabled": true,
+            "in-memory-tier": {
+              "capacity": 4096
+            }
+          }
+        },
+        "my-map-2": {
+          "tiered-store": {
+            "enabled": true,
+            "disk-tier": {
+              "enabled": true,
+              "capacity": 8
+            }
+          }
+        },
+        "my-map-3": {
+          "tiered-store": {
+            "enabled": true,
+            "in-memory-tier": {
+              "capacity": 8192
+            },
+            "disk-tier": {
+              "enabled": true,
+              "base-dir": "/dev/hazelcast/tstore",
+              "block-size": 4096,
+              "capacity": 512
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

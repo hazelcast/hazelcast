@@ -1478,6 +1478,7 @@
                 "properties": {
                   "capacity": {
                     "type": "number",
+                    "minimum": 1,
                     "default": 256,
                     "description": "Capacity in MB, i.e., how much main memory should this tier consume at most."
                   }
@@ -1498,11 +1499,13 @@
                   },
                   "block-size": {
                     "type": "integer",
+                    "minimum": 64,
                     "default": 4096,
-                    "description": "Device block/sector size in bytes. The default is 4096."
+                    "description": "Device block/sector size in bytes. The default is 4096. The minimum is 64."
                   },
                   "capacity": {
                     "type": "number",
+                    "minimum": 1,
                     "description": "Disk capacity in GB, i.e., how much disk space should be consumed at most."
                   }
                 },
