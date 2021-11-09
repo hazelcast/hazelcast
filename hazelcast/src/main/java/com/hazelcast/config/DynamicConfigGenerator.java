@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String ringBufferConfigGenerator(RingbufferConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "ringbuffer",
+                Config::addRingBufferConfig,
+                ConfigXmlGenerator::ringbufferXmlGenerator,
+                ConfigYamlGenerator::ringbufferYamlGenerator
+        );
+    }
+
     static String topicConfigGenerator(TopicConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "topic",

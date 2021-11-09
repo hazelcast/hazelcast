@@ -721,7 +721,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void ringbufferXmlGenerator(XmlGenerator gen, Config config) {
+    static void ringbufferXmlGenerator(XmlGenerator gen, Config config) {
         Collection<RingbufferConfig> configs = config.getRingbufferConfigs().values();
         for (RingbufferConfig rbConfig : configs) {
             gen.open("ringbuffer", "name", rbConfig.getName())

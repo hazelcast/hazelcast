@@ -51,8 +51,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -972,103 +970,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
 
         CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
-    }
-
-    @Test
-    public void testRingbufferWithStoreClass() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setClassName("ClassName")
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    @Test
-    public void testRingbufferWithStoreImplementation() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setStoreImplementation(new TestRingbufferStore())
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    private static class TestRingbufferStore implements RingbufferStore {
-        @Override
-        public void store(long sequence, Object data) {
-        }
-
-        @Override
-        public void storeAll(long firstItemSequence, Object[] items) {
-        }
-
-        @Override
-        public Object load(long sequence) {
-            return null;
-        }
-
-        @Override
-        public long getLargestSequence() {
-            return 0;
-        }
-    }
-
-    @Test
-    public void testRingbufferWithStoreFactory() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryClassName("FactoryClassName")
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    @Test
-    public void testRingbufferWithStoreFactoryImplementation() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryImplementation(new TestRingbufferStoreFactory())
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory {
-        @Override
-        public RingbufferStore newRingbufferStore(String name, Properties properties) {
-            return null;
-        }
-    }
-
-    private void testRingbuffer(RingbufferStoreConfig ringbufferStoreConfig) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy("PassThroughMergePolicy")
-                .setBatchSize(1234);
-        RingbufferConfig expectedConfig = new RingbufferConfig("testRbConfig")
-                .setBackupCount(1)
-                .setAsyncBackupCount(2)
-                .setCapacity(3)
-                .setTimeToLiveSeconds(4)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setRingbufferStoreConfig(ringbufferStoreConfig)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig);
-
-        Config config = new Config().addRingBufferConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
-        ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
     }
 
     @Test
