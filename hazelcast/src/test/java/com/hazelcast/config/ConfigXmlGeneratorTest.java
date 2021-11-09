@@ -62,7 +62,6 @@ import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -105,7 +104,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
+public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -122,7 +121,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         cfg.setLicenseKey("HazelcastLicenseKey");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
         assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
@@ -188,7 +187,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
                 .setClassName("ClassName");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
         assertEquals(expected, actual);
@@ -200,7 +199,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
                 .setImplementation(new TestMemberAddressProvider());
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
         ConfigCompatibilityChecker.checkMemberAddressProviderConfig(expected, actual);
@@ -242,7 +241,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.getNetworkConfig().setIcmpFailureDetectorConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getIcmpFailureDetectorConfig();
 
         assertFailureDetectorConfigEquals(expected, actual);
@@ -252,7 +251,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testNetworkAutoDetectionJoinConfig() {
         Config cfg = new Config();
         cfg.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
-        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        Config actualConfig = getNewConfigViaGenerator(cfg);
         assertFalse(actualConfig.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
@@ -264,7 +263,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.getNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
 
-        MulticastConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getJoin().getMulticastConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -278,7 +277,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
 
-        TcpIpConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getJoin().getTcpIpConfig();
+        TcpIpConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getJoin().getTcpIpConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -292,7 +291,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addOutboundPortDefinition("4242-4244")
                 .addOutboundPortDefinition("5252;5254");
 
-        NetworkConfig actualNetworkConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig();
+        NetworkConfig actualNetworkConfig = getNewConfigViaGenerator(cfg).getNetworkConfig();
 
         assertEquals(expectedNetworkConfig.getOutboundPortDefinitions(), actualNetworkConfig.getOutboundPortDefinitions());
         assertEquals(expectedNetworkConfig.getOutboundPorts(), actualNetworkConfig.getOutboundPorts());
@@ -307,7 +306,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addInterface("127.0.0.*")
                 .setEnabled(true);
 
-        NetworkConfig actualNetworkConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig();
+        NetworkConfig actualNetworkConfig = getNewConfigViaGenerator(cfg).getNetworkConfig();
 
         assertEquals(expectedNetworkConfig.getInterfaces(), actualNetworkConfig.getInterfaces());
     }
@@ -327,7 +326,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
-        SocketInterceptorConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -341,7 +340,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
-        SocketInterceptorConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
 
         ConfigCompatibilityChecker.checkSocketInterceptorConfig(expectedConfig, actualConfig);
     }
@@ -362,7 +361,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.setListenerConfigs(singletonList(new ListenerConfig("Listener")));
 
-        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
 
         assertEquals(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
@@ -373,7 +372,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.setListenerConfigs(singletonList(new ListenerConfig(new TestEventListener())));
 
-        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
 
         ConfigCompatibilityChecker.checkListenerConfigs(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
@@ -454,7 +453,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         configurePersistence(cfg);
 
-        PersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
+        PersistenceConfig hrConfig = getNewConfigViaGenerator(cfg).getPersistenceConfig();
 
         EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
@@ -486,7 +485,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
 
-        PersistenceConfig persistenceConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
+        PersistenceConfig persistenceConfig = getNewConfigViaGenerator(cfg).getPersistenceConfig();
 
         EncryptionAtRestConfig actualConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
@@ -533,32 +532,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         dummyprops.put("a", "b");
 
         RealmConfig memberRealm = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
-                Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("member.f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("member.b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("member.l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                        Arrays.asList(
+                                new LoginModuleConfig()
+                                        .setClassName("member.f.o.o")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                new LoginModuleConfig()
+                                        .setClassName("member.b.a.r")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                new LoginModuleConfig()
+                                        .setClassName("member.l.o.l")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                 .setCredentialsFactoryConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops));
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
                 .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
                 .setClientBlockUnmappedActions(false)
                 .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
-                        Arrays.asList(
-                                new LoginModuleConfig()
-                                        .setClassName("f.o.o")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                                new LoginModuleConfig()
-                                        .setClassName("b.a.r")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                                new LoginModuleConfig()
-                                        .setClassName("l.o.l")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                                Arrays.asList(
+                                        new LoginModuleConfig()
+                                                .setClassName("f.o.o")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                        new LoginModuleConfig()
+                                                .setClassName("b.a.r")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                        new LoginModuleConfig()
+                                                .setClassName("l.o.l")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                         .setUsernamePasswordIdentityConfig("username", "password"))
                 .setMemberRealmConfig("mr", memberRealm)
                 .setClientPermissionConfigs(new HashSet<>(asList(
@@ -618,7 +617,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -649,7 +648,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("kerberosRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -662,7 +661,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("tlsRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -673,10 +672,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRoleSeparator(":")
                 .addUser("test", "1234", "monitor", "hazelcast")
                 .addUser("dev", "secret", "root")
-                );
+        );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -730,7 +729,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.setSerializationConfig(expectedConfig);
 
-        SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
+        SerializationConfig actualConfig = getNewConfigViaGenerator(cfg).getSerializationConfig();
 
         assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
         assertEquals(expectedConfig.isAllowOverrideDefaultSerializers(), actualConfig.isAllowOverrideDefaultSerializers());
@@ -781,7 +780,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.setSerializationConfig(expectedConfig);
 
-        SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
+        SerializationConfig actualConfig = getNewConfigViaGenerator(cfg).getSerializationConfig();
 
         assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
         assertEquals(expectedConfig.getPortableVersion(), actualConfig.getPortableVersion());
@@ -831,7 +830,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.setPartitionGroupConfig(expectedConfig);
 
-        PartitionGroupConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getPartitionGroupConfig();
+        PartitionGroupConfig actualConfig = getNewConfigViaGenerator(cfg).getPartitionGroupConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -846,7 +845,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setManagementCenterConfig(managementCenterConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
@@ -873,7 +872,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addReplicatedMapConfig(replicatedMapConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
         MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
@@ -886,27 +885,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
         assertEquals(1234, actualMergePolicyConfig.getBatchSize());
         assertEquals(replicatedMapConfig, xmlReplicatedMapConfig);
-    }
-
-    @Test
-    public void testFlakeIdGeneratorConfigGenerator() {
-        FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
-                .setPrefetchCount(3)
-                .setPrefetchValidityMillis(10L)
-                .setEpochStart(1000000L)
-                .setNodeIdOffset(30L)
-                .setBitsSequence(2)
-                .setBitsNodeId(3)
-                .setAllowedFutureMillis(123L)
-                .setStatisticsEnabled(false);
-
-        Config config = new Config()
-                .addFlakeIdGeneratorConfig(figConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
-        assertEquals(figConfig, xmlReplicatedConfig);
     }
 
     @Test
@@ -940,7 +918,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals(expectedConfig, actualConfig);
@@ -967,7 +945,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals(expectedConfig, actualConfig);
@@ -991,7 +969,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
@@ -1088,7 +1066,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Config config = new Config().addRingBufferConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
         ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
@@ -1106,7 +1084,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addExecutorConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ExecutorConfig actualConfig = xmlConfig.getExecutorConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
@@ -1125,7 +1103,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addDurableExecutorConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
@@ -1151,10 +1129,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
         cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
 
-        ScheduledExecutorConfig existing = getNewConfigViaXMLGenerator(cfg).getScheduledExecutorConfig("Existing");
+        ScheduledExecutorConfig existing = getNewConfigViaGenerator(cfg).getScheduledExecutorConfig("Existing");
         assertEquals(scheduledExecutorConfig, existing);
 
-        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
+        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
                 .getScheduledExecutorConfig("NotExisting/Default");
         assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
         assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
@@ -1162,22 +1140,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
         assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
         assertEquals(defaultSchedExecConfig.isStatisticsEnabled(), fallsbackToDefault.isStatisticsEnabled());
-    }
-
-
-    @Test
-    public void testPNCounter() {
-        PNCounterConfig expectedConfig = new PNCounterConfig()
-                .setName("testPNCounter")
-                .setReplicaCount(100)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config().addPNCounterConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        PNCounterConfig actualConfig = xmlConfig.getPNCounterConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -1195,7 +1157,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMultiMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         MultiMapConfig actualConfig = xmlConfig.getMultiMapConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
@@ -1219,7 +1181,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addListConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ListConfig actualConfig = xmlConfig.getListConfig("testList");
         assertEquals(expectedConfig, actualConfig);
@@ -1243,7 +1205,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addSetConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
         assertEquals(expectedConfig, actualConfig);
@@ -1349,7 +1311,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addQueueConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         QueueConfig actualConfig = xmlConfig.getQueueConfig("testQueue");
         assertEquals("testQueue", actualConfig.getName());
@@ -1372,7 +1334,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -1400,7 +1362,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -1436,7 +1398,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -1519,7 +1481,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMaxConcurrentReplicationTargets(10)
                 .setReplicationPeriodMillis(2000);
         final Config config = new Config().setCRDTReplicationConfig(replicationConfig);
-        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        final Config xmlConfig = getNewConfigViaGenerator(config);
         final CRDTReplicationConfig xmlReplicationConfig = xmlConfig.getCRDTReplicationConfig();
 
         assertNotNull(xmlReplicationConfig);
@@ -1639,7 +1601,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
         AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
@@ -1655,7 +1617,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
         MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1668,7 +1630,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
         MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1681,7 +1643,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
         MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1706,7 +1668,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(mapConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
         assertEquals(expectedConfig, actualConfig);
@@ -1725,7 +1687,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(mapConfig);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
@@ -1747,7 +1709,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config().addMultiMapConfig(multiMapConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         assertEquals(multiMapConfig, xmlConfig.getMultiMapConfig("myMultiMap"));
     }
@@ -1803,7 +1765,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
@@ -1824,10 +1786,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();
         cfg.addCardinalityEstimatorConfig(defaultCardinalityEstConfig);
 
-        CardinalityEstimatorConfig existing = getNewConfigViaXMLGenerator(cfg).getCardinalityEstimatorConfig("Existing");
+        CardinalityEstimatorConfig existing = getNewConfigViaGenerator(cfg).getCardinalityEstimatorConfig("Existing");
         assertEquals(estimatorConfig, existing);
 
-        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
+        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
                 .getCardinalityEstimatorConfig("NotExisting/Default");
         assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
         assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
@@ -1846,7 +1808,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
         cfg.addTopicConfig(expectedConfig);
 
-        TopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getTopicConfig("TestTopic");
+        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig("TestTopic");
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1863,7 +1825,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
         cfg.addTopicConfig(expectedConfig);
 
-        TopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getTopicConfig(testTopic);
+        TopicConfig actualConfig = getNewConfigViaGenerator(cfg).getTopicConfig(testTopic);
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1882,7 +1844,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         cfg.addReliableTopicConfig(expectedConfig);
 
-        ReliableTopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
+        ReliableTopicConfig actualConfig = getNewConfigViaGenerator(cfg).getReliableTopicConfig(testTopic);
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -1895,7 +1857,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setFunctionClassName("com.hazelcast.SplitBrainProtectionFunction");
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).
                 getSplitBrainProtectionConfig("test-splitBrainProtection");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
@@ -1910,7 +1872,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("recently-active");
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).getSplitBrainProtectionConfig("recently-active");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
@@ -1929,7 +1891,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
@@ -1967,7 +1929,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addLockConfig(new FencedLockConfig("lock1", 2));
 
 
-        CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
+        CPSubsystemConfig generatedConfig = getNewConfigViaGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),
                 new CPSubsystemConfigChecker().check(config.getCPSubsystemConfig(), generatedConfig));
     }
@@ -1987,7 +1949,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         config.getMetricsConfig().getJmxConfig()
                 .setEnabled(false);
 
-        MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
+        MetricsConfig generatedConfig = getNewConfigViaGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
                 new MetricsConfigChecker().check(config.getMetricsConfig(), generatedConfig));
     }
@@ -2001,7 +1963,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setFileName("/dummy/file")
                 .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
 
-        InstanceTrackingConfig generatedConfig = getNewConfigViaXMLGenerator(config).getInstanceTrackingConfig();
+        InstanceTrackingConfig generatedConfig = getNewConfigViaGenerator(config).getInstanceTrackingConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getInstanceTrackingConfig(),
                 new InstanceTrackingConfigChecker().check(config.getInstanceTrackingConfig(), generatedConfig));
     }
@@ -2012,7 +1974,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         confiig.getSqlConfig().setStatementTimeoutMillis(30L);
 
-        SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
+        SqlConfig generatedConfig = getNewConfigViaGenerator(confiig).getSqlConfig();
 
         assertEquals(confiig.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
     }
@@ -2022,7 +1984,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig().setEnabled(true);
         Config config = new Config();
         config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
-        MemcacheProtocolConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getMemcacheProtocolConfig();
+        MemcacheProtocolConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getMemcacheProtocolConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + memcacheProtocolConfig.toString(),
                 new ConfigCompatibilityChecker.MemcacheProtocolConfigChecker().check(memcacheProtocolConfig, generatedConfig));
     }
@@ -2032,7 +1994,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         RestApiConfig restApiConfig = new RestApiConfig();
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -2043,7 +2005,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         restApiConfig.setEnabled(true).enableAllGroups();
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -2057,7 +2019,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -2071,7 +2033,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -2085,7 +2047,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -2094,7 +2056,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testAdvancedNetworkAutoDetectionJoinConfig() {
         Config cfg = new Config();
         cfg.getAdvancedNetworkConfig().setEnabled(true).getJoin().getAutoDetectionConfig().setEnabled(false);
-        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        Config actualConfig = getNewConfigViaGenerator(cfg);
         assertFalse(actualConfig.getAdvancedNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
@@ -2107,7 +2069,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getAdvancedNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
         cfg.getAdvancedNetworkConfig().setEnabled(true);
 
-        MulticastConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
+        MulticastConfig actualConfig = getNewConfigViaGenerator(cfg)
                 .getAdvancedNetworkConfig().getJoin().getMulticastConfig();
 
         assertEquals(expectedConfig, actualConfig);
@@ -2122,7 +2084,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getAdvancedNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getAdvancedNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
 
-        TcpIpConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
+        TcpIpConfig actualConfig = getNewConfigViaGenerator(cfg)
                 .getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
 
         assertEquals(expectedConfig, actualConfig);
@@ -2143,7 +2105,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().setIcmpFailureDetectorConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getIcmpFailureDetectorConfig();
 
         assertFailureDetectorConfigEquals(expected, actual);
@@ -2160,7 +2122,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setClassName("ClassName");
         expected.getProperties().setProperty("p1", "v1");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getMemberAddressProviderConfig();
 
         assertEquals(expected, actual);
@@ -2199,7 +2161,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
 
-        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
+        EndpointConfig actual = getNewConfigViaGenerator(cfg)
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
@@ -2215,7 +2177,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().setMemberEndpointConfig(expected);
 
-        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
+        EndpointConfig actual = getNewConfigViaGenerator(cfg)
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
@@ -2230,7 +2192,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setFactoryClassName("com.acme.AuditlogToSyslog")
                 .setProperty("host", "syslogserver.acme.com")
                 .setProperty("port", "514");
-        AuditlogConfig generatedConfig = getNewConfigViaXMLGenerator(config).getAuditlogConfig();
+        AuditlogConfig generatedConfig = getNewConfigViaGenerator(config).getAuditlogConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getAuditlogConfig(),
                 new ConfigCompatibilityChecker.AuditlogConfigChecker().check(config.getAuditlogConfig(), generatedConfig));
     }
@@ -2251,7 +2213,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setPacketSizeLimit(123)
                 .setQueueSize(123);
 
-        Config newConfig = getNewConfigViaXMLGenerator(config);
+        Config newConfig = getNewConfigViaGenerator(config);
         assertEquals(jetConfig, newConfig.getJetConfig());
     }
 
@@ -2268,7 +2230,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setProviderMode(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES);
         config.setUserCodeDeploymentConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(config);
+        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(config);
         UserCodeDeploymentConfig actual = newConfigViaXMLGenerator.getUserCodeDeploymentConfig();
 
         assertEquals(expected.isEnabled(), actual.isEnabled());
@@ -2289,7 +2251,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getCacheConfig("test")
                 .setMerkleTreeConfig(actual);
 
-        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
                 .getCacheConfig("test").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
@@ -2301,7 +2263,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MerkleTreeConfig actual = cfg.getCacheConfig("testCacheWithoutMerkleTreeConfig")
                 .getMerkleTreeConfig();
 
-        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
                 .getCacheConfig("testCacheWithoutMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
@@ -2315,9 +2277,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Config cfg = new Config();
         cfg.getCacheConfig("testCacheWithDisabledMerkleTreeConfig")
-           .setMerkleTreeConfig(actual);
+                .setMerkleTreeConfig(actual);
 
-        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
                 .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
@@ -2368,7 +2330,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setProperty("tag-value", "dummyTagValue");
     }
 
-    private static Config getNewConfigViaXMLGenerator(Config config) {
+    Config getNewConfigViaGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
 

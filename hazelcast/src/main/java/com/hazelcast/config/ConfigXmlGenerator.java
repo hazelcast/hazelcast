@@ -630,7 +630,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
+    static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
         for (PNCounterConfig counterConfig : config.getPNCounterConfigs().values()) {
             gen.open("pn-counter", "name", counterConfig.getName())
                     .node("replica-count", counterConfig.getReplicaCount())
@@ -1545,7 +1545,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+    static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
         for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
