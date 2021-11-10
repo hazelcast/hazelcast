@@ -1,28 +1,26 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl;
+package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -52,10 +50,32 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
-        constructors[JSON_PARSE] = arg -> new JsonParseFunction();
-        constructors[JSON_VALUE] = arg -> new JsonValueFunction();
+        constructors[JSON_QUERY] = arg -> createInstance(
+                "com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction"
+        );
+        constructors[JSON_PARSE] = arg -> createInstance(
+                "com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction"
+        );
+        constructors[JSON_VALUE] = arg -> createInstance(
+                "com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction"
+        );
 
         return new ArrayDataSerializableFactory(constructors);
+    }
+
+    private IdentifiedDataSerializable createInstance(String className) {
+        try {
+            final Class<?> clazz = Class.forName(className);
+            return (IdentifiedDataSerializable) clazz.newInstance();
+        } catch (ClassNotFoundException ignored) {
+            throw new HazelcastException("Class " + className + " not found in the classpath. "
+                    + "Please that hazelcast-sql module is included in the classpath.");
+        } catch (InstantiationException ignored) {
+            throw new HazelcastException("Class " + className + " can not be instantiated. "
+                    + "Please check availability of default constructors.");
+        } catch (IllegalAccessException ignored) {
+            throw new HazelcastException("Class " + className + " can not be accessed. "
+                    + "Please check security permissions.");
+        }
     }
 }

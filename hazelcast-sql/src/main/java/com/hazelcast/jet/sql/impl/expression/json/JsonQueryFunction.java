@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 import com.google.common.cache.Cache;
 import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
