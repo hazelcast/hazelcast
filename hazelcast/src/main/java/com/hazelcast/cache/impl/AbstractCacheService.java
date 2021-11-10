@@ -97,7 +97,8 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PartitionAwareService,
+public abstract class AbstractCacheService implements ICacheService,
+        PreJoinAwareService, PartitionAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService,
         ClusterStateListener, TenantContextAwareService {
     /**
