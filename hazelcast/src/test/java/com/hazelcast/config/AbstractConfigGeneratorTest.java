@@ -181,7 +181,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStore implements RingbufferStore {
+    private static class TestRingbufferStore implements RingbufferStore<Object> {
         @Override
         public void store(long sequence, Object data) {
         }
@@ -225,9 +225,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory {
+    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory<Object> {
         @Override
-        public RingbufferStore newRingbufferStore(String name, Properties properties) {
+        public RingbufferStore<Object> newRingbufferStore(String name, Properties properties) {
             return null;
         }
     }
@@ -360,20 +360,20 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
 
-        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
-        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
+        ScheduledExecutorConfig defaultScheduledExecConfig = new ScheduledExecutorConfig();
+        cfg.addScheduledExecutorConfig(defaultScheduledExecConfig);
 
         ScheduledExecutorConfig existing = getNewConfigViaGenerator(cfg).getScheduledExecutorConfig("Existing");
         assertEquals(scheduledExecutorConfig, existing);
 
-        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
+        ScheduledExecutorConfig fallbacksToDefault = getNewConfigViaGenerator(cfg)
                 .getScheduledExecutorConfig("NotExisting/Default");
-        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
-        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
-        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
-        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
-        assertEquals(defaultSchedExecConfig.isStatisticsEnabled(), fallsbackToDefault.isStatisticsEnabled());
+        assertEquals(defaultScheduledExecConfig.getMergePolicyConfig(), fallbacksToDefault.getMergePolicyConfig());
+        assertEquals(defaultScheduledExecConfig.getCapacity(), fallbacksToDefault.getCapacity());
+        assertEquals(defaultScheduledExecConfig.getCapacityPolicy(), fallbacksToDefault.getCapacityPolicy());
+        assertEquals(defaultScheduledExecConfig.getPoolSize(), fallbacksToDefault.getPoolSize());
+        assertEquals(defaultScheduledExecConfig.getDurability(), fallbacksToDefault.getDurability());
+        assertEquals(defaultScheduledExecConfig.isStatisticsEnabled(), fallbacksToDefault.isStatisticsEnabled());
     }
 
     @Test
@@ -393,12 +393,12 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         CardinalityEstimatorConfig existing = getNewConfigViaGenerator(cfg).getCardinalityEstimatorConfig("Existing");
         assertEquals(estimatorConfig, existing);
 
-        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaGenerator(cfg)
+        CardinalityEstimatorConfig fallbacksToDefault = getNewConfigViaGenerator(cfg)
                 .getCardinalityEstimatorConfig("NotExisting/Default");
-        assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
-        assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallsbackToDefault.getAsyncBackupCount());
-        assertEquals(defaultCardinalityEstConfig.getSplitBrainProtectionName(), fallsbackToDefault.getSplitBrainProtectionName());
+        assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallbacksToDefault.getMergePolicyConfig());
+        assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallbacksToDefault.getBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallbacksToDefault.getAsyncBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getSplitBrainProtectionName(), fallbacksToDefault.getSplitBrainProtectionName());
     }
 
     @Test
