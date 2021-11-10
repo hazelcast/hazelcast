@@ -70,10 +70,20 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 /**
- * Sent from the master node to the partition owner. It will perform the migration by preparing the migration operations and
- * sending them to the destination. A response with a value equal to {@link Boolean#TRUE} indicates a successful migration.
- * It runs on the migration source and transfers the partition with multiple shots.
- * It divides the partition data into fragments and send a group of fragments within each shot.
+ * Sent from the master node to the partition owner.
+ * <p>
+ * It will perform the migration by preparing the migration
+ * operations and sending them to the destination.
+ * <p>
+ * A response with a value equal to {@link
+ * Boolean#TRUE} indicates a successful migration.
+ * <p>
+ * It runs on the migration source and transfers the partition
+ * with multiple shots. It divides the partition data into
+ * fragments and send a group of fragments within each shot.
+ * <p>
+ * @since 5.1 If chunked migration is enabled,
+ * it also subdivides fragments into chunks.
  */
 public class MigrationRequestOperation extends BaseMigrationOperation {
 
