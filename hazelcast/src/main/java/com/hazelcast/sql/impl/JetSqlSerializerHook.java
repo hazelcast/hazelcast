@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -67,15 +66,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         try {
             final Class<?> clazz = Class.forName(className);
             return (IdentifiedDataSerializable) clazz.newInstance();
-        } catch (ClassNotFoundException ignored) {
-            throw new HazelcastException("Class " + className + " not found in the classpath. "
-                    + "Please that hazelcast-sql module is included in the classpath.");
-        } catch (InstantiationException ignored) {
-            throw new HazelcastException("Class " + className + " can not be instantiated. "
-                    + "Please check availability of default constructors.");
-        } catch (IllegalAccessException ignored) {
-            throw new HazelcastException("Class " + className + " can not be accessed. "
-                    + "Please check security permissions.");
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ignored) {
+            return null;
         }
     }
 }
