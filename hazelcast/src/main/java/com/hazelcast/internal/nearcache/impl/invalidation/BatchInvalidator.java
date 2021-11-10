@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -226,16 +224,5 @@ public class BatchInvalidator extends Invalidator {
         invalidationQueues.clear();
 
         super.reset();
-    }
-
-    public static void main(String[] args) {
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
-        IMap<Object, Object> test = hazelcastInstance.getMap("test");
-        for (int i = 0; i < 1000; i++) {
-            test.set(i, i);
-        }
-        test.destroy();
-
-        hazelcastInstance.shutdown();
     }
 }
