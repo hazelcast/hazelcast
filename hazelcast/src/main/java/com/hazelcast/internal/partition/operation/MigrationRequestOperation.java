@@ -82,6 +82,7 @@ import static java.util.Collections.singleton;
  * with multiple shots. It divides the partition data into
  * fragments and send a group of fragments within each shot.
  * <p>
+ *
  * @since 5.1 If chunked migration is enabled,
  * it also subdivides fragments into chunks.
  */
@@ -90,6 +91,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private int maxTotalChunkedDataInBytes;
     private boolean chunkedMigrationEnabled;
     private boolean fragmentedMigrationEnabled;
+
     private transient ServiceNamespacesContext namespacesContext;
     private transient Map<ServiceNamespace, Collection<ChunkSupplier>>
             namespaceToSuppliers = new HashMap<>();
@@ -357,7 +359,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             versions.put(namespace, v);
         }
 
-        return new ReplicaFragmentMigrationState(versions, operations, suppliers, maxTotalChunkedDataInBytes);
+        return new ReplicaFragmentMigrationState(versions, operations,
+                suppliers, maxTotalChunkedDataInBytes, getLogger());
     }
 
     @Override

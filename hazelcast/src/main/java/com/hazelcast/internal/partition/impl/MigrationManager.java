@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
@@ -179,7 +180,8 @@ public class MigrationManager {
         partitionMigrationInterval = properties.getPositiveMillisOrDefault(PARTITION_MIGRATION_INTERVAL, 0);
         partitionMigrationTimeout = properties.getMillis(PARTITION_MIGRATION_TIMEOUT);
         fragmentedMigrationEnabled = properties.getBoolean(PARTITION_FRAGMENTED_MIGRATION_ENABLED);
-        chunkedMigrationEnabled = properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
+        chunkedMigrationEnabled = isClusterVersionGreaterOrEqualV51()
+                && properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
         maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
         partitionStateManager = partitionService.getPartitionStateManager();
@@ -197,6 +199,12 @@ public class MigrationManager {
                         ? node.getConfig().getPersistenceConfig().getRebalanceDelaySeconds()
                         : PersistenceConfig.DEFAULT_REBALANCE_DELAY;
         this.asyncExecutor = node.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
+    }
+
+    // RU_COMPAT 5.0
+    private boolean isClusterVersionGreaterOrEqualV51() {
+        return node.getClusterService()
+                .getClusterVersion().isGreaterOrEqual(Versions.V5_1);
     }
 
     @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)

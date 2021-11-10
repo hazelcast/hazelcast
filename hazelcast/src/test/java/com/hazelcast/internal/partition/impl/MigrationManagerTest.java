@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -227,7 +228,7 @@ public class MigrationManagerTest {
         PartitionReplica[] replicas = new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT];
         for (int i = 0; i < members.size(); i++) {
             replicas[i] = new PartitionReplica(members.get(i).getAddress(),
-            members.get(i).getUuid());
+                    members.get(i).getUuid());
         }
         return replicas;
     }
@@ -239,20 +240,22 @@ public class MigrationManagerTest {
         MetricsRegistry metricsRegistry = mock(MetricsRegistry.class);
         ExecutionService executionService = mock(ExecutionService.class);
         ManagedExecutorService asyncExecutor = mock(ManagedExecutorService.class);
+        clusterService = mock(ClusterServiceImpl.class);
+
         when(node.getProperties()).thenReturn(new HazelcastProperties(new Config()));
         when(node.getNodeEngine()).thenReturn(nodeEngine);
+        when(node.getClusterService()).thenReturn(clusterService);
         when(instance.getName()).thenReturn("dev");
         when(nodeEngine.getHazelcastInstance()).thenReturn(instance);
         when(nodeEngine.getMetricsRegistry()).thenReturn(metricsRegistry);
         when(executionService.getExecutor(any(String.class))).thenReturn(asyncExecutor);
         when(nodeEngine.getExecutionService()).thenReturn(executionService);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
 
         partitionStateManager = mock(PartitionStateManager.class);
         partitionService = mock(InternalPartitionServiceImpl.class);
         when(partitionService.getPartitionStateManager()).thenReturn(partitionStateManager);
 
-        clusterService = mock(ClusterServiceImpl.class);
-        when(node.getClusterService()).thenReturn(clusterService);
 
         when(node.getConfig()).thenReturn(new Config());
     }

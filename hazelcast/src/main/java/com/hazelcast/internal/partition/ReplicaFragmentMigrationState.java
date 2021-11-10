@@ -17,12 +17,15 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
@@ -34,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
-import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static java.lang.String.format;
 
 /**
@@ -42,32 +45,36 @@ import static java.lang.String.format;
  *
  * @since 3.9
  */
-public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable, TargetAware {
+public class ReplicaFragmentMigrationState
+        implements IdentifiedDataSerializable, TargetAware, Versioned {
 
     private Map<ServiceNamespace, long[]> namespaces;
     private Collection<Operation> migrationOperations;
 
     private transient Collection<ChunkSupplier> chunkSuppliers;
     private transient int maxTotalChunkedDataInBytes;
+    private transient ILogger logger;
 
     public ReplicaFragmentMigrationState() {
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
-                                         Collection<Operation> migrationOperations) {
-        this(namespaces, migrationOperations, Collections.emptyList(), Integer.MAX_VALUE);
+                                         Collection<Operation> migrationOperations, ILogger logger) {
+        this(namespaces, migrationOperations, Collections.emptyList(), Integer.MAX_VALUE, logger);
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations,
                                          Collection<ChunkSupplier> chunkSuppliers,
-                                         int maxTotalChunkedDataInBytes) {
+                                         int maxTotalChunkedDataInBytes, ILogger logger) {
         assert chunkSuppliers != null;
+        assert logger != null;
 
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
         this.chunkSuppliers = chunkSuppliers;
         this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
+        this.logger = logger;
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
@@ -101,21 +108,27 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             out.writeObject(operation);
         }
 
-        writeChunkedOperations(out);
+        // RU_COMPAT 5.0
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            writeChunkedOperations(out);
+        }
     }
 
     private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
         IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
-        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-            chunkSupplier.inject(isEndOfChunk);
 
-            System.err.println(chunkSupplier);
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+
+            chunkSupplier.inject(isEndOfChunk);
 
             while (chunkSupplier.hasNext()) {
                 Operation chunk = chunkSupplier.next();
                 if (chunk == null) {
                     break;
                 }
+
+                logCurrentChunk(chunkSupplier);
+
                 out.writeObject(chunk);
 
                 if (isEndOfChunk.getAsBoolean()) {
@@ -124,15 +137,39 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             }
 
             if (isEndOfChunk.getAsBoolean()) {
-                System.err.println(format("Reached maxTotalChunkedDataInBytes:%d, bytesWrittenSoFar:%d",
-                        maxTotalChunkedDataInBytes, isEndOfChunk.bytesWrittenSoFar()));
+                logEndOfChunk(isEndOfChunk);
                 break;
             }
         }
         // indicates end of chunked state
         out.writeObject(null);
 
-        // TODO remove allDone, it is here for only logging purposes
+        logEndOfAllChunks(isEndOfChunk);
+    }
+
+    private void logCurrentChunk(ChunkSupplier chunkSupplier) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
+        logger.finest(String.format("Writing chunk[%s]", chunkSupplier));
+    }
+
+    private void logEndOfChunk(IsEndOfChunk isEndOfChunk) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
+        logger.finest(format("Chunk is full [maxChunkSize:%dMB, actualChunkSize:%dMB]",
+                BYTES.toMegaBytes(maxTotalChunkedDataInBytes),
+                BYTES.toMegaBytes(isEndOfChunk.bytesWrittenSoFar())));
+    }
+
+    private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
         boolean allDone = true;
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
             if (chunkSupplier.hasNext()) {
@@ -141,9 +178,10 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             }
         }
 
-        if (isNotEmpty(chunkSuppliers) && allDone) {
-            System.err.println(format("allDone maxTotalChunkedDataInBytes:%d, bytesWrittenSoFar:%d",
-                    maxTotalChunkedDataInBytes, isEndOfChunk.bytesWrittenSoFar()));
+        if (allDone) {
+            logger.finest(format("Last chunk was sent [maxChunkSize:%dMB, actualChunkSize:%dMB]",
+                    BYTES.toMegaBytes(maxTotalChunkedDataInBytes),
+                    BYTES.toMegaBytes(isEndOfChunk.bytesWrittenSoFar())));
         }
     }
 
@@ -185,7 +223,10 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             migrationOperations.add(migrationOperation);
         }
 
-        readChunkedOperations(in);
+        // RU_COMPAT 5.0
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            readChunkedOperations(in);
+        }
     }
 
     private void readChunkedOperations(ObjectDataInput in) throws IOException {
