@@ -39,6 +39,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        replicatedMapConfigYamlGenerator(root, config);
         ringbufferYamlGenerator(root, config);
         topicYamlGenerator(root, config);
         reliableTopicYamlGenerator(root, config);
@@ -52,7 +53,6 @@ public class ConfigYamlGenerator {
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
-                .setIndicatorIndent(INDENT)
                 .setIndent(INDENT)
                 .build();
         Dump dump = new Dump(dumpSettings);
@@ -74,6 +74,28 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+        static void replicatedMapConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getReplicatedMapConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ReplicatedMapConfig subConfigAsObject : config.getReplicatedMapConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "in-memory-format", subConfigAsObject.getInMemoryFormat().name());
+            addNonNullToMap(subConfigAsMap, "async-fillup", subConfigAsObject.isAsyncFillup());
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
+            addNonNullToMap(subConfigAsMap, "entry-listeners", getEntryListenerConfigsAsList(subConfigAsObject.getListenerConfigs()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("replicatedmap", child);
+    }
 
     static void ringbufferYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getRingbufferConfigs().isEmpty()) {
@@ -264,6 +286,26 @@ public class ConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    private static List<Map<String, Object>> getEntryListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {
+        if (listenerConfigs == null || listenerConfigs.isEmpty()) {
+            return null;
+        }
+
+        List<Map<String, Object>> listenerConfigsAsList = new LinkedList<>();
+
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            Map<String, Object> listenerConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(listenerConfigAsMap, "class-name", classNameOrImplClass(listenerConfig.getClassName(), listenerConfig.getImplementation()));
+            addNonNullToMap(listenerConfigAsMap, "include-value", listenerConfig.isIncludeValue());
+            addNonNullToMap(listenerConfigAsMap, "local", listenerConfig.isLocal());
+
+            addNonNullToList(listenerConfigsAsList, listenerConfigAsMap);
+        }
+
+        return listenerConfigsAsList;
     }
 
     private static Map<String, Object> getPropertiesAsMap(Properties properties) {

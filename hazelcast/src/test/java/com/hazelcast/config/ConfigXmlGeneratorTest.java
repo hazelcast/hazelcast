@@ -851,40 +851,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testReplicatedMapConfigGenerator() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy("PassThroughMergePolicy")
-                .setBatchSize(1234);
-
-        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
-                .setName("replicated-map-name")
-                .setStatisticsEnabled(false)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
-
-        replicatedMapConfig.setAsyncFillup(true);
-
-        Config config = new Config()
-                .addReplicatedMapConfig(replicatedMapConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
-        MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
-        assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("splitBrainProtection", xmlReplicatedMapConfig.getSplitBrainProtectionName());
-        assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
-        assertTrue(xmlReplicatedMapConfig.isAsyncFillup());
-        assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
-        assertEquals(1234, actualMergePolicyConfig.getBatchSize());
-        assertEquals(replicatedMapConfig, xmlReplicatedMapConfig);
-    }
-
-    @Test
     public void testCacheAttributes() {
         CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
                 .setName("testCache")

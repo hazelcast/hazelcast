@@ -31,7 +31,16 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
-    static String ringBufferConfigGenerator(RingbufferConfig subConfig, boolean configIsXml, int indent) {
+    static String replicatedMapConfigGenerator(ReplicatedMapConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "replicatedmap",
+                Config::addReplicatedMapConfig,
+                ConfigXmlGenerator::replicatedMapConfigXmlGenerator,
+                ConfigYamlGenerator::replicatedMapConfigYamlGenerator
+        );
+    }
+
+    static String ringbufferConfigGenerator(RingbufferConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "ringbuffer",
                 Config::addRingBufferConfig,
@@ -142,7 +151,6 @@ public final class DynamicConfigGenerator {
 
             DumpSettings dumpSettings = DumpSettings.builder()
                     .setDefaultFlowStyle(FlowStyle.BLOCK)
-                    .setIndicatorIndent(indent)
                     .setIndent(indent)
                     .build();
             Dump dump = new Dump(dumpSettings);

@@ -219,7 +219,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
             gen.open("replicatedmap", "name", r.getName())
