@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.util.InstanceTrackingUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -97,6 +98,20 @@ public class InstanceTrackingInfoTest extends HazelcastTestSupport {
         assertNotNull(files);
         assertEquals(1, files.length);
         assertEquals("dummy", bytesToString(Files.readAllBytes(files[0].toPath())));
+    }
+
+    @Test
+    public void whenInstanceTrackingEnabled_thenFileSetInSystemProperty() throws IOException {
+        Config config = new Config();
+        File tempFile = tempFolder.newFile();
+        config.getInstanceTrackingConfig()
+              .setEnabled(true)
+              .setFileName(tempFile.getAbsolutePath());
+
+        createHazelcastInstance(config);
+
+        assertEquals(tempFile.getAbsolutePath(),
+                System.getProperty(InstanceTrackingUtil.HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE));
     }
 
     private void assertTrackingFileContents(String pattern, Consumer<String> contentAssertion) throws IOException {
