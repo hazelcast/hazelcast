@@ -107,7 +107,13 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MIGRATION_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_FRAGMENTED_MIGRATION_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MIGRATION_INTERVAL;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MIGRATION_TIMEOUT;
 
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
@@ -170,11 +176,11 @@ public class MigrationManager {
         this.partitionServiceLock = partitionServiceLock;
         migrationPlanner = new MigrationPlanner(node.getLogger(MigrationPlanner.class));
         HazelcastProperties properties = node.getProperties();
-        partitionMigrationInterval = properties.getPositiveMillisOrDefault(ClusterProperty.PARTITION_MIGRATION_INTERVAL, 0);
-        partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
-        fragmentedMigrationEnabled = properties.getBoolean(ClusterProperty.PARTITION_FRAGMENTED_MIGRATION_ENABLED);
-        chunkedMigrationEnabled = properties.getBoolean(ClusterProperty.PARTITION_CHUNKED_MIGRATION_ENABLED);
-        maxTotalChunkedDataInBytes = properties.getInteger(ClusterProperty.PARTITION_MAX_TOTAL_CHUNKED_MIGRATION_DATA);
+        partitionMigrationInterval = properties.getPositiveMillisOrDefault(PARTITION_MIGRATION_INTERVAL, 0);
+        partitionMigrationTimeout = properties.getMillis(PARTITION_MIGRATION_TIMEOUT);
+        fragmentedMigrationEnabled = properties.getBoolean(PARTITION_FRAGMENTED_MIGRATION_ENABLED);
+        chunkedMigrationEnabled = properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
+        maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
         partitionStateManager = partitionService.getPartitionStateManager();
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);

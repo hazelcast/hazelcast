@@ -27,7 +27,7 @@ import java.util.function.BooleanSupplier;
  *
  * @see ChunkedMigrationAwareService
  * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_CHUNKED_MIGRATION_ENABLED
- * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_MAX_TOTAL_CHUNKED_MIGRATION_DATA
+ * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB
  */
 public interface ChunkSupplier extends Iterator<Operation> {
 
