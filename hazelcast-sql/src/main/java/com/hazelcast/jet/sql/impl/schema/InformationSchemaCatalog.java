@@ -79,14 +79,14 @@ public class InformationSchemaCatalog implements TableResolver {
         // we skip events originating from local member to avoid double processing
         this.mappingStorage.registerListener(new MappingStorage.EntryListenerAdapter() {
             @Override
-            public void entryUpdated(EntryEvent<String, Mapping> event) {
+            public void entryUpdated(EntryEvent<String, Object> event) {
                 if (!event.getMember().localMember()) {
                     listeners.forEach(TableListener::onTableChanged);
                 }
             }
 
             @Override
-            public void entryRemoved(EntryEvent<String, Mapping> event) {
+            public void entryRemoved(EntryEvent<String, Object> event) {
                 if (!event.getMember().localMember()) {
                     listeners.forEach(TableListener::onTableChanged);
                 }
@@ -106,7 +106,7 @@ public class InformationSchemaCatalog implements TableResolver {
             mappingStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
         } else if (!mappingStorage.putIfAbsent(name, resolved)) {
-            throw QueryException.error("Mapping already exists: " + name);
+            throw QueryException.error("Mapping or view with such name already exists: " + name);
         }
     }
 
@@ -145,12 +145,11 @@ public class InformationSchemaCatalog implements TableResolver {
     public void createView(View view, boolean replace) {
         if (replace) {
             viewStorage.put(view.name(), view);
-            listeners.forEach(TableListener::onTableChanged);
             return;
         }
 
         if (!viewStorage.putIfAbsent(view.name(), view)) {
-            throw QueryException.error("View already exists: " + view.name());
+            throw QueryException.error("Mapping or view with such name exists: " + view.name());
         }
     }
 
