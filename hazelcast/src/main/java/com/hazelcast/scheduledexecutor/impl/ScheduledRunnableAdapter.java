@@ -19,16 +19,14 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.internal.services.NodeAware;
 
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 public class ScheduledRunnableAdapter<V> extends AbstractTaskDecorator<V>
-        implements IdentifiedDataSerializable, Callable<V>, NodeAware, PartitionAware, NamedTask, StatefulTask {
+        implements NodeAware, PartitionAware, NamedTask, StatefulTask {
 
     public ScheduledRunnableAdapter() {
     }
