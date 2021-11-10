@@ -37,7 +37,6 @@ import java.nio.file.Files;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -111,8 +110,8 @@ public class InstanceTrackingInfoTest extends HazelcastTestSupport {
 
         createHazelcastInstance(config);
 
-        assertThat(System.getProperty(InstanceTrackingUtil.HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE))
-                .isEqualTo(tempFile.getAbsolutePath());
+        assertEquals(tempFile.getAbsolutePath(),
+                System.getProperty(InstanceTrackingUtil.HAZELCAST_CONFIG_INSTANCE_TRACKING_FILE));
     }
 
     private void assertTrackingFileContents(String pattern, Consumer<String> contentAssertion) throws IOException {
