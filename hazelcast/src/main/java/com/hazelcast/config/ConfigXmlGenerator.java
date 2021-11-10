@@ -701,7 +701,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void queueXmlGenerator(XmlGenerator gen, Config config) {
+    static void queueXmlGenerator(XmlGenerator gen, Config config) {
         Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             gen.open("queue", "name", q.getName())

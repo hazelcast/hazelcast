@@ -31,6 +31,24 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String queueConfigGenerator(QueueConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "queue",
+                Config::addQueueConfig,
+                ConfigXmlGenerator::queueXmlGenerator,
+                ConfigYamlGenerator::queueYamlGenerator
+        );
+    }
+
+    static String listConfigGenerator(ListConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "list",
+                Config::addListConfig,
+                ConfigXmlGenerator::listConfigXmlGenerator,
+                ConfigYamlGenerator::listConfigYamlGenerator
+        );
+    }
+
     static String setConfigGenerator(SetConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "set",

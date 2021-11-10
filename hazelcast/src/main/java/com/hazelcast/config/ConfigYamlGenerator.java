@@ -39,6 +39,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        queueYamlGenerator(root, config);
         listConfigYamlGenerator(root, config);
         setConfigYamlGenerator(root, config);
         multiMapYamlGenerator(root, config);
@@ -78,6 +79,32 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+    static void queueYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getQueueConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (QueueConfig subConfigAsObject : config.getQueueConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "priority-comparator-class-name", subConfigAsObject.getPriorityComparatorClassName());
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "max-size", subConfigAsObject.getMaxSize());
+            addNonNullToMap(subConfigAsMap, "backup-count", subConfigAsObject.getBackupCount());
+            addNonNullToMap(subConfigAsMap, "async-backup-count", subConfigAsObject.getAsyncBackupCount());
+            addNonNullToMap(subConfigAsMap, "empty-queue-ttl", subConfigAsObject.getEmptyQueueTtl());
+            addNonNullToMap(subConfigAsMap, "item-listeners", getItemListenerConfigsAsList(subConfigAsObject.getItemListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "queue-store", getQueueStoreConfigAsMap(subConfigAsObject.getQueueStoreConfig()));
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("queue", child);
+    }
 
     static void listConfigYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getListConfigs().isEmpty()) {
@@ -413,19 +440,46 @@ public class ConfigYamlGenerator {
         return propertiesAsMap;
     }
 
+    private static Map<String, Object> getStoreConfigAsMap(
+            boolean enabled,
+            String className,
+            String factoryClassName,
+            Properties properties
+    ) {
+        Map<String, Object> storeConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(storeConfigAsMap, "enabled", enabled);
+        addNonNullToMap(storeConfigAsMap, "class-name", className);
+        addNonNullToMap(storeConfigAsMap, "factory-class-name", factoryClassName);
+        addNonNullToMap(storeConfigAsMap, "properties", getPropertiesAsMap(properties));
+
+        return storeConfigAsMap;
+    }
+
+    private static Map<String, Object> getQueueStoreConfigAsMap(QueueStoreConfig queueStoreConfig) {
+        if (queueStoreConfig == null) {
+            return null;
+        }
+
+        return getStoreConfigAsMap(
+                queueStoreConfig.isEnabled(),
+                classNameOrImplClass(queueStoreConfig.getClassName(), queueStoreConfig.getStoreImplementation()),
+                classNameOrImplClass(queueStoreConfig.getFactoryClassName(), queueStoreConfig.getFactoryImplementation()),
+                queueStoreConfig.getProperties()
+        );
+    }
+
     private static Map<String, Object> getRingbufferStoreConfigAsMap(RingbufferStoreConfig ringbufferStoreConfig) {
         if (ringbufferStoreConfig == null) {
             return null;
         }
 
-        Map<String, Object> getRingbufferStoreConfigAsMap = new LinkedHashMap<>();
-
-        addNonNullToMap(getRingbufferStoreConfigAsMap, "enabled", ringbufferStoreConfig.isEnabled());
-        addNonNullToMap(getRingbufferStoreConfigAsMap, "class-name", classNameOrImplClass(ringbufferStoreConfig.getClassName(), ringbufferStoreConfig.getStoreImplementation()));
-        addNonNullToMap(getRingbufferStoreConfigAsMap, "factory-class-name", classNameOrImplClass(ringbufferStoreConfig.getFactoryClassName(), ringbufferStoreConfig.getFactoryImplementation()));
-        addNonNullToMap(getRingbufferStoreConfigAsMap, "properties", getPropertiesAsMap(ringbufferStoreConfig.getProperties()));
-
-        return getRingbufferStoreConfigAsMap;
+        return getStoreConfigAsMap(
+                ringbufferStoreConfig.isEnabled(),
+                classNameOrImplClass(ringbufferStoreConfig.getClassName(), ringbufferStoreConfig.getStoreImplementation()),
+                classNameOrImplClass(ringbufferStoreConfig.getFactoryClassName(), ringbufferStoreConfig.getFactoryImplementation()),
+                ringbufferStoreConfig.getProperties()
+        );
     }
 
     private static List<String> getMessageListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {

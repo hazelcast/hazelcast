@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.QueueStore;
+import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -25,7 +27,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -33,6 +38,117 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testQueueWithStoreClass() {
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
+                .setClassName("className")
+                .setEnabled(true)
+                .setProperty("key", "value");
+
+        testQueue(queueStoreConfig);
+    }
+
+    @Test
+    public void testQueueWithStoreImplementation() {
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
+                .setStoreImplementation(new TestQueueStore())
+                .setEnabled(true)
+                .setProperty("key", "value");
+
+        testQueue(queueStoreConfig);
+    }
+
+    @Test
+    public void testQueueWithStoreFactory() {
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
+                .setFactoryClassName("factoryClassName")
+                .setEnabled(true)
+                .setProperty("key", "value");
+
+        testQueue(queueStoreConfig);
+    }
+
+    @Test
+    public void testQueueWithStoreFactoryImplementation() {
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
+                .setFactoryImplementation(new TestQueueStoreFactory())
+                .setEnabled(true)
+                .setProperty("key", "value");
+
+        testQueue(queueStoreConfig);
+    }
+
+    private void testQueue(QueueStoreConfig queueStoreConfig) {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(DiscardMergePolicy.class.getSimpleName())
+                .setBatchSize(1234);
+
+        QueueConfig expectedConfig = new QueueConfig()
+                .setName("testQueue")
+                .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator")
+                .setMaxSize(10)
+                .setStatisticsEnabled(true)
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setEmptyQueueTtl(1000)
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setQueueStoreConfig(queueStoreConfig)
+                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
+
+        Config config = new Config()
+                .addQueueConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        QueueConfig actualConfig = xmlConfig.getQueueConfig("testQueue");
+        assertEquals("testQueue", actualConfig.getName());
+
+        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
+        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
+        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
+        ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
+    }
+
+    private static class TestQueueStore implements QueueStore<Object> {
+        @Override
+        public void store(Long key, Object value) {
+        }
+
+        @Override
+        public void storeAll(Map<Long, Object> map) {
+        }
+
+        @Override
+        public void delete(Long key) {
+        }
+
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+        }
+
+        @Override
+        public Object load(Long key) {
+            return null;
+        }
+
+        @Override
+        public Map<Long, Object> loadAll(Collection<Long> keys) {
+            return null;
+        }
+
+        @Override
+        public Set<Long> loadAllKeys() {
+            return null;
+        }
+    }
+
+    private static class TestQueueStoreFactory implements QueueStoreFactory<Object> {
+        @Override
+        public QueueStore<Object> newQueueStore(String name, Properties properties) {
+            return null;
+        }
+    }
 
     @Test
     public void testList() {
@@ -181,26 +297,6 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStore implements RingbufferStore<Object> {
-        @Override
-        public void store(long sequence, Object data) {
-        }
-
-        @Override
-        public void storeAll(long firstItemSequence, Object[] items) {
-        }
-
-        @Override
-        public Object load(long sequence) {
-            return null;
-        }
-
-        @Override
-        public long getLargestSequence() {
-            return 0;
-        }
-    }
-
     @Test
     public void testRingbufferWithStoreFactory() {
         RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
@@ -225,13 +321,6 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory<Object> {
-        @Override
-        public RingbufferStore<Object> newRingbufferStore(String name, Properties properties) {
-            return null;
-        }
-    }
-
     private void testRingbuffer(RingbufferStoreConfig ringbufferStoreConfig) {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy("PassThroughMergePolicy")
@@ -252,6 +341,33 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
         ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
+    }
+
+    private static class TestRingbufferStore implements RingbufferStore<Object> {
+        @Override
+        public void store(long sequence, Object data) {
+        }
+
+        @Override
+        public void storeAll(long firstItemSequence, Object[] items) {
+        }
+
+        @Override
+        public Object load(long sequence) {
+            return null;
+        }
+
+        @Override
+        public long getLargestSequence() {
+            return 0;
+        }
+    }
+
+    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory<Object> {
+        @Override
+        public RingbufferStore<Object> newRingbufferStore(String name, Properties properties) {
+            return null;
+        }
     }
 
     @Test
