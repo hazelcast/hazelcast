@@ -46,11 +46,13 @@ import java.util.Map.Entry;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
- * Migration operation used by Hazelcast version 3.9
- *
- * It runs on the migration destination and applies the received fragments.
- * Sent by the partition owner to the migration destination to start the migration process on the destination.
- * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
+ * Migration operation used by Hazelcast version 3.9.
+ * <p>
+ * It runs on the migration destination and applies the received
+ * fragments. Sent by the partition owner to the migration
+ * destination to start the migration process on the destination.
+ * Contains the operations which will be executed on the destination
+ * node to migrate the data and the replica versions to be set.
  */
 public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
 
