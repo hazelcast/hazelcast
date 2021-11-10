@@ -88,6 +88,8 @@ public interface Cluster {
      * via {@link #promoteLocalLiteMember()}
      * or when this member merges to a new cluster after split-brain detected. Returned value should not be
      * cached but instead this method should be called each time when local member is needed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return this Hazelcast instance member
      */
@@ -97,6 +99,8 @@ public interface Cluster {
      * Promotes the local lite member to a data member.
      * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
      * reflect the promotion.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @throws IllegalStateException when member is not a lite member or mastership claim is in progress
      *                               or local member cannot be identified as a member of the cluster
@@ -121,6 +125,8 @@ public interface Cluster {
      * If cluster state change is in process, {@link ClusterState#IN_TRANSITION} will be returned.
      * <p>
      * This is a local operation, state will be read directly from local member.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return state of the cluster
      * @since 3.6
@@ -146,6 +152,8 @@ public interface Cluster {
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param newState new state of the cluster
      * @throws NullPointerException     if newState is null
@@ -177,6 +185,8 @@ public interface Cluster {
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param newState           new state of the cluster
      * @param transactionOptions transaction options
@@ -209,6 +219,8 @@ public interface Cluster {
      * 3.9, since all cluster members will be compatible with the new cluster version. Once cluster version
      * is updated to 3.9, further communication among members will take place in 3.9 and all new features and functionality
      * of version 3.9 will be available.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return the version at which this cluster operates.
      * @since 3.8
@@ -218,12 +230,16 @@ public interface Cluster {
     /**
      * @deprecated since 5.0
      * Use {@link Cluster#getPersistenceService()} instead.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      */
     @Deprecated
     HotRestartService getHotRestartService();
 
     /**
      * Returns the public persistence service for interacting with Persistence
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @return the persistence service
      * @throws UnsupportedOperationException if the persistence service is not
@@ -245,6 +261,8 @@ public interface Cluster {
      * either all other nodes leave the cluster or a configurable timeout occurs
      * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @throws IllegalStateException if member-list changes during the transaction
      *                               or there are ongoing/pending migration operations
@@ -270,6 +288,8 @@ public interface Cluster {
      * either all other nodes leave the cluster or a configurable timeout occurs
      * (see {@link ClusterProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param transactionOptions transaction options
      * @throws IllegalStateException if member-list changes during the transaction
@@ -305,6 +325,8 @@ public interface Cluster {
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param version new version of the cluster
      * @since 3.8
@@ -331,6 +353,8 @@ public interface Cluster {
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
      *
      * @param version new version of the cluster
      * @param options options by which to execute the transaction

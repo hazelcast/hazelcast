@@ -1645,6 +1645,10 @@
                 "type": "string",
                 "description": "Fully qualified class name."
               },
+              "factory-class-name": {
+                "type": "string",
+                "description": "Fully qualified name of the RingbufferStoreFactory implementation class."
+              },
               "properties": {
                 "type": "object"
               },
@@ -1652,10 +1656,7 @@
                 "type": "boolean",
                 "default": true
               }
-            },
-            "required": [
-              "class-name"
-            ]
+            }
           },
           "split-brain-protection-ref": {
             "type": "string",
