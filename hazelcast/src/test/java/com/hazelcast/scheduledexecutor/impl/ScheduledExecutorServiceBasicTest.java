@@ -607,27 +607,6 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void capacity_whenAutoDisposableRunnable() {
-        String schedulerName = ANY_EXECUTOR_NAME;
-
-        HazelcastInstance[] instances = createClusterWithCount(1, null);
-        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
-        List<IScheduledFuture> futures = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            futures.add(service.schedule(autoDisposable(new PlainRunnableTask()), 0, TimeUnit.SECONDS));
-        }
-
-        futures.forEach(this::assertTaskHasBeenDestroyedEventually);
-
-        // Re-schedule to verify capacity
-        for (int i = 0; i < 10; i++) {
-            service.schedule(autoDisposable(new PlainRunnableTask()), 0, TimeUnit.SECONDS);
-        }
-
-        // no exceptions thrown
-    }
-
-    @Test
     public void capacity_whenAutoDisposable_Runnable() throws Exception {
         String schedulerName = ANY_EXECUTOR_NAME;
         int capacity = 10;
