@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static java.lang.Boolean.TRUE;
 
 public class ConfigYamlGenerator {
 
@@ -39,11 +41,12 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        cacheYamlGenerator(root, config);
         queueYamlGenerator(root, config);
-        listConfigYamlGenerator(root, config);
-        setConfigYamlGenerator(root, config);
+        listYamlGenerator(root, config);
+        setYamlGenerator(root, config);
         multiMapYamlGenerator(root, config);
-        replicatedMapConfigYamlGenerator(root, config);
+        replicatedMapYamlGenerator(root, config);
         ringbufferYamlGenerator(root, config);
         topicYamlGenerator(root, config);
         reliableTopicYamlGenerator(root, config);
@@ -80,6 +83,46 @@ public class ConfigYamlGenerator {
 //        parent.put(xxx, child);
 //    }
 
+    static void cacheYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getCacheConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (CacheSimpleConfig subConfigAsObject : config.getCacheConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "key-type", wrapObjectWithMap("class-name", subConfigAsObject.getKeyType()));
+            addNonNullToMap(subConfigAsMap, "value-type", wrapObjectWithMap("class-name", subConfigAsObject.getValueType()));
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "management-enabled", subConfigAsObject.isManagementEnabled());
+            addNonNullToMap(subConfigAsMap, "read-through", subConfigAsObject.isReadThrough());
+            addNonNullToMap(subConfigAsMap, "write-through", subConfigAsObject.isWriteThrough());
+            addNonNullToMap(subConfigAsMap, "cache-loader-factory", wrapObjectWithMap("class-name", subConfigAsObject.getCacheLoaderFactory()));
+            addNonNullToMap(subConfigAsMap, "cache-writer-factory", wrapObjectWithMap("class-name", subConfigAsObject.getCacheWriterFactory()));
+            addNonNullToMap(subConfigAsMap, "cache-loader", wrapObjectWithMap("class-name", subConfigAsObject.getCacheLoader()));
+            addNonNullToMap(subConfigAsMap, "cache-writer", wrapObjectWithMap("class-name", subConfigAsObject.getCacheWriter()));
+            addNonNullToMap(subConfigAsMap, "expiry-policy-factory", getExpiryPolicyFactoryConfigAsMap(subConfigAsObject.getExpiryPolicyFactoryConfig()));
+            addNonNullToMap(subConfigAsMap, "cache-entry-listeners", getCacheSimpleEntryListenerConfigsAsList(subConfigAsObject.getCacheEntryListeners()));
+            addNonNullToMap(subConfigAsMap, "in-memory-format", subConfigAsObject.getInMemoryFormat().name());
+            addNonNullToMap(subConfigAsMap, "backup-count", subConfigAsObject.getBackupCount());
+            addNonNullToMap(subConfigAsMap, "async-backup-count", subConfigAsObject.getAsyncBackupCount());
+            addNonNullToMap(subConfigAsMap, "eviction", getEvictionConfigAsMap(subConfigAsObject.getEvictionConfig()));
+            addNonNullToMap(subConfigAsMap, "wan-replication-ref", getWanReplicationRefAsMap(subConfigAsObject.getWanReplicationRef(), false));
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "partition-lost-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getPartitionLostListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
+            addNonNullToMap(subConfigAsMap, "event-journal", getEventJournalConfigAsMap(subConfigAsObject.getEventJournalConfig()));
+            addNonNullToMap(subConfigAsMap, "data-persistence", getDataPersistenceConfigAsMap(subConfigAsObject.getDataPersistenceConfig()));
+            addNonNullToMap(subConfigAsMap, "merkle-tree", getMerkleTreeConfigAsMap(subConfigAsObject.getMerkleTreeConfig()));
+            addNonNullToMap(subConfigAsMap, "disable-per-entry-invalidation-events", subConfigAsObject.isDisablePerEntryInvalidationEvents());
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("cache", child);
+    }
+
     static void queueYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getQueueConfigs().isEmpty()) {
             return;
@@ -106,7 +149,7 @@ public class ConfigYamlGenerator {
         parent.put("queue", child);
     }
 
-    static void listConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    static void listYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getListConfigs().isEmpty()) {
             return;
         }
@@ -119,7 +162,7 @@ public class ConfigYamlGenerator {
         parent.put("list", child);
     }
 
-    static void setConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    static void setYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getSetConfigs().isEmpty()) {
             return;
         }
@@ -156,7 +199,7 @@ public class ConfigYamlGenerator {
         parent.put("multimap", child);
     }
 
-    static void replicatedMapConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    static void replicatedMapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReplicatedMapConfigs().isEmpty()) {
             return;
         }
@@ -369,6 +412,126 @@ public class ConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
+    private static Map<String, Object> getMerkleTreeConfigAsMap(MerkleTreeConfig merkleTreeConfig) {
+        if (merkleTreeConfig == null || merkleTreeConfig.getEnabled() == null) {
+            return null;
+        }
+
+        Map<String, Object> merkleTreeConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(merkleTreeConfigAsMap, "enabled", TRUE.equals(merkleTreeConfig.getEnabled()));
+        addNonNullToMap(merkleTreeConfigAsMap, "depth", merkleTreeConfig.getDepth());
+
+        return merkleTreeConfigAsMap;
+    }
+
+    private static Map<String, Object> getDataPersistenceConfigAsMap(DataPersistenceConfig dataPersistenceConfig) {
+        if (dataPersistenceConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> dataPersistenceConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(dataPersistenceConfigAsMap, "enabled", dataPersistenceConfig.isEnabled());
+        addNonNullToMap(dataPersistenceConfigAsMap, "fsync", dataPersistenceConfig.isFsync());
+
+        return dataPersistenceConfigAsMap;
+    }
+
+    private static Map<String, Object> getEventJournalConfigAsMap(EventJournalConfig eventJournalConfig) {
+        if (eventJournalConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> eventJournalConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(eventJournalConfigAsMap, "enabled", eventJournalConfig.isEnabled());
+        addNonNullToMap(eventJournalConfigAsMap, "capacity", eventJournalConfig.getCapacity());
+        addNonNullToMap(eventJournalConfigAsMap, "time-to-live-seconds", eventJournalConfig.getTimeToLiveSeconds());
+
+        return eventJournalConfigAsMap;
+    }
+
+    private static Map<String, Object> getWanReplicationRefAsMap(WanReplicationRef wanReplicationRef, boolean isMap) {
+        if (wanReplicationRef == null) {
+            return null;
+        }
+
+        Map<String, Object> wanReplicationRefAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(wanReplicationRefAsMap, "merge-policy-class-name", wanReplicationRef.getMergePolicyClassName());
+        addNonNullToMap(wanReplicationRefAsMap, "republishing-enabled", wanReplicationRef.isRepublishingEnabled());
+        addNonNullToMap(wanReplicationRefAsMap, "filters", wanReplicationRef.getFilters());
+
+        if (isMap) {
+            return wrapObjectWithMap(wanReplicationRef.getName(), wanReplicationRefAsMap);
+        } else {
+            addNonNullToMap(wanReplicationRefAsMap, "name", wanReplicationRef.getName());
+            return wanReplicationRefAsMap;
+        }
+    }
+
+    private static Map<String, Object> getEvictionConfigAsMap(EvictionConfig evictionConfig) {
+        if (evictionConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> evictionConfigAsMap = new LinkedHashMap<>();
+
+        String comparatorClassName = !isNullOrEmpty(evictionConfig.getComparatorClassName())
+                ? evictionConfig.getComparatorClassName()
+                : null;
+
+        addNonNullToMap(evictionConfigAsMap, "size", evictionConfig.getSize());
+        addNonNullToMap(evictionConfigAsMap, "max-size-policy", evictionConfig.getMaxSizePolicy().name());
+        addNonNullToMap(evictionConfigAsMap, "eviction-policy", evictionConfig.getEvictionPolicy().name());
+        addNonNullToMap(evictionConfigAsMap, "comparator-class-name", comparatorClassName);
+
+        return evictionConfigAsMap;
+
+    }
+
+    private static List<Map<String, Object>> getCacheSimpleEntryListenerConfigsAsList(List<CacheSimpleEntryListenerConfig> cacheSimpleEntryListenerConfigs) {
+        if (cacheSimpleEntryListenerConfigs == null || cacheSimpleEntryListenerConfigs.isEmpty()) {
+            return null;
+        }
+
+        List<Map<String, Object>> cacheSimpleEntryListenerConfigsAsList = new LinkedList<>();
+
+        for (CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig : cacheSimpleEntryListenerConfigs) {
+            Map<String, Object> cacheSimpleEntryListenerConfigsAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(cacheSimpleEntryListenerConfigsAsMap, "old-value-required", cacheSimpleEntryListenerConfig.isOldValueRequired());
+            addNonNullToMap(cacheSimpleEntryListenerConfigsAsMap, "synchronous", cacheSimpleEntryListenerConfig.isSynchronous());
+            addNonNullToMap(cacheSimpleEntryListenerConfigsAsMap, "cache-entry-listener-factory", wrapObjectWithMap("class-name", cacheSimpleEntryListenerConfig.getCacheEntryListenerFactory()));
+            addNonNullToMap(cacheSimpleEntryListenerConfigsAsMap, "cache-entry-event-filter-factory", wrapObjectWithMap("class-name", cacheSimpleEntryListenerConfig.getCacheEntryEventFilterFactory()));
+
+            addNonNullToList(cacheSimpleEntryListenerConfigsAsList, cacheSimpleEntryListenerConfigsAsMap);
+        }
+
+        return cacheSimpleEntryListenerConfigsAsList;
+    }
+
+    private static Map<String, Object> getExpiryPolicyFactoryConfigAsMap(CacheSimpleConfig.ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+        if (expiryPolicyFactoryConfig == null) {
+            return null;
+        }
+
+        if (!isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
+            return wrapObjectWithMap("class-name", expiryPolicyFactoryConfig.getClassName());
+        } else {
+            CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedConfig = expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+            if (timedConfig != null && timedConfig.getExpiryPolicyType() != null && timedConfig.getDurationConfig() != null) {
+                Map<String, Object> timedConfigAsMap = new LinkedHashMap<>();
+                addNonNullToMap(timedConfigAsMap, "expiry-policy-type", timedConfig.getExpiryPolicyType().name());
+                addNonNullToMap(timedConfigAsMap, "duration-amount", timedConfig.getDurationConfig().getDurationAmount());
+                addNonNullToMap(timedConfigAsMap, "time-unit", timedConfig.getDurationConfig().getTimeUnit().name());
+                return wrapObjectWithMap("timed-expiry-policy-factory", timedConfigAsMap);
+            }
+            return null;
+        }
+    }
+
     private static Map<String, Object> getCollectionConfigAsMap(CollectionConfig<?> collectionConfig) {
         if (collectionConfig == null) {
             return null;
@@ -482,7 +645,7 @@ public class ConfigYamlGenerator {
         );
     }
 
-    private static List<String> getMessageListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {
+    private static List<String> getMessageListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             return null;
         }
@@ -507,6 +670,15 @@ public class ConfigYamlGenerator {
         addNonNullToMap(mergePolicyConfigAsMap, "batch-size", mergePolicyConfig.getBatchSize());
 
         return mergePolicyConfigAsMap;
+    }
+
+    private static Map<String, Object> wrapObjectWithMap(String key, Object value) {
+        if (value == null) {
+            return null;
+        }
+        Map<String, Object> wrappedObject = new LinkedHashMap<>();
+        wrappedObject.put(key, value);
+        return wrappedObject;
     }
 
     private static <E> void addNonNullToList(List<E> list, E element) {

@@ -16,11 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.collection.QueueStore;
-import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
@@ -55,9 +50,6 @@ import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.HigherHitsMergePolicy;
-import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -81,10 +73,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
@@ -93,7 +83,6 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -850,93 +839,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
     }
 
-    @Test
-    public void testCacheAttributes() {
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setEvictionConfig(evictionConfig())
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setCacheLoader("cacheLoader")
-                .setCacheWriter("cacheWriter")
-                .setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig("expiryPolicyFactory"))
-                .setManagementEnabled(true)
-                .setStatisticsEnabled(true)
-                .setKeyType("keyType")
-                .setValueType("valueType")
-                .setReadThrough(true)
-                .setDataPersistenceConfig(dataPersistenceConfig())
-                .setEventJournalConfig(eventJournalConfig())
-                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
-                .setWriteThrough(true)
-                .setPartitionLostListenerConfigs(singletonList(
-                        new CachePartitionLostListenerConfig("partitionLostListener")))
-                .setSplitBrainProtectionName("testSplitBrainProtection");
-
-        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
-        expectedConfig.setDisablePerEntryInvalidationEvents(true);
-        expectedConfig.setWanReplicationRef(wanReplicationRef());
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testCacheFactoryAttributes() {
-        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig = new TimedExpiryPolicyFactoryConfig(ACCESSED,
-                new DurationConfig(10, SECONDS));
-
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setCacheLoaderFactory("cacheLoaderFactory")
-                .setCacheWriterFactory("cacheWriterFactory")
-                .setExpiryPolicyFactory("expiryPolicyFactory")
-                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
-                .setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig(timedExpiryPolicyFactoryConfig))
-                .setPartitionLostListenerConfigs(singletonList(
-                        new CachePartitionLostListenerConfig("partitionLostListener")));
-
-        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
-        expectedConfig.setDisablePerEntryInvalidationEvents(true);
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    private static CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig() {
-        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
-        entryListenerConfig.setCacheEntryListenerFactory("entryListenerFactory");
-        entryListenerConfig.setSynchronous(true);
-        entryListenerConfig.setOldValueRequired(true);
-        entryListenerConfig.setCacheEntryEventFilterFactory("entryEventFilterFactory");
-        return entryListenerConfig;
-    }
-
-    @Test
-    public void testCacheSplitBrainProtectionRef() {
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setSplitBrainProtectionName("testSplitBrainProtection");
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
-    }
 
     @Test
     public void testNativeMemory() {
@@ -1860,41 +1762,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
-    }
-
-    private static WanReplicationRef wanReplicationRef() {
-        return new WanReplicationRef()
-                .setName("wanReplication")
-                .setMergePolicyClassName("mergePolicy")
-                .setRepublishingEnabled(true)
-                .setFilters(Arrays.asList("filter1", "filter2"));
-    }
-
-    private static DataPersistenceConfig dataPersistenceConfig() {
-        return new DataPersistenceConfig()
-                .setEnabled(true)
-                .setFsync(true);
-    }
-
-    private static MerkleTreeConfig merkleTreeConfig() {
-        return new MerkleTreeConfig()
-                .setEnabled(true)
-                .setDepth(15);
-    }
-
-    private static EventJournalConfig eventJournalConfig() {
-        return new EventJournalConfig()
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-    }
-
-    private static EvictionConfig evictionConfig() {
-        return new EvictionConfig()
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setComparatorClassName("comparatorClassName")
-                .setSize(10)
-                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
     }
 
     private static TcpIpConfig tcpIpConfig() {

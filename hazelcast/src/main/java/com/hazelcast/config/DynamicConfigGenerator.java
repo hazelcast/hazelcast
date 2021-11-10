@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String cacheConfigGenerator(CacheSimpleConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "cache",
+                Config::addCacheConfig,
+                ConfigXmlGenerator::cacheXmlGenerator,
+                ConfigYamlGenerator::cacheYamlGenerator
+        );
+    }
+
     static String queueConfigGenerator(QueueConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "queue",
@@ -44,8 +53,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 "list",
                 Config::addListConfig,
-                ConfigXmlGenerator::listConfigXmlGenerator,
-                ConfigYamlGenerator::listConfigYamlGenerator
+                ConfigXmlGenerator::listXmlGenerator,
+                ConfigYamlGenerator::listYamlGenerator
         );
     }
 
@@ -53,8 +62,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 "set",
                 Config::addSetConfig,
-                ConfigXmlGenerator::setConfigXmlGenerator,
-                ConfigYamlGenerator::setConfigYamlGenerator
+                ConfigXmlGenerator::setXmlGenerator,
+                ConfigYamlGenerator::setYamlGenerator
         );
     }
 
@@ -71,8 +80,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 "replicatedmap",
                 Config::addReplicatedMapConfig,
-                ConfigXmlGenerator::replicatedMapConfigXmlGenerator,
-                ConfigYamlGenerator::replicatedMapConfigYamlGenerator
+                ConfigXmlGenerator::replicatedMapXmlGenerator,
+                ConfigYamlGenerator::replicatedMapYamlGenerator
         );
     }
 

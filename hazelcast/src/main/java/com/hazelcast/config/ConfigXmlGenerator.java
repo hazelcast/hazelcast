@@ -148,13 +148,13 @@ public class ConfigXmlGenerator {
         wanReplicationXmlGenerator(gen, config);
         networkConfigXmlGenerator(gen, config);
         advancedNetworkConfigXmlGenerator(gen, config);
-        replicatedMapConfigXmlGenerator(gen, config);
+        replicatedMapXmlGenerator(gen, config);
         mapConfigXmlGenerator(gen, config);
-        cacheConfigXmlGenerator(gen, config);
+        cacheXmlGenerator(gen, config);
         queueXmlGenerator(gen, config);
         multiMapXmlGenerator(gen, config);
-        listConfigXmlGenerator(gen, config);
-        setConfigXmlGenerator(gen, config);
+        listXmlGenerator(gen, config);
+        setXmlGenerator(gen, config);
         topicXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
@@ -201,11 +201,11 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void listConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void listXmlGenerator(XmlGenerator gen, Config config) {
         collectionXmlGenerator(gen, "list", config.getListConfigs().values());
     }
 
-    static void setConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void setXmlGenerator(XmlGenerator gen, Config config) {
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
     }
 
@@ -227,7 +227,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void replicatedMapXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
             gen.open("replicatedmap", "name", r.getName())
@@ -1036,7 +1036,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void cacheConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void cacheXmlGenerator(XmlGenerator gen, Config config) {
         for (CacheSimpleConfig c : config.getCacheConfigs().values()) {
             gen.open("cache", "name", c.getName());
             if (c.getKeyType() != null) {

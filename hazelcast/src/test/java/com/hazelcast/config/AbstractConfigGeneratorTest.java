@@ -27,17 +27,143 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testCacheAttributes() {
+        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
+                .setName("testCache")
+                .setEvictionConfig(evictionConfig())
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setCacheLoader("cacheLoader")
+                .setCacheWriter("cacheWriter")
+                .setExpiryPolicyFactoryConfig(new CacheSimpleConfig.ExpiryPolicyFactoryConfig("expiryPolicyFactory"))
+                .setManagementEnabled(true)
+                .setStatisticsEnabled(true)
+                .setKeyType("keyType")
+                .setValueType("valueType")
+                .setReadThrough(true)
+                .setDataPersistenceConfig(dataPersistenceConfig())
+                .setEventJournalConfig(eventJournalConfig())
+                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
+                .setWriteThrough(true)
+                .setPartitionLostListenerConfigs(singletonList(
+                        new CachePartitionLostListenerConfig("partitionLostListener")))
+                .setSplitBrainProtectionName("testSplitBrainProtection");
+
+        expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy");
+        expectedConfig.setDisablePerEntryInvalidationEvents(true);
+        expectedConfig.setWanReplicationRef(wanReplicationRef());
+
+        Config config = new Config()
+                .addCacheConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testCacheFactoryAttributes() {
+        CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig = new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig(ACCESSED,
+                new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig(10, SECONDS));
+
+        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
+                .setName("testCache")
+                .setCacheLoaderFactory("cacheLoaderFactory")
+                .setCacheWriterFactory("cacheWriterFactory")
+                .setExpiryPolicyFactory("expiryPolicyFactory")
+                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
+                .setExpiryPolicyFactoryConfig(new CacheSimpleConfig.ExpiryPolicyFactoryConfig(timedExpiryPolicyFactoryConfig))
+                .setPartitionLostListenerConfigs(singletonList(
+                        new CachePartitionLostListenerConfig("partitionLostListener")));
+
+        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
+        expectedConfig.setDisablePerEntryInvalidationEvents(true);
+
+        Config config = new Config()
+                .addCacheConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    private static CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig() {
+        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
+        entryListenerConfig.setCacheEntryListenerFactory("entryListenerFactory");
+        entryListenerConfig.setSynchronous(true);
+        entryListenerConfig.setOldValueRequired(true);
+        entryListenerConfig.setCacheEntryEventFilterFactory("entryEventFilterFactory");
+        return entryListenerConfig;
+    }
+
+    @Test
+    public void testCacheSplitBrainProtectionRef() {
+        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
+                .setName("testCache")
+                .setSplitBrainProtectionName("testSplitBrainProtection");
+
+        Config config = new Config()
+                .addCacheConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
+    }
+
+    static WanReplicationRef wanReplicationRef() {
+        return new WanReplicationRef()
+                .setName("wanReplication")
+                .setMergePolicyClassName("HigherHitsMergePolicy")
+                .setRepublishingEnabled(true)
+                .setFilters(Arrays.asList("filter1", "filter2"));
+    }
+
+    static DataPersistenceConfig dataPersistenceConfig() {
+        return new DataPersistenceConfig()
+                .setEnabled(true)
+                .setFsync(true);
+    }
+
+    static MerkleTreeConfig merkleTreeConfig() {
+        return new MerkleTreeConfig()
+                .setEnabled(true)
+                .setDepth(15);
+    }
+
+    static EventJournalConfig eventJournalConfig() {
+        return new EventJournalConfig()
+                .setEnabled(true)
+                .setCapacity(123)
+                .setTimeToLiveSeconds(321);
+    }
+
+    static EvictionConfig evictionConfig() {
+        return new EvictionConfig()
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .setComparatorClassName("comparatorClassName")
+                .setSize(10)
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
+    }
 
     @Test
     public void testQueueWithStoreClass() {
