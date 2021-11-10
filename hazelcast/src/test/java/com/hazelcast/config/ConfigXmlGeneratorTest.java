@@ -939,27 +939,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testMultiMap() {
-        MultiMapConfig expectedConfig = new MultiMapConfig()
-                .setName("testMultiMap")
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
-                .setBinary(true)
-                .setStatisticsEnabled(true)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setEntryListenerConfigs(singletonList(new EntryListenerConfig("java.Listener", true, true)));
-
-        Config config = new Config()
-                .addMultiMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        MultiMapConfig actualConfig = xmlConfig.getMultiMapConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testList() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName())
@@ -1489,25 +1468,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
         assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMultiMapConfig() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(DiscardMergePolicy.class.getSimpleName())
-                .setBatchSize(2342);
-
-        MultiMapConfig multiMapConfig = new MultiMapConfig()
-                .setName("myMultiMap")
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setBinary(false)
-                .setMergePolicyConfig(mergePolicyConfig);
-
-        Config config = new Config().addMultiMapConfig(multiMapConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        assertEquals(multiMapConfig, xmlConfig.getMultiMapConfig("myMultiMap"));
     }
 
     @Test

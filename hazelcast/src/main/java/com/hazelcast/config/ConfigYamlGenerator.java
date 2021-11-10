@@ -39,6 +39,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        multiMapYamlGenerator(root, config);
         replicatedMapConfigYamlGenerator(root, config);
         ringbufferYamlGenerator(root, config);
         topicYamlGenerator(root, config);
@@ -53,6 +54,7 @@ public class ConfigYamlGenerator {
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
+                .setIndicatorIndent(INDENT - 2)
                 .setIndent(INDENT)
                 .build();
         Dump dump = new Dump(dumpSettings);
@@ -74,6 +76,30 @@ public class ConfigYamlGenerator {
 //
 //        parent.put(xxx, child);
 //    }
+
+        static void multiMapYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getMultiMapConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (MultiMapConfig subConfigAsObject : config.getMultiMapConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "backup-count", subConfigAsObject.getBackupCount());
+            addNonNullToMap(subConfigAsMap, "async-backup-count", subConfigAsObject.getAsyncBackupCount());
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "binary", subConfigAsObject.isBinary());
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "value-collection-type", subConfigAsObject.getValueCollectionType().name());
+            addNonNullToMap(subConfigAsMap, "entry-listeners", getEntryListenerConfigsAsList(subConfigAsObject.getEntryListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("multimap", child);
+    }
 
         static void replicatedMapConfigYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReplicatedMapConfigs().isEmpty()) {
@@ -132,7 +158,7 @@ public class ConfigYamlGenerator {
 
             addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "global-ordering-enabled", subConfigAsObject.isGlobalOrderingEnabled());
-            addNonNullToMap(subConfigAsMap, "message-listeners", getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "message-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
             addNonNullToMap(subConfigAsMap, "multi-threading-enabled", subConfigAsObject.isMultiThreadingEnabled());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
@@ -153,7 +179,7 @@ public class ConfigYamlGenerator {
             addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "read-batch-size", subConfigAsObject.getReadBatchSize());
             addNonNullToMap(subConfigAsMap, "topic-overload-policy", subConfigAsObject.getTopicOverloadPolicy().name());
-            addNonNullToMap(subConfigAsMap, "message-listeners", getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "message-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -288,7 +314,7 @@ public class ConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
-    private static List<Map<String, Object>> getEntryListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {
+    private static List<Map<String, Object>> getEntryListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             return null;
         }
@@ -337,7 +363,7 @@ public class ConfigYamlGenerator {
         return getRingbufferStoreConfigAsMap;
     }
 
-    private static List<String> getListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {
+    private static List<String> getMessageListenerConfigsAsList(List<ListenerConfig> listenerConfigs) {
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             return null;
         }

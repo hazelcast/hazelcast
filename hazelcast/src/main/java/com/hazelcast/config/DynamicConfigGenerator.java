@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String multiMapConfigGenerator(MultiMapConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "multimap",
+                Config::addMultiMapConfig,
+                ConfigXmlGenerator::multiMapXmlGenerator,
+                ConfigYamlGenerator::multiMapYamlGenerator
+        );
+    }
+
     static String replicatedMapConfigGenerator(ReplicatedMapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "replicatedmap",
@@ -151,6 +160,7 @@ public final class DynamicConfigGenerator {
 
             DumpSettings dumpSettings = DumpSettings.builder()
                     .setDefaultFlowStyle(FlowStyle.BLOCK)
+                    .setIndicatorIndent(indent - 2)
                     .setIndent(indent)
                     .build();
             Dump dump = new Dump(dumpSettings);

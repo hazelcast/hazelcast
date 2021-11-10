@@ -676,7 +676,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void multiMapXmlGenerator(XmlGenerator gen, Config config) {
+    static void multiMapXmlGenerator(XmlGenerator gen, Config config) {
         for (MultiMapConfig mm : config.getMultiMapConfigs().values()) {
             gen.open("multimap", "name", mm.getName())
                     .node("backup-count", mm.getBackupCount())
