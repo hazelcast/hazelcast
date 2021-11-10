@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,13 +54,13 @@ public class CreateViewStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void createViewStatementBaseTest() {
+    public void when_createsView_then_succeeds() {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
         ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
         assertThat(viewStorage.containsKey("v")).isTrue();
-        assertThat(viewStorage.containsKey("v")).isInstanceOf(View.class);
+        assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"\n" +
                 "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
@@ -70,7 +71,47 @@ public class CreateViewStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void dropViewStatementBaseTest() {
+    public void when_createsViewWithReplace_then_succeeds() {
+        String sql = "CREATE VIEW v AS SELECT * FROM map";
+        instance().getSql().execute(sql);
+
+        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        assertThat(viewStorage.get("v")).isInstanceOf(View.class);
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"\n" +
+                "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+
+        sql = "CREATE OR REPLACE VIEW v AS SELECT this FROM map";
+        instance().getSql().execute(sql);
+
+        assertThat(viewStorage.get("v")).isInstanceOf(View.class);
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"this\"\n" +
+                "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+    }
+
+    @Test
+    public void when_createsViewWithExistingName_then_throws() {
+        String sql = "CREATE VIEW v AS SELECT * FROM map";
+        instance().getSql().execute(sql);
+
+        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        assertThat(viewStorage.containsKey("v")).isTrue();
+        assertThat(viewStorage.get("v")).isInstanceOf(View.class);
+
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("Mapping or view with such name exists: v");
+    }
+
+    @Test
+    public void when_createsViewWithExistingMappingWithEqualName_then_throws() {
+        createMapping("v", Integer.class, Integer.class);
+
+        String sql = "CREATE VIEW v AS SELECT * FROM map";
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("Mapping or view with such name exists: v");
+    }
+
+    @Test
+    public void when_dropView_then_succeeds() {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
