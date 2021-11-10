@@ -528,6 +528,32 @@
                 </executions>
                 <inherited>false</inherited>
             </plugin>
+            <plugin>
+                <groupId>com.hazelcast.maven</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aggregated-attribution</id>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>per-jar-attribution</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -586,6 +612,22 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
                     <version>${codehause.license.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.hazelcast.maven</groupId>
+                    <artifactId>attribution-maven-plugin</artifactId>
+                    <version>1.0</version>
+                    <configuration>
+                        <exclusionPatterns>
+                            <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
+                            <exclusionPattern>per-property override</exclusionPattern>
+                            <exclusionPattern>^copyright notice</exclusionPattern>
+                            <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>Substitute for l, l</exclusionPattern>
+                            <exclusionPattern>inside edge crossings that are between</exclusionPattern>
+                        </exclusionPatterns>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
