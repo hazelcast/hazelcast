@@ -145,6 +145,7 @@
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.21.0</archunit.version>
+        <errorprone.version>2.10.0</errorprone.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -1702,6 +1703,11 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${errorprone.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
