@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -49,14 +50,31 @@ public final class WindowUtils {
     private WindowUtils() {
     }
 
+    public static Object[] insert(Object[] row, WindowProperties.WindowProperty windowProperty, long window_start, long window_end) {
+        Object[] result = new Object[row.length + 1];
+
+        int index = windowProperty.index();
+
+        System.arraycopy(row, 0, result, 0, index);
+        result[windowProperty.index()] = windowProperty.choose(window_start, window_end);
+        System.arraycopy(row, index, result, index + 1, result.length - index - 1);
+
+        return result;
+    }
+
     /**
      * Returns a row with two added fields: the window_start and window_end.
      */
     public static Object[] addWindowBounds(Object[] row, int index, SlidingWindowPolicy windowPolicy) {
         Object value = row[index];
         long millis = extractMillis(value);
+
         long windowStartMillis = windowPolicy.floorFrameTs(millis);
         long windowEndMillis = windowPolicy.higherFrameTs(millis);
+
+        //long windowStartMillis = millis;
+        //long windowEndMillis = millis;
+
         Object[] result = Arrays.copyOf(row, row.length + 2);
         if (value instanceof Byte) {
             result[result.length - 2] = (byte) windowStartMillis;
@@ -90,6 +108,37 @@ public final class WindowUtils {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE);
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE);
             return result;
+        }
+    }
+
+    public static Object convert(long millis, SqlTypeName typeName) {
+        switch (typeName) {
+            case TINYINT: {
+                return (byte) millis;
+            }
+            case SMALLINT: {
+                return (short) millis;
+            }
+            case INTEGER: {
+                return (int) millis;
+            }
+            case BIGINT: {
+                return millis;
+            }
+            case TIME: {
+                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalTime();
+            }
+            case DATE: {
+                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDate();
+            }
+            case TIMESTAMP: {
+                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDateTime();
+            }
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE: {
+                return asTimestampWithTimezone(millis, DEFAULT_ZONE);
+            }
+            default:
+                throw new IllegalArgumentException();
         }
     }
 

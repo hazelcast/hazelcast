@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastHopTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
@@ -108,6 +109,27 @@ final class FunctionLogicalRules {
         }
     };
 
+    static final RelOptRule TUMBLE_HOP_FUNCTION_INSTANCE = new ConverterRule(
+            LogicalTableFunctionScan.class, scan -> extractHopWindowFunction(scan) != null,
+            Convention.NONE, Convention.NONE,
+            FunctionLogicalRules.class.getSimpleName() + "(Hop-Window)"
+    ) {
+        @Override
+        public RelNode convert(RelNode rel) {
+            LogicalTableFunctionScan scan = (LogicalTableFunctionScan) rel;
+
+            return new SlidingWindowLogicalRel(
+                    scan.getCluster(),
+                    OptUtils.toLogicalConvention(scan.getTraitSet()),
+                    Util.toList(scan.getInputs(), OptUtils::toLogicalInput),
+                    scan.getCall(),
+                    scan.getElementType(),
+                    scan.getRowType(),
+                    scan.getColumnMappings()
+            );
+        }
+    };
+
     private FunctionLogicalRules() {
     }
 
@@ -145,5 +167,17 @@ final class FunctionLogicalRules {
             return null;
         }
         return (HazelcastTumbleTableFunction) call.getOperator();
+    }
+
+    private static HazelcastHopTableFunction extractHopWindowFunction(LogicalTableFunctionScan scan) {
+        if (scan == null || !(scan.getCall() instanceof RexCall)) {
+            return null;
+        }
+        RexCall call = (RexCall) scan.getCall();
+
+        if (!(call.getOperator() instanceof HazelcastHopTableFunction)) {
+            return null;
+        }
+        return (HazelcastHopTableFunction) call.getOperator();
     }
 }

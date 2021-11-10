@@ -52,7 +52,7 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    public void test() {
+    public void test_tumble() {
         String name = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -63,7 +63,12 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
-        sqlService.execute("INSERT INTO " + name + " VALUES(0, 'value-0'), (1, 'value-1'), (2, 'value-2'), (10, 'value-10')");
+        sqlService.execute("INSERT INTO " + name + " VALUES" +
+                "(0, 'value-0')" +
+                ", (1, 'value-1')" +
+                ", (2, 'value-2')" +
+                ", (10, 'value-10')"
+        );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, COUNT(*) FROM " +
@@ -76,6 +81,44 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                 asList(
                         new Row(0, 2, 2L),
                         new Row(2, 4, 1L)
+                )
+        );
+    }
+
+    @Test
+    public void test_hop() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+        sqlService.execute("INSERT INTO " + name + " VALUES" +
+                "(0, 'value-0')" +
+                ", (3, 'value-3')" +
+                ", (4, 'value-4')" +
+                ", (5, 'value-7')" +
+                ", (10, 'value-10')"
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start, /*window_end,*/ COUNT(__key) FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2)))" +
+                        "  , DESCRIPTOR(__key)" +
+                        "  , 2" +
+                        "  , 4" +
+                        ")) " +
+                        "GROUP BY window_start/*, window_end*/",
+                asList(
+                        new Row(-2, /* 2,*/ 1L),
+                        new Row(0, /* 4,*/ 2L),
+                        new Row(2, /* 6,*/ 3L),
+                        new Row(4, /* 8,*/ 2L)
                 )
         );
     }

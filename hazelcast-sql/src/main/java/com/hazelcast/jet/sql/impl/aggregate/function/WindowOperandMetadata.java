@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -29,28 +28,30 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
-import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
-    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {
+    private final int[] columnIndexes;
+
+    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] columnIndexes) {
         super(parameters);
+        this.columnIndexes = columnIndexes;
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        SqlNode input = binding.operand(0);
-        SqlNode column = unwrapFunctionOperand(binding.operand(1));
-        SqlNode lag = binding.operand(2);
-        boolean result = checkColumnOperand(binding, input, (SqlCall) column, lag);
-
+        boolean result = true;
+        for (int columnIndex : columnIndexes) {
+            SqlNode column = binding.operand(columnIndex);
+            result &= checkColumnOperand(binding, column);
+        }
         if (!result && throwOnFailure) {
             throw binding.newValidationSignatureError();
         }
         return result;
     }
 
-    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode input, SqlCall column, SqlNode lag) {
+    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode lag) {
         HazelcastSqlValidator validator = binding.getValidator();
         SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
         return checkColumnType(validator, orderingColumnType, lag);

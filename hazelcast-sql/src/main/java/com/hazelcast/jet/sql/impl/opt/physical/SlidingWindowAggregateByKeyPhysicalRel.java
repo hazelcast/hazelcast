@@ -56,7 +56,8 @@ public class SlidingWindowAggregateByKeyPhysicalRel extends Aggregate implements
     }
 
     public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
-        return ObjectArrayKey.projectFn(getGroupSet().toArray());
+        return ObjectArrayKey.projectFn(getGroupSet().clear(windowProperty().index()).toArray());
+        //return ObjectArrayKey.projectFn(getGroupSet().toArray());
     }
 
     public AggregateOperation<?, Object[]> aggrOp() {

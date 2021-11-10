@@ -35,6 +35,6 @@ public class HazelcastTumbleTableFunction extends HazelcastWindowTableFunction {
     );
 
     public HazelcastTumbleTableFunction() {
-        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS), 1);
+        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS, new int[]{2}), 1);
     }
 }

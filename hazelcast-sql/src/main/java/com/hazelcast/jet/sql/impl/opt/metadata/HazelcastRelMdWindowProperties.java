@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
+import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WP;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowEndProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowProperty;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties.WindowStartProperty;
@@ -74,8 +75,12 @@ public final class HazelcastRelMdWindowProperties
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider = rel.windowPolicyProvider();
         WindowProperties windowProperties = new WindowProperties(
                 // window_start and window_end are the last two fields in SlidingWindow
-                new WindowStartProperty(fieldCount - 2, windowPolicyProvider),
-                new WindowEndProperty(fieldCount - 1, windowPolicyProvider)
+                rel.isTumble()
+                        ? new WindowStartProperty(fieldCount - 2, windowPolicyProvider, rel.getRowType().getFieldList().get(fieldCount - 2).getType().getSqlTypeName())
+                        : new WP(true, fieldCount - 2, windowPolicyProvider, rel.getRowType().getFieldList().get(fieldCount - 2).getType().getSqlTypeName()),
+                rel.isTumble()
+                        ? new WindowEndProperty(fieldCount - 1, windowPolicyProvider, rel.getRowType().getFieldList().get(fieldCount - 1).getType().getSqlTypeName())
+                        : new WP(false, fieldCount - 1, windowPolicyProvider, rel.getRowType().getFieldList().get(fieldCount - 1).getType().getSqlTypeName())
         );
 
         return inputWindowProperties == null ? windowProperties : inputWindowProperties.merge(windowProperties);

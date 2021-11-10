@@ -21,8 +21,10 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +36,7 @@ import static java.util.Arrays.stream;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
-public final class WindowProperties {
+public final class WindowProperties implements Serializable {
 
     private final Map<Integer, WindowProperty> propertiesByIndex;
 
@@ -80,7 +82,7 @@ public final class WindowProperties {
         return propertiesByIndex.values().stream();
     }
 
-    public interface WindowProperty {
+    public interface WindowProperty extends Serializable {
 
         int index();
 
@@ -92,16 +94,62 @@ public final class WindowProperties {
          * Returns a copy of this property, but with index changed.
          */
         WindowProperty withIndex(int index);
+
+        Object choose(long window_start, long window_end);
+    }
+
+    public static class WP implements WindowProperty {
+
+        private final boolean b;
+
+        private final int index;
+        private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
+        private final SqlTypeName typeName;
+
+        public WP(boolean b, int index, FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider, SqlTypeName typeName) {
+            this.b = b;
+            this.index = index;
+            this.windowPolicyProvider = windowPolicyProvider;
+            this.typeName = typeName;
+        }
+
+        @Override
+        public int index() {
+            return index;
+        }
+
+        @Override
+        public ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context) {
+            int index = this.index;
+            return row -> WindowUtils.extractMillis(row[index]);
+        }
+
+        @Override
+        public SlidingWindowPolicy windowPolicy(ExpressionEvalContext context) {
+            return windowPolicyProvider.apply(context);
+        }
+
+        @Override
+        public WP withIndex(int index) {
+            return new WP(b, index, windowPolicyProvider, typeName);
+        }
+
+        @Override
+        public Object choose(long window_start, long window_end) {
+            return WindowUtils.convert(b ? window_start : window_end, typeName);
+        }
     }
 
     public static class WindowStartProperty implements WindowProperty {
 
         private final int index;
         private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
+        private final SqlTypeName typeName;
 
-        public WindowStartProperty(int index, FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider) {
+        public WindowStartProperty(int index, FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider, SqlTypeName typeName) {
             this.index = index;
             this.windowPolicyProvider = windowPolicyProvider;
+            this.typeName = typeName;
         }
 
         @Override
@@ -122,7 +170,12 @@ public final class WindowProperties {
 
         @Override
         public WindowStartProperty withIndex(int index) {
-            return new WindowStartProperty(index, windowPolicyProvider);
+            return new WindowStartProperty(index, windowPolicyProvider, typeName);
+        }
+
+        @Override
+        public Object choose(long window_start, long window_end) {
+            return WindowUtils.convert(window_start, typeName);
         }
     }
 
@@ -130,10 +183,12 @@ public final class WindowProperties {
 
         private final int index;
         private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
+        private final SqlTypeName typeName;
 
-        public WindowEndProperty(int index, FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider) {
+        public WindowEndProperty(int index, FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider, SqlTypeName typeName) {
             this.index = index;
             this.windowPolicyProvider = windowPolicyProvider;
+            this.typeName = typeName;
         }
 
         @Override
@@ -158,7 +213,12 @@ public final class WindowProperties {
 
         @Override
         public WindowEndProperty withIndex(int index) {
-            return new WindowEndProperty(index, windowPolicyProvider);
+            return new WindowEndProperty(index, windowPolicyProvider, typeName);
+        }
+
+        @Override
+        public Object choose(long window_start, long window_end) {
+            return WindowUtils.convert(window_end, typeName);
         }
     }
 }

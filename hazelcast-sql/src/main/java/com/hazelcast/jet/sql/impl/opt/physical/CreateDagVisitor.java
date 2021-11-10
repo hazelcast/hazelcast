@@ -309,7 +309,7 @@ public class CreateDagVisitor {
                 mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
-                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
+                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy); // TODO: single row belongs to multiple windows...
                         }),
                         (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
                 )
@@ -335,10 +335,10 @@ public class CreateDagVisitor {
                         windowPolicy,
                         0,
                         aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> result
+                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, windowProperty, start, end)
                 )
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
+        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
@@ -375,7 +375,7 @@ public class CreateDagVisitor {
                 Processors.combineToSlidingWindowP(
                         windowPolicy,
                         aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> result
+                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, windowProperty, start, end)
                 )
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
