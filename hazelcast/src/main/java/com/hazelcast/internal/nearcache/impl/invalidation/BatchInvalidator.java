@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,12 +53,7 @@ public class BatchInvalidator extends Invalidator {
      * Creates an invalidation-queue per data-structure-name.
      */
     private final ConstructorFunction<String, InvalidationQueue<Invalidation>> invalidationQueueConstructor
-            = new ConstructorFunction<String, InvalidationQueue<Invalidation>>() {
-        @Override
-        public InvalidationQueue<Invalidation> createNew(String dataStructureName) {
-            return new InvalidationQueue<Invalidation>();
-        }
-    };
+            = dataStructureName -> new InvalidationQueue<>();
 
     /**
      * data-structure-name to invalidation-queue mappings.
@@ -82,7 +77,11 @@ public class BatchInvalidator extends Invalidator {
 
     @Override
     protected Invalidation newInvalidation(Data key, String dataStructureName, UUID sourceUuid, int partitionId) {
-        checkBackgroundTaskIsRunning();
+        if (key != null) {
+            // when key is null invalidations are sent
+            // immediately hence no need to check background task.
+            checkBackgroundTaskIsRunning();
+        }
         return super.newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
@@ -159,14 +158,11 @@ public class BatchInvalidator extends Invalidator {
     private UUID registerNodeShutdownListener() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
-        return lifecycleService.addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == SHUTTING_DOWN) {
-                    Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
-                    for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
-                        pollAndSendInvalidations(entry.getKey(), entry.getValue());
-                    }
+        return lifecycleService.addLifecycleListener(event -> {
+            if (event.getState() == SHUTTING_DOWN) {
+                Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
+                for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
+                    pollAndSendInvalidations(entry.getKey(), entry.getValue());
                 }
             }
         });
@@ -230,5 +226,16 @@ public class BatchInvalidator extends Invalidator {
         invalidationQueues.clear();
 
         super.reset();
+    }
+
+    public static void main(String[] args) {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        IMap<Object, Object> test = hazelcastInstance.getMap("test");
+        for (int i = 0; i < 1000; i++) {
+            test.set(i, i);
+        }
+        test.destroy();
+
+        hazelcastInstance.shutdown();
     }
 }
