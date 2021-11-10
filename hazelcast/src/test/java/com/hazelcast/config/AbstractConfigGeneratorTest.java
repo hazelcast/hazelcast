@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
@@ -31,6 +33,54 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testList() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(HigherHitsMergePolicy.class.getName())
+                .setBatchSize(1234);
+
+        ListConfig expectedConfig = new ListConfig("testList")
+                .setMaxSize(10)
+                .setStatisticsEnabled(true)
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setSplitBrainProtectionName("splitBrainProtection")
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
+
+        Config config = new Config()
+                .addListConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        ListConfig actualConfig = xmlConfig.getListConfig("testList");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testSet() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(LatestUpdateMergePolicy.class.getName())
+                .setBatchSize(1234);
+
+        SetConfig expectedConfig = new SetConfig("testSet")
+                .setMaxSize(10)
+                .setStatisticsEnabled(true)
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setSplitBrainProtectionName("splitBrainProtection")
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
+
+        Config config = new Config()
+                .addSetConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
+        assertEquals(expectedConfig, actualConfig);
+    }
 
     @Test
     public void testMultiMap() {

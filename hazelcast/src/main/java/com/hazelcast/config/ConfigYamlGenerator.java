@@ -39,6 +39,8 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        listConfigYamlGenerator(root, config);
+        setConfigYamlGenerator(root, config);
         multiMapYamlGenerator(root, config);
         replicatedMapConfigYamlGenerator(root, config);
         ringbufferYamlGenerator(root, config);
@@ -77,7 +79,33 @@ public class ConfigYamlGenerator {
 //        parent.put(xxx, child);
 //    }
 
-        static void multiMapYamlGenerator(Map<String, Object> parent, Config config) {
+    static void listConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getListConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ListConfig subConfigAsObject : config.getListConfigs().values()) {
+            child.put(subConfigAsObject.getName(), getCollectionConfigAsMap(subConfigAsObject));
+        }
+
+        parent.put("list", child);
+    }
+
+    static void setConfigYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getSetConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (SetConfig subConfigAsObject : config.getSetConfigs().values()) {
+            child.put(subConfigAsObject.getName(), getCollectionConfigAsMap(subConfigAsObject));
+        }
+
+        parent.put("set", child);
+    }
+
+    static void multiMapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getMultiMapConfigs().isEmpty()) {
             return;
         }
@@ -101,7 +129,7 @@ public class ConfigYamlGenerator {
         parent.put("multimap", child);
     }
 
-        static void replicatedMapConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    static void replicatedMapConfigYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReplicatedMapConfigs().isEmpty()) {
             return;
         }
@@ -312,6 +340,43 @@ public class ConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    private static Map<String, Object> getCollectionConfigAsMap(CollectionConfig<?> collectionConfig) {
+        if (collectionConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(subConfigAsMap, "statistics-enabled", collectionConfig.isStatisticsEnabled());
+        addNonNullToMap(subConfigAsMap, "max-size", collectionConfig.getMaxSize());
+        addNonNullToMap(subConfigAsMap, "backup-count", collectionConfig.getBackupCount());
+        addNonNullToMap(subConfigAsMap, "async-backup-count", collectionConfig.getAsyncBackupCount());
+        addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", collectionConfig.getSplitBrainProtectionName());
+        addNonNullToMap(subConfigAsMap, "item-listeners", getItemListenerConfigsAsList(collectionConfig.getItemListenerConfigs()));
+        addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(collectionConfig.getMergePolicyConfig()));
+
+        return subConfigAsMap;
+    }
+
+    private static List<Map<String, Object>> getItemListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {
+        if (listenerConfigs == null || listenerConfigs.isEmpty()) {
+            return null;
+        }
+
+        List<Map<String, Object>> listenerConfigsAsList = new LinkedList<>();
+
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            Map<String, Object> listenerConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(listenerConfigAsMap, "class-name", classNameOrImplClass(listenerConfig.getClassName(), listenerConfig.getImplementation()));
+            addNonNullToMap(listenerConfigAsMap, "include-value", listenerConfig.isIncludeValue());
+
+            addNonNullToList(listenerConfigsAsList, listenerConfigAsMap);
+        }
+
+        return listenerConfigsAsList;
     }
 
     private static List<Map<String, Object>> getEntryListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {

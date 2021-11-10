@@ -939,54 +939,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
     }
 
     @Test
-    public void testList() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(HigherHitsMergePolicy.class.getName())
-                .setBatchSize(1234);
-
-        ListConfig expectedConfig = new ListConfig("testList")
-                .setMaxSize(10)
-                .setStatisticsEnabled(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
-
-        Config config = new Config()
-                .addListConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        ListConfig actualConfig = xmlConfig.getListConfig("testList");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testSet() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(LatestUpdateMergePolicy.class.getName())
-                .setBatchSize(1234);
-
-        SetConfig expectedConfig = new SetConfig("testSet")
-                .setMaxSize(10)
-                .setStatisticsEnabled(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
-
-        Config config = new Config()
-                .addSetConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaGenerator(config);
-
-        SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testQueueWithStoreClass() {
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
                 .setClassName("className")

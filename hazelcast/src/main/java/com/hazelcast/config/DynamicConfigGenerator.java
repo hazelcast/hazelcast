@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String setConfigGenerator(SetConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "set",
+                Config::addSetConfig,
+                ConfigXmlGenerator::setConfigXmlGenerator,
+                ConfigYamlGenerator::setConfigYamlGenerator
+        );
+    }
+
     static String multiMapConfigGenerator(MultiMapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "multimap",

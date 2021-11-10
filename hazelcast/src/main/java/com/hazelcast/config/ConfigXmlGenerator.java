@@ -153,8 +153,8 @@ public class ConfigXmlGenerator {
         cacheConfigXmlGenerator(gen, config);
         queueXmlGenerator(gen, config);
         multiMapXmlGenerator(gen, config);
-        collectionXmlGenerator(gen, "list", config.getListConfigs().values());
-        collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
+        listConfigXmlGenerator(gen, config);
+        setConfigXmlGenerator(gen, config);
         topicXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
@@ -199,6 +199,14 @@ public class ConfigXmlGenerator {
             trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
             gen.close();
         }
+    }
+
+    static void listConfigXmlGenerator(XmlGenerator gen, Config config) {
+        collectionXmlGenerator(gen, "list", config.getListConfigs().values());
+    }
+
+    static void setConfigXmlGenerator(XmlGenerator gen, Config config) {
+        collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
     }
 
     @SuppressWarnings("unchecked")
@@ -1790,7 +1798,8 @@ public class ConfigXmlGenerator {
         if (CollectionUtil.isNotEmpty(configs)) {
             gen.open("item-listeners");
             for (ItemListenerConfig lc : configs) {
-                gen.node("item-listener", lc.getClassName(), "include-value", lc.isIncludeValue());
+                gen.node("item-listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()),
+                        "include-value", lc.isIncludeValue());
             }
             gen.close();
         }
