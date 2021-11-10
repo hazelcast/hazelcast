@@ -35,6 +35,9 @@ import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -46,11 +49,15 @@ import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
+import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
@@ -149,7 +156,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @Test
     @Category(SerialTest.class)
-    public void customProjection() {
+    public void customProjection() throws ExecutionException, InterruptedException {
         HELPER.createStream(1);
 
         sendMessages();
@@ -167,7 +174,14 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .rollingAggregate(counting())
                 .writeTo(Sinks.map(resultMap));
 
-        hz().getJet().newJob(pipeline).join();
+        JobConfig jobConfig = new JobConfig()
+                .registerSerializer(Data.class, DataSerializer.class);
+
+        try {
+            hz().getJet().newJob(pipeline, jobConfig).getFuture().get(30, SECONDS);
+        } catch (TimeoutException e) {
+            // noop
+        }
         assertEquals(MESSAGES, resultMap.size());
         Long expectedPerSequenceNo = 1L;
         resultMap.values().forEach(v -> assertEquals(expectedPerSequenceNo, v));
@@ -177,9 +191,30 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         byte[] payload;
         String sequenceNo;
 
-        public Data(byte[] payload, String sequenceNo) {
+        Data(byte[] payload, String sequenceNo) {
             this.payload = payload;
             this.sequenceNo = sequenceNo;
+        }
+    }
+
+    private static final class DataSerializer implements StreamSerializer<Data> {
+        @Override
+        public int getTypeId() {
+            return 1;
+        }
+
+        @Override
+        public void write(@Nonnull ObjectDataOutput out, @Nonnull Data object) throws IOException {
+            out.writeByteArray(object.payload);
+            out.writeString(object.sequenceNo);
+        }
+
+        @Nonnull
+        @Override
+        public Data read(@Nonnull ObjectDataInput in) throws IOException {
+            byte[] payload = in.readByteArray();
+            String sequenceNo = in.readString();
+            return new Data(payload, sequenceNo);
         }
     }
 
