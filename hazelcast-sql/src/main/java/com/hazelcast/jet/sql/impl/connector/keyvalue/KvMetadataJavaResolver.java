@@ -162,7 +162,23 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     return new MappingField(name, type, path.toString());
                 }).collect(Collectors.toList());
 
+        for (MappingField f : new ArrayList<>(topLevelFields)) {
+            if (f.type().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                expandFields(f.name(), f.type().getSubFields(), topLevelFields);
+            }
+        }
+
         return topLevelFields.stream();
+    }
+
+    private void expandFields(String prefix, List<QueryDataTypeField> fields, List<MappingField> projections) {
+        for (final QueryDataTypeField field : fields) {
+            final String newPrefix = prefix + "." + field.getName();
+            projections.add(new MappingField(newPrefix, field.getType(), newPrefix));
+            if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                expandFields(newPrefix, field.getType().getSubFields(), projections);
+            }
+        }
     }
 
     private QueryDataType enhanceRowType(Class<?> fieldClass) {

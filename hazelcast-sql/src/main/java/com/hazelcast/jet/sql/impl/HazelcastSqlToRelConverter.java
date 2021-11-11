@@ -42,6 +42,7 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -50,6 +51,7 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlJsonEmptyOrError;
@@ -135,9 +137,30 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertBetween((SqlCall) node, blackboard);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
+        } else if (node instanceof SqlIdentifier && ((SqlIdentifier) node).names.size() > 2) {
+            return convertNestedFieldIdentifier((SqlIdentifier) node, blackboard);
         }
 
         return null;
+    }
+
+    private RexNode convertNestedFieldIdentifier(SqlIdentifier node, Blackboard blackboard) {
+        final String tableName = node.names.get(0);
+        final String fieldName = String.join(".", node.names.subList(1, node.names.size()));
+        final Prepare.PreparingTable table = catalogReader.getTable(Collections.singletonList(tableName));
+        if (table == null) {
+            throw QueryException.error("Can not find table " + tableName);
+        }
+
+        final RelDataTypeField field = table.table()
+                .getRowType(typeFactory)
+                .getField(fieldName, false, true);
+        if (field == null) {
+            throw QueryException.error("Can not find field " + fieldName + " within table " + tableName);
+        }
+
+        // TODO: fix nullability
+        return getRexBuilder().makeInputRef(typeFactory.createTypeWithNullability(field.getType(), false), field.getIndex());
     }
 
     /**
