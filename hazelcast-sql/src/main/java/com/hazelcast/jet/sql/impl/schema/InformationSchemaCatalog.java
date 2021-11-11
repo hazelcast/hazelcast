@@ -106,7 +106,7 @@ public class InformationSchemaCatalog implements TableResolver {
             mappingStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
         } else if (!mappingStorage.putIfAbsent(name, resolved)) {
-            throw QueryException.error("Mapping or view with such name already exists: " + name);
+            throw QueryException.error("Mapping or view with such name exists: " + name);
         }
     }
 

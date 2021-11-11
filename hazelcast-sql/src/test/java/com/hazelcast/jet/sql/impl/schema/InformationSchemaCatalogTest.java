@@ -114,7 +114,7 @@ public class InformationSchemaCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Mapping already exists: name");
+                .hasMessageContaining("Mapping or view with such name exists: name");
         verifyNoInteractions(listener);
     }
 
@@ -232,7 +232,7 @@ public class InformationSchemaCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createView(view, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("View already exists: name");
+                .hasMessageContaining("Mapping or view with such name exists: name");
         verifyNoInteractions(listener);
     }
 
