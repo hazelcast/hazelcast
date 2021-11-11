@@ -30,8 +30,6 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.schema.Mapping;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +55,6 @@ public abstract class AbstractMetadataStorage<T> {
     }
 
     void put(String name, T data) {
-        checkMappingPresence(name);
         storage().put(name, data);
         awaitMappingOnAllMembers(name, data);
     }
@@ -123,16 +120,6 @@ public abstract class AbstractMetadataStorage<T> {
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * Since mappings and views sharing the same ReplicatedMap, we should detect name collisions.
-     */
-    private void checkMappingPresence(String name) {
-        if (storage().containsKey(name) && storage().get(name) instanceof Mapping) {
-            throw QueryException.error("SQL catalog contains mapping with name '" + name + "'." +
-                    " Try to choose another view name");
         }
     }
 
