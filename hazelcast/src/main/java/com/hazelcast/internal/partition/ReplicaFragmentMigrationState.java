@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,12 +33,10 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
-import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static java.lang.String.format;
 
 /**
@@ -54,19 +53,15 @@ public class ReplicaFragmentMigrationState
     private transient Collection<ChunkSupplier> chunkSuppliers;
     private transient int maxTotalChunkedDataInBytes;
     private transient ILogger logger;
+    private transient int partitionId;
 
     public ReplicaFragmentMigrationState() {
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
-                                         Collection<Operation> migrationOperations, ILogger logger) {
-        this(namespaces, migrationOperations, Collections.emptyList(), Integer.MAX_VALUE, logger);
-    }
-
-    public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations,
                                          Collection<ChunkSupplier> chunkSuppliers,
-                                         int maxTotalChunkedDataInBytes, ILogger logger) {
+                                         int maxTotalChunkedDataInBytes, ILogger logger, int partitionId) {
         assert chunkSuppliers != null;
         assert logger != null;
 
@@ -75,6 +70,7 @@ public class ReplicaFragmentMigrationState
         this.chunkSuppliers = chunkSuppliers;
         this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
         this.logger = logger;
+        this.partitionId = partitionId;
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
@@ -152,7 +148,8 @@ public class ReplicaFragmentMigrationState
             return;
         }
 
-        logger.finest(String.format("Writing chunk[%s]", chunkSupplier));
+        logger.finest(String.format("Current chunk [partitionId:%d, %s]",
+                partitionId, chunkSupplier));
     }
 
     private void logEndOfChunk(IsEndOfChunk isEndOfChunk) {
@@ -160,9 +157,10 @@ public class ReplicaFragmentMigrationState
             return;
         }
 
-        logger.finest(format("Chunk is full [maxChunkSize:%dMB, actualChunkSize:%dMB]",
-                BYTES.toMegaBytes(maxTotalChunkedDataInBytes),
-                BYTES.toMegaBytes(isEndOfChunk.bytesWrittenSoFar())));
+        logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+                partitionId,
+                MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
+                MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
     }
 
     private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
@@ -179,9 +177,10 @@ public class ReplicaFragmentMigrationState
         }
 
         if (allDone) {
-            logger.finest(format("Last chunk was sent [maxChunkSize:%dMB, actualChunkSize:%dMB]",
-                    BYTES.toMegaBytes(maxTotalChunkedDataInBytes),
-                    BYTES.toMegaBytes(isEndOfChunk.bytesWrittenSoFar())));
+            logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+                    partitionId,
+                    MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
+                    MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
         }
     }
 

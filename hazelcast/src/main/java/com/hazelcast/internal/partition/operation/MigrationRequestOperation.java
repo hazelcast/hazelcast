@@ -239,7 +239,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * will be very cheap, instead of copying partition data on each retry.
      */
     private ReplicaFragmentMigrationState initialReplicaFragmentMigrationState() {
-        return createReplicaFragmentMigrationState(emptySet(), emptySet(), emptyList(), Integer.MAX_VALUE);
+        return createReplicaFragmentMigrationState(emptySet(), emptySet(),
+                emptyList(), maxTotalChunkedDataInBytes);
     }
 
     private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
@@ -360,7 +361,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         return new ReplicaFragmentMigrationState(versions, operations,
-                suppliers, maxTotalChunkedDataInBytes, getLogger());
+                suppliers, maxTotalChunkedDataInBytes, getLogger(), getPartitionId());
     }
 
     @Override

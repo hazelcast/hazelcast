@@ -66,6 +66,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -203,8 +204,8 @@ public class MigrationManager {
 
     // RU_COMPAT 5.0
     private boolean isClusterVersionGreaterOrEqualV51() {
-        return node.getClusterService()
-                .getClusterVersion().isGreaterOrEqual(Versions.V5_1);
+        Version clusterVersion = node.getClusterService().getClusterVersion();
+        return clusterVersion.isUnknownOrGreaterOrEqual(Versions.V5_1);
     }
 
     @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)

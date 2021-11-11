@@ -17,8 +17,12 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
+import java.util.function.Supplier;
+
+import static java.lang.String.format;
 
 /**
  * Contract to be used to lazily migrate data in chunks.
@@ -48,6 +52,17 @@ public interface ChunkedMigrationAwareService
     default ChunkSupplier newChunkSupplier(PartitionReplicationEvent event,
                                            Collection<ServiceNamespace> namespaces) {
         return ChunkSuppliers.newSingleChunkSupplier(
-                () -> prepareReplicationOperation(event, namespaces));
+                new Supplier<Operation>() {
+                    @Override
+                    public Operation get() {
+                        return ChunkedMigrationAwareService.this.prepareReplicationOperation(event, namespaces);
+                    }
+
+                    @Override
+                    public String toString() {
+                        return format("OperationSupplier{service: %s}",
+                                ChunkedMigrationAwareService.this.getClass().getSimpleName());
+                    }
+                });
     }
 }
