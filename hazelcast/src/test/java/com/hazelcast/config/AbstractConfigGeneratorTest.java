@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -34,6 +36,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -41,6 +44,273 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testAttributesConfigWithStoreClass() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setClassName("className")
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setProperty("key", "value");
+
+        testMap(mapStoreConfig);
+    }
+
+    @Test
+    public void testAttributesConfigWithStoreImplementation() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setImplementation(new TestMapStore())
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setProperty("key", "value");
+
+        testMap(mapStoreConfig);
+    }
+
+    private static class TestMapStore implements MapStore {
+        @Override
+        public void store(Object key, Object value) {
+        }
+
+        @Override
+        public void storeAll(Map map) {
+        }
+
+        @Override
+        public void delete(Object key) {
+        }
+
+        @Override
+        public void deleteAll(Collection keys) {
+        }
+
+        @Override
+        public Object load(Object key) {
+            return null;
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            return null;
+        }
+
+        @Override
+        public Iterable loadAllKeys() {
+            return null;
+        }
+    }
+
+    @Test
+    public void testAttributesConfigWithStoreFactory() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setFactoryClassName("factoryClassName")
+                .setProperty("key", "value");
+
+        testMap(mapStoreConfig);
+    }
+
+    @Test
+    public void testAttributesConfigWithStoreFactoryImplementation() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
+                .setProperty("key", "value");
+
+        testMap(mapStoreConfig);
+    }
+
+    private void testMap(MapStoreConfig mapStoreConfig) {
+        AttributeConfig attrConfig = new AttributeConfig()
+                .setName("power")
+                .setExtractorClassName("com.car.PowerExtractor");
+
+        EvictionConfig evictionConfig1 = new EvictionConfig()
+                .setSize(10)
+                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+
+        IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
+
+        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
+
+        EvictionConfig evictionConfig2 = new EvictionConfig()
+                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE)
+                .setSize(100)
+                .setComparatorClassName("comparatorClassName")
+                .setEvictionPolicy(EvictionPolicy.LRU);
+
+        PredicateConfig predicateConfig1 = new PredicateConfig();
+        predicateConfig1.setClassName("className");
+
+        PredicateConfig predicateConfig2 = new PredicateConfig();
+        predicateConfig2.setSql("sqlQuery");
+
+        QueryCacheConfig queryCacheConfig1 = new QueryCacheConfig()
+                .setName("queryCache1")
+                .setPredicateConfig(predicateConfig1)
+                .addEntryListenerConfig(listenerConfig)
+                .setBatchSize(230)
+                .setDelaySeconds(20)
+                .setPopulate(false)
+                .setBufferSize(8)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setEvictionConfig(evictionConfig2)
+                .setIncludeValue(false)
+                .setCoalesce(false)
+                .addIndexConfig(indexConfig);
+
+        QueryCacheConfig queryCacheConfig2 = new QueryCacheConfig()
+                .setName("queryCache2")
+                .setPredicateConfig(predicateConfig2)
+                .addEntryListenerConfig(listenerConfig)
+                .setBatchSize(500)
+                .setDelaySeconds(10)
+                .setPopulate(true)
+                .setBufferSize(10)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setEvictionConfig(evictionConfig2)
+                .setIncludeValue(true)
+                .setCoalesce(true)
+                .addIndexConfig(indexConfig);
+
+        MapConfig expectedConfig = new MapConfig()
+                .setName("carMap")
+                .setEvictionConfig(evictionConfig1)
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE)
+                .setMaxIdleSeconds(100)
+                .setTimeToLiveSeconds(1000)
+                .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
+                .setStatisticsEnabled(true)
+                .setPerEntryStatsEnabled(false)
+                .setReadBackupData(true)
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setMapStoreConfig(mapStoreConfig)
+                .setWanReplicationRef(wanReplicationRef())
+                .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
+                .setMerkleTreeConfig(merkleTreeConfig())
+                .setEventJournalConfig(eventJournalConfig())
+                .setDataPersistenceConfig(dataPersistenceConfig())
+                .addEntryListenerConfig(listenerConfig)
+                .setIndexConfigs(singletonList(indexConfig))
+                .addAttributeConfig(attrConfig)
+                .setPartitionLostListenerConfigs(singletonList(
+                        new MapPartitionLostListenerConfig("partitionLostListener"))
+                );
+
+        expectedConfig.setQueryCacheConfigs(asList(queryCacheConfig1, queryCacheConfig2));
+
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
+        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
+        assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
+        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
+        ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithoutMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithoutMerkleTreeConfig");
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithEnabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithDisabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapNearCacheConfig() {
+        NearCacheConfig expectedConfig = new NearCacheConfig()
+                .setName("nearCache")
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setMaxIdleSeconds(42)
+                .setCacheLocalEntries(true)
+                .setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.INVALIDATE)
+                .setTimeToLiveSeconds(10)
+                .setEvictionConfig(evictionConfig())
+                .setSerializeKeys(true);
+
+        MapConfig mapConfig = new MapConfig()
+                .setName("nearCacheTest")
+                .setNearCacheConfig(expectedConfig);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapNearCacheEvictionConfig() {
+        NearCacheConfig expectedConfig = new NearCacheConfig()
+                .setName("nearCache");
+        expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
+
+        MapConfig mapConfig = new MapConfig()
+                .setName("nearCacheTest")
+                .setNearCacheConfig(expectedConfig);
+
+        Config config = new Config()
+                .addMapConfig(mapConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
+        assertEquals(23, actualConfig.getEvictionConfig().getSize());
+        assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
+        assertEquals(expectedConfig, actualConfig);
+    }
 
     @Test
     public void testCacheAttributes() {

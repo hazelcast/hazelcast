@@ -41,6 +41,7 @@ public class ConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        mapYamlGenerator(root, config);
         cacheYamlGenerator(root, config);
         queueYamlGenerator(root, config);
         listYamlGenerator(root, config);
@@ -83,6 +84,52 @@ public class ConfigYamlGenerator {
 //        parent.put(xxx, child);
 //    }
 
+    static void mapYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getMapConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (MapConfig subConfigAsObject : config.getMapConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            String cacheDeserializedValues = subConfigAsObject.getCacheDeserializedValues() != null
+                    ? subConfigAsObject.getCacheDeserializedValues().name().replaceAll("_", "-")
+                    : null;
+
+            addNonNullToMap(subConfigAsMap, "in-memory-format", subConfigAsObject.getInMemoryFormat().name());
+            addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
+            addNonNullToMap(subConfigAsMap, "per-entry-stats-enabled", subConfigAsObject.isPerEntryStatsEnabled());
+            addNonNullToMap(subConfigAsMap, "cache-deserialized-values", cacheDeserializedValues);
+            addNonNullToMap(subConfigAsMap, "backup-count", subConfigAsObject.getBackupCount());
+            addNonNullToMap(subConfigAsMap, "async-backup-count", subConfigAsObject.getAsyncBackupCount());
+            addNonNullToMap(subConfigAsMap, "time-to-live-seconds", subConfigAsObject.getTimeToLiveSeconds());
+            addNonNullToMap(subConfigAsMap, "max-idle-seconds", subConfigAsObject.getMaxIdleSeconds());
+            addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
+            addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
+            addNonNullToMap(subConfigAsMap, "read-backup-data", subConfigAsObject.isReadBackupData());
+            addNonNullToMap(subConfigAsMap, "metadata-policy", subConfigAsObject.getMetadataPolicy().name());
+            addNonNullToMap(subConfigAsMap, "eviction", getEvictionConfigAsMap(subConfigAsObject.getEvictionConfig()));
+            addNonNullToMap(subConfigAsMap, "merkle-tree", getMerkleTreeConfigAsMap(subConfigAsObject.getMerkleTreeConfig()));
+            addNonNullToMap(subConfigAsMap, "event-journal", getEventJournalConfigAsMap(subConfigAsObject.getEventJournalConfig()));
+            addNonNullToMap(subConfigAsMap, "data-persistence", getDataPersistenceConfigAsMap(subConfigAsObject.getDataPersistenceConfig()));
+            addNonNullToMap(subConfigAsMap, "map-store", getMapStoreConfigAsMap(subConfigAsObject.getMapStoreConfig()));
+            addNonNullToMap(subConfigAsMap, "near-cache", getNearCacheConfigAsMap(subConfigAsObject.getNearCacheConfig()));
+            addNonNullToMap(subConfigAsMap, "wan-replication-ref", getWanReplicationRefAsMap(subConfigAsObject.getWanReplicationRef(), true));
+            addNonNullToMap(subConfigAsMap, "near-cache", getNearCacheConfigAsMap(subConfigAsObject.getNearCacheConfig()));
+            addNonNullToMap(subConfigAsMap, "indexes", getIndexConfigsAsList(subConfigAsObject.getIndexConfigs()));
+            addNonNullToMap(subConfigAsMap, "attributes", getAttributeConfigsAsMap(subConfigAsObject.getAttributeConfigs()));
+            addNonNullToMap(subConfigAsMap, "entry-listeners", getEntryListenerConfigsAsList(subConfigAsObject.getEntryListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "partition-lost-listeners", getListenerConfigsAsList(subConfigAsObject.getPartitionLostListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "partition-strategy", getPartitioningStrategyAsString(subConfigAsObject.getPartitioningStrategyConfig()));
+            addNonNullToMap(subConfigAsMap, "query-caches", getQueryCacheConfigsAsMap(subConfigAsObject.getQueryCacheConfigs()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("map", child);
+    }
+
     static void cacheYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getCacheConfigs().isEmpty()) {
             return;
@@ -110,7 +157,7 @@ public class ConfigYamlGenerator {
             addNonNullToMap(subConfigAsMap, "eviction", getEvictionConfigAsMap(subConfigAsObject.getEvictionConfig()));
             addNonNullToMap(subConfigAsMap, "wan-replication-ref", getWanReplicationRefAsMap(subConfigAsObject.getWanReplicationRef(), false));
             addNonNullToMap(subConfigAsMap, "split-brain-protection-ref", subConfigAsObject.getSplitBrainProtectionName());
-            addNonNullToMap(subConfigAsMap, "partition-lost-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getPartitionLostListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "partition-lost-listeners", getListenerConfigsAsList(subConfigAsObject.getPartitionLostListenerConfigs()));
             addNonNullToMap(subConfigAsMap, "merge-policy", getMergePolicyConfigAsMap(subConfigAsObject.getMergePolicyConfig()));
             addNonNullToMap(subConfigAsMap, "event-journal", getEventJournalConfigAsMap(subConfigAsObject.getEventJournalConfig()));
             addNonNullToMap(subConfigAsMap, "data-persistence", getDataPersistenceConfigAsMap(subConfigAsObject.getDataPersistenceConfig()));
@@ -256,7 +303,7 @@ public class ConfigYamlGenerator {
 
             addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "global-ordering-enabled", subConfigAsObject.isGlobalOrderingEnabled());
-            addNonNullToMap(subConfigAsMap, "message-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "message-listeners", getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
             addNonNullToMap(subConfigAsMap, "multi-threading-enabled", subConfigAsObject.isMultiThreadingEnabled());
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
@@ -277,7 +324,7 @@ public class ConfigYamlGenerator {
             addNonNullToMap(subConfigAsMap, "statistics-enabled", subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "read-batch-size", subConfigAsObject.getReadBatchSize());
             addNonNullToMap(subConfigAsMap, "topic-overload-policy", subConfigAsObject.getTopicOverloadPolicy().name());
-            addNonNullToMap(subConfigAsMap, "message-listeners", getMessageListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
+            addNonNullToMap(subConfigAsMap, "message-listeners", getListenerConfigsAsList(subConfigAsObject.getMessageListenerConfigs()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -410,6 +457,122 @@ public class ConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    private static String getPartitioningStrategyAsString(PartitioningStrategyConfig partitioningStrategyConfig) {
+        if (partitioningStrategyConfig == null) {
+            return null;
+        }
+
+        return classNameOrImplClass(partitioningStrategyConfig.getPartitioningStrategyClass(), partitioningStrategyConfig.getPartitioningStrategy());
+    }
+
+    private static Map<String, Object> getPredicateConfigAsMap(PredicateConfig predicateConfig) {
+        if (predicateConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> predicateConfigAsMap = new LinkedHashMap<>();
+
+        String type = predicateConfig.getClassName() != null
+                ? "class-name"
+                : "sql";
+
+        String content = predicateConfig.getClassName() != null
+                ? predicateConfig.getClassName()
+                : predicateConfig.getSql();
+
+        addNonNullToMap(predicateConfigAsMap, type, content);
+
+        return predicateConfigAsMap;
+    }
+
+    private static Map<String, Object> getQueryCacheConfigsAsMap(List<QueryCacheConfig> queryCacheConfigs) {
+        if (queryCacheConfigs == null || queryCacheConfigs.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> queryCacheConfigsAsMap = new LinkedHashMap<>();
+
+        for (QueryCacheConfig queryCacheConfig : queryCacheConfigs) {
+            Map<String, Object> queryCacheConfigAsMap = new LinkedHashMap<>();
+            addNonNullToMap(queryCacheConfigAsMap, "include-value", queryCacheConfig.isIncludeValue());
+            addNonNullToMap(queryCacheConfigAsMap, "in-memory-format", queryCacheConfig.getInMemoryFormat().name());
+            addNonNullToMap(queryCacheConfigAsMap, "populate", queryCacheConfig.isPopulate());
+            addNonNullToMap(queryCacheConfigAsMap, "coalesce", queryCacheConfig.isCoalesce());
+            addNonNullToMap(queryCacheConfigAsMap, "delay-seconds", queryCacheConfig.getDelaySeconds());
+            addNonNullToMap(queryCacheConfigAsMap, "batch-size", queryCacheConfig.getBatchSize());
+            addNonNullToMap(queryCacheConfigAsMap, "buffer-size", queryCacheConfig.getBufferSize());
+            addNonNullToMap(queryCacheConfigAsMap, "eviction", getEvictionConfigAsMap(queryCacheConfig.getEvictionConfig()));
+            addNonNullToMap(queryCacheConfigAsMap, "indexes", getIndexConfigsAsList(queryCacheConfig.getIndexConfigs()));
+            addNonNullToMap(queryCacheConfigAsMap, "predicate", getPredicateConfigAsMap(queryCacheConfig.getPredicateConfig()));
+            addNonNullToMap(queryCacheConfigAsMap, "entry-listeners", getEntryListenerConfigsAsList(queryCacheConfig.getEntryListenerConfigs()));
+
+            queryCacheConfigsAsMap.put(queryCacheConfig.getName(), queryCacheConfigAsMap);
+        }
+
+        return queryCacheConfigsAsMap;
+    }
+
+    private static Map<String, Object> getAttributeConfigsAsMap(List<AttributeConfig> attributeConfigs) {
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> attributeConfigsAsMap = new LinkedHashMap<>();
+
+        for (AttributeConfig attributeConfig : attributeConfigs) {
+            addNonNullToMap(attributeConfigsAsMap, attributeConfig.getName(), wrapObjectWithMap("extractor-class-name", attributeConfig.getExtractorClassName()));
+        }
+
+        return attributeConfigsAsMap;
+    }
+
+    private static List<Map<String, Object>> getIndexConfigsAsList(List<IndexConfig> indexConfigs) {
+        if (indexConfigs == null || indexConfigs.isEmpty()) {
+            return null;
+        }
+
+        List<Map<String, Object>> indexConfigsAsList = new LinkedList<>();
+
+        for (IndexConfig indexConfig : indexConfigs) {
+            Map<String, Object> indexConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(indexConfigAsMap, "name", indexConfig.getName());
+            addNonNullToMap(indexConfigAsMap, "type", indexConfig.getType().name());
+            addNonNullToMap(indexConfigAsMap, "attributes", indexConfig.getAttributes());
+
+            if (indexConfig.getType() == IndexType.BITMAP) {
+                Map<String, Object> bitmapIndexOptionsAsMap = new LinkedHashMap<>();
+                addNonNullToMap(bitmapIndexOptionsAsMap, "unique-key", indexConfig.getBitmapIndexOptions().getUniqueKey());
+                addNonNullToMap(bitmapIndexOptionsAsMap, "unique-key-transformation", indexConfig.getBitmapIndexOptions().getUniqueKeyTransformation().name());
+
+                indexConfigAsMap.put("bitmap-index-options", bitmapIndexOptionsAsMap);
+            }
+
+            addNonNullToList(indexConfigsAsList, indexConfigAsMap);
+        }
+
+        return indexConfigsAsList;
+    }
+
+    private static Map<String, Object> getNearCacheConfigAsMap(NearCacheConfig nearCacheConfig) {
+        if (nearCacheConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> nearCacheConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(nearCacheConfigAsMap, "name", nearCacheConfig.getName());
+        addNonNullToMap(nearCacheConfigAsMap, "in-memory-format", nearCacheConfig.getInMemoryFormat().name());
+        addNonNullToMap(nearCacheConfigAsMap, "invalidate-on-change", nearCacheConfig.isInvalidateOnChange());
+        addNonNullToMap(nearCacheConfigAsMap, "time-to-live-seconds", nearCacheConfig.getTimeToLiveSeconds());
+        addNonNullToMap(nearCacheConfigAsMap, "max-idle-seconds", nearCacheConfig.getMaxIdleSeconds());
+        addNonNullToMap(nearCacheConfigAsMap, "serialize-keys", nearCacheConfig.isSerializeKeys());
+        addNonNullToMap(nearCacheConfigAsMap, "cache-local-entries", nearCacheConfig.isCacheLocalEntries());
+        addNonNullToMap(nearCacheConfigAsMap, "eviction", getEvictionConfigAsMap(nearCacheConfig.getEvictionConfig()));
+
+        return nearCacheConfigAsMap;
     }
 
     private static Map<String, Object> getMerkleTreeConfigAsMap(MerkleTreeConfig merkleTreeConfig) {
@@ -619,6 +782,34 @@ public class ConfigYamlGenerator {
         return storeConfigAsMap;
     }
 
+    private static Map<String, Object> getMapStoreConfigAsMap(MapStoreConfig mapStoreConfig) {
+        if (mapStoreConfig == null) {
+            return null;
+        }
+
+        // Note that order is different from the ConfigXmlGenerator#classNameOrImplClass().
+        // Here implementation takes priority rather than classname.
+        String className = mapStoreConfig.getImplementation() != null
+                ? mapStoreConfig.getImplementation().getClass().getName()
+                : mapStoreConfig.getClassName();
+        String factoryClassName = mapStoreConfig.getFactoryImplementation() != null
+                ? mapStoreConfig.getFactoryImplementation().getClass().getName()
+                : mapStoreConfig.getFactoryClassName();
+
+        Map<String, Object> mapStoreConfigAsMap = getStoreConfigAsMap(
+                mapStoreConfig.isEnabled(),
+                className,
+                factoryClassName,
+                mapStoreConfig.getProperties()
+        );
+
+        addNonNullToMap(mapStoreConfigAsMap, "initial-mode", mapStoreConfig.getInitialLoadMode().name());
+        addNonNullToMap(mapStoreConfigAsMap, "write-delay-seconds", mapStoreConfig.getWriteDelaySeconds());
+        addNonNullToMap(mapStoreConfigAsMap, "write-batch-size", mapStoreConfig.getWriteBatchSize());
+
+        return mapStoreConfigAsMap;
+    }
+
     private static Map<String, Object> getQueueStoreConfigAsMap(QueueStoreConfig queueStoreConfig) {
         if (queueStoreConfig == null) {
             return null;
@@ -645,7 +836,7 @@ public class ConfigYamlGenerator {
         );
     }
 
-    private static List<String> getMessageListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {
+    private static List<String> getListenerConfigsAsList(List<? extends ListenerConfig> listenerConfigs) {
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             return null;
         }

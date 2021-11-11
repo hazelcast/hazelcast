@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String mapConfigGenerator(MapConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "map",
+                Config::addMapConfig,
+                ConfigXmlGenerator::mapXmlGenerator,
+                ConfigYamlGenerator::mapYamlGenerator
+        );
+    }
+
     static String cacheConfigGenerator(CacheSimpleConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "cache",

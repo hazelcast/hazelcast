@@ -149,7 +149,7 @@ public class ConfigXmlGenerator {
         networkConfigXmlGenerator(gen, config);
         advancedNetworkConfigXmlGenerator(gen, config);
         replicatedMapXmlGenerator(gen, config);
-        mapConfigXmlGenerator(gen, config);
+        mapXmlGenerator(gen, config);
         cacheXmlGenerator(gen, config);
         queueXmlGenerator(gen, config);
         multiMapXmlGenerator(gen, config);
@@ -977,7 +977,7 @@ public class ConfigXmlGenerator {
         return "wan-endpoint-config";
     }
 
-    private static void mapConfigXmlGenerator(XmlGenerator gen, Config config) {
+    static void mapXmlGenerator(XmlGenerator gen, Config config) {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
         for (MapConfig m : mapConfigs) {
             String cacheDeserializedVal = m.getCacheDeserializedValues() != null
