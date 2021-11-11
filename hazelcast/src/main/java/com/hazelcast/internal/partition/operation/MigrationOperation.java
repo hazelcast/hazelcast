@@ -126,7 +126,8 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     private void checkActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
-        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration(migrationInfo.getPartitionId());
+        MigrationInfo activeMigration = partitionService.getMigrationManager()
+                .getActiveMigration(migrationInfo.getPartitionId());
         if (!migrationInfo.equals(activeMigration)) {
             throw new IllegalStateException("Unexpected active migration " + activeMigration
                     + "! First migration fragment should have set active migration to: " + migrationInfo);

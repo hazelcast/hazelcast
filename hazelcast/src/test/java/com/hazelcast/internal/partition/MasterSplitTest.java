@@ -21,6 +21,7 @@ import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -102,8 +103,10 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         ReplicaFragmentMigrationState migrationState
                 = new ReplicaFragmentMigrationState(Collections.emptyMap(),
-                Collections.emptySet(), Logger.getLogger(getClass()));
-        Operation op = new MigrationOperation(migration, Collections.emptyList(), 0, migrationState, true, true);
+                Collections.emptySet(), Collections.emptySet(), (int) MemoryUnit.MEGABYTES.toBytes(50),
+                Logger.getLogger(getClass()), 1);
+        Operation op = new MigrationOperation(migration, Collections.emptyList(),
+                0, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
