@@ -1463,6 +1463,9 @@
                 }
               }
             }
+          },
+          "partition-strategy": {
+            "type": "string"
           }
         }
       }
