@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.RowTypeMarker;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;

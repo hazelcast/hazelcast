@@ -37,7 +37,6 @@ import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
-import static org.apache.calcite.sql.type.SqlTypeName.ROW;
 
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link

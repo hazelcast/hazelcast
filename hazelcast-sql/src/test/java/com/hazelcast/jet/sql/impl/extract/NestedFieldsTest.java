@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.extract;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.type.RowTypeMarker;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
