@@ -52,7 +52,7 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         // like QueryDataType.VARCHAR_CHARACTER, are canonicalized to values of
         // some other canonical type, like QueryDataType.VARCHAR. That kind of
         // changes the observed type of a column to a canonical one.
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             return new ColumnExpression<>(index, type);
         } else {
             Class<?> canonicalClass = type.getConverter().getNormalizedValueClass();

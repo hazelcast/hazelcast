@@ -151,7 +151,7 @@ public class HazelcastTable extends AbstractTable {
         for (Integer project : projects) {
             TableField field = target.getField(project);
 
-            if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+            if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                 processRowTypeFields(field, typeFactory, convertedFields);
                 continue;
             }

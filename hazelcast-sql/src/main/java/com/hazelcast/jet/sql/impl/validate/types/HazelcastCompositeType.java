@@ -38,7 +38,7 @@ public class HazelcastCompositeType extends RelDataTypeImpl {
 
     @Override
     public SqlTypeName getSqlTypeName() {
-        return SqlTypeName.ROW;
+        return SqlTypeName.ANY;
     }
 
     @Override

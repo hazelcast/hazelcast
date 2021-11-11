@@ -43,7 +43,6 @@ import com.hazelcast.sql.impl.type.converter.MapConverter;
 import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
-import com.hazelcast.sql.impl.type.converter.RowConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
@@ -94,7 +93,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public static final QueryDataType MAP = new QueryDataType(MapConverter.INSTANCE);
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
-    public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
     private Converter converter;
     private List<QueryDataTypeField> fields;
@@ -105,7 +103,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public QueryDataType(List<QueryDataTypeField> fields) {
         this.fields = fields;
-        this.converter = RowConverter.INSTANCE;
+        this.converter = ObjectConverter.INSTANCE;
     }
 
     QueryDataType(Converter converter) {

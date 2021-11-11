@@ -344,7 +344,7 @@ public final class OptUtils {
                     + ", getSqlTypeName should never return null.");
         }
 
-        if (sqlTypeName == SqlTypeName.ROW) {
+        if (sqlTypeName == SqlTypeName.ANY) {
             return convertRowType(field, typeFactory);
         } else if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType);
@@ -368,8 +368,8 @@ public final class OptUtils {
     }
 
     private static RelDataType convertRowTypeRecursively(final QueryDataType dataType, final RelDataTypeFactory typeFactory) {
-        if (!dataType.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
-            throw new RuntimeException("convertRowType only support converting ROW dataType");
+        if (dataType.getSubFields() == null || dataType.getSubFields().size() == 0) {
+            return new HazelcastCompositeType(Collections.emptyList());
         }
 
         final List<QueryDataTypeField> subFields = dataType.getSubFields();
@@ -378,7 +378,7 @@ public final class OptUtils {
             final QueryDataTypeField entry = subFields.get(index);
             final HazelcastCompositeType.Field currentField;
 
-            if (entry.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+            if (entry.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                 currentField = new HazelcastCompositeType.Field(
                         entry.getName(),
                         index,

@@ -61,7 +61,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         instance().getSql().execute(sql, args);
     }
 
-    public static class User implements Serializable, RowTypeMarker {
+    public static class User implements Serializable {
         private Long id;
         private String name;
         private Organization organization;
@@ -99,7 +99,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Organization implements Serializable, RowTypeMarker {
+    public static class Organization implements Serializable {
         private Long id;
         private String name;
         private Office office;
@@ -137,7 +137,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         }
     }
 
-    public static class Office implements Serializable, RowTypeMarker {
+    public static class Office implements Serializable {
         private Long id;
         private String name;
 

@@ -87,7 +87,6 @@ public abstract class Converter implements Serializable {
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
     private final boolean convertToJson;
-    private final boolean convertToRow;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
@@ -111,7 +110,6 @@ public abstract class Converter implements Serializable {
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
             convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
-            convertToRow = canConvert(clazz.getMethod("asRow", Object.class));
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to initialize converter: " + getClass().getName(), e);
         }
@@ -207,11 +205,6 @@ public abstract class Converter implements Serializable {
         throw cannotConvertError(QueryDataTypeFamily.JSON);
     }
 
-    @NotConvertible
-    public RowTypeMarker asRow(Object val) {
-        throw cannotConvertError(QueryDataTypeFamily.ROW);
-    }
-
     public Object asObject(Object val) {
         return val;
     }
@@ -276,10 +269,6 @@ public abstract class Converter implements Serializable {
         return convertToJson;
     }
 
-    public final boolean canConvertToRow() {
-        return convertToRow;
-    }
-
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
@@ -327,9 +316,6 @@ public abstract class Converter implements Serializable {
 
             case JSON:
                 return canConvertToJson();
-
-            case ROW:
-                return canConvertToRow();
 
             default:
                 return getTypeFamily() == typeFamily;

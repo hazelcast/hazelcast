@@ -83,7 +83,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        if (type != QueryDataType.OBJECT && type != QueryDataType.ROW) {
+        if (type != QueryDataType.OBJECT) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
             return resolveObjectSchema(isKey, userFields, clazz);
@@ -147,7 +147,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         if (fieldsInClass.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
             String name = isKey ? KEY : VALUE;
-            return Stream.of(new MappingField(name, QueryDataType.ROW, name));
+            return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
         final List<MappingField> topLevelFields = fieldsInClass.entrySet().stream()
@@ -155,8 +155,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
                     String name = classField.getKey();
-                    if (type.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
-                        // Replace generic ROW type with actual metadata-rich ROW type.
+                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                         type = enhanceRowType(classField.getValue());
                     }
 
@@ -176,7 +175,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                             QueryDataTypeUtils.resolveTypeForClass(entry.getValue())
                     );
 
-                    if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
+                    if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                         field.setType(enhanceRowType(entry.getValue()));
                     }
 
@@ -226,7 +225,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
-        if (type != QueryDataType.OBJECT && type != QueryDataType.ROW) {
+        if (type != QueryDataType.OBJECT) {
             return resolvePrimitiveMetadata(isKey, resolvedFields, fields, type);
         } else {
             return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);

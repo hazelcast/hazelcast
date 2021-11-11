@@ -39,7 +39,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
-import static com.hazelcast.sql.impl.type.QueryDataType.ROW;
 import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP;
@@ -261,9 +260,6 @@ public final class QueryDataTypeUtils {
 
             case JSON:
                 return JSON;
-
-            case ROW:
-                return ROW;
 
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
