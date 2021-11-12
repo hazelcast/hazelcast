@@ -32,6 +32,7 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -3049,21 +3050,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testTieredStore() {
-        // memory-tier parameter(s)
-        long inMemoryTierCapacityMB = 1024;
-
-        // disk-tier parameters
         String baseDir = "/";
         int blockSize = 2048;
-        long diskTierCapacityGB = 1L << 12;
 
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"my-map\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
-                + "            <capacity>" + inMemoryTierCapacityMB + "</capacity>"
+                + "            <capacity>1024 MB</capacity>"
                 + "        </memory-tier>"
-                + "        <disk-tier enabled=\"true\" capacity=\"" + diskTierCapacityGB + "\">"
+                + "        <disk-tier enabled=\"true\">"
                 + "            <base-dir>" + baseDir + "</base-dir>"
                 + "            <block-size>" + blockSize + "</block-size>"
                 + "        </disk-tier>"
@@ -3075,12 +3071,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
         assertTrue(tieredStoreConfig.isEnabled());
 
-        TSInMemoryTierConfig inMemoryTierConfig = tieredStoreConfig.getInMemoryTierConfig();
-        assertEquals(inMemoryTierCapacityMB << 20, inMemoryTierConfig.getCapacity());
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1024, memoryTierConfig.getCapacity().getValue());
 
-        TSDiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(diskTierConfig.isEnabled());
-        assertEquals(diskTierCapacityGB << 30, diskTierConfig.getCapacity());
         assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
         assertEquals(blockSize, diskTierConfig.getBlockSize());
     }

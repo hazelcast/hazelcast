@@ -30,12 +30,12 @@ import java.util.Objects;
  *
  * @since 5.1
  */
-public class TSDiskTierConfig implements IdentifiedDataSerializable {
+public class DiskTierConfig implements IdentifiedDataSerializable {
 
     /**
      * Default base directory for the tiered-store.
      */
-    public static final String DEFAULT_TSTORE_BASE_DIR = "tiered-store";
+    public static final String DEFAULT_TIERED_STORE_BASE_DIR = "tiered-store";
 
     /**
      * Default block/sector size in bytes.
@@ -43,19 +43,17 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
     public static final int DEFAULT_BLOCK_SIZE_IN_BYTES = 4096;
 
     private boolean enabled;
-    private File baseDir = new File(DEFAULT_TSTORE_BASE_DIR).getAbsoluteFile();
+    private File baseDir = new File(DEFAULT_TIERED_STORE_BASE_DIR).getAbsoluteFile();
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
-    private long capacity;
 
-    public TSDiskTierConfig() {
+    public DiskTierConfig() {
 
     }
 
-    public TSDiskTierConfig(TSDiskTierConfig tsDiskTierConfig) {
-        enabled = tsDiskTierConfig.isEnabled();
-        baseDir = new File(tsDiskTierConfig.getBaseDir().getAbsolutePath());
-        blockSize = tsDiskTierConfig.getBlockSize();
-        capacity = tsDiskTierConfig.getCapacity();
+    public DiskTierConfig(DiskTierConfig diskTierConfig) {
+        enabled = diskTierConfig.isEnabled();
+        baseDir = new File(diskTierConfig.getBaseDir().getAbsolutePath());
+        blockSize = diskTierConfig.getBlockSize();
     }
 
     /**
@@ -71,9 +69,9 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
      * Sets whether disk tier is enabled on the related tiered-store.
      *
      * @param enabled enabled parameter.
-     * @return this TSDiskTierConfig
+     * @return this DiskTierConfig
      */
-    public TSDiskTierConfig setEnabled(boolean enabled) {
+    public DiskTierConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -90,9 +88,9 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
      * Sets the base directory for this disk tier.
      *
      * @param baseDir base directory.
-     * @return this TSDiskTierConfig
+     * @return this DiskTierConfig
      */
-    public TSDiskTierConfig setBaseDir(File baseDir) {
+    public DiskTierConfig setBaseDir(File baseDir) {
         this.baseDir = baseDir;
         return this;
     }
@@ -109,81 +107,19 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
     /**
      * Sets the disk block/sector size in bytes.
      * @param blockSize block size.
-     * @return this TSDiskTierConfig
+     * @return this DiskTierConfig
      */
-    public TSDiskTierConfig setBlockSize(int blockSize) {
+    public DiskTierConfig setBlockSize(int blockSize) {
         this.blockSize = blockSize;
         return this;
     }
 
-    /**
-     * Returns the capacity of this disk tier.
-     *
-     * @return disk tier capacity.
-     */
-    public long getCapacity() {
-        return capacity;
-    }
-
-    /**
-     * Sets the capacity of this disk tier.
-     *
-     * @param capacity capacity.
-     * @return this TSDiskTierConfig
-     */
-    public TSDiskTierConfig setCapacity(long capacity) {
-        this.capacity = capacity;
-        return this;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TSDiskTierConfig)) {
-            return false;
-        }
-
-        TSDiskTierConfig that = (TSDiskTierConfig) o;
-
-        if (enabled != that.enabled) {
-            return false;
-        }
-        if (blockSize != that.blockSize) {
-            return false;
-        }
-        if (!Objects.equals(baseDir, that.baseDir)) {
-            return false;
-        }
-        return Objects.equals(capacity, that.capacity);
-    }
-
-    @Override
-    public final int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
-        result = 31 * result + blockSize;
-        result = 31 * result + (int) (capacity ^ (capacity >>> 32));
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "TSDiskTierConfig{"
-                + "enabled=" + enabled
-                + ", baseDir=" + baseDir
-                + ", blockSize=" + blockSize
-                + ", capacity=" + capacity
-                + '}';
-    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeString(baseDir.getAbsolutePath());
         out.writeInt(blockSize);
-        out.writeLong(capacity);
     }
 
     @Override
@@ -191,7 +127,6 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
         enabled = in.readBoolean();
         baseDir = new File(in.readString()).getAbsoluteFile();
         blockSize = in.readInt();
-        capacity = in.readLong();
     }
 
     @Override
@@ -201,6 +136,43 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.TS_DISK_TIER_CONFIG;
+        return ConfigDataSerializerHook.DISK_TIER_CONFIG;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DiskTierConfig)) {
+            return false;
+        }
+
+        DiskTierConfig that = (DiskTierConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (blockSize != that.blockSize) {
+            return false;
+        }
+        return Objects.equals(baseDir, that.baseDir);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
+        result = 31 * result + blockSize;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "TieredStoreDiskTierConfig{"
+                + "enabled=" + enabled
+                + ", baseDir=" + baseDir
+                + ", blockSize=" + blockSize
+                + '}';
     }
 }

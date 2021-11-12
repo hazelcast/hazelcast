@@ -101,8 +101,8 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.TSDiskTierConfig;
-import com.hazelcast.config.TSInMemoryTierConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
@@ -170,6 +170,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -1301,9 +1302,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child: childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("memory-tier".equals(name)) {
-                    handleTSInMemoryTierConfig(tieredStoreConfigBuilder, child);
+                    handleMemoryTierConfig(tieredStoreConfigBuilder, child);
                 } else if ("disk-tier".equals(name)) {
-                    handleTSDiskTierConfig(tieredStoreConfigBuilder, child);
+                    handleDiskTierConfig(tieredStoreConfigBuilder, child);
                 }
             }
 
@@ -1311,40 +1312,37 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         @SuppressWarnings("checkstyle:magicnumber")
-        private void handleTSInMemoryTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
-            BeanDefinitionBuilder tsInMemoryTierConfigBuilder = createBeanBuilder(TSInMemoryTierConfig.class);
-            fillAttributeValues(node, tsInMemoryTierConfigBuilder);
+        private void handleMemoryTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder memoryTierConfigBuilder = createBeanBuilder(MemoryTierConfig.class);
+            fillAttributeValues(node, memoryTierConfigBuilder);
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("capacity".equals(name)) {
-                    tsInMemoryTierConfigBuilder.addPropertyValue("capacity",
-                            getLongValue("capacity", getTextContent(child)) << 20);
+                    memoryTierConfigBuilder.addPropertyValue("capacity",
+                            parseMemorySize(getTextContent(child))
+                    );
                 }
             }
 
-            configBuilder.addPropertyValue("inMemoryTierConfig", tsInMemoryTierConfigBuilder.getBeanDefinition());
+            configBuilder.addPropertyValue("memoryTierConfig", memoryTierConfigBuilder.getBeanDefinition());
         }
 
         @SuppressWarnings("checkstyle:magicnumber")
-        private void handleTSDiskTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
-            BeanDefinitionBuilder tsDiskTierConfig = createBeanBuilder(TSDiskTierConfig.class);
-            fillAttributeValues(node, tsDiskTierConfig);
-
-            Node capacityNode = node.getAttributes().getNamedItem("capacity");
-            long capacity = getLongValue("capacity", getTextContent(capacityNode));
-            tsDiskTierConfig.addPropertyValue("capacity", capacity << 30);
+        private void handleDiskTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder diskTierConfig = createBeanBuilder(DiskTierConfig.class);
+            fillAttributeValues(node, diskTierConfig);
 
             for (Node child: childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("base-dir".equals(name)) {
-                    tsDiskTierConfig.addPropertyValue("baseDir", getTextContent(child));
+                    diskTierConfig.addPropertyValue("baseDir", getTextContent(child));
                 } else if ("block-size".equals(name)) {
-                    tsDiskTierConfig.addPropertyValue("blockSize",
+                    diskTierConfig.addPropertyValue("blockSize",
                             getIntegerValue("block-size", getTextContent(child)));
                 }
             }
 
-            configBuilder.addPropertyValue("diskTierConfig", tsDiskTierConfig.getBeanDefinition());
+            configBuilder.addPropertyValue("diskTierConfig", diskTierConfig.getBeanDefinition());
         }
 
         private void handleEventJournalConfig(BeanDefinitionBuilder configBuilder, Node node) {

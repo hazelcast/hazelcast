@@ -36,6 +36,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -66,6 +67,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
@@ -479,11 +481,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapConfig5 = config.getMapConfig("testMap5");
         TieredStoreConfig tieredStoreConfig = testMapConfig5.getTieredStoreConfig();
         assertTrue(tieredStoreConfig.isEnabled());
-        assertEquals(128L << 20, tieredStoreConfig.getInMemoryTierConfig().getCapacity());
-        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
-        assertEquals(108L << 30, tieredStoreConfig.getDiskTierConfig().getCapacity());
-        assertEquals("tiered-store_base_dir", tieredStoreConfig.getDiskTierConfig().getBaseDir().getName());
-        assertEquals(256, tieredStoreConfig.getDiskTierConfig().getBlockSize());
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(128L, memoryTierConfig.getCapacity().getValue());
+
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(diskTierConfig.isEnabled());
+        assertEquals("tiered-store_base_dir", diskTierConfig.getBaseDir().getName());
+        assertEquals(512, diskTierConfig.getBlockSize());
     }
 
     @Test

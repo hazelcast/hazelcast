@@ -29,12 +29,12 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TSDiskTierConfigTest {
+public class DiskTierConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(TSDiskTierConfig.class)
+        EqualsVerifier.forClass(DiskTierConfig.class)
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

@@ -163,6 +163,24 @@ public final class MemorySize {
         return new MemorySize(Long.parseLong(value), unit);
     }
 
+    public static MemorySize parseMemorySize(String memorySize) {
+        String[] valAndUnit = memorySize.split(" ");
+        long value = Long.parseLong(valAndUnit[0]);
+
+        switch (valAndUnit[1]) {
+            case "B":
+                return new MemorySize(value, MemoryUnit.BYTES);
+            case "KB":
+                return new MemorySize(value, MemoryUnit.KILOBYTES);
+            case "MB":
+                return new MemorySize(value, MemoryUnit.MEGABYTES);
+            case "GB":
+                return new MemorySize(value, MemoryUnit.GIGABYTES);
+            default:
+                throw new IllegalArgumentException("Could not determine memory unit of " + memorySize);
+        }
+    }
+
     /**
      * Returns a pretty format String representation of this memory size.
      *

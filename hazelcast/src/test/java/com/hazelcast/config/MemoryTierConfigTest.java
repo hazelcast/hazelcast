@@ -29,12 +29,12 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TSInMemoryTierConfigTest {
+public class MemoryTierConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(TSInMemoryTierConfig.class)
+        EqualsVerifier.forClass(MemoryTierConfig.class)
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

@@ -1474,18 +1474,20 @@
               },
               "memory-tier": {
                 "type": "object",
+                "description": "Memory tier.",
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "type": "number",
-                    "minimum": 1,
-                    "default": 256,
-                    "description": "Capacity in MB, i.e., how much main memory should this tier consume at most."
+                    "type": "string",
+                    "pattern": "^[1-9]([0-9]*) (B|KB|MB|GB)$",
+                    "default": "256 MB",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB). For instance, capacity=\"1024 MB\" is valid, whereas capacity=\"2^10 mb\" is not."
                   }
                 }
               },
               "disk-tier": {
                 "type": "object",
+                "description": "Disk tier.",
                 "additionalProperties": false,
                 "properties": {
                   "enabled": {
@@ -1499,17 +1501,12 @@
                   },
                   "block-size": {
                     "type": "integer",
-                    "minimum": 64,
+                    "minimum": 512,
                     "default": 4096,
-                    "description": "Device block/sector size in bytes. The default is 4096. The minimum is 64."
-                  },
-                  "capacity": {
-                    "type": "number",
-                    "minimum": 1,
-                    "description": "Disk capacity in GB, i.e., how much disk space should be consumed at most."
+                    "description": "Device block/sector size in bytes. The default is 4096. The minimum is 512."
                   }
                 },
-                "required": ["enabled", "capacity"]
+                "required": ["enabled"]
               }
             },
             "required": ["enabled"]

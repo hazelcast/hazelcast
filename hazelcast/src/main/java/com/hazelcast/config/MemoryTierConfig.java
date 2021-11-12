@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,43 +27,43 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * In-Memory tier configuration of Tiered-Store.
+ * Memory tier configuration of Tiered-Store.
  *
  * @since 5.1
  */
-public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
+public class MemoryTierConfig implements IdentifiedDataSerializable {
 
     /**
-     * Default capacity in bytes.
+     * Default capacity. It is 256 MB.
      */
-    public static final long DEFAULT_CAPACITY = 256L << 20;
+    public static final MemorySize DEFAULT_CAPACITY = new MemorySize(256, MemoryUnit.MEGABYTES);
 
-    private long capacity = DEFAULT_CAPACITY;
+    private MemorySize capacity = DEFAULT_CAPACITY;
 
-    public TSInMemoryTierConfig() {
+    public MemoryTierConfig() {
 
     }
 
-    public TSInMemoryTierConfig(TSInMemoryTierConfig tsInMemoryTierConfig) {
-        capacity = tsInMemoryTierConfig.getCapacity();
+    public MemoryTierConfig(MemoryTierConfig memoryTierConfig) {
+        capacity = memoryTierConfig.getCapacity();
     }
 
     /**
-     * Returns the capacity of this in-memory tier.
+     * Returns the capacity of this memory tier.
      *
-     * @return in-memory tier capacity.
+     * @return memory tier capacity.
      */
-    public long getCapacity() {
+    public MemorySize getCapacity() {
         return capacity;
     }
 
     /**
-     * Sets the capacity of this in-memory tier.
+     * Sets the capacity of this memory tier.
      *
      * @param capacity capacity.
-     * @return this TSInMemoryTierConfig
+     * @return this MemoryTierConfig
      */
-    public TSInMemoryTierConfig setCapacity(long capacity) {
+    public MemoryTierConfig setCapacity(MemorySize capacity) {
         this.capacity = capacity;
         return this;
     }
@@ -71,35 +73,36 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TSInMemoryTierConfig)) {
+        if (!(o instanceof MemoryTierConfig)) {
             return false;
         }
 
-        TSInMemoryTierConfig that = (TSInMemoryTierConfig) o;
+        MemoryTierConfig that = (MemoryTierConfig) o;
 
         return Objects.equals(capacity, that.capacity);
     }
 
     @Override
     public final int hashCode() {
-        return (int) (capacity ^ (capacity >>> 32));
+        return capacity != null ? capacity.hashCode() : 0;
     }
 
     @Override
     public String toString() {
-        return "TSInMemoryTierConfig{"
+        return "TieredStoreMemoryTierConfig{"
                 + "capacity=" + capacity
                 + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(capacity);
+        out.writeLong(capacity.getValue());
+        out.writeString(capacity.getUnit().name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        capacity = in.readLong();
+        capacity = new MemorySize(in.readLong(), MemoryUnit.valueOf(in.readString()));
     }
 
     @Override
@@ -109,6 +112,6 @@ public class TSInMemoryTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.TS_IN_MEMORY_TIER_CONFIG;
+        return ConfigDataSerializerHook.MEMORY_TIER_CONFIG;
     }
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.TSDiskTierConfig;
-import com.hazelcast.config.TSInMemoryTierConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TieredStoreConfig;
 
 public class TieredStoreConfigReadOnly extends TieredStoreConfig {
@@ -32,12 +32,12 @@ public class TieredStoreConfigReadOnly extends TieredStoreConfig {
     }
 
     @Override
-    public TieredStoreConfigReadOnly setInMemoryTierConfig(TSInMemoryTierConfig inMemoryTierConfig) {
+    public TieredStoreConfigReadOnly setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public TieredStoreConfigReadOnly setDiskTierConfig(TSDiskTierConfig diskTierConfig) {
+    public TieredStoreConfigReadOnly setDiskTierConfig(DiskTierConfig diskTierConfig) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

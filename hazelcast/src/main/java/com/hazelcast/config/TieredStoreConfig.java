@@ -37,8 +37,8 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
     public static final boolean DEFAULT_ENABLED = false;
 
     private boolean enabled = DEFAULT_ENABLED;
-    private TSInMemoryTierConfig inMemoryTierConfig = new TSInMemoryTierConfig();
-    private TSDiskTierConfig diskTierConfig = new TSDiskTierConfig();
+    private MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
+    private DiskTierConfig diskTierConfig = new DiskTierConfig();
 
     public TieredStoreConfig() {
 
@@ -46,8 +46,8 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
 
     public TieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
         this.enabled = tieredStoreConfig.isEnabled();
-        this.inMemoryTierConfig = new TSInMemoryTierConfig(tieredStoreConfig.getInMemoryTierConfig());
-        this.diskTierConfig = new TSDiskTierConfig(tieredStoreConfig.getDiskTierConfig());
+        this.memoryTierConfig = new MemoryTierConfig(tieredStoreConfig.getMemoryTierConfig());
+        this.diskTierConfig = new DiskTierConfig(tieredStoreConfig.getDiskTierConfig());
     }
 
     /**
@@ -71,22 +71,22 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the in-memory tier config of this tiered-store configuration.
+     * Returns the memory tier config of this tiered-store configuration.
      *
-     * @return {@code TSInMemoryTierConfig} of this tiered-store configuration.
+     * @return {@code MemoryTierConfig} of this tiered-store configuration.
      */
-    public TSInMemoryTierConfig getInMemoryTierConfig() {
-        return inMemoryTierConfig;
+    public MemoryTierConfig getMemoryTierConfig() {
+        return memoryTierConfig;
     }
 
     /**
-     * Sets the in-memory tier config of this tiered-store configuration.
+     * Sets the memory tier config of this tiered-store configuration.
      *
-     * @param inMemoryTierConfig in-memory tier configuration.
+     * @param memoryTierConfig memory tier configuration.
      * @return this TieredStoreConfig
      */
-    public TieredStoreConfig setInMemoryTierConfig(TSInMemoryTierConfig inMemoryTierConfig) {
-        this.inMemoryTierConfig = inMemoryTierConfig;
+    public TieredStoreConfig setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
+        this.memoryTierConfig = memoryTierConfig;
         return this;
     }
 
@@ -95,7 +95,7 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
      *
      * @return {@code TSDiskTierConfig} of this tiered-store configuration.
      */
-    public TSDiskTierConfig getDiskTierConfig() {
+    public DiskTierConfig getDiskTierConfig() {
         return diskTierConfig;
     }
 
@@ -105,7 +105,7 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
      * @param diskTierConfig disk tier configuration.
      * @return this TieredStoreConfig
      */
-    public TieredStoreConfig setDiskTierConfig(TSDiskTierConfig diskTierConfig) {
+    public TieredStoreConfig setDiskTierConfig(DiskTierConfig diskTierConfig) {
         this.diskTierConfig = diskTierConfig;
         return this;
     }
@@ -124,7 +124,7 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
         if (enabled != that.enabled) {
             return false;
         }
-        if (!Objects.equals(inMemoryTierConfig, that.inMemoryTierConfig)) {
+        if (!Objects.equals(memoryTierConfig, that.memoryTierConfig)) {
             return false;
         }
         return Objects.equals(diskTierConfig, that.diskTierConfig);
@@ -133,7 +133,7 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
     @Override
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
-        result = 31 * result + (inMemoryTierConfig != null ? inMemoryTierConfig.hashCode() : 0);
+        result = 31 * result + (memoryTierConfig != null ? memoryTierConfig.hashCode() : 0);
         result = 31 * result + (diskTierConfig != null ? diskTierConfig.hashCode() : 0);
         return result;
     }
@@ -142,7 +142,7 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "TieredStoreConfig{"
                 + "enabled=" + enabled
-                + ", inMemoryTierConfig=" + inMemoryTierConfig
+                + ", memoryTierConfig=" + memoryTierConfig
                 + ", diskTierConfig=" + diskTierConfig
                 + '}';
     }
@@ -150,14 +150,14 @@ public class TieredStoreConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeObject(inMemoryTierConfig);
+        out.writeObject(memoryTierConfig);
         out.writeObject(diskTierConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        inMemoryTierConfig = in.readObject();
+        memoryTierConfig = in.readObject();
         diskTierConfig = in.readObject();
     }
 

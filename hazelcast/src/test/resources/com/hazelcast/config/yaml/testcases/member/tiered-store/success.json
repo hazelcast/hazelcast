@@ -11,7 +11,7 @@
           "tiered-store": {
             "enabled": true,
             "memory-tier": {
-              "capacity": 4096
+              "capacity": "2 GB"
             }
           }
         },
@@ -19,8 +19,7 @@
           "tiered-store": {
             "enabled": true,
             "disk-tier": {
-              "enabled": true,
-              "capacity": 8
+              "enabled": true
             }
           }
         },
@@ -28,13 +27,12 @@
           "tiered-store": {
             "enabled": true,
             "memory-tier": {
-              "capacity": 8192
+              "capacity": "8192 KB"
             },
             "disk-tier": {
               "enabled": true,
               "base-dir": "/dev/hazelcast/tiered-store",
-              "block-size": 4096,
-              "capacity": 512
+              "block-size": 4096
             }
           }
         }

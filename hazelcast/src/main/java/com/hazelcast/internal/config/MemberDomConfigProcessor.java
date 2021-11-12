@@ -107,8 +107,8 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.TSDiskTierConfig;
-import com.hazelcast.config.TSInMemoryTierConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
@@ -233,6 +233,7 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -492,32 +493,28 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
 
             if (matches("memory-tier", name)) {
-                tieredStoreConfig.setInMemoryTierConfig(createTSInMemoryTierConfig(n));
+                tieredStoreConfig.setMemoryTierConfig(createMemoryTierConfig(n));
             } else if (matches("disk-tier", name)) {
-                tieredStoreConfig.setDiskTierConfig(createTSDiskTierConfig(n));
+                tieredStoreConfig.setDiskTierConfig(createDiskTierConfig(n));
             }
         }
         return tieredStoreConfig;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private TSInMemoryTierConfig createTSInMemoryTierConfig(Node node) {
-        long capacityInMB = getLongValue("capacity", getTextContent(childElements(node).iterator().next()));
-        return new TSInMemoryTierConfig()
-                .setCapacity(capacityInMB << 20);
+    private MemoryTierConfig createMemoryTierConfig(Node node) {
+        String capacity = getTextContent(childElements(node).iterator().next());
+        return new MemoryTierConfig()
+                .setCapacity(parseMemorySize(capacity));
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private TSDiskTierConfig createTSDiskTierConfig(Node node) {
-        TSDiskTierConfig diskTierConfig = new TSDiskTierConfig();
+    private DiskTierConfig createDiskTierConfig(Node node) {
+        DiskTierConfig diskTierConfig = new DiskTierConfig();
 
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         diskTierConfig.setEnabled(enabled);
-
-        Node attrCapacity = getNamedItemNode(node, "capacity");
-        long capacityInGB = getLongValue("capacity", getTextContent(attrCapacity));
-        diskTierConfig.setCapacity(capacityInGB << 30);
 
         String baseDirName = "base-dir";
         String blockSizeName = "block-size";
