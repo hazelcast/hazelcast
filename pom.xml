@@ -620,6 +620,14 @@
                     <version>1.0</version>
                     <configuration>
                         <exclusionPatterns>
+                        <!--
+                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                          are actually not the copyright lines. Let's exclude them here.
+
+                          Example:
+                          com.fasterxml.jackson.core:jackson-databind:2.12.1
+                             (c) per-property override (from annotation on specific property or
+                         -->
                             <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
                             <exclusionPattern>per-property override</exclusionPattern>
                             <exclusionPattern>^copyright notice</exclusionPattern>
