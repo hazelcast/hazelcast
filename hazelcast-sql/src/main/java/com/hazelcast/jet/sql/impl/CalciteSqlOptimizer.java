@@ -56,8 +56,8 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
-import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
+import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
@@ -66,8 +66,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog;
-import com.hazelcast.jet.sql.impl.schema.MappingStorage;
-import com.hazelcast.jet.sql.impl.schema.ViewStorage;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -199,10 +198,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private static InformationSchemaCatalog mappingCatalog(NodeEngine nodeEngine) {
-        MappingStorage mappingStorage = new MappingStorage(nodeEngine);
-        ViewStorage viewStorage = new ViewStorage(nodeEngine);
+        TablesStorage tablesStorage = new TablesStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new InformationSchemaCatalog(nodeEngine, mappingStorage, viewStorage, connectorCache);
+        return new InformationSchemaCatalog(nodeEngine, tablesStorage, connectorCache);
     }
 
     @Nullable

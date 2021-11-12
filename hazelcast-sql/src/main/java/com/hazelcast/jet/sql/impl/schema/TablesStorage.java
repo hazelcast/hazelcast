@@ -24,53 +24,96 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-public abstract class AbstractMetadataStorage<T> {
+public class TablesStorage {
 
     protected static final int MAX_CHECK_ATTEMPTS = 5;
     protected static final long SLEEP_MILLIS = 100;
+
+    private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
     protected final String catalogName;
 
-    public AbstractMetadataStorage(NodeEngine nodeEngine, String catalogName) {
+    public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-        this.catalogName = catalogName;
+        this.catalogName = CATALOG_MAP_NAME;
     }
 
-    void put(String name, T data) {
-        storage().put(name, data);
-        awaitMappingOnAllMembers(name, data);
+    void put(String name, Mapping mapping) {
+        storage().put(name, mapping);
+        awaitMappingOnAllMembers(name, mapping);
     }
 
-    boolean putIfAbsent(String name, T data) {
-        Object previous = storage().putIfAbsent(name, data);
-        awaitMappingOnAllMembers(name, data);
+    void put(String name, View view) {
+        storage().put(name, view);
+        awaitMappingOnAllMembers(name, view);
+    }
+
+    boolean putIfAbsent(String name, Mapping mapping) {
+        Object previous = storage().putIfAbsent(name, mapping);
+        awaitMappingOnAllMembers(name, mapping);
         return previous == null;
     }
 
-    @SuppressWarnings("unchecked")
-    T remove(String name) {
-        return (T) storage().remove(name);
+    boolean putIfAbsent(String name, View view) {
+        Object previous = storage().putIfAbsent(name, view);
+        awaitMappingOnAllMembers(name, view);
+        return previous == null;
     }
 
-    abstract void registerListener(EntryListener<String, Object> listener);
+    Mapping removeMapping(String name) {
+        return (Mapping) storage().remove(name);
+    }
+
+    View removeView(String name) {
+        return (View) storage().remove(name);
+    }
+
+    Collection<Mapping> valuesMappings() {
+        return storage().values()
+                .stream()
+                .filter(m -> m instanceof Mapping)
+                .map(m -> (Mapping) m)
+                .collect(Collectors.toList());
+    }
+
+
+    Collection<View> valuesViews() {
+        return storage().values()
+                .stream()
+                .filter(v -> v instanceof View)
+                .map(v -> (View) v)
+                .collect(Collectors.toList());
+    }
+
+    void registerListener(EntryListener<String, Object> listener) {
+        // do not try to implicitly create ReplicatedMap
+        // TODO: perform this check in a single place i.e. SqlService ?
+        if (!nodeEngine.getLocalMember().isLiteMember()) {
+            storage().addEntryListener(listener);
+        }
+    }
 
     protected ReplicatedMap<String, Object> storage() {
         return nodeEngine.getHazelcastInstance().getReplicatedMap(catalogName);
@@ -87,7 +130,7 @@ public abstract class AbstractMetadataStorage<T> {
      * Temporary measure to ensure schema is propagated to all the members.
      */
     @SuppressWarnings("BusyWait")
-    protected void awaitMappingOnAllMembers(String name, T metadata) {
+    protected void awaitMappingOnAllMembers(String name, IdentifiedDataSerializable metadata) {
         Data keyData = nodeEngine.getSerializationService().toData(name);
         int keyPartitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
         OperationService operationService = nodeEngine.getOperationService();

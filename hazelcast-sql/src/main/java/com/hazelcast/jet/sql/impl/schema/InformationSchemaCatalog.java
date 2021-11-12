@@ -57,27 +57,24 @@ public class InformationSchemaCatalog implements TableResolver {
     );
 
     private final NodeEngine nodeEngine;
-    private final MappingStorage mappingStorage;
-    private final ViewStorage viewStorage;
+    private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
     public InformationSchemaCatalog(
             NodeEngine nodeEngine,
-            MappingStorage mappingStorage,
-            ViewStorage viewStorage,
+            TablesStorage tableStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
-        this.mappingStorage = mappingStorage;
-        this.viewStorage = viewStorage;
+        this.tableStorage = tableStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
         // we skip events originating from local member to avoid double processing
-        this.mappingStorage.registerListener(new MappingStorage.EntryListenerAdapter() {
+        this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
             @Override
             public void entryUpdated(EntryEvent<String, Object> event) {
                 if (!event.getMember().localMember()) {
@@ -101,11 +98,11 @@ public class InformationSchemaCatalog implements TableResolver {
 
         String name = resolved.name();
         if (ifNotExists) {
-            mappingStorage.putIfAbsent(name, resolved);
+            tableStorage.putIfAbsent(name, resolved);
         } else if (replace) {
-            mappingStorage.put(name, resolved);
+            tableStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
-        } else if (!mappingStorage.putIfAbsent(name, resolved)) {
+        } else if (!tableStorage.putIfAbsent(name, resolved)) {
             throw QueryException.error("Mapping or view with such name exists: " + name);
         }
     }
@@ -126,7 +123,7 @@ public class InformationSchemaCatalog implements TableResolver {
     }
 
     public void removeMapping(String name, boolean ifExists) {
-        if (mappingStorage.remove(name) != null) {
+        if (tableStorage.removeMapping(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
@@ -135,7 +132,7 @@ public class InformationSchemaCatalog implements TableResolver {
 
     @Nonnull
     public List<String> getMappingNames() {
-        return mappingStorage.values().stream().map(Mapping::name).collect(Collectors.toList());
+        return tableStorage.valuesMappings().stream().map(Mapping::name).collect(Collectors.toList());
     }
 
     // endregion
@@ -144,17 +141,17 @@ public class InformationSchemaCatalog implements TableResolver {
 
     public void createView(View view, boolean replace) {
         if (replace) {
-            viewStorage.put(view.name(), view);
+            tableStorage.put(view.name(), view);
             return;
         }
 
-        if (!viewStorage.putIfAbsent(view.name(), view)) {
+        if (!tableStorage.putIfAbsent(view.name(), view)) {
             throw QueryException.error("Mapping or view with such name exists: " + view.name());
         }
     }
 
     public void removeView(String name, boolean ifExists) {
-        if (viewStorage.remove(name) != null) {
+        if (tableStorage.removeView(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("View does not exist: " + name);
@@ -172,14 +169,14 @@ public class InformationSchemaCatalog implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Mapping> mappings = mappingStorage.values();
+        Collection<Mapping> mappings = tableStorage.valuesMappings();
         List<Table> tables = new ArrayList<>(mappings.size() + 3);
         for (Mapping mapping : mappings) {
             tables.add(toTable(mapping));
         }
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, viewStorage.values()));
+        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, tableStorage.valuesViews()));
         return tables;
     }
 

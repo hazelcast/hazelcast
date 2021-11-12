@@ -58,10 +58,7 @@ public class InformationSchemaCatalogTest {
     private NodeEngine nodeEngine;
 
     @Mock
-    private MappingStorage mappingStorage;
-
-    @Mock
-    private ViewStorage viewStorage;
+    private TablesStorage tableStorage;
 
     @Mock
     private SqlConnectorCache connectorCache;
@@ -76,11 +73,9 @@ public class InformationSchemaCatalogTest {
     public void before() {
         MockitoAnnotations.openMocks(this);
 
-        catalog = new InformationSchemaCatalog(nodeEngine, mappingStorage, viewStorage, connectorCache);
+        catalog = new InformationSchemaCatalog(nodeEngine, tableStorage, connectorCache);
         catalog.registerListener(listener);
     }
-
-    // region mapping storage tests
 
     @Test
     public void when_createsInvalidMapping_then_throws() {
@@ -95,8 +90,8 @@ public class InformationSchemaCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, true, true))
                 .hasMessageContaining("expected test exception");
-        verify(mappingStorage, never()).putIfAbsent(anyString(), any());
-        verify(mappingStorage, never()).put(anyString(), any());
+        verify(tableStorage, never()).putIfAbsent(anyString(), (Mapping) any());
+        verify(tableStorage, never()).put(anyString(), (Mapping) any());
         verifyNoInteractions(listener);
     }
 
@@ -108,7 +103,7 @@ public class InformationSchemaCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(mappingStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         // then
@@ -126,7 +121,7 @@ public class InformationSchemaCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(mappingStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         catalog.createMapping(mapping, false, true);
@@ -148,7 +143,7 @@ public class InformationSchemaCatalogTest {
         catalog.createMapping(mapping, true, false);
 
         // then
-        verify(mappingStorage).put(eq(mapping.name()), isA(Mapping.class));
+        verify(tableStorage).put(eq(mapping.name()), isA(Mapping.class));
         verify(listener).onTableChanged();
     }
 
@@ -157,7 +152,7 @@ public class InformationSchemaCatalogTest {
         // given
         String name = "name";
 
-        given(mappingStorage.remove(name)).willReturn(mapping());
+        given(tableStorage.removeMapping(name)).willReturn(mapping());
 
         // when
         // then
@@ -170,7 +165,7 @@ public class InformationSchemaCatalogTest {
         // given
         String name = "name";
 
-        given(mappingStorage.remove(name)).willReturn(null);
+        given(tableStorage.removeMapping(name)).willReturn(null);
 
         // when
         // then
@@ -185,7 +180,7 @@ public class InformationSchemaCatalogTest {
         // given
         String name = "name";
 
-        given(mappingStorage.remove(name)).willReturn(null);
+        given(tableStorage.removeMapping(name)).willReturn(null);
 
         // when
         // then
@@ -201,13 +196,13 @@ public class InformationSchemaCatalogTest {
     public void when_createsView_then_succeeds() {
         // given
         View view = view();
-        given(viewStorage.putIfAbsent(view.name(), view)).willReturn(true);
+        given(tableStorage.putIfAbsent(view.name(), view)).willReturn(true);
 
         // when
         catalog.createView(view, false);
 
         // then
-        verify(viewStorage).putIfAbsent(eq(view.name()), isA(View.class));
+        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
     }
 
     @Test
@@ -219,14 +214,14 @@ public class InformationSchemaCatalogTest {
         catalog.createView(view, true);
 
         // then
-        verify(viewStorage).put(eq(view.name()), isA(View.class));
+        verify(tableStorage).put(eq(view.name()), isA(View.class));
     }
 
     @Test
     public void when_createsDuplicateViews_then_throws() {
         // given
         View view = view();
-        given(viewStorage.putIfAbsent(eq(view.name()), isA(View.class))).willReturn(false);
+        given(tableStorage.putIfAbsent(eq(view.name()), isA(View.class))).willReturn(false);
 
         // when
         // then
@@ -241,7 +236,7 @@ public class InformationSchemaCatalogTest {
         // given
         String name = "name";
 
-        given(viewStorage.remove(name)).willReturn(null);
+        given(tableStorage.removeView(name)).willReturn(null);
 
         // when
         // then
