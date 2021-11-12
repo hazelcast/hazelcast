@@ -169,7 +169,7 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "TieredStoreDiskTierConfig{"
+        return "DiskTierConfig{"
                 + "enabled=" + enabled
                 + ", baseDir=" + baseDir
                 + ", blockSize=" + blockSize
