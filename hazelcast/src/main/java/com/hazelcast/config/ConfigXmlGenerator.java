@@ -756,7 +756,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
+    static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
             for (WanBatchPublisherConfig p : wan.getBatchPublisherConfigs()) {

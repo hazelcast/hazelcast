@@ -18,19 +18,26 @@ package com.hazelcast.config;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.DiscoveryStrategy;
+import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -947,6 +954,109 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
         assertEquals(figConfig, xmlReplicatedConfig);
+    }
+
+    @Test
+    public void testWanConfig() {
+        @SuppressWarnings("rawtypes")
+        HashMap<String, Comparable> props = new HashMap<>();
+        props.put("prop1", "val1");
+        props.put("prop2", "val2");
+        props.put("prop3", "val3");
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
+                .setName("testName")
+                .setConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
+        WanBatchPublisherConfig batchPublisher = new WanBatchPublisherConfig()
+                .setClusterName("dummyGroup")
+                .setPublisherId("dummyPublisherId")
+                .setSnapshotEnabled(false)
+                .setInitialPublisherState(WanPublisherState.STOPPED)
+                .setQueueCapacity(1000)
+                .setBatchSize(500)
+                .setBatchMaxDelayMillis(1000)
+                .setResponseTimeoutMillis(60000)
+                .setQueueFullBehavior(WanQueueFullBehavior.DISCARD_AFTER_MUTATION)
+                .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
+                .setDiscoveryPeriodSeconds(20)
+                .setMaxTargetEndpoints(100)
+                .setMaxConcurrentInvocations(500)
+                .setUseEndpointPrivateAddress(true)
+                .setIdleMinParkNs(100)
+                .setIdleMaxParkNs(1000)
+                .setTargetEndpoints("a,b,c,d")
+                .setAwsConfig(getDummyAwsConfig())
+                .setDiscoveryConfig(getDummyDiscoveryConfig())
+                .setEndpoint("WAN")
+                .setProperties(props);
+
+        batchPublisher.getSyncConfig()
+                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+
+        WanCustomPublisherConfig customPublisher = new WanCustomPublisherConfig()
+                .setPublisherId("dummyPublisherId")
+                .setClassName("className")
+                .setProperties(props);
+
+        WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
+                .setClassName("dummyClass")
+                .setProperties(props)
+                .setPersistWanReplicatedData(false);
+
+        wanReplicationConfig.setConsumerConfig(wanConsumerConfig)
+                .addBatchReplicationPublisherConfig(batchPublisher)
+                .addCustomPublisherConfig(customPublisher);
+
+        Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        ConfigCompatibilityChecker.checkWanConfigs(
+                config.getWanReplicationConfigs(),
+                xmlConfig.getWanReplicationConfigs());
+    }
+
+    private AwsConfig getDummyAwsConfig() {
+        return new AwsConfig().setProperty("host-header", "dummyHost")
+                .setProperty("region", "dummyRegion")
+                .setEnabled(true)
+                .setProperty("connection-timeout-seconds", "1")
+                .setProperty("access-key", "dummyKey")
+                .setProperty("iam-role", "dummyIam")
+                .setProperty("secret-key", "dummySecretKey")
+                .setProperty("security-group-name", "dummyGroupName")
+                .setProperty("tag-key", "dummyTagKey")
+                .setProperty("tag-value", "dummyTagValue");
+    }
+
+    private static class TestDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return null;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+            return null;
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return null;
+        }
+    }
+
+    private DiscoveryConfig getDummyDiscoveryConfig() {
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(new TestDiscoveryStrategyFactory());
+        strategyConfig.addProperty("prop1", "val1");
+        strategyConfig.addProperty("prop2", "val2");
+
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        discoveryConfig.setNodeFilter(candidate -> false);
+        assert discoveryConfig.getNodeFilterClass() == null;
+        assert discoveryConfig.getNodeFilter() != null;
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("dummyClass2"));
+
+        return discoveryConfig;
     }
 
     abstract Config getNewConfigViaGenerator(Config config);

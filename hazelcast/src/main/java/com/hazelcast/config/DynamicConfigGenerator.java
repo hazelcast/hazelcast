@@ -31,6 +31,15 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
+    static String wanReplicationConfigGenerator(WanReplicationConfig subConfig, boolean configIsXml, int indent) {
+        return configGenerator(subConfig, configIsXml, indent,
+                "wan-replication",
+                Config::addWanReplicationConfig,
+                ConfigXmlGenerator::wanReplicationXmlGenerator,
+                ConfigYamlGenerator::wanReplicationYamlGenerator
+        );
+    }
+
     static String mapConfigGenerator(MapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
                 "map",

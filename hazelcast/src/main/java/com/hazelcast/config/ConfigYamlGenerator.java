@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.lang.Boolean.TRUE;
 
 public class ConfigYamlGenerator {
@@ -57,6 +59,7 @@ public class ConfigYamlGenerator {
         cardinalityEstimatorYamlGenerator(root, config);
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
+        wanReplicationYamlGenerator(root, config);
 
 
         DumpSettings dumpSettings = DumpSettings.builder()
@@ -67,22 +70,6 @@ public class ConfigYamlGenerator {
         Dump dump = new Dump(dumpSettings);
         return dump.dumpToString(document);
     }
-
-//    static void xxxGenerator(Map<String, Object> parent, Config config) {
-//        if (config.xxx.isEmpty()) {
-//            return;
-//        }
-//
-//        Map<String, Object> child = new LinkedHashMap<>();
-//        for (xxx subConfigAsObject : config.xxx.values()) {
-//            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
-//
-//
-//            child.put(subConfigAsObject.getName(), subConfigAsMap);
-//        }
-//
-//        parent.put(xxx, child);
-//    }
 
     static void mapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getMapConfigs().isEmpty()) {
@@ -459,6 +446,142 @@ public class ConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
+    static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getWanReplicationConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (WanReplicationConfig subConfigAsObject : config.getWanReplicationConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            Map<String, Object> wanBatchPublisherConfigsAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "batch-publisher", getWanBatchPublisherConfigsAsMap(subConfigAsObject.getBatchPublisherConfigs()));
+            addNonNullToMap(subConfigAsMap, "custom-publisher", getWanCustomPublisherConfigsAsMap(subConfigAsObject.getCustomPublisherConfigs()));
+            addNonNullToMap(subConfigAsMap, "consumer", getWanConsumerConfigsAsMap(subConfigAsObject.getConsumerConfig()));
+
+            child.put(subConfigAsObject.getName(), subConfigAsMap);
+        }
+
+        parent.put("wan-replication", child);
+    }
+
+    private static Map<String, Object> getWanConsumerConfigsAsMap(WanConsumerConfig wanConsumerConfig) {
+        if (wanConsumerConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> wanConsumerConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(wanConsumerConfigAsMap, "class-name", classNameOrImplClass(wanConsumerConfig.getClassName(), wanConsumerConfig.getImplementation()));
+        addNonNullToMap(wanConsumerConfigAsMap, "persist-wan-replicated-data", wanConsumerConfig.isPersistWanReplicatedData());
+        addNonNullToMap(wanConsumerConfigAsMap, "properties", getPropertiesAsMap(wanConsumerConfig.getProperties()));
+
+        return wanConsumerConfigAsMap;
+    }
+
+    private static Map<String, Object> getWanCustomPublisherConfigsAsMap(List<WanCustomPublisherConfig> wanCustomPublisherConfigs) {
+        if (wanCustomPublisherConfigs == null || wanCustomPublisherConfigs.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> wanBatchPublisherConfigsAsMap = new LinkedHashMap<>();
+        for (WanCustomPublisherConfig wanCustomPublisherConfig : wanCustomPublisherConfigs) {
+            Map<String, Object> wanCustomPublisherConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(wanCustomPublisherConfigAsMap, "class-name", wanCustomPublisherConfig.getClassName());
+            addNonNullToMap(wanCustomPublisherConfigAsMap, "properties", getPropertiesAsMap(wanCustomPublisherConfig.getProperties()));
+
+            wanBatchPublisherConfigsAsMap.put(wanCustomPublisherConfig.getPublisherId(), wanCustomPublisherConfigAsMap);
+        }
+
+        return wanBatchPublisherConfigsAsMap;
+    }
+
+    private static Map<String, Object> getWanBatchPublisherConfigsAsMap(List<WanBatchPublisherConfig> wanBatchPublisherConfigs) {
+        if (wanBatchPublisherConfigs == null || wanBatchPublisherConfigs.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> wanBatchPublisherConfigsAsMap = new LinkedHashMap<>();
+
+        for (WanBatchPublisherConfig wanBatchPublisherConfig : wanBatchPublisherConfigs) {
+            Map<String, Object> wanBatchPublisherConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "cluster-name", wanBatchPublisherConfig.getClusterName());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "batch-size", wanBatchPublisherConfig.getBatchSize());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "batch-max-delay-millis", wanBatchPublisherConfig.getBatchMaxDelayMillis());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "response-timeout-millis", wanBatchPublisherConfig.getResponseTimeoutMillis());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "acknowledge-type", wanBatchPublisherConfig.getAcknowledgeType().name());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "initial-publisher-state", wanBatchPublisherConfig.getInitialPublisherState().name());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "snapshot-enabled", wanBatchPublisherConfig.isSnapshotEnabled());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "idle-max-park-ns", wanBatchPublisherConfig.getIdleMaxParkNs());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "idle-min-park-ns", wanBatchPublisherConfig.getIdleMinParkNs());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "max-concurrent-invocations", wanBatchPublisherConfig.getMaxConcurrentInvocations());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "discovery-period-seconds", wanBatchPublisherConfig.getDiscoveryPeriodSeconds());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "use-endpoint-private-address", wanBatchPublisherConfig.isUseEndpointPrivateAddress());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "queue-full-behavior", wanBatchPublisherConfig.getQueueFullBehavior().name());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "max-target-endpoints", wanBatchPublisherConfig.getMaxTargetEndpoints());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "queue-capacity", wanBatchPublisherConfig.getQueueCapacity());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "properties", getPropertiesAsMap(wanBatchPublisherConfig.getProperties()));
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "target-endpoints", wanBatchPublisherConfig.getTargetEndpoints());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "endpoint", wanBatchPublisherConfig.getEndpoint());
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "sync", wrapObjectWithMap("consistency-check-strategy", wanBatchPublisherConfig.getSyncConfig().getConsistencyCheckStrategy().name()));
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "discovery-strategies", getDiscoveryConfigAsMap(wanBatchPublisherConfig.getDiscoveryConfig()));
+            addNonNullToMap(wanBatchPublisherConfigAsMap, "discovery-strategies", getDiscoveryConfigAsMap(wanBatchPublisherConfig.getDiscoveryConfig()));
+
+            for (AliasedDiscoveryConfig<?> aliasedDiscoveryConfig : aliasedDiscoveryConfigsFrom(wanBatchPublisherConfig)) {
+                addNonNullToMap(wanBatchPublisherConfigAsMap, aliasedDiscoveryConfig.getTag(), getAliasedDiscoveryConfigAsMap(aliasedDiscoveryConfig));
+            }
+
+            wanBatchPublisherConfigsAsMap.put(wanBatchPublisherConfig.getPublisherId(), wanBatchPublisherConfigAsMap);
+        }
+
+        return wanBatchPublisherConfigsAsMap;
+    }
+
+    private static Map<String, Object> getAliasedDiscoveryConfigAsMap(AliasedDiscoveryConfig<?> aliasedDiscoveryConfig) {
+        if (aliasedDiscoveryConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> aliasedDiscoveryConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(aliasedDiscoveryConfigAsMap, "enabled", aliasedDiscoveryConfig.isEnabled());
+        addNonNullToMap(aliasedDiscoveryConfigAsMap, "use-public-ip", aliasedDiscoveryConfig.isUsePublicIp());
+        for (String key : aliasedDiscoveryConfig.getProperties().keySet()) {
+            addNonNullToMap(aliasedDiscoveryConfigAsMap, key, aliasedDiscoveryConfig.getProperties().get(key));
+        }
+
+        return aliasedDiscoveryConfigAsMap;
+    }
+
+    private static Map<String, Object> getDiscoveryConfigAsMap(DiscoveryConfig discoveryConfig) {
+        if (discoveryConfig == null) {
+            return null;
+        }
+
+        Map<String, Object> discoveryConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(discoveryConfigAsMap, "node-filter", wrapObjectWithMap("class", classNameOrImplClass(discoveryConfig.getNodeFilterClass(), discoveryConfig.getNodeFilter())));
+
+        List<Map<String, Object>> discoveryStrategyConfigsAsList = new LinkedList<>();
+        for (DiscoveryStrategyConfig discoveryStrategyConfig : discoveryConfig.getDiscoveryStrategyConfigs()) {
+            Map<String, Object> discoveryStrategyConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(discoveryStrategyConfigAsMap, "enabled", "true");
+            addNonNullToMap(discoveryStrategyConfigAsMap, "class", classNameOrImplClass(discoveryStrategyConfig.getClassName(), discoveryStrategyConfig.getDiscoveryStrategyFactory()));
+            addNonNullToMap(discoveryStrategyConfigAsMap, "properties", getPropertiesAsMap(discoveryStrategyConfig.getProperties()));
+
+            discoveryStrategyConfigsAsList.add(discoveryStrategyConfigAsMap);
+        }
+
+        addNonNullToMap(discoveryConfigAsMap, "discovery-strategies", discoveryStrategyConfigsAsList);
+
+        return discoveryConfigAsMap;
+    }
+
     private static String getPartitioningStrategyAsString(PartitioningStrategyConfig partitioningStrategyConfig) {
         if (partitioningStrategyConfig == null) {
             return null;
@@ -750,6 +873,20 @@ public class ConfigYamlGenerator {
         }
 
         return listenerConfigsAsList;
+    }
+
+    private static Map<String, Object> getPropertiesAsMap(@SuppressWarnings("rawtypes") Map<String, Comparable> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> propertiesAsMap = new LinkedHashMap<>();
+
+        for (String key : properties.keySet()) {
+            addNonNullToMap(propertiesAsMap, key, properties.get(key));
+        }
+
+        return propertiesAsMap;
     }
 
     private static Map<String, Object> getPropertiesAsMap(Properties properties) {
