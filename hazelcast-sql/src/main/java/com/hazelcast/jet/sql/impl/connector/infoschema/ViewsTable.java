@@ -37,8 +37,12 @@ public class ViewsTable extends InfoSchemaTable {
     private static final List<TableField> FIELDS = asList(
             new TableField("table_catalog", QueryDataType.VARCHAR, false),
             new TableField("table_schema", QueryDataType.VARCHAR, false),
-            new TableField("view_name", QueryDataType.VARCHAR, false),
-            new TableField("view_query", QueryDataType.VARCHAR, false)
+            new TableField("table_name", QueryDataType.VARCHAR, false),
+            new TableField("view_query", QueryDataType.VARCHAR, false),
+            // FYI: standard tables, which is unused at the moment : check_option, is_updatable and insertable_into
+            new TableField("check_option", QueryDataType.VARCHAR, false),
+            new TableField("is_updatable", QueryDataType.VARCHAR, false),
+            new TableField("insertable_into", QueryDataType.VARCHAR, false)
     );
 
     private final String mappingsSchema;
@@ -70,7 +74,10 @@ public class ViewsTable extends InfoSchemaTable {
                     catalog(),
                     mappingsSchema,
                     v.name(),
-                    v.query()
+                    v.query(),
+                    "NONE",     // check_option, NONE by default
+                    "NO",       // is_updatable,    NO by default
+                    "NO"        // insertable_into, NO by default
             };
             rows.add(row);
         }

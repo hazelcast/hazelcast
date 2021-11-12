@@ -27,6 +27,9 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog.SCHEMA_NAME_PUBLIC;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+
 public class SqlCreateView extends SqlCreate {
     private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
 
@@ -77,5 +80,22 @@ public class SqlCreateView extends SqlCreate {
         writer.keyword("AS");
         writer.newlineAndIndent();
         query.unparse(writer, 0, 0);
+    }
+
+    /**
+     * Returns true if the view name is in a valid schema,
+     * that is it must be either:
+     * <ul>
+     *     <li>a simple name
+     *     <li>a name in schema "public"
+     *     <li>a name in schema "hazelcast.public"
+     * </ul>
+     */
+    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})
+    static boolean isViewNameValid(SqlIdentifier name) {
+        return name.names.size() == 1
+                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
+                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
+                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

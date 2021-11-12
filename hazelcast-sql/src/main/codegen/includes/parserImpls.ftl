@@ -486,7 +486,7 @@ SqlCreate SqlCreateView(Span span, boolean replace) :
 {
     <VIEW>
 
-    name = SimpleIdentifier()
+    name = CompoundIdentifier()
 
     <AS>
 
