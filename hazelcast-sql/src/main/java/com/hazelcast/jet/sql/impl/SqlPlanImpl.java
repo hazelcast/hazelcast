@@ -67,6 +67,12 @@ abstract class SqlPlanImpl extends SqlPlan {
         super(planKey);
     }
 
+    public boolean isPlanValid(PlanCheckContext context) {
+        throw new UnsupportedOperationException(isCacheable()
+                ? "override this method"
+                : "method should not be called for non-cacheable plans");
+    }
+
     protected void checkPermissions(SqlSecurityContext context, DAG dag) {
         if (!context.isSecurityEnabled()) {
             return;
@@ -122,11 +128,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new SqlPermission(mapping.name(), ACTION_CREATE));
         }
@@ -173,11 +174,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -258,11 +254,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new SqlPermission(name, ACTION_INDEX));
         }
@@ -309,11 +300,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -429,11 +415,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -485,11 +466,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -531,11 +507,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -583,11 +554,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -629,11 +595,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -686,11 +647,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -733,11 +689,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return true;
         }
@@ -771,11 +722,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
