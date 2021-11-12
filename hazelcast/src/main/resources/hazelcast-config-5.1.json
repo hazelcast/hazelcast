@@ -3924,6 +3924,9 @@
                   "type": "string",
                   "description": "Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented."
                 },
+                "endpoint": {
+                  "type": "string"
+                },
                 "sync": {
                   "type": "object",
                   "additionalProperties": false,
