@@ -4638,7 +4638,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="in-memory-tier">
+    <xs:complexType name="memory-tier">
         <xs:annotation>
             <xs:documentation>
                 Defines configuration for the in-memory tier of a tiered store.
@@ -4700,7 +4700,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="in-memory-tier" type="in-memory-tier">
+            <xs:element name="memory-tier" type="memory-tier">
                 <xs:annotation>
                     <xs:documentation>
                         In-memory tier.

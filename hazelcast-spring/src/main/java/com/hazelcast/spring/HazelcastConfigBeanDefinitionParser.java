@@ -1300,7 +1300,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, tieredStoreConfigBuilder);
             for (Node child: childElements(node)) {
                 String name = cleanNodeName(child);
-                if ("in-memory-tier".equals(name)) {
+                if ("memory-tier".equals(name)) {
                     handleTSInMemoryTierConfig(tieredStoreConfigBuilder, child);
                 } else if ("disk-tier".equals(name)) {
                     handleTSDiskTierConfig(tieredStoreConfigBuilder, child);

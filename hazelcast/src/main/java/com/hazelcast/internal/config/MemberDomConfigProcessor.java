@@ -491,7 +491,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(tsRoot)) {
             String name = cleanNodeName(n);
 
-            if (matches("in-memory-tier", name)) {
+            if (matches("memory-tier", name)) {
                 tieredStoreConfig.setInMemoryTierConfig(createTSInMemoryTierConfig(n));
             } else if (matches("disk-tier", name)) {
                 tieredStoreConfig.setDiskTierConfig(createTSDiskTierConfig(n));

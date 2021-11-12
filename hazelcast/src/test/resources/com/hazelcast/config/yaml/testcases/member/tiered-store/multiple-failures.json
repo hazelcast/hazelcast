@@ -14,7 +14,7 @@
         "my-map-2": {
           "tiered-store": {
             "enabled": true,
-            "in-memory-tier": {
+            "memory-tier": {
               "capacity": -1
             },
             "disk-tier": {
@@ -72,8 +72,8 @@
             "message": "3 schema violations found"
           },
           {
-            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/in-memory-tier/properties/capacity",
-            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/in-memory-tier/capacity",
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
+            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity",
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "-1 is not greater or equal to 1"

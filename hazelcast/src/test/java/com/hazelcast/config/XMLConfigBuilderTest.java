@@ -3049,7 +3049,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testTieredStore() {
-        // in-memory-tier parameter(s)
+        // memory-tier parameter(s)
         long inMemoryTierCapacityMB = 1024;
 
         // disk-tier parameters
@@ -3060,9 +3060,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"my-map\">"
                 + "    <tiered-store enabled=\"true\">"
-                + "        <in-memory-tier>"
+                + "        <memory-tier>"
                 + "            <capacity>" + inMemoryTierCapacityMB + "</capacity>"
-                + "        </in-memory-tier>"
+                + "        </memory-tier>"
                 + "        <disk-tier enabled=\"true\" capacity=\"" + diskTierCapacityGB + "\">"
                 + "            <base-dir>" + baseDir + "</base-dir>"
                 + "            <block-size>" + blockSize + "</block-size>"

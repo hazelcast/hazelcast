@@ -10,7 +10,7 @@
         "my-map-1": {
           "tiered-store": {
             "enabled": true,
-            "in-memory-tier": {
+            "memory-tier": {
               "capacity": 4096
             }
           }
@@ -27,7 +27,7 @@
         "my-map-3": {
           "tiered-store": {
             "enabled": true,
-            "in-memory-tier": {
+            "memory-tier": {
               "capacity": 8192
             },
             "disk-tier": {

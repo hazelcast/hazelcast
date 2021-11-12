@@ -470,9 +470,9 @@
 
             <hz:map name="testMap5">
                 <hz:tiered-store enabled="true">
-                    <hz:in-memory-tier>
+                    <hz:memory-tier>
                         <hz:capacity>128</hz:capacity>
-                    </hz:in-memory-tier>
+                    </hz:memory-tier>
                     <hz:disk-tier enabled="true" capacity="108">
                         <hz:base-dir>tiered-store_base_dir</hz:base-dir>
                         <hz:block-size>256</hz:block-size>

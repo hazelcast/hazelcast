@@ -1472,7 +1472,7 @@
                 "type": "boolean",
                 "description": "True if Tiered-Store is enabled, false otherwise."
               },
-              "in-memory-tier": {
+              "memory-tier": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {

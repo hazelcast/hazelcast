@@ -3062,7 +3062,7 @@ public class YamlConfigBuilderTest
     @Override
     @Test
     public void testTieredStore() {
-        // in-memory-tier parameter(s)
+        // memory-tier parameter(s)
         long inMemoryTierCapacityMB = 1024;
 
         // disk-tier parameters
@@ -3076,7 +3076,7 @@ public class YamlConfigBuilderTest
                 + "    my-map:\n"
                 + "      tiered-store:\n"
                 + "        enabled: true\n"
-                + "        in-memory-tier:\n"
+                + "        memory-tier:\n"
                 + "          capacity: " + inMemoryTierCapacityMB + "\n"
                 + "        disk-tier:\n"
                 + "          enabled: true\n"
