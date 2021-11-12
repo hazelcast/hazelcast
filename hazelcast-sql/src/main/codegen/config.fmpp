@@ -23,10 +23,14 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
@@ -46,6 +50,7 @@ data: {
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "IF"
+      "INDEX"
       "JOB"
       "JOBS"
       "MAPPING"
@@ -448,6 +453,7 @@ data: {
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
       "SqlCreateMapping"
+      "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateSnapshot"
     ]
@@ -457,6 +463,7 @@ data: {
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
       "SqlDropMapping"
+      "SqlDropIndex"
       "SqlDropJob"
       "SqlDropSnapshot"
     ]
