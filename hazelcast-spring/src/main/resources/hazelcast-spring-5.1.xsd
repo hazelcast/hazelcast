@@ -4662,7 +4662,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tstore">
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tiered-store">
                 <xs:annotation>
                     <xs:documentation>
                         Base directory for storing files.

@@ -1494,7 +1494,7 @@
                   },
                   "base-dir": {
                     "type": "string",
-                    "default": "tstore",
+                    "default": "tiered-store",
                     "description": "Base directory for storing files."
                   },
                   "block-size": {

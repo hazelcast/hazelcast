@@ -35,7 +35,7 @@ public class TSDiskTierConfig implements IdentifiedDataSerializable {
     /**
      * Default base directory for the tiered-store.
      */
-    public static final String DEFAULT_TSTORE_BASE_DIR = "tstore";
+    public static final String DEFAULT_TSTORE_BASE_DIR = "tiered-store";
 
     /**
      * Default block/sector size in bytes.

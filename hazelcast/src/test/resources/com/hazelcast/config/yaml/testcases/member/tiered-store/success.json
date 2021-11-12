@@ -32,7 +32,7 @@
             },
             "disk-tier": {
               "enabled": true,
-              "base-dir": "/dev/hazelcast/tstore",
+              "base-dir": "/dev/hazelcast/tiered-store",
               "block-size": 4096,
               "capacity": 512
             }
