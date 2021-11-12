@@ -89,7 +89,7 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "TieredStoreMemoryTierConfig{"
+        return "MemoryTierConfig{"
                 + "capacity=" + capacity
                 + '}';
     }
