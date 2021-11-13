@@ -101,12 +101,26 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
+    /**
+     * Not supported in open source version, so test is expected to throw exception.
+     */
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapConfig_TieredStore() {
+        checkMapConfig(getMapConfig(true), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+    }
+
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
         MapConfig mapConfig = new MapConfig()
                 .setInMemoryFormat(inMemoryFormat)
                 .setPerEntryStatsEnabled(true);
         mapConfig.getMergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName());
+        return mapConfig;
+    }
+
+    private MapConfig getMapConfig(boolean tieredStoreEnabled) {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.getTieredStoreConfig().setEnabled(tieredStoreEnabled);
         return mapConfig;
     }
 

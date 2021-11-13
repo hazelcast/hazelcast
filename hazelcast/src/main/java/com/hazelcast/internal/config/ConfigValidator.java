@@ -40,6 +40,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -129,6 +130,7 @@ public final class ConfigValidator {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
         checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
+        checkNotTieredStoreWhenOpenSource(mapConfig.getTieredStoreConfig());
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
@@ -634,6 +636,19 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
+        }
+    }
+
+    /**
+     * Throws {@link InvalidConfigurationException} if the given {@link TieredStoreConfig}
+     * is enabled and Hazelcast is OS.
+     *
+     * @param tieredStoreConfig supplied tieredStoreConfig
+     */
+    private static void checkNotTieredStoreWhenOpenSource(TieredStoreConfig tieredStoreConfig) {
+        if (tieredStoreConfig.isEnabled() && !getBuildInfo().isEnterprise()) {
+            throw new InvalidConfigurationException("Tiered-Store is supported in Hazelcast Enterprise only."
+                    + " Please make sure you have Hazelcast Enterprise JARs on your classpath.");
         }
     }
 
