@@ -67,13 +67,19 @@ public class LocalReplicationStatsImpl implements LocalReplicationStats {
         return fullPartitionReplicationCount;
     }
 
-    public void incrementFullPartitionReplicationRecordsCount(long delta) {
+    public void incrementFullPartitionReplicationCount() {
         FULL_PARTITION_REPLICATION_COUNT.incrementAndGet(this);
+    }
+
+    public void incrementDiffPartitionReplicationCount() {
+        DIFF_PARTITION_REPLICATION_COUNT.incrementAndGet(this);
+    }
+
+    public void incrementFullPartitionReplicationRecordsCount(long delta) {
         FULL_PARTITION_REPLICATION_RECORDS_COUNT.addAndGet(this, delta);
     }
 
     public void incrementDiffPartitionReplicationRecordsCount(long delta) {
-        DIFF_PARTITION_REPLICATION_COUNT.incrementAndGet(this);
         DIFF_PARTITION_REPLICATION_RECORDS_COUNT.addAndGet(this, delta);
     }
 

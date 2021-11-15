@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -46,6 +47,7 @@ public class MapChunkContext {
     private final ExpirySystem expirySystem;
     private final MapServiceContext mapServiceContext;
     private final RecordStore recordStore;
+    private final LocalMapStatsImpl mapStats;
 
     private ServiceNamespace serviceNamespace;
     private Iterator<Map.Entry<Data, Record>> iterator;
@@ -60,6 +62,7 @@ public class MapChunkContext {
         this.iterator = recordStore.iterator();
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
+        this.mapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(mapName);
     }
 
     public ILogger getLogger(String className) {
@@ -101,6 +104,14 @@ public class MapChunkContext {
 
     public ExpiryMetadata getExpiryMetadata(Data dataKey) {
         return expirySystem.getExpiryMetadata(dataKey);
+    }
+
+    public LocalMapStatsImpl getMapStats() {
+        return mapStats;
+    }
+
+    public MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
     }
 
     public boolean isRecordStoreLoaded() {
