@@ -3065,26 +3065,26 @@ public class YamlConfigBuilderTest
     public void testDevice() {
         String deviceName = "amazing_device";
         String baseDir = "base-directory";
+        int blockSize = 2048;
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  device:\n"
                 + "    device-name: " + deviceName + "\n"
-                + "    base-dir: " + baseDir + "\n";
+                + "    base-dir: " + baseDir + "\n"
+                + "    block-size: " + blockSize + "\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         DeviceConfig deviceConfig = config.getDeviceConfig();
 
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
     }
 
     @Override
     @Test
     public void testTieredStore() {
-        String baseDir = "/";
-        int blockSize = 2048;
-
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
@@ -3094,9 +3094,7 @@ public class YamlConfigBuilderTest
                 + "        memory-tier:\n"
                 + "          capacity: 1024 MB\n"
                 + "        disk-tier:\n"
-                + "          enabled: true\n"
-                + "          base-dir: " + baseDir + "\n"
-                + "          block-size: " + blockSize + "\n";
+                + "          enabled: true\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
@@ -3106,10 +3104,7 @@ public class YamlConfigBuilderTest
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1024, memoryTierConfig.getCapacity().getValue());
 
-        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
-        assertTrue(diskTierConfig.isEnabled());
-        assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
-        assertEquals(blockSize, diskTierConfig.getBlockSize());
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
     }
 
     @Override

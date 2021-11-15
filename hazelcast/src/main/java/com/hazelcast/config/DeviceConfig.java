@@ -29,10 +29,21 @@ public class DeviceConfig {
     /**
      * Default base directory for the device.
      */
-    public static final String DEFAULT_DEVICE_BASE_DIR = "tiered-store-device";
+    public static final String DEFAULT_DEVICE_BASE_DIR = "tiered-store";
 
-    private String deviceName;
+    /**
+     * Default block/sector size in bytes.
+     */
+    public static final int DEFAULT_BLOCK_SIZE_IN_BYTES = 4096;
+
+    /**
+     * Default device name.
+     */
+    public static final String DEFAULT_DEVICE_NAME = "local-disk";
+
+    private String deviceName = DEFAULT_DEVICE_NAME;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
+    private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
 
     public DeviceConfig() {
 
@@ -43,21 +54,59 @@ public class DeviceConfig {
         baseDir = deviceConfig.getBaseDir();
     }
 
+    /**
+     * Returns the device name.
+     */
     public String getDeviceName() {
         return deviceName;
     }
 
+    /**
+     * Sets the device name.
+     *
+     * @param deviceName device name
+     * @return this DeviceConfig
+     */
     public DeviceConfig setDeviceName(String deviceName) {
         this.deviceName = deviceName;
         return this;
     }
 
+    /**
+     * Base directory for this device.
+     * Can be an absolute or relative path to the node startup directory.
+     */
     public File getBaseDir() {
         return baseDir;
     }
 
+    /**
+     * Sets the base directory for this device.
+     *
+     * @param baseDir base directory.
+     * @return this DeviceConfig
+     */
     public DeviceConfig setBaseDir(File baseDir) {
         this.baseDir = baseDir;
+        return this;
+    }
+
+    /**
+     * Returns disk block/sector size in bytes.
+     *
+     * @return block size
+     */
+    public int getBlockSize() {
+        return blockSize;
+    }
+
+    /**
+     * Sets the disk block/sector size in bytes.
+     * @param blockSize block size.
+     * @return this DeviceConfig
+     */
+    public DeviceConfig setBlockSize(int blockSize) {
+        this.blockSize = blockSize;
         return this;
     }
 
@@ -72,6 +121,9 @@ public class DeviceConfig {
 
         DeviceConfig that = (DeviceConfig) o;
 
+        if (blockSize != that.blockSize) {
+            return false;
+        }
         if (!Objects.equals(deviceName, that.deviceName)) {
             return false;
         }
@@ -82,6 +134,7 @@ public class DeviceConfig {
     public final int hashCode() {
         int result = deviceName != null ? deviceName.hashCode() : 0;
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
+        result = 31 * result + blockSize;
         return result;
     }
 
@@ -90,6 +143,7 @@ public class DeviceConfig {
         return "DeviceConfig{"
                 + "deviceName='" + deviceName + '\''
                 + ", baseDir=" + baseDir
+                + ", blockSize=" + blockSize
                 + '}';
     }
 }

@@ -1496,17 +1496,6 @@
                   "enabled": {
                     "type": "boolean",
                     "description": "True to enable using disk as the second memory tier, false otherwise."
-                  },
-                  "base-dir": {
-                    "type": "string",
-                    "default": "tiered-store",
-                    "description": "Base directory for storing files."
-                  },
-                  "block-size": {
-                    "type": "integer",
-                    "minimum": 512,
-                    "default": 4096,
-                    "description": "Device block/sector size in bytes. The default is 4096. The minimum is 512."
                   }
                 },
                 "required": ["enabled"]
@@ -3695,15 +3684,21 @@
       "properties": {
         "device-name": {
           "type": "string",
+          "default": "local-disk",
           "description": "Device name."
         },
         "base-dir": {
           "type": "string",
-          "default": "tiered-store-device",
-          "description": "Base directory in the device that will be used for tiered-store."
+          "default": "tiered-store",
+          "description": "Device base directory that will be used for tiered-store."
+        },
+        "block-size": {
+          "type": "integer",
+          "minimum": 512,
+          "default": 4096,
+          "description": "Device block/sector size in bytes. The default is 4096. The minimum is 512."
         }
-      },
-      "required": ["device-name"]
+      }
     },
     "SocketEndpointConfig": {
       "allOf": [

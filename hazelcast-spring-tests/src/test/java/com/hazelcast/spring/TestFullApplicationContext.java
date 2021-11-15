@@ -486,10 +486,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(128L, memoryTierConfig.getCapacity().getValue());
 
-        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
-        assertTrue(diskTierConfig.isEnabled());
-        assertEquals("tiered-store_base_dir", diskTierConfig.getBaseDir().getName());
-        assertEquals(512, diskTierConfig.getBlockSize());
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
     }
 
     @Test
@@ -1365,10 +1362,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testDevice() {
         String deviceName = "tiered_store_device";
         File baseDir = new File("/dev/devices/tiered_store_device");
+        int blockSize = 8192;
 
         DeviceConfig deviceConfig = config.getDeviceConfig();
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(baseDir, deviceConfig.getBaseDir());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
     }
 
     @Test

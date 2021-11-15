@@ -495,6 +495,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 deviceConfig.setDeviceName(getTextContent(n));
             } else if (matches("base-dir", name)) {
                 deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches("block-size", name)) {
+                deviceConfig.setBlockSize(getIntegerValue("block-size", getTextContent(n)));
             }
         }
         config.setDeviceConfig(deviceConfig);
@@ -533,17 +535,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         diskTierConfig.setEnabled(enabled);
 
-        String baseDirName = "base-dir";
-        String blockSizeName = "block-size";
-
-        for (Node n : childElements(node)) {
-            String name = cleanNodeName(n);
-            if (matches(baseDirName, name)) {
-                diskTierConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
-            } else if (matches(blockSizeName, name)) {
-                diskTierConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
-            }
-        }
         return diskTierConfig;
     }
 

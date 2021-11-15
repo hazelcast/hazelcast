@@ -3052,11 +3052,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testDevice() {
         String deviceName = "amazing_device";
         String baseDir = "base-directory";
+        int blockSize = 2048;
 
         String xml = HAZELCAST_START_TAG
                 + "<device>"
                 + "    <device-name>" + deviceName + "</device-name>"
                 + "    <base-dir>" + baseDir + "</base-dir>"
+                + "    <block-size>" + blockSize + "</block-size>"
                 + "</device>\n"
                 + HAZELCAST_END_TAG;
 
@@ -3065,24 +3067,19 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
     }
 
     @Override
     @Test
     public void testTieredStore() {
-        String baseDir = "/";
-        int blockSize = 2048;
-
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"my-map\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
                 + "            <capacity>1024 MB</capacity>"
                 + "        </memory-tier>"
-                + "        <disk-tier enabled=\"true\">"
-                + "            <base-dir>" + baseDir + "</base-dir>"
-                + "            <block-size>" + blockSize + "</block-size>"
-                + "        </disk-tier>"
+                + "        <disk-tier enabled=\"true\"/>"
                 + "    </tiered-store>"
                 + "</map>\n"
                 + HAZELCAST_END_TAG;
@@ -3095,10 +3092,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1024, memoryTierConfig.getCapacity().getValue());
 
-        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
-        assertTrue(diskTierConfig.isEnabled());
-        assertEquals(new File(baseDir).getAbsoluteFile(), diskTierConfig.getBaseDir());
-        assertEquals(blockSize, diskTierConfig.getBlockSize());
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
     }
 
     @Override

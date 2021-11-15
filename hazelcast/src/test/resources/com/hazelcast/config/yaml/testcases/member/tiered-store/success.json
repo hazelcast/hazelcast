@@ -3,7 +3,8 @@
     "hazelcast": {
       "device": {
         "device-name": "tiered_store_device_name",
-        "base-dir": "tiered_store_base_dir"
+        "base-dir": "tiered_store_base_dir",
+        "block-size": 8192
       },
       "map": {
         "my-map-0": {
@@ -34,9 +35,7 @@
               "capacity": "8192 KB"
             },
             "disk-tier": {
-              "enabled": true,
-              "base-dir": "/dev/hazelcast/tiered-store",
-              "block-size": 4096
+              "enabled": true
             }
           }
         }

@@ -431,6 +431,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     deviceConfigBuilder.addPropertyValue("deviceName", getTextContent(n));
                 } else if ("base-dir".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("baseDir", getTextContent(n));
+                } else if ("block-size".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("blockSize",
+                            getIntegerValue("block-size", getTextContent(n)));
                 }
             }
             configBuilder.addPropertyValue("deviceConfig", deviceConfigBuilder.getBeanDefinition());
@@ -1349,17 +1352,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleDiskTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
             BeanDefinitionBuilder diskTierConfig = createBeanBuilder(DiskTierConfig.class);
             fillAttributeValues(node, diskTierConfig);
-
-            for (Node child: childElements(node)) {
-                String name = cleanNodeName(child);
-                if ("base-dir".equals(name)) {
-                    diskTierConfig.addPropertyValue("baseDir", getTextContent(child));
-                } else if ("block-size".equals(name)) {
-                    diskTierConfig.addPropertyValue("blockSize",
-                            getIntegerValue("block-size", getTextContent(child)));
-                }
-            }
-
             configBuilder.addPropertyValue("diskTierConfig", diskTierConfig.getBeanDefinition());
         }
 
