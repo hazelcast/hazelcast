@@ -569,18 +569,21 @@ abstract class SqlPlanImpl extends SqlPlan {
     static class CreateViewPlan extends SqlPlanImpl {
         private final View view;
         private final boolean replace;
+        private final boolean ifNotExists;
         private final PlanExecutor planExecutor;
 
         CreateViewPlan(
                 PlanKey planKey,
                 View view,
                 boolean replace,
+                boolean ifNotExists,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.view = view;
             this.replace = replace;
+            this.ifNotExists = ifNotExists;
             this.planExecutor = planExecutor;
         }
 
@@ -590,6 +593,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         boolean isReplace() {
             return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
         }
 
         @Override

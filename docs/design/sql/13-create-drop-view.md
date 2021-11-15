@@ -44,7 +44,7 @@ the view) may be inlined into another query which uses the view.
 Proposed grammar:
 
 ```
-CREATE [ OR REPLACE ] VIEW name AS query
+CREATE [ OR REPLACE ] VIEW [ IF NOT EXISTS ] name AS query
 ```
 
 Example:

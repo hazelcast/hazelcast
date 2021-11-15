@@ -231,7 +231,7 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateViewPlan plan) {
-        catalog.createView(plan.view(), plan.isReplace());
+        catalog.createView(plan.view(), plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 

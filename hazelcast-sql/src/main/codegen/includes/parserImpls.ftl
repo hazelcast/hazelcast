@@ -480,12 +480,15 @@ SqlDrop SqlDropSnapshot(Span span, boolean replace) :
 SqlCreate SqlCreateView(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
     SqlIdentifier name;
     SqlNode query;
 }
 {
     <VIEW>
-
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
     name = CompoundIdentifier()
 
     <AS>
@@ -495,6 +498,7 @@ SqlCreate SqlCreateView(Span span, boolean replace) :
         return new com.hazelcast.jet.sql.impl.parse.SqlCreateView(
             startPos,
             replace,
+            ifNotExists,
             name,
             query
         );

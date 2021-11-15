@@ -24,9 +24,12 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 
@@ -36,9 +39,8 @@ public class SqlCreateView extends SqlCreate {
     private final SqlIdentifier name;
     private SqlNode query;
 
-
-    public SqlCreateView(SqlParserPos pos, boolean replace, SqlIdentifier name, SqlNode query) {
-        super(CREATE_VIEW, pos, replace, false);
+    public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
+        super(CREATE_VIEW, pos, replace, ifNotExists);
         this.name = name;
         this.query = query;
     }
@@ -76,10 +78,25 @@ public class SqlCreateView extends SqlCreate {
             writer.keyword("CREATE");
         }
         writer.keyword("VIEW");
+        if (ifNotExists) {
+            writer.keyword("IF NOT EXISTS");
+        }
         name.unparse(writer, leftPrec, rightPrec);
         writer.keyword("AS");
         writer.newlineAndIndent();
         query.unparse(writer, 0, 0);
+    }
+
+    @Override
+    public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (getReplace() && ifNotExists) {
+            throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
+        }
+
+        if (!isViewNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
+        }
+        query = validator.validate(query);
     }
 
     /**

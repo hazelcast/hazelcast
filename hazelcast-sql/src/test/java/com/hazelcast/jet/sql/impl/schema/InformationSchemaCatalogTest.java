@@ -77,6 +77,8 @@ public class InformationSchemaCatalogTest {
         catalog.registerListener(listener);
     }
 
+    // region mapping storage tests
+
     @Test
     public void when_createsInvalidMapping_then_throws() {
         // given
@@ -199,7 +201,20 @@ public class InformationSchemaCatalogTest {
         given(tableStorage.putIfAbsent(view.name(), view)).willReturn(true);
 
         // when
-        catalog.createView(view, false);
+        catalog.createView(view, false, false);
+
+        // then
+        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
+    }
+
+    @Test
+    public void when_createsViewIfNotExists_then_succeeds() {
+        // given
+        View view = view();
+        given(tableStorage.putIfAbsent(view.name(), view)).willReturn(true);
+
+        // when
+        catalog.createView(view, false, true);
 
         // then
         verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
@@ -211,10 +226,22 @@ public class InformationSchemaCatalogTest {
         View view = view();
 
         // when
-        catalog.createView(view, true);
+        catalog.createView(view, true, false);
 
         // then
         verify(tableStorage).put(eq(view.name()), isA(View.class));
+    }
+
+    @Test
+    public void when_createsDuplicateViewsIfReplaceAndIfNotExists_then_succeeds() {
+        // given
+        View view = view();
+
+        // when
+        catalog.createView(view, true, true);
+
+        // then
+        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
     }
 
     @Test
@@ -225,9 +252,24 @@ public class InformationSchemaCatalogTest {
 
         // when
         // then
-        assertThatThrownBy(() -> catalog.createView(view, false))
+        assertThatThrownBy(() -> catalog.createView(view, false, false))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Mapping or view with such name exists: name");
+        verifyNoInteractions(listener);
+    }
+
+    @Test
+    public void when_removesNonExistingView_then_throws() {
+        // given
+        String name = "name";
+
+        given(tableStorage.removeView(name)).willReturn(null);
+
+        // when
+        // then
+        assertThatThrownBy(() -> catalog.removeView(name, false))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("View does not exist: name");
         verifyNoInteractions(listener);
     }
 

@@ -139,21 +139,18 @@ public class InformationSchemaCatalog implements TableResolver {
 
     // region view
 
-    public void createView(View view, boolean replace) {
-        if (replace) {
+    public void createView(View view, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(view.name(), view);
+        } else if (replace) {
             tableStorage.put(view.name(), view);
-            return;
-        }
-
-        if (!tableStorage.putIfAbsent(view.name(), view)) {
+        } else if (!tableStorage.putIfAbsent(view.name(), view)) {
             throw QueryException.error("Mapping or view with such name exists: " + view.name());
         }
     }
 
     public void removeView(String name, boolean ifExists) {
-        if (tableStorage.removeView(name) != null) {
-            listeners.forEach(TableListener::onTableChanged);
-        } else if (!ifExists) {
+        if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
         }
     }

@@ -102,6 +102,13 @@ public class CreateViewStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_replaceViewWithIfNotExists_then_throws() {
+        String sql = "CREATE OR REPLACE VIEW IF NOT EXISTS v AS SELECT * FROM map";
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("OR REPLACE in conjunction with IF NOT EXISTS not supported");
+    }
+
+    @Test
     public void when_createsViewWithExistingMappingWithEqualName_then_throws() {
         createMapping("v", Integer.class, Integer.class);
 
@@ -121,5 +128,12 @@ public class CreateViewStatementTest extends SqlTestSupport {
         sql = "DROP VIEW v";
         instance().getSql().execute(sql);
         assertThat(viewStorage.containsKey("v")).isFalse();
+    }
+
+    @Test
+    public void when_dropAbsentViewWithIfExists_then_throws() {
+        String sql = "DROP VIEW v";
+        assertThatThrownBy(() -> instance().getSql().execute(sql))
+                .hasMessageContaining("View does not exist: v");
     }
 }
