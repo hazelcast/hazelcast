@@ -39,6 +39,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int LEN = JSON_VALUE + 1;
 
+    private static final SqlSerializationFactory SERIALIZATION_FACTORY = lookupSerializationFactory();
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -47,27 +49,22 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     @SuppressWarnings("unchecked")
     @Override
     public DataSerializableFactory createFactory() {
+
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[JSON_QUERY] = arg -> createInstance(
-                "com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction"
-        );
-        constructors[JSON_PARSE] = arg -> createInstance(
-                "com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction"
-        );
-        constructors[JSON_VALUE] = arg -> createInstance(
-                "com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction"
-        );
+        constructors[JSON_QUERY] = arg -> SERIALIZATION_FACTORY.createJsonQueryFunction();
+        constructors[JSON_PARSE] = arg -> SERIALIZATION_FACTORY.createJsonParseFunction();
+        constructors[JSON_VALUE] = arg -> SERIALIZATION_FACTORY.createJsonValueFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
 
-    private IdentifiedDataSerializable createInstance(String className) {
+    private static SqlSerializationFactory lookupSerializationFactory() {
         try {
-            final Class<?> clazz = Class.forName(className);
-            return (IdentifiedDataSerializable) clazz.newInstance();
+            final Class<?> clazz = Class.forName("com.hazelcast.jet.sql.impl.JetSqlSerializationFactory");
+            return (SqlSerializationFactory) clazz.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ignored) {
-            return null;
+            return new NoopSqlSerializationFactory();
         }
     }
 }
