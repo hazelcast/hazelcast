@@ -24,6 +24,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -973,6 +974,16 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setPersistenceConfig(PersistenceConfig prConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public DeviceConfig getDeviceConfig() {
+        return staticConfig.getDeviceConfig();
+    }
+
+    @Override
+    public Config setDeviceConfig(DeviceConfig deviceConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

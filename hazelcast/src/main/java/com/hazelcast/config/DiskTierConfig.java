@@ -52,7 +52,7 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
 
     public DiskTierConfig(DiskTierConfig diskTierConfig) {
         enabled = diskTierConfig.isEnabled();
-        baseDir = new File(diskTierConfig.getBaseDir().getAbsolutePath());
+        baseDir = diskTierConfig.getBaseDir();
         blockSize = diskTierConfig.getBlockSize();
     }
 

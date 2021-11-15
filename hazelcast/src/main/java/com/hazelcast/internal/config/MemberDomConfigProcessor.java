@@ -30,6 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -180,6 +181,7 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
@@ -368,6 +370,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSql(node);
         } else if (matches(JET.getName(), nodeName)) {
             handleJet(node);
+        } else if (matches(DEVICE.getName(), nodeName)) {
+            handleDevice(node);
         } else {
             return true;
         }
@@ -482,6 +486,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setPersistenceConfig(prConfig);
     }
 
+    private void handleDevice(Node deviceRoot) {
+        DeviceConfig deviceConfig = new DeviceConfig();
+
+        for (Node n : childElements(deviceRoot)) {
+            String name = cleanNodeName(n);
+            if (matches("device-name", name)) {
+                deviceConfig.setDeviceName(getTextContent(n));
+            } else if (matches("base-dir", name)) {
+                deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            }
+        }
+        config.setDeviceConfig(deviceConfig);
+    }
     private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
         TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 

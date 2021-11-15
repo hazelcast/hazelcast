@@ -201,6 +201,8 @@ public class Config {
 
     private JetConfig jetConfig = new JetConfig();
 
+    private DeviceConfig deviceConfig = new DeviceConfig();
+
     public Config() {
     }
 
@@ -2633,6 +2635,28 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the Device configuration for this hazelcast instance.
+     *
+     * @return device configuration
+     */
+    public DeviceConfig getDeviceConfig() {
+        return deviceConfig;
+    }
+
+    /**
+     * Sets the Device configuration.
+     *
+     * @param deviceConfig Device configuration
+     * @return this config instance
+     * @throws NullPointerException if the {@code deviceConfig} parameter is {@code null}
+     */
+    public Config setDeviceConfig(DeviceConfig deviceConfig) {
+        checkNotNull(deviceConfig, "Device config cannot be null!");
+        this.deviceConfig = deviceConfig;
+        return this;
+    }
+
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         return crdtReplicationConfig;
     }
@@ -3021,6 +3045,7 @@ public class Config {
                 + ", metricsConfig=" + metricsConfig
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
+                + ", deviceConfig=" + deviceConfig
                 + '}';
     }
 }

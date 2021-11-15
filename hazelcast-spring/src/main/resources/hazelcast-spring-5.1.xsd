@@ -1378,6 +1378,7 @@
                         <xs:element name="sql" type="sql" minOccurs="0"/>
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="device" type="device" minOccurs="0"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -4636,6 +4637,30 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="device">
+        <xs:annotation>
+            <xs:documentation>
+                Device configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="device-name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tiered-store-device">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory in the device that will be used for tiered-store.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="memory-tier">

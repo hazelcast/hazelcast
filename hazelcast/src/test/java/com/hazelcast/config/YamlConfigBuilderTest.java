@@ -3062,6 +3062,25 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    public void testDevice() {
+        String deviceName = "amazing_device";
+        String baseDir = "base-directory";
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  device:\n"
+                + "    device-name: " + deviceName + "\n"
+                + "    base-dir: " + baseDir + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        DeviceConfig deviceConfig = config.getDeviceConfig();
+
+        assertEquals(deviceName, deviceConfig.getDeviceName());
+        assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+    }
+
+    @Override
+    @Test
     public void testTieredStore() {
         String baseDir = "/";
         int blockSize = 2048;

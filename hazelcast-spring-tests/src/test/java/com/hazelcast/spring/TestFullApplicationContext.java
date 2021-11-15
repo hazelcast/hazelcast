@@ -34,6 +34,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -1358,6 +1359,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Test
+    public void testDevice() {
+        String deviceName = "tiered_store_device";
+        File baseDir = new File("/dev/devices/tiered_store_device");
+
+        DeviceConfig deviceConfig = config.getDeviceConfig();
+        assertEquals(deviceName, deviceConfig.getDeviceName());
+        assertEquals(baseDir, deviceConfig.getBaseDir());
     }
 
     @Test

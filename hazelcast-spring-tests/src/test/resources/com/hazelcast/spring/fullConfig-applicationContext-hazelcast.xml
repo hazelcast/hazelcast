@@ -1061,6 +1061,10 @@
                     <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
                 </hz:edge-defaults>
             </hz:jet>
+            <hz:device>
+                <hz:device-name>tiered_store_device</hz:device-name>
+                <hz:base-dir>/dev/devices/tiered_store_device</hz:base-dir>
+            </hz:device>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>

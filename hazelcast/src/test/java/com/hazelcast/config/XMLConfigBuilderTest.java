@@ -3049,6 +3049,26 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testDevice() {
+        String deviceName = "amazing_device";
+        String baseDir = "base-directory";
+
+        String xml = HAZELCAST_START_TAG
+                + "<device>"
+                + "    <device-name>" + deviceName + "</device-name>"
+                + "    <base-dir>" + baseDir + "</base-dir>"
+                + "</device>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        DeviceConfig deviceConfig = config.getDeviceConfig();
+
+        assertEquals(deviceName, deviceConfig.getDeviceName());
+        assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+    }
+
+    @Override
+    @Test
     public void testTieredStore() {
         String baseDir = "/";
         int blockSize = 2048;
