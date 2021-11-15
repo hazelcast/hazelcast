@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
+import com.hazelcast.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,6 +47,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
 
 /**
@@ -142,6 +144,10 @@ public class SplitBrainProtectionOperationTest {
             "EntryOffloadableSetUnlockOperation"
     );
 
+    private static final Collection<String> OPTIONAL_HOOKS = singletonList(
+            JetSqlSerializerHook.class.getName()
+    );
+
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
     private static final String MUTATING_OP_NAME = MutatingOperation.class.getSimpleName();
     private static final String READ_ONLY_OP_NAME = ReadonlyOperation.class.getSimpleName();
@@ -152,6 +158,10 @@ public class SplitBrainProtectionOperationTest {
         Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
         while (hooks.hasNext()) {
             DataSerializerHook hook = hooks.next();
+            if (OPTIONAL_HOOKS.contains(hook.getClass().getName())) {
+                continue;
+            }
+
             String simpleClassName = hook.getClass().getName();
             LOGGER.info("Testing " + simpleClassName + "...");
             DataSerializableFactory factory = hook.createFactory();
