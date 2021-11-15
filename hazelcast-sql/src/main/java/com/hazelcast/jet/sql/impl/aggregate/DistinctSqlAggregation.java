@@ -49,7 +49,9 @@ class DistinctSqlAggregation implements SqlAggregation {
     public void combine(SqlAggregation other0) {
         DistinctSqlAggregation other = (DistinctSqlAggregation) other0;
 
-        delegate.combine(other.delegate);
+        for (Object object: other.values) {
+            accumulate(object);
+        }
     }
 
     @Override

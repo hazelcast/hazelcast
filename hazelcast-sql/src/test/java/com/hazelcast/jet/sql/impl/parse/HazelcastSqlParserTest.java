@@ -164,9 +164,7 @@ public class HazelcastSqlParserTest {
         // when & then
         assertThatThrownBy(() -> parse(sql))
                 .hasMessageContaining("Encountered \"<EOF>\" at line 1")
-                .hasMessageContaining(
-                        "Was expecting:\n" +
-                                "    \"ON\" ...\n");
+                .hasMessageContaining("\"ON\" ...");
     }
 
     @Test

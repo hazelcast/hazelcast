@@ -23,7 +23,6 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -343,12 +342,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     private static Schema buildSchema(CompactSerializableRegistration registration, Object o) {
         SchemaWriter writer = new SchemaWriter(registration.getTypeName());
-        try {
-            registration.getSerializer().write(writer, o);
-        } catch (IOException e) {
-            //Schema writer does not throw IOException
-            EmptyStatement.ignore(e);
-        }
+        registration.getSerializer().write(writer, o);
         return writer.build();
     }
 }
