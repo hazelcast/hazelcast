@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.util.XmlUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+@PrivateApi
 public final class DynamicConfigGenerator {
 
     private DynamicConfigGenerator() {
