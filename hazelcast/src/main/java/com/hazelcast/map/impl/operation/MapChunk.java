@@ -75,11 +75,11 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
     private static final int DISPOSE_AT_COUNT = 1024;
 
-    private transient ILogger logger;
-    private transient String mapName;
-    private transient MapChunkContext context;
+    protected transient ILogger logger;
+    protected transient MapChunkContext context;
+    protected transient BooleanSupplier isEndOfChunk;
+    protected transient String mapName;
     private transient LinkedList keyRecordExpiry;
-    private transient BooleanSupplier isEndOfChunk;
 
     private transient boolean loaded;
     private transient MapIndexInfo mapIndexInfo;
@@ -109,6 +109,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             logger.finest(String.format("mapName:%s, chunkNumber:%d, partitionId:%d",
                     context.getMapName(), chunkNumber, context.getPartitionId()));
         }
+        incrementReplicationCount();
     }
 
     @Override
@@ -116,7 +117,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         RecordStore recordStore = getRecordStore(mapName);
         if (firstChunk) {
             addIndexes(recordStore, mapIndexInfo.getIndexConfigs());
-            recordStore.reset();
+            initializeRecordStore(mapName, recordStore);
             recordStore.setStats(stats);
             recordStore.setPreMigrationLoadedStatus(loaded);
 
@@ -134,6 +135,18 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             applyWriteBehindState(recordStore);
             applyNearCacheState(recordStore);
         }
+    }
+
+    protected void incrementReplicationCount() {
+        context.getMapStats().getReplicationStats().incrementFullPartitionReplicationCount();
+    }
+
+    protected void incrementReplicationRecordCount(long delta) {
+        context.getMapStats().getReplicationStats().incrementFullPartitionReplicationRecordsCount(delta);
+    }
+
+    protected void initializeRecordStore(String mapName, RecordStore recordStore) {
+        recordStore.reset();
     }
 
     private void putInto(RecordStore recordStore) {
@@ -354,17 +367,21 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
         out.writeBoolean(firstChunk);
         if (firstChunk) {
-            out.writeObject(context.createMapIndexInfo());
-            out.writeBoolean(context.isRecordStoreLoaded());
-            context.getStats().writeData(out);
-
-            writeWriteBehindState(out, context.getRecordStore());
-            writeNearCacheState(out);
-
+            writeMetadata(out);
             firstChunk = false;
         }
 
         writeChunk(out, context);
+    }
+
+    protected void writeMetadata(ObjectDataOutput out)
+            throws IOException {
+        out.writeObject(context.createMapIndexInfo());
+        out.writeBoolean(context.isRecordStoreLoaded());
+        context.getStats().writeData(out);
+
+        writeWriteBehindState(out, context.getRecordStore());
+        writeNearCacheState(out);
     }
 
     public void writeNearCacheState(ObjectDataOutput out) throws IOException {
@@ -445,8 +462,9 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
     }
 
-    private void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
+    protected void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
         SerializationService ss = context.getSerializationService();
+        long recordCount = 0;
 
         out.writeString(context.getMapName());
         Iterator<Map.Entry<Data, Record>> entries = context.getIterator();
@@ -460,11 +478,13 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             IOUtil.writeData(out, dataKey);
             Records.writeRecord(out, record, dataValue);
             Records.writeExpiry(out, context.getExpiryMetadata(dataKey));
+            recordCount++;
 
             if (isEndOfChunk.getAsBoolean()) {
                 break;
             }
         }
+        incrementReplicationRecordCount(recordCount);
         // indicates end of chunk
         IOUtil.writeData(out, null);
     }
@@ -475,16 +495,21 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
         this.firstChunk = in.readBoolean();
         if (firstChunk) {
-            this.mapIndexInfo = in.readObject();
-            this.loaded = in.readBoolean();
-            this.stats = new LocalRecordStoreStatsImpl();
-            stats.readData(in);
-
-            readWriteBehindState(in);
-            readNearCacheState(in);
+            readMetadata(in);
         }
 
         readChunk(in);
+    }
+
+    protected void readMetadata(ObjectDataInput in)
+            throws IOException {
+        this.mapIndexInfo = in.readObject();
+        this.loaded = in.readBoolean();
+        this.stats = new LocalRecordStoreStatsImpl();
+        stats.readData(in);
+
+        readWriteBehindState(in);
+        readNearCacheState(in);
     }
 
     private void readWriteBehindState(ObjectDataInput in) throws IOException {
