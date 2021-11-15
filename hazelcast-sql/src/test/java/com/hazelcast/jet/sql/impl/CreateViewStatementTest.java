@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CreateViewStatementTest extends SqlTestSupport {
+    private static final String LE = System.lineSeparator();
     private IMap<Integer, Integer> map;
 
     @BeforeClass
@@ -61,8 +62,8 @@ public class CreateViewStatementTest extends SqlTestSupport {
         ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
-        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"\n" +
-                "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
+                + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
 
         List<Row> expected = new ArrayList<>();
@@ -77,15 +78,15 @@ public class CreateViewStatementTest extends SqlTestSupport {
 
         ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
-        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"\n" +
-                "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
+                + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
         sql = "CREATE OR REPLACE VIEW v AS SELECT this FROM map";
         instance().getSql().execute(sql);
 
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
-        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"this\"\n" +
-                "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"this\"" + LE
+                + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
     }
 
     @Test
