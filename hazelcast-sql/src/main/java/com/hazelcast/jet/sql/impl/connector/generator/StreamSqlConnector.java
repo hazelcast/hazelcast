@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -24,8 +25,10 @@ import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -89,11 +92,16 @@ class StreamSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections
+            @Nonnull List<Expression<?>> projections,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
+        }
+
         StreamTable table = (StreamTable) table0;
 
-        StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) table.items(predicate, projections);
+        StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<Object[]>) table.items(predicate, projections);
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return dag.newUniqueVertex(table.toString(), pms);
     }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -35,26 +37,32 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Ill-formatted JSON strings may cause false positive or false negative
  * results in queries. {@code null} string is not allowed.
  */
-public final class HazelcastJsonValue {
+public final class HazelcastJsonValue implements Comparable<HazelcastJsonValue> {
 
-    private final String string;
+    private final String value;
 
     /**
      * Creates a HazelcastJsonValue from the given string.
      *
-     * @param string a non-null JSON string
+     * @param value a non-null JSON string
      */
-    public HazelcastJsonValue(String string) {
-        this.string = checkNotNull(string);
+    public HazelcastJsonValue(@Nonnull String value) {
+        this.value = checkNotNull(value);
+    }
+
+    public String getValue() {
+        return value;
     }
 
     /**
      * Returns unaltered string that was used to create this object.
+     *
      * @return original string
      */
     @Override
+    @Nonnull
     public String toString() {
-        return string;
+        return value;
     }
 
     @Override
@@ -67,11 +75,16 @@ public final class HazelcastJsonValue {
         }
 
         HazelcastJsonValue that = (HazelcastJsonValue) o;
-        return string.equals(that.string);
+        return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        return string.hashCode();
+        return value.hashCode();
+    }
+
+    @Override
+    public int compareTo(@Nonnull HazelcastJsonValue o) {
+        return value.compareTo(o.value);
     }
 }

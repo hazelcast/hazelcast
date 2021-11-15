@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
@@ -41,6 +42,7 @@ import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -237,6 +239,34 @@ public class SqlJsonTest extends SqlTestSupport {
     @Test
     public void when_explicitTopLevelField_then_fail_this() {
         when_explicitTopLevelField_then_fail("this", "__key");
+    }
+
+    @Test
+    public void test_jsonType() {
+        String name = createRandomTopic();
+
+        String createSql = format("CREATE MAPPING %s TYPE %s ", name, KafkaSqlConnector.TYPE_NAME)
+                + "OPTIONS ( "
+                + format("'%s' = 'json'", OPTION_KEY_FORMAT)
+                + format(", '%s' = 'json'", OPTION_VALUE_FORMAT)
+                + format(", 'bootstrap.servers' = '%s'", kafkaTestSupport.getBrokerConnectionString())
+                + ", 'auto.offset.reset' = 'earliest'"
+                + ")";
+
+        sqlService.execute(createSql);
+
+        assertTopicEventually(
+                name,
+                "INSERT INTO " + name + " VALUES ('[1,2,3]', '[4,5,6]')",
+                createMap("[1,2,3]", "[4,5,6]")
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(
+                        new HazelcastJsonValue("[1,2,3]"),
+                        new HazelcastJsonValue("[4,5,6]")
+                ))
+        );
     }
 
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {

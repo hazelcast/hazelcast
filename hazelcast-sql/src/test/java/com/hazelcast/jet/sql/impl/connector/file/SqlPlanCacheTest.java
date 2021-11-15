@@ -41,32 +41,32 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
     @Test
     public void test_tableName() {
-        createMapping("file1", "id", "file.csv");
+        createMappingWithGlob("file1", "id", "file.csv");
         sqlService.execute("SELECT * FROM file1");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        createMapping("file2", "id", "file.csv");
+        createMappingWithGlob("file2", "id", "file.csv");
         sqlService.execute("DROP MAPPING file1");
         assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
     public void test_fieldList() {
-        createMapping("file", "id", "file.csv");
+        createMappingWithGlob("file", "id", "file.csv");
         sqlService.execute("SELECT * FROM file");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        createMapping("file", "name", "file.csv");
+        createMappingWithGlob("file", "name", "file.csv");
         assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
     public void test_options() {
-        createMapping("file", "id", "file.csv");
+        createMappingWithGlob("file", "id", "file.csv");
         sqlService.execute("SELECT * FROM file");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        createMapping("file", "id", "*");
+        createMappingWithGlob("file", "id", "*");
         assertThat(planCache(instance()).size()).isZero();
     }
 
@@ -86,7 +86,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isZero();
     }
 
-    private static void createMapping(String name, String fieldName, String glob) {
+    private static void createMappingWithGlob(String name, String fieldName, String glob) {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + " ("
                 + fieldName + " TINYINT EXTERNAL NAME byte"
                 + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '

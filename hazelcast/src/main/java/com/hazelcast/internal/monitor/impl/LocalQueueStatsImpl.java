@@ -41,7 +41,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalQueueStatsImpl implements LocalQueueStats {
 
-    public static final long DEFAULT_MAX_AGE = Long.MIN_VALUE;
+    public static final long DEFAULT_MAX_AGE = 0;
     public static final long DEFAULT_MIN_AGE = Long.MAX_VALUE;
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");

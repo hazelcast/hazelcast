@@ -215,7 +215,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     private Map<ObjectNamespace, RingbufferContainer> getOrCreateRingbufferContainers(int partitionId) {
         final Map<ObjectNamespace, RingbufferContainer> partitionContainer = containers.get(partitionId);
         if (partitionContainer == null) {
-            containers.putIfAbsent(partitionId, new HashMap<>());
+            containers.putIfAbsent(partitionId, new ConcurrentHashMap<>());
         }
         return containers.get(partitionId);
     }

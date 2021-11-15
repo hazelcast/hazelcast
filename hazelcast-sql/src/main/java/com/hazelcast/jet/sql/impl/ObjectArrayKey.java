@@ -76,11 +76,11 @@ public final class ObjectArrayKey implements DataSerializable {
     }
 
     public static ObjectArrayKey project(Object[] row, int[] indices) {
-        Object[] hashKeys = new Object[indices.length];
+        Object[] key = new Object[indices.length];
         for (int i = 0; i < indices.length; i++) {
-            hashKeys[i] = row[indices[i]];
+            key[i] = row[indices[i]];
         }
-        return new ObjectArrayKey(hashKeys);
+        return new ObjectArrayKey(key);
     }
 
     /**

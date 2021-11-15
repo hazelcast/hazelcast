@@ -31,25 +31,20 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
-import example.serialization.NamedDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -57,73 +52,6 @@ import static org.junit.Assert.assertTrue;
 public class GenericRecordTest {
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
-    @Nonnull
-    private GenericRecord createCompactGenericRecord(MainDTO mainDTO) {
-        InnerDTO inner = mainDTO.p;
-        GenericRecord[] namedRecords = new GenericRecord[inner.nn.length];
-        int i = 0;
-        for (NamedDTO named : inner.nn) {
-            GenericRecord namedRecord = GenericRecordBuilder.compact("named")
-                    .setString("name", named.name)
-                    .setInt("myint", named.myint).build();
-            namedRecords[i++] = namedRecord;
-        }
-
-        GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
-                .setByteArray("b", inner.bb)
-                .setCharArray("c", inner.cc)
-                .setShortArray("s", inner.ss)
-                .setIntArray("i", inner.ii)
-                .setLongArray("l", inner.ll)
-                .setFloatArray("f", inner.ff)
-                .setDoubleArray("d", inner.dd)
-                .setGenericRecordArray("nn", namedRecords)
-                .setDecimalArray("bigDecimals", inner.bigDecimals)
-                .setTimeArray("localTimes", inner.localTimes)
-                .setDateArray("localDates", inner.localDates)
-                .setTimestampArray("localDateTimes", inner.localDateTimes)
-                .setTimestampWithTimezoneArray("offsetDateTimes", inner.offsetDateTimes)
-                .build();
-
-        return GenericRecordBuilder.compact("main")
-                .setByte("b", mainDTO.b)
-                .setBoolean("bool", mainDTO.bool)
-                .setChar("c", mainDTO.c)
-                .setShort("s", mainDTO.s)
-                .setInt("i", mainDTO.i)
-                .setLong("l", mainDTO.l)
-                .setFloat("f", mainDTO.f)
-                .setDouble("d", mainDTO.d)
-                .setString("str", mainDTO.str)
-                .setGenericRecord("p", innerRecord)
-                .setDecimal("bigDecimal", mainDTO.bigDecimal)
-                .setTime("localTime", mainDTO.localTime)
-                .setDate("localDate", mainDTO.localDate)
-                .setTimestamp("localDateTime", mainDTO.localDateTime)
-                .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
-                .build();
-    }
-
-    @Nonnull
-    private MainDTO createMainDTO() {
-        NamedDTO[] nn = new NamedDTO[2];
-        nn[0] = new NamedDTO("name", 123);
-        nn[1] = new NamedDTO("name", 123);
-        InnerDTO inner = new InnerDTO(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
-                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
-                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
-                new LocalTime[]{LocalTime.now(), LocalTime.now()},
-                new LocalDate[]{LocalDate.now(), LocalDate.now()},
-                new LocalDateTime[]{LocalDateTime.now()},
-                new OffsetDateTime[]{OffsetDateTime.now()});
-
-        return new MainDTO((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main object created for testing!", inner,
-                new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
-    }
-
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
@@ -135,6 +63,8 @@ public class GenericRecordTest {
                 .build();
 
         MainDTO expectedDTO = createMainDTO();
+        expectedDTO.nullableBool = null;
+        expectedDTO.p.localDateTimes[0] = null;
         Data data = serializationService.toData(expectedDTO);
         assertTrue(data.isCompact());
 
@@ -270,6 +200,30 @@ public class GenericRecordTest {
 
         assertEquals(2, newRecord.getInt("foo"));
         assertEquals(100, newRecord.getLong("bar"));
+    }
+
+    @Test
+    public void testReadWriteChar() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            compact("writeChar").setChar("c", 'a');
+        });
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            GenericRecord record = compact("readChar").build();
+            record.getChar("c");
+        });
+    }
+
+    @Test
+    public void testReadWriteCharArray() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            compact("writeCharArray").setArrayOfChars("ca", new char[]{'c'});
+        });
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            GenericRecord record = compact("readCharArray").build();
+            record.getArrayOfChars("ca");
+        });
     }
 
     private String trySetAndGetMessage(String fieldName, int value, GenericRecordBuilder cloneBuilder) {
