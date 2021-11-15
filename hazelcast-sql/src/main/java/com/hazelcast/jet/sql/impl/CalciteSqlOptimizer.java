@@ -65,7 +65,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
@@ -190,17 +190,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         this.mappingResolver = new MetadataResolver(nodeEngine);
 
-        InformationSchemaCatalog informationSchemaCatalog = mappingCatalog(nodeEngine);
-        this.tableResolvers = singletonList(informationSchemaCatalog);
-        this.planExecutor = new PlanExecutor(informationSchemaCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
+        this.tableResolvers = singletonList(tableResolverImpl);
+        this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static InformationSchemaCatalog mappingCatalog(NodeEngine nodeEngine) {
+    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine) {
         TablesStorage tablesStorage = new TablesStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new InformationSchemaCatalog(nodeEngine, tablesStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
     }
 
     @Nullable

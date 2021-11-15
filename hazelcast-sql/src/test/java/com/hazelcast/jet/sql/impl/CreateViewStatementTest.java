@@ -98,7 +98,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
 
         assertThatThrownBy(() -> instance().getSql().execute(sql))
-                .hasMessageContaining("Mapping or view with such name exists: v");
+                .hasMessageContaining("Mapping or view already exists: v");
     }
 
     @Test
@@ -114,7 +114,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
 
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         assertThatThrownBy(() -> instance().getSql().execute(sql))
-                .hasMessageContaining("Mapping or view with such name exists: v");
+                .hasMessageContaining("Mapping or view already exists: v");
     }
 
     @Test

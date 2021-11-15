@@ -47,7 +47,7 @@ import static java.util.Collections.singletonList;
  * A table resolver for DDL-created mappings and for the {@code
  * information_schema}.
  */
-public class InformationSchemaCatalog implements TableResolver {
+public class TableResolverImpl implements TableResolver {
 
     public static final String SCHEMA_NAME_PUBLIC = "public";
     public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
@@ -61,7 +61,7 @@ public class InformationSchemaCatalog implements TableResolver {
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
-    public InformationSchemaCatalog(
+    public TableResolverImpl(
             NodeEngine nodeEngine,
             TablesStorage tableStorage,
             SqlConnectorCache connectorCache
@@ -103,7 +103,7 @@ public class InformationSchemaCatalog implements TableResolver {
             tableStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
         } else if (!tableStorage.putIfAbsent(name, resolved)) {
-            throw QueryException.error("Mapping or view with such name exists: " + name);
+            throw QueryException.error("Mapping or view already exists: " + name);
         }
     }
 
@@ -145,7 +145,7 @@ public class InformationSchemaCatalog implements TableResolver {
         } else if (replace) {
             tableStorage.put(view.name(), view);
         } else if (!tableStorage.putIfAbsent(view.name(), view)) {
-            throw QueryException.error("Mapping or view with such name exists: " + view.name());
+            throw QueryException.error("Mapping or view already exists: " + view.name());
         }
     }
 

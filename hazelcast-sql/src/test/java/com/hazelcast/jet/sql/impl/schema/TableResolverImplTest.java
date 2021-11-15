@@ -50,9 +50,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class InformationSchemaCatalogTest {
+public class TableResolverImplTest {
 
-    private InformationSchemaCatalog catalog;
+    private TableResolverImpl catalog;
 
     @Mock
     private NodeEngine nodeEngine;
@@ -73,7 +73,7 @@ public class InformationSchemaCatalogTest {
     public void before() {
         MockitoAnnotations.openMocks(this);
 
-        catalog = new InformationSchemaCatalog(nodeEngine, tableStorage, connectorCache);
+        catalog = new TableResolverImpl(nodeEngine, tableStorage, connectorCache);
         catalog.registerListener(listener);
     }
 
@@ -111,7 +111,7 @@ public class InformationSchemaCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Mapping or view with such name exists: name");
+                .hasMessageContaining("Mapping or view already exists: name");
         verifyNoInteractions(listener);
     }
 
@@ -254,7 +254,7 @@ public class InformationSchemaCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createView(view, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Mapping or view with such name exists: name");
+                .hasMessageContaining("Mapping or view already exists: name");
         verifyNoInteractions(listener);
     }
 

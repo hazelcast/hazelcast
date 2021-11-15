@@ -30,8 +30,7 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog.SCHEMA_NAME_PUBLIC;
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 
 public class SqlCreateView extends SqlCreate {
     private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
@@ -93,26 +92,9 @@ public class SqlCreateView extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
         }
 
-        if (!isViewNameValid(name)) {
+        if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
         }
         query = validator.validate(query);
-    }
-
-    /**
-     * Returns true if the view name is in a valid schema,
-     * that is it must be either:
-     * <ul>
-     *     <li>a simple name
-     *     <li>a name in schema "public"
-     *     <li>a name in schema "hazelcast.public"
-     * </ul>
-     */
-    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})
-    static boolean isViewNameValid(SqlIdentifier name) {
-        return name.names.size() == 1
-                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
-                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
-                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

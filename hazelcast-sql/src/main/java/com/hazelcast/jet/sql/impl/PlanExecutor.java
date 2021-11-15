@@ -47,7 +47,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -92,12 +92,12 @@ import static java.util.Collections.singletonList;
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
 
-    private final InformationSchemaCatalog catalog;
+    private final TableResolverImpl catalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
     public PlanExecutor(
-            InformationSchemaCatalog catalog,
+            TableResolverImpl catalog,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {

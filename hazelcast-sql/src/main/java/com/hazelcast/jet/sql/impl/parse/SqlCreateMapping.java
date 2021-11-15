@@ -42,8 +42,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.schema.InformationSchemaCatalog.SCHEMA_NAME_PUBLIC;
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateMapping extends SqlCreate {
@@ -99,12 +98,12 @@ public class SqlCreateMapping extends SqlCreate {
 
     public Map<String, String> options() {
         return options.getList().stream()
-                      .map(node -> (SqlOption) node)
-                      .collect(
-                              LinkedHashMap::new,
-                              (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
-                              Map::putAll
-                      );
+                .map(node -> (SqlOption) node)
+                .collect(
+                        LinkedHashMap::new,
+                        (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
+                        Map::putAll
+                );
     }
 
     public boolean ifNotExists() {
@@ -232,7 +231,7 @@ public class SqlCreateMapping extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
         }
 
-        if (!isMappingNameValid(name)) {
+        if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
         }
 
@@ -251,22 +250,5 @@ public class SqlCreateMapping extends SqlCreate {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
             }
         }
-    }
-
-    /**
-     * Returns true if the mapping name is in a valid schema, that is it must
-     * be either:
-     * <ul>
-     *     <li>a simple name
-     *     <li>a name in schema "public"
-     *     <li>a name in schema "hazelcast.public"
-     * </ul>
-     */
-    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})
-    static boolean isMappingNameValid(SqlIdentifier name) {
-        return name.names.size() == 1
-                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
-                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
-                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

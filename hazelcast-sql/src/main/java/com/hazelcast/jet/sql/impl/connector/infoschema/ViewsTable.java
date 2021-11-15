@@ -38,7 +38,7 @@ public class ViewsTable extends InfoSchemaTable {
             new TableField("table_catalog", QueryDataType.VARCHAR, false),
             new TableField("table_schema", QueryDataType.VARCHAR, false),
             new TableField("table_name", QueryDataType.VARCHAR, false),
-            new TableField("view_query", QueryDataType.VARCHAR, false),
+            new TableField("view_definition", QueryDataType.VARCHAR, false),
             // FYI: standard tables, which is unused at the moment : check_option, is_updatable and insertable_into
             new TableField("check_option", QueryDataType.VARCHAR, false),
             new TableField("is_updatable", QueryDataType.VARCHAR, false),

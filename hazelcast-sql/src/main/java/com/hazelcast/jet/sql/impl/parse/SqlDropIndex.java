@@ -32,6 +32,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlDropIndex extends SqlDrop {
@@ -91,7 +92,7 @@ public class SqlDropIndex extends SqlDrop {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        if (!SqlCreateMapping.isMappingNameValid(name)) {
+        if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.droppedIndexDoesNotExist(name.toString()));
         }
     }
