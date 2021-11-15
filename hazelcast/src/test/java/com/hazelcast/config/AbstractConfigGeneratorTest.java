@@ -80,13 +80,13 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         testMap(mapStoreConfig);
     }
 
-    private static class TestMapStore implements MapStore {
+    private static class TestMapStore implements MapStore<Object, Object> {
         @Override
         public void store(Object key, Object value) {
         }
 
         @Override
-        public void storeAll(Map map) {
+        public void storeAll(Map<Object, Object> map) {
         }
 
         @Override
@@ -94,7 +94,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void deleteAll(Collection keys) {
+        public void deleteAll(Collection<Object> keys) {
         }
 
         @Override
@@ -103,12 +103,12 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map loadAll(Collection keys) {
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
             return null;
         }
 
         @Override
-        public Iterable loadAllKeys() {
+        public Iterable<Object> loadAllKeys() {
             return null;
         }
     }
@@ -135,7 +135,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
-                .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
+                .setFactoryImplementation((MapStoreFactory<Object, Object>) (mapName, properties) -> null)
                 .setProperty("key", "value");
 
         testMap(mapStoreConfig);
@@ -225,12 +225,12 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
-        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
-        assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
-        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
+        MapConfig actualConfig = decConfig.getMapConfig("carMap");
+        AttributeConfig decAttrConfig = actualConfig.getAttributeConfigs().get(0);
+        assertEquals(attrConfig.getName(), decAttrConfig.getName());
+        assertEquals(attrConfig.getExtractorClassName(), decAttrConfig.getExtractorClassName());
         ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
     }
 
@@ -241,8 +241,8 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
+        Config decConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = decConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -254,8 +254,8 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        Config decConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = decConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -267,8 +267,8 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        Config decConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = decConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -292,9 +292,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(mapConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
+        NearCacheConfig actualConfig = decConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -311,9 +311,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMapConfig(mapConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
+        NearCacheConfig actualConfig = decConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
         assertEquals(23, actualConfig.getEvictionConfig().getSize());
         assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
         assertEquals(expectedConfig, actualConfig);
@@ -350,9 +350,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        CacheSimpleConfig actualConfig = decConfig.getCacheConfig("testCache");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -377,9 +377,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        CacheSimpleConfig actualConfig = decConfig.getCacheConfig("testCache");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -401,9 +401,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addCacheConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
+        CacheSimpleConfig actualConfig = decConfig.getCacheConfig("testCache");
         assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
     }
 
@@ -502,14 +502,14 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addQueueConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        QueueConfig actualConfig = xmlConfig.getQueueConfig("testQueue");
+        QueueConfig actualConfig = decConfig.getQueueConfig("testQueue");
         assertEquals("testQueue", actualConfig.getName());
 
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
+        MergePolicyConfig decMergePolicyConfig = actualConfig.getMergePolicyConfig();
+        assertEquals(DiscardMergePolicy.class.getSimpleName(), decMergePolicyConfig.getPolicy());
+        assertEquals(1234, decMergePolicyConfig.getBatchSize());
         ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
 
@@ -571,9 +571,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addListConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        ListConfig actualConfig = xmlConfig.getListConfig("testList");
+        ListConfig actualConfig = decConfig.getListConfig("testList");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -595,9 +595,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addSetConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
+        SetConfig actualConfig = decConfig.getSetConfig("testSet");
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -616,9 +616,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addMultiMapConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        MultiMapConfig actualConfig = xmlConfig.getMultiMapConfig(expectedConfig.getName());
+        MultiMapConfig actualConfig = decConfig.getMultiMapConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -636,9 +636,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config().addMultiMapConfig(multiMapConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        assertEquals(multiMapConfig, xmlConfig.getMultiMapConfig("myMultiMap"));
+        assertEquals(multiMapConfig, decConfig.getMultiMapConfig("myMultiMap"));
     }
 
     @Test
@@ -661,19 +661,19 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addReplicatedMapConfig(replicatedMapConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
-        MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
-        assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("splitBrainProtection", xmlReplicatedMapConfig.getSplitBrainProtectionName());
-        assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
-        assertTrue(xmlReplicatedMapConfig.isAsyncFillup());
+        ReplicatedMapConfig decReplicatedMapConfig = decConfig.getReplicatedMapConfig("replicated-map-name");
+        MergePolicyConfig actualMergePolicyConfig = decReplicatedMapConfig.getMergePolicyConfig();
+        assertEquals("replicated-map-name", decReplicatedMapConfig.getName());
+        assertFalse(decReplicatedMapConfig.isStatisticsEnabled());
+        assertEquals("com.hazelcast.entrylistener", decReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("splitBrainProtection", decReplicatedMapConfig.getSplitBrainProtectionName());
+        assertEquals(InMemoryFormat.NATIVE, decReplicatedMapConfig.getInMemoryFormat());
+        assertTrue(decReplicatedMapConfig.isAsyncFillup());
         assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
         assertEquals(1234, actualMergePolicyConfig.getBatchSize());
-        assertEquals(replicatedMapConfig, xmlReplicatedMapConfig);
+        assertEquals(replicatedMapConfig, decReplicatedMapConfig);
     }
 
     @Test
@@ -740,9 +740,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         Config config = new Config().addRingBufferConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
+        RingbufferConfig actualConfig = decConfig.getRingbufferConfig(expectedConfig.getName());
         ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
     }
 
@@ -837,9 +837,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addExecutorConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        ExecutorConfig actualConfig = xmlConfig.getExecutorConfig(expectedConfig.getName());
+        ExecutorConfig actualConfig = decConfig.getExecutorConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -856,9 +856,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addDurableExecutorConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
+        DurableExecutorConfig actualConfig = decConfig.getDurableExecutorConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -929,9 +929,9 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         Config config = new Config().addPNCounterConfig(expectedConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        PNCounterConfig actualConfig = xmlConfig.getPNCounterConfig(expectedConfig.getName());
+        PNCounterConfig actualConfig = decConfig.getPNCounterConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -950,10 +950,10 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         Config config = new Config()
                 .addFlakeIdGeneratorConfig(figConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
-        FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
-        assertEquals(figConfig, xmlReplicatedConfig);
+        FlakeIdGeneratorConfig decReplicatedConfig = decConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
+        assertEquals(figConfig, decReplicatedConfig);
     }
 
     @Test
@@ -1007,11 +1007,11 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config decConfig = getNewConfigViaGenerator(config);
 
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
-                xmlConfig.getWanReplicationConfigs());
+                decConfig.getWanReplicationConfigs());
     }
 
     private AwsConfig getDummyAwsConfig() {
@@ -1034,7 +1034,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, @SuppressWarnings("rawtypes") Map<String, Comparable> properties) {
             return null;
         }
 
