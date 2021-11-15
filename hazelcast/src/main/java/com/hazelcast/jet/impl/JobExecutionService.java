@@ -208,6 +208,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.values();
     }
 
+    public ConcurrentMap<Long, Long> getFailedJobs() {
+        return failedJobs;
+    }
+
     Map<SenderReceiverKey, SenderTasklet> getSenderMap(long executionId) {
         ExecutionContext ctx = executionContexts.get(executionId);
         return ctx != null ? ctx.senderMap() : null;

@@ -33,6 +33,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -142,11 +143,16 @@ public class SqlClientTest extends SqlTestSupport {
 
         JetServiceBackend jetService = getJetServiceBackend(instance());
         Collection<ExecutionContext> contexts = jetService.getJobExecutionService().getExecutionContexts();
+        // assert that all ExecutionContexts are eventually cleaned up
         assertTrueEventually(() -> {
             String remainingContexts = contexts.stream()
                     .map(c -> idToString(c.executionId()))
                     .collect(Collectors.joining(", "));
             assertEquals("remaining execIds: " + remainingContexts, 0, contexts.size());
         }, 5);
+
+        // assert that failedJobs is also cleaned up
+        ConcurrentMap<Long, Long> failedJobs = jetService.getJobExecutionService().getFailedJobs();
+        assertTrueEventually(() -> assertEquals(0, failedJobs.size()));
     }
 }
