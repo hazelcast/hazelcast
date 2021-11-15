@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -64,7 +65,27 @@ public class JetSqlSerializerHook implements DataSerializerHook {
             final Class<?> clazz = Class.forName("com.hazelcast.jet.sql.impl.JetSqlSerializationFactory");
             return (SqlSerializationFactory) clazz.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ignored) {
-            return new NoopSqlSerializationFactory();
+            return new FailingSqlSerializationFactory();
+        }
+    }
+
+    public static class FailingSqlSerializationFactory implements SqlSerializationFactory {
+        @Override
+        public IdentifiedDataSerializable createJsonQueryFunction() {
+            throw new HazelcastException("Can not instantiate JSON_QUERY function "
+                    + "because \"hazelcast-sql\" module is not in the classpath.");
+        }
+
+        @Override
+        public IdentifiedDataSerializable createJsonValueFunction() {
+            throw new HazelcastException("Can not instantiate JSON_VALUE function "
+                    + "because \"hazelcast-sql\" module is not in the classpath.");
+        }
+
+        @Override
+        public IdentifiedDataSerializable createJsonParseFunction() {
+            throw new HazelcastException("Can not instantiate JSON_PARSE function "
+                    + "because \"hazelcast-sql\" module is not in the classpath.");
         }
     }
 }
