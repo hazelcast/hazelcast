@@ -144,6 +144,7 @@
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.21.0</archunit.version>
+        <errorprone.version>2.10.0</errorprone.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -526,6 +527,32 @@
                 </executions>
                 <inherited>false</inherited>
             </plugin>
+            <plugin>
+                <groupId>com.hazelcast.maven</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aggregated-attribution</id>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>per-jar-attribution</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -566,6 +593,30 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
                     <version>${codehause.license.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.hazelcast.maven</groupId>
+                    <artifactId>attribution-maven-plugin</artifactId>
+                    <version>1.0.1</version>
+                    <configuration>
+                        <exclusionPatterns>
+                        <!--
+                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                          are actually not the copyright lines. Let's exclude them here.
+
+                          Example:
+                          com.fasterxml.jackson.core:jackson-databind:2.12.1
+                             (c) per-property override (from annotation on specific property or
+                         -->
+                            <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
+                            <exclusionPattern>per-property override</exclusionPattern>
+                            <exclusionPattern>^copyright notice</exclusionPattern>
+                            <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>Substitute for l, l</exclusionPattern>
+                            <exclusionPattern>inside edge crossings that are between</exclusionPattern>
+                        </exclusionPatterns>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1549,6 +1600,11 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${errorprone.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
