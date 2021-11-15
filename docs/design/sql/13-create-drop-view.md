@@ -172,7 +172,7 @@ time the `columns` view is queried.
 | table_catalog  | VARCHAR |
 | table_schema   | VARCHAR |
 | table_name     | VARCHAR |
-| view_query     | VARCHAR |
+| view_definition     | VARCHAR |
 | check_option   | VARCHAR |
 | is_updatable   | VARCHAR  [NO / YES] |
 | insertable_into | VARCHAR [NO / YES] |
