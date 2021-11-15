@@ -30,12 +30,12 @@ import java.util.TreeMap;
  * {@link DeserializedGenericRecord}s. It carries the schema information
  * of the record and do type checks while setting fields.
  */
-class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
+public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();
     private final Schema schema;
 
-    DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
+    public DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
         this.schema = schema;
     }
 

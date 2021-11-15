@@ -50,7 +50,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setString(@Nonnull String fieldName, String value) {
+    public GenericRecordBuilder setString(@Nonnull String fieldName, @Nullable String value) {
         return write(fieldName, value, FieldKind.STRING);
     }
 
@@ -69,7 +69,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
-        return write(fieldName, value, FieldKind.CHAR);
+        throw new UnsupportedOperationException("Compact format does not support writing a char field");
     }
 
     @Nonnull
@@ -128,95 +128,179 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        return write(fieldName, value, FieldKind.COMPACT_ARRAY);
+    public GenericRecordBuilder setArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_COMPACTS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
-        return write(fieldName, value, FieldKind.BYTE_ARRAY);
+    public GenericRecordBuilder setArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_BYTES);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
-        return write(fieldName, value, FieldKind.BOOLEAN_ARRAY);
+    public GenericRecordBuilder setArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_BOOLEANS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
-        return write(fieldName, value, FieldKind.CHAR_ARRAY);
+    public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
+        throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
-        return write(fieldName, value, FieldKind.INT_ARRAY);
+    public GenericRecordBuilder setArrayOfInts(@Nonnull String fieldName, @Nullable int[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_INTS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
-        return write(fieldName, value, FieldKind.LONG_ARRAY);
+    public GenericRecordBuilder setArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_LONGS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
-        return write(fieldName, value, FieldKind.DOUBLE_ARRAY);
+    public GenericRecordBuilder setArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_DOUBLES);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
-        return write(fieldName, value, FieldKind.FLOAT_ARRAY);
+    public GenericRecordBuilder setArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_FLOATS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
-        return write(fieldName, value, FieldKind.SHORT_ARRAY);
+    public GenericRecordBuilder setArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_SHORTS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
-        return write(fieldName, value, FieldKind.STRING_ARRAY);
+    public GenericRecordBuilder setArrayOfStrings(@Nonnull String fieldName, @Nullable String[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_STRINGS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
-        return write(fieldName, value, FieldKind.DECIMAL_ARRAY);
+    public GenericRecordBuilder setArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_DECIMALS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
-        return write(fieldName, value, FieldKind.TIME_ARRAY);
+    public GenericRecordBuilder setArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMES);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
-        return write(fieldName, value, FieldKind.DATE_ARRAY);
+    public GenericRecordBuilder setArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_DATES);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
-        return write(fieldName, value, FieldKind.TIMESTAMP_ARRAY);
+    public GenericRecordBuilder setArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMESTAMPS);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
-        return write(fieldName, value, FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    public GenericRecordBuilder setArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES);
     }
 
-    protected abstract GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind);
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableBoolean(@Nonnull String fieldName, @Nullable Boolean value) {
+        return write(fieldName, value, FieldKind.NULLABLE_BOOLEAN);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableByte(@Nonnull String fieldName, @Nullable Byte value) {
+        return write(fieldName, value, FieldKind.NULLABLE_BYTE);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableDouble(@Nonnull String fieldName, @Nullable Double value) {
+        return write(fieldName, value, FieldKind.NULLABLE_DOUBLE);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableFloat(@Nonnull String fieldName, @Nullable Float value) {
+        return write(fieldName, value, FieldKind.NULLABLE_FLOAT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableInt(@Nonnull String fieldName, @Nullable Integer value) {
+        return write(fieldName, value, FieldKind.NULLABLE_INT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableLong(@Nonnull String fieldName, @Nullable Long value) {
+        return write(fieldName, value, FieldKind.NULLABLE_LONG);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setNullableShort(@Nonnull String fieldName, @Nullable Short value) {
+        return write(fieldName, value, FieldKind.NULLABLE_SHORT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_BOOLEANS);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_BYTES);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_FLOATS);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_INTS);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_DOUBLES);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_LONGS);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value) {
+        return write(fieldName, value, FieldKind.ARRAY_OF_NULLABLE_SHORTS);
+    }
+
+    protected abstract GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldType);
 
     public static void checkTypeWithSchema(Schema schema, @Nonnull String fieldName, FieldKind fieldKind) {
         FieldDescriptor fd = schema.getField(fieldName);
@@ -228,5 +312,4 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
                     + "' for " + schema + ", expected : " + fd.getKind() + ", given : " + fieldKind);
         }
     }
-
 }

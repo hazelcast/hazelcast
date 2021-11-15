@@ -21,17 +21,17 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 /**
  * Interface to customize how an object is written in Compact Format.
  * One can either implement `CompactSerializer` and register
- * it via {@link com.hazelcast.config.CompactSerializationConfig#register(Class, CompactSerializer)}
+ * it via {@link com.hazelcast.config.CompactSerializationConfig#register(Class, String, CompactSerializer)}
  * or the serialized object can implement this interface so that the serialization
  * system gets the related compact serializer. This interface is used by code
- * generation an not intended to be a public API.
+ * generation and not intended to be a public API.
  *
  * @param <T> Type of the object to be serialized
  */
 public interface Compactable<T> {
 
     /**
-     * Returns the compact serializer that will be used the serialize
+     * Returns the compact serializer that will be used to serialize
      * instances of class {@code T}.
      */
     CompactSerializer<T> getCompactSerializer();

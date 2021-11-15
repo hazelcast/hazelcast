@@ -205,7 +205,11 @@ QueryDataType ObjectTypes() :
     QueryDataType type;
 }
 {
-    <OBJECT> { type = QueryDataType.OBJECT; }
+    (
+        <OBJECT> { type = QueryDataType.OBJECT; }
+    |
+        <JSON> { type = QueryDataType.JSON; }
+    )
     {
         return type;
     }
@@ -229,6 +233,106 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
     name = CompoundIdentifier()
     {
         return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
+* Parses CREATE INDEX statement.
+*/
+SqlCreate SqlCreateIndex(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+
+    SqlIdentifier name;
+    SqlIdentifier objectName;
+    SqlNodeList attributes;
+    SqlIdentifier type = null;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    boolean ifNotExists = false;
+}
+    {
+        <INDEX>
+        [
+            <IF> <NOT> <EXISTS> { ifNotExists = true; }
+        ]
+        name = SimpleIdentifier()
+
+        <ON>
+
+        objectName = SimpleIdentifier()
+        attributes = IndexAttributes()
+        [
+            <TYPE>
+            type = SimpleIdentifier()
+        ]
+        [
+            <OPTIONS>
+            sqlOptions = SqlOptions()
+        ]
+        {
+            return new SqlCreateIndex(
+                name,
+                objectName,
+                attributes,
+                type,
+                sqlOptions,
+                replace,
+                ifNotExists,
+                startPos.plus(getPos())
+        );
+    }
+}
+
+
+SqlNodeList IndexAttributes():
+{
+    SqlParserPos pos = getPos();
+
+    SqlIdentifier attributeName;
+    List<SqlNode> attributes = new ArrayList<SqlNode>();
+}
+{
+    [
+        <LPAREN> {  pos = getPos(); }
+        attributeName = SimpleIdentifier()
+        {
+            attributes.add(attributeName);
+        }
+        (
+            <COMMA> attributeName = SimpleIdentifier()
+            {
+                attributes.add(attributeName);
+            }
+        )*
+        <RPAREN>
+    ]
+    {
+        return new SqlNodeList(attributes, pos.plus(getPos()));
+    }
+}
+
+/**
+ * Parses DROP INDEX statement.
+ */
+SqlDrop SqlDropIndex(Span span, boolean required) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    SqlIdentifier objectName;
+    boolean ifExists = false;
+}
+{
+    <INDEX>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+
+    <ON>
+    objectName = SimpleIdentifier()
+    {
+        return new SqlDropIndex(name, objectName, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -434,6 +538,24 @@ SqlShowStatement SqlShowStatement() :
 }
 
 /**
+ * Parses an EXPLAIN statement.
+ */
+SqlNode SqlExplainStatement() :
+{
+    SqlNode stmt;
+}
+{
+    <EXPLAIN>
+    [
+        LOOKAHEAD(2)
+        <PLAN> <FOR>
+    ]
+    stmt = ExtendedSqlQueryOrDml() {
+        return new SqlExplainStatement(getPos(), stmt);
+    }
+}
+
+/**
  * Parses INSERT/SINK INTO statement.
  */
 SqlExtendedInsert SqlExtendedInsert() :
@@ -476,6 +598,25 @@ SqlExtendedInsert SqlExtendedInsert() :
             span.end(source)
         );
     }
+}
+
+/** Parses a query (SELECT or VALUES)
+ * or DML statement (extended INSERT, UPDATE, DELETE). */
+SqlNode ExtendedSqlQueryOrDml() :
+{
+    SqlNode stmt;
+}
+{
+    (
+        LOOKAHEAD(2)
+        stmt = SqlExtendedInsert()
+    |
+        stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    |
+        stmt = SqlDelete()
+    |
+        stmt = SqlUpdate()
+    ) { return stmt; }
 }
 
 /**
@@ -521,4 +662,3 @@ boolean HazelcastTimeZoneOpt() :
 |
     { return false; }
 }
-

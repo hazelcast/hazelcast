@@ -87,8 +87,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        return getRingbufferWaitNotifyKey();
     }
 
     @Override

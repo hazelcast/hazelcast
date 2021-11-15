@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Filter;
@@ -54,13 +53,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
 
     private FilterIntoScanLogicalRule() {
         super(
-                operand(LogicalFilter.class,
-                        operandJ(LogicalTableScan.class,
-                                null,
-                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                                none()
-                        )
-                ),
+                operand(LogicalFilter.class, operand(LogicalTableScan.class, none())),
                 RelFactories.LOGICAL_BUILDER,
                 FilterIntoScanLogicalRule.class.getSimpleName()
         );

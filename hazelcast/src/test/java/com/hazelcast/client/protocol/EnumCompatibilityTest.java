@@ -136,37 +136,51 @@ public class EnumCompatibilityTest {
         // Used in FieldDescriptorCodec
         Map<FieldKind, Integer> mappings = new HashMap<>();
         mappings.put(FieldKind.BOOLEAN, 0);
-        mappings.put(FieldKind.BOOLEAN_ARRAY, 1);
+        mappings.put(FieldKind.ARRAY_OF_BOOLEANS, 1);
         mappings.put(FieldKind.BYTE, 2);
-        mappings.put(FieldKind.BYTE_ARRAY, 3);
+        mappings.put(FieldKind.ARRAY_OF_BYTES, 3);
         mappings.put(FieldKind.CHAR, 4);
-        mappings.put(FieldKind.CHAR_ARRAY, 5);
+        mappings.put(FieldKind.ARRAY_OF_CHARS, 5);
         mappings.put(FieldKind.SHORT, 6);
-        mappings.put(FieldKind.SHORT_ARRAY, 7);
+        mappings.put(FieldKind.ARRAY_OF_SHORTS, 7);
         mappings.put(FieldKind.INT, 8);
-        mappings.put(FieldKind.INT_ARRAY, 9);
+        mappings.put(FieldKind.ARRAY_OF_INTS, 9);
         mappings.put(FieldKind.LONG, 10);
-        mappings.put(FieldKind.LONG_ARRAY, 11);
+        mappings.put(FieldKind.ARRAY_OF_LONGS, 11);
         mappings.put(FieldKind.FLOAT, 12);
-        mappings.put(FieldKind.FLOAT_ARRAY, 13);
+        mappings.put(FieldKind.ARRAY_OF_FLOATS, 13);
         mappings.put(FieldKind.DOUBLE, 14);
-        mappings.put(FieldKind.DOUBLE_ARRAY, 15);
+        mappings.put(FieldKind.ARRAY_OF_DOUBLES, 15);
         mappings.put(FieldKind.STRING, 16);
-        mappings.put(FieldKind.STRING_ARRAY, 17);
+        mappings.put(FieldKind.ARRAY_OF_STRINGS, 17);
         mappings.put(FieldKind.DECIMAL, 18);
-        mappings.put(FieldKind.DECIMAL_ARRAY, 19);
+        mappings.put(FieldKind.ARRAY_OF_DECIMALS, 19);
         mappings.put(FieldKind.TIME, 20);
-        mappings.put(FieldKind.TIME_ARRAY, 21);
+        mappings.put(FieldKind.ARRAY_OF_TIMES, 21);
         mappings.put(FieldKind.DATE, 22);
-        mappings.put(FieldKind.DATE_ARRAY, 23);
+        mappings.put(FieldKind.ARRAY_OF_DATES, 23);
         mappings.put(FieldKind.TIMESTAMP, 24);
-        mappings.put(FieldKind.TIMESTAMP_ARRAY, 25);
+        mappings.put(FieldKind.ARRAY_OF_TIMESTAMPS, 25);
         mappings.put(FieldKind.TIMESTAMP_WITH_TIMEZONE, 26);
-        mappings.put(FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY, 27);
+        mappings.put(FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES, 27);
         mappings.put(FieldKind.COMPACT, 28);
-        mappings.put(FieldKind.COMPACT_ARRAY, 29);
+        mappings.put(FieldKind.ARRAY_OF_COMPACTS, 29);
         mappings.put(FieldKind.PORTABLE, 30);
-        mappings.put(FieldKind.PORTABLE_ARRAY, 31);
+        mappings.put(FieldKind.ARRAY_OF_PORTABLES, 31);
+        mappings.put(FieldKind.NULLABLE_BOOLEAN, 32);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_BOOLEANS, 33);
+        mappings.put(FieldKind.NULLABLE_BYTE, 34);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_BYTES, 35);
+        mappings.put(FieldKind.NULLABLE_SHORT, 36);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_SHORTS, 37);
+        mappings.put(FieldKind.NULLABLE_INT, 38);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_INTS, 39);
+        mappings.put(FieldKind.NULLABLE_LONG, 40);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_LONGS, 41);
+        mappings.put(FieldKind.NULLABLE_FLOAT, 42);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_FLOATS, 43);
+        mappings.put(FieldKind.NULLABLE_DOUBLE, 44);
+        mappings.put(FieldKind.ARRAY_OF_NULLABLE_DOUBLES, 45);
         verifyCompatibility(FieldKind.values(), FieldKind::getId, mappings);
     }
 
@@ -199,6 +213,7 @@ public class EnumCompatibilityTest {
         mappings.put(SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, 12);
         mappings.put(SqlColumnType.OBJECT, 13);
         mappings.put(SqlColumnType.NULL, 14);
+        mappings.put(SqlColumnType.JSON, 15);
         verifyCompatibility(SqlColumnType.values(), SqlColumnType::getId, mappings);
     }
 

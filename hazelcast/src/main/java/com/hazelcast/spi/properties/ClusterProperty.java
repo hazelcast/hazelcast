@@ -31,6 +31,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -192,7 +193,7 @@ public final class ClusterProperty {
     /**
      * Socket connection timeout in seconds. Socket.connect() is blocked until
      * either connection is established or connection is refused or this timeout
-     * passes. Default is 0, means infinite.
+     * passes. Default is 10, 0 means infinite.
      */
     public static final HazelcastProperty SOCKET_CONNECT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 10, SECONDS);
@@ -1733,7 +1734,8 @@ public final class ClusterProperty {
      *
      * @since 5.0
      */
-    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled", true);
+    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
+            !OsHelper.isWindows());
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The

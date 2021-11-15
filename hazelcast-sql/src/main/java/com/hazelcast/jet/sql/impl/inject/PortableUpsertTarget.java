@@ -145,49 +145,49 @@ class PortableUpsertTarget implements UpsertTarget {
                         portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);
                         break;
                     case BOOLEAN_ARRAY:
-                        portable.setBooleanArray(name, value == NOT_SET ? null : (boolean[]) value);
+                        portable.setArrayOfBooleans(name, value == NOT_SET ? null : (boolean[]) value);
                         break;
                     case BYTE_ARRAY:
-                        portable.setByteArray(name, value == NOT_SET ? null : (byte[]) value);
+                        portable.setArrayOfBytes(name, value == NOT_SET ? null : (byte[]) value);
                         break;
                     case SHORT_ARRAY:
-                        portable.setShortArray(name, value == NOT_SET ? null : (short[]) value);
+                        portable.setArrayOfShorts(name, value == NOT_SET ? null : (short[]) value);
                         break;
                     case CHAR_ARRAY:
-                        portable.setCharArray(name, value == NOT_SET ? null : (char[]) value);
+                        portable.setArrayOfChars(name, value == NOT_SET ? null : (char[]) value);
                         break;
                     case INT_ARRAY:
-                        portable.setIntArray(name, value == NOT_SET ? null : (int[]) value);
+                        portable.setArrayOfInts(name, value == NOT_SET ? null : (int[]) value);
                         break;
                     case LONG_ARRAY:
-                        portable.setLongArray(name, value == NOT_SET ? null : (long[]) value);
+                        portable.setArrayOfLongs(name, value == NOT_SET ? null : (long[]) value);
                         break;
                     case FLOAT_ARRAY:
-                        portable.setFloatArray(name, value == NOT_SET ? null : (float[]) value);
+                        portable.setArrayOfFloats(name, value == NOT_SET ? null : (float[]) value);
                         break;
                     case DOUBLE_ARRAY:
-                        portable.setDoubleArray(name, value == NOT_SET ? null : (double[]) value);
+                        portable.setArrayOfDoubles(name, value == NOT_SET ? null : (double[]) value);
                         break;
                     case DECIMAL_ARRAY:
-                        portable.setDecimalArray(name, value == NOT_SET ? null : (BigDecimal[]) value);
+                        portable.setArrayOfDecimals(name, value == NOT_SET ? null : (BigDecimal[]) value);
                         break;
                     case UTF_ARRAY:
-                        portable.setStringArray(name, value == NOT_SET ? null : (String[]) value);
+                        portable.setArrayOfStrings(name, value == NOT_SET ? null : (String[]) value);
                         break;
                     case TIME_ARRAY:
-                        portable.setTimeArray(name, value == NOT_SET ? null : (LocalTime[]) value);
+                        portable.setArrayOfTimes(name, value == NOT_SET ? null : (LocalTime[]) value);
                         break;
                     case DATE_ARRAY:
-                        portable.setDateArray(name, value == NOT_SET ? null : (LocalDate[]) value);
+                        portable.setArrayOfDates(name, value == NOT_SET ? null : (LocalDate[]) value);
                         break;
                     case TIMESTAMP_ARRAY:
-                        portable.setTimestampArray(name, value == NOT_SET ? null : (LocalDateTime[]) value);
+                        portable.setArrayOfTimestamps(name, value == NOT_SET ? null : (LocalDateTime[]) value);
                         break;
                     case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                        portable.setTimestampWithTimezoneArray(name, value == NOT_SET ? null : (OffsetDateTime[]) value);
+                        portable.setArrayOfTimestampWithTimezones(name, value == NOT_SET ? null : (OffsetDateTime[]) value);
                         break;
                     case PORTABLE_ARRAY:
-                        portable.setGenericRecordArray(name, value == NOT_SET ? null : (GenericRecord[]) value);
+                        portable.setArrayOfGenericRecords(name, value == NOT_SET ? null : (GenericRecord[]) value);
                         break;
                     default:
                         throw QueryException.error("Unsupported type: " + type);

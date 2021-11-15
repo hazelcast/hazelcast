@@ -20,6 +20,9 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 public abstract class PortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
 
     /**
@@ -34,5 +37,131 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
         writeFieldsToStringBuilder(stringBuilder);
         stringBuilder.append('}');
         return stringBuilder.toString();
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBoolean(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByte(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDouble(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLong(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShort(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
     }
 }

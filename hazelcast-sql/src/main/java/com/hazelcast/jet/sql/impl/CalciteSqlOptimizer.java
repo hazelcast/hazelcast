@@ -41,21 +41,24 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -97,6 +100,9 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -235,6 +241,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
             return toDropMappingPlan(planKey, (SqlDropMapping) node);
+        } else if (node instanceof SqlCreateIndex) {
+            return toCreateIndexPlan(planKey, (SqlCreateIndex) node);
+        } else if (node instanceof SqlDropIndex) {
+            return toDropIndexPlan(planKey, (SqlDropIndex) node);
         } else if (node instanceof SqlCreateJob) {
             return toCreateJobPlan(planKey, parseResult, context);
         } else if (node instanceof SqlAlterJob) {
@@ -247,6 +257,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
+        } else if (node instanceof SqlExplainStatement) {
+            return toExplainStatementPlan(planKey, context, parseResult);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
@@ -284,6 +296,23 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toDropMappingPlan(PlanKey planKey, SqlDropMapping sqlDropMapping) {
         return new DropMappingPlan(planKey, sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
+    }
+
+    private SqlPlan toCreateIndexPlan(PlanKey planKey, SqlCreateIndex sqlCreateIndex) {
+        return new CreateIndexPlan(
+                planKey,
+                sqlCreateIndex.indexName(),
+                sqlCreateIndex.mapName(),
+                sqlCreateIndex.type(),
+                sqlCreateIndex.columns(),
+                sqlCreateIndex.options(),
+                sqlCreateIndex.ifNotExists(),
+                planExecutor
+        );
+    }
+
+    private SqlPlan toDropIndexPlan(PlanKey planKey, SqlDropIndex sqlDropIndex) {
+        return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
     }
 
     private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context) {
@@ -336,6 +365,24 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
+    }
+
+    private SqlPlan toExplainStatementPlan(
+            PlanKey planKey,
+            OptimizerContext context,
+            QueryParseResult parseResult
+    ) {
+        SqlNode node = parseResult.getNode();
+        assert node instanceof SqlExplainStatement;
+        QueryConvertResult convertResult = context.convert(((SqlExplainStatement) node).getExplicandum());
+        PhysicalRel physicalRel = optimize(
+                parseResult.getParameterMetadata(),
+                convertResult.getRel(),
+                context,
+                false
+        );
+
+        return new ExplainStatementPlan(planKey, physicalRel, planExecutor);
     }
 
     private SqlPlanImpl toPlan(

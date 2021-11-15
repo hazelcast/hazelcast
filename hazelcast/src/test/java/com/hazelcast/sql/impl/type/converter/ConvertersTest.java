@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -50,6 +51,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
@@ -93,6 +95,7 @@ public class ConvertersTest {
         checkGetById(ZonedDateTimeConverter.INSTANCE);
 
         checkGetById(ObjectConverter.INSTANCE);
+        checkGetById(JsonConverter.INSTANCE);
 
         checkGetById(NullConverter.INSTANCE);
     }
@@ -122,9 +125,23 @@ public class ConvertersTest {
         checkGetByClass(ZonedDateTimeConverter.INSTANCE, ZonedDateTime.class);
 
         checkGetByClass(ObjectConverter.INSTANCE, Object.class, SqlCustomClass.class);
+        checkGetByClass(JsonConverter.INSTANCE, HazelcastJsonValue.class);
 
         checkGetByClass(NullConverter.INSTANCE, void.class);
         checkGetByClass(NullConverter.INSTANCE, Void.class);
+    }
+
+    @Test
+    public void testJsonConverter() {
+        JsonConverter converter = JsonConverter.INSTANCE;
+        checkConverter(converter, Converter.ID_JSON, JSON, HazelcastJsonValue.class);
+        checkConverterConversions(converter, VARCHAR, JSON, OBJECT);
+
+        assertEquals("[1,2,3]", converter.asVarchar(new HazelcastJsonValue("[1,2,3]")));
+
+        assertEquals(new HazelcastJsonValue("[1,2,3]"), converter.asObject(new HazelcastJsonValue("[1,2,3]")));
+
+        checkConverterSelf(converter);
     }
 
     @Test
@@ -549,7 +566,8 @@ public class ConvertersTest {
             DATE,
             TIMESTAMP,
             TIMESTAMP_WITH_TIME_ZONE,
-            OBJECT
+            OBJECT,
+            JSON
         );
 
         // Boolean
@@ -726,7 +744,8 @@ public class ConvertersTest {
             DATE,
             TIMESTAMP,
             TIMESTAMP_WITH_TIME_ZONE,
-            VARCHAR
+            VARCHAR,
+            JSON
         );
 
         checkObjectConverter(c);
@@ -981,6 +1000,11 @@ public class ConvertersTest {
                 assertEquals(expected, converter.canConvertToObject());
 
                 break;
+
+            case JSON:
+                assertEquals(expected, converter.canConvertToJson());
+
+                break;
         }
 
         if (!expected) {
@@ -1190,6 +1214,13 @@ public class ConvertersTest {
             invoked = OBJECT;
 
             return new Object();
+        }
+
+        @Override
+        public HazelcastJsonValue asJson(Object val) {
+            invoked = JSON;
+
+            return new HazelcastJsonValue("");
         }
 
         @Override

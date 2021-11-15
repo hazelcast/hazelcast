@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.genericrecord;
+package com.hazelcast.internal.serialization.impl.portable.integration;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -50,7 +50,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
+public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTestSupport {
 
     private final SerializationConfig serializationConfig = new SerializationConfig()
             .addPortableFactory(PortableTest.PORTABLE_FACTORY_ID, new PortableTest.TestPortableFactory());
@@ -371,19 +371,19 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.portable(innerPortableClassDefinition)
-                .setByteArray("b", inner.bb)
-                .setCharArray("c", inner.cc)
-                .setShortArray("s", inner.ss)
-                .setIntArray("i", inner.ii)
-                .setLongArray("l", inner.ll)
-                .setFloatArray("f", inner.ff)
-                .setDoubleArray("d", inner.dd)
-                .setGenericRecordArray("nn", namedRecords)
-                .setDecimalArray("bigDecimals", inner.bigDecimals)
-                .setTimeArray("localTimes", inner.localTimes)
-                .setDateArray("localDates", inner.localDates)
-                .setTimestampArray("localDateTimes", inner.localDateTimes)
-                .setTimestampWithTimezoneArray("offsetDateTimes", inner.offsetDateTimes)
+                .setArrayOfBytes("b", inner.bb)
+                .setArrayOfChars("c", inner.cc)
+                .setArrayOfShorts("s", inner.ss)
+                .setArrayOfInts("i", inner.ii)
+                .setArrayOfLongs("l", inner.ll)
+                .setArrayOfFloats("f", inner.ff)
+                .setArrayOfDoubles("d", inner.dd)
+                .setArrayOfGenericRecords("nn", namedRecords)
+                .setArrayOfDecimals("bigDecimals", inner.bigDecimals)
+                .setArrayOfTimes("localTimes", inner.localTimes)
+                .setArrayOfDates("localDates", inner.localDates)
+                .setArrayOfTimestamps("localDateTimes", inner.localDateTimes)
+                .setArrayOfTimestampWithTimezones("offsetDateTimes", inner.offsetDateTimes)
                 .build();
 
         return GenericRecordBuilder.portable(mainPortableClassDefinition)

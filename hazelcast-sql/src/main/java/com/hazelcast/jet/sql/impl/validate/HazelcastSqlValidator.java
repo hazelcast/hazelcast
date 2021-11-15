@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
+import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunction;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -73,6 +76,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
@@ -89,16 +93,24 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             .withSqlConformance(HazelcastSqlConformance.INSTANCE)
             .withTypeCoercionFactory(HazelcastTypeCoercion::new);
 
-    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
+    /**
+     * Visitor to rewrite Calcite operators to Hazelcast operators.
+     */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
 
-    /** Parameter converter that will be passed to parameter metadata. */
+    /**
+     * Parameter converter that will be passed to parameter metadata.
+     */
     private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
 
-    /** Parameter positions. */
+    /**
+     * Parameter positions.
+     */
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
-    /** Parameter values. */
+    /**
+     * Parameter values.
+     */
     private final List<Object> arguments;
 
     private final MappingResolver mappingResolver;
@@ -131,6 +143,30 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode instanceof SqlShowStatement) {
             return topNode;
+        }
+
+        if (topNode instanceof SqlExplainStatement) {
+            /*
+             * Just FYI, why do we do set validated explicandum back.
+             *
+             * There was a corner case with queries where ORDER BY is present.
+             * SqlOrderBy is present as AST node (or SqlNode),
+             * but then it becomes embedded as part of SqlSelect AST node,
+             * and node itself is removed in `performUnconditionalRewrites().
+             * As a result, ORDER BY is absent as operator
+             * on the next validation & optimization phases
+             * and also doesn't present in SUPPORTED_KINDS.
+             *
+             * Explain query contains explicandum query, and
+             * performUnconditionalRewrites() doesn't rewrite anything for EXPLAIN.
+             * It's a reason why we do it (extraction, validation & re-setting) manually.
+             */
+
+            SqlExplainStatement explainStatement = (SqlExplainStatement) topNode;
+            SqlNode explicandum = explainStatement.getExplicandum();
+            explicandum = super.validate(explicandum);
+            explainStatement.setExplicandum(explicandum);
+            return explainStatement;
         }
 
         return super.validate(topNode);
@@ -181,15 +217,41 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
+
+        if (countOrderingFunctions(node) > 1) {
+            throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
+        }
+
         isInfiniteRows = containsStreamingSource(node);
+    }
+
+    private static int countOrderingFunctions(SqlNode node) {
+        class OrderingFunctionCounter extends SqlBasicVisitor<Void> {
+            int count;
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof ImposeOrderFunction) {
+                    count++;
+                }
+                return super.visit(call);
+            }
+        }
+
+        OrderingFunctionCounter counter = new OrderingFunctionCounter();
+        node.accept(counter);
+        return counter.count;
     }
 
     @Override
     protected void validateGroupClause(SqlSelect select) {
         super.validateGroupClause(select);
 
-        if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
+        if (isInfiniteRows(select)
+                && containsGroupingOrAggregation(select)
+                && !containsOrderedWindow(requireNonNull(select.getFrom()))) {
+            throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
         }
     }
 
@@ -209,6 +271,30 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return false;
+    }
+
+    private static boolean containsOrderedWindow(SqlNode node) {
+        class OrderedWindowFinder extends SqlBasicVisitor<Void> {
+            boolean windowingFunctionFound;
+            boolean orderedInputToWindowingFunctionFound;
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastWindowTableFunction) {
+                    windowingFunctionFound = true;
+                    orderedInputToWindowingFunctionFound = false;
+                } else if (operator instanceof ImposeOrderFunction && windowingFunctionFound) {
+                    orderedInputToWindowingFunctionFound = true;
+                    windowingFunctionFound = false;
+                }
+                return super.visit(call);
+            }
+        }
+
+        OrderedWindowFinder finder = new OrderedWindowFinder();
+        node.accept(finder);
+        return finder.orderedInputToWindowingFunctionFound;
     }
 
     @Override
@@ -255,8 +341,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
+            case FULL:
+                throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
             default:
-                break;
+                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
         }
     }
 
@@ -388,8 +476,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlCall call) {
                 SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastTableFunction) {
-                    if (((HazelcastTableFunction) operator).isStream()) {
+                if (operator instanceof HazelcastTableSourceFunction) {
+                    if (((HazelcastTableSourceFunction) operator).isStream()) {
                         found = true;
                         return null;
                     }
@@ -482,7 +570,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
             if (converter == null) {
                 QueryDataType targetType =
-                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName());
+                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType());
                 converter = AbstractParameterConverter.from(targetType, i, parameterPositionMap.get(i));
             }
 

@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -106,42 +107,9 @@ public class SqlCompactTest extends SqlTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         initializeWithClient(1, config, clientConfig);
-        sqlService = client().getSql();
+        sqlService = instance().getSql();
 
         serializationService = Util.getSerializationService(instance());
-    }
-
-    @Test
-    public void test_nulls() throws IOException {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR "
-                + ") "
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_KEY_COMPACT_TYPE_NAME + "'='" + PERSON_ID_TYPE_NAME + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
-                + ")"
-        ).updateCount();
-
-        sqlService.execute("SINK INTO " + name + " VALUES (1, null)").updateCount();
-
-        Entry<Data, Data> entry = randomEntryFrom(name);
-
-        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt("id")).isEqualTo(1);
-
-        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertFalse(valueRecord.hasField("id"));
-        assertThat(valueRecord.getString("name")).isNull();
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                singletonList(new Row(1, null))
-        );
     }
 
     @Test
@@ -161,24 +129,184 @@ public class SqlCompactTest extends SqlTestSupport {
         ).updateCount()).hasMessageContaining("Cannot derive Compact type for 'OBJECT'");
     }
 
+
+    public static class Primitives {
+        boolean b;
+        byte bt;
+        short s;
+        int i;
+        long l;
+        float f;
+        double d;
+
+        public Primitives() {
+
+        }
+
+        public Primitives(boolean b, byte bt, short s, int i, long l, float f, double d) {
+            this.b = b;
+            this.bt = bt;
+            this.s = s;
+            this.i = i;
+            this.l = l;
+            this.f = f;
+            this.d = d;
+        }
+
+
+    }
+
     @Test
-    public void when_nullIntoPrimitive_then_fails() {
+    public void test_readToClassWithNonNulls() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR "
+                + " __key INT "
+                + ", b BOOLEAN "
+                + ", bt TINYINT "
+                + ", s SMALLINT "
+                + ", i INTEGER "
+                + ", l BIGINT "
+                + ", f REAL "
+                + ", d DOUBLE "
                 + ") "
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_KEY_COMPACT_TYPE_NAME + "'='" + PERSON_ID_TYPE_NAME + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='integer'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + Primitives.class.getName() + '\''
+                + ")"
+        ).updateCount();
+
+        sqlService.execute("SINK INTO " + name + " VALUES (1, true, 2, 3, 4, 5, 12.321, 124.311)").updateCount();
+
+        IMap<Object, Object> map = client().getMap(name);
+        Primitives primitives = (Primitives) map.get(1);
+
+        assertEquals(primitives.b, true);
+        assertEquals(primitives.bt, 2);
+        assertEquals(primitives.s, 3);
+        assertEquals(primitives.i, 4);
+        assertEquals(primitives.l, 5);
+        assertEquals(primitives.f, 12.321, 0.1);
+        assertEquals(primitives.d, 124.311, 0.1);
+    }
+
+
+    @Test
+    public void test_insertNulls() throws IOException {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + "__key INT "
+                + ", b BOOLEAN "
+                + ", st VARCHAR "
+                + ", bt TINYINT "
+                + ", s SMALLINT "
+                + ", i INTEGER "
+                + ", l BIGINT "
+                + ", bd DECIMAL "
+                + ", f REAL "
+                + ", d DOUBLE "
+                + ", t TIME "
+                + ", dt DATE "
+                + ", tmstmp TIMESTAMP "
+                + ", tmstmpTz TIMESTAMP WITH TIME ZONE "
+                + ") "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='integer'"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
                 + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
                 + ")"
-        );
+        ).updateCount();
 
-        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')").iterator().next())
-                .hasMessageContaining("Cannot set NULL to a primitive field");
+        sqlService.execute("SINK INTO " + name + " VALUES (1, null, null, null, "
+                + "null, null, null, null, null, null, null, null, null, null )").updateCount();
+
+        Entry<Data, Data> entry = randomEntryFrom(name);
+
+        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
+        assertThat(valueRecord.getNullableBoolean("b")).isNull();
+        assertThat(valueRecord.getString("st")).isNull();
+        assertThat(valueRecord.getNullableByte("bt")).isNull();
+        assertThat(valueRecord.getNullableShort("s")).isNull();
+        assertThat(valueRecord.getNullableInt("i")).isNull();
+        assertThat(valueRecord.getNullableLong("l")).isNull();
+        assertThat(valueRecord.getDecimal("bd")).isNull();
+        assertThat(valueRecord.getNullableFloat("f")).isNull();
+        assertThat(valueRecord.getNullableDouble("d")).isNull();
+        assertThat(valueRecord.getTime("t")).isNull();
+        assertThat(valueRecord.getDate("dt")).isNull();
+        assertThat(valueRecord.getTimestamp("tmstmp")).isNull();
+        assertThat(valueRecord.getTimestampWithTimezone("tmstmpTz")).isNull();
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, null, null, null, null, null, null, null, null, null, null, null, null, null)));
+    }
+
+    @Test
+    public void test_readNonNullKindsOfCompactViaSQL() throws IOException {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + " __key INT "
+                + ", b BOOLEAN "
+                + ", st VARCHAR "
+                + ", bt TINYINT "
+                + ", s SMALLINT "
+                + ", i INTEGER "
+                + ", l BIGINT "
+                + ", bd DECIMAL "
+                + ", f REAL "
+                + ", d DOUBLE "
+                + ", t TIME "
+                + ", dt DATE "
+                + ", tmstmp TIMESTAMP "
+                + ", tmstmpTz TIMESTAMP WITH TIME ZONE "
+                + ") "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='integer'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
+                + ")"
+        ).updateCount();
+
+        boolean b = true;
+        String st = "test";
+        byte bt = (byte) 12;
+        short s = 1312;
+        int i = 12314;
+        long l = 23214141L;
+        BigDecimal bd = BigDecimal.TEN;
+        float f = 13221321.213213f;
+        double d = 13221321.213213d;
+        LocalDate dt = LocalDate.now();
+        LocalTime t = LocalTime.now();
+        LocalDateTime tmstmp = LocalDateTime.now();
+        OffsetDateTime tmstmpTz = OffsetDateTime.now();
+
+        GenericRecord record = GenericRecordBuilder.compact(PERSON_TYPE_NAME)
+                .setBoolean("b", b)
+                .setString("st", st)
+                .setByte("bt", bt)
+                .setShort("s", s)
+                .setInt("i", i)
+                .setLong("l", l)
+                .setDecimal("bd", bd)
+                .setFloat("f", f)
+                .setDouble("d", d)
+                .setTime("t", t)
+                .setDate("dt", dt)
+                .setTimestamp("tmstmp", tmstmp)
+                .setTimestampWithTimezone("tmstmpTz", tmstmpTz)
+                .build();
+
+        IMap<Object, Object> map = client().getMap(name);
+        map.put(1, record);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, b, st, bt, s, i, l, bd, f, d, t, dt, tmstmp, tmstmpTz)));
     }
 
     @Test
@@ -215,10 +343,10 @@ public class SqlCompactTest extends SqlTestSupport {
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt("id")).isEqualTo(1);
+        assertThat(keyRecord.getNullableInt("id")).isEqualTo(1);
 
         InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueRecord.getInt("id")).isEqualTo(2);
+        assertThat(valueRecord.getNullableInt("id")).isEqualTo(2);
 
         assertRowsAnyOrder(
                 "SELECT key_id, value_id FROM " + name,
@@ -357,13 +485,13 @@ public class SqlCompactTest extends SqlTestSupport {
                 .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
         assertThat(valueRecord.getString("string")).isEqualTo("string");
         assertThat(valueRecord.getString("character")).isEqualTo("a");
-        assertThat(valueRecord.getBoolean("boolean")).isTrue();
-        assertThat(valueRecord.getByte("byte")).isEqualTo((byte) 127);
-        assertThat(valueRecord.getShort("short")).isEqualTo((short) 32767);
-        assertThat(valueRecord.getInt("int")).isEqualTo(2147483647);
-        assertThat(valueRecord.getLong("long")).isEqualTo(9223372036854775807L);
-        assertThat(valueRecord.getFloat("float")).isEqualTo(1234567890.1F);
-        assertThat(valueRecord.getDouble("double")).isEqualTo(123451234567890.1D);
+        assertThat(valueRecord.getNullableBoolean("boolean")).isTrue();
+        assertThat(valueRecord.getNullableByte("byte")).isEqualTo((byte) 127);
+        assertThat(valueRecord.getNullableShort("short")).isEqualTo((short) 32767);
+        assertThat(valueRecord.getNullableInt("int")).isEqualTo(2147483647);
+        assertThat(valueRecord.getNullableLong("long")).isEqualTo(9223372036854775807L);
+        assertThat(valueRecord.getNullableFloat("float")).isEqualTo(1234567890.1F);
+        assertThat(valueRecord.getNullableDouble("double")).isEqualTo(123451234567890.1D);
         assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
         assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
         assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
@@ -445,7 +573,7 @@ public class SqlCompactTest extends SqlTestSupport {
         assertFalse(rowIterator.hasNext());
 
         assertEquals(
-                GenericRecordBuilder.compact(PERSON_ID_TYPE_NAME).setInt("id", 1).build(),
+                GenericRecordBuilder.compact(PERSON_ID_TYPE_NAME).setNullableInt("id", 1).build(),
                 row.getObject(0)
         );
         assertEquals(
