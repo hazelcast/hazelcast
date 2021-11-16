@@ -160,7 +160,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         // TODO: fix nullability
-        return getRexBuilder().makeInputRef(typeFactory.createTypeWithNullability(field.getType(), false), field.getIndex());
+        return getRexBuilder().makeInputRef(
+                typeFactory.createTypeWithNullability(field.getType(), true),
+                field.getIndex()
+        );
     }
 
     /**

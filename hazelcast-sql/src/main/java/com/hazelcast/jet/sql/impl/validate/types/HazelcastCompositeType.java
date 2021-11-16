@@ -65,4 +65,9 @@ public class HazelcastCompositeType extends RelDataTypeImpl {
             super(name, index, type);
         }
     }
+
+    @Override
+    public boolean isNullable() {
+        return true;
+    }
 }

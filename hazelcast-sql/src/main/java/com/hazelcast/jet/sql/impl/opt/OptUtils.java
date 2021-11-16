@@ -388,7 +388,10 @@ public final class OptUtils {
                 currentField = new HazelcastCompositeType.Field(
                         entry.getName(),
                         index,
-                        typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(entry.getType()))
+                        typeFactory.createTypeWithNullability(
+                                typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(entry.getType())),
+                                true
+                        )
                 );
             }
 
