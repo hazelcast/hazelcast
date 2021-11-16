@@ -79,6 +79,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
@@ -172,8 +173,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_SEARCHABLE = 59;
     public static final int EXPRESSION_SEARCH = 60;
-    public static final int EXPRESSION_FIELD_ACCESS = 61;
-    public static final int QUERY_DATA_TYPE_FIELD = 62;
+    public static final int VIEW = 61;
+    public static final int EXPRESSION_FIELD_ACCESS = 62;
+    public static final int QUERY_DATA_TYPE_FIELD = 63;
 
     public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
 
@@ -263,6 +265,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+        constructors[VIEW] = arg -> new View();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataTypeField();
 

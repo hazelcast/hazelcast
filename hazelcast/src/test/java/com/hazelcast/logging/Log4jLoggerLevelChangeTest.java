@@ -22,9 +22,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,8 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.util.logging.Level;
 
+import static com.hazelcast.logging.Log4jTrackingAppender.registerTrackingAppender;
 import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_LOG4J;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -44,7 +41,7 @@ public class Log4jLoggerLevelChangeTest extends HazelcastTestSupport {
     public final IsolatedLoggingRule isolatedLoggingRule = new IsolatedLoggingRule();
 
     private LoggingServiceImpl loggingService;
-    private TestAppender appender;
+    private Log4jTrackingAppender appender;
     private ILogger logger;
 
     @Before
@@ -53,59 +50,36 @@ public class Log4jLoggerLevelChangeTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         loggingService = (LoggingServiceImpl) instance.getLoggingService();
 
-        appender = new TestAppender();
-        LogManager.getRootLogger().addAppender(appender);
+        String loggerName = Log4jLoggerLevelChangeTest.class.getName();
+        appender = registerTrackingAppender(loggerName);
 
-        logger = loggingService.getLogger(Log4jLoggerLevelChangeTest.class.getName());
+        logger = loggingService.getLogger(loggerName);
     }
 
     @Test
     public void test() {
-        assertEquals(0, appender.hits);
+        appender.assertNoLoggedEvents();
 
         logger.finest("foo");
-        assertEquals(0, appender.hits);
+        appender.assertNoLoggedEvents();
 
         logger.severe("foo");
-        assertEquals(1, appender.hits);
+        appender.assertNumberOfLoggedEvents(1);
 
         loggingService.setLevel(Level.OFF);
         logger.severe("foo");
-        assertEquals(2, appender.hits);
+        appender.assertNumberOfLoggedEvents(2);
 
         loggingService.setLevel(Level.FINEST);
         logger.finest("foo");
-        assertEquals(3, appender.hits);
+        appender.assertNumberOfLoggedEvents(3);
 
         loggingService.resetLevel();
         logger.finest("foo");
-        assertEquals(3, appender.hits);
+        appender.assertNumberOfLoggedEvents(3);
 
         logger.severe("foo");
-        assertEquals(4, appender.hits);
-    }
-
-    private static class TestAppender extends AppenderSkeleton {
-
-        public int hits;
-
-        @Override
-        public void close() {
-            // do nothing
-        }
-
-        @Override
-        public boolean requiresLayout() {
-            return false;
-        }
-
-        @Override
-        protected void append(LoggingEvent event) {
-            if (Log4jLoggerLevelChangeTest.class.getName().equals(event.getLoggerName())) {
-                hits += 1;
-            }
-        }
-
+        appender.assertNumberOfLoggedEvents(4);
     }
 
 }

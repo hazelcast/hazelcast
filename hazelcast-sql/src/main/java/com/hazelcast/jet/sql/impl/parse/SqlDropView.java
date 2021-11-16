@@ -24,67 +24,50 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
-public class SqlDropMapping extends SqlDrop {
+public class SqlDropView extends SqlDrop {
+    private static final SqlSpecialOperator DROP_VIEW =
+            new SqlSpecialOperator("DROP VIEW", SqlKind.DROP_VIEW);
 
-    private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("DROP EXTERNAL MAPPING", SqlKind.DROP_TABLE);
+    private final SqlIdentifier viewName;
 
-    private final SqlIdentifier name;
-
-    public SqlDropMapping(
-            SqlIdentifier name,
-            boolean ifExists,
-            SqlParserPos pos
-    ) {
-        super(OPERATOR, pos, ifExists);
-
-        this.name = requireNonNull(name, "Name should not be null");
-    }
-
-    public String nameWithoutSchema() {
-        return name.names.get(name.names.size() - 1);
+    public SqlDropView(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
+        super(DROP_VIEW, pos, ifExists);
+        this.viewName = requireNonNull(name, "View name should not be null");
     }
 
     public boolean ifExists() {
         return ifExists;
     }
 
+    public String viewName() {
+        return viewName.toString();
+    }
+
     @Nonnull
     @Override
     public SqlOperator getOperator() {
-        return OPERATOR;
+        return DROP_VIEW;
     }
 
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name);
+        return ImmutableNullableList.of(viewName);
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("DROP EXTERNAL MAPPING");
+        writer.keyword("DROP VIEW");
         if (ifExists) {
             writer.keyword("IF EXISTS");
         }
-        name.unparse(writer, leftPrec, rightPrec);
-    }
-
-    @Override
-    public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        if (!isCatalogObjectNameValid(name)) {
-            throw validator.newValidationError(name, RESOURCE.droppedMappingDoesNotExist(name.toString()));
-        }
+        viewName.unparse(writer, leftPrec, rightPrec);
     }
 }

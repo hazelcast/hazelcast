@@ -21,12 +21,14 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ import static java.util.Collections.singletonList;
  * A table resolver for DDL-created mappings and for the {@code
  * information_schema}.
  */
-public class MappingCatalog implements TableResolver {
+public class TableResolverImpl implements TableResolver {
 
     public static final String SCHEMA_NAME_PUBLIC = "public";
     public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
@@ -55,33 +57,33 @@ public class MappingCatalog implements TableResolver {
     );
 
     private final NodeEngine nodeEngine;
-    private final MappingStorage storage;
+    private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
-    public MappingCatalog(
+    public TableResolverImpl(
             NodeEngine nodeEngine,
-            MappingStorage storage,
+            TablesStorage tableStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
-        this.storage = storage;
+        this.tableStorage = tableStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
         // we skip events originating from local member to avoid double processing
-        this.storage.registerListener(new MappingStorage.EntryListenerAdapter() {
+        this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
             @Override
-            public void entryUpdated(EntryEvent<String, Mapping> event) {
+            public void entryUpdated(EntryEvent<String, Object> event) {
                 if (!event.getMember().localMember()) {
                     listeners.forEach(TableListener::onTableChanged);
                 }
             }
 
             @Override
-            public void entryRemoved(EntryEvent<String, Mapping> event) {
+            public void entryRemoved(EntryEvent<String, Object> event) {
                 if (!event.getMember().localMember()) {
                     listeners.forEach(TableListener::onTableChanged);
                 }
@@ -89,17 +91,19 @@ public class MappingCatalog implements TableResolver {
         });
     }
 
+    // region mapping
+
     public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists) {
         Mapping resolved = resolveMapping(mapping);
 
         String name = resolved.name();
         if (ifNotExists) {
-            storage.putIfAbsent(name, resolved);
+            tableStorage.putIfAbsent(name, resolved);
         } else if (replace) {
-            storage.put(name, resolved);
+            tableStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
-        } else if (!storage.putIfAbsent(name, resolved)) {
-            throw QueryException.error("Mapping already exists: " + name);
+        } else if (!tableStorage.putIfAbsent(name, resolved)) {
+            throw QueryException.error("Mapping or view already exists: " + name);
         }
     }
 
@@ -119,7 +123,7 @@ public class MappingCatalog implements TableResolver {
     }
 
     public void removeMapping(String name, boolean ifExists) {
-        if (storage.remove(name) != null) {
+        if (tableStorage.removeMapping(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
@@ -128,8 +132,30 @@ public class MappingCatalog implements TableResolver {
 
     @Nonnull
     public List<String> getMappingNames() {
-        return storage.values().stream().map(Mapping::name).collect(Collectors.toList());
+        return tableStorage.valuesMappings().stream().map(Mapping::name).collect(Collectors.toList());
     }
+
+    // endregion
+
+    // region view
+
+    public void createView(View view, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(view.name(), view);
+        } else if (replace) {
+            tableStorage.put(view.name(), view);
+        } else if (!tableStorage.putIfAbsent(view.name(), view)) {
+            throw QueryException.error("Mapping or view already exists: " + view.name());
+        }
+    }
+
+    public void removeView(String name, boolean ifExists) {
+        if (tableStorage.removeView(name) == null && !ifExists) {
+            throw QueryException.error("View does not exist: " + name);
+        }
+    }
+
+    // endregion
 
     @Nonnull
     @Override
@@ -140,13 +166,14 @@ public class MappingCatalog implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Mapping> mappings = storage.values();
-        List<Table> tables = new ArrayList<>(mappings.size() + 2);
+        Collection<Mapping> mappings = tableStorage.valuesMappings();
+        List<Table> tables = new ArrayList<>(mappings.size() + 3);
         for (Mapping mapping : mappings) {
             tables.add(toTable(mapping));
         }
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
+        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, tableStorage.valuesViews()));
         return tables;
     }
 
