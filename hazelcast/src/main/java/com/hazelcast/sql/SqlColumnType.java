@@ -79,10 +79,7 @@ public enum SqlColumnType {
     NULL(14, Void.class),
 
     /** JSON type, represented by {@link HazelcastJsonValue} */
-    JSON(15, HazelcastJsonValue.class),
-
-    /** ROW type, could be represented by any Java class or any arbitrary data structure */
-    ROW(16, Object.class);
+    JSON(15, HazelcastJsonValue.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 
