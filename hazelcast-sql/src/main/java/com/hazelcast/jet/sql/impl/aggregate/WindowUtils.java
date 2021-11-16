@@ -72,9 +72,6 @@ public final class WindowUtils {
         long windowStartMillis = windowPolicy.floorFrameTs(millis);
         long windowEndMillis = windowPolicy.higherFrameTs(millis);
 
-        //long windowStartMillis = millis;
-        //long windowEndMillis = millis;
-
         Object[] result = Arrays.copyOf(row, row.length + 2);
         if (value instanceof Byte) {
             result[result.length - 2] = (byte) windowStartMillis;

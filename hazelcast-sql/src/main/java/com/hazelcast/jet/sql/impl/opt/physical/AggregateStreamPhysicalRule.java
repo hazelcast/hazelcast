@@ -86,7 +86,6 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     ) {
         AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
-                //logicalAggregate.getGroupSet(),
                 logicalAggregate.getGroupSet().clear(windowProperty.index()),
                 logicalAggregate.getAggCallList()
         );

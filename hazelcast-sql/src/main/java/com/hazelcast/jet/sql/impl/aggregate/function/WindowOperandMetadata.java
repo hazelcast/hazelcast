@@ -31,17 +31,17 @@ import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumn
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
-    private final int[] columnIndexes;
+    private final int[] operandIndexes;
 
-    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] columnIndexes) {
+    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] operandIndexes) {
         super(parameters);
-        this.columnIndexes = columnIndexes;
+        this.operandIndexes = operandIndexes;
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         boolean result = true;
-        for (int columnIndex : columnIndexes) {
+        for (int columnIndex : operandIndexes) {
             SqlNode column = binding.operand(columnIndex);
             result &= checkColumnOperand(binding, column);
         }
@@ -51,10 +51,10 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
         return result;
     }
 
-    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode lag) {
+    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode operand) {
         HazelcastSqlValidator validator = binding.getValidator();
         SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
-        return checkColumnType(validator, orderingColumnType, lag);
+        return checkColumnType(validator, orderingColumnType, operand);
     }
 
     private static boolean checkColumnType(SqlValidator validator, SqlTypeName orderingColumnType, SqlNode lag) {
