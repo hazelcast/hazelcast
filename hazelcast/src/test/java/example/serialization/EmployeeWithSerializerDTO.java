@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 /**
  * An example class which is planned to be generated via code generator
@@ -33,7 +32,7 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
             new CompactSerializer<EmployeeWithSerializerDTO>() {
                 @Nonnull
                 @Override
-                public EmployeeWithSerializerDTO read(@Nonnull CompactReader in) throws IOException {
+                public EmployeeWithSerializerDTO read(@Nonnull CompactReader in) {
                     EmployeeWithSerializerDTO employee = new EmployeeWithSerializerDTO();
                     employee.age = in.readInt("a");
                     employee.id = in.readLong("i");
@@ -41,7 +40,7 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
                 }
 
                 @Override
-                public void write(@Nonnull CompactWriter out, @Nonnull EmployeeWithSerializerDTO object) throws IOException {
+                public void write(@Nonnull CompactWriter out, @Nonnull EmployeeWithSerializerDTO object) {
                     out.writeInt("a", object.age);
                     out.writeLong("i", object.id);
                 }

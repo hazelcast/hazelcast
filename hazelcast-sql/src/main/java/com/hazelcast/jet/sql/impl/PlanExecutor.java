@@ -32,10 +32,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
@@ -45,7 +47,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -90,12 +92,12 @@ import static java.util.Collections.singletonList;
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
 
-    private final MappingCatalog catalog;
+    private final TableResolverImpl catalog;
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
     public PlanExecutor(
-            MappingCatalog catalog,
+            TableResolverImpl catalog,
             HazelcastInstance hazelcastInstance,
             QueryResultRegistry resultRegistry
     ) {
@@ -225,6 +227,16 @@ public class PlanExecutor {
             throw QueryException.error("The snapshot doesn't exist: " + plan.getSnapshotName());
         }
         snapshot.destroy();
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(CreateViewPlan plan) {
+        catalog.createView(plan.view(), plan.isReplace(), plan.ifNotExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(DropViewPlan plan) {
+        catalog.removeView(plan.viewName(), plan.isIfExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 

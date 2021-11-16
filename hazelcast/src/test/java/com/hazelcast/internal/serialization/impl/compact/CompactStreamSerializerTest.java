@@ -72,6 +72,7 @@ public class CompactStreamSerializerTest {
 
         assertEquals(expected, actual);
     }
+
     @Test
     public void testDefaultsReflection_insideCollection() {
         SerializationService serializationService = createSerializationService();
@@ -482,12 +483,12 @@ public class CompactStreamSerializerTest {
                 .register(EmployeeDTO.class, "employee", new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
-                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt("age", object.getAge());
                         out.writeLong("id", object.getId());
                         out.writeString("surname", "sir");
@@ -520,12 +521,12 @@ public class CompactStreamSerializerTest {
                 .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
-                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt("age", object.getAge());
                     }
                 });

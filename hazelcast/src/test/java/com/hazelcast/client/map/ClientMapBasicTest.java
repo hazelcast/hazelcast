@@ -35,6 +35,8 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import testsubjects.StaticSerializableBiFunction;
+import testsubjects.StaticSerializableBiFunctionEx;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -871,6 +873,33 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         assertEquals(value, result.get());
         assertNull(map.get(key));
+    }
+
+    @Test
+    public void testReplaceAllWithStaticSerializableFunction() {
+        IMap<String, String> map = client.getMap(randomString());
+        map.put("k1", "v1");
+        map.put("k2", "v2");
+        map.replaceAll(new StaticSerializableBiFunction("v_new"));
+        assertEquals(map.get("k1"), "v_new");
+        assertEquals(map.get("k2"), "v_new");
+    }
+
+    @Test
+    public void testReplaceAllWithLambdaFunction() {
+        IMap<String, Integer>  map = client.getMap(randomString());
+        map.put("k1", 1);
+        map.put("k2", 2);
+        map.replaceAll((k, v) -> v * 10);
+        assertEquals((int) map.get("k1"), 10);
+        assertEquals((int) map.get("k2"), 20);
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testReplaceAllWithStaticSerializableFunction_ThrowsException() {
+        IMap<Integer, Integer> map = client.getMap(randomString());
+        map.put(1, 0);
+        map.replaceAll(new StaticSerializableBiFunctionEx());
     }
 
     @Test
