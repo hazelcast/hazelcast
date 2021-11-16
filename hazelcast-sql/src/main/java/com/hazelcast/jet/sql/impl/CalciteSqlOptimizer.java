@@ -21,10 +21,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSelectPlan;
@@ -54,15 +56,17 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
-import com.hazelcast.jet.sql.impl.schema.MappingStorage;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -80,6 +84,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -94,6 +99,8 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
+import org.apache.calcite.sql.util.SqlString;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -183,17 +190,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         this.mappingResolver = new MetadataResolver(nodeEngine);
 
-        MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
-        this.tableResolvers = singletonList(mappingCatalog);
-        this.planExecutor = new PlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
+        this.tableResolvers = singletonList(tableResolverImpl);
+        this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static MappingCatalog mappingCatalog(NodeEngine nodeEngine) {
-        MappingStorage mappingStorage = new MappingStorage(nodeEngine);
+    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine) {
+        TablesStorage tablesStorage = new TablesStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        return new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
+        return new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
     }
 
     @Nullable
@@ -234,6 +241,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             QueryParseResult parseResult,
             OptimizerContext context
     ) {
+        // TODO [sasha] : refactor this.
         SqlNode node = parseResult.getNode();
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
@@ -255,6 +263,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateSnapshotPlan(planKey, (SqlCreateSnapshot) node);
         } else if (node instanceof SqlDropSnapshot) {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
+        } else if (node instanceof SqlCreateView) {
+            return toCreateViewPlan(planKey, (SqlCreateView) node);
+        } else if (node instanceof SqlDropView) {
+            return toDropViewPlan(planKey, (SqlDropView) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else if (node instanceof SqlExplainStatement) {
@@ -361,6 +373,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toDropSnapshotPlan(PlanKey planKey, SqlDropSnapshot sqlNode) {
         return new DropSnapshotPlan(planKey, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
+    }
+
+    private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
+        // TODO: should we create our own sql dialect or we may use PSQL dialect to unparse query as SQL string?
+        SqlString sqlString = sqlNode.getQuery().toSqlString(PostgresqlSqlDialect.DEFAULT);
+        String sql = sqlString.getSql();
+        boolean replace = sqlNode.getReplace();
+        boolean ifNotExists = sqlNode.ifNotExists;
+
+        return new CreateViewPlan(planKey, new View(sqlNode.name(), sql), replace, ifNotExists, planExecutor);
+    }
+
+    private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {
+        return new DropViewPlan(planKey, sqlNode.viewName(), sqlNode.ifExists(), planExecutor);
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {

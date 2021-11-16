@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
+import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -134,6 +135,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public SqlNode validate(SqlNode topNode) {
         if (topNode instanceof SqlCreateJob) {
             isCreateJob = true;
+        }
+
+        if (topNode instanceof SqlDropView) {
+            return topNode;
         }
 
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {

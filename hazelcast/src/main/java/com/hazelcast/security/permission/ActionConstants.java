@@ -78,6 +78,10 @@ public final class ActionConstants {
     public static final String LISTENER_MEMBER = "member";
     public static final String LISTENER_MIGRATION = "migration";
 
+    // SQL-specific actions
+    public static final String ACTION_CREATE_VIEW = "create-view";
+    public static final String ACTION_DROP_VIEW = "drop-view";
+
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 
     static {

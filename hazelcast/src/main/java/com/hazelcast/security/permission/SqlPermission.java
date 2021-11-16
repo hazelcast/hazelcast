@@ -21,7 +21,9 @@ public class SqlPermission extends InstancePermission {
     private static final int CREATE_MAPPING = CREATE;
     private static final int DROP_MAPPING = DESTROY;
     private static final int CREATE_INDEX = DROP_MAPPING << 1;
-    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX;
+    private static final int CREATE_VIEW = CREATE_INDEX << 1;
+    private static final int DROP_VIEW = CREATE_VIEW << 1;
+    private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);
@@ -40,6 +42,10 @@ public class SqlPermission extends InstancePermission {
                     mask |= DROP_MAPPING;
                 } else if (ActionConstants.ACTION_INDEX.equals(action)) {
                     mask |= CREATE_INDEX;
+                } else if (ActionConstants.ACTION_CREATE_VIEW.equals(action)) {
+                    mask |= CREATE_VIEW;
+                } else if (ActionConstants.ACTION_DROP_VIEW.equals(action)) {
+                    mask |= DROP_VIEW;
                 }
                 // Note: DROP INDEX is not implemented yet, no need to have separate permission.
             }
