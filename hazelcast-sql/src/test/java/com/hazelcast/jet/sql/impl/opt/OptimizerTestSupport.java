@@ -102,6 +102,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
                 1,
+                name -> null,
                 name -> null
         );
 

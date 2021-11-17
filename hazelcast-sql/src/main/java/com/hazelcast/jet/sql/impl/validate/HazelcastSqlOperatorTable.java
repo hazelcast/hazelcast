@@ -25,10 +25,13 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
+import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
@@ -70,6 +73,8 @@ import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastReplaceFunc
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastTrimFunction;
+import com.hazelcast.sql.impl.schema.ViewResolver;
+import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -84,6 +89,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlUtil;
@@ -353,6 +359,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public SqlNode visit(SqlCall call) {
+            call = expandView(call);
             call = rewriteCall(call);
             for (int i = 0; i < call.getOperandList().size(); i++) {
                 SqlNode operand = call.getOperandList().get(i);
@@ -398,6 +405,35 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlCase sqlCase = (SqlCase) call;
                 return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
                         sqlCase.getThenOperands(), sqlCase.getElseOperand());
+            }
+            return call;
+        }
+
+        private SqlCall expandView(SqlCall call) {
+            if (call instanceof SqlSelect) {
+                SqlSelect selectCall = (SqlSelect) call;
+                ViewResolver viewResolver = validator.getViewResolver();
+
+                if (selectCall.getFrom() == null) {
+                    return call;
+                }
+
+                SqlNode from = selectCall.getFrom();
+                if (from instanceof SqlIdentifier) {
+                    SqlIdentifier fromClause = (SqlIdentifier) from;
+                    String id = fromClause.names.get(0);
+                    View resolvedView = viewResolver.resolve(id);
+                    if (resolvedView == null) {
+                        return call;
+                    } else {
+                        QueryParser parser = new QueryParser(validator);
+                        // Note: query was parsed & validated previously.
+                        // We assume, that no exception happens here during parsing.
+                        QueryParseResult parseResult = parser.parse(resolvedView.query());
+                        selectCall.setFrom(parseResult.getNode());
+                        return selectCall;
+                    }
+                }
             }
             return call;
         }

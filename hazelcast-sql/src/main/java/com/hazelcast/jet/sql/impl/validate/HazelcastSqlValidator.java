@@ -37,11 +37,14 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.ViewResolver;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -116,19 +119,23 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final MappingResolver mappingResolver;
 
+    private final ViewResolver viewResolver;
+
     private boolean isCreateJob;
     private boolean isInfiniteRows;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            MappingResolver mappingResolver
+            MappingResolver mappingResolver,
+            ViewResolver viewResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
         this.mappingResolver = mappingResolver;
+        this.viewResolver = viewResolver;
     }
 
     @Override
@@ -551,6 +558,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public HazelcastTypeCoercion getTypeCoercion() {
         return (HazelcastTypeCoercion) super.getTypeCoercion();
+    }
+
+    public ViewResolver getViewResolver() {
+        return viewResolver;
     }
 
     public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {

@@ -67,6 +67,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.ViewResolverImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -83,6 +84,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
@@ -180,6 +182,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final NodeEngine nodeEngine;
 
     private final MappingResolver mappingResolver;
+    private final ViewResolver viewResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
 
@@ -189,6 +192,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         this.mappingResolver = new MetadataResolver(nodeEngine);
+        this.viewResolver = new ViewResolverImpl(nodeEngine);
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(tableResolverImpl);
@@ -225,7 +229,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                mappingResolver
+                mappingResolver,
+                viewResolver
         );
 
         // 2. Parse SQL string and validate it.

@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -149,6 +150,15 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
+    @Nonnull
+    public View getView(String name) {
+        View requestedView = tableStorage.getView(name);
+        if (requestedView == null) {
+            throw QueryException.error("View does not exist: " + name);
+        }
+        return requestedView;
+    }
+
     public void removeView(String name, boolean ifExists) {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
@@ -175,6 +185,12 @@ public class TableResolverImpl implements TableResolver {
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, tableStorage.valuesViews()));
         return tables;
+    }
+
+    @Nonnull
+    @Override
+    public List<View> getViews() {
+        return new ArrayList<>(tableStorage.valuesViews());
     }
 
     private Table toTable(Mapping mapping) {

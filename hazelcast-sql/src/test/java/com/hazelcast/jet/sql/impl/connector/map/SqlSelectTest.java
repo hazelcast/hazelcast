@@ -121,4 +121,16 @@ public class SqlSelectTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT this FROM " + name, projected);
     }
+
+    @Test
+    public void test_selectFromView() {
+        String name = randomName();
+        createMapping(name, int.class, String.class);
+        IMap<Integer, String> map = instance().getMap(name);
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + name);
+
+        List<Row> rows = fillIMapAndGetData(map, 20);
+        assertRowsAnyOrder("SELECT * FROM v", rows);
+    }
 }

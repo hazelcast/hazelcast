@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties;
 import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.schema.ViewResolver;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -98,12 +99,13 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver
+            MappingResolver mappingResolver,
+            ViewResolver viewResolver
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, mappingResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, mappingResolver, viewResolver);
     }
 
     public static OptimizerContext create(
@@ -111,12 +113,18 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver
+            MappingResolver mappingResolver,
+            ViewResolver viewResolver
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, mappingResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(
+                catalogReader,
+                arguments,
+                mappingResolver,
+                viewResolver
+        );
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
 

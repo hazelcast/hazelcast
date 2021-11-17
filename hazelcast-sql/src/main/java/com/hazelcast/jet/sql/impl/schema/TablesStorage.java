@@ -86,6 +86,10 @@ public class TablesStorage {
         return (Mapping) storage().remove(name);
     }
 
+    View getView(String name) {
+        return (View) storage().get(name);
+    }
+
     View removeView(String name) {
         return (View) storage().remove(name);
     }
@@ -97,7 +101,6 @@ public class TablesStorage {
                 .map(m -> (Mapping) m)
                 .collect(Collectors.toList());
     }
-
 
     Collection<View> valuesViews() {
         return storage().values()
