@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.phonehome;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.matching.ContainsPattern;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -43,6 +44,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 
@@ -67,8 +71,12 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
+    static ContainsPattern containingParam(String paramName, String expectedValue) {
+        return new ContainsPattern(paramName + "=" + expectedValue);
+    }
+
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().jettyHeaderBufferSize(16384));
+    public WireMockRule wireMockRule = new WireMockRule();
 
     private Node node;
     private PhoneHome phoneHome;
@@ -99,7 +107,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     public void stubUrls(String phoneHomeStatus, String awsStatus, String azureStatus, String gcpStatus) {
-        stubFor(get(urlPathEqualTo("/ping"))
+        stubFor(post(urlPathEqualTo("/ping"))
                 .willReturn(checkStatusConditional(phoneHomeStatus.equals("200"))));
         stubFor(get(urlPathEqualTo("/latest/meta-data"))
                 .willReturn(checkStatusConditional(awsStatus.equals("200"))));
@@ -131,17 +139,17 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpct", equalTo("2"))
-                .withQueryParam("mpbrct", equalTo("1"))
-                .withQueryParam("mpmsct", equalTo("1"))
-                .withQueryParam("mpaoqcct", equalTo("1"))
-                .withQueryParam("mpaoict", equalTo("1"))
-                .withQueryParam("mphect", equalTo("1"))
-                .withQueryParam("mpwact", equalTo("1"))
-                .withQueryParam("mpaocct", equalTo("1"))
-                .withQueryParam("mpevct", equalTo("1"))
-                .withQueryParam("mpnmct", equalTo("1")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("mpct", "2"))
+                .withRequestBody(containingParam("mpbrct", "1"))
+                .withRequestBody(containingParam("mpmsct", "1"))
+                .withRequestBody(containingParam("mpaoqcct", "1"))
+                .withRequestBody(containingParam("mpaoict", "1"))
+                .withRequestBody(containingParam("mphect", "1"))
+                .withRequestBody(containingParam("mpwact", "1"))
+                .withRequestBody(containingParam("mpaocct", "1"))
+                .withRequestBody(containingParam("mpevct", "1"))
+                .withRequestBody(containingParam("mpnmct", "1")));
     }
 
     @Test
@@ -160,18 +168,18 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpct", equalTo("1"))
-                .withQueryParam("sect", equalTo("1"))
-                .withQueryParam("quct", equalTo("1"))
-                .withQueryParam("mmct", equalTo("1"))
-                .withQueryParam("lict", equalTo("1"))
-                .withQueryParam("rbct", equalTo("1"))
-                .withQueryParam("tpct", equalTo("1"))
-                .withQueryParam("rpct", equalTo("1"))
-                .withQueryParam("cect", equalTo("1"))
-                .withQueryParam("pncct", equalTo("1"))
-                .withQueryParam("figct", equalTo("1")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("mpct", "1"))
+                .withRequestBody(containingParam("sect", "1"))
+                .withRequestBody(containingParam("quct", "1"))
+                .withRequestBody(containingParam("mmct", "1"))
+                .withRequestBody(containingParam("lict", "1"))
+                .withRequestBody(containingParam("rbct", "1"))
+                .withRequestBody(containingParam("tpct", "1"))
+                .withRequestBody(containingParam("rpct", "1"))
+                .withRequestBody(containingParam("cect", "1"))
+                .withRequestBody(containingParam("pncct", "1"))
+                .withRequestBody(containingParam("figct", "1")));
     }
 
     @Test
@@ -186,9 +194,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("cact", equalTo("1"))
-                .withQueryParam("cawact", equalTo("1")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("cact", "1"))
+                .withRequestBody(containingParam("cawact", "1")));
     }
 
     @Test
@@ -209,9 +217,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpptlams", equalTo(String.valueOf(totalPutLatency / totalPutOperationCount)))
-                .withQueryParam("mpgtlams", equalTo(String.valueOf(totalGetLatency / totalGetOperationCount))));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("mpptlams", String.valueOf(totalPutLatency / totalPutOperationCount)))
+                .withRequestBody(containingParam("mpgtlams", String.valueOf(totalGetLatency / totalGetOperationCount))));
 
         assertGreaterOrEquals("mpptlams", totalPutLatency / totalPutOperationCount, 200);
         assertGreaterOrEquals("mpgtlams", totalGetLatency / totalGetOperationCount, 200);
@@ -230,9 +238,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         localMapStats2.incrementGetLatencyNanos(1000000000L);
 
         phoneHome.phoneHome(false);
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpptla", equalTo("1666"))
-                .withQueryParam("mpgtla", equalTo("1000")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("mpptla", "1666"))
+                .withRequestBody(containingParam("mpgtla", "1000")));
     }
 
     @Test
@@ -240,8 +248,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         stubUrls("200", "200", "4XX", "4XX");
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("cld", equalTo("A")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("cld", "A")));
     }
 
     @Test
@@ -249,8 +257,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         stubUrls("200", "4XX", "200", "4XX");
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("cld", equalTo("Z")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("cld", "Z")));
     }
 
     @Test
@@ -258,15 +266,15 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         stubUrls("200", "4XX", "4XX", "200");
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("cld", equalTo("G")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("cld", "G")));
     }
 
     @Test
     public void testDockerStateIfKuberNetes() {
         phoneHome.phoneHome(false);
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("dck", equalTo("K")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("dck", "K")));
     }
 
     @Test
@@ -274,8 +282,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
             throws IOException {
         when(kubernetesTokenPath.toRealPath()).thenThrow(new IOException());
         phoneHome.phoneHome(false);
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("dck", equalTo("D")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("dck", "D")));
     }
 
     @Test
@@ -283,8 +291,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
             throws IOException {
         when(dockerPath.toRealPath()).thenThrow(new IOException());
         phoneHome.phoneHome(false);
-        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("dck", equalTo("N")));
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("dck", "N")));
     }
 
     @Test
@@ -294,7 +302,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
         phoneHome.phoneHome(false);
 
-        verify(2, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("1")));
+        verify(2, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("mpct", "1")));
     }
 
     @Test
