@@ -45,6 +45,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+
+
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
@@ -54,12 +59,10 @@ import java.nio.file.Paths;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.when;
@@ -68,12 +71,12 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
-    private static ContainsPattern containingParam(String paramName, String expectedValue) {
+    static ContainsPattern containingParam(String paramName, String expectedValue) {
         return new ContainsPattern(paramName + "=" + expectedValue);
     }
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().jettyHeaderBufferSize(16384));
+    public WireMockRule wireMockRule = new WireMockRule();
 
     private Node node;
     private PhoneHome phoneHome;
