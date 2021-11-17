@@ -244,7 +244,7 @@ public class RestCallCollector {
     }
 
     public String getMapDeleteFailureCount() {
-        return String.valueOf(mapDeleteSuccCount.get());
+        return String.valueOf(mapDeleteFailCount.get());
     }
 
     public String getTotalMapRequestCount() {
