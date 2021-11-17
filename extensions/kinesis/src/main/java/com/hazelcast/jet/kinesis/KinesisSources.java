@@ -138,6 +138,7 @@ public final class KinesisSources {
     /**
      * Fluent builder for constructing the Kinesis source and setting
      * its configuration parameters.
+     * @param <T> Result type returned from the source.
      */
     public static final class Builder<T> {
 
@@ -290,8 +291,8 @@ public final class KinesisSources {
         }
 
         /**
-         * Specifies projection function, that will map input {@link Record} and {@link com.amazonaws.services.kinesis.model.Shard}
-         * from which this record was read into user-defined type.
+         * Specifies projection function, that will map input {@link Record}
+         * and {@link com.amazonaws.services.kinesis.model.Shard} from which this record was read into user-defined type.
          *
          * If not provided, source will return {@code Map.Entry<String, byte[]>} with {@link Record#getPartitionKey()}
          * as key and {@link Record#getData()} as value.
