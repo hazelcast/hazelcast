@@ -114,6 +114,7 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restmapgetsucc", "1"))
                 .withRequestBody(containingParam("restmapgetfail", "2"))
                 .withRequestBody(containingParam("restmapdeletesucc", "1"))
+                .withRequestBody(containingParam("restmapdeletefail", "0"))
                 .withRequestBody(containingParam("restmapct", "2"))
                 .withRequestBody(containingParam("restqueuepostsucc", "0"))
                 .withRequestBody(containingParam("restqueuepostfail", "0"))
