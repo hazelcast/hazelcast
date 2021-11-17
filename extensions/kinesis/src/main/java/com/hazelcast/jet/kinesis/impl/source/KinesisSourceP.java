@@ -19,7 +19,7 @@ package com.hazelcast.jet.kinesis.impl.source;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -62,7 +62,7 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
     @Nonnull
     private final String stream;
     @Nonnull
-    private final EventTimeMapper<? super Entry<String, T>> eventTimeMapper;
+    private final EventTimeMapper<? super T> eventTimeMapper;
     @Nonnull
     private final HashRange memberHashRange;
     @Nonnull
@@ -79,7 +79,7 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
     private final RetryStrategy retryStrategy;
     @Nonnull
     private final InitialShardIterators initialShardIterators;
-    private final FunctionEx<? super Record, ? extends T> projectionFn;
+    private final BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn;
 
     private int id;
     private ILogger logger;
@@ -92,14 +92,14 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
     public KinesisSourceP(
             @Nonnull AmazonKinesisAsync kinesis,
             @Nonnull String stream,
-            @Nonnull EventTimePolicy<? super Entry<String, T>> eventTimePolicy,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull HashRange memberHashRange,
             @Nonnull HashRange processorHashRange,
             @Nonnull ShardQueue shardQueue,
             @Nullable RangeMonitor monitor,
             @Nonnull RetryStrategy retryStrategy,
             @Nonnull InitialShardIterators initialShardIterators,
-            FunctionEx<? super Record, ? extends T> projectionFn
+            BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn
             ) {
         this.kinesis = Objects.requireNonNull(kinesis, "kinesis");
         this.stream = Objects.requireNonNull(stream, "stream");
@@ -166,18 +166,18 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
 
                 ShardReader.Result result = reader.probe(currentTime);
                 if (ShardReader.Result.HAS_DATA.equals(result)) {
+                    Shard shard = reader.getShard();
                     traverser = reader.clearData()
                             .flatMap(record -> {
-                                T payload = projectionFn.apply(record);
-                                Entry<String, T> entry = entry(record.getPartitionKey(), payload);
+                                T payload = projectionFn.apply(record, shard);
                                 return eventTimeMapper.flatMapEvent(
-                                        entry,
+                                        payload,
                                         currentReader,
                                         record.getApproximateArrivalTimestamp().getTime());
                             });
                     Long watermark = eventTimeMapper.getWatermark(currentReader);
                     watermark = watermark < 0 ? null : watermark;
-                    shardStates.update(reader.getShard(), reader.getLastSeenSeqNo(), watermark);
+                    shardStates.update(shard, reader.getLastSeenSeqNo(), watermark);
                     emitFromTraverser(traverser);
                     return;
                 } else if (ShardReader.Result.CLOSED.equals(result)) {

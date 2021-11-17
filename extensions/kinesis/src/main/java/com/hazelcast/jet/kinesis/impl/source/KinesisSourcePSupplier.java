@@ -18,7 +18,8 @@ package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.Record;
-import com.hazelcast.function.FunctionEx;
+import com.amazonaws.services.kinesis.model.Shard;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -30,7 +31,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
@@ -44,7 +44,7 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
     @Nonnull
     private final String stream;
     @Nonnull
-    private final EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy;
+    private final EventTimePolicy<? super T> eventTimePolicy;
     @Nonnull
     private final HashRange hashRange;
     @Nonnull
@@ -52,7 +52,7 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
     @Nonnull
     private final InitialShardIterators initialShardIterators;
     @Nonnull
-    private final FunctionEx<? super Record, ? extends T> projectionFn;
+    private final BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn;
 
     private transient int memberCount;
     private transient ILogger logger;
@@ -61,11 +61,11 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
     public KinesisSourcePSupplier(
             @Nonnull AwsConfig awsConfig,
             @Nonnull String stream,
-            @Nonnull EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull HashRange hashRange,
             @Nonnull RetryStrategy retryStrategy,
             @Nonnull InitialShardIterators initialShardIterators,
-            @Nonnull FunctionEx<? super Record, ? extends T> projectionFn
+            @Nonnull BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn
     ) {
         this.awsConfig = awsConfig;
         this.stream = stream;

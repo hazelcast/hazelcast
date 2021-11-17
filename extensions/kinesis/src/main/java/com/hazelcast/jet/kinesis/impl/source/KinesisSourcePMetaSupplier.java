@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
+import com.amazonaws.services.kinesis.model.Record;
+import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -47,9 +49,9 @@ public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
     @Nonnull
     private final InitialShardIterators initialShardIterators;
     @Nonnull
-    private final EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy;
+    private final EventTimePolicy<? super T> eventTimePolicy;
     @Nonnull
-    private final FunctionEx<? super com.amazonaws.services.kinesis.model.Record, ? extends T> projectionFn;
+    private final BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn;
 
     private transient Map<Address, HashRange> assignedHashRanges;
 
@@ -58,8 +60,8 @@ public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
             @Nonnull String stream,
             @Nonnull RetryStrategy retryStrategy,
             @Nonnull InitialShardIterators initialShardIterators,
-            @Nonnull EventTimePolicy<? super Map.Entry<String, T>> eventTimePolicy,
-            @Nonnull FunctionEx<? super com.amazonaws.services.kinesis.model.Record, ? extends T> projectionFn
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn
     ) {
         this.awsConfig = awsConfig;
         this.stream = stream;

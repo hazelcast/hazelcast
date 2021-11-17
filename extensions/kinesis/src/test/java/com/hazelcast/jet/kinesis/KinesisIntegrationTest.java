@@ -155,14 +155,16 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         try {
             Pipeline pipeline = Pipeline.create();
-            StreamSource<Map.Entry<String, String>> source = kinesisSource().build(r -> {
-                byte[] payload = new byte[r.getData().remaining()];
-                r.getData().get(payload);
-                return r.getSequenceNumber();
-            });
+            StreamSource<String> source = kinesisSource()
+                    .withProjectionFn((r, s) -> {
+                        byte[] payload = new byte[r.getData().remaining()];
+                        r.getData().get(payload);
+                        return r.getSequenceNumber();
+                    })
+                    .build();
             pipeline.readFrom(source)
                     .withoutTimestamps()
-                    .groupingKey(Map.Entry::getValue)
+                    .groupingKey(r -> r)
                     .rollingAggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, results -> {
                         assertEquals(MESSAGES, results.size());

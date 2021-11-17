@@ -175,7 +175,7 @@ public abstract class AbstractKinesisTest extends JetTestSupport {
         });
     }
 
-    protected KinesisSources.Builder kinesisSource() {
+    protected KinesisSources.Builder<Map.Entry<String, byte[]>> kinesisSource() {
         return KinesisSources.kinesis(STREAM)
                 .withEndpoint(awsConfig.getEndpoint())
                 .withRegion(awsConfig.getRegion())

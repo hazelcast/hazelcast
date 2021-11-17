@@ -17,7 +17,8 @@
 package com.hazelcast.jet.kinesis;
 
 import com.amazonaws.services.kinesis.model.Record;
-import com.hazelcast.function.FunctionEx;
+import com.amazonaws.services.kinesis.model.Shard;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.kinesis.impl.source.InitialShardIterators;
 import com.hazelcast.jet.kinesis.impl.source.KinesisSourcePMetaSupplier;
@@ -130,15 +131,15 @@ public final class KinesisSources {
      * also to construct the source once configuration is done
      */
     @Nonnull
-    public static Builder kinesis(@Nonnull String stream) {
-        return new Builder(Objects.requireNonNull(stream));
+    public static Builder<Map.Entry<String, byte[]>> kinesis(@Nonnull String stream) {
+        return new Builder<>(Objects.requireNonNull(stream));
     }
 
     /**
      * Fluent builder for constructing the Kinesis source and setting
      * its configuration parameters.
      */
-    public static final class Builder {
+    public static final class Builder<T> {
 
         private static final long INITIAL_RETRY_TIMEOUT_MS = 100L;
         private static final double EXPONENTIAL_BACKOFF_MULTIPLIER = 2.0;
@@ -156,10 +157,13 @@ public final class KinesisSources {
         @Nonnull
         private RetryStrategy retryStrategy = DEFAULT_RETRY_STRATEGY;
         @Nonnull
-        private InitialShardIterators initialShardIterators = new InitialShardIterators();
+        private final InitialShardIterators initialShardIterators = new InitialShardIterators();
+        @Nonnull
+        private BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn;
 
         private Builder(@Nonnull String stream) {
             this.stream = stream;
+            this.projectionFn = (record, shard) -> (T) toArray(record, shard);
         }
 
         /**
@@ -176,7 +180,7 @@ public final class KinesisSources {
          * endpoint for the specified region will be used.
          */
         @Nonnull
-        public Builder withEndpoint(@Nullable String endpoint) {
+        public Builder<T> withEndpoint(@Nullable String endpoint) {
             awsConfig.withEndpoint(endpoint);
             return this;
         }
@@ -193,7 +197,7 @@ public final class KinesisSources {
          * "{@code us-east-1}" will be used.
          */
         @Nonnull
-        public Builder withRegion(@Nullable String region) {
+        public Builder<T> withRegion(@Nullable String region) {
             awsConfig.withRegion(region);
             return this;
         }
@@ -211,7 +215,7 @@ public final class KinesisSources {
          * Either both keys must be set to non-null values or neither.
          */
         @Nonnull
-        public Builder withCredentials(@Nullable String accessKey, @Nullable String secretKey) {
+        public Builder<T> withCredentials(@Nullable String accessKey, @Nullable String secretKey) {
             awsConfig.withCredentials(accessKey, secretKey);
             return this;
         }
@@ -225,7 +229,7 @@ public final class KinesisSources {
          * capped at 3 seconds.
          */
         @Nonnull
-        public Builder withRetryStrategy(@Nonnull RetryStrategy retryStrategy) {
+        public Builder<T> withRetryStrategy(@Nonnull RetryStrategy retryStrategy) {
             this.retryStrategy = retryStrategy;
             return this;
         }
@@ -278,7 +282,7 @@ public final class KinesisSources {
          * in future Jet releases.
          */
         @Nonnull
-        public Builder withInitialShardIteratorRule(@Nonnull String shardIdRegExp,
+        public Builder<T> withInitialShardIteratorRule(@Nonnull String shardIdRegExp,
                                                     @Nonnull String shardIteratorType,
                                                     @Nullable String parameter) {
             initialShardIterators.add(shardIdRegExp, shardIteratorType, parameter);
@@ -286,22 +290,24 @@ public final class KinesisSources {
         }
 
         /**
-         * Constructs the source based on the options provided so far.
+         * Specifies projection function, that will map input {@link Record} and {@link com.amazonaws.services.kinesis.model.Shard}
+         * from which this record was read into user-defined type.
+         *
+         * If not provided, source will return {@code Map.Entry<String, byte[]>} with {@link Record#getPartitionKey()}
+         * as key and {@link Record#getData()} as value.
          */
         @Nonnull
-        public StreamSource<Map.Entry<String, byte[]>> build() {
-            FunctionEx<? super Record, byte[]> projectionFn = Builder::toArray;
-            return build(projectionFn);
+        @SuppressWarnings("unchecked") // here we base on Java's type erasure, that's why we use that casting
+        public <NT> Builder<NT> withProjectionFn(@Nonnull BiFunctionEx<Record, Shard, NT> projectionFn) {
+            this.projectionFn = (BiFunctionEx<Record, Shard, T>) projectionFn;
+            return (Builder<NT>) this;
         }
 
         /**
-         * Constructs the source based on the options provided so far and with user-specified projection function.
-         * @param projectionFn projection function that will convert Amazon's {@link Record} into some user-defined type
-         *                     as the map value.
-         * @since 5.1
+         * Constructs the source based on the options provided so far.
          */
         @Nonnull
-        public <T> StreamSource<Map.Entry<String, T>> build(FunctionEx<? super Record, ? extends T> projectionFn) {
+        public StreamSource<T> build() {
             String stream = this.stream;
             AwsConfig awsConfig = this.awsConfig;
             RetryStrategy retryStrategy = this.retryStrategy;
@@ -309,11 +315,11 @@ public final class KinesisSources {
             return Sources.streamFromProcessorWithWatermarks(
                     "Kinesis Source (" + stream + ")",
                     true,
-                    eventTimePolicy -> new KinesisSourcePMetaSupplier<>(awsConfig, stream, retryStrategy,
+                    eventTimePolicy -> new KinesisSourcePMetaSupplier<T>(awsConfig, stream, retryStrategy,
                             initialShardIterators, eventTimePolicy, projectionFn));
         }
 
-        private static byte[] toArray(com.amazonaws.services.kinesis.model.Record record) {
+        private static byte[] toArray(Record record, Shard shard) {
             ByteBuffer buffer = record.getData();
             int position = buffer.position();
             int limit = buffer.limit();
@@ -323,7 +329,6 @@ public final class KinesisSources {
                 return Arrays.copyOfRange(buffer.array(), position, limit);
             }
         }
-
     }
 
 }
