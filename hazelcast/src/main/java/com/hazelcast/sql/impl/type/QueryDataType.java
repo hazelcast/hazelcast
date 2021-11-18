@@ -49,6 +49,7 @@ import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -84,7 +85,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME = new QueryDataType(OffsetDateTimeConverter.INSTANCE);
     public static final QueryDataType TIMESTAMP_WITH_TZ_ZONED_DATE_TIME = new QueryDataType(ZonedDateTimeConverter.INSTANCE);
 
-    public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
+    public static final QueryDataType OBJECT = new QueryDataType(Collections.emptyList());
 
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
 

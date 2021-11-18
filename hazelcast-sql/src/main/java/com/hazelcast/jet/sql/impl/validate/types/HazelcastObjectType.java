@@ -25,15 +25,23 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
-public class HazelcastCompositeType extends RelDataTypeImpl {
-    public HazelcastCompositeType(final List<Field> fields) {
+public class HazelcastObjectType extends RelDataTypeImpl {
+    private final boolean nullable;
+    public HazelcastObjectType(final List<Field> fields) {
         super(fields);
-        this.digest = "COMPOSITE";
+        this.digest = "OBJECT";
+        this.nullable = true;
+    }
+
+    public HazelcastObjectType(final List<Field> fields, final boolean nullable) {
+        super(fields);
+        this.digest = "OBJECT";
+        this.nullable = nullable;
     }
 
     @Override
     protected void generateTypeString(final StringBuilder sb, final boolean withDetail) {
-        sb.append("COMPOSITE");
+        sb.append("OBJECT");
     }
 
     @Override
@@ -68,6 +76,6 @@ public class HazelcastCompositeType extends RelDataTypeImpl {
 
     @Override
     public boolean isNullable() {
-        return true;
+        return nullable;
     }
 }

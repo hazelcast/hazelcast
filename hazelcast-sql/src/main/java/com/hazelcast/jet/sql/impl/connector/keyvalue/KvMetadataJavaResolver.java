@@ -155,7 +155,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
                     String name = classField.getKey();
-                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+                    // skip Java classes like List, Map etc.
+                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(classField.getValue())) {
                         type = enhanceRowType(classField.getValue());
                     }
 
@@ -169,6 +170,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         }
 
         return topLevelFields.stream();
+    }
+
+    private boolean isJavaClass(Class<?> clazz) {
+        return !clazz.getPackage().getName().startsWith("java.");
     }
 
     private void expandFields(String prefix, List<QueryDataTypeField> fields, List<MappingField> projections) {

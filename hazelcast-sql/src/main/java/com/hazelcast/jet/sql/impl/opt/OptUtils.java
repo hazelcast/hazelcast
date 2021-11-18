@@ -27,7 +27,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastCompositeType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -369,23 +369,23 @@ public final class OptUtils {
 
     private static RelDataType convertRowTypeRecursively(final QueryDataType dataType, final RelDataTypeFactory typeFactory) {
         if (dataType.getSubFields() == null || dataType.getSubFields().size() == 0) {
-            return new HazelcastCompositeType(Collections.emptyList());
+            return new HazelcastObjectType(Collections.emptyList());
         }
 
         final List<QueryDataTypeField> subFields = dataType.getSubFields();
-        final List<HazelcastCompositeType.Field> fields = new ArrayList<>();
+        final List<HazelcastObjectType.Field> fields = new ArrayList<>();
         for (int index = 0; index < subFields.size(); index++) {
             final QueryDataTypeField entry = subFields.get(index);
-            final HazelcastCompositeType.Field currentField;
+            final HazelcastObjectType.Field currentField;
 
             if (entry.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                currentField = new HazelcastCompositeType.Field(
+                currentField = new HazelcastObjectType.Field(
                         entry.getName(),
                         index,
                         convertRowTypeRecursively(entry.getType(), typeFactory)
                 );
             } else {
-                currentField = new HazelcastCompositeType.Field(
+                currentField = new HazelcastObjectType.Field(
                         entry.getName(),
                         index,
                         typeFactory.createTypeWithNullability(
@@ -398,7 +398,7 @@ public final class OptUtils {
             fields.add(currentField);
         }
 
-        return new HazelcastCompositeType(fields);
+        return new HazelcastObjectType(fields);
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {

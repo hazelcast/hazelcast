@@ -317,13 +317,18 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
-        if (sourceType.isStruct() || targetType.isStruct()) {
-            if (sourceType.getSqlTypeName() != SqlTypeName.ROW) {
-                throw new IllegalArgumentException("Unexpected source type: " + sourceType);
+        // TODO: simplify & check logic
+        if (isStruct(sourceType) || isStruct(targetType)) {
+            // if one of them isn't a struct
+            if (!isStruct(sourceType) || !isStruct(targetType)) {
+                return false;
             }
-            if (targetType.getSqlTypeName() != SqlTypeName.ROW) {
-                throw new IllegalArgumentException("Unexpected target type: " + targetType);
+
+            // if they're different kinds of structs, probably going to be supported in the future
+            if (sourceType.getSqlTypeName() != targetType.getSqlTypeName()) {
+                return false;
             }
+
             int n = targetType.getFieldCount();
             if (sourceType.getFieldCount() != n) {
                 return false;
@@ -342,6 +347,10 @@ public final class HazelcastTypeUtils {
         QueryDataType queryTo = toHazelcastType(targetType);
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
+    }
+
+    private static boolean isStruct(RelDataType relDataType) {
+        return relDataType.isStruct() && relDataType.getFieldCount() > 0;
     }
 
     public static boolean hasParameters(SqlCallBinding binding) {
