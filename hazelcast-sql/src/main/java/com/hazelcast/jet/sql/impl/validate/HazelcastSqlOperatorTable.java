@@ -23,9 +23,8 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
-import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
-import com.hazelcast.jet.sql.impl.calcite.parser.HazelcastSqlParser;
+import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
@@ -409,6 +408,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             return call;
         }
 
+        @SuppressWarnings("CheckStyle")
         private SqlCall expandView(SqlCall call) {
             if (call instanceof SqlSelect) {
                 SqlSelect selectCall = (SqlSelect) call;
@@ -422,17 +422,22 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 if (from instanceof SqlIdentifier) {
                     SqlIdentifier fromClause = (SqlIdentifier) from;
                     // TODO: handle the schema
-                    String id = fromClause.names.get(0);
-                    View resolvedView = viewResolver.resolve(id);
-                    if (resolvedView == null) {
-                        return call;
+                    if (ValidationUtil.isCatalogObjectNameValid(fromClause)) {
+                        String id = fromClause.names.get(fromClause.names.size() - 1);
+                        View resolvedView = viewResolver.resolve(id);
+                        if (resolvedView == null) {
+                            return call;
+                        } else {
+                            QueryParser parser = new QueryParser(validator);
+                            // Note: query was parsed & validated previously.
+                            // We assume, that no exception happens here during parsing.
+                            QueryParseResult parseResult = parser.parse(resolvedView.query());
+                            selectCall.setFrom(parseResult.getNode());
+                            return selectCall;
+                        }
                     } else {
-                        QueryParser parser = new QueryParser(validator);
-                        // Note: query was parsed & validated previously.
-                        // We assume, that no exception happens here during parsing.
-                        QueryParseResult parseResult = parser.parse(resolvedView.query());
-                        selectCall.setFrom(parseResult.getNode());
-                        return selectCall;
+                        // We are not throwing any exceptions here, delegating it to validation stage.
+                        return call;
                     }
                 }
             }

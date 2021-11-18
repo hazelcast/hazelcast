@@ -22,6 +22,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -61,7 +62,10 @@ public class SqlExpandViewTest extends SqlTestSupport {
     public void when_fullSchemaViewIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
-        assertRowsAnyOrder("SELECT * FROM hazelcast.public.v", Collections.singletonList(new Row(1, 1)));
+        List<Row> expectedRows = singletonList(new Row(1, 1));
+        assertRowsAnyOrder("SELECT * FROM v", expectedRows);
+        assertRowsAnyOrder("SELECT * FROM public.v", expectedRows);
+        assertRowsAnyOrder("SELECT * FROM hazelcast.public.v", expectedRows);
     }
 
     @Test
@@ -108,6 +112,15 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_simpleViewIsExpandedWithOrdering() {
+        map.put(2, 2);
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " ORDER BY __key DESC");
+
+        assertRowsAnyOrder("SELECT * FROM v", asList(new Row(2, 2), new Row(1, 1)));
+    }
+
+    @Test
     public void when_simpleViewIsExpandedWithUnionAll() {
         final String MAP_NAME_2 = "map2";
         final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
@@ -124,11 +137,36 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_doubleView() {
+    public void when_simpleViewIsExpandedWithAggFunction() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT MAX(__key) FROM map");
+
+        assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1)));
+    }
+
+    @Test
+    public void when_simpleViewIsExpandedWithGroupByAndHaving() {
+        map.put(2, 2);
+        map.put(3, 3);
+        instance().getSql().execute("CREATE VIEW v AS SELECT this FROM map GROUP BY (this) HAVING AVG(this) = 2");
+
+        assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(2)));
+    }
+
+    @Test
+    public void when_doubleViewIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
 
         assertRowsAnyOrder("SELECT * FROM vv", emptyList());
+    }
+
+    @Test
+    public void when_tripleViewIsExpanded() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key = 1");
+        instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
+        instance().getSql().execute("CREATE VIEW vvv AS SELECT * FROM vv");
+
+        assertRowsAnyOrder("SELECT * FROM vvv", singletonList(new Row(1, 1)));
     }
 
     @Test
@@ -146,6 +184,4 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT * FROM vv WHERE __key = 1", singletonList(new Row(1)));
     }
-
-    // hazelcast.public
 }
