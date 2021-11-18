@@ -421,23 +421,21 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlNode from = selectCall.getFrom();
                 if (from instanceof SqlIdentifier) {
                     SqlIdentifier fromClause = (SqlIdentifier) from;
-                    // TODO: handle the schema
-                    if (ValidationUtil.isCatalogObjectNameValid(fromClause)) {
-                        String id = fromClause.names.get(fromClause.names.size() - 1);
-                        View resolvedView = viewResolver.resolve(id);
-                        if (resolvedView == null) {
-                            return call;
-                        } else {
-                            QueryParser parser = new QueryParser(validator);
-                            // Note: query was parsed & validated previously.
-                            // We assume, that no exception happens here during parsing.
-                            QueryParseResult parseResult = parser.parse(resolvedView.query());
-                            selectCall.setFrom(parseResult.getNode());
-                            return selectCall;
-                        }
-                    } else {
+                    if (!ValidationUtil.isCatalogObjectNameValid(fromClause)) {
                         // We are not throwing any exceptions here, delegating it to validation stage.
                         return call;
+                    }
+                    String id = fromClause.names.get(fromClause.names.size() - 1);
+                    View resolvedView = viewResolver.resolve(id);
+                    if (resolvedView == null) {
+                        return call;
+                    } else {
+                        QueryParser parser = new QueryParser(validator);
+                        // Note: query was parsed & validated previously.
+                        // We assume, that no exception happens here during parsing.
+                        QueryParseResult parseResult = parser.parse(resolvedView.query());
+                        selectCall.setFrom(parseResult.getNode());
+                        return selectCall;
                     }
                 }
             }
