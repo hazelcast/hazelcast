@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
