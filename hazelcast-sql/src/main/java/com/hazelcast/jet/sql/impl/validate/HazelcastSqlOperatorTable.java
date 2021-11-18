@@ -421,6 +421,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlNode from = selectCall.getFrom();
                 if (from instanceof SqlIdentifier) {
                     SqlIdentifier fromClause = (SqlIdentifier) from;
+                    // TODO: handle the schema
                     String id = fromClause.names.get(0);
                     View resolvedView = viewResolver.resolve(id);
                     if (resolvedView == null) {

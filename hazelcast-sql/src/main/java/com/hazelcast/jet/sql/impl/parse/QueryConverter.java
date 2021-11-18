@@ -125,16 +125,23 @@ public class QueryConverter {
      * @return Resulting relation.
      */
     private static RelNode rewriteSubqueries(RelNode rel) {
-        HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
-        hepPgmBldr.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
-        hepPgmBldr.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
-        hepPgmBldr.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+        hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
+        hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
 
-        hepPgmBldr.addRuleInstance(CoreRules.UNION_MERGE);
-        hepPgmBldr.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
+        // TODO: [sasha] Move more rules to unconditionally rewrite rel tree.
+        hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
+        hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
 
-        HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
 
         planner.setRoot(rel);
 

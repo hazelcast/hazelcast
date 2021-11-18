@@ -39,8 +39,9 @@ public class ViewResolverImpl implements ViewResolver {
     public View resolve(String name) {
         HazelcastInstance instance = nodeEngine.getHazelcastInstance();
         ReplicatedMap<String, View> catalogContainer = instance.getReplicatedMap(VIEW_STORAGE_NAME);
-        if (catalogContainer.get(name) instanceof View) {
-            return catalogContainer.get(name);
+        Object viewCandidate = catalogContainer.get(name);
+        if (viewCandidate instanceof View) {
+            return (View) viewCandidate;
         } else {
             return null;
         }
