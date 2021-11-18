@@ -114,6 +114,7 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restmapgetsucc", "1"))
                 .withRequestBody(containingParam("restmapgetfail", "2"))
                 .withRequestBody(containingParam("restmapdeletesucc", "1"))
+                .withRequestBody(containingParam("restmapdeletefail", "0"))
                 .withRequestBody(containingParam("restmapct", "2"))
                 .withRequestBody(containingParam("restqueuepostsucc", "0"))
                 .withRequestBody(containingParam("restqueuepostfail", "0"))
@@ -127,6 +128,8 @@ public class RESTClientPhoneHomeTest {
         assertEquals(400, http.doPost(http.getUrl(URI_QUEUES)).responseCode);
         assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
         assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
+        assertEquals(204, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue/10").responseCode);
+        assertEquals(400, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue").responseCode);
 
         PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
         phoneHome.phoneHome(false);
@@ -135,12 +138,12 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restmappostsucc", "0"))
                 .withRequestBody(containingParam("restmappostfail", "0"))
                 .withRequestBody(containingParam("restmaprequestct", "0"))
-                .withRequestBody(containingParam("restqueuerequestct", "5"))
-                .withRequestBody(containingParam("restrequestct", "5"))
+                .withRequestBody(containingParam("restqueuerequestct", "7"))
+                .withRequestBody(containingParam("restrequestct", "7"))
                 .withRequestBody(containingParam("restqueuepostsucc", "2"))
                 .withRequestBody(containingParam("restqueuepostfail", "1"))
-                .withRequestBody(containingParam("restqueuedeletesucc", "0"))
-                .withRequestBody(containingParam("restqueuedeletefail", "0"))
+                .withRequestBody(containingParam("restqueuedeletesucc", "1"))
+                .withRequestBody(containingParam("restqueuedeletefail", "1"))
                 .withRequestBody(containingParam("restqueuegetsucc", "2"))
                 .withRequestBody(containingParam("restqueuect", "1"))
         );
