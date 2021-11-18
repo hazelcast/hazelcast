@@ -107,7 +107,7 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restenabled", "1"))
                 .withRequestBody(containingParam("restmaprequestct", "7"))
                 .withRequestBody(containingParam("restqueuerequestct", "0"))
-                .withRequestBody(containingParam("restrequestct", "9"))
+                .withRequestBody(containingParam("restrequestct", "7"))
                 .withRequestBody(containingParam("restuniqrequestct", "6"))
                 .withRequestBody(containingParam("restmappostsucc", "2"))
                 .withRequestBody(containingParam("restmappostfail", "1"))
