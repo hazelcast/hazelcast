@@ -16,6 +16,7 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.logging.Log4jFactory.Log4jLogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import static com.hazelcast.logging.Log4jTrackingAppender.registerTrackingAppender;
 import static org.apache.log4j.Level.DEBUG;
 import static org.apache.log4j.Level.ERROR;
 import static org.apache.log4j.Level.INFO;
@@ -34,12 +36,10 @@ import static org.apache.log4j.Level.OFF;
 import static org.apache.log4j.Level.TRACE;
 import static org.apache.log4j.Level.WARN;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -51,7 +51,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
     @Before
     public void setUp() {
         mockLogger = mock(org.apache.log4j.Logger.class);
-        hazelcastLogger = new Log4jFactory.Log4jLogger(mockLogger);
+        hazelcastLogger = new Log4jLogger(mockLogger);
     }
 
     @Test
@@ -108,28 +108,26 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
     }
 
     @Test
-    @SuppressWarnings("ThrowableNotThrown")
     public void logEvent_shouldLog() {
         LogRecord logRecord = LOG_EVENT.getLogRecord();
+        Log4jTrackingAppender trackingAppender = registerTrackingAppender(logRecord.getLoggerName());
+        trackingAppender.assertNoLoggedEvents();
 
         hazelcastLogger.log(LOG_EVENT);
 
-        verifyZeroInteractions(mockLogger);
-        verify(logRecord, atLeastOnce()).getLevel();
-        verify(logRecord, atLeastOnce()).getLoggerName();
-        verify(logRecord, atLeastOnce()).getMessage();
-        verify(logRecord, atLeastOnce()).getThrown();
-        verifyNoMoreInteractions(logRecord);
+        verifyNoInteractions(mockLogger);
+        trackingAppender.assertNumberOfLoggedEvents(1);
     }
 
     @Test
     public void logEvent_withLogLevelOff_shouldNotLog() {
         LogRecord logRecord = LOG_EVENT_OFF.getLogRecord();
+        Log4jTrackingAppender trackingAppender = registerTrackingAppender(logRecord.getLoggerName());
+        trackingAppender.assertNoLoggedEvents();
 
         hazelcastLogger.log(LOG_EVENT_OFF);
 
-        verifyZeroInteractions(mockLogger);
-        verify(logRecord, atLeastOnce()).getLevel();
-        verifyNoMoreInteractions(logRecord);
+        verifyNoInteractions(mockLogger);
+        trackingAppender.assertNoLoggedEvents();
     }
 }
