@@ -489,14 +489,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleDevice(Node deviceRoot) {
         DeviceConfig deviceConfig = new DeviceConfig();
 
+        String blockSizeName = "block-size";
+        String readIOThreadCountName = "read-io-thread-count";
+        String writeIOThreadCountName = "write-io-thread-count";
+
         for (Node n : childElements(deviceRoot)) {
             String name = cleanNodeName(n);
             if (matches("device-name", name)) {
                 deviceConfig.setDeviceName(getTextContent(n));
             } else if (matches("base-dir", name)) {
                 deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
-            } else if (matches("block-size", name)) {
-                deviceConfig.setBlockSize(getIntegerValue("block-size", getTextContent(n)));
+            } else if (matches(blockSizeName, name)) {
+                deviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+            } else if (matches(readIOThreadCountName, name)) {
+                deviceConfig.setReadIOThreadCount(getIntegerValue(readIOThreadCountName, getTextContent(n)));
+            } else if (matches(writeIOThreadCountName, name)) {
+                deviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
             }
         }
         config.setDeviceConfig(deviceConfig);

@@ -1362,11 +1362,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         String deviceName = "tiered_store_device";
         File baseDir = new File("/dev/devices/tiered_store_device");
         int blockSize = 8192;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 8;
 
         DeviceConfig deviceConfig = config.getDeviceConfig();
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(baseDir, deviceConfig.getBaseDir());
         assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
     }
 
     @Test

@@ -3053,12 +3053,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String deviceName = "amazing_device";
         String baseDir = "base-directory";
         int blockSize = 2048;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 1;
 
         String xml = HAZELCAST_START_TAG
                 + "<device>"
                 + "    <device-name>" + deviceName + "</device-name>"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
+                + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + writeIOThreadCount + "</write-io-thread-count>"
                 + "</device>\n"
                 + HAZELCAST_END_TAG;
 
@@ -3068,6 +3072,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override

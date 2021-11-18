@@ -434,6 +434,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("block-size".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("blockSize",
                             getIntegerValue("block-size", getTextContent(n)));
+                } else if ("read-io-thread-count".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("readIOThreadCount",
+                            getIntegerValue("read-io-thread-count", getTextContent(n)));
+                } else if ("write-io-thread-count".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("writeIOThreadCount",
+                            getIntegerValue("write-io-thread-count", getTextContent(n)));
                 }
             }
             configBuilder.addPropertyValue("deviceConfig", deviceConfigBuilder.getBeanDefinition());
@@ -1332,7 +1338,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("tieredStoreConfig", tieredStoreConfigBuilder.getBeanDefinition());
         }
 
-        @SuppressWarnings("checkstyle:magicnumber")
         private void handleMemoryTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
             BeanDefinitionBuilder memoryTierConfigBuilder = createBeanBuilder(MemoryTierConfig.class);
             fillAttributeValues(node, memoryTierConfigBuilder);

@@ -41,9 +41,21 @@ public class DeviceConfig {
      */
     public static final String DEFAULT_DEVICE_NAME = "local-disk";
 
+    /**
+     * Default read IO thread count.
+     */
+    public static final int DEFAULT_READ_IO_THREAD_COUNT = 4;
+
+    /**
+     * Default write IO thread count.
+     */
+    public static final int DEFAULT_WRITE_IO_THREAD_COUNT = 4;
+
     private String deviceName = DEFAULT_DEVICE_NAME;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
+    private int readIOThreadCount = DEFAULT_READ_IO_THREAD_COUNT;
+    private int writeIOThreadCount = DEFAULT_WRITE_IO_THREAD_COUNT;
 
     public DeviceConfig() {
 
@@ -52,6 +64,9 @@ public class DeviceConfig {
     public DeviceConfig(DeviceConfig deviceConfig) {
         deviceName = deviceConfig.getDeviceName();
         baseDir = deviceConfig.getBaseDir();
+        blockSize = deviceConfig.getBlockSize();
+        readIOThreadCount = deviceConfig.getReadIOThreadCount();
+        writeIOThreadCount = deviceConfig.getWriteIOThreadCount();
     }
 
     /**
@@ -110,6 +125,46 @@ public class DeviceConfig {
         return this;
     }
 
+    /**
+     * Returns the read IO thread count;
+     *
+     * @return read IO thread count
+     */
+    public int getReadIOThreadCount() {
+        return readIOThreadCount;
+    }
+
+    /**
+     * Sets the read IO thread count.
+     *
+     * @param readIOThreadCount read IO thread count
+     * @return this DeviceConfig
+     */
+    public DeviceConfig setReadIOThreadCount(int readIOThreadCount) {
+        this.readIOThreadCount = readIOThreadCount;
+        return this;
+    }
+
+    /**
+     * Returns the write IO thread count
+     *
+     * @return write IO thread count
+     */
+    public int getWriteIOThreadCount() {
+        return writeIOThreadCount;
+    }
+
+    /**
+     * Sets the write IO thread count.
+     *
+     * @param writeIOThreadCount write IO thread count
+     * @return this DeviceConfig
+     */
+    public DeviceConfig setWriteIOThreadCount(int writeIOThreadCount) {
+        this.writeIOThreadCount = writeIOThreadCount;
+        return this;
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) {
@@ -124,6 +179,12 @@ public class DeviceConfig {
         if (blockSize != that.blockSize) {
             return false;
         }
+        if (readIOThreadCount != that.readIOThreadCount) {
+            return false;
+        }
+        if (writeIOThreadCount != that.writeIOThreadCount) {
+            return false;
+        }
         if (!Objects.equals(deviceName, that.deviceName)) {
             return false;
         }
@@ -135,6 +196,8 @@ public class DeviceConfig {
         int result = deviceName != null ? deviceName.hashCode() : 0;
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
         result = 31 * result + blockSize;
+        result = 31 * result + readIOThreadCount;
+        result = 31 * result + writeIOThreadCount;
         return result;
     }
 
@@ -144,6 +207,8 @@ public class DeviceConfig {
                 + "deviceName='" + deviceName + '\''
                 + ", baseDir=" + baseDir
                 + ", blockSize=" + blockSize
+                + ", readIOThreadCount=" + readIOThreadCount
+                + ", writeIOThreadCount=" + writeIOThreadCount
                 + '}';
     }
 }

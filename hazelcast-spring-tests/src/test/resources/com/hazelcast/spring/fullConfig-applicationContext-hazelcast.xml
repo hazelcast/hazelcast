@@ -1062,6 +1062,8 @@
                 <hz:device-name>tiered_store_device</hz:device-name>
                 <hz:base-dir>/dev/devices/tiered_store_device</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
+                <hz:read-io-thread-count>16</hz:read-io-thread-count>
+                <hz:write-io-thread-count>8</hz:write-io-thread-count>
             </hz:device>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">

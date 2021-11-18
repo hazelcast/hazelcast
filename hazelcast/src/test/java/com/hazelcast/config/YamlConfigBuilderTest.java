@@ -3066,13 +3066,17 @@ public class YamlConfigBuilderTest
         String deviceName = "amazing_device";
         String baseDir = "base-directory";
         int blockSize = 2048;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 1;
 
         String yaml = ""
                 + "hazelcast:\n"
                 + "  device:\n"
                 + "    device-name: " + deviceName + "\n"
                 + "    base-dir: " + baseDir + "\n"
-                + "    block-size: " + blockSize + "\n";
+                + "    block-size: " + blockSize + "\n"
+                + "    read-io-thread-count: " + readIOThreadCount + "\n"
+                + "    write-io-thread-count: " + writeIOThreadCount + "\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         DeviceConfig deviceConfig = config.getDeviceConfig();
@@ -3080,6 +3084,8 @@ public class YamlConfigBuilderTest
         assertEquals(deviceName, deviceConfig.getDeviceName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override

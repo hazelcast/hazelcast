@@ -4125,6 +4125,30 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
+            <xs:element name="read-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Read IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="write-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Write IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

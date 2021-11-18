@@ -3,7 +3,9 @@
     "hazelcast": {
       "device": {
         "base-dir": 1111,
-        "block-size": 511
+        "block-size": 511,
+        "read-io-thread-count": 0,
+        "write-io-thread-count": 0
       },
       "map": {
         "my-map-0": {
@@ -55,9 +57,23 @@
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "511 is not greater or equal to 512"
+          },
+          {
+            "schemaLocation": "#/definitions/Device/properties/read-io-thread-count",
+            "pointerToViolation": "#/hazelcast/device/read-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          },
+          {
+            "schemaLocation": "#/definitions/Device/properties/write-io-thread-count",
+            "pointerToViolation": "#/hazelcast/device/write-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
           }
         ],
-        "message": "2 schema violations found"
+        "message": "4 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Map",
@@ -95,6 +111,6 @@
         "message": "4 schema violations found"
       }
     ],
-    "message": "6 schema violations found"
+    "message": "8 schema violations found"
   }
 }

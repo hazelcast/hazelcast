@@ -3697,6 +3697,18 @@
           "minimum": 512,
           "default": 4096,
           "description": "Device block/sector size in bytes. The default is 4096. The minimum is 512."
+        },
+        "read-io-thread-count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4,
+          "description": "Read IO thread count. The default is 4."
+        },
+        "write-io-thread-count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4,
+          "description": "Write IO thread count. The default is 4."
         }
       }
     },
