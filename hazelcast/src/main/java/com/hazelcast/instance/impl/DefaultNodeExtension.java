@@ -67,6 +67,8 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
+import com.hazelcast.internal.dynamicconfig.EmptyRewriterProxy;
+import com.hazelcast.internal.dynamicconfig.RewriterProxy;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
 import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
@@ -563,6 +565,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public DynamicConfigListener createDynamicConfigListener() {
         return new EmptyDynamicConfigListener();
+    }
+
+    @Override
+    public RewriterProxy createRewriterProxy() {
+        return new EmptyRewriterProxy();
     }
 
     @Override
