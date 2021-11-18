@@ -38,8 +38,8 @@ public class RestApiMetricsCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.REST_ACCESSED_MAP_COUNT, collector.getAccessedMapCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_POST_SUCCESS, collector.getQueuePostSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_POST_FAILURE, collector.getQueuePostFailureCount());
-        metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_SUCCESS, collector.getQueuePostSuccessCount());
-        metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_FAILURE, collector.getQueuePostFailureCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_SUCCESS, collector.getQueueGetSuccessCount());
+        metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_GET_FAILURE, collector.getQueueGetFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_DELETE_SUCCESS, collector.getQueueDeleteSuccessCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_QUEUE_DELETE_FAILURE, collector.getQueueDeleteFailureCount());
         metricsConsumer.accept(PhoneHomeMetrics.REST_ACCESSED_QUEUE_COUNT, collector.getAccessedQueueCount());

@@ -223,6 +223,14 @@ public class RestCallCollector {
         return String.valueOf(queuePostFailCount.get());
     }
 
+    public String getQueueGetSuccessCount() {
+        return String.valueOf(queueGetSuccCount.get());
+    }
+
+    public String getQueueGetFailureCount() {
+        return String.valueOf(queueGetFailCount.get());
+    }
+
     public String getQueueDeleteSuccessCount() {
         return String.valueOf(queueDeleteSuccCount.get());
     }
@@ -244,7 +252,7 @@ public class RestCallCollector {
     }
 
     public String getMapDeleteFailureCount() {
-        return String.valueOf(mapDeleteSuccCount.get());
+        return String.valueOf(mapDeleteFailCount.get());
     }
 
     public String getTotalMapRequestCount() {
