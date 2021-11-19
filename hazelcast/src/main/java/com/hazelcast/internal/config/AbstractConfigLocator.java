@@ -24,6 +24,7 @@ import com.hazelcast.logging.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,6 +32,8 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
+import static com.hazelcast.internal.dynamicconfig.RewriterProxy.REWRITER_FILE_SUFFIX;
+import static com.hazelcast.internal.nio.IOUtil.move;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.util.Objects.requireNonNull;
 
@@ -270,8 +273,20 @@ public abstract class AbstractConfigLocator {
         LOGGER.info(String.format("Using configuration file at %s", configurationFile.getAbsolutePath()));
 
         if (!configurationFile.exists()) {
-            String msg = String.format("Config file at '%s' doesn't exist.", configurationFile.getAbsolutePath());
-            throw new HazelcastException(msg);
+            File tempConfigFile = new File(configSystemProperty + REWRITER_FILE_SUFFIX);
+            if (tempConfigFile.exists()) {
+                try {
+                    move(tempConfigFile.toPath(), configurationFile.toPath());
+                } catch (IOException e) {
+                    String msg = String.format("Config file at '%s' doesn't exist."
+                            + " Tried to finish configuration rewrite but move failed.",
+                            configurationFile.getAbsolutePath());
+                    throw new HazelcastException(msg);
+                }
+            } else {
+                String msg = String.format("Config file at '%s' doesn't exist.", configurationFile.getAbsolutePath());
+                throw new HazelcastException(msg);
+            }
         }
 
         try {
