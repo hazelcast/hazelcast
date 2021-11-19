@@ -60,6 +60,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -154,6 +155,8 @@ public class Config {
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
 
+    private final Map<String, DeviceConfig> deviceConfigs = new ConcurrentHashMap<>();
+
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
 
@@ -200,8 +203,6 @@ public class Config {
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
 
     private JetConfig jetConfig = new JetConfig();
-
-    private DeviceConfig deviceConfig = new DeviceConfig();
 
     public Config() {
     }
@@ -2636,24 +2637,45 @@ public class Config {
     }
 
     /**
-     * Returns the Device configuration for this hazelcast instance.
+     * Returns the map of {@link DeviceConfig}s mapped by device name.
      *
-     * @return device configuration
+     * @return the device configurations mapped by device name
      */
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        return deviceConfigs;
     }
 
     /**
-     * Sets the Device configuration.
+     * Sets the map of {@link DeviceConfig}s mapped by device name.
      *
-     * @param deviceConfig Device configuration
+     * @param deviceConfigs device configuration map
      * @return this config instance
-     * @throws NullPointerException if the {@code deviceConfig} parameter is {@code null}
      */
-    public Config setDeviceConfig(DeviceConfig deviceConfig) {
-        checkNotNull(deviceConfig, "Device config cannot be null!");
-        this.deviceConfig = deviceConfig;
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
+        this.deviceConfigs.clear();
+        this.deviceConfigs.putAll(deviceConfigs);
+        return this;
+    }
+
+    /**
+     * Returns the device config mapped by the provided device name.
+     *
+     * @param name the device name
+     * @return device config or {@code null} if absent
+     */
+    @Nullable
+    public DeviceConfig getDeviceConfig(String name) {
+        return deviceConfigs.get(name);
+    }
+
+    /**
+     * Adds the device configuration.
+     *
+     * @param deviceConfig device config
+     * @return this config instance
+     */
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        deviceConfigs.put(deviceConfig.getName(), deviceConfig);
         return this;
     }
 
@@ -3045,7 +3067,7 @@ public class Config {
                 + ", metricsConfig=" + metricsConfig
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
-                + ", deviceConfig=" + deviceConfig
+                + ", deviceConfigs=" + deviceConfigs
                 + '}';
     }
 }

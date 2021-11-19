@@ -244,6 +244,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
+        private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -270,6 +271,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<>();
+            this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -423,13 +425,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleDevice(Node deviceNode) {
             BeanDefinitionBuilder deviceConfigBuilder = createBeanBuilder(DeviceConfig.class);
+            AbstractBeanDefinition beanDefinition = deviceConfigBuilder.getBeanDefinition();
+            Node attName = deviceNode.getAttributes().getNamedItem("name");
+            String deviceName = getTextContent(attName);
+            deviceConfigBuilder.addPropertyValue("name", deviceName);
             fillAttributeValues(deviceNode, deviceConfigBuilder);
 
             for (Node n : childElements(deviceNode)) {
                 String name = cleanNodeName(n);
-                if ("device-name".equals(name)) {
-                    deviceConfigBuilder.addPropertyValue("deviceName", getTextContent(n));
-                } else if ("base-dir".equals(name)) {
+                if ("base-dir".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("baseDir", getTextContent(n));
                 } else if ("block-size".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("blockSize",
@@ -442,7 +446,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             getIntegerValue("write-io-thread-count", getTextContent(n)));
                 }
             }
-            configBuilder.addPropertyValue("deviceConfig", deviceConfigBuilder.getBeanDefinition());
+            deviceConfigManagedMap.put(deviceName, beanDefinition);
         }
 
         private void handleEncryptionAtRest(BeanDefinitionBuilder hotRestartConfigBuilder, Node node) {

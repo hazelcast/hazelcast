@@ -21,7 +21,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Disk tier configuration of Tiered-Store.
@@ -32,12 +36,15 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;
 
+    private String deviceName;
+
     public DiskTierConfig() {
 
     }
 
     public DiskTierConfig(DiskTierConfig diskTierConfig) {
         enabled = diskTierConfig.isEnabled();
+        deviceName = diskTierConfig.getDeviceName();
     }
 
     /**
@@ -60,14 +67,36 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the device name of this disk tier.
+     *
+     * @return device name.
+     */
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    /**
+     * Sets the device name for this disk tier.
+     *
+     * @param deviceName device name.
+     * @return this DiskTierConfig
+     */
+    public DiskTierConfig setDeviceName(@Nonnull String deviceName) {
+        this.deviceName = checkNotNull(deviceName, "Device name must not be null");
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
+        out.writeString(deviceName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
+        deviceName = in.readString();
     }
 
     @Override
@@ -91,18 +120,24 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
 
         DiskTierConfig that = (DiskTierConfig) o;
 
-        return enabled == that.enabled;
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return Objects.equals(deviceName, that.deviceName);
     }
 
     @Override
     public final int hashCode() {
-        return (enabled ? 1 : 0);
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (deviceName != null ? deviceName.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
         return "DiskTierConfig{"
                 + "enabled=" + enabled
+                + ", deviceName='" + deviceName + '\''
                 + '}';
     }
 }

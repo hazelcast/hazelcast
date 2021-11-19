@@ -854,12 +854,17 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public DeviceConfig getDeviceConfig() {
+    public DeviceConfig getDeviceConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setDeviceConfig(DeviceConfig deviceConfig) {
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

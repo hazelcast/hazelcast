@@ -16,15 +16,18 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Device configuration for the Tiered-Store.
  *
  * @since 5.1
  */
-public class DeviceConfig {
+public class DeviceConfig implements NamedConfig {
 
     /**
      * Default base directory for the device.
@@ -37,11 +40,6 @@ public class DeviceConfig {
     public static final int DEFAULT_BLOCK_SIZE_IN_BYTES = 4096;
 
     /**
-     * Default device name.
-     */
-    public static final String DEFAULT_DEVICE_NAME = "local-disk";
-
-    /**
      * Default read IO thread count.
      */
     public static final int DEFAULT_READ_IO_THREAD_COUNT = 4;
@@ -51,7 +49,7 @@ public class DeviceConfig {
      */
     public static final int DEFAULT_WRITE_IO_THREAD_COUNT = 4;
 
-    private String deviceName = DEFAULT_DEVICE_NAME;
+    private String name;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
     private int readIOThreadCount = DEFAULT_READ_IO_THREAD_COUNT;
@@ -62,7 +60,7 @@ public class DeviceConfig {
     }
 
     public DeviceConfig(DeviceConfig deviceConfig) {
-        deviceName = deviceConfig.getDeviceName();
+        name = deviceConfig.getName();
         baseDir = deviceConfig.getBaseDir();
         blockSize = deviceConfig.getBlockSize();
         readIOThreadCount = deviceConfig.getReadIOThreadCount();
@@ -72,18 +70,20 @@ public class DeviceConfig {
     /**
      * Returns the device name.
      */
-    public String getDeviceName() {
-        return deviceName;
+    @Override
+    public String getName() {
+        return name;
     }
 
     /**
      * Sets the device name.
      *
-     * @param deviceName device name
+     * @param name device name
      * @return this DeviceConfig
      */
-    public DeviceConfig setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
+    @Override
+    public DeviceConfig setName(@Nonnull String name) {
+        this.name = checkNotNull(name, "Device name must not be null");
         return this;
     }
 
@@ -101,8 +101,8 @@ public class DeviceConfig {
      * @param baseDir base directory.
      * @return this DeviceConfig
      */
-    public DeviceConfig setBaseDir(File baseDir) {
-        this.baseDir = baseDir;
+    public DeviceConfig setBaseDir(@Nonnull File baseDir) {
+        this.baseDir = checkNotNull(baseDir, "Base directory must not be null");
         return this;
     }
 
@@ -185,7 +185,7 @@ public class DeviceConfig {
         if (writeIOThreadCount != that.writeIOThreadCount) {
             return false;
         }
-        if (!Objects.equals(deviceName, that.deviceName)) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
         return Objects.equals(baseDir, that.baseDir);
@@ -193,7 +193,7 @@ public class DeviceConfig {
 
     @Override
     public final int hashCode() {
-        int result = deviceName != null ? deviceName.hashCode() : 0;
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
         result = 31 * result + blockSize;
         result = 31 * result + readIOThreadCount;
@@ -204,7 +204,7 @@ public class DeviceConfig {
     @Override
     public String toString() {
         return "DeviceConfig{"
-                + "deviceName='" + deviceName + '\''
+                + "name='" + name + '\''
                 + ", baseDir=" + baseDir
                 + ", blockSize=" + blockSize
                 + ", readIOThreadCount=" + readIOThreadCount

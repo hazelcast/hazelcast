@@ -978,12 +978,17 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public DeviceConfig getDeviceConfig() {
-        return staticConfig.getDeviceConfig();
+    public DeviceConfig getDeviceConfig(String name) {
+        return staticConfig.getDeviceConfig(name);
     }
 
     @Override
-    public Config setDeviceConfig(DeviceConfig deviceConfig) {
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        return staticConfig.getDeviceConfigs();
+    }
+
+    @Override
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

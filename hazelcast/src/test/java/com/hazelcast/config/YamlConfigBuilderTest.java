@@ -3063,7 +3063,6 @@ public class YamlConfigBuilderTest
     @Override
     @Test
     public void testDevice() {
-        String deviceName = "amazing_device";
         String baseDir = "base-directory";
         int blockSize = 2048;
         int readIOThreadCount = 16;
@@ -3072,20 +3071,47 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  device:\n"
-                + "    device-name: " + deviceName + "\n"
-                + "    base-dir: " + baseDir + "\n"
-                + "    block-size: " + blockSize + "\n"
-                + "    read-io-thread-count: " + readIOThreadCount + "\n"
-                + "    write-io-thread-count: " + writeIOThreadCount + "\n";
+                + "    local-device:\n"
+                + "      base-dir: " + baseDir + "\n"
+                + "      block-size: " + blockSize + "\n"
+                + "      read-io-thread-count: " + readIOThreadCount + "\n"
+                + "      write-io-thread-count: " + writeIOThreadCount + "\n";
 
         Config config = new InMemoryYamlConfig(yaml);
-        DeviceConfig deviceConfig = config.getDeviceConfig();
+        DeviceConfig deviceConfig = config.getDeviceConfig("local-device");
 
-        assertEquals(deviceName, deviceConfig.getDeviceName());
+        assertEquals("local-device", deviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, deviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+
+        int device0Multiplier = 2;
+        int device1Multiplier = 4;
+        yaml = ""
+                + "hazelcast:\n"
+                + "  device:\n"
+                + "    device0:\n"
+                + "      block-size: " + (blockSize * device0Multiplier) + "\n"
+                + "      read-io-thread-count: " + (readIOThreadCount * device0Multiplier) + "\n"
+                + "      write-io-thread-count: " + (writeIOThreadCount * device0Multiplier) + "\n"
+                + "    device1:\n"
+                + "      block-size: " + (blockSize * device1Multiplier) + "\n"
+                + "      read-io-thread-count: " + (readIOThreadCount * device1Multiplier) + "\n"
+                + "      write-io-thread-count: " + (writeIOThreadCount * device1Multiplier) + "\n";
+
+        config = new InMemoryYamlConfig(yaml);
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override

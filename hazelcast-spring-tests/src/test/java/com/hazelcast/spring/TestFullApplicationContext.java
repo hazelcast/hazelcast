@@ -37,6 +37,7 @@ import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -485,7 +486,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(128L, memoryTierConfig.getCapacity().getValue());
 
-        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(diskTierConfig.isEnabled());
+        assertEquals("the-local0751", diskTierConfig.getDeviceName());
     }
 
     @Test
@@ -1359,18 +1362,33 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testDevice() {
-        String deviceName = "tiered_store_device";
-        File baseDir = new File("/dev/devices/tiered_store_device");
+        String deviceName0 = "device0";
+        String deviceName1 = "device1";
+
+        File baseDir0 = new File("/dev/devices/tiered_store_device0");
+        File baseDir1 = new File("/dev/devices/tiered_store_device1");
+
         int blockSize = 8192;
         int readIOThreadCount = 16;
-        int writeIOThreadCount = 8;
 
-        DeviceConfig deviceConfig = config.getDeviceConfig();
-        assertEquals(deviceName, deviceConfig.getDeviceName());
-        assertEquals(baseDir, deviceConfig.getBaseDir());
+        int writeIOThreadCount0 = 8;
+        int writeIOThreadCount1 = 16;
+
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        DeviceConfig deviceConfig = config.getDeviceConfig(deviceName0);
+        assertEquals(deviceName0, deviceConfig.getName());
+        assertEquals(baseDir0, deviceConfig.getBaseDir());
         assertEquals(blockSize, deviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+        assertEquals(writeIOThreadCount0, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig(deviceName1);
+        assertEquals(deviceName1, deviceConfig.getName());
+        assertEquals(baseDir1, deviceConfig.getBaseDir());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount1, deviceConfig.getWriteIOThreadCount());
     }
 
     @Test

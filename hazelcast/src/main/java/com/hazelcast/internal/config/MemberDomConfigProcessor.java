@@ -486,18 +486,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setPersistenceConfig(prConfig);
     }
 
-    private void handleDevice(Node deviceRoot) {
-        DeviceConfig deviceConfig = new DeviceConfig();
+    protected void handleDevice(Node parentNode) {
+        String name = getAttribute(parentNode, "name");
+        DeviceConfig deviceConfig = ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, DeviceConfig.class);
+        handleDeviceNode(parentNode, deviceConfig);
+    }
 
+    protected void handleDeviceNode(Node deviceNode, DeviceConfig deviceConfig) {
         String blockSizeName = "block-size";
         String readIOThreadCountName = "read-io-thread-count";
         String writeIOThreadCountName = "write-io-thread-count";
 
-        for (Node n : childElements(deviceRoot)) {
+        for (Node n : childElements(deviceNode)) {
             String name = cleanNodeName(n);
-            if (matches("device-name", name)) {
-                deviceConfig.setDeviceName(getTextContent(n));
-            } else if (matches("base-dir", name)) {
+            if (matches("base-dir", name)) {
                 deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches(blockSizeName, name)) {
                 deviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
@@ -507,8 +509,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 deviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
             }
         }
-        config.setDeviceConfig(deviceConfig);
+        config.addDeviceConfig(deviceConfig);
     }
+
     private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
         TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 
@@ -528,20 +531,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return tieredStoreConfig;
     }
 
-    @SuppressWarnings("checkstyle:magicnumber")
     private MemoryTierConfig createMemoryTierConfig(Node node) {
         String capacity = getTextContent(childElements(node).iterator().next());
         return new MemoryTierConfig()
                 .setCapacity(parseMemorySize(capacity));
     }
 
-    @SuppressWarnings("checkstyle:magicnumber")
     private DiskTierConfig createDiskTierConfig(Node node) {
         DiskTierConfig diskTierConfig = new DiskTierConfig();
 
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         diskTierConfig.setEnabled(enabled);
+
+        Node attrDeviceName = getNamedItemNode(node, "device-name");
+        String deviceName = getTextContent(attrDeviceName);
+        diskTierConfig.setDeviceName(deviceName);
 
         return diskTierConfig;
     }

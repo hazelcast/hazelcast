@@ -3050,15 +3050,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testDevice() {
-        String deviceName = "amazing_device";
         String baseDir = "base-directory";
         int blockSize = 2048;
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
         String xml = HAZELCAST_START_TAG
-                + "<device>"
-                + "    <device-name>" + deviceName + "</device-name>"
+                + "<device name=\"local-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
                 + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
@@ -3067,13 +3065,41 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
-        DeviceConfig deviceConfig = config.getDeviceConfig();
+        DeviceConfig deviceConfig = config.getDeviceConfig("local-device");
 
-        assertEquals(deviceName, deviceConfig.getDeviceName());
+        assertEquals("local-device", deviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, deviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+
+        int device0Multiplier = 2;
+        int device1Multiplier = 4;
+        xml = HAZELCAST_START_TAG
+                + "<device name=\"device0\">"
+                + "    <block-size>" + (blockSize * device0Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device0Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device0Multiplier) + "</write-io-thread-count>"
+                + "</device>\n"
+                + "<device name=\"device1\">"
+                + "    <block-size>" + (blockSize * device1Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device1Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device1Multiplier) + "</write-io-thread-count>"
+                + "</device>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override
@@ -3085,7 +3111,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <memory-tier>"
                 + "            <capacity>1024 MB</capacity>"
                 + "        </memory-tier>"
-                + "        <disk-tier enabled=\"true\"/>"
+                + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
                 + "    </tiered-store>"
                 + "</map>\n"
                 + HAZELCAST_END_TAG;
@@ -3098,7 +3124,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1024, memoryTierConfig.getCapacity().getValue());
 
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals("local-device", diskTierConfig.getDeviceName());
     }
 
     @Override
