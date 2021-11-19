@@ -993,6 +993,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         return staticConfig.getCRDTReplicationConfig();
     }

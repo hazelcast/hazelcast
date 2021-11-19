@@ -172,6 +172,8 @@ public final class MemorySize {
      *
      * @param memorySize memory size.
      * @return @{code MemorySize} instance.
+     *
+     * @since 5.1
      */
     public static MemorySize parseMemorySize(String memorySize) {
         String[] valAndUnit = memorySize.split(" ");

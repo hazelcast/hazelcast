@@ -869,6 +869,11 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }

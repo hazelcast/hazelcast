@@ -3126,7 +3126,8 @@ public class YamlConfigBuilderTest
                 + "        memory-tier:\n"
                 + "          capacity: 1024 MB\n"
                 + "        disk-tier:\n"
-                + "          enabled: true\n";
+                + "          enabled: true\n"
+                + "          device-name: local-device";
 
         Config config = new InMemoryYamlConfig(yaml);
         TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
@@ -3136,7 +3137,9 @@ public class YamlConfigBuilderTest
         assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
         assertEquals(1024, memoryTierConfig.getCapacity().getValue());
 
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals("local-device", diskTierConfig.getDeviceName());
     }
 
     @Override
