@@ -21,5 +21,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public interface RewriterProxy {
 
+    String REWRITER_FILE_SUFFIX = ".rewrite";
+
     void doRewrite(Config config, IdentifiedDataSerializable subConfig);
 }
