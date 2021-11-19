@@ -51,7 +51,9 @@ public final class DynamicConfigGenerator {
         //not called
     }
 
-    public static String wanReplicationConfigGenerator(WanReplicationConfig subConfig, boolean configIsXml, int indent) {
+    public static String wanReplicationConfigGenerator(
+            WanReplicationConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
                 WAN_REPLICATION.getName(),
                 Config::addWanReplicationConfig,
@@ -159,7 +161,9 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    public static String durableExecutorConfigGenerator(DurableExecutorConfig subConfig, boolean configIsXml, int indent) {
+    public static String durableExecutorConfigGenerator(
+            DurableExecutorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
                 DURABLE_EXECUTOR_SERVICE.getName(),
                 Config::addDurableExecutorConfig,
@@ -168,7 +172,9 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    public static String scheduledExecutorConfigGenerator(ScheduledExecutorConfig subConfig, boolean configIsXml, int indent) {
+    public static String scheduledExecutorConfigGenerator(
+            ScheduledExecutorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
                 SCHEDULED_EXECUTOR_SERVICE.getName(),
                 Config::addScheduledExecutorConfig,
@@ -177,7 +183,9 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    public static String cardinalityEstimatorConfigGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
+    public static String cardinalityEstimatorConfigGenerator(
+            CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
                 CARDINALITY_ESTIMATOR.getName(),
                 Config::addCardinalityEstimatorConfig,
@@ -186,7 +194,9 @@ public final class DynamicConfigGenerator {
         );
     }
 
-    public static String flakeIdGeneratorConfigGenerator(FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent) {
+    public static String flakeIdGeneratorConfigGenerator(
+            FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
                 FLAKE_ID_GENERATOR.getName(),
                 Config::addFlakeIdGeneratorConfig,
