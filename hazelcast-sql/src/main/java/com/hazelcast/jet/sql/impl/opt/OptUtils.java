@@ -200,10 +200,10 @@ public final class OptUtils {
     }
 
     /**
-     * Get possible physical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have
+     * the physical trait. Every returned input is guaranteed to have a
+     * unique trait set.
      *
-     * @param input Subset.
      * @return Physical rels.
      */
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
@@ -215,10 +215,10 @@ public final class OptUtils {
     }
 
     /**
-     * Get possible logical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have
+     * the logical trait. Every returned input is guaranteed to have a
+     * unique trait set.
      *
-     * @param input Subset.
      * @return Logical rels.
      */
     public static Collection<RelNode> extractLogicalRelsFromSubset(RelNode input) {
@@ -229,13 +229,6 @@ public final class OptUtils {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.LOGICAL);
     }
 
-    /**
-     * Get possible rels from the given subset matching given predicate.
-     * Every returned input will match the given predicate.
-     *
-     * @param input Subset.
-     * @return matching rels.
-     */
     private static Collection<RelNode> extractRelsFromSubset(RelNode input, Predicate<RelNode> predicate) {
         Set<RelTraitSet> traitSets = new HashSet<>();
 

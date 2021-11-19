@@ -16,27 +16,40 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
 
-import java.util.Collection;
-
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-public final class JoinNestedLoopPhysicalRule extends RelOptRule {
+public final class JoinNestedLoopPhysicalRule extends RelRule<RelRule.Config> {
 
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(JoinNestedLoopPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
+                    .trait(LOGICAL)
+                    .inputs(
+                            b1 -> b1.operand(RelNode.class).anyInputs(),
+                            b2 -> b2.operand(TableScan.class)
+                                    .trait(LOGICAL)
+                                    .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
+                                    .noInputs()));
+
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new JoinNestedLoopPhysicalRule();
 
     private JoinNestedLoopPhysicalRule() {
-        super(
-                operand(JoinLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()), operand(TableScan.class, any()))),
-                JoinNestedLoopPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override
@@ -46,23 +59,26 @@ public final class JoinNestedLoopPhysicalRule extends RelOptRule {
         JoinRelType joinType = logicalJoin.getJoinType();
         assert joinType == JoinRelType.INNER || joinType == JoinRelType.LEFT;
 
-        RelNode physicalLeft = OptUtils.toPhysicalInput(logicalJoin.getLeft());
-        RelNode physicalRight = OptUtils.toPhysicalInput(logicalJoin.getRight());
+        RelNode leftInput = call.rel(1);
+        TableScan rightScan = call.rel(2);
 
-        Collection<RelNode> lefts = OptUtils.extractPhysicalRelsFromSubset(physicalLeft);
-        Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
-        for (RelNode left : lefts) {
-            for (RelNode right : rights) {
-                RelNode rel = new JoinNestedLoopPhysicalRel(
-                            logicalJoin.getCluster(),
-                            OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                            left,
-                            right,
-                            logicalJoin.getCondition(),
-                            logicalJoin.getJoinType()
-                    );
-                call.transformTo(rel);
-            }
+        RelNode leftInputConverted = convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
+        RelNode rightScanConverted = convert(rightScan, rightScan.getTraitSet().replace(PHYSICAL));
+
+        HazelcastTable rightHzTable = rightScan.getTable().unwrap(HazelcastTable.class);
+        SqlConnector rightSqlConnector = SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget());
+        if (!rightSqlConnector.isNestedLoopReaderSupported()) {
+            return;
         }
+
+        RelNode rel = new JoinNestedLoopPhysicalRel(
+                logicalJoin.getCluster(),
+                OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                leftInputConverted,
+                rightScanConverted,
+                logicalJoin.getCondition(),
+                logicalJoin.getJoinType()
+        );
+        call.transformTo(rel);
     }
 }

@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -303,6 +304,17 @@ public interface SqlConnector {
             @Nonnull JetJoinInfo joinInfo
     ) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
+    }
+
+    default boolean isNestedLoopReaderSupported() {
+        try {
+            // nestedLoopReader() is supported, if the class overrides the default method in this class
+            Method m = getClass().getMethod("nestedLoopReader", DAG.class, Table.class, Expression.class, List.class,
+                    JetJoinInfo.class);
+            return m.getDeclaringClass() != SqlConnector.class;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

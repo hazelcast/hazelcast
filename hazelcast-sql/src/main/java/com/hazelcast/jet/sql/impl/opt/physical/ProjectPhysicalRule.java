@@ -16,43 +16,37 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
-
-import java.util.Collection;
+import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.Project;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class ProjectPhysicalRule extends RelOptRule {
+final class ProjectPhysicalRule extends ConverterRule {
+
+    /** Default configuration. */
+    private static final Config DEFAULT_CONFIG = Config.INSTANCE
+            .as(Config.class)
+            .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
 
     static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
     private ProjectPhysicalRule() {
-        super(
-                operand(ProjectLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()))),
-                ProjectPhysicalRule.class.getSimpleName()
-        );
+        super(DEFAULT_CONFIG);
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
-        ProjectLogicalRel logicalProject = call.rel(0);
-        RelNode input = logicalProject.getInput();
+    public RelNode convert(RelNode rel) {
+        Project project = (Project) rel;
 
-        RelNode convertedInput = OptUtils.toPhysicalInput(input);
-        Collection<RelNode> transformedInputs = OptUtils.extractPhysicalRelsFromSubset(convertedInput);
-        for (RelNode transformedInput : transformedInputs) {
-            ProjectPhysicalRel rel = new ProjectPhysicalRel(
-                    logicalProject.getCluster(),
-                    transformedInput.getTraitSet(),
-                    transformedInput,
-                    logicalProject.getProjects(),
-                    logicalProject.getRowType()
-            );
-            call.transformTo(rel);
-        }
+        RelNode transformedInput = RelOptRule.convert(project.getInput(), rel.getTraitSet().replace(PHYSICAL));
+        return new ProjectPhysicalRel(
+                project.getCluster(),
+                transformedInput.getTraitSet(),
+                transformedInput,
+                project.getProjects(),
+                project.getRowType());
     }
 }
