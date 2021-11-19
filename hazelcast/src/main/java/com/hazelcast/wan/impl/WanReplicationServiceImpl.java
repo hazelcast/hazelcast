@@ -393,8 +393,9 @@ public class WanReplicationServiceImpl implements WanReplicationService,
     }
 
     @Override
-    public void appendWanReplicationConfig(WanReplicationConfig newConfig) {
+    public boolean appendWanReplicationConfig(WanReplicationConfig newConfig) {
         // not implemented in OS
+        return false;
     }
 
     private WanPublisher getPublisherOrNull(String wanReplicationName,
