@@ -183,8 +183,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             if (!service.isKnownServiceNamespace(ns)) {
                 continue;
             }
-            operations = collectReplicationOperations(event, ns, isRunningOnPartitionThread(), operations,
-                    serviceInfo.getName(), service);
+            operations = collectReplicationOperations(event, ns,
+                    isRunningOnPartitionThread(), operations, serviceInfo.getName(), service);
         }
         return operations;
     }
@@ -207,7 +207,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 && ((OffloadedReplicationPreparation) service).shouldOffload())) {
             operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
         } else if (runsOnPartitionThread) {
-            // migration aware service requested offload but we are on partition thread
+            // migration aware service requested offload, but we are on partition thread
             // execute on async executor
             Future<Operation> future =
                     getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,

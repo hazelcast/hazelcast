@@ -46,8 +46,9 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 
 /**
- * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
- * response to the replica to retry the sync operation when:
+ * The request sent from a replica to the partition owner to
+ * synchronize the replica data. The partition owner can send
+ * a response to the replica to retry the sync operation when:
  * <ul>
  * <li>the replica sync is not allowed (because migrations are not allowed)</li>
  * <li>the operation was received by a node which is not the partition owner</li>
@@ -55,7 +56,7 @@ import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  *
- * @since   5.0
+ * @since 5.0
  */
 public final class PartitionReplicaSyncRequestOffloadable
         extends PartitionReplicaSyncRequest {
@@ -67,7 +68,8 @@ public final class PartitionReplicaSyncRequestOffloadable
         namespaces = Collections.emptyList();
     }
 
-    public PartitionReplicaSyncRequestOffloadable(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+    public PartitionReplicaSyncRequestOffloadable(Collection<ServiceNamespace> namespaces,
+                                                  int partitionId, int replicaIndex) {
         this.namespaces = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.namespaces.addAll(namespaces);
         this.partitionId = partitionId;
@@ -76,8 +78,7 @@ public final class PartitionReplicaSyncRequestOffloadable
     }
 
     @Override
-    public CallStatus call()
-            throws Exception {
+    public CallStatus call() throws Exception {
         return new ReplicaSyncRequestOffload();
     }
 
@@ -89,13 +90,14 @@ public final class PartitionReplicaSyncRequestOffloadable
         try {
             PartitionReplicationEvent event = new PartitionReplicationEvent(getCallerAddress(), partitionId,
                     getReplicaIndex());
-            // It is only safe to read replica versions before preparing replication operations.
-            // Reasoning: even though partition is already marked as migrating,
+            // It is only safe to read replica versions before
+            // preparing replication operations. Reasoning: even
+            // though partition is already marked as migrating,
             // operations may be already queued in partition thread.
             // If we read replica versions after replication operation
-            // is prepared, we may read updated replica versions but replication op
-            // may have stale data -> future backup sync checks will not detect the
-            // stale data.
+            // is prepared, we may read updated replica versions
+            // but replication op may have stale data -> future
+            // backup sync checks will not detect the stale data.
             readReplicaVersions();
 
             final Iterator<ServiceNamespace> iterator = namespaces.iterator();
@@ -107,7 +109,9 @@ public final class PartitionReplicaSyncRequestOffloadable
                 } else {
                     operations = createFragmentReplicationOperationsOffload(event, namespace);
                 }
-                // operations can be null if await-ing for non-fragmented services' repl operations failed due to interruption
+                // operations can be null if await-ing
+                // for non-fragmented services' repl
+                // operations failed due to interruption
                 if (operations != null) {
                     operations = new CopyOnWriteArrayList<>(operations);
                     sendOperationsOnPartitionThread(operations, namespace);
@@ -126,8 +130,11 @@ public final class PartitionReplicaSyncRequestOffloadable
         UrgentPartitionRunnable<Void> gatherReplicaVersionsRunnable = new UrgentPartitionRunnable<>(partitionId(),
                 () -> {
                     for (ServiceNamespace ns : namespaces) {
-                        // make a copy because getPartitionReplicaVersions returns references
-                        // to the internal replica versions data structures that may change under our feet
+                        // make a copy because
+                        // getPartitionReplicaVersions
+                        // returns references to the internal
+                        // replica versions data structures
+                        // that may change under our feet
                         long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
                                 IPartition.MAX_BACKUP_COUNT);
                         replicaVersions.put(BiTuple.of(partitionId(), ns), versions);
@@ -176,8 +183,8 @@ public final class PartitionReplicaSyncRequestOffloadable
 
         @Override
         public void start() throws Exception {
-            // set partition as migrating to disable mutating operations
-            // while preparing replication operations
+            // set partition as migrating to disable mutating
+            // operations while preparing replication operations
             if (!trySetMigratingFlag()) {
                 sendRetryResponse();
             }

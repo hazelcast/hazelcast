@@ -66,7 +66,8 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         namespaces = Collections.emptyList();
     }
 
-    public PartitionReplicaSyncRequest(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+    public PartitionReplicaSyncRequest(Collection<ServiceNamespace> namespaces,
+                                       int partitionId, int replicaIndex) {
         this.namespaces = namespaces;
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
