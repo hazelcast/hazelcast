@@ -475,6 +475,58 @@ SqlDrop SqlDropSnapshot(Span span, boolean replace) :
 }
 
 /**
+ * Parses CREATE VIEW statement.
+ */
+SqlCreate SqlCreateView(Span span, boolean replace) :
+{
+    SqlParserPos startPos = span.pos();
+    boolean ifNotExists = false;
+    SqlIdentifier name;
+    SqlNode query;
+}
+{
+    <VIEW>
+    [
+        <IF> <NOT> <EXISTS> { ifNotExists = true; }
+    ]
+    name = CompoundIdentifier()
+
+    <AS>
+
+    query = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    {
+        return new com.hazelcast.jet.sql.impl.parse.SqlCreateView(
+            startPos,
+            replace,
+            ifNotExists,
+            name,
+            query
+        );
+    }
+}
+
+/**
+ * Parses DROP VIEW statement.
+ */
+SqlDrop SqlDropView(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <VIEW>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+    {
+        return new SqlDropView(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
  * Parses OPTIONS.
  */
 SqlNodeList SqlOptions():

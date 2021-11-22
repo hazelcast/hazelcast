@@ -16,84 +16,85 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import org.apache.calcite.sql.SqlDrop;
+import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateViewOperator;
+import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
-import org.apache.calcite.util.ImmutableNullableList;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
-import static java.util.Objects.requireNonNull;
 
-public class SqlDropIndex extends SqlDrop {
-
-    private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("DROP INDEX", SqlKind.DROP_INDEX);
+public class SqlCreateView extends SqlCreate {
+    private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
 
     private final SqlIdentifier name;
-    private final SqlIdentifier objectName;
+    private SqlNode query;
 
-    public SqlDropIndex(
-            SqlIdentifier name,
-            SqlIdentifier objectName,
-            boolean ifExists,
-            SqlParserPos pos
-    ) {
-        super(OPERATOR, pos, ifExists);
-
-        this.name = requireNonNull(name, "Name should not be null");
-        this.objectName = requireNonNull(objectName, "Object name should not be null");
+    public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
+        super(CREATE_VIEW, pos, replace, ifNotExists);
+        this.name = name;
+        this.query = query;
     }
 
-    public String indexName() {
+    public String name() {
         return name.toString();
     }
 
-    public String objectName() {
-        return objectName.toString();
+    public SqlNode getQuery() {
+        return query;
     }
 
-    public boolean ifExists() {
-        return ifExists;
+    public void setQuery(SqlNode query) {
+        this.query = query;
     }
 
-    @Nonnull
-    @Override
-    public SqlOperator getOperator() {
-        return OPERATOR;
-    }
-
-    @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, objectName);
+        return ImmutableList.of(name, query);
     }
 
     @Override
+    public SqlOperator getOperator() {
+        return CREATE_VIEW;
+    }
+
+    /**
+     * Copied from {@link org.apache.calcite.sql.ddl.SqlCreateView}
+     */
+    @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("DROP INDEX");
-        if (ifExists) {
-            writer.keyword("IF EXISTS");
+        if (getReplace()) {
+            writer.keyword("CREATE OR REPLACE");
+        } else {
+            writer.keyword("CREATE");
+        }
+        writer.keyword("VIEW");
+        if (ifNotExists) {
+            writer.keyword("IF NOT EXISTS");
         }
         name.unparse(writer, leftPrec, rightPrec);
-        writer.keyword("ON");
-        objectName.unparse(writer, leftPrec, rightPrec);
+        writer.keyword("AS");
+        writer.newlineAndIndent();
+        query.unparse(writer, 0, 0);
     }
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        if (!isCatalogObjectNameValid(name)) {
-            throw validator.newValidationError(name, RESOURCE.droppedIndexDoesNotExist(name.toString()));
+        if (getReplace() && ifNotExists) {
+            throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
         }
+
+        if (!isCatalogObjectNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
+        }
+        query = validator.validate(query);
     }
 }
