@@ -91,7 +91,9 @@ public class Networking {
         int ordinal = memoryReader.readInt(payload, Long.BYTES + Integer.BYTES);
 
         ExecutionContext executionContext = jobExecutionService.getOrCreateExecutionContext(executionId);
-        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload);
+        if (executionContext != null) {
+            executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload);
+        }
     }
 
     public static byte[] createStreamPacketHeader(NodeEngine nodeEngine,
