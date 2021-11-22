@@ -33,12 +33,11 @@ public class ViewResolverImpl implements ViewResolver {
         this.nodeEngine = nodeEngine;
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Nullable
     @Override
     public View resolve(String name) {
         HazelcastInstance instance = nodeEngine.getHazelcastInstance();
-        ReplicatedMap<String, View> catalogContainer = instance.getReplicatedMap(VIEW_STORAGE_NAME);
+        ReplicatedMap<String, Object> catalogContainer = instance.getReplicatedMap(VIEW_STORAGE_NAME);
         Object viewCandidate = catalogContainer.get(name);
         if (viewCandidate instanceof View) {
             return (View) viewCandidate;

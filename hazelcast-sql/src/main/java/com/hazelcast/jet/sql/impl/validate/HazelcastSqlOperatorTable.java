@@ -358,7 +358,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public SqlNode visit(SqlCall call) {
-            call = expandView(call);
+            call = expandViews(call);
             call = rewriteCall(call);
             for (int i = 0; i < call.getOperandList().size(); i++) {
                 SqlNode operand = call.getOperandList().get(i);
@@ -409,7 +409,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         @SuppressWarnings("CheckStyle")
-        private SqlCall expandView(SqlCall call) {
+        private SqlCall expandViews(SqlCall call) {
             if (call instanceof SqlSelect) {
                 SqlSelect selectCall = (SqlSelect) call;
                 ViewResolver viewResolver = validator.getViewResolver();

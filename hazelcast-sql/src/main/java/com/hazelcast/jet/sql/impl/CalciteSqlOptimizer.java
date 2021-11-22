@@ -192,10 +192,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         this.mappingResolver = new MetadataResolver(nodeEngine);
-        this.viewResolver = new ViewResolverImpl(nodeEngine);
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(tableResolverImpl);
+        this.viewResolver = new ViewResolverImpl(nodeEngine);
         this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
