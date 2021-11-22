@@ -143,7 +143,9 @@ public class SqlClientTest extends SqlTestSupport {
 
         JetServiceBackend jetService = getJetServiceBackend(instance());
         Collection<ExecutionContext> contexts = jetService.getJobExecutionService().getExecutionContexts();
-        // assert that all ExecutionContexts are eventually cleaned up
+        // Assert that all ExecutionContexts are eventually cleaned up
+        // This assert will fail if a network packet arrives after the JobExecutionService#FAILED_EXECUTION_EXPIRY_NS
+        // time. Hopefully Jenkins isn't that slow.
         assertTrueEventually(() -> {
             String remainingContexts = contexts.stream()
                     .map(c -> idToString(c.executionId()))
