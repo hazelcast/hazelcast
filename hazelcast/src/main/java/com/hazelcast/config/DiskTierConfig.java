@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.EMPTY_STRING;
 
 /**
  * Disk tier configuration of Tiered-Store.
@@ -36,7 +37,7 @@ public class DiskTierConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;
 
-    private String deviceName;
+    private String deviceName = EMPTY_STRING;
 
     public DiskTierConfig() {
 

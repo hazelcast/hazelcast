@@ -58,6 +58,11 @@ public final class StringUtil {
     public static final Pattern VERSION_PATTERN
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
+    /**
+     * Empty String.
+     */
+    public static final String EMPTY_STRING = "";
+
     private static final String GETTER_PREFIX = "get";
 
     private StringUtil() {
