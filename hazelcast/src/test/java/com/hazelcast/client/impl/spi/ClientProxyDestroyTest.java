@@ -90,7 +90,6 @@ public class ClientProxyDestroyTest {
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testRemoteProxyDeletionDelegatesToClientEventually() {
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         client.getMap("map");
