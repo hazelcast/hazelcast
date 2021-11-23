@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.impl.schema.view.View;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -27,6 +29,8 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlExpandViewTest extends SqlTestSupport {
     private static final String MAP_NAME = "map";
@@ -52,10 +56,35 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_incorrectQueryView_then_throws() {
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT -"))
+                .hasMessageContaining("Encountered \"<EOF>\" at line 1");
+    }
+
+    @Test
+    public void when_simpleViewAfterMappingRemovedIsExpanded_then_throws() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
+        instance().getSql().execute("DROP MAPPING " + MAP_NAME);
+
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME))
+                .hasMessageContaining("Object '" + MAP_NAME + "' not found, did you forget to CREATE MAPPING?");
+    }
+
+    @Test
     public void when_simpleViewWithStreamingQueryIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_SERIES(-5, 5, 5))");
 
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
+    }
+
+    @Ignore
+    @Test
+    public void when_circularViewsResolvedCorrectly() {
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT * FROM " + MAP_NAME);
+        instance().getSql().execute("CREATE VIEW v2 AS SELECT * FROM v1");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT * FROM v2");
+
+        assertRowsAnyOrder("SELECT * FROM v1", singletonList(new Row(1, 1)));
     }
 
     @Test
@@ -104,11 +133,29 @@ public class SqlExpandViewTest extends SqlTestSupport {
         map2.put(1, 1);
 
         final String sql = "CREATE VIEW v AS SELECT * FROM " + MAP_NAME
-                + " INNER JOIN " + MAP_NAME_2 + " ON map2.__key = map.__key";
+                + " INNER JOIN " + MAP_NAME_2 + " ON " + MAP_NAME_2 + ".__key = " + MAP_NAME + " .__key";
 
         instance().getSql().execute(sql);
 
         assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1, 1, 1, 1)));
+    }
+
+    @Ignore("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
+    @Test
+    public void when_simpleViewIsExpandedAsJoinRHS() {
+        final String MAP_NAME_2 = "map2";
+        final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
+        createMapping("map2", Integer.class, Integer.class);
+        map2.put(1, 1);
+
+        final String sql = "CREATE VIEW v AS SELECT * FROM " + MAP_NAME;
+
+        instance().getSql().execute(sql);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + MAP_NAME_2 + " JOIN v ON " + MAP_NAME + ".__key = " + MAP_NAME_2 + ".__key = 1",
+                singletonList(new Row(1, 1, 1, 1))
+        );
     }
 
     @Test
@@ -153,15 +200,26 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_doubleViewIsExpanded() {
+    public void when_doubleViewIsExpandedDuringQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
 
         assertRowsAnyOrder("SELECT * FROM vv", emptyList());
     }
 
+    @Ignore
     @Test
-    public void when_tripleViewIsExpanded() {
+    public void when_doubleViewIsNotExpandedDuringViewCreation() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
+        instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
+
+        View vv = (View) instance().getReplicatedMap("__sql.catalog").get("vv");
+
+        assertThat(vv.query()).isEqualTo("SELECT * FROM \"v\"");
+    }
+
+    @Test
+    public void when_tripleViewIsExpandedDuringQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key = 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
         instance().getSql().execute("CREATE VIEW vvv AS SELECT * FROM vv");

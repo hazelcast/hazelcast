@@ -95,6 +95,11 @@ public class SqlCreateView extends SqlCreate {
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
         }
+//        if (query instanceof SqlSelect) {
+//            SqlNonExpandableSelect select = new SqlNonExpandableSelect((SqlSelect) query);
+//            query = validator.validate(select);
+//        } else {
         query = validator.validate(query);
+//        }
     }
 }

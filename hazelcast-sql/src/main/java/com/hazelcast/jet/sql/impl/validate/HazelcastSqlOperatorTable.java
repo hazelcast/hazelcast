@@ -31,6 +31,7 @@ import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFuncti
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParser;
+import com.hazelcast.jet.sql.impl.parse.SqlNonExpandableSelect;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
@@ -72,6 +73,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastReplaceFunc
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastTrimFunction;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.runtime.CalciteException;
@@ -82,6 +84,7 @@ import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInfixOperator;
+import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
@@ -358,7 +361,9 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public SqlNode visit(SqlCall call) {
-            call = expandViews(call);
+            if (call instanceof SqlSelect && !(call instanceof SqlNonExpandableSelect)) {
+                expandView((SqlSelect) call);
+            }
             call = rewriteCall(call);
             for (int i = 0; i < call.getOperandList().size(); i++) {
                 SqlNode operand = call.getOperandList().get(i);
@@ -409,37 +414,67 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         @SuppressWarnings("CheckStyle")
-        private SqlCall expandViews(SqlCall call) {
-            if (call instanceof SqlSelect) {
-                SqlSelect selectCall = (SqlSelect) call;
-                ViewResolver viewResolver = validator.getViewResolver();
+        private void expandView(SqlSelect selectCall) {
+            if (selectCall.getFrom() == null) {
+                return;
+            }
 
-                if (selectCall.getFrom() == null) {
-                    return call;
-                }
-
-                SqlNode from = selectCall.getFrom();
-                if (from instanceof SqlIdentifier) {
-                    SqlIdentifier fromClause = (SqlIdentifier) from;
-                    if (!ValidationUtil.isCatalogObjectNameValid(fromClause)) {
-                        // We are not throwing any exceptions here, delegating it to validation stage.
-                        return call;
-                    }
-                    String id = fromClause.names.get(fromClause.names.size() - 1);
-                    View resolvedView = viewResolver.resolve(id);
-                    if (resolvedView == null) {
-                        return call;
-                    } else {
-                        QueryParser parser = new QueryParser(validator);
-                        // Note: query was parsed & validated previously.
-                        // We assume, that no exception happens here during parsing.
+            SqlNode from = selectCall.getFrom();
+            ViewResolver viewResolver = validator.getViewResolver();
+            if (from instanceof SqlIdentifier) {
+                SqlIdentifier fromClause = (SqlIdentifier) from;
+                View resolvedView = extractView(fromClause, viewResolver);
+                if (resolvedView == null) {
+                    return;
+                } else {
+                    QueryParser parser = new QueryParser(validator);
+                    // Note: despite query was parsed & validated previously,
+                    // we may expect dependent mapping to be removed.
+                    try {
                         QueryParseResult parseResult = parser.parse(resolvedView.query());
-                        selectCall.setFrom(parseResult.getNode());
-                        return selectCall;
+                        SqlNode parsedQuery = parseResult.getNode();
+                        if (parsedQuery instanceof SqlSelect) {
+                            SqlSelect selectQuery = (SqlSelect) parsedQuery;
+                            selectCall.setFrom(new SqlNonExpandableSelect(selectQuery));
+                        } else {
+                            selectCall.setFrom(parsedQuery);
+                        }
+                        return;
+                    } catch (QueryException e) {
+                        e.printStackTrace();
                     }
                 }
             }
-            return call;
+
+            if (from instanceof SqlJoin) {
+                SqlJoin joinFrom = (SqlJoin) from;
+                QueryParser parser = new QueryParser(validator);
+                if (joinFrom.getLeft() instanceof SqlIdentifier) {
+                    SqlIdentifier left = (SqlIdentifier) joinFrom.getLeft();
+                    View resolvedView = extractView(left, viewResolver);
+                    if (resolvedView != null) {
+                        joinFrom.setLeft(parser.parse(resolvedView.query()).getNode());
+                    }
+                }
+
+                if (joinFrom.getRight() instanceof SqlIdentifier) {
+                    SqlIdentifier right = (SqlIdentifier) joinFrom.getRight();
+                    View resolvedView = extractView(right, viewResolver);
+                    if (resolvedView != null) {
+                        joinFrom.setRight(parser.parse(resolvedView.query()).getNode());
+                    }
+                }
+            }
+
+        }
+
+        private View extractView(SqlIdentifier fromClause, ViewResolver viewResolver) {
+            if (!ValidationUtil.isCatalogObjectNameValid(fromClause)) {
+                // We are not throwing any exceptions here, delegating it to validation stage.
+                return null;
+            }
+            String id = fromClause.names.get(fromClause.names.size() - 1);
+            return viewResolver.resolve(id);
         }
 
         private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
