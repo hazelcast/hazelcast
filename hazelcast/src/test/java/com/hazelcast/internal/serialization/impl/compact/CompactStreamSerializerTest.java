@@ -76,12 +76,14 @@ public class CompactStreamSerializerTest {
 
         ArrayList<Object> expected = new ArrayList<>();
         expected.add(node);
+        expected.add(employeeDTO);
         expected.add(employerDTO);
 
         Data data = serializationService.toData(expected);
         ArrayList<Object> arrayList = serializationService.toObject(data);
         assertEquals(node, arrayList.get(0));
-        assertEquals(employerDTO, arrayList.get(1));
+        assertEquals(employeeDTO, arrayList.get(1));
+        assertEquals(employerDTO, arrayList.get(2));
     }
 
     private InternalSerializationService createSerializationService() {
