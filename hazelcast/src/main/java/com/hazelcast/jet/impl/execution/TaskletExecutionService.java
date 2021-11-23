@@ -110,9 +110,11 @@ public class TaskletExecutionService {
             properties, JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS, JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
         );
 
+        ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
         Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
+        Arrays.stream(cooperativeThreadPool).forEach(thread -> thread.setContextClassLoader(configClassLoader));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
 
         // register metrics
@@ -286,7 +288,9 @@ public class TaskletExecutionService {
         public void run() {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
-            currentThread().setContextClassLoader(tracker.jobClassLoader);
+            if (tracker.jobClassLoader != null) {
+                currentThread().setContextClassLoader(tracker.jobClassLoader);
+            }
             IdleStrategy idlerLocal = idlerNonCooperative;
             MetricsImpl.Container userMetricsContextContainer = MetricsImpl.container();
 
@@ -382,8 +386,11 @@ public class TaskletExecutionService {
             if (finestLogEnabled) {
                 start = System.nanoTime();
             }
+            ClassLoader clBackup = myThread.getContextClassLoader();
             try {
-                myThread.setContextClassLoader(t.jobClassLoader);
+                if (t.jobClassLoader != null) {
+                    myThread.setContextClassLoader(t.jobClassLoader);
+                }
                 userMetricsContextContainer.setContext(t.tasklet.getMetricsContext());
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
@@ -401,6 +408,7 @@ public class TaskletExecutionService {
                 }
             } finally {
                 userMetricsContextContainer.setContext(null);
+                myThread.setContextClassLoader(clBackup);
             }
             if (t.executionTracker.executionCompletedExceptionally()) {
                 dismissTasklet(t);

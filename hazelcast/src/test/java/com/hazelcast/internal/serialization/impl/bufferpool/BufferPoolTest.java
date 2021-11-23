@@ -17,12 +17,12 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -159,8 +159,6 @@ public class BufferPoolTest extends HazelcastTestSupport {
         bufferPool.returnInputBuffer(in);
 
         assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.inputQueue.size());
-        // we need to make sure that the in was closed since we are not going to pool it.
-        verify(in, times(1)).close();
     }
 
     @Test
