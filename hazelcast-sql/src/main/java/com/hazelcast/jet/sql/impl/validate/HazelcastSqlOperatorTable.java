@@ -423,7 +423,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             SqlNode from = selectCall.getFrom();
             ViewResolver viewResolver = validator.getViewResolver();
             View resolvedView = null;
-            
+
             if (from instanceof SqlBasicCall) {
                 SqlBasicCall call = (SqlBasicCall) from;
                 SqlOperator operator = call.getOperator();
