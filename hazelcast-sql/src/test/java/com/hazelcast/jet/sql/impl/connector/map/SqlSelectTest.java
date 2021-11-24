@@ -133,18 +133,4 @@ public class SqlSelectTest extends SqlTestSupport {
         List<Row> rows = fillIMapAndGetData(map, 20);
         assertRowsAnyOrder("SELECT * FROM v", rows);
     }
-
-    @Test
-    public void test() {
-        final String MAP_NAME_2 = "map2";
-        final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
-        createMapping("map2", Integer.class, Integer.class);
-        map2.put(1, 1);
-        assertRowsAnyOrder(
-                "SELECT * FROM map2 " +
-                        "INNER JOIN (SELECT __key, this FROM map) " +
-                        "ON map.__key = map2.__key = 1",
-                singletonList(new Row(1, 1, 1, 1))
-        );
-    }
 }

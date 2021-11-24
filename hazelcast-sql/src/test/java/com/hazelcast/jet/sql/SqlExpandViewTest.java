@@ -62,7 +62,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewAfterMappingRemovedIsExpanded_then_throws() {
+    public void when_viewAfterMappingRemovedIsExpanded_then_throws() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
         instance().getSql().execute("DROP MAPPING " + MAP_NAME);
 
@@ -71,7 +71,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewWithStreamingQueryIsExpanded() {
+    public void when_viewWithStreamingQueryIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_SERIES(-5, 5, 5))");
 
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
@@ -98,35 +98,35 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithQueryFilter() {
+    public void when_viewIsExpandedWithQueryFilter() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
         assertRowsAnyOrder("SELECT * FROM v WHERE __key > 1", emptyList());
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithViewFilter() {
+    public void when_viewIsExpandedWithViewFilter() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
 
         assertRowsAnyOrder("SELECT * FROM v", emptyList());
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithQueryProjection() {
+    public void when_viewIsExpandedWithQueryProjection() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
         assertRowsAnyOrder("SELECT this FROM v", singletonList(new Row(1)));
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithViewProjection() {
+    public void when_viewIsExpandedWithViewProjection() {
         instance().getSql().execute("CREATE VIEW v AS SELECT this FROM " + MAP_NAME);
 
         assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1)));
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithJoin() {
+    public void when_viewIsExpandedWithJoin() {
         final String MAP_NAME_2 = "map2";
         final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
         createMapping("map2", Integer.class, Integer.class);
@@ -142,7 +142,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
     @Ignore("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     @Test
-    public void when_simpleViewIsExpandedAsJoinRHS() {
+    public void when_viewIsExpandedAsJoinRHS() {
         final String MAP_NAME_2 = "map2";
         final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
         createMapping("map2", Integer.class, Integer.class);
@@ -159,7 +159,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithOrdering() {
+    public void when_viewIsExpandedWithOrdering() {
         map.put(2, 2);
 
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " ORDER BY __key DESC");
@@ -168,7 +168,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithUnionAll() {
+    public void when_viewIsExpandedWithUnionAll() {
         final String MAP_NAME_2 = "map2";
         final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
         createMapping("map2", Integer.class, Integer.class);
@@ -184,14 +184,14 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithAggFunction() {
+    public void when_viewIsExpandedWithAggFunction() {
         instance().getSql().execute("CREATE VIEW v AS SELECT MAX(__key) FROM map");
 
         assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1)));
     }
 
     @Test
-    public void when_simpleViewIsExpandedWithGroupByAndHaving() {
+    public void when_viewIsExpandedWithGroupByAndHaving() {
         map.put(2, 2);
         map.put(3, 3);
         instance().getSql().execute("CREATE VIEW v AS SELECT this FROM map GROUP BY (this) HAVING AVG(this) = 2");
