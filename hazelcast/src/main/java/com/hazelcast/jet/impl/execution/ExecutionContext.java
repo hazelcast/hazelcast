@@ -212,6 +212,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
             } else {
                 // begin job execution
                 ClassLoader cl = jetServiceBackend.getJobClassLoaderService().getClassLoader(jobId);
+                if (cl == null) {
+                    cl = nodeEngine.getConfigClassLoader();
+                }
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))

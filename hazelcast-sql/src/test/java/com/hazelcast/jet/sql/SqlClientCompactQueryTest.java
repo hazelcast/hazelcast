@@ -138,7 +138,7 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
                 + ", isFired BOOLEAN"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + "int" + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
                 + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + EmployeeDTO.class.getName() + '\''
                 + ")");

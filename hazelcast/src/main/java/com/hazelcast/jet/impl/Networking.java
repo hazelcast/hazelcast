@@ -188,13 +188,13 @@ public class Networking {
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
         BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet);
-        for (; ; ) {
+        for (;;) {
             final long executionId = input.readLong();
             if (executionId == TERMINAL_EXECUTION_ID) {
                 break;
             }
             final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
-            for (; ; ) {
+            for (;;) {
                 final int vertexId = input.readInt();
                 if (vertexId == TERMINAL_VERTEX_ID) {
                     break;
