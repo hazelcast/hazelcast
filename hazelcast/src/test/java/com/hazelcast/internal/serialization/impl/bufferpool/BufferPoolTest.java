@@ -33,8 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -93,7 +91,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returnOutputBuffer_whenOverflowing() throws IOException {
+    public void returnOutputBuffer_whenOverflowing() {
         for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
             bufferPool.returnOutputBuffer(mock(BufferObjectDataOutput.class));
         }
@@ -102,8 +100,6 @@ public class BufferPoolTest extends HazelcastTestSupport {
         bufferPool.returnOutputBuffer(out);
 
         assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.outputQueue.size());
-        // we need to make sure that the out was closed since we are not going to pool it.
-        verify(out, times(1)).close();
     }
 
     @Test
@@ -150,7 +146,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returnInputBuffer_whenOverflowing() throws IOException {
+    public void returnInputBuffer_whenOverflowing() {
         for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
             bufferPool.returnInputBuffer(mock(BufferObjectDataInput.class));
         }
