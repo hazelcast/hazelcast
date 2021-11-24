@@ -156,10 +156,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             if (!(topNode instanceof SqlCreateView)) {
                 return topNode;
             } else {
+                // Note, hack: special check for CREATE VIEW command.
+                // It may happens that select list will be empty after the validation.
+                // Here, we manually adding 'star' to such select query.
+                // Its a temporal state and might be resolved
+                // with fields list addition to ViewTable.
                 SqlCreateView validated = (SqlCreateView) topNode;
                 SqlNode query = validated.getQuery();
                 if (query instanceof SqlNonExpandableSelect) {
                     SqlNonExpandableSelect select = (SqlNonExpandableSelect) query;
+                    //noinspection CheckStyle
                     if (select.getSelectList().isEmpty()) {
                         select.setSelectList(
                                 new SqlNodeList(
