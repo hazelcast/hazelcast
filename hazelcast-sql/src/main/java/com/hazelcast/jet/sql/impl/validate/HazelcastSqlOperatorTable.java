@@ -104,7 +104,9 @@ import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastResources.RESOURCES;
 
@@ -343,6 +345,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
      */
     static final class RewriteVisitor extends SqlBasicVisitor<SqlNode> {
         private final HazelcastSqlValidator validator;
+        private final Set<View> visitedViews = new HashSet<>();
 
         RewriteVisitor(HazelcastSqlValidator validator) {
             this.validator = validator;
@@ -458,7 +461,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 return;
             }
 
+            if (visitedViews.contains(resolvedView)) {
+                throw QueryException.error("Infinite recursion during view expanding detected");
+            }
+
             if (resolvedView != null) {
+                visitedViews.add(resolvedView);
                 QueryParser parser = new QueryParser(validator);
                 // Note: despite query was parsed & validated previously,
                 // we may expect dependent mapping to be removed.

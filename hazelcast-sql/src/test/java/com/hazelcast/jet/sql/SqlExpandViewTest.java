@@ -77,14 +77,14 @@ public class SqlExpandViewTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
     }
 
-    @Ignore
     @Test
     public void when_circularViewsResolvedCorrectly() {
         instance().getSql().execute("CREATE VIEW v1 AS SELECT * FROM " + MAP_NAME);
         instance().getSql().execute("CREATE VIEW v2 AS SELECT * FROM v1");
         instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT * FROM v2");
 
-        assertRowsAnyOrder("SELECT * FROM v1", singletonList(new Row(1, 1)));
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v1"))
+                .hasMessageContaining("Infinite recursion during view expanding detected");
     }
 
     @Test
