@@ -221,6 +221,14 @@ hazelcast:
     # - false: Allows all actions that have no permission mapping
     client-block-unmapped-actions: true
 
+  device:
+    # Configuration for a device, which a tiered-store can reference and use for its disk-tier.
+    default:
+      base-dir: "tiered-store"
+      block-size: 4096
+      read-io-thread-count: 16
+      write-io-thread-count: 4
+
   map:
     default:
       # Data type that will be used for storing recordMap.
@@ -308,6 +316,19 @@ hazelcast:
       # implement a custom eviction policy, out-of-the-box
       # eviction policies work regardless of this setting.
       per-entry-stats-enabled: false
+
+      # Tiered Store configuration. By default, it is disabled.
+      tiered-store:
+        enabled: false
+        memory-tier:
+          # The amount of memory to be reserved for the memory-tier of the tiered-store instance of this map.
+          capacity: "256 MB"
+        # Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
+        # of the tiered-store instance of this map.
+        disk-tier:
+          enabled: false
+          device-name: "default"
+
 
   queue:
     default:
