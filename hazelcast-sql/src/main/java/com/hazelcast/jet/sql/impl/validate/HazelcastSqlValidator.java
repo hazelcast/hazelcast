@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
+import com.hazelcast.jet.sql.impl.parse.SqlNonExpandableSelect;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
@@ -148,6 +152,24 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
             topNode.validate(this, getEmptyScope());
+
+            if (!(topNode instanceof SqlCreateView)) {
+                return topNode;
+            } else {
+                SqlCreateView validated = (SqlCreateView) topNode;
+                SqlNode query = validated.getQuery();
+                if (query instanceof SqlNonExpandableSelect) {
+                    SqlNonExpandableSelect select = (SqlNonExpandableSelect) query;
+                    if (select.getSelectList().isEmpty()) {
+                        select.setSelectList(
+                                new SqlNodeList(
+                                        ImmutableList.of(new SqlIdentifier("", select.getParserPosition())),
+                                        select.getParserPosition()
+                                )
+                        );
+                    }
+                }
+            }
             return topNode;
         }
 
@@ -184,6 +206,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        if (node instanceof SqlNonExpandableSelect) {
+            validateSelect((SqlSelect) node, scope);
+            return;
+        }
+
         super.validateQuery(node, scope, targetRowType);
 
         if (node instanceof SqlSelect) {
@@ -474,6 +501,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 // not every identifier is a table
                 if (table != null) {
                     HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
+                    if (hazelcastTable.getTarget() instanceof ViewTable) {
+                        return null;
+                    }
                     SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
                     if (connector.isStream()) {
                         found = true;

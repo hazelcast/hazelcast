@@ -201,13 +201,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
     @Test
     public void when_doubleViewIsExpandedDuringQuery() {
-        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key = 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
 
-        assertRowsAnyOrder("SELECT * FROM vv", emptyList());
+        assertRowsAnyOrder("SELECT * FROM vv", singletonList(new Row(1, 1)));
     }
 
-    @Ignore
     @Test
     public void when_doubleViewIsNotExpandedDuringViewCreation() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
@@ -215,7 +214,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         View vv = (View) instance().getReplicatedMap("__sql.catalog").get("vv");
 
-        assertThat(vv.query()).isEqualTo("SELECT * FROM \"v\"");
+        assertThat(vv.query()).isEqualTo("SELECT *\n" + "FROM \"hazelcast\".\"public\".\"v\" AS \"v\"");
     }
 
     @Test

@@ -22,8 +22,10 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -176,9 +179,14 @@ public class TableResolverImpl implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Mapping> mappings = tableStorage.valuesMappings();
-        List<Table> tables = new ArrayList<>(mappings.size() + 3);
+        Collection<View> views = tableStorage.valuesViews();
+        List<Table> tables = new ArrayList<>(mappings.size() + views.size() + 3);
         for (Mapping mapping : mappings) {
             tables.add(toTable(mapping));
+        }
+
+        for (View view : views) {
+            tables.add(toTable(view));
         }
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
@@ -201,6 +209,15 @@ public class TableResolverImpl implements TableResolver {
                 mapping.externalName(),
                 mapping.options(),
                 mapping.fields()
+        );
+    }
+
+    private Table toTable(View view) {
+        return new ViewTable(
+                SCHEMA_NAME_PUBLIC,
+                view.name(),
+                emptyList(),
+                new ConstantTableStatistics(0L)
         );
     }
 

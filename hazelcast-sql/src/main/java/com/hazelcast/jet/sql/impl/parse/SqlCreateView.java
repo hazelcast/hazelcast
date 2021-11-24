@@ -22,6 +22,7 @@ import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
@@ -41,7 +42,12 @@ public class SqlCreateView extends SqlCreate {
     public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, ifNotExists);
         this.name = name;
-        this.query = query;
+        if (query instanceof SqlSelect) {
+            SqlSelect select = (SqlSelect) query;
+            this.query = new SqlNonExpandableSelect(select);
+        } else {
+            this.query = query;
+        }
     }
 
     public String name() {
@@ -95,11 +101,6 @@ public class SqlCreateView extends SqlCreate {
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
         }
-//        if (query instanceof SqlSelect) {
-//            SqlNonExpandableSelect select = new SqlNonExpandableSelect((SqlSelect) query);
-//            query = validator.validate(select);
-//        } else {
         query = validator.validate(query);
-//        }
     }
 }

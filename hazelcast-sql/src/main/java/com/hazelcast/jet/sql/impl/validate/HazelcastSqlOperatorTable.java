@@ -77,6 +77,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.runtime.CalciteException;
+import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
@@ -421,29 +422,19 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
             SqlNode from = selectCall.getFrom();
             ViewResolver viewResolver = validator.getViewResolver();
+            View resolvedView = null;
+            
+            if (from instanceof SqlBasicCall) {
+                SqlBasicCall call = (SqlBasicCall) from;
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof SqlAsOperator) {
+                    resolvedView = extractView((SqlIdentifier) call.getOperandList().get(1), viewResolver);
+                }
+            }
+
             if (from instanceof SqlIdentifier) {
                 SqlIdentifier fromClause = (SqlIdentifier) from;
-                View resolvedView = extractView(fromClause, viewResolver);
-                if (resolvedView == null) {
-                    return;
-                } else {
-                    QueryParser parser = new QueryParser(validator);
-                    // Note: despite query was parsed & validated previously,
-                    // we may expect dependent mapping to be removed.
-                    try {
-                        QueryParseResult parseResult = parser.parse(resolvedView.query());
-                        SqlNode parsedQuery = parseResult.getNode();
-                        if (parsedQuery instanceof SqlSelect) {
-                            SqlSelect selectQuery = (SqlSelect) parsedQuery;
-                            selectCall.setFrom(new SqlNonExpandableSelect(selectQuery));
-                        } else {
-                            selectCall.setFrom(parsedQuery);
-                        }
-                        return;
-                    } catch (QueryException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resolvedView = extractView(fromClause, viewResolver);
             }
 
             if (from instanceof SqlJoin) {
@@ -451,7 +442,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 QueryParser parser = new QueryParser(validator);
                 if (joinFrom.getLeft() instanceof SqlIdentifier) {
                     SqlIdentifier left = (SqlIdentifier) joinFrom.getLeft();
-                    View resolvedView = extractView(left, viewResolver);
+                    resolvedView = extractView(left, viewResolver);
                     if (resolvedView != null) {
                         joinFrom.setLeft(parser.parse(resolvedView.query()).getNode());
                     }
@@ -459,13 +450,25 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 if (joinFrom.getRight() instanceof SqlIdentifier) {
                     SqlIdentifier right = (SqlIdentifier) joinFrom.getRight();
-                    View resolvedView = extractView(right, viewResolver);
+                    resolvedView = extractView(right, viewResolver);
                     if (resolvedView != null) {
                         joinFrom.setRight(parser.parse(resolvedView.query()).getNode());
                     }
                 }
+                return;
             }
 
+            if (resolvedView != null) {
+                QueryParser parser = new QueryParser(validator);
+                // Note: despite query was parsed & validated previously,
+                // we may expect dependent mapping to be removed.
+                try {
+                    QueryParseResult parseResult = parser.parse(resolvedView.query());
+                    selectCall.setFrom(parseResult.getNode());
+                } catch (QueryException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         private View extractView(SqlIdentifier fromClause, ViewResolver viewResolver) {

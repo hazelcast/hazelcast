@@ -22,6 +22,23 @@ import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+/*
+ * Special SqlSelect AST node class.
+ * It is used as CREATE VIEW SELECT query alias.
+ * During the validation phase it would be expanded only on top level.
+ * Example :
+ * ```
+ * CREATE VIEW v AS SELECT 1;
+ * CREATE VIEW vv AS SELECT * v
+ *
+ * -- this query
+ * SELECT * FROM vv
+ * -- it would be expanded to
+ * SELECT * FROM (SELECT * FROM v)
+ * -- but not to
+ * SELECT * FROM (SELECT * FROM (SELECT 1)))
+ * ```
+ */
 public class SqlNonExpandableSelect extends SqlSelect {
     @SuppressWarnings("checkstyle:ParameterNumber")
     public SqlNonExpandableSelect(
