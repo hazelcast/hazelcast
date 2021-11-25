@@ -301,7 +301,6 @@ public class ReceiverTasklet implements Tasklet {
                 }
                 totalItems += itemCount;
                 totalBytes += input.position();
-                input.close();
                 tracker.madeProgress();
             }
             bytesInCounter.inc(totalBytes);

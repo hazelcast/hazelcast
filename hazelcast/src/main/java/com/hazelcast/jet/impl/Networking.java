@@ -185,24 +185,23 @@ public class Networking {
     }
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
-        try (BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet)) {
+        BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet);
+        for (;;) {
+            final long executionId = input.readLong();
+            if (executionId == TERMINAL_EXECUTION_ID) {
+                break;
+            }
+            final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
             for (;;) {
-                final long executionId = input.readLong();
-                if (executionId == TERMINAL_EXECUTION_ID) {
+                final int vertexId = input.readInt();
+                if (vertexId == TERMINAL_VERTEX_ID) {
                     break;
                 }
-                final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
-                for (;;) {
-                    final int vertexId = input.readInt();
-                    if (vertexId == TERMINAL_VERTEX_ID) {
-                        break;
-                    }
-                    int ordinal = input.readInt();
-                    int sendSeqLimitCompressed = input.readInt();
-                    final SenderTasklet t;
-                    if (senderMap != null && (t = senderMap.get(new SenderReceiverKey(vertexId, ordinal, fromAddr))) != null) {
-                        t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
-                    }
+                int ordinal = input.readInt();
+                int sendSeqLimitCompressed = input.readInt();
+                final SenderTasklet t;
+                if (senderMap != null && (t = senderMap.get(new SenderReceiverKey(vertexId, ordinal, fromAddr))) != null) {
+                    t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
                 }
             }
         }
