@@ -299,9 +299,9 @@ public final class KinesisSources {
          */
         @Nonnull
         @SuppressWarnings("unchecked") // here we base on Java's type erasure, that's why we use that casting
-        public <NT> Builder<NT> withProjectionFn(@Nonnull BiFunctionEx<Record, Shard, NT> projectionFn) {
+        public <T_NEW> Builder<T_NEW> withProjectionFn(@Nonnull BiFunctionEx<Record, Shard, T_NEW> projectionFn) {
             this.projectionFn = (BiFunctionEx<Record, Shard, T>) projectionFn;
-            return (Builder<NT>) this;
+            return (Builder<T_NEW>) this;
         }
 
         /**
