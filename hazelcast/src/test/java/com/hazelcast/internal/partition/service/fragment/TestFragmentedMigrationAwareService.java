@@ -17,13 +17,13 @@
 package com.hazelcast.internal.partition.service.fragment;
 
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAwareService<String>
-        implements FragmentedMigrationAwareService {
+        implements ChunkedMigrationAwareService {
 
     public static final String SERVICE_NAME = TestFragmentedMigrationAwareService.class.getSimpleName();
 
@@ -105,7 +105,8 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
             }
         }
 
-        return values.isEmpty() ? null : new TestFragmentReplicationOperation(values);
+        return values.isEmpty() ? null : new TestFragmentReplicationOperation(values)
+                .setServiceName(SERVICE_NAME);
     }
 
     @Override

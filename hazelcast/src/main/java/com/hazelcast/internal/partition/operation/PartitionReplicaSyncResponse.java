@@ -16,8 +16,12 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -26,14 +30,15 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
@@ -45,12 +50,15 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static java.lang.String.format;
 
 /**
  * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation
@@ -67,17 +75,38 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
         AllowedDuringPassiveState, TargetAware {
 
+    // TODO sync usages with chunkSuppliers
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
     private long[] versions;
 
+    // TODO sync usages with operations
+    private transient Collection<ChunkSupplier> chunkSuppliers;
+    private transient int maxTotalChunkedDataInBytes;
+    private transient ILogger logger;
+    private transient int partitionId;
+
     public PartitionReplicaSyncResponse() {
     }
 
-    public PartitionReplicaSyncResponse(Collection<Operation> operations, ServiceNamespace namespace, long[] versions) {
+    public PartitionReplicaSyncResponse(Collection<Operation> operations,
+                                        Collection<ChunkSupplier> chunkSuppliers,
+                                        ServiceNamespace namespace,
+                                        long[] versions,
+                                        int maxTotalChunkedDataInBytes,
+                                        ILogger logger,
+                                        int partitionId) {
+        assert chunkSuppliers != null;
+        assert logger != null;
+        assert maxTotalChunkedDataInBytes > 0 : maxTotalChunkedDataInBytes;
+
         this.operations = operations;
         this.namespace = namespace;
         this.versions = versions;
+        this.chunkSuppliers = chunkSuppliers;
+        this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
+        this.logger = logger;
+        this.partitionId = partitionId;
     }
 
     @Override
@@ -119,7 +148,9 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         }
     }
 
-    /** Fail all replication operations with the exception that this node is no longer the replica with the sent index */
+    /**
+     * Fail all replication operations with the exception that this node is no longer the replica with the sent index
+     */
     private void nodeNotOwnsBackup(InternalPartitionImpl partition) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
@@ -207,7 +238,6 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         }
     }
 
-
     @Override
     public boolean returnsResponse() {
         return false;
@@ -262,6 +292,109 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         out.writeObject(namespace);
         out.writeLongArray(versions);
         writeNullableCollection(operations, out);
+        // RU_COMPAT 5.0
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            writeChunkedOperations(out);
+        }
+    }
+
+    private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
+        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
+
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+
+            chunkSupplier.inject(isEndOfChunk);
+
+            while (chunkSupplier.hasNext()) {
+                Operation chunk = chunkSupplier.next();
+                if (chunk == null) {
+                    break;
+                }
+
+                logCurrentChunk(chunkSupplier);
+
+                out.writeObject(chunk);
+
+                if (isEndOfChunk.getAsBoolean()) {
+                    break;
+                }
+            }
+
+            if (isEndOfChunk.getAsBoolean()) {
+                logEndOfChunk(isEndOfChunk);
+                break;
+            }
+        }
+        // indicates end of chunked state
+        out.writeObject(null);
+
+        logEndOfAllChunks(isEndOfChunk);
+    }
+
+    private void logCurrentChunk(ChunkSupplier chunkSupplier) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
+        logger.finest(String.format("Current chunk [partitionId:%d, %s]",
+                partitionId, chunkSupplier));
+    }
+
+    private void logEndOfChunk(IsEndOfChunk isEndOfChunk) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
+        logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+                partitionId,
+                MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
+                MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+    }
+
+    private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
+        if (!logger.isFinestEnabled()) {
+            return;
+        }
+
+        boolean allDone = true;
+        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
+            if (chunkSupplier.hasNext()) {
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone) {
+            logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
+                    partitionId,
+                    MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
+                    MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
+        }
+    }
+
+    private static final class IsEndOfChunk implements BooleanSupplier {
+
+        private final int positionStart;
+        private final int maxTotalChunkedDataInBytes;
+        private final BufferObjectDataOutput out;
+
+        private IsEndOfChunk(ObjectDataOutput out, int maxTotalChunkedDataInBytes) {
+            assert maxTotalChunkedDataInBytes > 0
+                    : "Found maxTotalChunkedDataInBytes: " + maxTotalChunkedDataInBytes;
+
+            this.out = ((BufferObjectDataOutput) out);
+            this.positionStart = ((BufferObjectDataOutput) out).position();
+            this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
+        }
+
+        @Override
+        public boolean getAsBoolean() {
+            return bytesWrittenSoFar() >= maxTotalChunkedDataInBytes;
+        }
+
+        public int bytesWrittenSoFar() {
+            return out.position() - positionStart;
+        }
     }
 
     @Override
@@ -269,7 +402,25 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         namespace = in.readObject();
         versions = in.readLongArray();
         operations = readNullableCollection(in);
+        // RU_COMPAT 5.0
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            readChunkedOperations(in);
+        }
     }
+
+    private void readChunkedOperations(ObjectDataInput in) throws IOException {
+        do {
+            Object operation = in.readObject();
+            if (operation == null) {
+                break;
+            }
+            if (CollectionUtil.isEmpty(operations)) {
+                operations = new LinkedList<>();
+            }
+            operations.add(((Operation) operation));
+        } while (true);
+    }
+
 
     @Override
     protected void toString(StringBuilder sb) {

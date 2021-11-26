@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
@@ -43,6 +44,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 
 /**
@@ -103,18 +106,29 @@ public final class PartitionReplicaSyncRequestOffloadable
             final Iterator<ServiceNamespace> iterator = namespaces.iterator();
             for (int i = 0; i < permits; i++) {
                 ServiceNamespace namespace = iterator.next();
-                Collection<Operation> operations;
+
+                Collection<Operation> operations = Collections.emptyList();
+                Collection<ChunkSupplier> chunkSuppliers = Collections.emptyList();
+
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
-                    operations = createFragmentReplicationOperationsOffload(event, namespace);
+                    chunkSuppliers = collectChunkSuppliers(event, namespace);
+                    if (isEmpty(chunkSuppliers)) {
+                        operations = createFragmentReplicationOperationsOffload(event, namespace);
+                    }
                 }
                 // operations can be null if await-ing
                 // for non-fragmented services' repl
                 // operations failed due to interruption
-                if (operations != null) {
-                    operations = new CopyOnWriteArrayList<>(operations);
-                    sendOperationsOnPartitionThread(operations, namespace);
+                if (isNotEmpty(operations) || isNotEmpty(chunkSuppliers)) {
+                    // TODO why using new CopyOnWriteArrayList<>(chunkSuppliers)?
+                    sendOperationsOnPartitionThread(new CopyOnWriteArrayList<>(operations),
+                            new CopyOnWriteArrayList<>(chunkSuppliers), namespace);
+                    while (hasRemainingChunksToSend(chunkSuppliers)) {
+                        sendOperationsOnPartitionThread(new CopyOnWriteArrayList<>(operations),
+                                new CopyOnWriteArrayList<>(chunkSuppliers), namespace);
+                    }
                     iterator.remove();
                 }
             }
@@ -149,23 +163,30 @@ public final class PartitionReplicaSyncRequestOffloadable
         return this.partitionId;
     }
 
-    private void sendOperationsOnPartitionThread(Collection<Operation> operations, ServiceNamespace ns) {
+    private void sendOperationsOnPartitionThread(Collection<Operation> operations,
+                                                 Collection<ChunkSupplier> chunkSuppliers,
+                                                 ServiceNamespace ns) {
         if (isRunningOnPartitionThread()) {
-            sendOperations(operations, ns);
+            sendOperations(operations, chunkSuppliers, ns);
         } else {
             UrgentPartitionRunnable partitionRunnable = new UrgentPartitionRunnable(partitionId(),
-                    () -> sendOperations(operations, ns));
+                    () -> sendOperations(operations, chunkSuppliers, ns));
             getNodeEngine().getOperationService().execute(partitionRunnable);
             partitionRunnable.future.joinInternal();
         }
     }
 
     @Override
-    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
+    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations,
+                                                          Collection<ChunkSupplier> chunkSuppliers,
+                                                          ServiceNamespace ns) {
         int partitionId = partitionId();
         int replicaIndex = getReplicaIndex();
         long[] versions = replicaVersions.get(BiTuple.of(partitionId, ns));
-        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionReplicaSyncResponse syncResponse
+                = new PartitionReplicaSyncResponse(operations, chunkSuppliers, ns, versions,
+                partitionService.getMaxTotalChunkedDataInBytes(), getLogger(), partitionId);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
     }

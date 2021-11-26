@@ -103,6 +103,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 import static com.hazelcast.internal.partition.impl.MigrationManager.applyMigration;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -129,6 +131,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private final int partitionCount;
 
     private final long partitionMigrationTimeout;
+    private final int maxTotalChunkedDataInBytes;
 
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
@@ -168,6 +171,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 2 * TRIGGER_MASTER_DELAY_MILLIS, this::resetMasterTriggeredFlag);
 
         partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
+        maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
 
         proxy = new PartitionServiceProxy(nodeEngine, this);
 
@@ -993,6 +997,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     public long getPartitionMigrationTimeout() {
         return partitionMigrationTimeout;
+    }
+
+    public int getMaxTotalChunkedDataInBytes() {
+        return maxTotalChunkedDataInBytes;
     }
 
     @Override

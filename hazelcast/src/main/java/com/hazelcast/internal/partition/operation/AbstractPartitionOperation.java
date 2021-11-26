@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -24,18 +25,20 @@ import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
-import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -45,7 +48,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
-import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
@@ -97,12 +100,13 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
+    @Nonnull
     final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
                                                           Collection<String> serviceNames,
                                                           ServiceNamespace namespace) {
         getLogger().fine("Collecting chunk suppliers...");
 
-        Collection<ChunkSupplier> suppliers = EMPTY_LIST;
+        Collection<ChunkSupplier> suppliers = emptyList();
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         for (String serviceName : serviceNames) {
@@ -112,7 +116,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 continue;
             }
 
-            if (suppliers == EMPTY_LIST) {
+            if (CollectionUtil.isEmpty(suppliers)) {
                 suppliers = new LinkedList<>();
             }
 
@@ -166,6 +170,39 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         }
 
         return operations;
+    }
+
+    @Nonnull
+    final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event, ServiceNamespace ns) {
+        assert !(ns instanceof NonFragmentedServiceNamespace)
+                : ns + " should be used only for chunked migrations enabled services!";
+        //assertRunningOnPartitionThread();
+
+        getLogger().fine("Collecting chunk suppliers...");
+
+        Collection<ChunkSupplier> suppliers = Collections.emptyList();
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(ChunkedMigrationAwareService.class);
+
+        for (ServiceInfo serviceInfo : services) {
+            ChunkedMigrationAwareService service = serviceInfo.getService();
+            if (!service.isKnownServiceNamespace(ns)) {
+                continue;
+            }
+
+            if (CollectionUtil.isEmpty(suppliers)) {
+                suppliers = new LinkedList<>();
+            }
+
+            suppliers.add(service.newChunkSupplier(event, singleton(ns)));
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
+                        ns, event.getPartitionId()));
+            }
+        }
+
+        return suppliers;
     }
 
     /**

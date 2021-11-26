@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -46,6 +47,7 @@ import java.util.Iterator;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -149,30 +151,60 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
             Iterator<ServiceNamespace> iterator = namespaces.iterator();
             for (int i = 0; i < permits; i++) {
                 ServiceNamespace namespace = iterator.next();
-                Collection<Operation> operations;
+
+                Collection<Operation> operations = Collections.emptyList();
+                Collection<ChunkSupplier> chunkSuppliers = Collections.emptyList();
+
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
-                    operations = createFragmentReplicationOperations(event, namespace);
+                    chunkSuppliers = collectChunkSuppliers(event, namespace);
+                    if (isEmpty(chunkSuppliers)) {
+                        operations = createFragmentReplicationOperations(event, namespace);
+                    }
                 }
-                sendOperations(operations, namespace);
+
+                sendOperations(operations, chunkSuppliers, namespace);
+
+                while (hasRemainingChunksToSend(chunkSuppliers)) {
+                    sendOperations(operations, chunkSuppliers, namespace);
+                }
+
                 iterator.remove();
+
             }
         } finally {
             partitionService.getReplicaManager().releaseReplicaSyncPermits(permits);
         }
     }
 
-    protected void sendOperations(Collection<Operation> operations, ServiceNamespace ns) {
-        if (operations.isEmpty()) {
+    protected boolean hasRemainingChunksToSend(Collection<ChunkSupplier> chunkSuppliers) {
+        Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
+        while (iterator.hasNext()) {
+            ChunkSupplier chunkSupplier = iterator.next();
+            if (chunkSupplier.hasNext()) {
+                return true;
+            } else {
+                iterator.remove();
+            }
+        }
+        return false;
+    }
+
+    protected void sendOperations(Collection<Operation> operations,
+                                  Collection<ChunkSupplier> chunkSuppliers,
+                                  ServiceNamespace ns) {
+        if (isEmpty(operations) && isEmpty(chunkSuppliers)) {
             logNoReplicaDataFound(partitionId(), ns, getReplicaIndex());
-            sendResponse(null, ns);
+            sendResponse(null, null, ns);
         } else {
-            sendResponse(operations, ns);
+            sendResponse(operations, chunkSuppliers, ns);
         }
     }
 
-    /** Checks if we are the primary owner of the partition. */
+    /**
+     * Checks if we are the primary owner of the partition.
+     */
     protected boolean checkPartitionOwner() {
         InternalPartitionServiceImpl partitionService = getService();
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
@@ -191,7 +223,9 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         return true;
     }
 
-    /** Send a response to the replica to retry the replica sync */
+    /**
+     * Send a response to the replica to retry the replica sync
+     */
     protected void sendRetryResponse() {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = partitionId();
@@ -204,11 +238,15 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         operationService.send(response, target);
     }
 
-    /** Send a synchronization response to the caller replica containing the replication operations to be executed */
-    private void sendResponse(Collection<Operation> operations, ServiceNamespace ns) {
+    /**
+     * Send a synchronization response to the caller replica containing the replication operations to be executed
+     */
+    private void sendResponse(Collection<Operation> operations,
+                              Collection<ChunkSupplier> chunkSuppliers,
+                              ServiceNamespace ns) {
         NodeEngine nodeEngine = getNodeEngine();
 
-        PartitionReplicaSyncResponse syncResponse = createResponse(operations, ns);
+        PartitionReplicaSyncResponse syncResponse = createResponse(operations, chunkSuppliers, ns);
         Address target = getCallerAddress();
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
@@ -223,14 +261,19 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         operationService.send(syncResponse, target);
     }
 
-    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
+    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations,
+                                                          Collection<ChunkSupplier> chunkSuppliers,
+                                                          ServiceNamespace ns) {
         int partitionId = partitionId();
         int replicaIndex = getReplicaIndex();
-        InternalPartitionService partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
 
         long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
-        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
+        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations,
+                chunkSuppliers, ns, versions,
+                partitionService.getMaxTotalChunkedDataInBytes(),
+                getLogger(), partitionId);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
     }
@@ -239,7 +282,7 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("No replica data is found for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
-                + ", namespace= " + namespace);
+                    + ", namespace= " + namespace);
         }
     }
 
