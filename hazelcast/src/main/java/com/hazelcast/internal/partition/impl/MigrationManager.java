@@ -109,7 +109,9 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_CHUNKED_MIGRATION_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_FRAGMENTED_MIGRATION_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MIGRATION_INTERVAL;
@@ -151,6 +153,7 @@ public class MigrationManager {
     private final MigrationPlanner migrationPlanner;
     private final boolean fragmentedMigrationEnabled;
     private final boolean chunkedMigrationEnabled;
+    private final int maxTotalChunkedDataInBytes;
     private final long memberHeartbeatTimeoutMillis;
     private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
     private final int maxParallelMigrations;
@@ -180,6 +183,7 @@ public class MigrationManager {
         fragmentedMigrationEnabled = properties.getBoolean(PARTITION_FRAGMENTED_MIGRATION_ENABLED);
         chunkedMigrationEnabled = isClusterVersionGreaterOrEqualV51()
                 && properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
+        maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
         partitionStateManager = partitionService.getPartitionStateManager();
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
@@ -309,6 +313,14 @@ public class MigrationManager {
 
     private void registerFinalizingMigration(MigrationInfo migration) {
         finalizingMigrationsRegistry.add(migration);
+    }
+
+    public boolean isChunkedMigrationEnabled() {
+        return chunkedMigrationEnabled;
+    }
+
+    public int getMaxTotalChunkedDataInBytes() {
+        return maxTotalChunkedDataInBytes;
     }
 
     public boolean removeFinalizingMigration(MigrationInfo migration) {
@@ -1427,7 +1439,6 @@ public class MigrationManager {
             try {
                 beforeMigration();
 
-                int maxTotalChunkedDataInBytes = partitionService.getMaxTotalChunkedDataInBytes();
                 List<MigrationInfo> completedMigrations = getCompletedMigrations(migration.getPartitionId());
                 Operation op = new MigrationRequestOperation(migration, completedMigrations, 0,
                         fragmentedMigrationEnabled, chunkedMigrationEnabled, maxTotalChunkedDataInBytes);

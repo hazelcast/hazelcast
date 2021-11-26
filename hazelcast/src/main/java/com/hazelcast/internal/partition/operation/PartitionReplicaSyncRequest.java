@@ -28,6 +28,7 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -158,7 +159,8 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
-                    chunkSuppliers = collectChunkSuppliers(event, namespace);
+                    chunkSuppliers = isChunkedMigrationEnabled()
+                            ? collectChunkSuppliers(event, namespace) : chunkSuppliers;
                     if (isEmpty(chunkSuppliers)) {
                         operations = createFragmentReplicationOperations(event, namespace);
                     }
@@ -179,6 +181,10 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
     }
 
     protected boolean hasRemainingChunksToSend(Collection<ChunkSupplier> chunkSuppliers) {
+        if (!isChunkedMigrationEnabled()) {
+            return false;
+        }
+
         Iterator<ChunkSupplier> iterator = chunkSuppliers.iterator();
         while (iterator.hasNext()) {
             ChunkSupplier chunkSupplier = iterator.next();
@@ -272,10 +278,21 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
         PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations,
                 chunkSuppliers, ns, versions,
-                partitionService.getMaxTotalChunkedDataInBytes(),
+                getMaxTotalChunkedDataInBytes(),
                 getLogger(), partitionId);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
+    }
+
+    protected final boolean isChunkedMigrationEnabled() {
+        InternalPartitionServiceImpl partitionService = getService();
+        return partitionService.getMigrationManager().isChunkedMigrationEnabled();
+    }
+
+    protected final int getMaxTotalChunkedDataInBytes() {
+        InternalPartitionServiceImpl partitionService = getService();
+        MigrationManager migrationManager = partitionService.getMigrationManager();
+        return migrationManager.getMaxTotalChunkedDataInBytes();
     }
 
     private void logNoReplicaDataFound(int partitionId, ServiceNamespace namespace, int replicaIndex) {

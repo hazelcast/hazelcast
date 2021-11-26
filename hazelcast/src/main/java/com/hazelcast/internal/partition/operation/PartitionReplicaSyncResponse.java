@@ -36,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -73,7 +74,7 @@ import static java.lang.String.format;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
-        AllowedDuringPassiveState, TargetAware {
+        AllowedDuringPassiveState, TargetAware, Versioned {
 
     // TODO sync usages with chunkSuppliers
     private Collection<Operation> operations;

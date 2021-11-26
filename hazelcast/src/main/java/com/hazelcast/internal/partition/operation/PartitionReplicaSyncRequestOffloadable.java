@@ -113,7 +113,8 @@ public final class PartitionReplicaSyncRequestOffloadable
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
-                    chunkSuppliers = collectChunkSuppliers(event, namespace);
+                    chunkSuppliers = isChunkedMigrationEnabled()
+                            ? collectChunkSuppliers(event, namespace) : chunkSuppliers;
                     if (isEmpty(chunkSuppliers)) {
                         operations = createFragmentReplicationOperationsOffload(event, namespace);
                     }
@@ -183,11 +184,14 @@ public final class PartitionReplicaSyncRequestOffloadable
         int partitionId = partitionId();
         int replicaIndex = getReplicaIndex();
         long[] versions = replicaVersions.get(BiTuple.of(partitionId, ns));
-        InternalPartitionServiceImpl partitionService = getService();
+
         PartitionReplicaSyncResponse syncResponse
-                = new PartitionReplicaSyncResponse(operations, chunkSuppliers, ns, versions,
-                partitionService.getMaxTotalChunkedDataInBytes(), getLogger(), partitionId);
-        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+                = new PartitionReplicaSyncResponse(operations, chunkSuppliers, ns,
+                versions, getMaxTotalChunkedDataInBytes(), getLogger(), partitionId);
+
+        syncResponse.setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex);
+
         return syncResponse;
     }
 
