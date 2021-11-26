@@ -40,6 +40,7 @@ public final class JoinHashPhysicalRule extends RelRule<RelRule.Config> {
                                     .predicate(OptUtils::isBounded)
                                     .anyInputs()));
 
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new JoinHashPhysicalRule();
 
     private JoinHashPhysicalRule() {
