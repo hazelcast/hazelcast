@@ -20,30 +20,31 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.core.TableScan;
 
 import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-public final class JoinHashPhysicalRule extends RelOptRule {
+public final class JoinHashPhysicalRule extends RelRule<RelRule.Config> {
+
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(JoinHashPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
+                    .trait(LOGICAL)
+                    .inputs(
+                            b1 -> b1.operand(RelNode.class).anyInputs(),
+                            b2 -> b2.operand(RelNode.class)
+                                    .trait(LOGICAL)
+                                    .predicate(OptUtils::isBounded)
+                                    .anyInputs()));
 
     static final RelOptRule INSTANCE = new JoinHashPhysicalRule();
 
     private JoinHashPhysicalRule() {
-        super(
-                operand(
-                        JoinLogicalRel.class,
-                        LOGICAL,
-                        some(
-                                operand(RelNode.class, any()),
-                                operandJ(RelNode.class, LOGICAL, node -> !(node instanceof TableScan), any())
-                        )
-                ),
-                JoinHashPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override
