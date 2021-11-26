@@ -20,23 +20,27 @@ import java.util.Collection;
 
 /**
  * Interface for {@link FragmentedMigrationAwareService}
- * implementations which may wish to offload execution of
- * {@link FragmentedMigrationAwareService#prepareReplicationOperation(PartitionReplicationEvent, Collection)}
- * method. The default execution model is to invoke this method
- * on the partition thread. When this interface is implemented,
- * {@link #shouldOffload()} method is consulted while preparing
- * replication operations. If {@link #shouldOffload()} returns {@code true},
- * then {@code prepareReplicationOperation} execution is offloaded
- * to Hazelcast internal async executor instead of the partition
+ * implementations which may wish to offload execution of {@link
+ * FragmentedMigrationAwareService#prepareReplicationOperation(PartitionReplicationEvent,
+ * Collection)} method.
+ * <p>
+ * The default execution model is to invoke this method
+ * on the partition thread.
+ * <p>
+ * When this interface is implemented, {@link #shouldOffload()}
+ * method is consulted while preparing replication operations.
+ * If {@link #shouldOffload()} returns {@code true}, then {@code
+ * prepareReplicationOperation} execution is offloaded to
+ * Hazelcast internal async executor instead of the partition
  * thread. This can help avoid deadlocks when replication
  * operation preparation requires network communication.
  */
 public interface OffloadedReplicationPreparation {
 
     /**
-     * @return  {@code true} to offload execution of {@code prepareReplicationOperation}
-     *          to Hazelcast internal async executor or {@code false} to execute on
-     *          partition thread.
+     * @return {@code true} to offload execution of {@code prepareReplicationOperation}
+     * to Hazelcast internal async executor or {@code false} to execute on
+     * partition thread.
      */
     default boolean shouldOffload() {
         return false;

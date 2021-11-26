@@ -109,7 +109,6 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             logger.finest(String.format("mapName:%s, chunkNumber:%d, partitionId:%d",
                     context.getMapName(), chunkNumber, context.getPartitionId()));
         }
-        incrementReplicationCount();
     }
 
     @Override
@@ -485,6 +484,9 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             }
         }
         incrementReplicationRecordCount(recordCount);
+        if (!entries.hasNext()) {
+            incrementReplicationCount();
+        }
         // indicates end of chunk
         IOUtil.writeData(out, null);
     }

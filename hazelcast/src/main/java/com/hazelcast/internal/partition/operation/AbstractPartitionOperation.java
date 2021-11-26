@@ -228,22 +228,68 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
 
     /**
      * Collect replication operations of a single fragmented service.
+     * <p>
      * If the service implements {@link OffloadedReplicationPreparation} interface, then
      * that service's {@link FragmentedMigrationAwareService#prepareReplicationOperation(PartitionReplicationEvent, Collection)}
      * method will be invoked from the internal {@code ASYNC_EXECUTOR},
      * otherwise it will be invoked from the partition thread.
      */
     @Nullable
-    private Collection<Operation> collectReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns,
-                                                               boolean runsOnPartitionThread, Collection<Operation> operations,
-                                                               String serviceName, FragmentedMigrationAwareService service) {
-        // execute on current thread if (shouldOffload() ^ runsOnPartitionThread)
+    private Collection<Operation> collectReplicationOperations(PartitionReplicationEvent event,
+                                                               ServiceNamespace ns,
+                                                               boolean currentThreadIsPartitionThread,
+                                                               Collection<Operation> operations,
+                                                               String serviceName,
+                                                               FragmentedMigrationAwareService service) {
+        // execute on current thread if (shouldOffload() ^ currentThreadIsPartitionThread)
         // otherwise explicitly request execution on partition or async executor thread.
-        if (runsOnPartitionThread
+        if (currentThreadIsPartitionThread
                 ^ (service instanceof OffloadedReplicationPreparation
                 && ((OffloadedReplicationPreparation) service).shouldOffload())) {
             operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
-        } else if (runsOnPartitionThread) {
+        } else if (currentThreadIsPartitionThread) {
+            // migration aware service requested offload, but we are on partition thread
+            // execute on async executor
+            Future<Operation> future =
+                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
+                            () -> prepareReplicationOperation(event, ns, service, serviceName));
+            try {
+                Operation op = future.get();
+                operations = appendOperation(operations, op);
+            } catch (ExecutionException | CancellationException e) {
+                ExceptionUtil.rethrow(e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                ExceptionUtil.rethrow(e);
+            }
+        } else {
+            // migration aware service did not request offload but execution is not on partition thread
+            // must execute replication operation preparation on partition thread
+            UrgentPartitionRunnable<Operation> partitionThreadRunnable = new UrgentPartitionRunnable<>(
+                    event.getPartitionId(),
+                    () -> prepareReplicationOperation(event, ns, service, serviceName));
+            getNodeEngine().getOperationService().execute(partitionThreadRunnable);
+            Operation op = partitionThreadRunnable.future.joinInternal();
+            operations = appendOperation(operations, op);
+        }
+        return operations;
+    }
+
+
+    @Nullable
+    private Collection<Operation> collectChunkedReplicationOperations(PartitionReplicationEvent event,
+                                                                      ServiceNamespace ns,
+                                                                      boolean currentThreadIsPartitionThread,
+                                                                      Collection<Operation> operations,
+                                                                      String serviceName,
+                                                                      FragmentedMigrationAwareService service) {
+        // execute on current thread if (shouldOffload() ^ currentThreadIsPartitionThread)
+        // otherwise explicitly request execution on partition or async executor thread.
+        if (currentThreadIsPartitionThread
+                ^ (service instanceof OffloadedReplicationPreparation
+                && ((OffloadedReplicationPreparation) service).shouldOffload())) {
+            operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
+        } else if (currentThreadIsPartitionThread) {
             // migration aware service requested offload, but we are on partition thread
             // execute on async executor
             Future<Operation> future =
