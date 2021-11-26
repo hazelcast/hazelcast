@@ -31,6 +31,7 @@ final class ProjectPhysicalRule extends ConverterRule {
             .as(Config.class)
             .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
 
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
     private ProjectPhysicalRule() {
