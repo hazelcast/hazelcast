@@ -42,7 +42,7 @@ final class ProjectPhysicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         Project project = (Project) rel;
 
-        RelNode transformedInput = RelOptRule.convert(project.getInput(), rel.getTraitSet().replace(PHYSICAL));
+        RelNode transformedInput = RelOptRule.convert(project.getInput(), project.getInput().getTraitSet().replace(PHYSICAL));
         return new ProjectPhysicalRel(
                 project.getCluster(),
                 transformedInput.getTraitSet(),
