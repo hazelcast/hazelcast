@@ -50,8 +50,9 @@ public final class PhysicalRules {
                 SortPhysicalRule.INSTANCE,
 
                 // Join rules
-                JoinNestedLoopPhysicalRule.INSTANCE,
-                JoinHashPhysicalRule.INSTANCE,
+//                JoinNestedLoopPhysicalRule.INSTANCE,
+//                JoinHashPhysicalRule.INSTANCE,
+                JoinPhysicalRule.INSTANCE,
 
                 // Union rules
                 UnionPhysicalRule.INSTANCE,
