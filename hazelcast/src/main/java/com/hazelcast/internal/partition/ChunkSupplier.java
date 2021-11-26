@@ -34,7 +34,7 @@ public interface ChunkSupplier extends Iterator<Operation> {
     /**
      * @param isEndOfChunk boolean supplier to signal end of chunk.
      */
-    default void inject(BooleanSupplier isEndOfChunk) {
+    default void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
 
     }
 }

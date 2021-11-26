@@ -177,7 +177,7 @@ class MapMigrationAwareService
         }
 
         @Override
-        public void inject(BooleanSupplier isEndOfChunk) {
+        public void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
             this.isEndOfChunk = isEndOfChunk;
         }
 

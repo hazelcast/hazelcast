@@ -108,9 +108,9 @@ public final class ChunkSuppliers {
         }
 
         @Override
-        public void inject(BooleanSupplier isEndOfChunk) {
+        public void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
             for (ChunkSupplier chunkSupplier : chain) {
-                chunkSupplier.inject(isEndOfChunk);
+                chunkSupplier.signalEndOfChunkWith(isEndOfChunk);
             }
         }
 

@@ -304,7 +304,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
 
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {
 
-            chunkSupplier.inject(isEndOfChunk);
+            chunkSupplier.signalEndOfChunkWith(isEndOfChunk);
 
             while (chunkSupplier.hasNext()) {
                 Operation chunk = chunkSupplier.next();
