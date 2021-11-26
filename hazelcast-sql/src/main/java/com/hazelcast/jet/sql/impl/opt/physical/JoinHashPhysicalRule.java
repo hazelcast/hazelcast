@@ -24,9 +24,8 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 
-import java.util.Collection;
-
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 public final class JoinHashPhysicalRule extends RelRule<RelRule.Config> {
 
@@ -54,23 +53,16 @@ public final class JoinHashPhysicalRule extends RelRule<RelRule.Config> {
         JoinRelType joinType = logicalJoin.getJoinType();
         assert joinType == JoinRelType.INNER || joinType == JoinRelType.LEFT;
 
-        RelNode physicalLeft = OptUtils.toPhysicalInput(logicalJoin.getLeft());
-        RelNode physicalRight = OptUtils.toPhysicalInput(logicalJoin.getRight());
+        RelNode leftInput = call.rel(0);
+        RelNode rightInput = call.rel(1);
 
-        Collection<RelNode> lefts = OptUtils.extractPhysicalRelsFromSubset(physicalLeft);
-        Collection<RelNode> rights = OptUtils.extractPhysicalRelsFromSubset(physicalRight);
-        for (RelNode left : lefts) {
-            for (RelNode right : rights) {
-                RelNode rel = new JoinHashPhysicalRel(
-                        logicalJoin.getCluster(),
-                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                        left,
-                        right,
-                        logicalJoin.getCondition(),
-                        logicalJoin.getJoinType()
-                );
-                call.transformTo(rel);
-            }
-        }
+        RelNode rel = new JoinHashPhysicalRel(
+                logicalJoin.getCluster(),
+                logicalJoin.getTraitSet().replace(PHYSICAL),
+                RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL)),
+                RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL)),
+                logicalJoin.getCondition(),
+                logicalJoin.getJoinType());
+        call.transformTo(rel);
     }
 }
