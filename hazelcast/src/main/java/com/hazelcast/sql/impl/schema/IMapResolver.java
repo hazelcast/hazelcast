@@ -19,11 +19,12 @@ package com.hazelcast.sql.impl.schema;
 import javax.annotation.Nullable;
 
 /**
- * Generic interface that resolves mappings based on object name.
+ * Interface that creates {@link Mapping} objects based on IMap name by
+ * sampling the map data.
  */
 @FunctionalInterface
-public interface MappingResolver {
+public interface IMapResolver {
 
     @Nullable
-    Mapping resolve(String name);
+    Mapping resolve(String iMapName);
 }
