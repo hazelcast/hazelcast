@@ -41,6 +41,8 @@ import java.util.Set;
 
 public class MapChunkContext {
 
+    protected Iterator<Map.Entry<Data, Record>> iterator;
+
     private final int partitionId;
     private final String mapName;
     private final SerializationService ss;
@@ -50,7 +52,6 @@ public class MapChunkContext {
     private final LocalMapStatsImpl mapStats;
 
     private ServiceNamespace serviceNamespace;
-    private Iterator<Map.Entry<Data, Record>> iterator;
 
     public MapChunkContext(MapServiceContext mapServiceContext,
                            int partitionId, ServiceNamespace namespaces) {
