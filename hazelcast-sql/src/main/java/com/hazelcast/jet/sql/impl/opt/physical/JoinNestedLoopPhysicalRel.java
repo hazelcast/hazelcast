@@ -18,10 +18,9 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -32,10 +31,7 @@ import org.apache.calcite.rex.RexNode;
 import java.util.Arrays;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-
-public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
+public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
     JoinNestedLoopPhysicalRel(
             RelOptCluster cluster,
@@ -45,7 +41,7 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
             RexNode condition,
             JoinRelType joinType
     ) {
-        super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
+        super(cluster, traitSet, left, right, condition, joinType);
     }
 
     public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
@@ -69,13 +65,6 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
         return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
-    }
-
-    @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
-        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
-        return PlanNodeSchema.combine(leftSchema, rightSchema);
     }
 
     @Override

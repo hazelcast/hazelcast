@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -32,10 +31,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-
-public class JoinHashPhysicalRel extends Join implements PhysicalRel {
+public class JoinHashPhysicalRel extends JoinPhysicalRel {
 
     JoinHashPhysicalRel(
             RelOptCluster cluster,
@@ -45,7 +41,7 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
             RexNode condition,
             JoinRelType joinType
     ) {
-        super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
+        super(cluster, traitSet, left, right, condition, joinType);
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -66,13 +62,6 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return super.computeSelfCost(planner, mq);
-    }
-
-    @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
-        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
-        return PlanNodeSchema.combine(leftSchema, rightSchema);
     }
 
     @Override
