@@ -47,32 +47,30 @@ public class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode rightInput = call.rel(2);
         RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
         RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
-        HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
 
-        // only use hash join if there's some equi-condition
-        if (!logicalJoin.analyzeCondition().leftKeys.isEmpty()) {
-            RelNode rel = new JoinHashPhysicalRel(
-                    logicalJoin.getCluster(),
-                    logicalJoin.getTraitSet().replace(PHYSICAL),
-                    leftInputConverted,
-                    rightInputConverted,
-                    logicalJoin.getCondition(),
-                    logicalJoin.getJoinType());
-            call.transformTo(rel);
-        }
+        RelNode rel = new JoinHashPhysicalRel(
+                logicalJoin.getCluster(),
+                logicalJoin.getTraitSet().replace(PHYSICAL),
+                leftInputConverted,
+                rightInputConverted,
+                logicalJoin.getCondition(),
+                logicalJoin.getJoinType());
+        call.transformTo(rel);
 
         if (rightInput instanceof TableScan
-                && OptUtils.hasTableType(rightInput, PartitionedMapTable.class)
-                && SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
-            RelNode rel = new JoinNestedLoopPhysicalRel(
-                    logicalJoin.getCluster(),
-                    OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
-                    leftInputConverted,
-                    rightInputConverted,
-                    logicalJoin.getCondition(),
-                    logicalJoin.getJoinType()
-            );
-            call.transformTo(rel);
+                && OptUtils.hasTableType(rightInput, PartitionedMapTable.class)) {
+            HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
+            if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
+                RelNode rel2 = new JoinNestedLoopPhysicalRel(
+                        logicalJoin.getCluster(),
+                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                        leftInputConverted,
+                        rightInputConverted,
+                        logicalJoin.getCondition(),
+                        logicalJoin.getJoinType()
+                );
+                call.transformTo(rel2);
+            }
         }
     }
 }

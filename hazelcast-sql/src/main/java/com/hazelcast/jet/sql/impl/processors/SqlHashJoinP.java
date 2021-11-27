@@ -97,6 +97,10 @@ public class SqlHashJoinP extends AbstractProcessor {
         }
         Object[] rightRow = (Object[]) item;
         ObjectArrayKey joinKeys = ObjectArrayKey.project(rightRow, joinInfo.rightEquiJoinIndices());
+        // if there's a null in the key, then `null = null` is UNKNOWN in SQL, ignore such keys
+        if (joinKeys.containsNull()) {
+            return true;
+        }
         hashMap.put(joinKeys, rightRow);
         return true;
     }

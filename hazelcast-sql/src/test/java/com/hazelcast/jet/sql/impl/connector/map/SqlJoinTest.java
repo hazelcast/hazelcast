@@ -41,6 +41,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+// TODO [viliam] test IS DISTINCT FROM in the join condition
+
 @RunWith(Enclosed.class)
 public class SqlJoinTest {
 
@@ -466,7 +468,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.name, m.id " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.id",
@@ -491,7 +493,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v1, l.v2, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v1 = m.id AND l.v2 = m.name",
@@ -516,7 +518,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v1, l.v2, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v1 = m.id OR l.v2 = m.name",
@@ -544,7 +546,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new PersonId(2), new Person(0, "value-2"));
             instance().getMap(mapName).put(new PersonId(3), new Person(0, "value-3"));
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.id " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.name",
@@ -566,7 +568,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(2, new Person(2, "value-2"));
             instance().getMap(mapName).put(3, new Person(0, "value-3"));
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.__key AND l.v = m.id",

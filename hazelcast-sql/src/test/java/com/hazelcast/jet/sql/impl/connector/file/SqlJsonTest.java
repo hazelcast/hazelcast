@@ -114,7 +114,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ")"
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertRowsAnyOrder(
                 "SELECT * FROM " + name,
                 singletonList(new Row(
                         "string",
@@ -147,7 +147,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ")"
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertRowsAnyOrder(
                 "SELECT "
                         + "string"
                         + ", \"boolean\""
