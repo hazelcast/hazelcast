@@ -112,6 +112,9 @@ final class SelectByKeyMapLogicalRules {
         }
     };
 
+    private SelectByKeyMapLogicalRules() {
+    }
+
     /**
      * Inline the projection from {@code table} into the projection given in {@code projects}.
      *
@@ -135,8 +138,5 @@ final class SelectByKeyMapLogicalRules {
         };
 
         return shuttle.apply(projects);
-    }
-
-    private SelectByKeyMapLogicalRules() {
     }
 }
