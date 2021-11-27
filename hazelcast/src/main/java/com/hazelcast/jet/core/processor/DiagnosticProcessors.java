@@ -29,7 +29,9 @@ import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -45,6 +47,37 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @since Jet 3.0
  */
 public final class DiagnosticProcessors {
+
+    /**
+     * A function that uses `Object.toString()` for non-arrays,
+     * `Arrays.toString()` for arrays of primitive types and
+     * `Arrays.deepToString()` for `Object[]`. Used for `peek()`
+     * function in the DAG and Pipeline API.
+     *
+     * @since 5.1
+     */
+    public static final FunctionEx<Object, String> PEEK_DEFAULT_TO_STRING = o -> {
+        if (o instanceof Object[]) {
+            return Arrays.deepToString((Object[]) o);
+        } else if (o instanceof byte[]) {
+            return Arrays.toString((byte[]) o);
+        } else if (o instanceof short[]) {
+            return Arrays.toString((short[]) o);
+        } else if (o instanceof int[]) {
+            return Arrays.toString((int[]) o);
+        } else if (o instanceof long[]) {
+            return Arrays.toString((long[]) o);
+        } else if (o instanceof float[]) {
+            return Arrays.toString((float[]) o);
+        } else if (o instanceof double[]) {
+            return Arrays.toString((double[]) o);
+        } else if (o instanceof boolean[]) {
+            return Arrays.toString((boolean[]) o);
+        } else {
+            return Objects.toString(o);
+        }
+    };
+
     private DiagnosticProcessors() {
     }
 
@@ -77,7 +110,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeLoggerP() {
-        return writeLoggerP(Object::toString);
+        return writeLoggerP(PEEK_DEFAULT_TO_STRING);
     }
 
     /**
@@ -101,7 +134,7 @@ public final class DiagnosticProcessors {
      * passed to {@code shouldLogFn} and {@code toStringFn}.
      *
      * @param toStringFn  a function that returns the string representation of the item.
-     *                    You can use {@code Object::toString}.
+     *                    You can use {@link #PEEK_DEFAULT_TO_STRING}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    PredicateEx#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
@@ -160,7 +193,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier peekInputP(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekInputP(Object::toString, alwaysTrue(), wrapped);
+        return peekInputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -172,7 +205,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorSupplier peekInputP(@Nonnull ProcessorSupplier wrapped) {
-        return peekInputP(Object::toString, alwaysTrue(), wrapped);
+        return peekInputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -184,7 +217,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static SupplierEx<Processor> peekInputP(@Nonnull SupplierEx<Processor> wrapped) {
-        return peekInputP(Object::toString, alwaysTrue(), wrapped);
+        return peekInputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -220,7 +253,7 @@ public final class DiagnosticProcessors {
      * {@code shouldLogFn} or {@code toStringFn}.
      *
      * @param toStringFn  a function that returns the string representation of the item.
-     *                    You can use {@code Object::toString}.
+     *                    You can use {@link #PEEK_DEFAULT_TO_STRING}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    PredicateEx#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
@@ -278,7 +311,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier peekOutputP(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
+        return peekOutputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -290,7 +323,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorSupplier peekOutputP(@Nonnull ProcessorSupplier wrapped) {
-        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
+        return peekOutputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -302,7 +335,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static SupplierEx<Processor> peekOutputP(@Nonnull SupplierEx<Processor> wrapped) {
-        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
+        return peekOutputP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -320,7 +353,7 @@ public final class DiagnosticProcessors {
      * </ol>
      *
      * @param toStringFn  a function that returns the string representation of the item.
-     *                    You can use {@code Object::toString}
+     *                    You can use {@code DEFAULT_TO_STRING}
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    PredicateEx#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
@@ -380,7 +413,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static SupplierEx<Processor> peekSnapshotP(@Nonnull SupplierEx<Processor> wrapped) {
-        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
+        return peekSnapshotP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -391,7 +424,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier peekSnapshotP(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
+        return peekSnapshotP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 
     /**
@@ -403,6 +436,6 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static ProcessorSupplier peekSnapshotP(@Nonnull ProcessorSupplier wrapped) {
-        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
+        return peekSnapshotP(PEEK_DEFAULT_TO_STRING, alwaysTrue(), wrapped);
     }
 }
