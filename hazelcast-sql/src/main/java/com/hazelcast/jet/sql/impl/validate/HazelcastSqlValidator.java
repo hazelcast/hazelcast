@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
-import com.hazelcast.jet.sql.impl.parse.SqlCreateView;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlNonExpandableSelect;
@@ -152,28 +150,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
             topNode.validate(this, getEmptyScope());
-
-            if (!(topNode instanceof SqlCreateView)) {
-                return topNode;
-            }
-            // Note, hack: special check for CREATE VIEW command.
-            // It may happens that select list will be empty after the validation.
-            // Here, we manually adding 'star' to such select query.
-            // Its a temporal state and might be resolved
-            // with fields list addition to ViewTable.
-            SqlCreateView validated = (SqlCreateView) topNode;
-            SqlNode query = validated.getQuery();
-            if (query instanceof SqlNonExpandableSelect) {
-                SqlNonExpandableSelect select = (SqlNonExpandableSelect) query;
-                if (select.getSelectList().isEmpty()) {
-                    select.setSelectList(
-                            new SqlNodeList(
-                                    ImmutableList.of(new SqlIdentifier("", select.getParserPosition())),
-                                    select.getParserPosition()
-                            )
-                    );
-                }
-            }
             return topNode;
         }
 

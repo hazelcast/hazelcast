@@ -16,25 +16,29 @@
 
 package com.hazelcast.sql.impl.schema.view;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 public class View implements IdentifiedDataSerializable {
 
     private String name;
     private String query;
+    private List<String> projection;
 
     public View() {
     }
 
-    public View(String name, String query) {
+    public View(String name, String query, List<String> projection) {
         this.name = name;
         this.query = query;
+        this.projection = projection;
     }
 
     public String name() {
@@ -45,16 +49,22 @@ public class View implements IdentifiedDataSerializable {
         return query;
     }
 
+    public List<String> projection() {
+        return projection;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(query);
+        SerializationUtil.writeList(projection, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         query = in.readString();
+        projection = SerializationUtil.readList(in);
     }
 
     @Override
@@ -76,7 +86,9 @@ public class View implements IdentifiedDataSerializable {
             return false;
         }
         View view = (View) o;
-        return Objects.equals(name, view.name) && Objects.equals(query, view.query);
+        return Objects.equals(name, view.name)
+                && Objects.equals(query, view.query)
+                && Objects.equals(projection, view.projection);
     }
 
     @Override

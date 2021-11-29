@@ -39,4 +39,5 @@ public class ViewTable extends Table {
     public PlanObjectKey getObjectKey() {
         return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
+
 }

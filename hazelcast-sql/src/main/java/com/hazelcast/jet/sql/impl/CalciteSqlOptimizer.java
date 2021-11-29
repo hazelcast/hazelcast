@@ -381,13 +381,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
-        // TODO: should we create our own sql dialect or we may use PSQL dialect to unparse query as SQL string?
         SqlString sqlString = sqlNode.getQuery().toSqlString(PostgresqlSqlDialect.DEFAULT);
         String sql = sqlString.getSql();
+        List<String> projection = sqlNode.projection();
         boolean replace = sqlNode.getReplace();
         boolean ifNotExists = sqlNode.ifNotExists;
 
-        return new CreateViewPlan(planKey, new View(sqlNode.name(), sql), replace, ifNotExists, planExecutor);
+        return new CreateViewPlan(
+                planKey,
+                new View(sqlNode.name(), sql, projection),
+                replace,
+                ifNotExists,
+                planExecutor
+        );
     }
 
     private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {

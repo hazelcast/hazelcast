@@ -29,8 +29,10 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -43,7 +45,6 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -152,15 +153,6 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
-    @Nonnull
-    public View getView(String name) {
-        View requestedView = tableStorage.getView(name);
-        if (requestedView == null) {
-            throw QueryException.error("View does not exist: " + name);
-        }
-        return requestedView;
-    }
-
     public void removeView(String name, boolean ifExists) {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
@@ -216,7 +208,10 @@ public class TableResolverImpl implements TableResolver {
         return new ViewTable(
                 SCHEMA_NAME_PUBLIC,
                 view.name(),
-                emptyList(),
+                view.projection()
+                        .stream()
+                        .map(v -> new TableField(v, QueryDataType.OBJECT, false))
+                        .collect(Collectors.toList()),
                 new ConstantTableStatistics(0L)
         );
     }

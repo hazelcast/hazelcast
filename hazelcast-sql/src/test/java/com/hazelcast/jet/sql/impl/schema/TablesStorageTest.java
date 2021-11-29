@@ -26,9 +26,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.List;
+
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -92,7 +95,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     public void when_removeView_then_isNotPresentInValues() {
         String name = randomName();
 
-        storage.put(name, view(name, "type"));
+        storage.put(name, view(name, "type", singletonList("*")));
 
         assertThat(storage.removeView(name)).isNotNull();
         assertThat(storage.valuesViews().stream().filter(m -> m.name().equals(name))).isEmpty();
@@ -107,7 +110,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         return new Mapping(name, name, type, emptyList(), emptyMap());
     }
 
-    private static View view(String name, String query) {
-        return new View(name, query);
+    private static View view(String name, String query, List<String> projection) {
+        return new View(name, query, projection);
     }
 }

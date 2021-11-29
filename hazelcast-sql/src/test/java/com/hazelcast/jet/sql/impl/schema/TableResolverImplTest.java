@@ -293,6 +293,6 @@ public class TableResolverImplTest {
     }
 
     private static View view() {
-        return new View("name", "SELECT * FROM map");
+        return new View("name", "SELECT * FROM map", singletonList("*"));
     }
 }
