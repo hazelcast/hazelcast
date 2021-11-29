@@ -17,14 +17,20 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexShuttle;
+
+import java.util.List;
 
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
@@ -66,7 +72,7 @@ final class SelectByKeyMapLogicalRules {
                         scan.getRowType(),
                         table,
                         keyCondition,
-                        rexBuilder.identityProjects(scan.getRowType())
+                        pushProjectIntoTable(rexBuilder.identityProjects(scan.getRowType()), table)
                 );
                 call.transformTo(rel);
             }
@@ -99,7 +105,7 @@ final class SelectByKeyMapLogicalRules {
                         project.getRowType(),
                         table,
                         keyCondition,
-                        project.getProjects()
+                        pushProjectIntoTable(project.getProjects(), table)
                 );
                 call.transformTo(rel);
             }
@@ -107,5 +113,30 @@ final class SelectByKeyMapLogicalRules {
     };
 
     private SelectByKeyMapLogicalRules() {
+    }
+
+    /**
+     * Inline the projection from {@code table} into the projection given in {@code projects}.
+     *
+     * For example, the table's projection is {@code [4, 5]} (meaning
+     * the table outputs fifth and sixth fields from the underlying
+     * table), and {@code projects} is {@code [$1 + 5]} (meaning 5 added
+     * to the second field of the input). In this case the output will
+     * be {@code [$5 + 5]}.
+     */
+    private static List<? extends RexNode> pushProjectIntoTable(List<? extends RexNode> projects, RelOptTable input) {
+        HazelcastTable hzTable = input.unwrap(HazelcastTable.class);
+        assert hzTable != null;
+        List<RelDataTypeField> fieldList = input.getRowType().getFieldList();
+
+        RexShuttle shuttle =  new RexShuttle() {
+            @Override
+            public RexNode visitInputRef(RexInputRef ref) {
+                int index = ref.getIndex();
+                return new RexInputRef(hzTable.getProjects().get(index), fieldList.get(index).getType());
+            }
+        };
+
+        return shuttle.apply(projects);
     }
 }
