@@ -25,9 +25,9 @@ import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -39,7 +39,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -104,9 +103,10 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
                                                           Collection<String> serviceNames,
                                                           ServiceNamespace namespace) {
-        getLogger().fine("Collecting chunk suppliers...");
+        ILogger logger = getLogger();
+        logger.fine("Collecting chunk suppliers...");
 
-        Collection<ChunkSupplier> suppliers = emptyList();
+        Collection<ChunkSupplier> chunkSuppliers = emptyList();
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         for (String serviceName : serviceNames) {
@@ -116,22 +116,91 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 continue;
             }
 
-            if (CollectionUtil.isEmpty(suppliers)) {
-                suppliers = new LinkedList<>();
-            }
+            chunkSuppliers = collectChunkSuppliers(event, namespace,
+                    isRunningOnPartitionThread(), chunkSuppliers, ((ChunkedMigrationAwareService) service));
 
-            suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, singleton(namespace)));
-            if (getLogger().isFineEnabled()) {
-                getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
+            if (logger.isFineEnabled()) {
+                logger.fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
                         namespace, event.getPartitionId()));
             }
         }
 
-        return suppliers;
+        return chunkSuppliers;
     }
 
-    // must be invoked on partition thread; prepares replication operations within partition thread
-    // does not support differential sync
+    @Nonnull
+    final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
+                                                          ServiceNamespace ns) {
+        assert !(ns instanceof NonFragmentedServiceNamespace)
+                : ns + " should be used only for chunked migrations enabled services!";
+
+        ILogger logger = getLogger();
+        logger.fine("Collecting chunk chunk suppliers...");
+
+        Collection<ChunkSupplier> chunkSuppliers = Collections.emptyList();
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(ChunkedMigrationAwareService.class);
+
+        for (ServiceInfo serviceInfo : services) {
+            ChunkedMigrationAwareService service = serviceInfo.getService();
+            if (!service.isKnownServiceNamespace(ns)) {
+                continue;
+            }
+
+            chunkSuppliers = collectChunkSuppliers(event, ns,
+                    isRunningOnPartitionThread(), chunkSuppliers, service);
+
+            if (logger.isFineEnabled()) {
+                logger.fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
+                        ns, event.getPartitionId()));
+            }
+        }
+
+        return chunkSuppliers;
+    }
+
+    private Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
+                                                            ServiceNamespace ns,
+                                                            boolean currentThreadIsPartitionThread,
+                                                            Collection<ChunkSupplier> chunkSuppliers,
+                                                            ChunkedMigrationAwareService service) {
+        // execute on current thread if (shouldOffload() ^
+        // currentThreadIsPartitionThread) otherwise explicitly
+        // request execution on partition or async executor thread.
+        if (currentThreadIsPartitionThread
+                ^ (service instanceof OffloadedReplicationPreparation
+                && ((OffloadedReplicationPreparation) service).shouldOffload())) {
+            return prepareAndAppendNewChunkSupplier(event, ns, service, chunkSuppliers);
+        }
+
+        if (currentThreadIsPartitionThread) {
+            // migration aware service requested offload, but we
+            // are on partition thread execute on async executor
+            Future<ChunkSupplier> future =
+                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
+                            () -> service.newChunkSupplier(event, singleton(ns)));
+            try {
+                ChunkSupplier supplier = future.get();
+                return appendNewElement(chunkSuppliers, supplier);
+            } catch (ExecutionException | CancellationException e) {
+                ExceptionUtil.rethrow(e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                ExceptionUtil.rethrow(e);
+            }
+        }
+
+        // migration aware service did not request offload but
+        // execution is not on partition thread must execute
+        // chunk preparation on partition thread
+        UrgentPartitionRunnable<ChunkSupplier> partitionThreadRunnable = new UrgentPartitionRunnable<>(
+                event.getPartitionId(), () -> service.newChunkSupplier(event, singleton(ns)));
+        getNodeEngine().getOperationService().execute(partitionThreadRunnable);
+        ChunkSupplier op = partitionThreadRunnable.future.joinInternal();
+        return appendNewElement(chunkSuppliers, op);
+    }
+
     final Collection<Operation> createFragmentReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns) {
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
         assertRunningOnPartitionThread();
@@ -152,7 +221,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     }
 
     /**
-     * used for offloaded replication op preparation while executing a migration request
+     * Used for offloaded replication-operation
+     * preparation while executing a migration request
      */
     final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event,
                                                                            ServiceNamespace ns,
@@ -172,44 +242,14 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
-    @Nonnull
-    final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event, ServiceNamespace ns) {
-        assert !(ns instanceof NonFragmentedServiceNamespace)
-                : ns + " should be used only for chunked migrations enabled services!";
-        //assertRunningOnPartitionThread();
-
-        getLogger().fine("Collecting chunk suppliers...");
-
-        Collection<ChunkSupplier> suppliers = Collections.emptyList();
-
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(ChunkedMigrationAwareService.class);
-
-        for (ServiceInfo serviceInfo : services) {
-            ChunkedMigrationAwareService service = serviceInfo.getService();
-            if (!service.isKnownServiceNamespace(ns)) {
-                continue;
-            }
-
-            if (CollectionUtil.isEmpty(suppliers)) {
-                suppliers = new LinkedList<>();
-            }
-
-            suppliers.add(service.newChunkSupplier(event, singleton(ns)));
-            if (getLogger().isFineEnabled()) {
-                getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
-                        ns, event.getPartitionId()));
-            }
-        }
-
-        return suppliers;
-    }
-
     /**
-     * used for partition replica sync, supporting offloaded replication op preparation
+     * Used for partition replica sync, supporting
+     * offloaded replication-operation preparation
      */
-    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event, ServiceNamespace ns) {
-        assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
+    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event,
+                                                                           ServiceNamespace ns) {
+        assert !(ns instanceof NonFragmentedServiceNamespace)
+                : ns + " should be used only for fragmented services!";
 
         Collection<Operation> operations = emptySet();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
@@ -229,9 +269,10 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     /**
      * Collect replication operations of a single fragmented service.
      * <p>
-     * If the service implements {@link OffloadedReplicationPreparation} interface, then
-     * that service's {@link FragmentedMigrationAwareService#prepareReplicationOperation(PartitionReplicationEvent, Collection)}
-     * method will be invoked from the internal {@code ASYNC_EXECUTOR},
+     * If the service implements {@link OffloadedReplicationPreparation}
+     * interface, then that service's {@link
+     * FragmentedMigrationAwareService#prepareReplicationOperation(PartitionReplicationEvent,
+     * Collection)} method will be invoked from the internal {@code ASYNC_EXECUTOR},
      * otherwise it will be invoked from the partition thread.
      */
     @Nullable
@@ -255,7 +296,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                             () -> prepareReplicationOperation(event, ns, service, serviceName));
             try {
                 Operation op = future.get();
-                operations = appendOperation(operations, op);
+                operations = appendNewElement(operations, op);
             } catch (ExecutionException | CancellationException e) {
                 ExceptionUtil.rethrow(e.getCause());
             } catch (InterruptedException e) {
@@ -270,7 +311,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                     () -> prepareReplicationOperation(event, ns, service, serviceName));
             getNodeEngine().getOperationService().execute(partitionThreadRunnable);
             Operation op = partitionThreadRunnable.future.joinInternal();
-            operations = appendOperation(operations, op);
+            operations = appendNewElement(operations, op);
         }
         return operations;
     }
@@ -297,7 +338,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                             () -> prepareReplicationOperation(event, ns, service, serviceName));
             try {
                 Operation op = future.get();
-                operations = appendOperation(operations, op);
+                operations = appendNewElement(operations, op);
             } catch (ExecutionException | CancellationException e) {
                 ExceptionUtil.rethrow(e.getCause());
             } catch (InterruptedException e) {
@@ -312,12 +353,37 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                     () -> prepareReplicationOperation(event, ns, service, serviceName));
             getNodeEngine().getOperationService().execute(partitionThreadRunnable);
             Operation op = partitionThreadRunnable.future.joinInternal();
-            operations = appendOperation(operations, op);
+            operations = appendNewElement(operations, op);
         }
         return operations;
     }
 
-    private Collection<Operation> appendOperation(Collection<Operation> previous, Operation additional) {
+    private Collection<ChunkSupplier> prepareAndAppendNewChunkSupplier(PartitionReplicationEvent event,
+                                                                       ServiceNamespace ns,
+                                                                       ChunkedMigrationAwareService service,
+                                                                       Collection<ChunkSupplier> chunkSuppliers) {
+        ChunkSupplier supplier = service.newChunkSupplier(event, singleton(ns));
+        if (supplier == null) {
+            return chunkSuppliers;
+        }
+
+        if (chunkSuppliers.isEmpty()) {
+            // generally a namespace belongs to a single service only
+            return singleton(supplier);
+        }
+
+        if (chunkSuppliers.size() == 1) {
+            chunkSuppliers = newOperationSet(chunkSuppliers);
+            chunkSuppliers.add(supplier);
+            return chunkSuppliers;
+        }
+
+        chunkSuppliers.add(supplier);
+        return chunkSuppliers;
+    }
+
+
+    private <T> Collection<T> appendNewElement(Collection<T> previous, T additional) {
         if (additional == null) {
             return previous;
         }
@@ -376,8 +442,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     }
 
     // return a new thread-safe Set populated with all elements from previous
-    Set<Operation> newOperationSet(Collection<Operation> previous) {
-        Set<Operation> newSet = newSetFromMap(new ConcurrentHashMap<>());
+    <T> Set<T> newOperationSet(Collection<T> previous) {
+        Set<T> newSet = newSetFromMap(new ConcurrentHashMap<>());
         newSet.addAll(previous);
         return newSet;
     }

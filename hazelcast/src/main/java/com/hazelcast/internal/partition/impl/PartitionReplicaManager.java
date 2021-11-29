@@ -251,6 +251,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         Operation syncRequest = shouldOffload()
                 ? new PartitionReplicaSyncRequestOffloadable(namespaces, partitionId, replicaIndex)
                 : new PartitionReplicaSyncRequest(namespaces, partitionId, replicaIndex);
+
         nodeEngine.getOperationService().send(syncRequest, target.address());
     }
 

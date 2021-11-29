@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
@@ -37,7 +36,8 @@ import java.util.Map;
 import static com.hazelcast.internal.partition.ChunkSerDerHelper.readChunkedOperations;
 
 /**
- * Contains fragment namespaces along with their partition versions and migration data operations
+ * Contains fragment namespaces along with their
+ * partition versions and migration data operations
  *
  * @since 3.9
  */
@@ -94,10 +94,7 @@ public class ReplicaFragmentMigrationState
             out.writeObject(operation);
         }
 
-        // RU_COMPAT 5.0
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            chunkSerDerHelper.writeChunkedOperations(out);
-        }
+        chunkSerDerHelper.writeChunkedOperations(out);
     }
 
     @Override
@@ -116,10 +113,7 @@ public class ReplicaFragmentMigrationState
             migrationOperations.add(migrationOperation);
         }
 
-        // RU_COMPAT 5.0
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            migrationOperations = readChunkedOperations(in, migrationOperations);
-        }
+        migrationOperations = readChunkedOperations(in, migrationOperations);
     }
 
     @Override

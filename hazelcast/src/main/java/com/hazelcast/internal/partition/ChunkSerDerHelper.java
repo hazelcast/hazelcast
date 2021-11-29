@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemorySize;
@@ -58,6 +59,11 @@ public final class ChunkSerDerHelper {
 
     public static Collection<Operation> readChunkedOperations(ObjectDataInput in,
                                                               Collection<Operation> operations) throws IOException {
+        // RU_COMPAT 5.0
+        if (in.getVersion().isUnknownOrLessThan(Versions.V5_1)) {
+            return operations;
+        }
+
         do {
             Object operation = in.readObject();
             if (operation == null) {
@@ -74,6 +80,11 @@ public final class ChunkSerDerHelper {
 
 
     public void writeChunkedOperations(ObjectDataOutput out) throws IOException {
+        // RU_COMPAT 5.0
+        if (out.getVersion().isUnknownOrLessThan(Versions.V5_1)) {
+            return;
+        }
+
         IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
 
         for (ChunkSupplier chunkSupplier : chunkSuppliers) {

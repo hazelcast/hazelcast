@@ -18,10 +18,9 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkSerDerHelper;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -280,10 +279,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         out.writeObject(namespace);
         out.writeLongArray(versions);
         writeNullableCollection(operations, out);
-        // RU_COMPAT 5.0
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            chunkSerDerHelper.writeChunkedOperations(out);
-        }
+        chunkSerDerHelper.writeChunkedOperations(out);
     }
 
     @Override
@@ -291,10 +287,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         namespace = in.readObject();
         versions = in.readLongArray();
         operations = readNullableCollection(in);
-        // RU_COMPAT 5.0
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            operations = readChunkedOperations(in, operations);
-        }
+        operations = readChunkedOperations(in, operations);
     }
 
     @Override
