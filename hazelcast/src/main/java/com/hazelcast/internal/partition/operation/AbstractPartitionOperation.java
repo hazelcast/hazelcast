@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static java.util.Collections.emptyList;
@@ -197,8 +198,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         UrgentPartitionRunnable<ChunkSupplier> partitionThreadRunnable = new UrgentPartitionRunnable<>(
                 event.getPartitionId(), () -> service.newChunkSupplier(event, singleton(ns)));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        ChunkSupplier op = partitionThreadRunnable.future.joinInternal();
-        return appendNewElement(chunkSuppliers, op);
+        ChunkSupplier supplier = partitionThreadRunnable.future.joinInternal();
+        return appendNewElement(chunkSuppliers, supplier);
     }
 
     final Collection<Operation> createFragmentReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns) {
@@ -363,39 +364,32 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                                                                        ChunkedMigrationAwareService service,
                                                                        Collection<ChunkSupplier> chunkSuppliers) {
         ChunkSupplier supplier = service.newChunkSupplier(event, singleton(ns));
+
         if (supplier == null) {
             return chunkSuppliers;
         }
 
-        if (chunkSuppliers.isEmpty()) {
-            // generally a namespace belongs to a single service only
-            return singleton(supplier);
-        }
-
-        if (chunkSuppliers.size() == 1) {
+        if (isEmpty(chunkSuppliers)) {
             chunkSuppliers = newOperationSet(chunkSuppliers);
-            chunkSuppliers.add(supplier);
-            return chunkSuppliers;
         }
 
         chunkSuppliers.add(supplier);
+
         return chunkSuppliers;
     }
 
 
-    private <T> Collection<T> appendNewElement(Collection<T> previous, T additional) {
-        if (additional == null) {
+    private <T> Collection<T> appendNewElement(Collection<T> previous, T newElement) {
+        if (newElement == null) {
             return previous;
         }
-        if (previous.isEmpty()) {
-            previous = singleton(additional);
-        } else if (previous.size() == 1) {
-            // previous is an immutable singleton list
+
+        if (isEmpty(previous)) {
             previous = newOperationSet(previous);
-            previous.add(additional);
-        } else {
-            previous.add(additional);
         }
+
+        previous.add(newElement);
+
         return previous;
     }
 
