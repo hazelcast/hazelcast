@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.jet.Util.entry;
+
 /**
  * Contains factory methods for creating Amazon Kinesis Data Streams
  * (KDS) sources.
@@ -164,7 +166,7 @@ public final class KinesisSources {
 
         private Builder(@Nonnull String stream) {
             this.stream = stream;
-            this.projectionFn = (record, shard) -> (T) toArray(record, shard);
+            this.projectionFn = (record, shard) -> (T) entry(record.getPartitionKey(), toArray(record, shard));
         }
 
         /**
@@ -313,6 +315,7 @@ public final class KinesisSources {
             AwsConfig awsConfig = this.awsConfig;
             RetryStrategy retryStrategy = this.retryStrategy;
             InitialShardIterators initialShardIterators = this.initialShardIterators;
+            BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn = this.projectionFn;
             return Sources.streamFromProcessorWithWatermarks(
                     "Kinesis Source (" + stream + ")",
                     true,
