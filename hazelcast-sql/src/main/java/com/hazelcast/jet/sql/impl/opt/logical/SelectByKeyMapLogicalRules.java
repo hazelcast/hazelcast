@@ -124,7 +124,7 @@ final class SelectByKeyMapLogicalRules {
      * to the second field of the input). In this case the output will
      * be {@code [$5 + 5]}.
      */
-    private static List<RexNode> pushProjectIntoTable(List<RexNode> projects, RelOptTable input) {
+    private static List<? extends RexNode> pushProjectIntoTable(List<? extends RexNode> projects, RelOptTable input) {
         HazelcastTable hzTable = input.unwrap(HazelcastTable.class);
         assert hzTable != null;
         List<RelDataTypeField> fieldList = input.getRowType().getFieldList();
