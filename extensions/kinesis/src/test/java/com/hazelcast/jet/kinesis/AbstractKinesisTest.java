@@ -34,7 +34,7 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -57,7 +57,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class AbstractKinesisTest extends JetTestSupport {
 
     protected static final int KEYS = 250;
