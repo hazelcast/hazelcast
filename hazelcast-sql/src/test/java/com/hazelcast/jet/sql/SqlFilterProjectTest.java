@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.map.IMap;
@@ -25,8 +26,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.Serializable;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
@@ -687,48 +686,10 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     // test for https://github.com/hazelcast/hazelcast/issues/19983
     // Checks the case when select-by-key optimization is used, but the __key (the 0-th) field isn't selected.
     public void test_selectByKey_keyNotSelected() {
-        IMap<Integer, Integer> map = instance().getMap("m");
-        map.put(42, 43);
+        IMap<Long, Person> map = instance().getMap("test");
+        map.put(1L, new Person(10, "foo"));
 
-        createMapping("m", Integer.class, Integer.class);
-        assertRowsAnyOrder("select this from m where __key=42", singletonList(new Row(43)));
-    }
-
-    @Test
-    public void test_selectByKey_keyNotSelectWithObject() {
-        IMap<Long, TestValue> map = instance().getMap("test");
-        map.put(1L, new TestValue(10L, "test-value"));
-
-        createMapping("test", Long.class, TestValue.class);
-        assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("test-value")));
-    }
-
-    public static class TestValue implements Serializable {
-        private Long id;
-        private String name;
-
-        public TestValue() {
-        }
-
-        public TestValue(final Long id, final String name) {
-            this.id = id;
-            this.name = name;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public void setId(final Long id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(final String name) {
-            this.name = name;
-        }
+        createMapping("test", Long.class, Person.class);
+        assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("foo")));
     }
 }
