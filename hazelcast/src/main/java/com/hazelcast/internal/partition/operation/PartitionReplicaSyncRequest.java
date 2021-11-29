@@ -51,8 +51,9 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
- * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
- * response to the replica to retry the sync operation when:
+ * The request sent from a replica to the partition owner to
+ * synchronize the replica data. The partition owner can send
+ * a response to the replica to retry the sync operation when:
  * <ul>
  * <li>the replica sync is not allowed (because migrations are not allowed)</li>
  * <li>the operation was received by a node which is not the partition owner</li>

@@ -25,14 +25,19 @@ import java.util.function.Supplier;
 import static java.lang.String.format;
 
 /**
- * Contract to be used to lazily migrate data in chunks.
+ * Contract to be used to migrate data of a partition in chunks.
  * <p>
- * Wins are more controlled heap usage and less pressure over network.
+ * Depending on their implementation, chunks can be created
+ * lazily. By the help of chunks, large partition data can be
+ * transferred to a target destination by keeping heap memory
+ * under control and by having less pressure over network.
  * <p>
- * These wins come with potential trade-off of longer migration times.
+ * If a partition data doesn't fit into one chunk, increased migration times can be observed.
  *
  * @see ChunkSupplier
  * @see ChunkSuppliers
+ * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_CHUNKED_MIGRATION_ENABLED
+ * @see com.hazelcast.spi.properties.ClusterProperty#PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB
  */
 public interface ChunkedMigrationAwareService
         extends FragmentedMigrationAwareService {

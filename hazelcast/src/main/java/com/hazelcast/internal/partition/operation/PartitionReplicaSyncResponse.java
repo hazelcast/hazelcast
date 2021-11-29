@@ -20,8 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkSerDerHelper;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -31,9 +31,7 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -51,19 +49,19 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.ChunkSerDerHelper.readChunkedOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
-import static java.lang.String.format;
 
 /**
- * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation
- * list if the replica index hasn't changed. If the current replica index is not the one sent by the partition owner, it will :
+ * The replica synchronization response sent from the partition
+ * owner to a replica. It will execute the received operation list
+ * if the replica index hasn't changed. If the current replica
+ * index is not the one sent by the partition owner, it will :
  * <ul>
  * <li>fail all received operations</li>
  * <li>cancel the current replica sync request</li>
@@ -76,16 +74,11 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
         AllowedDuringPassiveState, TargetAware, Versioned {
 
-    // TODO sync usages with chunkSuppliers
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
     private long[] versions;
 
-    // TODO sync usages with operations
-    private transient Collection<ChunkSupplier> chunkSuppliers;
-    private transient int maxTotalChunkedDataInBytes;
-    private transient ILogger logger;
-    private transient int partitionId;
+    private transient ChunkSerDerHelper chunkSerDerHelper;
 
     public PartitionReplicaSyncResponse() {
     }
@@ -97,17 +90,11 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
                                         int maxTotalChunkedDataInBytes,
                                         ILogger logger,
                                         int partitionId) {
-        assert chunkSuppliers != null;
-        assert logger != null;
-        assert maxTotalChunkedDataInBytes > 0 : maxTotalChunkedDataInBytes;
-
         this.operations = operations;
         this.namespace = namespace;
         this.versions = versions;
-        this.chunkSuppliers = chunkSuppliers;
-        this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
-        this.logger = logger;
-        this.partitionId = partitionId;
+        this.chunkSerDerHelper = new ChunkSerDerHelper(logger, partitionId,
+                chunkSuppliers, maxTotalChunkedDataInBytes);
     }
 
     @Override
@@ -295,106 +282,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         writeNullableCollection(operations, out);
         // RU_COMPAT 5.0
         if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            writeChunkedOperations(out);
-        }
-    }
-
-    private void writeChunkedOperations(ObjectDataOutput out) throws IOException {
-        IsEndOfChunk isEndOfChunk = new IsEndOfChunk(out, maxTotalChunkedDataInBytes);
-
-        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-
-            chunkSupplier.signalEndOfChunkWith(isEndOfChunk);
-
-            while (chunkSupplier.hasNext()) {
-                Operation chunk = chunkSupplier.next();
-                if (chunk == null) {
-                    break;
-                }
-
-                logCurrentChunk(chunkSupplier);
-
-                out.writeObject(chunk);
-
-                if (isEndOfChunk.getAsBoolean()) {
-                    break;
-                }
-            }
-
-            if (isEndOfChunk.getAsBoolean()) {
-                logEndOfChunk(isEndOfChunk);
-                break;
-            }
-        }
-        // indicates end of chunked state
-        out.writeObject(null);
-
-        logEndOfAllChunks(isEndOfChunk);
-    }
-
-    private void logCurrentChunk(ChunkSupplier chunkSupplier) {
-        if (!logger.isFinestEnabled()) {
-            return;
-        }
-
-        logger.finest(String.format("Current chunk [partitionId:%d, %s]",
-                partitionId, chunkSupplier));
-    }
-
-    private void logEndOfChunk(IsEndOfChunk isEndOfChunk) {
-        if (!logger.isFinestEnabled()) {
-            return;
-        }
-
-        logger.finest(format("Chunk is full [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
-                partitionId,
-                MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
-    }
-
-    private void logEndOfAllChunks(IsEndOfChunk isEndOfChunk) {
-        if (!logger.isFinestEnabled()) {
-            return;
-        }
-
-        boolean allDone = true;
-        for (ChunkSupplier chunkSupplier : chunkSuppliers) {
-            if (chunkSupplier.hasNext()) {
-                allDone = false;
-                break;
-            }
-        }
-
-        if (allDone) {
-            logger.finest(format("Last chunk was sent [partitionId:%d, maxChunkSize:%s, actualChunkSize:%s]",
-                    partitionId,
-                    MemorySize.toPrettyString(maxTotalChunkedDataInBytes),
-                    MemorySize.toPrettyString(isEndOfChunk.bytesWrittenSoFar())));
-        }
-    }
-
-    private static final class IsEndOfChunk implements BooleanSupplier {
-
-        private final int positionStart;
-        private final int maxTotalChunkedDataInBytes;
-        private final BufferObjectDataOutput out;
-
-        private IsEndOfChunk(ObjectDataOutput out, int maxTotalChunkedDataInBytes) {
-            assert maxTotalChunkedDataInBytes > 0
-                    : "Found maxTotalChunkedDataInBytes: " + maxTotalChunkedDataInBytes;
-
-            this.out = ((BufferObjectDataOutput) out);
-            this.positionStart = ((BufferObjectDataOutput) out).position();
-            this.maxTotalChunkedDataInBytes = maxTotalChunkedDataInBytes;
-        }
-
-        @Override
-        public boolean getAsBoolean() {
-            return bytesWrittenSoFar() >= maxTotalChunkedDataInBytes;
-        }
-
-        public int bytesWrittenSoFar() {
-            return out.position() - positionStart;
+            chunkSerDerHelper.writeChunkedOperations(out);
         }
     }
 
@@ -405,23 +293,9 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         operations = readNullableCollection(in);
         // RU_COMPAT 5.0
         if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
-            readChunkedOperations(in);
+            operations = readChunkedOperations(in, operations);
         }
     }
-
-    private void readChunkedOperations(ObjectDataInput in) throws IOException {
-        do {
-            Object operation = in.readObject();
-            if (operation == null) {
-                break;
-            }
-            if (CollectionUtil.isEmpty(operations)) {
-                operations = new LinkedList<>();
-            }
-            operations.add(((Operation) operation));
-        } while (true);
-    }
-
 
     @Override
     protected void toString(StringBuilder sb) {
