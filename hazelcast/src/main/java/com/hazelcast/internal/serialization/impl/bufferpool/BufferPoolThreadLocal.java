@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 
 import java.lang.ref.WeakReference;
@@ -30,28 +30,28 @@ import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceTy
 /**
  * A thread-local for {@link BufferPool}.
  *
- * The BufferPoolThreadLocal is not assigned to a static field, but as a member field of the SerializationService-instance.
- * It is unlike to the common use of a ThreadLocal where it assigned to a static field. The reason behind this is that the
+ * The BufferPoolThreadLocal is not assigned to a static field, but is a member field of the SerializationService instance.
+ * It is not like the common use of a ThreadLocal where it's assigned to a static field. The reason for this is that the
  * BufferPool instance belongs to a specific SerializationService instance (the buffer pool has buffers tied to a particular
  * SerializationService instance). By creating a ThreadLocal per SerializationService-instance, we obtain 'BufferPool per thread
  * per SerializationService-instance' semantics.
  *
  * <h1>BufferPool is tied to SerializationService-instance</h1>
  * The BufferPool contains e.g. {@link BufferObjectDataOutput} instances that have a reference to a specific
- * SerializationService-instance. So as long as there is a strong reference to the BufferPool, there is a strong reference
- * to the SerializationService-instance.
+ * SerializationService instance. So as long as there is a strong reference to the BufferPool, there is a strong reference
+ * to the SerializationService instance.
  *
  * <h1>The problem with regular ThreadLocals</h1>
- * In the Thread.threadLocal-map only the key (the ThreadLocal) is wrapped in a WeakReference. So when the ThreadLocal-instance
+ * In the Thread.threadLocal-map only the key (the ThreadLocal) is wrapped in a WeakReference. So when the ThreadLocal instance
  * dies, the WeakReference prevents a strong reference to the ThreadLocal and potentially at some point in the future, the map
- * entry with the null valued WeakReference-key and the strong reference to the the value removed. The problem is we have
+ * entry with the null-valued WeakReference-key and the strong reference to the value is removed. The problem is we have
  * no control when this happens and we could end up with a memory leak because there are strong references to e.g. the
  * SerializationService.
  *
  * <h1>BufferPoolThreadLocal wraps BufferPool also in WeakReference</h1>
  * To prevent this memory leak, the value (the BufferPool) in the Thread.threadLocals-map is also wrapped in a WeakReference
- * So if there is no strong reference to the BufferPool, the BufferPool is gc'ed. Even though there might by some empty key/value
- * WeakReferences in the Thread.threadLocal-map.
+ * So if there is no strong reference to the BufferPool, the BufferPool is gc'ed. Even though there might be some empty key/value
+ * WeakReferences in the Thread.threadLocal map.
  *
  * <h1>Strong references to the BufferPools</h1>
  * To prevent the BufferPool wrapped in a WeakReference to be gc'ed as soon as it is created, the BufferPool is also stored
@@ -61,7 +61,7 @@ import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceTy
  * This gives us the following behavior:
  * <ol>
  * <li>
- * As soon as the Thread, having the ThreadLocal in its Thread.threadLocals-map, dies, the Entry with the Thread as key
+ * As soon as the Thread, having the ThreadLocal in its Thread.threadLocals map, dies, the Entry with the Thread as key
  * will be removed from the ConcurrentReferenceHashMap at some point.
  * </li>
  * <li>
@@ -69,7 +69,7 @@ import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceTy
  * are no strong references to the BufferPool instances, and they get collected as well.
  * </li>
  * </ol>
- * So it can be that a Thread in its Thread.threadLocal-map will for some time have an empty weak-reference as key and value. But
+ * So it can be that a Thread in its Thread.threadLocal map will for some time have an empty weak reference as key and value. But
  * there won't be any references to the BufferPool/SerializationService.
  *
  * <h1>Performance</h1>

@@ -391,6 +391,13 @@ hazelcast:
                 - "name"
             - attributes:
               - "age"
+      tiered-store:
+        enabled: true
+        memory-tier:
+          capacity: "1 GB"
+        disk-tier:
+          enabled: true
+          device-name: my-local-device
 
   multimap:
     default:
@@ -918,6 +925,13 @@ hazelcast:
     parallelism: 3
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
+
+  device:
+    my-local-device:
+      base-dir: base-dir
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 1
 
   lite-member:
     enabled: true

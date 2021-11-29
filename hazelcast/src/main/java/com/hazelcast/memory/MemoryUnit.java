@@ -50,6 +50,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, G);
         }
+
+        public String abbreviation() {
+            return "B";
+        }
     },
 
     /**
@@ -74,6 +78,10 @@ public enum MemoryUnit {
 
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, M);
+        }
+
+        public String abbreviation() {
+            return "KB";
         }
     },
 
@@ -100,6 +108,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return divideByAndRoundToInt(value, K);
         }
+
+        public String abbreviation() {
+            return "MB";
+        }
     },
 
     /**
@@ -125,6 +137,10 @@ public enum MemoryUnit {
         public long toGigaBytes(long value) {
             return value;
         }
+
+        public String abbreviation() {
+            return "GB";
+        }
     };
 
     static final int POWER = 10;
@@ -141,4 +157,6 @@ public enum MemoryUnit {
     public abstract long toMegaBytes(long value);
 
     public abstract long toGigaBytes(long value);
+
+    public abstract String abbreviation();
 }
