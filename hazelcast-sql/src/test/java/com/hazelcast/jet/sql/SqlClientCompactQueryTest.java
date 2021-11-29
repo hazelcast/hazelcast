@@ -86,6 +86,7 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
             config.setClassLoader(classLoader);
         }
         factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
     }
 
     @After
@@ -112,10 +113,37 @@ public class SqlClientCompactQueryTest extends HazelcastTestSupport {
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + "int" + '\''
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + "employee" + '\''
+                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + EmployeeDTO.class.getName() + '\''
                 + ")");
 
         SqlResult result = client.getSql().execute("SELECT * FROM test WHERE age >= 5");
+
+        assertThat(result).hasSize(5);
+    }
+
+    @Test
+    public void testQueryOnPrimitive_selectValue() {
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig());
+        IMap<Integer, Object> map = client.getMap("test");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, new EmployeeDTO(i, i));
+        }
+
+        client.getSql().execute("CREATE MAPPING " + "test" + '('
+                + "__key INTEGER"
+                + ", age INTEGER"
+                + ", \"rank\" INTEGER"
+                + ", id BIGINT"
+                + ", isHired BOOLEAN"
+                + ", isFired BOOLEAN"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + EmployeeDTO.class.getName() + '\''
+                + ")");
+
+        SqlResult result = client.getSql().execute("SELECT this FROM test WHERE age >= 5");
 
         assertThat(result).hasSize(5);
     }

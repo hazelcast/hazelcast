@@ -80,9 +80,9 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
@@ -181,7 +181,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
 
-    private final MappingResolver mappingResolver;
+    private final IMapResolver iMapResolver;
     private final ViewResolver viewResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
@@ -191,7 +191,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
 
-        this.mappingResolver = new MetadataResolver(nodeEngine);
+        this.iMapResolver = new MetadataResolver(nodeEngine);
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(tableResolverImpl);
@@ -210,7 +210,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Nullable
     @Override
     public String mappingDdl(String name) {
-        Mapping mapping = mappingResolver.resolve(name);
+        Mapping mapping = iMapResolver.resolve(name);
         return mapping != null ? SqlCreateMapping.unparse(mapping) : null;
     }
 
@@ -229,7 +229,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                mappingResolver,
+                iMapResolver,
                 viewResolver
         );
 

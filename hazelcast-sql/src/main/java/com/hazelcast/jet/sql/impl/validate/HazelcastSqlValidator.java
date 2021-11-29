@@ -36,8 +36,8 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -117,7 +117,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      */
     private final List<Object> arguments;
 
-    private final MappingResolver mappingResolver;
+    private final IMapResolver iMapResolver;
 
     private final ViewResolver viewResolver;
 
@@ -127,14 +127,14 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            MappingResolver mappingResolver,
+            IMapResolver iMapResolver,
             ViewResolver viewResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
-        this.mappingResolver = mappingResolver;
+        this.iMapResolver = iMapResolver;
         this.viewResolver = viewResolver;
     }
 
@@ -667,7 +667,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
-            Mapping mapping = identifier != null ? mappingResolver.resolve(identifier) : null;
+            Mapping mapping = identifier != null ? iMapResolver.resolve(identifier) : null;
             String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
             String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);

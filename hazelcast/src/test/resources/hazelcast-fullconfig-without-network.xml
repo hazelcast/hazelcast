@@ -428,6 +428,12 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <tiered-store enabled="true">
+            <memory-tier>
+                <capacity>1 GB</capacity>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="my-local-device"/>
+        </tiered-store>
     </map>
 
     <multimap name="default">
@@ -978,6 +984,13 @@
         <validation-timeout-seconds>10</validation-timeout-seconds>
         <rebalance-delay-seconds>240</rebalance-delay-seconds>
     </persistence>
+
+    <device name="my-local-device">
+        <base-dir>base-dir</base-dir>
+        <block-size>4096</block-size>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>1</write-io-thread-count>
+    </device>
 
     <lite-member enabled="true"/>
 

@@ -54,6 +54,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -92,14 +93,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * A timeout after which we cancel a light job that doesn't receive InitOp
      * from the coordinator. {@link ExecutionContext} can be created in
      * response to data packet received for that execution, but it doesn't know
-     * the coordinator. Therefore the checker cannot confirm with the
+     * the coordinator. Therefore, the checker cannot confirm with the
      * coordinator if it still exists. We terminate these jobs after a timeout.
      * However, the timeout has to be long enough because if the job happens to
-     * be initialized later, we'll lose data and we won't eve detect it. It can
+     * be initialized later, we'll lose data, and we won't even detect it. It can
      * also happen that we lose a DONE_ITEM and the job will get stuck, though
      * that's better than incorrect results.
      */
     private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
+
+    private static final long FAILED_EXECUTION_EXPIRY_NS = SECONDS.toNanos(5);
 
     private final Object mutex = new Object();
 
@@ -112,6 +115,21 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     // key: executionId
     private final ConcurrentMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+
+    /**
+     * Key: executionId
+     * Value: expiry time (as per System.nanoTime())
+     * <p>
+     * This map contains executions, that failed or were cancelled.
+     * These executions are very likely to receive further data packets
+     * from other members whose executions are concurrently cancelled
+     * too. If we keep no track of these exceptions, in failure-heavy or
+     * cancellation-heavy scenarios a significant amount of memory could
+     * be held for time defined in {@link
+     * #UNINITIALIZED_CONTEXT_MAX_AGE_NS}, see
+     * https://github.com/hazelcast/hazelcast/issues/19897.
+     */
+    private final ConcurrentMap<Long, Long> failedJobs = new ConcurrentHashMap<>();
 
     @Probe(name = MetricNames.JOB_EXECUTIONS_STARTED)
     private final Counter executionStarted = MwCounter.newMwCounter();
@@ -129,7 +147,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
         this.taskletExecutionService = taskletExecutionService;
         this.jobClassloaderService = jobClassloaderService;
 
-        newLightJobExecutionContextFunction = execId -> new ExecutionContext(nodeEngine, execId, execId, true);
+        newLightJobExecutionContextFunction = execId ->
+                failedJobs.containsKey(execId)
+                        ? null
+                        : new ExecutionContext(nodeEngine, execId, execId, true);
 
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
@@ -138,7 +159,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         registry.registerStaticMetrics(descriptor, this);
 
         this.lightExecutionsCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
-                this::checkLightExecutions, 0, 1, SECONDS);
+                this::checkExecutions, 0, 1, SECONDS);
     }
 
     public Long getExecutionIdForJobId(long jobId) {
@@ -156,7 +177,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Gets the execution context or creates it, if it doesn't exist. If
      * we're creating it, we assume it's for a light job and that the
-     * jobId == executionId.
+     * jobId == executionId. Might return null if the job with the given
+     * ID recently failed.
      * <p>
      * We can also end up here for a non-light job in this scenario:<ul>
      *     <li>job runs on 2 members. The master requests termination.
@@ -170,15 +192,24 @@ public class JobExecutionService implements DynamicMetricsProvider {
      *
      * We ignore this as we assume that we'll never receive the
      * StartExecutionOperation. The improperly-created ExecutionContext will be
-     * removed after a timeout in {@link #checkLightExecutions()} because it
+     * removed after a timeout in {@link #checkExecutions()} because it
      * will never be initialized.
+     * <p>
+     * We mitigate the number of execution context created after a job
+     * failed by checking the {@link #failedJobs} map before re-creating
+     * the execution context in this method.
      */
+    @Nullable
     public ExecutionContext getOrCreateExecutionContext(long executionId) {
         return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
     public Collection<ExecutionContext> getExecutionContexts() {
         return executionContexts.values();
+    }
+
+    public ConcurrentMap<Long, Long> getFailedJobs() {
+        return failedJobs;
     }
 
     Map<SenderReceiverKey, SenderTasklet> getSenderMap(long executionId) {
@@ -480,6 +511,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         ExecutionContext removed = executionContexts.remove(executionContext.executionId());
         if (removed != null) {
+            if (error != null) {
+                failedJobs.put(executionContext.executionId(), System.nanoTime() + FAILED_EXECUTION_EXPIRY_NS);
+            }
             JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
             try {
                 doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
@@ -555,22 +589,26 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     /**
-     * See javadoc at {@link CheckLightJobsOperation}.
+     * See also javadoc at {@link CheckLightJobsOperation}.
      */
-    private void checkLightExecutions() {
+    private void checkExecutions() {
         try {
-            long uninitializedContextThreshold = System.nanoTime() - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
+            long now = System.nanoTime();
+            long uninitializedContextThreshold = now - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
             Map<Address, List<Long>> executionsPerMember = new HashMap<>();
+
             for (ExecutionContext ctx : executionContexts.values()) {
                 if (!ctx.isLightJob()) {
                     continue;
                 }
                 Address coordinator = ctx.coordinator();
                 if (coordinator != null) {
+                    // if coordinator is known, add execution to the list to check
                     executionsPerMember
                             .computeIfAbsent(coordinator, k -> new ArrayList<>())
                             .add(ctx.executionId());
                 } else {
+                    // if coordinator is not known, remove execution if it's not known for too long
                     if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
@@ -579,6 +617,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 }
             }
 
+            // submit the query to the coordinator
             for (Entry<Address, List<Long>> en : executionsPerMember.entrySet()) {
                 long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
                 Operation op = new CheckLightJobsOperation(executionIds);
@@ -604,6 +643,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     }
                 });
             }
+
+            // clean up failedJobs
+            failedJobs.values().removeIf(expiryTime -> expiryTime < now);
         } catch (Throwable e) {
             logger.severe("Failed to query live light executions: " + e, e);
         }

@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -31,8 +32,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties;
-import com.hazelcast.sql.impl.schema.MappingResolver;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -99,13 +99,13 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver,
+            IMapResolver iMapResolver,
             ViewResolver viewResolver
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, mappingResolver, viewResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver, viewResolver);
     }
 
     public static OptimizerContext create(
@@ -113,7 +113,7 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver,
+            IMapResolver iMapResolver,
             ViewResolver viewResolver
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
@@ -122,7 +122,7 @@ public final class OptimizerContext {
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
                 catalogReader,
                 arguments,
-                mappingResolver,
+                iMapResolver,
                 viewResolver
         );
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
