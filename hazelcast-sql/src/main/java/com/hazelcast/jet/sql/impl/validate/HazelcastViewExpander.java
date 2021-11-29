@@ -31,9 +31,13 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Hazelcast view expander helper class.
+ */
 public class HazelcastViewExpander {
     private final HazelcastSqlValidator validator;
     private final Set<View> visitedViews = new HashSet<>();
@@ -45,9 +49,8 @@ public class HazelcastViewExpander {
     }
 
     /**
-     * TODO: doc
-     *
-     * @param selectCall
+     * Tries to detect and expand view in given {@link SqlSelect} argument.
+     * View expanding happens on AST IR level.
      */
     @SuppressWarnings("CheckStyle")
     public void expandView(SqlSelect selectCall) {
@@ -103,7 +106,7 @@ public class HazelcastViewExpander {
             try {
                 QueryParseResult parseResult = parser.parse(resolvedView.query());
                 selectCall.setFrom(parseResult.getNode());
-                performMappingAlignment(selectCall);
+                rewriteProjectionOwnerTable(selectCall);
             } catch (QueryException e) {
                 e.printStackTrace();
             }
@@ -111,12 +114,13 @@ public class HazelcastViewExpander {
     }
 
     /**
-     * TODO: doc
+     * a
      *
-     * @param fromClause
-     * @param viewResolver
-     * @return
+     * @param fromClause   AST node.
+     * @param viewResolver view resolver.
+     * @return view instance if resolved, {@code null}, if not.
      */
+    @Nullable
     private View extractView(SqlIdentifier fromClause, ViewResolver viewResolver) {
         if (!ValidationUtil.isCatalogObjectNameValid(fromClause)) {
             // We are not throwing any exceptions here, delegating it to validation stage.
@@ -127,11 +131,21 @@ public class HazelcastViewExpander {
     }
 
     /**
-     * TODO: doc
+     * During multi-level view expansion it may happens,
+     * that projection contains view aliases in its scope.
+     * <p>
+     * Example : {@code SELECT v.this FROM (SELECT __key, this FROM map}.
+     * <p>
+     * Here, {@code v} is not in query scope, and should be rewritten with actual scope.
+     * Since Calcite does scope management by itself,
+     * we just manually remove old scopes from identifiers.
+     * <p>
+     * After the rewrite, query will have have a look like:
+     * {@code SELECT this FROM (SELECT __key, this FROM map}.
      *
-     * @param selectCall
+     * @param selectCall SELECT AST node to perform rewrite of old projections owners
      */
-    private void performMappingAlignment(SqlSelect selectCall) {
+    private void rewriteProjectionOwnerTable(SqlSelect selectCall) {
         SqlNodeList selectList = selectCall.getSelectList();
         for (SqlNode node : selectList) {
             if (node instanceof SqlIdentifier) {

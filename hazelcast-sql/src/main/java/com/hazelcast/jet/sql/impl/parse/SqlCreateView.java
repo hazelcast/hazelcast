@@ -37,7 +37,26 @@ import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 
 /**
- * TODO: doc
+ * CREATE VIEW statement AST tree node.
+ * <p>
+ * View creation process has specifics - the query that we represent as the view
+ * should not be substituted immediately, if it is already based on top of another view.
+ * Example, for better understanding:
+ * <p>
+ * {@code CREATE VIEW v AS SELECT * FROM map} -> typical , no extra work.
+ * <p>
+ * {@code CREATE VIEW vv AS SELECT * FROM v} -> view definition is based on top of another view.
+ * We are using views as aliases and they have the same behaviour as variable in prog. languages.
+ * <p>
+ * With default recursive substitution algorithm such transformation may be happened, but must not:
+ * <p>
+ * {@code CREATE VIEW vv AS SELECT * FROM v} -> {@code CREATE VIEW vv AS SELECT * FROM (SELECT * FROM map)}
+ * <p>
+ * To prevent such behaviour, we introduce extra SELECT AST tree node : {@link SqlNonExpandableSelect}.
+ * During the {@link SqlCreateView} initialization, we explicitly rewrite all SELECT queries in aliased
+ * query as {@link SqlNonExpandableSelect} by calling {@link SqlCreateView#rewriteInnerSelectsAsNonExpandable}.
+ *
+ * @since 5.1
  */
 public class SqlCreateView extends SqlCreate {
     private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
@@ -49,7 +68,7 @@ public class SqlCreateView extends SqlCreate {
     public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, ifNotExists);
         this.name = name;
-        this.query = markInnerSelectsAsNonExpandable(query);
+        this.query = rewriteInnerSelectsAsNonExpandable(query);
     }
 
     public String name() {
@@ -123,7 +142,7 @@ public class SqlCreateView extends SqlCreate {
         query = validator.validate(query);
     }
 
-    private SqlNode markInnerSelectsAsNonExpandable(SqlNode query) {
+    private SqlNode rewriteInnerSelectsAsNonExpandable(SqlNode query) {
         if (query instanceof SqlSelect) {
             SqlSelect select = new SqlNonExpandableSelect((SqlSelect) query);
             innerSelects.add(select);
@@ -149,7 +168,7 @@ public class SqlCreateView extends SqlCreate {
             SqlBasicCall call = (SqlBasicCall) query;
             for (int i = 0; i < call.getOperandList().size(); ++i) {
                 SqlNode node = call.getOperandList().get(i);
-                call.setOperand(i, markInnerSelectsAsNonExpandable(node));
+                call.setOperand(i, rewriteInnerSelectsAsNonExpandable(node));
             }
             return call;
         }

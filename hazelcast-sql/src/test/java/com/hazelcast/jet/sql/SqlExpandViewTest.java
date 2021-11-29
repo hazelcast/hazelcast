@@ -57,6 +57,15 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_viewIsExpandedWithDistinctSelect() {
+        map.put(1, 1);
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
+
+        assertRowsAnyOrder("SELECT DISTINCT * FROM v", singletonList(new Row(1, 1)));
+    }
+
+    @Test
     public void when_incorrectQueryView_then_throws() {
         assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT -"))
                 .hasMessageContaining("Encountered \"<EOF>\" at line 1");
@@ -187,6 +196,15 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_viewIsExpandedWithValues() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM ( VALUES(1, 1), (2, 2) )");
+        assertRowsAnyOrder("SELECT * FROM v", asList(
+                new Row((byte) 1, (byte) 1),
+                new Row((byte) 2, (byte) 2)
+        ));
+    }
+
+    @Test
     public void when_viewIsExpandedWithAggFunction() {
         instance().getSql().execute("CREATE VIEW v AS SELECT MAX(__key) FROM map");
 
@@ -223,12 +241,14 @@ public class SqlExpandViewTest extends SqlTestSupport {
     @Test
     public void when_doubleViewIsExpandedDuringQueryWithFunctionProjections() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE this = 1");
+        instance().getSql().execute("CREATE VIEW vv AS SELECT MAX(this) FROM v");
+        instance().getSql().execute("CREATE VIEW vvv AS SELECT COUNT(this) FROM v");
 
-        SqlResult sqlRows = instance().getSql().execute("SELECT MAX(this) FROM v");
+        SqlResult sqlRows = instance().getSql().execute("SELECT * FROM vv");
         Integer max = sqlRows.iterator().next().getObject(0);
         assertThat(max).isEqualTo(1);
 
-        sqlRows = instance().getSql().execute("SELECT COUNT(*) FROM v");
+        sqlRows = instance().getSql().execute("SELECT * FROM vvv");
         Long count = sqlRows.iterator().next().getObject(0);
         assertThat(count).isEqualTo(1L);
     }
