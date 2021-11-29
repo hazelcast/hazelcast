@@ -56,6 +56,7 @@ public final class DiagnosticProcessors {
      *
      * @since 5.1
      */
+    @SuppressWarnings("checkstyle:ReturnCount")
     public static final FunctionEx<Object, String> PEEK_DEFAULT_TO_STRING = o -> {
         if (o instanceof Object[]) {
             return Arrays.deepToString((Object[]) o);
