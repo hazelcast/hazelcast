@@ -107,12 +107,13 @@
         * console-enabled:
         Set to true to allow console commands execution on the member, false to disallow
         Default value is false.
+        * data-access-enabled TODO
 
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center scripting-enabled="false" console-enabled="false"/>
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true"/>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.

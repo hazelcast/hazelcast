@@ -30,6 +30,7 @@ hazelcast:
     # The default value for both attributes is false already so this one is just to be sure and explicit.
     scripting-enabled: false
     console-enabled: false
+    data-access-enabled: true
 
   user-code-deployment:
     # Explicitly disable the user-code deployments. I.e. allow only code which already is on the classpath.

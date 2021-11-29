@@ -2629,6 +2629,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="data-access-enabled" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    TODO
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="security">
         <xs:all>

@@ -32,6 +32,8 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     private boolean consoleEnabled;
 
+    private boolean dataAccessEnabled = true;
+
     private final Set<String> trustedInterfaces = newSetFromMap(new ConcurrentHashMap<>());
 
     public ManagementCenterConfig() {
@@ -82,6 +84,17 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
      */
     public boolean isConsoleEnabled() {
         return consoleEnabled;
+    }
+
+    // TODO
+    public boolean isDataAccessEnabled() {
+        return dataAccessEnabled;
+    }
+
+    // TODO
+    public ManagementCenterConfig setDataAccessEnabled(boolean dataAccessEnabled) {
+        this.dataAccessEnabled = dataAccessEnabled;
+        return this;
     }
 
     /**

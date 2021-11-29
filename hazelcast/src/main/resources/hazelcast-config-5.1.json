@@ -291,6 +291,11 @@
           "type": "boolean",
           "default": false
         },
+        "data-access-enabled": {
+          "description": "TODO.",
+          "type": "boolean",
+          "default": true
+        },
         "trusted-interfaces": {
           "type": "array",
           "items": {

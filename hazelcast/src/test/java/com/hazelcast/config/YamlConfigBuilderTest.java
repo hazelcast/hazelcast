@@ -883,6 +883,7 @@ public class YamlConfigBuilderTest
                 + "  management-center:\n"
                 + "    scripting-enabled: true\n"
                 + "    console-enabled: true\n"
+                + "    data-access-enabled: false\n"
                 + "    trusted-interfaces:\n"
                 + "      - 127.0.0.1\n"
                 + "      - 192.168.1.*\n";
@@ -892,6 +893,7 @@ public class YamlConfigBuilderTest
 
         assertTrue(mcConfig.isScriptingEnabled());
         assertTrue(mcConfig.isConsoleEnabled());
+        assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }

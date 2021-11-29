@@ -2709,6 +2709,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             managementCenterConfig.setConsoleEnabled(getBooleanValue(getTextContent(consoleEnabledNode)));
         }
 
+        Node dataAccessEnabledNode = getNamedItemNode(node, "data-access-enabled");
+        if (dataAccessEnabledNode != null) {
+            managementCenterConfig.setDataAccessEnabled(getBooleanValue(getTextContent(dataAccessEnabledNode)));
+        }
+
         for (Node n : childElements(node)) {
             if (matches("trusted-interfaces", cleanNodeName(n))) {
                 handleTrustedInterfaces(managementCenterConfig, n);
