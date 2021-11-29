@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
@@ -15,7 +31,7 @@ import org.apache.calcite.rel.core.TableScan;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-public class JoinPhysicalRule extends RelRule<RelRule.Config> {
+public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
     private static final Config RULE_CONFIG = Config.EMPTY
             .withDescription(JoinPhysicalRule.class.getSimpleName())
