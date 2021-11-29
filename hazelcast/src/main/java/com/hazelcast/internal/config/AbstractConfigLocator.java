@@ -32,7 +32,7 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
-import static com.hazelcast.internal.dynamicconfig.RewriterProxy.REWRITER_FILE_SUFFIX;
+import static com.hazelcast.internal.config.dynamic.rewrite.RewriterProxy.REWRITER_FILE_SUFFIX;
 import static com.hazelcast.internal.nio.IOUtil.move;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.util.Objects.requireNonNull;

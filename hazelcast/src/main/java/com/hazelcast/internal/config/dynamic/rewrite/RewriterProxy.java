@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.dynamicconfig;
+package com.hazelcast.internal.config.dynamic.rewrite;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class EmptyRewriterProxy implements RewriterProxy {
+public interface RewriterProxy {
 
-    @Override
-    public void doRewrite(Config config, IdentifiedDataSerializable subConfig) {
-        //intentionally no-op
-    }
+    String REWRITER_FILE_SUFFIX = ".rewrite";
+
+    void doRewrite(Config config, IdentifiedDataSerializable subConfig);
 }
