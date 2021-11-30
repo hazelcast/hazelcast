@@ -132,7 +132,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     }
 
     /**
-     * @see RemoteService#destroyDistributedObject(String) for IMap
+     * @see RemoteService#destroyDistributedObject(String)
      */
     @Override
     public boolean destroyNearCache(String mapName) {

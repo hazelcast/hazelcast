@@ -60,6 +60,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -153,6 +154,8 @@ public class Config {
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
+
+    private final Map<String, DeviceConfig> deviceConfigs = new ConcurrentHashMap<>();
 
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
@@ -2633,6 +2636,49 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the map of {@link DeviceConfig}s mapped by device name.
+     *
+     * @return the device configurations mapped by device name
+     */
+    public Map<String, DeviceConfig> getDeviceConfigs() {
+        return deviceConfigs;
+    }
+
+    /**
+     * Sets the map of {@link DeviceConfig}s mapped by device name.
+     *
+     * @param deviceConfigs device configuration map
+     * @return this config instance
+     */
+    public Config setDeviceConfigs(Map<String, DeviceConfig> deviceConfigs) {
+        this.deviceConfigs.clear();
+        this.deviceConfigs.putAll(deviceConfigs);
+        return this;
+    }
+
+    /**
+     * Returns the device config mapped by the provided device name.
+     *
+     * @param name the device name
+     * @return device config or {@code null} if absent
+     */
+    @Nullable
+    public DeviceConfig getDeviceConfig(String name) {
+        return deviceConfigs.get(name);
+    }
+
+    /**
+     * Adds the device configuration.
+     *
+     * @param deviceConfig device config
+     * @return this config instance
+     */
+    public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        deviceConfigs.put(deviceConfig.getName(), deviceConfig);
+        return this;
+    }
+
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         return crdtReplicationConfig;
     }
@@ -3021,6 +3067,7 @@ public class Config {
                 + ", metricsConfig=" + metricsConfig
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
+                + ", deviceConfigs=" + deviceConfigs
                 + '}';
     }
 }

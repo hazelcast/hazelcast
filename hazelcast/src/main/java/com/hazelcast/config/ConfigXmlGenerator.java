@@ -42,6 +42,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
@@ -119,6 +120,7 @@ public class ConfigXmlGenerator {
      * @param config the configuration
      * @return the XML string
      */
+    @SuppressWarnings("checkstyle:MethodLength")
     public String generate(Config config) {
         isNotNull(config, "Config");
 
@@ -168,6 +170,7 @@ public class ConfigXmlGenerator {
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
+        deviceConfigXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
@@ -1013,8 +1016,40 @@ public class ConfigXmlGenerator {
             mapPartitionLostListenerConfigXmlGenerator(gen, m);
             mapPartitionStrategyConfigXmlGenerator(gen, m);
             mapQueryCachesConfigXmlGenerator(gen, m);
+            tieredStoreConfigXmlGenerator(gen, m.getTieredStoreConfig());
             gen.close();
         }
+    }
+
+    private static void deviceConfigXmlGenerator(XmlGenerator gen, Config config) {
+        for (DeviceConfig deviceConfig : config.getDeviceConfigs().values()) {
+            gen.open("device", "name", deviceConfig.getName())
+                    .node("base-dir", deviceConfig.getBaseDir().getAbsolutePath())
+                    .node("block-size", deviceConfig.getBlockSize())
+                    .node("read-io-thread-count", deviceConfig.getReadIOThreadCount())
+                    .node("write-io-thread-count", deviceConfig.getWriteIOThreadCount())
+                    .close();
+        }
+    }
+
+    private static void tieredStoreConfigXmlGenerator(XmlGenerator gen, TieredStoreConfig tieredStoreConfig) {
+        gen.open("tiered-store", "enabled", tieredStoreConfig.isEnabled());
+        appendMemoryTierConfig(gen, tieredStoreConfig.getMemoryTierConfig());
+        appendDiskTierConfig(gen, tieredStoreConfig.getDiskTierConfig());
+        gen.close();
+    }
+
+    private static void appendMemoryTierConfig(XmlGenerator gen, MemoryTierConfig memoryTierConfig) {
+        MemorySize capacity = memoryTierConfig.getCapacity();
+        gen.open("memory-tier")
+                .node("capacity", (capacity.getValue() + " " + capacity.getUnit().abbreviation()))
+                .close();
+    }
+
+    private static void appendDiskTierConfig(XmlGenerator gen, DiskTierConfig diskTierConfig) {
+        gen.open("disk-tier", "enabled", diskTierConfig.isEnabled(),
+                "device-name", diskTierConfig.getDeviceName())
+                .close();
     }
 
     private static void appendMerkleTreeConfig(XmlGenerator gen, MerkleTreeConfig c) {

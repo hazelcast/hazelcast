@@ -241,49 +241,49 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeTimestampWithTimezone(fieldName, record.getTimestampWithTimezone(fieldName));
                     break;
                 case PORTABLE_ARRAY:
-                    writer.writeGenericRecordArray(fieldName, record.getGenericRecordArray(fieldName));
+                    writer.writeGenericRecordArray(fieldName, record.getArrayOfGenericRecords(fieldName));
                     break;
                 case BYTE_ARRAY:
-                    writer.writeByteArray(fieldName, record.getByteArray(fieldName));
+                    writer.writeByteArray(fieldName, record.getArrayOfBytes(fieldName));
                     break;
                 case BOOLEAN_ARRAY:
-                    writer.writeBooleanArray(fieldName, record.getBooleanArray(fieldName));
+                    writer.writeBooleanArray(fieldName, record.getArrayOfBooleans(fieldName));
                     break;
                 case CHAR_ARRAY:
-                    writer.writeCharArray(fieldName, record.getCharArray(fieldName));
+                    writer.writeCharArray(fieldName, record.getArrayOfChars(fieldName));
                     break;
                 case SHORT_ARRAY:
-                    writer.writeShortArray(fieldName, record.getShortArray(fieldName));
+                    writer.writeShortArray(fieldName, record.getArrayOfShorts(fieldName));
                     break;
                 case INT_ARRAY:
-                    writer.writeIntArray(fieldName, record.getIntArray(fieldName));
+                    writer.writeIntArray(fieldName, record.getArrayOfInts(fieldName));
                     break;
                 case LONG_ARRAY:
-                    writer.writeLongArray(fieldName, record.getLongArray(fieldName));
+                    writer.writeLongArray(fieldName, record.getArrayOfLongs(fieldName));
                     break;
                 case FLOAT_ARRAY:
-                    writer.writeFloatArray(fieldName, record.getFloatArray(fieldName));
+                    writer.writeFloatArray(fieldName, record.getArrayOfFloats(fieldName));
                     break;
                 case DOUBLE_ARRAY:
-                    writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
+                    writer.writeDoubleArray(fieldName, record.getArrayOfDoubles(fieldName));
                     break;
                 case UTF_ARRAY:
-                    writer.writeStringArray(fieldName, record.getStringArray(fieldName));
+                    writer.writeStringArray(fieldName, record.getArrayOfStrings(fieldName));
                     break;
                 case DECIMAL_ARRAY:
-                    writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));
+                    writer.writeDecimalArray(fieldName, record.getArrayOfDecimals(fieldName));
                     break;
                 case TIME_ARRAY:
-                    writer.writeTimeArray(fieldName, record.getTimeArray(fieldName));
+                    writer.writeTimeArray(fieldName, record.getArrayOfTimes(fieldName));
                     break;
                 case DATE_ARRAY:
-                    writer.writeDateArray(fieldName, record.getDateArray(fieldName));
+                    writer.writeDateArray(fieldName, record.getArrayOfDates(fieldName));
                     break;
                 case TIMESTAMP_ARRAY:
-                    writer.writeTimestampArray(fieldName, record.getTimestampArray(fieldName));
+                    writer.writeTimestampArray(fieldName, record.getArrayOfTimestamps(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    writer.writeTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
+                    writer.writeTimestampWithTimezoneArray(fieldName, record.getArrayOfTimestampWithTimezones(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected field type: " + cd.getFieldType(fieldName));
@@ -378,50 +378,50 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     genericRecordBuilder.setTimestampWithTimezone(fieldName, reader.getTimestampWithTimezone(fieldName));
                     break;
                 case PORTABLE_ARRAY:
-                    genericRecordBuilder.setGenericRecordArray(fieldName, reader.getGenericRecordArray(fieldName));
+                    genericRecordBuilder.setArrayOfGenericRecords(fieldName, reader.getArrayOfGenericRecords(fieldName));
                     break;
                 case BYTE_ARRAY:
-                    genericRecordBuilder.setByteArray(fieldName, reader.getByteArray(fieldName));
+                    genericRecordBuilder.setArrayOfBytes(fieldName, reader.getArrayOfBytes(fieldName));
                     break;
                 case BOOLEAN_ARRAY:
-                    genericRecordBuilder.setBooleanArray(fieldName, reader.getBooleanArray(fieldName));
+                    genericRecordBuilder.setArrayOfBooleans(fieldName, reader.getArrayOfBooleans(fieldName));
                     break;
                 case CHAR_ARRAY:
-                    genericRecordBuilder.setCharArray(fieldName, reader.getCharArray(fieldName));
+                    genericRecordBuilder.setArrayOfChars(fieldName, reader.getArrayOfChars(fieldName));
                     break;
                 case SHORT_ARRAY:
-                    genericRecordBuilder.setShortArray(fieldName, reader.getShortArray(fieldName));
+                    genericRecordBuilder.setArrayOfShorts(fieldName, reader.getArrayOfShorts(fieldName));
                     break;
                 case INT_ARRAY:
-                    genericRecordBuilder.setIntArray(fieldName, reader.getIntArray(fieldName));
+                    genericRecordBuilder.setArrayOfInts(fieldName, reader.getArrayOfInts(fieldName));
                     break;
                 case LONG_ARRAY:
-                    genericRecordBuilder.setLongArray(fieldName, reader.getLongArray(fieldName));
+                    genericRecordBuilder.setArrayOfLongs(fieldName, reader.getArrayOfLongs(fieldName));
                     break;
                 case FLOAT_ARRAY:
-                    genericRecordBuilder.setFloatArray(fieldName, reader.getFloatArray(fieldName));
+                    genericRecordBuilder.setArrayOfFloats(fieldName, reader.getArrayOfFloats(fieldName));
                     break;
                 case DOUBLE_ARRAY:
-                    genericRecordBuilder.setDoubleArray(fieldName, reader.getDoubleArray(fieldName));
+                    genericRecordBuilder.setArrayOfDoubles(fieldName, reader.getArrayOfDoubles(fieldName));
                     break;
                 case UTF_ARRAY:
-                    genericRecordBuilder.setStringArray(fieldName, reader.getStringArray(fieldName));
+                    genericRecordBuilder.setArrayOfStrings(fieldName, reader.getArrayOfStrings(fieldName));
                     break;
                 case DECIMAL_ARRAY:
-                    genericRecordBuilder.setDecimalArray(fieldName, reader.getDecimalArray(fieldName));
+                    genericRecordBuilder.setArrayOfDecimals(fieldName, reader.getArrayOfDecimals(fieldName));
                     break;
                 case TIME_ARRAY:
-                    genericRecordBuilder.setTimeArray(fieldName, reader.getTimeArray(fieldName));
+                    genericRecordBuilder.setArrayOfTimes(fieldName, reader.getArrayOfTimes(fieldName));
                     break;
                 case DATE_ARRAY:
-                    genericRecordBuilder.setDateArray(fieldName, reader.getDateArray(fieldName));
+                    genericRecordBuilder.setArrayOfDates(fieldName, reader.getArrayOfDates(fieldName));
                     break;
                 case TIMESTAMP_ARRAY:
-                    genericRecordBuilder.setTimestampArray(fieldName, reader.getTimestampArray(fieldName));
+                    genericRecordBuilder.setArrayOfTimestamps(fieldName, reader.getArrayOfTimestamps(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    genericRecordBuilder.setTimestampWithTimezoneArray(fieldName,
-                            reader.getTimestampWithTimezoneArray(fieldName));
+                    genericRecordBuilder.setArrayOfTimestampWithTimezones(fieldName,
+                            reader.getArrayOfTimestampWithTimezones(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));

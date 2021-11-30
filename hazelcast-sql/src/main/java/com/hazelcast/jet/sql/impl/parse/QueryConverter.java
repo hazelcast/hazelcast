@@ -26,12 +26,19 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.rules.CoreRules;
+import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.rex.RexVisitorImpl;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
+
+import javax.annotation.Nullable;
 
 /**
  * Converts a parse tree into a relational tree.
@@ -86,7 +93,6 @@ public class QueryConverter {
                 StandardConvertletTable.INSTANCE,
                 CONFIG
         );
-
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
@@ -96,14 +102,19 @@ public class QueryConverter {
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
         // See "Unnesting Arbitrary Queries", Thomas Neumann and Alfons Kemper.
-        RelNode relDecorrelated = converter.decorrelate(node, relNoSubqueries);
+        RelNode result = converter.decorrelate(node, relNoSubqueries);
 
         // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
         // primarily in projections. This steps removes unused fields from the tree.
-        RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
+        //
+        // Due to a (possible) Calcite bug, we're not doing it if there are nested EXISTS calls.
+        // The bug is likely in decorrelation which produces LogicalAggregate with 0 output columns.
+        if (!hasNestedExists(root.rel)) {
+            result = converter.trimUnusedFields(true, result);
+        }
 
         // 5. Collect original field names.
-        return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
+        return new QueryConvertResult(result, Pair.right(root.fields));
     }
 
     /**
@@ -128,5 +139,49 @@ public class QueryConverter {
         planner.setRoot(rel);
 
         return planner.findBestExp();
+    }
+
+    private static boolean hasNestedExists(RelNode root) {
+        class NestedExistsFinder extends RelVisitor {
+            private boolean found;
+            private int depth;
+
+            @Override
+            public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+                if (node instanceof LogicalFilter) {
+                    RexSubQuery exists = getExists((LogicalFilter) node);
+                    if (exists != null) {
+                        found |= depth > 0;
+                        depth++;
+                        go(exists.rel);
+                        depth--;
+                    }
+                }
+                super.visit(node, ordinal, parent);
+            }
+
+            private boolean find() {
+                go(root);
+                return found;
+            }
+
+            private RexSubQuery getExists(LogicalFilter filter) {
+                RexSubQuery[] existsSubQuery = {null};
+
+                filter.getCondition().accept(new RexVisitorImpl<Void>(true) {
+                    @Override
+                    public Void visitSubQuery(RexSubQuery subQuery) {
+                        if (subQuery.getKind() == SqlKind.EXISTS) {
+                            existsSubQuery[0] = subQuery;
+                        }
+                        return super.visitSubQuery(subQuery);
+                    }
+                });
+
+                return existsSubQuery[0];
+            }
+        }
+
+        return new NestedExistsFinder().find();
     }
 }

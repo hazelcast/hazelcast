@@ -22,25 +22,34 @@ import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -57,6 +66,7 @@ import java.util.function.Predicate;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
@@ -67,6 +77,9 @@ import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootR
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+
+    private static final int LOW_PRIORITY = 10;
+    private static final int HIGH_PRIORITY = 1;
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
@@ -138,8 +151,13 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        return getJetSqlConnector(table)
-                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+        return getJetSqlConnector(table).fullScanReader(
+                dag,
+                table,
+                rel.filter(parameterMetadata),
+                rel.projection(parameterMetadata),
+                rel.eventTimePolicyProvider()
+        );
     }
 
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
@@ -282,6 +300,88 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onSlidingWindow(SlidingWindowPhysicalRel rel) {
+        int orderingFieldIndex = rel.orderingFieldIndex();
+        FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider();
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window",
+                mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
+                            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                            SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
+                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
+                        }),
+                        (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                )
+        );
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
+        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-AggregateByKey",
+                Processors.aggregateToSlidingWindowP(
+                        singletonList(groupKeyFn),
+                        singletonList(timestampFn),
+                        TimestampKind.EVENT,
+                        windowPolicy,
+                        0,
+                        aggregateOperation,
+                        (start, end, ignoredKey, result, isEarly) -> result
+                )
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
+        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-AccumulateByKey",
+                Processors.accumulateByFrameP(
+                        singletonList(groupKeyFn),
+                        singletonList(timestampFn),
+                        TimestampKind.EVENT,
+                        windowPolicy,
+                        aggregateOperation
+                )
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
+        return vertex;
+    }
+
+    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
+        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+
+        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+
+        Vertex vertex = dag.newUniqueVertex(
+                "Sliding-Window-CombineByKey",
+                Processors.combineToSlidingWindowP(
+                        windowPolicy,
+                        aggregateOperation,
+                        (start, end, ignoredKey, result, isEarly) -> result
+                )
+        );
+        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
+        return vertex;
+    }
+
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
@@ -298,6 +398,20 @@ public class CreateDagVisitor {
         Vertex vertex = vertexWithConfig.vertex();
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
+    }
+
+    public Vertex onHashJoin(JoinHashPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Hash Join",
+                SqlHashJoinP.supplier(
+                        joinInfo,
+                        rel.getRight().getRowType().getFieldCount()
+                )
+        );
+        connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
     }
 
     public Vertex onUnion(UnionPhysicalRel rel) {
@@ -390,6 +504,31 @@ public class CreateDagVisitor {
         }
         dag.edge(edge);
         return inputVertex;
+    }
+
+    private void connectJoinInput(
+            JetJoinInfo joinInfo,
+            RelNode leftInputRel,
+            RelNode rightInputRel,
+            Vertex joinVertex
+    ) {
+        Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
+        Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
+
+        Edge left = between(leftInput, joinVertex).priority(LOW_PRIORITY).broadcast().distributed();
+        Edge right = from(rightInput).to(joinVertex, 1).priority(HIGH_PRIORITY).unicast().local();
+        if (joinInfo.isLeftOuter()) {
+            left = left.unicast().local();
+            right = right.broadcast().distributed();
+        }
+        if (joinInfo.isEquiJoin()) {
+            int[] leftIndices = joinInfo.leftEquiJoinIndices();
+            int[] rightIndices = joinInfo.rightEquiJoinIndices();
+            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
+            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
+        }
+        dag.edge(left);
+        dag.edge(right);
     }
 
     /**

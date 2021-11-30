@@ -180,9 +180,9 @@ public class SqlMappingTest extends SqlTestSupport {
                     "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json-flat')");
         }
 
-        MappingStorage mappingStorage = new MappingStorage(getNodeEngineImpl(instance()));
-        assertEquals(aliases.length, mappingStorage.values().size());
-        Iterator<Mapping> iterator = mappingStorage.values().iterator();
+        TablesStorage tablesStorage = new TablesStorage(getNodeEngineImpl(instance()));
+        assertEquals(aliases.length, tablesStorage.valuesMappings().size());
+        Iterator<Mapping> iterator = tablesStorage.valuesMappings().iterator();
 
         // the two mappings must be equal, except for their name & objectName
         Mapping firstMapping = iterator.next();

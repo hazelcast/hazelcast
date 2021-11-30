@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -30,7 +32,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.schema.MappingResolver;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
@@ -60,6 +62,8 @@ public final class OptimizerContext {
 
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
             HazelcastRelMdRowCount.SOURCE,
+            HazelcastRelMdBoundedness.SOURCE,
+            HazelcastRelMdWindowProperties.SOURCE,
             DefaultRelMetadataProvider.INSTANCE
     ));
 
@@ -94,12 +98,12 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver
+            IMapResolver iMapResolver
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, mappingResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
     }
 
     public static OptimizerContext create(
@@ -107,12 +111,12 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            MappingResolver mappingResolver
+            IMapResolver iMapResolver
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, mappingResolver);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
 

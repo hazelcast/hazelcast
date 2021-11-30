@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -50,10 +51,11 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     private Properties properties;
     private String topic;
-    private EventTimePolicy<Object[]> eventTimePolicy;
+    private FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider;
     private KvRowProjector.Supplier projectorSupplier;
 
     private transient ExpressionEvalContext evalContext;
+    private transient EventTimePolicy<Object[]> eventTimePolicy;
     private transient Extractors extractors;
 
     @SuppressWarnings("unused")
@@ -63,7 +65,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     RowProjectorProcessorSupplier(
             Properties properties,
             String topic,
-            EventTimePolicy<Object[]> eventTimePolicy,
+            FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,
@@ -73,7 +75,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     ) {
         this.properties = properties;
         this.topic = topic;
-        this.eventTimePolicy = eventTimePolicy;
+        this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.projectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
@@ -87,6 +89,9 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     @Override
     public void init(@Nonnull Context context) {
         evalContext = SimpleExpressionEvalContext.from(context);
+        eventTimePolicy = eventTimePolicyProvider == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicyProvider.apply(evalContext);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -111,15 +116,15 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(properties);
         out.writeString(topic);
+        out.writeObject(eventTimePolicyProvider);
         out.writeObject(projectorSupplier);
-        out.writeObject(eventTimePolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         properties = in.readObject();
         topic = in.readString();
+        eventTimePolicyProvider = in.readObject();
         projectorSupplier = in.readObject();
-        eventTimePolicy = in.readObject();
     }
 }

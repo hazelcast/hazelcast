@@ -164,6 +164,36 @@ public final class MemorySize {
     }
 
     /**
+     * Parses string representation of a memory size.
+     * <br>
+     * The input must match the pattern {@code ^[1-9]([0-9]*) (B|KB|MB|GB)$}.
+     * Ex, "8192 MB", "1 GB" are valid inputs, while "01 MB", "2.2 GB" are not.
+     * This method expects a well-formed input and does not do any kind of input validation.
+     *
+     * @param memorySize memory size.
+     * @return @{code MemorySize} instance.
+     *
+     * @since 5.1
+     */
+    public static MemorySize parseMemorySize(String memorySize) {
+        String[] valAndUnit = memorySize.split(" ");
+        long value = Long.parseLong(valAndUnit[0]);
+
+        switch (valAndUnit[1]) {
+            case "B":
+                return new MemorySize(value, MemoryUnit.BYTES);
+            case "KB":
+                return new MemorySize(value, MemoryUnit.KILOBYTES);
+            case "MB":
+                return new MemorySize(value, MemoryUnit.MEGABYTES);
+            case "GB":
+                return new MemorySize(value, MemoryUnit.GIGABYTES);
+            default:
+                throw new IllegalArgumentException("Could not determine memory unit of " + memorySize);
+        }
+    }
+
+    /**
      * Returns a pretty format String representation of this memory size.
      *
      * @return a pretty format representation of this memory size

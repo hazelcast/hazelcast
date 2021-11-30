@@ -54,45 +54,45 @@ public final class FieldTypeToFieldKind {
             case UTF:
                 return FieldKind.STRING;
             case PORTABLE_ARRAY:
-                return FieldKind.PORTABLE_ARRAY;
+                return FieldKind.ARRAY_OF_PORTABLES;
             case BYTE_ARRAY:
-                return FieldKind.BYTE_ARRAY;
+                return FieldKind.ARRAY_OF_BYTES;
             case BOOLEAN_ARRAY:
-                return FieldKind.BOOLEAN_ARRAY;
+                return FieldKind.ARRAY_OF_BOOLEANS;
             case CHAR_ARRAY:
-                return FieldKind.CHAR_ARRAY;
+                return FieldKind.ARRAY_OF_CHARS;
             case SHORT_ARRAY:
-                return FieldKind.SHORT_ARRAY;
+                return FieldKind.ARRAY_OF_SHORTS;
             case INT_ARRAY:
-                return FieldKind.INT_ARRAY;
+                return FieldKind.ARRAY_OF_INTS;
             case LONG_ARRAY:
-                return FieldKind.LONG_ARRAY;
+                return FieldKind.ARRAY_OF_LONGS;
             case FLOAT_ARRAY:
-                return FieldKind.FLOAT_ARRAY;
+                return FieldKind.ARRAY_OF_FLOATS;
             case DOUBLE_ARRAY:
-                return FieldKind.DOUBLE_ARRAY;
+                return FieldKind.ARRAY_OF_DOUBLES;
             case UTF_ARRAY:
-                return FieldKind.STRING_ARRAY;
+                return FieldKind.ARRAY_OF_STRINGS;
             case DECIMAL:
                 return FieldKind.DECIMAL;
             case DECIMAL_ARRAY:
-                return FieldKind.DECIMAL_ARRAY;
+                return FieldKind.ARRAY_OF_DECIMALS;
             case TIME:
                 return FieldKind.TIME;
             case TIME_ARRAY:
-                return FieldKind.TIME_ARRAY;
+                return FieldKind.ARRAY_OF_TIMES;
             case DATE:
                 return FieldKind.DATE;
             case DATE_ARRAY:
-                return FieldKind.DATE_ARRAY;
+                return FieldKind.ARRAY_OF_DATES;
             case TIMESTAMP:
                 return FieldKind.TIMESTAMP;
             case TIMESTAMP_ARRAY:
-                return FieldKind.TIMESTAMP_ARRAY;
+                return FieldKind.ARRAY_OF_TIMESTAMPS;
             case TIMESTAMP_WITH_TIMEZONE:
                 return FieldKind.TIMESTAMP_WITH_TIMEZONE;
             case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+                return FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
             default:
                 //This statement will never be called.
                 throw new IllegalStateException("There is no corresponding field kind for given field type : " + fieldType);

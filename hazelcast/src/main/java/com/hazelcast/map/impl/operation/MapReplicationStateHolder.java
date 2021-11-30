@@ -370,7 +370,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 IOUtil.writeData(out, dataKey);
                 Records.writeRecord(out, record, ss.toData(record.getValue()));
                 Records.writeExpiry(out, recordStore.getExpirySystem()
-                        .getExpiredMetadata(dataKey));
+                        .getExpiryMetadata(dataKey));
             } catch (IOException e) {
                 throw ExceptionUtil.rethrow(e);
             }

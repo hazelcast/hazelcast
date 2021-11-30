@@ -43,13 +43,18 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
 
     @Override
     public void beforeRun() throws Exception {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        ringbuffer.checkBlockableReadSequence(sequence);
+        RingbufferContainer ringbuffer = getRingBufferContainerOrNull();
+        if (ringbuffer != null) {
+            ringbuffer.checkBlockableReadSequence(sequence);
+        }
     }
 
     @Override
     public boolean shouldWait() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        RingbufferContainer ringbuffer = getRingBufferContainerOrNull();
+        if (ringbuffer == null) {
+            return true;
+        }
         if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
             //no need to wait, let the operation continue and fail in beforeRun
             return false;
@@ -66,8 +71,7 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        return getRingbufferWaitNotifyKey();
     }
 
     @Override

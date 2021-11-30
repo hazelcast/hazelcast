@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -44,6 +45,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +61,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
@@ -74,6 +82,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -180,6 +189,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
+     * Runs a streaming query and checks that for a hard-coded time it
+     * doesn't return any results.
+     */
+    public static void assertEmptyResultStream(String sql) {
+        Future<Boolean> future;
+        try (SqlResult result = instance().getSql().execute(sql)) {
+            future = spawn(() -> result.iterator().hasNext());
+            assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
+        }
+        assertTrueEventually(() -> assertTrue(future.isDone()));
+    }
+
+    /**
      * Execute a query and wait until it completes. Assert that the returned
      * rows contain the expected rows, in any order.
      *
@@ -194,15 +216,45 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Execute a query and wait until it completes. Assert that the returned
      * rows contain the expected rows, in any order.
      *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsAnyOrder(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
+        assertRowsAnyOrder(instance, sql, emptyList(), expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in any order.
+     *
      * @param sql          The query
      * @param arguments    The query arguments
      * @param expectedRows Expected rows
      */
     public static void assertRowsAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsAnyOrder(instance(), sql, arguments, expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in any order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsAnyOrder(
+            HazelcastInstance instance,
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows
+    ) {
         SqlStatement statement = new SqlStatement(sql);
         arguments.forEach(statement::addParameter);
 
-        SqlService sqlService = instance().getSql();
+        SqlService sqlService = instance.getSql();
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
@@ -356,6 +408,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
     }
 
+    /**
+     * Create an IMap mapping with given {@code name} that uses provided arbitrary key and value formats.
+     */
+    public static void createMapping(String name, String keyFormat, String valueFormat) {
+        createMapping(instance(), name, keyFormat, valueFormat);
+    }
+
+    public static void createMapping(HazelcastInstance instance, String name, String keyFormat, String valueFormat) {
+        String sql = "CREATE MAPPING " + name
+                + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + keyFormat + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + "'\n"
+                + ")";
+        try (SqlResult result = instance.getSql().execute(sql)) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
@@ -402,6 +473,37 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    public List<Row> rows(final int rowLength, final Object ...values) {
+        if ((values.length % rowLength) != 0) {
+            throw new HazelcastException("Number of row value args is not divisible by row length");
+        }
+
+        final List<Row> rowList = new ArrayList<>();
+        for (int i = 0; i < values.length; i += rowLength) {
+            Object[] rowValues = new Object[rowLength];
+            System.arraycopy(values, i, rowValues, 0, rowLength);
+            rowList.add(new Row(rowValues));
+        }
+
+        return rowList;
+    }
+
+    public static LocalTime time(long epochMillis) {
+        return timestampTz(epochMillis).toLocalTime();
+    }
+
+    public static LocalDate date(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDate();
+    }
+
+    public static LocalDateTime timestamp(long epochMillis) {
+        return timestampTz(epochMillis).toLocalDateTime();
+    }
+
+    public static OffsetDateTime timestampTz(long epochMillis) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
     }
 
     /**
