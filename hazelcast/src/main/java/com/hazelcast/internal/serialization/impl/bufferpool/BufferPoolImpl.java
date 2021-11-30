@@ -16,21 +16,18 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 
-import java.io.Closeable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-
 /**
  * Default {@link BufferPool} implementation.
- *
+ * <p>
  * This class is designed to that a subclass can be made. This is done for the Enterprise version.
  */
 public class BufferPoolImpl implements BufferPool {
@@ -63,7 +60,7 @@ public class BufferPoolImpl implements BufferPool {
 
         out.clear();
 
-        offerOrClose(outputQueue, out);
+        tryOffer(outputQueue, out);
     }
 
     @Override
@@ -84,12 +81,11 @@ public class BufferPoolImpl implements BufferPool {
 
         in.clear();
 
-        offerOrClose(inputQueue, in);
+        tryOffer(inputQueue, in);
     }
 
-    private static <C extends Closeable> void offerOrClose(Queue<C> queue, C item) {
+    private static <C> void tryOffer(Queue<C> queue, C item) {
         if (queue.size() == MAX_POOLED_ITEMS) {
-            closeResource(item);
             return;
         }
 

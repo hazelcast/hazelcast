@@ -54,7 +54,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 /**
  * A table function return type of which is NOT known upfront and is determined during validation phase.
  */
-public abstract class HazelcastDynamicTableFunction extends HazelcastTableFunction {
+public abstract class HazelcastDynamicTableFunction extends HazelcastTableSourceFunction {
 
     protected HazelcastDynamicTableFunction(
             String name,

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.impl.compact.DeserializedSchemaBoundGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
@@ -62,63 +63,30 @@ class CompactUpsertTarget implements UpsertTarget {
         switch (kind) {
             case STRING:
                 return value -> builder.setString(path, (String) value);
-            case BOOLEAN:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setBoolean(path, (Boolean) value);
-                };
-            case BYTE:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setByte(path, (Byte) value);
-                };
-            case SHORT:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setShort(path, (Short) value);
-                };
-            case INT:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setInt(path, (Integer) value);
-                };
-            case LONG:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setLong(path, (Long) value);
-                };
+            case NULLABLE_BOOLEAN:
+                return value -> builder.setNullableBoolean(path, (Boolean) value);
+            case NULLABLE_BYTE:
+                return value -> builder.setNullableByte(path, (Byte) value);
+            case NULLABLE_SHORT:
+                return value -> builder.setNullableShort(path, (Short) value);
+            case NULLABLE_INT:
+                return value -> builder.setNullableInt(path, (Integer) value);
+            case NULLABLE_LONG:
+                return value -> builder.setNullableLong(path, (Long) value);
             case DECIMAL:
                 return value -> builder.setDecimal(path, (BigDecimal) value);
-            case FLOAT:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setFloat(path, (Float) value);
-                };
-            case DOUBLE:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setDouble(path, (Double) value);
-                };
+            case NULLABLE_FLOAT:
+                return value -> builder.setNullableFloat(path, (Float) value);
+            case NULLABLE_DOUBLE:
+                return value -> builder.setNullableDouble(path, (Double) value);
             case TIME:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setTime(path, (LocalTime) value);
-                };
+                return value -> builder.setTime(path, (LocalTime) value);
             case DATE:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setDate(path, (LocalDate) value);
-                };
+                return value -> builder.setDate(path, (LocalDate) value);
             case TIMESTAMP:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setTimestamp(path, (LocalDateTime) value);
-                };
+                return value -> builder.setTimestamp(path, (LocalDateTime) value);
             case TIMESTAMP_WITH_TIMEZONE:
-                return value -> {
-                    ensureNotNull(value);
-                    builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
-                };
+                return value -> builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
             default:
                 throw QueryException.error(kind + " kind is not supported in SQL with Compact format!");
         }
@@ -126,7 +94,7 @@ class CompactUpsertTarget implements UpsertTarget {
 
     @Override
     public void init() {
-        this.builder = GenericRecordBuilder.compact(schema.getTypeName());
+        this.builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
     }
 
     @Override
@@ -134,11 +102,5 @@ class CompactUpsertTarget implements UpsertTarget {
         GenericRecord record = builder.build();
         builder = null;
         return record;
-    }
-
-    private static void ensureNotNull(Object value) {
-        if (value == null) {
-            throw QueryException.error("Cannot set NULL to a primitive field");
-        }
     }
 }

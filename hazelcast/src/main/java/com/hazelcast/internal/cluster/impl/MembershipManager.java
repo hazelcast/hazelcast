@@ -83,8 +83,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 /**
- * MembershipManager maintains member list and version, manages member update, suspicion and removal mechanisms.
- * Also initiates and manages mastership claim process.
+ * MembershipManager maintains member list and version, manages member update,
+ * suspicion and removal mechanisms. Also, initiates and manages mastership
+ * claim process.
  *
  * @since 3.9
  */
@@ -107,7 +108,7 @@ public class MembershipManager {
      * doesn't allow new members to join, such as FROZEN or PASSIVE.
      * <p>
      * Missing members are associated with either their {@code UUID} or their {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence is enabled or not.
      */
     private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
@@ -1011,7 +1012,7 @@ public class MembershipManager {
 
     /**
      * Returns whether member with given identity (either {@code UUID} or {@code Address}
-     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     * depending on Persistence is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member
@@ -1024,7 +1025,7 @@ public class MembershipManager {
 
     /**
      * Returns the missing member using either its {@code UUID} or its {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence feature is enabled or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member

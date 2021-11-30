@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -77,19 +78,17 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
         assertEquals(1, appender.events.size());
         LogEvent logEvent = appender.events.get(0);
         assertEquals(Level.DEBUG, logEvent.getLevel());
-        assertRecommendationContent(logEvent);
+        assertRecommendationContent(logEvent, !OsHelper.isWindows());
     }
 
     @Test
-    public void testSystemProperty() throws Exception {
-        sysPropSecurityBanner.setOrClearProperty("");
-        sysPropEmoji.setOrClearProperty("false");
-        TestAppender appender = configureTestAppender();
-        createHazelcastInstance();
-        assertEquals(1, appender.events.size());
-        LogEvent logEvent = appender.events.get(0);
-        assertEquals(Level.INFO, logEvent.getLevel());
-        assertRecommendationsWithoutEmo(logEvent);
+    public void testSystemPropertyWithoutEmojis() throws Exception {
+        testSystemPropertyInternal(false);
+    }
+
+    @Test
+    public void testTestWithEmojis() throws Exception {
+        testSystemPropertyInternal(true);
     }
 
     @Test
@@ -102,16 +101,23 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
         assertHintsToDisplayBanner(logEvent);
     }
 
-    private void assertRecommendationContent(LogEvent logEvent) {
-        String msg = logEvent.getMessage().getFormattedMessage();
-        assertTrue(msg.contains("⚠️ Use a custom cluster name"));
-        assertTrue(msg.contains("✅ Disable member multicast"));
+    private void testSystemPropertyInternal(boolean emojiEnabled) {
+        sysPropSecurityBanner.setOrClearProperty("");
+        sysPropEmoji.setOrClearProperty(Boolean.toString(emojiEnabled));
+        TestAppender appender = configureTestAppender();
+        createHazelcastInstance();
+        assertEquals(1, appender.events.size());
+        LogEvent logEvent = appender.events.get(0);
+        assertEquals(Level.INFO, logEvent.getLevel());
+        assertRecommendationContent(logEvent, emojiEnabled);
     }
 
-    private void assertRecommendationsWithoutEmo(LogEvent logEvent) {
+    private void assertRecommendationContent(LogEvent logEvent, boolean emojiExpected) {
         String msg = logEvent.getMessage().getFormattedMessage();
-        assertTrue(msg.contains("[ ] Use a custom cluster name"));
-        assertTrue(msg.contains("[X] Disable member multicast"));
+        String expectedMsg1 = emojiExpected ? "⚠️ Use a custom cluster name" : "[ ] Use a custom cluster name";
+        String expectedMsg2 = emojiExpected ? "✅ Disable member multicast" : "[X] Disable member multicast";
+        assertTrue(msg.contains(expectedMsg1));
+        assertTrue(msg.contains(expectedMsg2));
     }
 
     private void assertHintsToDisplayBanner(LogEvent logEvent) {

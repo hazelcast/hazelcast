@@ -21,14 +21,16 @@ import com.google.common.collect.Lists;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.validate.HazelcastResources;
 import com.hazelcast.jet.sql.impl.validate.literal.Literal;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
@@ -50,6 +52,9 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlJsonEmptyOrError;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonValueReturning;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -82,6 +87,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
 import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
@@ -176,8 +182,8 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RelDataType from = validator.getValidatedNodeType(operand);
         RelDataType to = validator.getValidatedNodeType(call);
 
-        QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
-        QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
+        QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from);
+        QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to);
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 
@@ -197,7 +203,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 // The operand of the outer cast is validated as a SMALLINT, however the operand, thanks to the
                 // simplification in RexBuilder.makeCast(), is converted to a literal [42:SMALLINT]. And LiteralUtils converts
                 // this operand to [42:TINYINT] - we have to use the literal's type instead of the validated operand type.
-                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastType(literal.getTypeName());
+                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName(literal.getTypeName());
                 toType.getConverter().convertToSelf(actualFromType.getConverter(), literal.getValue());
             } catch (Exception e) {
                 throw literalConversionException(validator, call, literal, toType, e);
@@ -232,6 +238,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                     return getRexBuilder().makeLiteral(convertedValue, to, false);
                 }
             }
+        }
+
+        if (literal != null && HazelcastTypeUtils.isJsonType(to)) {
+            return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
 
         // Delegate to Apache Calcite.
@@ -341,6 +351,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return null;
         }
 
+        if (((SqlCall) node).getOperator() instanceof HazelcastJsonValueFunction) {
+            return convertJsonValueCall((SqlCall) node, blackboard);
+        }
+
         if (callSet.add(node)) {
             try {
                 RelDataType type = validator.getValidatedNodeType(node);
@@ -365,6 +379,124 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         return null;
+    }
+
+    /**
+     * Converts JSON_VALUE calls with extended syntax, with RETURNING clause among other things.
+     * Because there is no RexNode for type reference in Calcite (see CAST implementation),
+     * the type has to be instead set as the type of the parent (JSON_VALUE's RexCall), which is
+     * then interpreted as the desired type of the expression.
+     *
+     * Supported syntax:
+     * JSON_VALUE(jsonArg, jsonPathArg [returning] [onEmpty|onError])
+     * returning: RETURNING dataType
+     * onEmpty: (DEFAULT value | NULL | ERROR) ON EMPTY
+     * onError: (DEFAULT value | NULL | ERROR) ON ERROR
+     */
+    private RexNode convertJsonValueCall(SqlCall call, Blackboard bb) {
+        RexNode target = bb.convertExpression(call.operand(0));
+        RexNode path = bb.convertExpression(call.operand(1));
+
+        SqlJsonValueEmptyOrErrorBehavior onError = SqlJsonValueEmptyOrErrorBehavior.NULL;
+        SqlJsonValueEmptyOrErrorBehavior onEmpty = SqlJsonValueEmptyOrErrorBehavior.NULL;
+
+        RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
+
+        RexNode defaultValueOnError = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+        RexNode defaultValueOnEmpty = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+
+        // Start at 3rd Arg
+        int tokenIndex = 2;
+
+        // RETURNING can only be placed at the beginning, never in the middle or the end of the list of tokens.
+        if (call.operandCount() > 2 && isJsonValueReturningClause(call.operand(tokenIndex))) {
+            returning = validator.getValidatedNodeType(call.operand(tokenIndex + 1));
+            tokenIndex += 2;
+        }
+
+        boolean onEmptyDefined = false;
+        boolean onErrorDefined = false;
+
+        while (tokenIndex < call.operandCount()) {
+            if (!(call.operand(tokenIndex) instanceof SqlLiteral)) {
+                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax");
+            }
+
+            final SqlJsonValueEmptyOrErrorBehavior behavior = (SqlJsonValueEmptyOrErrorBehavior)
+                    ((SqlLiteral) call.operand(tokenIndex)).getValue();
+
+            RexNode defaultExpr = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+
+            if (behavior == null) {
+                throw QueryException.error(SqlErrorCode.PARSING,
+                        "Failed to extract ON behavior for JSON_VALUE call");
+            }
+
+            switch (behavior) {
+                case DEFAULT:
+                    defaultExpr = bb.convertExpression(call.operand(tokenIndex + 1));
+                    tokenIndex += 2;
+                    break;
+                case NULL:
+                case ERROR:
+                    tokenIndex++;
+                    break;
+                default:
+                    // guard against possible unsupported updates to syntax, should never be thrown.
+                    throw QueryException.error(SqlErrorCode.PARSING,
+                            "Unsupported JSON_VALUE OnEmptyOrErrorBehavior");
+            }
+
+            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(tokenIndex))
+                    .getValue();
+            if (onTarget == null) {
+                throw QueryException.error(SqlErrorCode.PARSING,
+                        "Failed to extract ON-behavior target for JSON_VALUE call");
+            }
+
+            switch (onTarget) {
+                case EMPTY:
+                    if (onEmptyDefined) {
+                        throw QueryException.error(SqlErrorCode.PARSING,
+                                "Duplicate ON EMPTY clause in JSON_VALUE call");
+                    }
+                    if (behavior == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        defaultValueOnEmpty = defaultExpr;
+                    }
+                    onEmpty = behavior;
+                    onEmptyDefined = true;
+                    break;
+                case ERROR:
+                    if (onErrorDefined) {
+                        throw QueryException.error(SqlErrorCode.PARSING,
+                                "Duplicate ON ERROR clause in JSON_VALUE call");
+                    }
+                    if (behavior == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        defaultValueOnError = defaultExpr;
+                    }
+                    onError = behavior;
+                    onErrorDefined = true;
+                    break;
+                default:
+                    // guard against possible unsupported updates to syntax, should never be thrown.
+                    throw QueryException.error(SqlErrorCode.PARSING,
+                            "Unsupported JSON_VALUE EmptyOrErrorBehavior target");
+            }
+            tokenIndex++;
+        }
+
+        return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
+                target,
+                path,
+                defaultValueOnEmpty,
+                defaultValueOnError,
+                bb.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
+                bb.convertLiteral(onError.symbol(SqlParserPos.ZERO))
+        ));
+    }
+
+    private boolean isJsonValueReturningClause(SqlNode node) {
+        return node instanceof SqlLiteral && ((SqlLiteral) node).getValue() instanceof SqlJsonValueReturning;
     }
 
     private static List<RexNode> convertExpressionList(RexBuilder rexBuilder,

@@ -31,8 +31,8 @@ public interface ValidatorResource {
     @BaseMessage("{0} not supported")
     ExInst<SqlValidatorException> notSupported(String name);
 
-    @BaseMessage("Grouping/aggregations not supported for a streaming query")
-    ExInst<SqlValidatorException> streamingAggregationsNotSupported();
+    @BaseMessage("Unknown argument name ''{0}''")
+    ExInst<SqlValidatorException> unknownArgumentName(String name);
 
     @BaseMessage("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     ExInst<SqlValidatorException> joiningSubqueryNotSupported();
@@ -40,20 +40,26 @@ public interface ValidatorResource {
     @BaseMessage("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
     ExInst<SqlValidatorException> joiningValuesNotSupported();
 
-    @BaseMessage("UPDATE FROM SELECT not supported")
-    ExInst<SqlValidatorException> updateFromSelectNotSupported();
-
-    @BaseMessage("You must use CREATE JOB statement for a streaming DML query")
-    ExInst<SqlValidatorException> mustUseCreateJob();
-
-    @BaseMessage("Unknown argument name ''{0}''")
-    ExInst<SqlValidatorException> unknownArgumentName(String name);
+    @BaseMessage("Grouping/aggregations over non-windowed, non-ordered streaming source not supported")
+    ExInst<SqlValidatorException> streamingAggregationsOverNonOrderedSourceNotSupported();
 
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
 
     @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
     ExInst<SqlValidatorException> streamingSourceOnWrongSide();
+
+    @BaseMessage("Multiple ordering functions are not supported")
+    ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();
+
+    @BaseMessage("You must specify single ordering column")
+    ExInst<SqlValidatorException> mustUseSingleOrderingColumn();
+
+    @BaseMessage("UPDATE FROM SELECT not supported")
+    ExInst<SqlValidatorException> updateFromSelectNotSupported();
+
+    @BaseMessage("You must use CREATE JOB statement for a streaming DML query")
+    ExInst<SqlValidatorException> mustUseCreateJob();
 
     static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
         return originalMessage + " If you want to use the IMap named '" + identifier + "', execute this command first: "

@@ -103,11 +103,12 @@ public class ClusterJoinManager {
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
-     * Recently left member UUIDs: when a recently crashed member is joining with same UUID,
-     * typically it will have Hot Restart enabled (otherwise it will restart
-     * probably on the same address but definitely with a new random UUID).
-     * In order to support crashed members recovery with Hot Restart, partition
-     * table validation does not expect an identical partition table.
+     * Recently left member UUIDs: when a recently crashed member is joining
+     * with same UUID, typically it will have Persistence feature enabled
+     * (otherwise it will restart probably on the same address but definitely
+     * with a new random UUID). In order to support crashed members recovery
+     * with Persistence, partition table validation does not expect an
+     * identical partition table.
      *
      * Accessed by operation & cluster heartbeat threads
      */
@@ -634,7 +635,7 @@ public class ClusterJoinManager {
         if (masterAddress.equals(node.getThisAddress())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
-            // I already know that I will do a force-start so I will not allow target to join me
+            // I already know that I will do a force-start, so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }

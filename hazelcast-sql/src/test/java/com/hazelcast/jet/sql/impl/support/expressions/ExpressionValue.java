@@ -16,10 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.support.expressions;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -30,7 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
-public abstract class ExpressionValue implements Serializable {
+public abstract class ExpressionValue implements DataSerializable {
 
     private static final ConcurrentHashMap<String, Class<? extends ExpressionValue>> CLASS_CACHE = new ConcurrentHashMap<>();
 
@@ -110,7 +114,7 @@ public abstract class ExpressionValue implements Serializable {
 
     protected Object getField(String name) {
         try {
-            return getClass().getDeclaredField(name).get(this);
+            return getClass().getField(name).get(this);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -118,7 +122,7 @@ public abstract class ExpressionValue implements Serializable {
 
     protected void setField(String name, Object value) {
         try {
-            getClass().getDeclaredField(name).set(this, value);
+            getClass().getField(name).set(this, value);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -129,23 +133,36 @@ public abstract class ExpressionValue implements Serializable {
         return "[" + field1() + "]";
     }
 
-    public static class BooleanVal extends ExpressionValue implements Serializable { public Boolean field1; }
-    public static class ByteVal extends ExpressionValue implements Serializable { public Byte field1; }
-    public static class ShortVal extends ExpressionValue implements Serializable { public Short field1; }
-    public static class IntegerVal extends ExpressionValue implements Serializable { public Integer field1; }
-    public static class LongVal extends ExpressionValue implements Serializable { public Long field1; }
-    public static class BigDecimalVal extends ExpressionValue implements Serializable { public BigDecimal field1; }
-    public static class BigIntegerVal extends ExpressionValue implements Serializable { public BigInteger field1; }
-    public static class FloatVal extends ExpressionValue implements Serializable { public Float field1; }
-    public static class DoubleVal extends ExpressionValue implements Serializable { public Double field1; }
-    public static class StringVal extends ExpressionValue implements Serializable { public String field1; }
-    public static class CharacterVal extends ExpressionValue implements Serializable { public Character field1; }
-    public static class LocalDateVal extends ExpressionValue implements Serializable { public LocalDate field1; }
-    public static class LocalTimeVal extends ExpressionValue implements Serializable { public LocalTime field1; }
-    public static class LocalDateTimeVal extends ExpressionValue implements Serializable { public LocalDateTime field1; }
-    public static class OffsetDateTimeVal extends ExpressionValue implements Serializable { public OffsetDateTime field1; }
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(key);
+        out.writeObject(field1());
+    }
 
-    public static class ObjectVal extends ExpressionValue implements Serializable {
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        key = in.readInt();
+        field1(in.readObject());
+    }
+
+    public static class BooleanVal extends ExpressionValue { public Boolean field1; }
+    public static class ByteVal extends ExpressionValue { public Byte field1; }
+    public static class ShortVal extends ExpressionValue { public Short field1; }
+    public static class IntegerVal extends ExpressionValue { public Integer field1; }
+    public static class LongVal extends ExpressionValue { public Long field1; }
+    public static class BigDecimalVal extends ExpressionValue { public BigDecimal field1; }
+    public static class BigIntegerVal extends ExpressionValue { public BigInteger field1; }
+    public static class FloatVal extends ExpressionValue { public Float field1; }
+    public static class DoubleVal extends ExpressionValue { public Double field1; }
+    public static class StringVal extends ExpressionValue { public String field1; }
+    public static class CharacterVal extends ExpressionValue { public Character field1; }
+    public static class LocalDateVal extends ExpressionValue { public LocalDate field1; }
+    public static class LocalTimeVal extends ExpressionValue { public LocalTime field1; }
+    public static class LocalDateTimeVal extends ExpressionValue { public LocalDateTime field1; }
+    public static class OffsetDateTimeVal extends ExpressionValue { public OffsetDateTime field1; }
+    public static class HazelcastJsonValueVal extends ExpressionValue { public HazelcastJsonValue field1; }
+
+    public static class ObjectVal extends ExpressionValue {
         public Object field1;
 
         @Override

@@ -138,6 +138,9 @@
         },
         "jet": {
           "$ref": "#/definitions/Jet"
+        },
+        "device": {
+          "$ref": "#/definitions/Device"
         }
       }
     },
@@ -1463,6 +1466,46 @@
                 }
               }
             }
+          },
+          "tiered-store": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "True if Tiered-Store is enabled, false otherwise."
+              },
+              "memory-tier": {
+                "type": "object",
+                "description": "Memory tier.",
+                "additionalProperties": false,
+                "properties": {
+                  "capacity": {
+                    "type": "string",
+                    "pattern": "^[1-9]([0-9]*) (B|KB|MB|GB)$",
+                    "default": "256 MB",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB). For instance, capacity=\"1024 MB\" is valid, whereas capacity=\"2^10 mb\" is not."
+                  }
+                }
+              },
+              "disk-tier": {
+                "type": "object",
+                "description": "Disk tier.",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "True to enable using disk as the second memory tier, false otherwise."
+                  },
+                  "device-name": {
+                    "type": "string",
+                    "description": "Name of the device for a given disk tier."
+                  }
+                },
+                "required": ["enabled", "device-name"]
+              }
+            },
+            "required": ["enabled"]
           }
         }
       }
@@ -1645,6 +1688,10 @@
                 "type": "string",
                 "description": "Fully qualified class name."
               },
+              "factory-class-name": {
+                "type": "string",
+                "description": "Fully qualified name of the RingbufferStoreFactory implementation class."
+              },
               "properties": {
                 "type": "object"
               },
@@ -1652,10 +1699,7 @@
                 "type": "boolean",
                 "default": true
               }
-            },
-            "required": [
-              "class-name"
-            ]
+            }
           },
           "split-brain-protection-ref": {
             "type": "string",
@@ -3635,6 +3679,38 @@
           "minimum": 0,
           "default": 0,
           "description": "Time (in seconds) to wait before triggering automatic partition rebalancing after a member leaves the cluster unexpectedly. Unexpectedly in this context means that a member leaves the cluster by means other than graceful shutdown: programmatic termination (eg LifecycleService.terminate()), a process crash or network partition. Default is 0, which means rebalancing is triggered immediately. Setting this to a higher value will allow some time for members that are gone to rejoin the cluster. The benefit is that partition rebalancing in this case will be avoided, saving the burden of migrating partition data over the network. Do not use this option if your cluster also stores in-memory data. This option stops the cluster from migrating in-memory data. As a result any data that is not persisted will be lost if the member restarts within the configured delay, including backups. While members are gone, operations on partitions for which the owner is missing may fail immediately or will be retried until the member rejoins or operation timeout is exceeded. Notice that this delay only applies when cluster members leave the cluster; when the cluster is being scaled up and members are being added, partition rebalancing will be triggered immediately (subject to limitations imposed by the current cluster state)."
+        }
+      }
+    },
+    "Device": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "base-dir": {
+            "type": "string",
+            "default": "tiered-store",
+            "description": "Device base directory that will be used for tiered-store."
+          },
+          "block-size": {
+            "type": "integer",
+            "minimum": 512,
+            "default": 4096,
+            "description": "Device block/sector size in bytes. The default is 4096. The minimum is 512."
+          },
+          "read-io-thread-count": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 4,
+            "description": "Read IO thread count. The default is 4."
+          },
+          "write-io-thread-count": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 4,
+            "description": "Write IO thread count. The default is 4."
+          }
         }
       }
     },

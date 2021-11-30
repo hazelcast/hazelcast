@@ -1,0 +1,132 @@
+{
+  "instance": {
+    "hazelcast": {
+      "device": {
+        "some-device":{
+          "base-dir": 1111,
+          "block-size": 511,
+          "read-io-thread-count": 0,
+          "write-io-thread-count": 0
+        }
+      },
+      "map": {
+        "my-map-0": {
+          "tiered-store": {}
+        },
+        "my-map-1": {
+          "tiered-store": {
+            "enabled": true,
+            "disk-tier": {}
+          }
+        },
+        "my-map-2": {
+          "tiered-store": {
+            "enabled": true,
+            "memory-tier": {
+              "capacity": -1
+            }
+          }
+        },
+        "my-map-3": {
+          "tiered-store": {
+            "enabled": true,
+            "memory-tier": {
+              "capacity": "01 KB"
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast",
+    "pointerToViolation": "#/hazelcast",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Device/additionalProperties",
+        "pointerToViolation": "#/hazelcast/device/some-device",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Device/additionalProperties/properties/base-dir",
+            "pointerToViolation": "#/hazelcast/device/some-device/base-dir",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/Device/additionalProperties/properties/block-size",
+            "pointerToViolation": "#/hazelcast/device/some-device/block-size",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "511 is not greater or equal to 512"
+          },
+          {
+            "schemaLocation": "#/definitions/Device/additionalProperties/properties/read-io-thread-count",
+            "pointerToViolation": "#/hazelcast/device/some-device/read-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          },
+          {
+            "schemaLocation": "#/definitions/Device/additionalProperties/properties/write-io-thread-count",
+            "pointerToViolation": "#/hazelcast/device/some-device/write-io-thread-count",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "0 is not greater or equal to 1"
+          }
+        ],
+        "message": "4 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Map",
+        "pointerToViolation": "#/hazelcast/map",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store",
+            "pointerToViolation": "#/hazelcast/map/my-map-0/tiered-store",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [enabled] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
+            "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
+                "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [device-name] not found"
+              },
+              {
+                "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
+                "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [enabled] not found"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
+            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
+            "pointerToViolation": "#/hazelcast/map/my-map-3/tiered-store/memory-tier/capacity",
+            "causingExceptions": [],
+            "keyword": "pattern",
+            "message": "string [01 KB] does not match pattern ^[1-9]([0-9]*) (B|KB|MB|GB)$"
+          }
+        ],
+        "message": "5 schema violations found"
+      }
+    ],
+    "message": "9 schema violations found"
+  }
+}

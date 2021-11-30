@@ -102,6 +102,7 @@
         <jackson.version>2.12.1</jackson.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
+        <json-path.version>2.4.0</json-path.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
@@ -144,6 +145,7 @@
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.21.0</archunit.version>
+        <errorprone.version>2.10.0</errorprone.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -509,6 +511,50 @@
                     <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>get-hz-3</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
+                        </configuration>
+                    </execution>
+                </executions>
+                <inherited>false</inherited>
+            </plugin>
+            <plugin>
+                <groupId>com.hazelcast.maven</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aggregated-attribution</id>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>per-jar-attribution</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -532,6 +578,24 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc.plugin.version}</version>
+                    <configuration>
+                        <maxmemory>1024</maxmemory>
+                        <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
+                        <doclint>-missing</doclint>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
                 </plugin>
@@ -549,6 +613,30 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
                     <version>${codehause.license.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.hazelcast.maven</groupId>
+                    <artifactId>attribution-maven-plugin</artifactId>
+                    <version>1.0.1</version>
+                    <configuration>
+                        <exclusionPatterns>
+                        <!--
+                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                          are actually not the copyright lines. Let's exclude them here.
+
+                          Example:
+                          com.fasterxml.jackson.core:jackson-databind:2.12.1
+                             (c) per-property override (from annotation on specific property or
+                         -->
+                            <exclusionPattern>^Copyright Laws of the United States.</exclusionPattern>
+                            <exclusionPattern>per-property override</exclusionPattern>
+                            <exclusionPattern>^copyright notice</exclusionPattern>
+                            <exclusionPattern>FAILED_PRECONDITION</exclusionPattern>
+                            <exclusionPattern>The ASF licenses this file to you under the Apache License</exclusionPattern>
+                            <exclusionPattern>Substitute for l, l</exclusionPattern>
+                            <exclusionPattern>inside edge crossings that are between</exclusionPattern>
+                        </exclusionPatterns>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -955,20 +1043,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <maxmemory>1024</maxmemory>
-                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>-missing</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
 
                     <plugin>
@@ -997,22 +1071,30 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>-missing</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>release-devel</id>
+            <properties>
+                <javadoc>true</javadoc>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <repository>
+                    <id>devel-repository</id>
+                    <url>https://hazelcast.jfrog.io/artifactory/devel</url>
+                </repository>
+            </distributionManagement>
         </profile>
 
         <profile>
@@ -1219,10 +1301,11 @@
                                 <exclude>**/jsr/**.java</exclude>
                                 <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
                                 <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
-                                <!-- wrapper ClassRecordingSerializationService -->
-                                <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
+                                <!-- sampling serialization service -->
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/jet/**/*.java</exclude>
+                                <exclude>**/*Jet*.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
@@ -1628,6 +1711,11 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${errorprone.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

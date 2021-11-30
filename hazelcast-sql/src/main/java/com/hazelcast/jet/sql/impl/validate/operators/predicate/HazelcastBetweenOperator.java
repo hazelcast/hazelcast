@@ -108,7 +108,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
                         callBinding.getOperandType(2)
                 ));
 
-        QueryDataType winnerQueryDataType = toHazelcastType(winningType.getSqlTypeName());
+        QueryDataType winnerQueryDataType = toHazelcastType(winningType);
 
         // Set more flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions.
         if (winnerQueryDataType.getTypeFamily().isNumeric()) {

@@ -20,6 +20,9 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
+
+import java.util.UUID;
+
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Packet;
 
@@ -70,11 +73,17 @@ public class NodeMulticastListener implements MulticastListener {
             node.multicastService.send(response);
         } else if (joinMessage.getAddress().equals(masterAddress)) {
             MemberImpl master = node.getClusterService().getMember(masterAddress);
-            if (master != null && !master.getUuid().equals(joinMessage.getUuid())) {
-                String message = "New join request has been received from current master. Suspecting " + masterAddress;
-                logger.warning(message);
-                // I just make a local suspicion. Probably other nodes will eventually suspect as well.
-                clusterService.suspectMember(master, message, false);
+            if (master != null) {
+                UUID uuidFromMaster = master.getUuid();
+                UUID uuidInJoinRequest = joinMessage.getUuid();
+                if (!uuidFromMaster.equals(uuidInJoinRequest)) {
+                    String message = "New join request has been received from current master address. "
+                            + "The UUID in the join request (" + uuidInJoinRequest + ") is different from the "
+                            + "known master one (" + uuidFromMaster + "). Suspecting the master address: " + masterAddress;
+                    logger.warning(message);
+                    // I just make a local suspicion. Probably other nodes will eventually suspect as well.
+                    clusterService.suspectMember(master, message, false);
+                }
             }
         }
     }
@@ -124,7 +133,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         ConfigCheck theirConfig = joinMessage.getConfigCheck();
-        return ourConfig.isSameGroup(theirConfig);
+        return ourConfig.hasSameClusterName(theirConfig);
     }
 
     private boolean isMessageToSelf(JoinMessage joinMessage) {

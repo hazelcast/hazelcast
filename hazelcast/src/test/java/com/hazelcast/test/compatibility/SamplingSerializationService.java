@@ -24,12 +24,14 @@ import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -59,6 +61,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     private static final String DUMMY_CLASS_PREFIX = "Dummy";
     private static final String TEST_CLASS_SUFFIX = "Test";
     private static final String TEST_PACKAGE_INFIX = ".test";
+    private static final String EXAMPLE_PACKAGE_PREFIX = "example.";
 
     protected final InternalSerializationService delegate;
 
@@ -192,6 +195,16 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        return delegate.extractSchemaFromObject(object);
+    }
+
+    @Override
     public boolean isCompactSerializable(Object object) {
         return delegate.isCompactSerializable(object);
     }
@@ -280,7 +293,7 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     public static boolean isTestClass(String className) {
         if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
-                || className.contains(DUMMY_CLASS_PREFIX)) {
+                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX)) {
             return true;
         }
         return false;

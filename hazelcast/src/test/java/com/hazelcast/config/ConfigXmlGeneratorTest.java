@@ -401,6 +401,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDeviceConfig() {
+        DeviceConfig deviceConfig0 = new DeviceConfig()
+                .setName("null-device")
+                .setBaseDir(new File("null-dir").getAbsoluteFile())
+                .setBlockSize(512)
+                .setReadIOThreadCount(100)
+                .setWriteIOThreadCount(100);
+
+        DeviceConfig deviceConfig1 = new DeviceConfig()
+                .setName("local-device")
+                .setBaseDir(new File("local-dir").getAbsoluteFile())
+                .setBlockSize(1024)
+                .setReadIOThreadCount(200)
+                .setWriteIOThreadCount(200);
+
+        Config config = new Config()
+                .addDeviceConfig(deviceConfig0)
+                .addDeviceConfig(deviceConfig1);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig0, xmlConfig.getDeviceConfig("null-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig1, xmlConfig.getDeviceConfig("local-device"));
+    }
+
+    @Test
     public void testHotRestartConfig_equalsToPersistenceConfig() {
         Config cfg = new Config();
 
@@ -1608,7 +1634,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setCoalesce(true)
                 .addIndexConfig(indexConfig);
 
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("carMap")
                 .setEvictionConfig(evictionConfig1)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -1650,7 +1676,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithoutMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithoutMerkleTreeConfig");
         Config config = new Config()
                 .addMapConfig(expectedConfig);
@@ -1662,7 +1688,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithEnabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
         Config config = new Config()
@@ -1675,7 +1701,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithDisabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
         Config config = new Config()
@@ -1699,7 +1725,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(evictionConfig())
                 .setSerializeKeys(true);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -1718,7 +1744,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setName("nearCache");
         expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -2379,6 +2405,24 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
+    }
+
+    private static MapConfig newMapConfig() {
+        return new MapConfig().setTieredStoreConfig(tieredStoreConfig());
+    }
+
+    private static TieredStoreConfig tieredStoreConfig() {
+        MemoryTierConfig memTierConfig = new MemoryTierConfig()
+                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
+
+        DiskTierConfig diskTierConfig = new DiskTierConfig()
+                .setEnabled(true)
+                .setDeviceName("devicexz04");
+
+        return new TieredStoreConfig()
+                .setEnabled(true)
+                .setMemoryTierConfig(memTierConfig)
+                .setDiskTierConfig(diskTierConfig);
     }
 
     private static WanReplicationRef wanReplicationRef() {

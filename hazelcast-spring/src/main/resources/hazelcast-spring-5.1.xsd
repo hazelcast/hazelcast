@@ -663,6 +663,7 @@
                                     <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="partition-strategy" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" type="xs:string" default="BINARY">
@@ -1377,6 +1378,7 @@
                         <xs:element name="sql" type="sql" minOccurs="0"/>
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="device" type="device" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -1493,7 +1495,7 @@
 
     <xs:complexType name="serialization-factory">
         <xs:attributeGroup ref="class-or-bean-name"/>
-        <xs:attribute name="factory-id" type="xs:string" use="required"/>
+        <xs:attribute name="factory-id" type="parameterized-integer" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="global-serializer">
@@ -2346,12 +2348,12 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="timeout-milliseconds" type="xs:integer" minOccurs="0" default="1000">
+            <xs:element name="timeout-milliseconds" type="parameterized-integer" minOccurs="0" default="1000">
                 <xs:annotation>
                     <xs:documentation>Timeout in Milliseconds before declaring a failed ping</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="ttl" type="xs:integer" minOccurs="0" default="255">
+            <xs:element name="ttl" type="parameterized-integer" minOccurs="0" default="255">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of times the IP Datagram (ping) can be forwarded, in most cases
@@ -2360,12 +2362,12 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="parallel-mode" type="xs:boolean" minOccurs="0" default="true">
+            <xs:element name="parallel-mode" type="parameterized-boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="fail-fast-on-startup" type="xs:boolean" minOccurs="0" default="true">
+            <xs:element name="fail-fast-on-startup" type="parameterized-boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
                         Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
@@ -2373,20 +2375,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="max-attempts" type="xs:integer" minOccurs="0" default="2">
+            <xs:element name="max-attempts" type="parameterized-integer" minOccurs="0" default="2">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of consecutive failed attempts before declaring a member suspect
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="interval-milliseconds" type="xs:integer" minOccurs="0" default="1000">
+            <xs:element name="interval-milliseconds" type="parameterized-integer" minOccurs="0" default="1000">
                 <xs:annotation>
                     <xs:documentation>Time in milliseconds between each ICMP ping</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" default="false">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>Enables ICMP Pings to detect and suspect dead members</xs:documentation>
             </xs:annotation>
@@ -3174,7 +3176,7 @@
 
     <xs:simpleType name="parameterizedValueType">
         <xs:restriction base="xs:string">
-            <xs:pattern value="[$#]\{([^=^:]+)\}"/>
+            <xs:pattern value="[$#]\{([^=^:]+)(:.*)?\}"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -3225,6 +3227,10 @@
 
     <xs:simpleType name="parameterized-non-negative-integer">
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="parameterized-integer">
+        <xs:union memberTypes="xs:integer parameterizedValueType"/>
     </xs:simpleType>
 
     <xs:simpleType name="cp-group-size">
@@ -3670,7 +3676,7 @@
     <xs:complexType name="client-metrics">
         <xs:all>
             <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
-            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+            <xs:element name="collection-frequency-seconds" type="parameterized-unsigned-int" default="5" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the metrics collection frequency in seconds.
@@ -3681,7 +3687,7 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Master-switch for the metrics system. Controls whether
@@ -3876,7 +3882,7 @@
     </xs:simpleType>
 
     <xs:complexType name="eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="10000"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>
@@ -3884,7 +3890,7 @@
     </xs:complexType>
 
     <xs:complexType name="eviction-map">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0"/>
+        <xs:attribute name="size" type="parameterized-non-negative-integer" default="0"/>
         <xs:attribute name="max-size-policy" type="max-size-policy-map" default="PER_NODE"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
         <xs:attribute name="comparator-class-name" type="xs:string"/>
@@ -3894,8 +3900,8 @@
     <xs:complexType name="preloader">
         <xs:attribute name="enabled" type="parameterized-boolean" default="false"/>
         <xs:attribute name="directory" type="xs:string" default=""/>
-        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600"/>
-        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600"/>
+        <xs:attribute name="store-initial-delay-seconds" type="parameterized-positive-integer" default="600"/>
+        <xs:attribute name="store-interval-seconds" type="parameterized-positive-integer" default="600"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
@@ -3963,6 +3969,10 @@
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
+        <xs:union memberTypes="memory-unit-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="memory-unit-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
@@ -4006,7 +4016,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
+        <xs:attribute name="enabled" default="false" type="parameterized-boolean">
             <xs:annotation>
                 <xs:documentation>
                     Sets if using persistent memory as Hazelcast native memory is enabled.
@@ -4024,6 +4034,10 @@
     </xs:complexType>
 
     <xs:simpleType name="persistent-memory-mode">
+            <xs:union memberTypes="persistent-memory-mode-enum parameterizedValueType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="persistent-memory-mode-enum">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="MOUNTED">
                 <xs:annotation>
@@ -4042,6 +4056,7 @@
         </xs:restriction>
     </xs:simpleType>
 
+
     <xs:complexType name="persistent-memory-directory">
         <xs:annotation>
             <xs:documentation>
@@ -4056,7 +4071,7 @@
         </xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="numa-node" type="xs:int" default="-1">
+                <xs:attribute name="numa-node" type="parameterized-integer" default="-1">
                     <xs:annotation>
                         <xs:documentation>
                             The NUMA node that the persistent memory mounted
@@ -4619,6 +4634,143 @@
                     when the cluster is being scaled up and members are being added, partition
                     rebalancing will be triggered immediately (subject to limitations imposed
                     by the current cluster state).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="device">
+        <xs:annotation>
+            <xs:documentation>
+                Device configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tiered-store">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device base directory that will be used for tiered-store.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block-size" minOccurs="0" default="4096">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device block/sector size in bytes. The default is 4096. The minimum is 512.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="512"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="read-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Read IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="write-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Write IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the device.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="memory-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the memory tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="capacity" minOccurs="0" default="256 MB">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                        The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB).
+                        For instance, capacity="1024 MB" is valid, whereas capacity="2^10 mb" is not.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="[1-9]([0-9]*) (B|KB|MB|GB)"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="disk-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the disk tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable using disk as the second memory tier, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="device-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the device for a given disk tier.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="tiered-store">
+        <xs:annotation>
+            <xs:documentation>
+                Tiered-Store enables to stack up multiple (currently two) stores in tiers.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="memory-tier" type="memory-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="disk-tier" type="disk-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        Disk tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True if Tiered-Store is enabled, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -5401,7 +5553,7 @@
     </xs:complexType>
 
     <xs:complexType name="metrics-jmx">
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to

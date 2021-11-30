@@ -296,7 +296,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 .addParameter("remoteAddress", socketChannel.getRemoteAddress())
                 .log();
             if (serverContext.isSocketInterceptorEnabled(qualifier)) {
-                serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
+                serverContext.submitAsync(() -> newConnection0(connectionManager, channel));
             } else {
                 newConnection0(connectionManager, channel);
             }

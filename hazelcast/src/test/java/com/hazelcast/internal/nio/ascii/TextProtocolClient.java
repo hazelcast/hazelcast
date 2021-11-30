@@ -36,6 +36,7 @@ import com.hazelcast.internal.util.StringUtil;
  * <p>
  * <code><pre>
  * TextProtocolClient client = new TextProtocolClient(address, port);
+ * client.connect();
  * try {
  *   client.sendData("GET /hazelcast/health/node-state HTTP/1.0\r\n\r\n");
  *   Thread.sleep(1000L);
