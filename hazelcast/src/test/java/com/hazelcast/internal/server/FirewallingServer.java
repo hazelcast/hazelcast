@@ -269,6 +269,12 @@ public class FirewallingServer
             return delegate.getConnections();
         }
 
+
+        @Override
+        public ServerConnection get(Address address, int streamId) {
+            return wrap(delegate.get(address, streamId));
+        }
+
         @Override
         public ServerConnection get(UUID uuid, int streamId) {
             return wrap(delegate.get(uuid, streamId));

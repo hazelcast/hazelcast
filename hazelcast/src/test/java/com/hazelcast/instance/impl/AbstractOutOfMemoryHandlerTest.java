@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSupport {
@@ -92,6 +93,11 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
+            public ServerConnection get(UUID uuid, int streamId) {
+                return null;
+            }
+
+            @Override
             public ServerConnection getOrConnect(Address address, int streamId) {
                 return null;
             }
@@ -102,7 +108,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
+            public boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int streamId) {
                 return false;
             }
 

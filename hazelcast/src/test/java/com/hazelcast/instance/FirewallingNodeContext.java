@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.Server;
@@ -27,14 +28,14 @@ import java.util.Collections;
 
 /**
  * Creates a {@link DefaultNodeContext} with wrapping its ConnectionManager
- * with a {@link FirewallingConnectionManager}.
+ * with a {@link FirewallingServer.FirewallingServerConnectionManager}.
  */
 public class FirewallingNodeContext extends DefaultNodeContext {
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry) {
-        Server server = super.createServer(node, registry);
-        return new FirewallingServer(server, Collections.<Address>emptySet());
+    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+        Server server = super.createServer(node, registry, addressRegistry);
+        return new FirewallingServer(server, Collections.emptySet());
     }
 
 }

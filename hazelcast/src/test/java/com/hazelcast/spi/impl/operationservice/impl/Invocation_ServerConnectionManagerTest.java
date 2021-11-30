@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -97,12 +98,17 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
+        public boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int streamId) {
             return false;
         }
 
         @Override
         public ServerConnection get(Address address, int streamId) {
+            return null;
+        }
+
+        @Override
+        public ServerConnection get(UUID uuid, int streamId) {
             return null;
         }
 

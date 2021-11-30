@@ -179,9 +179,9 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void removeEndpoint(UUID endpoint) {
+    public void removeEndpoint(Address endpointAddress) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
-                () -> node.clusterService.suspectMemberIfNotConnected(endpoint));
+                () -> node.clusterService.suspectAddressIfNotConnected(endpointAddress));
     }
 
     @Override

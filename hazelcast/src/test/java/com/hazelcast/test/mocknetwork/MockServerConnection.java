@@ -52,6 +52,7 @@ public class MockServerConnection implements ServerConnection {
 
     private final Address remoteAddress;
 
+    private final UUID localUuid;
     private final UUID remoteUuid;
 
     private final ServerConnectionManager connectionManager;
@@ -61,16 +62,18 @@ public class MockServerConnection implements ServerConnection {
     public MockServerConnection(
             Address localAddress,
             Address remoteAddress,
+            UUID localUuid,
             UUID remoteUuid,
             NodeEngineImpl remoteNodeEngine
     ) {
-        this(null, localAddress, remoteAddress, remoteUuid, remoteNodeEngine, null);
+        this(null, localAddress, remoteAddress, localUuid, remoteUuid, remoteNodeEngine, null);
     }
 
     public MockServerConnection(
             ConnectionLifecycleListener lifecycleListener,
             Address localAddress,
             Address remoteAddress,
+            UUID localUuid,
             UUID remoteUuid,
             NodeEngineImpl remoteNodeEngine,
             ServerConnectionManager localConnectionManager
@@ -78,6 +81,7 @@ public class MockServerConnection implements ServerConnection {
         this.lifecycleListener = lifecycleListener;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
+        this.localUuid = localUuid;
         this.remoteUuid = remoteUuid;
         this.remoteNodeEngine = remoteNodeEngine;
         this.connectionManager = localConnectionManager;
@@ -215,7 +219,6 @@ public class MockServerConnection implements ServerConnection {
 
     @Override
     public void setRemoteUuid(UUID remoteUuid) {
-
     }
 
     @Override
@@ -226,8 +229,8 @@ public class MockServerConnection implements ServerConnection {
     @Override
     public String toString() {
         return "MockConnection{"
-                + "localEndpoint=" + localAddress
-                + ", remoteEndpoint=" + remoteAddress
+                + "localEndpoint=[address=" + localAddress + ", uuid=" + localUuid + "]"
+                + ", remoteEndpoint=[address=" + remoteAddress + ", uuid=" + remoteUuid + "]"
                 + ", alive=" + isAlive() + '}';
     }
 }

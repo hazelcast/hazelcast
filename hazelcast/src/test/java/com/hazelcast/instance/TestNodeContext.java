@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.UuidUtil;
@@ -95,7 +96,7 @@ public class TestNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry) {
+    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
         return server;
     }
 
@@ -108,7 +109,7 @@ public class TestNodeContext implements NodeContext {
         }
 
         @Override
-        public void pickAddress() throws Exception {
+        public void pickAddress() {
         }
 
         @Override

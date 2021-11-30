@@ -93,6 +93,25 @@ public interface ServerConnectionManager
         return connectionCount(null);
     }
 
+    /**
+     * Gets the connection for a given address. If the connection does not exist, it returns null.
+     *
+     * @param address the address of remote side of the connection
+     * @return the found Connection, or none if one doesn't exist
+     */
+    default ServerConnection get(Address address) {
+        return get(address, 0);
+    }
+
+    /**
+     * Gets the connection for a given address and streamId. If the connection
+     * does not exist, it returns null.
+     *
+     * @param address the address of remote side of the connection
+     * @param streamId the stream id
+     * @return the found Connection, or none if one doesn't exist
+     */
+    ServerConnection get(Address address, int streamId);
 
     /**
      * Gets the connection for a given address. If the connection does not exist, it returns null.
@@ -222,14 +241,14 @@ public interface ServerConnectionManager
     /**
      * blocks the caller thread until a connection is established (or failed)
      * or the time runs out. Callers must ensure a connection is established after this method returns {@code true}.
-     * @param address
-     * @param millis
-     * @param streamId
+     * @param address the address of the remote side of connection that  for
+     * @param timeoutMillis the maximum time to block on
+     * @param streamId the stream id for the connection
      * @return true if connected successfully, false if timed out
      * @throws java.lang.InterruptedException
      */
-    default boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(millis));
+    default boolean blockOnConnect(Address address, long timeoutMillis, int streamId) throws InterruptedException {
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(timeoutMillis));
         return false;
     }
 }

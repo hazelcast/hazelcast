@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,15 +34,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class DroppingServerConnection implements ServerConnection {
 
     private final Address remoteAddress;
+    private final UUID remoteUuid;
     private final long timestamp = Clock.currentTimeMillis();
     private final ServerConnectionManager connectionManager;
     private final ConnectionLifecycleListener lifecycleListener;
     private final AtomicBoolean isAlive = new AtomicBoolean(true);
     private final ConcurrentMap attributeMap = new ConcurrentHashMap();
 
-    DroppingServerConnection(ConnectionLifecycleListener lifecycleListener, Address remoteAddress,
-                             ServerConnectionManager connectionManager) {
+    DroppingServerConnection(
+            ConnectionLifecycleListener lifecycleListener,
+            Address remoteAddress,
+            UUID remoteUuid,
+            ServerConnectionManager connectionManager
+    ) {
         this.remoteAddress = remoteAddress;
+        this.remoteUuid = remoteUuid;
         this.connectionManager = connectionManager;
         this.lifecycleListener = lifecycleListener;
     }
@@ -120,6 +127,15 @@ class DroppingServerConnection implements ServerConnection {
 
     @Override
     public void setRemoteAddress(Address remoteAddress) {
+    }
+
+    @Override
+    public void setRemoteUuid(UUID remoteUuid) {
+    }
+
+    @Override
+    public UUID getRemoteUuid() {
+        return remoteUuid;
     }
 
     @Override

@@ -96,7 +96,12 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection get(UUID memberUuid, int stream) {
+        public ServerConnection get(Address address, int streamId) {
+            return get(server.nodeRegistry.uuidOf(address), streamId);
+        }
+
+        @Override
+        public MockServerConnection get(UUID memberUuid, int streamId) {
             return server.connectionMap.get(memberUuid);
         }
 
@@ -109,15 +114,9 @@ class MockServer implements Server {
             if (!server.live) {
                 return null;
             }
-
             Node targetNode = server.nodeRegistry.getNode(address);
             if (targetNode == null || isTargetLeft(targetNode)) {
-                if (targetNode != null) {
-                    UUID targetUuid = targetNode.getThisUuid();
-                    if (targetUuid != null) {
-                        suspectAddress(targetUuid);
-                    }
-                }
+                suspectAddress(address);
                 return null;
             }
 
@@ -128,10 +127,10 @@ class MockServer implements Server {
         public void accept(Packet packet) {
         }
 
-        private void suspectAddress(UUID memberUuid) {
+        private void suspectAddress(Address endpointAddress) {
             // see ServerContext#removeEndpoint()
             server.node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR,
-                    () -> server.node.getClusterService().suspectMemberIfNotConnected(memberUuid));
+                    () -> server.node.getClusterService().suspectAddressIfNotConnected(endpointAddress));
         }
 
         public static boolean isTargetLeft(Node targetNode) {
@@ -150,18 +149,32 @@ class MockServer implements Server {
             UUID localMemberUuid = node.getThisUuid();
             UUID remoteMemberUuid = targetNode.getThisUuid();
 
-            MockServerConnection thisConnection = new MockServerConnection(lifecycleListener, remoteAddress, localAddress,
-                    localMemberUuid, node.getNodeEngine(), targetNode.getServer().getConnectionManager(EndpointQualifier.MEMBER));
+            MockServerConnection thisConnection = new MockServerConnection(
+                    lifecycleListener,
+                    remoteAddress,
+                    localAddress,
+                    remoteMemberUuid,
+                    localMemberUuid,
+                    node.getNodeEngine(),
+                    targetNode.getServer().getConnectionManager(EndpointQualifier.MEMBER)
+            );
 
-            MockServerConnection remoteConnection = new MockServerConnection(lifecycleListener, localAddress, remoteAddress,
-                    remoteMemberUuid, targetNode.getNodeEngine(), node.getServer().getConnectionManager(EndpointQualifier.MEMBER));
+            MockServerConnection remoteConnection = new MockServerConnection(
+                    lifecycleListener,
+                    localAddress,
+                    remoteAddress,
+                    localMemberUuid,
+                    remoteMemberUuid,
+                    targetNode.getNodeEngine(),
+                    node.getServer().getConnectionManager(EndpointQualifier.MEMBER)
+            );
 
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
 
             if (!remoteConnection.isAlive()) {
                 // targetNode is not alive anymore.
-                suspectAddress(remoteMemberUuid);
+                suspectAddress(remoteAddress);
                 return null;
             }
 
@@ -172,7 +185,7 @@ class MockServer implements Server {
             if (!remoteConnection.isAlive()) {
                 // If connection is not alive after inserting it into connection map,
                 // that means remote node is being stopping during connection creation.
-                suspectAddress(remoteMemberUuid);
+                suspectAddress(remoteAddress);
             }
             return remoteConnection;
         }
@@ -245,6 +258,13 @@ class MockServer implements Server {
          * Retries sending packet maximum 5 times until connection to target becomes available.
          */
         @Override
+        public boolean transmit(Packet packet, Address targetAddress, int streamId) {
+            return transmit(packet, server.nodeRegistry.uuidOf(targetAddress), streamId);
+        }
+
+        /**
+         * Retries sending packet maximum 5 times until connection to target becomes available.
+         */
         public boolean transmit(Packet packet, UUID targetUuid, int streamId) {
             return send(packet, targetUuid, null);
         }
@@ -261,7 +281,7 @@ class MockServer implements Server {
 
             int retries = sendTask.retries.get();
             if (retries < RETRY_NUMBER && server.serverContext.isNodeActive()) {
-                getOrConnect(target, true);
+                getOrConnect(server.nodeRegistry.addressOf(targetUuid), true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 try {
                     server.scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
@@ -270,7 +290,7 @@ class MockServer implements Server {
                         throw e;
                     }
                     if (server.logger.isFinestEnabled()) {
-                        server.logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                        server.logger.finest("Packet send task is rejected. Packet cannot be sent to " + targetUuid);
                     }
                 }
                 return true;

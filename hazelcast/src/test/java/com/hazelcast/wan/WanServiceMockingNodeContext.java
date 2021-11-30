@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.server.Server;
 
@@ -53,7 +54,7 @@ public class WanServiceMockingNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry) {
-        return this.nodeContextDelegate.createServer(node, serverSocketRegistry);
+    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry, LocalAddressRegistry addressRegistry) {
+        return this.nodeContextDelegate.createServer(node, serverSocketRegistry, addressRegistry);
     }
 }

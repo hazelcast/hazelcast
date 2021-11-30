@@ -20,8 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
-import java.util.UUID;
-
 import static java.lang.System.currentTimeMillis;
 
 class TcpServerConnectionErrorHandler {
@@ -29,16 +27,14 @@ class TcpServerConnectionErrorHandler {
     private final ILogger logger;
     private final ServerContext serverContext;
     private final Address endpointAddress;
-    private final LocalAddressRegistry addressRegistry;
     private final long minInterval;
     private final int maxFaults;
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endpointAddress, LocalAddressRegistry addressRegistry) {
+    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endpointAddress) {
         this.endpointAddress = endpointAddress;
         this.serverContext = serverContext;
-        this.addressRegistry = addressRegistry;
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
         this.logger = serverContext.getLoggingService().getLogger(getClass());
@@ -53,10 +49,7 @@ class TcpServerConnectionErrorHandler {
             if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endpointAddress + getCauseDescription(cause);
                 logger.warning(removeEndpointMessage);
-                UUID endpointUuid = addressRegistry.uuidOf(endpointAddress);
-                if (endpointUuid != null) {
-                    serverContext.removeEndpoint(endpointUuid);
-                }
+                serverContext.removeEndpoint(endpointAddress);
             }
             lastFaultTime = now;
         }

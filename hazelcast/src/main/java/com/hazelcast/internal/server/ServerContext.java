@@ -89,7 +89,7 @@ public interface ServerContext {
 
     TextCommandService getTextCommandService();
 
-    void removeEndpoint(UUID endpoint);
+    void removeEndpoint(Address endpointAddress);
 
     void onSuccessfulConnection(Address address);
 

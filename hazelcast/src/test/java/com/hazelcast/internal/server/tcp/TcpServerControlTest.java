@@ -132,6 +132,7 @@ public class TcpServerControlTest {
     // mocks
     private Channel channel;
     private TcpServerConnectionManager connectionManager;
+    private LocalAddressRegistry addressRegistry;
 
     @Parameters
     public static List<Object> parameters() {
@@ -164,10 +165,10 @@ public class TcpServerControlTest {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfig());
         serializationService = getSerializationService(hz);
         Node node = getNode(hz);
-        connectionManager = TcpServerConnectionManager.class.cast(
-                node.getServer().getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier)));
+        connectionManager = (TcpServerConnectionManager) node.getServer()
+                .getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier));
         tcpServerControl = getFieldValueReflectively(connectionManager, "serverControl");
-
+        addressRegistry = node.getLocalAddressRegistry();
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
         when(socket.getRemoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
@@ -194,9 +195,10 @@ public class TcpServerControlTest {
         TcpServerConnectionManager.Plane[] planes = connectionManager.planes;
         try {
             for (Address address : expectedAddresses) {
+                UUID memberUuid = addressRegistry.uuidOf(address);
                 boolean found = false;
                 for (TcpServerConnectionManager.Plane plane : planes) {
-                    if (plane.getConnection((address)) != null) {
+                    if (plane.getConnection(memberUuid) != null) {
                         found = true;
                         break;
                     }

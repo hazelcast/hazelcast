@@ -397,7 +397,7 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getThisUuid() {
         return null;
     }
 }

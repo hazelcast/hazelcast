@@ -196,19 +196,19 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.suspectMember((MemberImpl) suspectedMember, reason, destroyConnection);
     }
 
-    public void suspectMemberIfNotConnected(UUID memberUuid) {
+    public void suspectAddressIfNotConnected(Address address) {
         lock.lock();
         try {
-            MemberImpl member = getMember(memberUuid);
+            MemberImpl member = getMember(address);
             if (member == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Cannot suspect for uuid=" + memberUuid + ", since it's not a member.");
+                    logger.fine("Cannot suspect " + address + ", since it's not a member.");
                 }
 
                 return;
             }
 
-            Connection conn = node.getServer().getConnectionManager(MEMBER).get(memberUuid);
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);

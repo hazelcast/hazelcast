@@ -374,12 +374,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     // TODO [ufuk]: use this in the first connections
     @Override
-    public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
+    public boolean blockOnConnect(Address address, long timeoutMillis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         try {
             Future<Void> future = plane.getConnectionInProgress(address);
             if (future != null) {
-                future.get(millis, TimeUnit.MILLISECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
                 return future.isDone();
             } else {
                 // connection-in-progress has come and gone,

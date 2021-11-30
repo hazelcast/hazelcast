@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.Server;
@@ -63,7 +64,7 @@ public class StaticMemberNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry) {
-        return delegate.createServer(node, registry);
+    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+        return delegate.createServer(node, registry, addressRegistry);
     }
 }

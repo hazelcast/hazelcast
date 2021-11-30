@@ -101,8 +101,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         this.server = tcpServer;
         this.errorHandlerConstructor = endpoint -> new TcpServerConnectionErrorHandler(
                 tcpServer.getContext(),
-                endpoint,
-                addressRegistry
+                endpoint
         );
         this.serverContext = tcpServer.getContext();
         this.endpointConfig = endpointConfig;

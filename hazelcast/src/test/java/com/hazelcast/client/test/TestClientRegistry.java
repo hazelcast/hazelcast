@@ -30,6 +30,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -40,6 +41,7 @@ import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -111,19 +113,29 @@ class TestClientRegistry {
         }
 
         @Override
-        protected TcpClientConnection createSocketConnection(Address address) {
+        protected TcpClientConnection createSocketConnection(Address remoteAddress) {
             checkClientActive();
             try {
-                HazelcastInstance instance = nodeRegistry.getInstance(address);
+                HazelcastInstance instance = nodeRegistry.getInstance(remoteAddress);
+                UUID remoteUuid = nodeRegistry.uuidOf(remoteAddress);
                 if (instance == null) {
-                    throw new IOException("Can not connect to " + address + ": instance does not exist");
+                    throw new IOException("Can not connect to " + remoteAddress + ": instance does not exist");
                 }
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                LockPair lockPair = getLockPair(address);
+                UUID localUuid = UuidUtil.newUnsecureUUID();
+                LockPair lockPair = getLockPair(remoteAddress);
 
-                MockedTcpClientConnection connection = new MockedTcpClientConnection(client, connectionIdGen.incrementAndGet(),
-                        getNodeEngineImpl(instance), address, localAddress, lockPair);
-                LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
+                MockedTcpClientConnection connection = new MockedTcpClientConnection(
+                        client,
+                        connectionIdGen.incrementAndGet(),
+                        getNodeEngineImpl(instance),
+                        remoteAddress,
+                        localAddress,
+                        remoteUuid,
+                        localUuid,
+                        lockPair
+                );
+                LOGGER.info("Created connection to endpoint: " + remoteAddress + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
                 throw rethrow(e);
@@ -187,15 +199,29 @@ class TestClientRegistry {
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
 
-        MockedTcpClientConnection(HazelcastClientInstanceImpl client,
-                                  int connectionId, NodeEngineImpl serverNodeEngine, Address address, Address localAddress,
-                                  LockPair lockPair) {
+        MockedTcpClientConnection(
+                HazelcastClientInstanceImpl client,
+                int connectionId,
+                NodeEngineImpl serverNodeEngine,
+                Address remoteAddress,
+                Address localAddress,
+                UUID remoteUuid,
+                UUID localUuid,
+                LockPair lockPair
+        ) {
             super(client, connectionId);
-            this.remoteAddress = address;
+            this.remoteAddress = remoteAddress;
             this.localAddress = localAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
-            this.serverConnection = new MockedServerConnection(connectionId, remoteAddress,
-                    localAddress, serverNodeEngine, this);
+            this.serverConnection = new MockedServerConnection(
+                    connectionId,
+                    remoteAddress,
+                    localAddress,
+                    remoteUuid,
+                    localUuid,
+                    serverNodeEngine,
+                    this
+            );
             this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                     ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
         }
@@ -329,10 +355,16 @@ class TestClientRegistry {
         private volatile long lastReadTimeMillis;
         private volatile long lastWriteTimeMillis;
 
-        MockedServerConnection(int connectionId, Address localEndpoint,
-                               Address remoteEndpoint, NodeEngineImpl nodeEngine,
-                               MockedTcpClientConnection responseConnection) {
-            super(localEndpoint, remoteEndpoint, nodeEngine);
+        MockedServerConnection(
+                int connectionId,
+                Address localEndpointAddress,
+                Address remoteEndpointAddress,
+                UUID localEndpointUuid,
+                UUID remoteEndpointUuid,
+                NodeEngineImpl nodeEngine,
+                MockedTcpClientConnection responseConnection
+        ) {
+            super(localEndpointAddress, remoteEndpointAddress, localEndpointUuid, remoteEndpointUuid, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
             lastReadTimeMillis = System.currentTimeMillis();
