@@ -55,48 +55,6 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
     }
 
-//    @Override
-//    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-//        double rowCount = mq.getRowCount(this);
-//
-//        // Joins can be flipped, and for many algorithms, both versions are viable
-//        // and have the same cost. To make the results stable between versions of
-//        // the planner, make one of the versions slightly more expensive.
-//        switch (joinType) {
-//            case SEMI:
-//            case ANTI:
-//                // SEMI and ANTI join cannot be flipped
-//                break;
-//            case RIGHT:
-//                rowCount = RelMdUtil.addEpsilon(rowCount);
-//                break;
-//            default:
-//                if (RelNodes.COMPARATOR.compare(left, right) > 0) {
-//                    rowCount = RelMdUtil.addEpsilon(rowCount);
-//                }
-//        }
-//
-//        // Cheaper if the smaller number of rows is coming from the LHS.
-//        // Model this by adding L log L to the cost.
-//        final double rightRowCount = right.estimateRowCount(mq);
-//        final double leftRowCount = left.estimateRowCount(mq);
-//        if (Double.isInfinite(leftRowCount)) {
-//            rowCount = leftRowCount;
-//        } else {
-//            rowCount += Util.nLogN(leftRowCount);
-//        }
-//        if (Double.isInfinite(rightRowCount)) {
-//            rowCount = rightRowCount;
-//        } else {
-//            rowCount += rightRowCount;
-//        }
-//        if (isSemiJoin()) {
-//            return planner.getCostFactory().makeCost(rowCount, 0, 0).multiplyBy(.01d);
-//        } else {
-//            return planner.getCostFactory().makeCost(rowCount, 0, 0);
-//        }
-//    }
-
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onHashJoin(this);

@@ -28,7 +28,6 @@ final class ProjectPhysicalRule extends ConverterRule {
 
     /** Default configuration. */
     private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .as(Config.class)
             .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
 
     @SuppressWarnings("checkstyle:DeclarationOrder")

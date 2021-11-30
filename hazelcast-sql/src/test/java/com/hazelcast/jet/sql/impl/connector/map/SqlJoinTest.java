@@ -41,8 +41,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// TODO [viliam] test IS DISTINCT FROM in the join condition
-
 @RunWith(Enclosed.class)
 public class SqlJoinTest {
 
