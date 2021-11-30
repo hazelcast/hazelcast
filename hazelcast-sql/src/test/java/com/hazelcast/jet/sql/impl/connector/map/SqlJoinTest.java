@@ -428,6 +428,18 @@ public class SqlJoinTest {
         }
 
         @Test
+        public void test_multipleJoinsWithSelectStar() {
+            createMapping("m1", int.class, int.class);
+            createMapping("m2", int.class, int.class);
+            createMapping("m3", int.class, int.class);
+
+            assertRowsOrdered("select * " +
+                    "from m1 " +
+                    "join m2 on m1.__key=m2.__key " +
+                    "join m3 on m2.__key=m3.__key", rows(1));
+        }
+
+        @Test
         public void test_innerJoinPartOfTheCompositeKey() {
             String leftName = randomName();
             TestBatchSqlConnector.create(
