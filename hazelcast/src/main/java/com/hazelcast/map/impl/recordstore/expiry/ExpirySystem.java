@@ -226,7 +226,7 @@ public class ExpirySystem {
         }
 
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return;
         }
 
@@ -253,7 +253,7 @@ public class ExpirySystem {
     }
 
     private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return ExpiryReason.NOT_EXPIRED;
         }
 
@@ -280,7 +280,7 @@ public class ExpirySystem {
     }
 
     @Nonnull
-    public final ExpiryMetadata getExpiredMetadata(Data key) {
+    public final ExpiryMetadata getExpiryMetadata(Data key) {
         ExpiryMetadata expiryMetadata = getOrCreateExpireTimeByKeyMap(false).get(key);
         return expiryMetadata != null ? expiryMetadata : ExpiryMetadata.NULL;
     }
@@ -297,8 +297,8 @@ public class ExpirySystem {
         // 2. Do scanning and evict expired keys.
         int scannedCount = 0;
         int expiredCount = 0;
+        long scanLoopStartNanos = System.nanoTime();
         try {
-            long scanLoopStartNanos = System.nanoTime();
             do {
                 scannedCount += findExpiredKeys(now, backup);
                 expiredCount += evictExpiredKeys(backup);
@@ -313,16 +313,19 @@ public class ExpirySystem {
         tryToSendBackupExpiryOp();
 
         if (logger.isFinestEnabled()) {
-            logProgress(maxScannableCount, scannedCount, expiredCount);
+            logProgress(maxScannableCount, scannedCount, expiredCount, scanLoopStartNanos);
         }
     }
 
-    private void logProgress(int maxScannableCount, int scannedCount, int expiredCount) {
+
+    private void logProgress(int maxScannableCount, int scannedCount,
+                             int expiredCount, long scanLoopStartNanos) {
         logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
-                        + "remainingKeyCountToExpire: %d, maxScannableKeyCount: %d, "
-                        + "scannedKeyCount: %d, expiredKeyCount: %d"
+                        + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, "
+                        + "remainedCount: %d, scanTookNanos: %d"
                 , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
-                , expireTimeByKey.size(), maxScannableCount, scannedCount, expiredCount));
+                , maxScannableCount, scannedCount, expiredCount, expireTimeByKey.size(),
+                (System.nanoTime() - scanLoopStartNanos)));
     }
 
     private int findMaxScannableCount(int percentage) {

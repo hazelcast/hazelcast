@@ -253,6 +253,17 @@
 
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </queue>
+
+    <!--
+        Configuration for a device, which a tiered-store can reference and use for its disk-tier.
+    -->
+    <device name="default">
+        <base-dir>tiered-store</base-dir>
+        <block-size>4096</block-size>
+        <read-io-thread-count>16</read-io-thread-count>
+        <write-io-thread-count>4</write-io-thread-count>
+    </device>
+
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
@@ -339,6 +350,25 @@
             eviction policies work regardless of this setting.
         -->
         <per-entry-stats-enabled>false</per-entry-stats-enabled>
+
+        <!--
+            Tiered Store configuration. By default, it is disabled.
+        -->
+        <tiered-store enabled="false">
+            <memory-tier>
+                <!--
+                    The amount of memory to be reserved for the memory-tier of the tiered-store instance
+                    of this map.
+                -->
+                <capacity>256 MB</capacity>
+            </memory-tier>
+
+            <!--
+                Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
+                of the tiered-store instance of this map.
+            -->
+            <disk-tier enabled="false" device-name="default"/>
+        </tiered-store>
 
     </map>
 

@@ -70,7 +70,7 @@ public abstract class BasePutOperation
     }
 
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
-        ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         return new PutBackupOperation(name, dataKey, record, dataValue, metadata);
     }
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.core.HazelcastJsonValue;
+
 /**
  * Converter for {@link java.lang.String} type.
  */
@@ -35,5 +37,10 @@ public final class StringConverter extends AbstractStringConverter {
     @Override
     protected String cast(Object val) {
         return (String) val;
+    }
+
+    @Override
+    public HazelcastJsonValue asJson(final Object val) {
+        return new HazelcastJsonValue(cast(val));
     }
 }

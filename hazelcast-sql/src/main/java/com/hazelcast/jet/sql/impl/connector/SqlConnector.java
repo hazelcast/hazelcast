@@ -16,14 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
@@ -232,9 +235,10 @@ public interface SqlConnector {
      * Then the projection will be {@code {1}} and the predicate will be {@code
      * {2}=10}.
      *
-     * @param table      the table object
-     * @param predicate  SQL expression to filter the rows
-     * @param projection the list of field names to return
+     * @param table                   the table object
+     * @param predicate               SQL expression to filter the rows
+     * @param projection              the list of field names to return
+     * @param eventTimePolicyProvider {@link EventTimePolicy}
      * @return The DAG Vertex handling the reading
      */
     @Nonnull
@@ -242,7 +246,8 @@ public interface SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
     }

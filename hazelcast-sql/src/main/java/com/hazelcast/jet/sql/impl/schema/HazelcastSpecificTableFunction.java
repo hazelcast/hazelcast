@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * A table function return type of which is known upfront.
  */
-public abstract class HazelcastSpecificTableFunction extends HazelcastTableFunction {
+public abstract class HazelcastSpecificTableFunction extends HazelcastTableSourceFunction {
 
     protected HazelcastSpecificTableFunction(
             String name,

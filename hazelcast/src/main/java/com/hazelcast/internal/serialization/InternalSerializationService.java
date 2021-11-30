@@ -21,11 +21,13 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
@@ -100,6 +102,22 @@ public interface InternalSerializationService extends SerializationService, Disp
      * @throws IOException
      */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+
+    /**
+     * @param data to extract the schema from
+     * @return schema of the given Compact Data
+     * @throws IOException
+     * @throws IllegalArgumentException if given data is not in the Compact format
+     */
+    Schema extractSchemaFromData(@Nonnull Data data) throws IOException;
+
+    /**
+     * @param object to extract the schema from
+     * @return schema of the given Compact Data
+     * @throws IllegalArgumentException if given object is not compact serializable
+     *                                  see {@link #isCompactSerializable(Object)}
+     */
+    Schema extractSchemaFromObject(@Nonnull Object object);
 
     /**
      * Returns {@code true} if the {@code object} is compact serializable.

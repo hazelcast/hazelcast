@@ -43,6 +43,10 @@ public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implem
         super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, null);
     }
 
+    protected HazelcastSpecialOperator(String name, SqlKind kind) {
+        super(name, kind);
+    }
+
     @Override
     public final boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         HazelcastCallBinding bindingOverride = prepareBinding(callBinding);

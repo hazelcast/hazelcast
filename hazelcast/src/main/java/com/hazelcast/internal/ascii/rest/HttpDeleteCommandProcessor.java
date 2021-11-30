@@ -19,6 +19,9 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.util.StringUtil;
 
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
+import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
+
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
     public HttpDeleteCommandProcessor(TextCommandService textCommandService) {
@@ -46,13 +49,16 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
     }
 
     private void handleMap(HttpDeleteCommand command, String uri) {
+        command.getExecutionDetails().setObjectType(MAP);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
+            command.getExecutionDetails().setObjectName(mapName);
             command.send200();
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+            command.getExecutionDetails().setObjectName(mapName);
             String key = uri.substring(indexEnd + 1);
             key = StringUtil.stripTrailingSlash(key);
             textCommandService.delete(mapName, key);
@@ -64,7 +70,9 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         // Poll an item from the default queue in 3 seconds
         // http://127.0.0.1:5701/hazelcast/rest/queues/default/3
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
+        command.getExecutionDetails().setObjectType(QUEUE);
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+        command.getExecutionDetails().setObjectName(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
         int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
         Object value = textCommandService.poll(queueName, seconds);

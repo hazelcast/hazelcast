@@ -157,14 +157,12 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        CompactSerializableRegistration registration = getOrCreateRegistration(o);
         Class<?> aClass = o.getClass();
+        CompactSerializableRegistration registration = getOrCreateRegistration(o);
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
-            SchemaWriter writer = new SchemaWriter(registration.getTypeName());
-            registration.getSerializer().write(writer, o);
-            schema = writer.build();
+            schema = buildSchema(registration, o);
             putToSchemaService(includeSchemaOnBinary, schema);
             classToSchemaMap.put(aClass, schema);
         }
@@ -322,5 +320,29 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             classToRegistrationMap.put(clazz, registration);
             typeNameToRegistrationMap.put(typeName, registration);
         }
+    }
+
+    public Schema extractSchema(BufferObjectDataInput objectDataInput) throws IOException {
+        return getOrReadSchema(objectDataInput, false);
+    }
+
+    public Schema extractSchema(Object o) {
+        Class<?> aClass = o.getClass();
+
+        Schema schema = classToSchemaMap.get(aClass);
+        if (schema == null) {
+            CompactSerializableRegistration registration = getOrCreateRegistration(o);
+            schema = buildSchema(registration, o);
+            schemaService.putLocal(schema);
+            classToSchemaMap.put(aClass, schema);
+            return schema;
+        }
+        return schema;
+    }
+
+    private static Schema buildSchema(CompactSerializableRegistration registration, Object o) {
+        SchemaWriter writer = new SchemaWriter(registration.getTypeName());
+        registration.getSerializer().write(writer, o);
+        return writer.build();
     }
 }

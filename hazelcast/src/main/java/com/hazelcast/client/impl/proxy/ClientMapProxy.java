@@ -85,6 +85,7 @@ import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
@@ -114,6 +115,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -207,6 +209,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private ClientQueryCacheContext queryCacheContext;
+    private boolean useDefaultReplaceAllOperation;
 
     public ClientMapProxy(String serviceName, String name, ClientContext context) {
         super(serviceName, name, context);
@@ -2191,4 +2194,42 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
+    @Override
+    public void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
+        checkNotNull(function, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        replaceAllInternal(function);
+    }
+
+    /**
+     * Orchestrator method that invokes all the paritition in parallel to replace each entry's
+     * value with the result of invoking the given function on that entry
+     *
+     * @param function  remappingfunction
+     */
+    protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
+        if (SerializationUtil.isClassStaticAndSerializable(function) && !useDefaultReplaceAllOperation) {
+            try {
+                int partitionCount = getContext().getPartitionService().getPartitionCount();
+                List<Future<ClientMessage>> futures = new ArrayList<>(partitionCount);
+                Data functionAsData = toData(function);
+                for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                    ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
+                    futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+                }
+                for (Future<ClientMessage> future : futures) {
+                    try {
+                        future.get();
+                    } catch (Exception e) {
+                        throw rethrow(e);
+                    }
+                }
+            } catch (UnsupportedOperationException e) {
+                //handle if the server version is less than client version
+                IMap.super.replaceAll(function);
+                useDefaultReplaceAllOperation = true;
+            }
+        } else {
+            IMap.super.replaceAll(function);
+        }
+    }
 }

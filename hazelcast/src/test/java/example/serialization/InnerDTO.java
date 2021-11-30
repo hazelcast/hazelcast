@@ -25,8 +25,8 @@ import java.util.Arrays;
 
 public class InnerDTO {
 
+    public boolean[] bools;
     public byte[] bb;
-    public char[] cc;
     public short[] ss;
     public int[] ii;
     public long[] ll;
@@ -38,16 +38,31 @@ public class InnerDTO {
     public LocalDate[] localDates;
     public LocalDateTime[] localDateTimes;
     public OffsetDateTime[] offsetDateTimes;
+    public Boolean[] nullableBools;
+    public Byte[] nullableBytes;
+    public Short[] nullableShorts;
+    public Integer[] nullableIntegers;
+    public Long[] nullableLongs;
+    public Float[] nullableFloats;
+    public Double[] nullableDoubles;
+    public LocalTime[] nullableLocalTimes;
+    public LocalDate[] nullableLocalDates;
+    public LocalDateTime[] nullableLocalDateTimes;
+    public OffsetDateTime[] nullableOffsetDateTimes;
 
     InnerDTO() {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public InnerDTO(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedDTO[] nn,
+    public InnerDTO(boolean[] bools, byte[] bb, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedDTO[] nn,
                     BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
-                    LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes) {
+                    LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes,
+                    Boolean[] nullableBools, Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers,
+                    Long[] nullableLongs, Float[] nullableFloats, Double[] nullableDoubles, LocalTime[] nullableLocalTimes,
+                    LocalDate[] nullableLocalDates, LocalDateTime[] nullableLocalDateTimes,
+                    OffsetDateTime[] nullableOffsetDateTimes) {
+        this.bools = bools;
         this.bb = bb;
-        this.cc = cc;
         this.ss = ss;
         this.ii = ii;
         this.ll = ll;
@@ -59,6 +74,17 @@ public class InnerDTO {
         this.localDates = localDates;
         this.localDateTimes = localDateTimes;
         this.offsetDateTimes = offsetDateTimes;
+        this.nullableBools = nullableBools;
+        this.nullableBytes = nullableBytes;
+        this.nullableShorts = nullableShorts;
+        this.nullableIntegers = nullableIntegers;
+        this.nullableLongs = nullableLongs;
+        this.nullableFloats = nullableFloats;
+        this.nullableDoubles = nullableDoubles;
+        this.nullableLocalTimes = nullableLocalTimes;
+        this.nullableLocalDates = nullableLocalDates;
+        this.nullableLocalDateTimes = nullableLocalDateTimes;
+        this.nullableOffsetDateTimes = nullableOffsetDateTimes;
     }
 
     @Override
@@ -71,7 +97,7 @@ public class InnerDTO {
         }
         InnerDTO that = (InnerDTO) o;
         return Arrays.equals(bb, that.bb)
-                && Arrays.equals(cc, that.cc)
+                && Arrays.equals(bools, that.bools)
                 && Arrays.equals(ss, that.ss)
                 && Arrays.equals(ii, that.ii)
                 && Arrays.equals(ll, that.ll)
@@ -82,13 +108,23 @@ public class InnerDTO {
                 && Arrays.equals(localTimes, that.localTimes)
                 && Arrays.equals(localDates, that.localDates)
                 && Arrays.equals(localDateTimes, that.localDateTimes)
-                && Arrays.equals(offsetDateTimes, that.offsetDateTimes);
+                && Arrays.equals(offsetDateTimes, that.offsetDateTimes)
+                && Arrays.equals(nullableBools, that.nullableBools)
+                && Arrays.equals(nullableShorts, that.nullableShorts)
+                && Arrays.equals(nullableIntegers, that.nullableIntegers)
+                && Arrays.equals(nullableLongs, that.nullableLongs)
+                && Arrays.equals(nullableFloats, that.nullableFloats)
+                && Arrays.equals(nullableDoubles, that.nullableDoubles)
+                && Arrays.equals(nullableLocalTimes, that.nullableLocalTimes)
+                && Arrays.equals(nullableLocalDates, that.nullableLocalDates)
+                && Arrays.equals(nullableLocalDateTimes, that.nullableLocalDateTimes)
+                && Arrays.equals(nullableOffsetDateTimes, that.nullableOffsetDateTimes);
     }
 
     @Override
     public int hashCode() {
         int result = Arrays.hashCode(bb);
-        result = 31 * result + Arrays.hashCode(cc);
+        result = 31 * result + Arrays.hashCode(bools);
         result = 31 * result + Arrays.hashCode(ss);
         result = 31 * result + Arrays.hashCode(ii);
         result = 31 * result + Arrays.hashCode(ll);
@@ -100,26 +136,47 @@ public class InnerDTO {
         result = 31 * result + Arrays.hashCode(localDates);
         result = 31 * result + Arrays.hashCode(localDateTimes);
         result = 31 * result + Arrays.hashCode(offsetDateTimes);
+        result = 31 * result + Arrays.hashCode(nullableBools);
+        result = 31 * result + Arrays.hashCode(nullableBytes);
+        result = 31 * result + Arrays.hashCode(nullableShorts);
+        result = 31 * result + Arrays.hashCode(nullableIntegers);
+        result = 31 * result + Arrays.hashCode(nullableLongs);
+        result = 31 * result + Arrays.hashCode(nullableFloats);
+        result = 31 * result + Arrays.hashCode(nullableDoubles);
+        result = 31 * result + Arrays.hashCode(nullableLocalTimes);
+        result = 31 * result + Arrays.hashCode(nullableLocalDates);
+        result = 31 * result + Arrays.hashCode(nullableLocalDateTimes);
+        result = 31 * result + Arrays.hashCode(nullableOffsetDateTimes);
         return result;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("InnerPortable{");
-        sb.append("bb=").append(Arrays.toString(bb));
-        sb.append(", cc=").append(Arrays.toString(cc));
-        sb.append(", ss=").append(Arrays.toString(ss));
-        sb.append(", ii=").append(Arrays.toString(ii));
-        sb.append(", ll=").append(Arrays.toString(ll));
-        sb.append(", ff=").append(Arrays.toString(ff));
-        sb.append(", dd=").append(Arrays.toString(dd));
-        sb.append(", nn=").append(Arrays.toString(nn));
-        sb.append(", bigDecimals=").append(Arrays.toString(bigDecimals));
-        sb.append(", localTimes=").append(Arrays.toString(localTimes));
-        sb.append(", localDates=").append(Arrays.toString(localDates));
-        sb.append(", localDateTimes=").append(Arrays.toString(localDateTimes));
-        sb.append(", offsetDateTimes=").append(Arrays.toString(offsetDateTimes));
-        sb.append('}');
-        return sb.toString();
+        return "InnerDTO{"
+                + "+ bools=" + Arrays.toString(bools)
+                + "+ bb=" + Arrays.toString(bb)
+                + ", + ss=" + Arrays.toString(ss)
+                + ", + ii=" + Arrays.toString(ii)
+                + ", + ll=" + Arrays.toString(ll)
+                + ", + ff=" + Arrays.toString(ff)
+                + ", + dd=" + Arrays.toString(dd)
+                + ", + nn=" + Arrays.toString(nn)
+                + ", + bigDecimals=" + Arrays.toString(bigDecimals)
+                + ", + localTimes=" + Arrays.toString(localTimes)
+                + ", + localDates=" + Arrays.toString(localDates)
+                + ", + localDateTimes=" + Arrays.toString(localDateTimes)
+                + ", + offsetDateTimes=" + Arrays.toString(offsetDateTimes)
+                + ", + nullableBools=" + Arrays.toString(nullableBools)
+                + ", + nullableBytes=" + Arrays.toString(nullableBytes)
+                + ", + nullableShorts=" + Arrays.toString(nullableShorts)
+                + ", + nullableIntegers=" + Arrays.toString(nullableIntegers)
+                + ", + nullableLongs=" + Arrays.toString(nullableLongs)
+                + ", + nullableFloats=" + Arrays.toString(nullableFloats)
+                + ", + nullableDoubles=" + Arrays.toString(nullableDoubles)
+                + ", + nullableLocalTimes=" + Arrays.toString(nullableLocalTimes)
+                + ", + nullableLocalDates=" + Arrays.toString(nullableLocalDates)
+                + ", + nullableLocalDateTimes=" + Arrays.toString(nullableLocalDateTimes)
+                + ", + nullableOffsetDateTimes=" + Arrays.toString(nullableOffsetDateTimes)
+                + '}';
     }
 }

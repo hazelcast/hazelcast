@@ -1003,9 +1003,9 @@ public class SqlAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_aggregatingStreamingSource() {
+    public void test_aggregatingNonOrderedStreamingSource() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
                 .isInstanceOf(HazelcastSqlException.class)
@@ -1013,16 +1013,16 @@ public class SqlAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_aggregatingStreamingFunction() {
+    public void test_aggregatingNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("not supported");
     }
 
     @Test
-    public void test_distinctStreamingSource() {
+    public void test_distinctNonOrderedStreamingSource() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
                 .isInstanceOf(HazelcastSqlException.class)
@@ -1030,7 +1030,7 @@ public class SqlAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_distinctStreamingFunction() {
+    public void test_distinctNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("not supported");
