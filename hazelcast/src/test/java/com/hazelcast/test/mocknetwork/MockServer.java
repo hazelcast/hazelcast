@@ -107,7 +107,7 @@ class MockServer implements Server {
 
         @Override
         public MockServerConnection getOrConnect(Address address, int stream) {
-            MockServerConnection conn = server.connectionMap.get(address);
+            MockServerConnection conn = server.connectionMap.get(server.nodeRegistry.uuidOf(address));
             if (conn != null && conn.isAlive()) {
                 return conn;
             }
@@ -206,6 +206,7 @@ class MockServer implements Server {
             }
 
             connection.setLifecycleListener(lifecycleListener);
+            connection.setRemoteUuid(remoteUuid);
             server.connectionMap.put(remoteUuid, connection);
             server.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override

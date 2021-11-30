@@ -30,7 +30,6 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -86,7 +85,7 @@ class TestClientRegistry {
     class MockTcpClientConnectionManager
             extends TcpClientConnectionManager {
 
-        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
+        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<>();
 
         private final HazelcastClientInstanceImpl client;
         private final String host;
@@ -122,17 +121,15 @@ class TestClientRegistry {
                     throw new IOException("Can not connect to " + remoteAddress + ": instance does not exist");
                 }
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                UUID localUuid = UuidUtil.newUnsecureUUID();
                 LockPair lockPair = getLockPair(remoteAddress);
 
                 MockedTcpClientConnection connection = new MockedTcpClientConnection(
                         client,
                         connectionIdGen.incrementAndGet(),
                         getNodeEngineImpl(instance),
-                        remoteAddress,
                         localAddress,
+                        remoteAddress,
                         remoteUuid,
-                        localUuid,
                         lockPair
                 );
                 LOGGER.info("Created connection to endpoint: " + remoteAddress + ", connection: " + connection);
@@ -190,8 +187,10 @@ class TestClientRegistry {
 
     private class MockedTcpClientConnection extends TcpClientConnection {
 
-        private final Address remoteAddress;
+        // the bind address of client
         private final Address localAddress;
+        // the remote address of server
+        private final Address remoteAddress;
         private final TwoWayBlockableExecutor executor;
         private final MockedServerConnection serverConnection;
         private final String connectionType;
@@ -203,22 +202,21 @@ class TestClientRegistry {
                 HazelcastClientInstanceImpl client,
                 int connectionId,
                 NodeEngineImpl serverNodeEngine,
-                Address remoteAddress,
                 Address localAddress,
-                UUID remoteUuid,
-                UUID localUuid,
+                Address remoteAddress,
+                UUID serverUuid,
                 LockPair lockPair
         ) {
             super(client, connectionId);
-            this.remoteAddress = remoteAddress;
             this.localAddress = localAddress;
+            this.remoteAddress = remoteAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
             this.serverConnection = new MockedServerConnection(
                     connectionId,
                     remoteAddress,
                     localAddress,
-                    remoteUuid,
-                    localUuid,
+                    serverUuid,
+                    null,
                     serverNodeEngine,
                     this
             );
