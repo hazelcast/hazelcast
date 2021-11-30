@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -61,20 +60,29 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
         RelNode leftInput = call.rel(1);
         RelNode rightInput = call.rel(2);
+
+        if (OptUtils.isUnbounded(rightInput)) {
+            // This rule doesn't support joining of streaming data on the right side. Stream
+            // can be on the left side.
+            return;
+        }
+
         RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
         RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
 
-        RelNode rel = new JoinHashPhysicalRel(
-                logicalJoin.getCluster(),
-                logicalJoin.getTraitSet().replace(PHYSICAL),
-                leftInputConverted,
-                rightInputConverted,
-                logicalJoin.getCondition(),
-                logicalJoin.getJoinType());
-        call.transformTo(rel);
+        // we don't use hash join for unbounded left input because it doesn't refresh the right side
+        if (OptUtils.isBounded(leftInput)) {
+            RelNode rel = new JoinHashPhysicalRel(
+                    logicalJoin.getCluster(),
+                    logicalJoin.getTraitSet().replace(PHYSICAL),
+                    leftInputConverted,
+                    rightInputConverted,
+                    logicalJoin.getCondition(),
+                    logicalJoin.getJoinType());
+            call.transformTo(rel);
+        }
 
-        if (rightInput instanceof TableScan
-                && OptUtils.hasTableType(rightInput, PartitionedMapTable.class)) {
+        if (rightInput instanceof TableScan) {
             HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
             if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
                 RelNode rel2 = new JoinNestedLoopPhysicalRel(

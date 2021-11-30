@@ -21,15 +21,11 @@ import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class JoinHashPhysicalRel extends JoinPhysicalRel {
 
@@ -59,10 +55,47 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
     }
 
-    @Override
-    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq);
-    }
+//    @Override
+//    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+//        double rowCount = mq.getRowCount(this);
+//
+//        // Joins can be flipped, and for many algorithms, both versions are viable
+//        // and have the same cost. To make the results stable between versions of
+//        // the planner, make one of the versions slightly more expensive.
+//        switch (joinType) {
+//            case SEMI:
+//            case ANTI:
+//                // SEMI and ANTI join cannot be flipped
+//                break;
+//            case RIGHT:
+//                rowCount = RelMdUtil.addEpsilon(rowCount);
+//                break;
+//            default:
+//                if (RelNodes.COMPARATOR.compare(left, right) > 0) {
+//                    rowCount = RelMdUtil.addEpsilon(rowCount);
+//                }
+//        }
+//
+//        // Cheaper if the smaller number of rows is coming from the LHS.
+//        // Model this by adding L log L to the cost.
+//        final double rightRowCount = right.estimateRowCount(mq);
+//        final double leftRowCount = left.estimateRowCount(mq);
+//        if (Double.isInfinite(leftRowCount)) {
+//            rowCount = leftRowCount;
+//        } else {
+//            rowCount += Util.nLogN(leftRowCount);
+//        }
+//        if (Double.isInfinite(rightRowCount)) {
+//            rowCount = rightRowCount;
+//        } else {
+//            rowCount += rightRowCount;
+//        }
+//        if (isSemiJoin()) {
+//            return planner.getCostFactory().makeCost(rowCount, 0, 0).multiplyBy(.01d);
+//        } else {
+//            return planner.getCostFactory().makeCost(rowCount, 0, 0);
+//        }
+//    }
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
