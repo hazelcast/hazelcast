@@ -910,6 +910,7 @@ public class YamlConfigBuilderTest
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -922,6 +923,7 @@ public class YamlConfigBuilderTest
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override

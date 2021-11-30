@@ -85,6 +85,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(cloned.isSslEnabled());
         assertTrue(cloned.isLite());
         assertFalse(cloned.isScriptingEnabled());
+        assertFalse(cloned.isConsoleEnabled());
+        assertTrue(cloned.isMcDataAccessEnabled());
         assertNotNull(cloned.toString());
     }
 
@@ -101,6 +103,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(deserialized.isSslEnabled());
         assertTrue(deserialized.isLite());
         assertFalse(deserialized.isScriptingEnabled());
+        assertFalse(deserialized.isConsoleEnabled());
+        assertTrue(deserialized.isMcDataAccessEnabled());
         assertNotNull(deserialized.toString());
     }
 

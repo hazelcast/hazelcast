@@ -3,7 +3,8 @@
     "hazelcast": {
       "management-center": {
         "scripting-enabled": false,
-        "console-enabled": false
+        "console-enabled": false,
+        "data-access-enabled": false
       }
     }
   },
