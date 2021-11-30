@@ -22,6 +22,7 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -112,7 +113,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithoutMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithoutMerkleTreeConfig");
         Config config = new Config()
                 .addMapConfig(expectedConfig);
@@ -124,7 +125,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithEnabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
         Config config = new Config()
@@ -137,7 +138,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithDisabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
         Config config = new Config()
@@ -161,7 +162,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(evictionConfig())
                 .setSerializeKeys(true);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -180,7 +181,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .setName("nearCache");
         expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -817,7 +818,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
                 .setCoalesce(true)
                 .addIndexConfig(indexConfig);
 
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("carMap")
                 .setEvictionConfig(evictionConfig1)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -1030,6 +1031,24 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
     }
 
     // UTILITY - METHODS
+
+    private static MapConfig newMapConfig() {
+        return new MapConfig().setTieredStoreConfig(tieredStoreConfig());
+    }
+
+    private static TieredStoreConfig tieredStoreConfig() {
+        MemoryTierConfig memTierConfig = new MemoryTierConfig()
+                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
+
+        DiskTierConfig diskTierConfig = new DiskTierConfig()
+                .setEnabled(true)
+                .setDeviceName("devicexz04");
+
+        return new TieredStoreConfig()
+                .setEnabled(true)
+                .setMemoryTierConfig(memTierConfig)
+                .setDiskTierConfig(diskTierConfig);
+    }
 
     private static CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig() {
         CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();

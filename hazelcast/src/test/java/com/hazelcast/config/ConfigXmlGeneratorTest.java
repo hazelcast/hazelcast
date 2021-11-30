@@ -394,7 +394,7 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
                 .addDeviceConfig(deviceConfig0)
                 .addDeviceConfig(deviceConfig1);
 
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaGenerator(config);
 
         ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig0, xmlConfig.getDeviceConfig("null-device"));
         ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig1, xmlConfig.getDeviceConfig("local-device"));
@@ -1407,24 +1407,6 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
-    }
-
-    private static MapConfig newMapConfig() {
-        return new MapConfig().setTieredStoreConfig(tieredStoreConfig());
-    }
-
-    private static TieredStoreConfig tieredStoreConfig() {
-        MemoryTierConfig memTierConfig = new MemoryTierConfig()
-                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
-
-        DiskTierConfig diskTierConfig = new DiskTierConfig()
-                .setEnabled(true)
-                .setDeviceName("devicexz04");
-
-        return new TieredStoreConfig()
-                .setEnabled(true)
-                .setMemoryTierConfig(memTierConfig)
-                .setDiskTierConfig(diskTierConfig);
     }
 
     private static TcpIpConfig tcpIpConfig() {
