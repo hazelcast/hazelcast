@@ -39,20 +39,20 @@ import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObject
 /**
  * CREATE VIEW statement AST tree node.
  * <p>
- * View creation process has specifics - the query that we represent as the view
- * should not be substituted immediately, if it is already based on top of another view.
- * Example, for better understanding:
+ * View creation process has specifics - when we're executing a query, we expand the view
+ * references in the AST. However, when we're creating a view, we're not expanding them.
+ * Example for better understanding:
  * <p>
- * {@code CREATE VIEW v AS SELECT * FROM map} -> typical , no extra work.
+ * {@code CREATE VIEW v1 AS SELECT * FROM map;}
  * <p>
- * {@code CREATE VIEW vv AS SELECT * FROM v} -> view definition is based on top of another view.
- * We are using views as aliases and they have the same behaviour as variable in prog. languages.
+ * {@code CREATE VIEW v2 AS SELECT * FROM v1;} -> view definition is based on another view.
+ * We are using views as aliases, and they have similar behaviour as pointers in procedural languages.
  * <p>
- * With default recursive substitution algorithm such transformation may be happened, but must not:
+ * When executing a query, we expand views like this:
  * <p>
- * {@code CREATE VIEW vv AS SELECT * FROM v} -> {@code CREATE VIEW vv AS SELECT * FROM (SELECT * FROM map)}
+ * {@code SELECT * FROM v2} -> {@code SELECT * FROM (SELECT * FROM map)}
  * <p>
- * To prevent such behaviour, we introduce extra SELECT AST tree node : {@link SqlNonExpandableSelect}.
+ * To prevent the expansion when creating a view, we introduce extra SELECT AST tree node: {@link SqlNonExpandableSelect}.
  * During the {@link SqlCreateView} initialization, we explicitly rewrite all SELECT queries in aliased
  * query as {@link SqlNonExpandableSelect} by calling {@link SqlCreateView#rewriteInnerSelectsAsNonExpandable}.
  *

@@ -16,12 +16,8 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.sql.impl.schema.view.View;
-
 import javax.annotation.Nonnull;
 import java.util.List;
-
-import static java.util.Collections.emptyList;
 
 /**
  * Generic interface that resolves tables belonging to a particular backend.
@@ -52,14 +48,6 @@ public interface TableResolver {
      */
     @Nonnull
     List<Table> getTables();
-
-    /**
-     * @return Collection of views to be registered.
-     */
-    @Nonnull
-    default List<View> getViews() {
-        return emptyList();
-    }
 
     /**
      * Adds a listener to be called when a {@see Table} is added, removed or changed.

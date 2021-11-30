@@ -186,12 +186,6 @@ public class TableResolverImpl implements TableResolver {
         return tables;
     }
 
-    @Nonnull
-    @Override
-    public List<View> getViews() {
-        return new ArrayList<>(tableStorage.valuesViews());
-    }
-
     private Table toTable(Mapping mapping) {
         SqlConnector connector = connectorCache.forType(mapping.type());
         return connector.createTable(

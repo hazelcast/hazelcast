@@ -38,6 +38,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * -- but not to
  * SELECT * FROM (SELECT * FROM (SELECT 1)))
  * ```
+ *
+ * @see SqlCreateView
  */
 public class SqlNonExpandableSelect extends SqlSelect {
     @SuppressWarnings("checkstyle:ParameterNumber")
