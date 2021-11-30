@@ -25,7 +25,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -41,6 +41,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.hazelcast.function.PredicateEx.alwaysTrue;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.PEEK_DEFAULT_TO_STRING;
 
 /**
  * The common aspect of {@link BatchStage batch} and {@link StreamStage
@@ -68,7 +69,7 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Attaches a mapping stage which applies the given function to each input
      * item independently and emits the function's result as the output item.
-     * If the result is {@code null}, it emits nothing. Therefore this stage
+     * If the result is {@code null}, it emits nothing. Therefore, this stage
      * can be used to implement filtering semantics as well.
      * <p>
      * This sample takes a stream of names and outputs the names in lowercase:
@@ -279,7 +280,7 @@ public interface GeneralStage<T> extends Stage {
      * item. The mapping function receives another parameter, the service
      * object, which Jet will create using the supplied {@code serviceFactory}.
      * <p>
-     * If the mapping result is {@code null}, it emits nothing. Therefore this
+     * If the mapping result is {@code null}, it emits nothing. Therefore, this
      * stage can be used to implement filtering semantics as well.
      * <p>
      * This sample takes a stream of stock items and sets the {@code detail}
@@ -554,7 +555,7 @@ public interface GeneralStage<T> extends Stage {
      * lookup is merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as
+     * Therefore, this stage can be used to implement filtering semantics as
      * well.
      * <p>
      * The mapping logic is equivalent to:
@@ -602,7 +603,7 @@ public interface GeneralStage<T> extends Stage {
      * merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as
+     * Therefore, this stage can be used to implement filtering semantics as
      * well.
      * <p>
      * The mapping logic is equivalent to:
@@ -648,7 +649,7 @@ public interface GeneralStage<T> extends Stage {
      * merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as
+     * Therefore, this stage can be used to implement filtering semantics as
      * well.
      * <p>
      * The mapping logic is equivalent to:
@@ -702,7 +703,7 @@ public interface GeneralStage<T> extends Stage {
      * the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as
+     * Therefore, this stage can be used to implement filtering semantics as
      * well.
      * <p>
      * The mapping logic is equivalent to:
@@ -767,7 +768,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the stage to hash-join with this one
@@ -814,7 +815,7 @@ public interface GeneralStage<T> extends Stage {
      * before reaching {@code #mapToOutputFn}.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the stage to hash-join with this one
@@ -860,7 +861,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the first stage to join
@@ -889,7 +890,7 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches to this and the two supplied stages a inner hash-joining stage
+     * Attaches to this and the two supplied stages an inner hash-joining stage
      * and returns it. This stage plays the role of the <em>primary stage</em>
      * in the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package javadoc} for a detailed description of the hash-join transform.
@@ -911,7 +912,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * <p>
@@ -972,7 +973,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @return the newly attached stage
@@ -1154,7 +1155,7 @@ public interface GeneralStage<T> extends Stage {
      * them. When timestamps are added at this moment, source partitions won't
      * be coalesced properly and will be treated as a single stream. The
      * allowed lag will need to cover for the additional disorder introduced by
-     * merging the streams. The streams are merged in an unpredictable order
+     * merging the streams. The streams are merged in an unpredictable order,
      * and it can happen, for example, that after the job was suspended for a
      * long time, there can be a very recent event in partition1 and a very old
      * event partition2. If partition1 happens to be merged first, the recent
@@ -1165,9 +1166,9 @@ public interface GeneralStage<T> extends Stage {
      * withTimestamps()}.
      * <p>
      * <b>Warning:</b> make sure the property you access in {@code timestampFn}
-     * isn't null, it would fail the job. Also that there are no nonsensical
-     * values such as -1, MIN_VALUE, 2100-01-01 etc - we'll treat those as real
-     * timestamps and they can cause unspecified behaviour.
+     * isn't null, it would fail the job. Also, that there are no nonsensical
+     * values such as -1, MIN_VALUE, 2100-01-01 etc. - we'll treat those as real
+     * timestamps, and they can cause unspecified behaviour.
      *
      * @param timestampFn a function that returns the timestamp for each item,
      *                    typically in milliseconds. It must be stateless and {@linkplain
@@ -1207,9 +1208,9 @@ public interface GeneralStage<T> extends Stage {
      *     logs the string at the INFO level to the log category {@code
      *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
      * </li></ol>
-     * The stage logs each item on whichever cluster member it happens to
-     * receive it. Its primary purpose is for development use, when running Jet
-     * on a local machine.
+     * The stage logs each item on the cluster member that outputs it. Its
+     * primary purpose is for development use, when running Jet on a local
+     * machine.
      * <p>
      * Note that peek after {@link #rebalance(FunctionEx)} operation is not supported.
      * <p>
@@ -1248,9 +1249,9 @@ public interface GeneralStage<T> extends Stage {
      *     logs the string at the INFO level to the log category {@code
      *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
      * </li></ol>
-     * The stage logs each item on whichever cluster member it happens to
-     * receive it. Its primary purpose is for development use, when running Jet
-     * on a local machine.
+     * The stage logs each item on the cluster member that outputs it. Its
+     * primary purpose is for development use, when running Jet on a local
+     * machine.
      * <p>
      * Note that peek after {@link #rebalance(FunctionEx)} operation is not supported.
      * <p>
@@ -1277,9 +1278,9 @@ public interface GeneralStage<T> extends Stage {
      * each item the stage emits, it logs the result of its {@code toString()}
      * method at the INFO level to the log category {@code
      * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}.
-     * The stage logs each item on whichever cluster member it happens to
-     * receive it. Its primary purpose is for development use, when running Jet
-     * on a local machine.
+     * The stage logs each item on the cluster member that outputs it. Its
+     * primary purpose is for development use, when running Jet on a local
+     * machine.
      * <p>
      * Note that peek after {@link #rebalance(FunctionEx)} is not supported.
      *
@@ -1289,7 +1290,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     default GeneralStage<T> peek() {
-        return peek(alwaysTrue(), Object::toString);
+        return peek(alwaysTrue(), PEEK_DEFAULT_TO_STRING);
     }
 
     /**
