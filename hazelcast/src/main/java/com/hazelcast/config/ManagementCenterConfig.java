@@ -86,15 +86,26 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
         return consoleEnabled;
     }
 
-    // TODO
-    public boolean isDataAccessEnabled() {
-        return dataAccessEnabled;
-    }
-
-    // TODO
+    /**
+     * Enables/disables data access for Management Center.
+     * Management Center can't access the data if at least one member has the data access disabled.
+     * <p>
+     * Default value for this config element is {@code true}.
+     *
+     * @param dataAccessEnabled {@code true} to allow data access for Management Center, {@code false} to disallow
+     * @return this management center config instance
+     * @since 5.1
+     */
     public ManagementCenterConfig setDataAccessEnabled(boolean dataAccessEnabled) {
         this.dataAccessEnabled = dataAccessEnabled;
         return this;
+    }
+
+    /**
+     * Returns if data access for Management Center is allowed ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isDataAccessEnabled() {
+        return dataAccessEnabled;
     }
 
     /**
@@ -146,7 +157,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     @Override
     public int hashCode() {
-        return Objects.hash(scriptingEnabled, consoleEnabled, trustedInterfaces);
+        return Objects.hash(scriptingEnabled, consoleEnabled, dataAccessEnabled, trustedInterfaces);
     }
 
     @Override
@@ -162,6 +173,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
         }
         ManagementCenterConfig other = (ManagementCenterConfig) obj;
         return scriptingEnabled == other.scriptingEnabled && consoleEnabled == other.consoleEnabled
+                && dataAccessEnabled == other.dataAccessEnabled
                 && Objects.equals(trustedInterfaces, other.trustedInterfaces);
     }
 }

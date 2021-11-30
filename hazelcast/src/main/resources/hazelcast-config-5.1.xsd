@@ -2629,10 +2629,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="data-access-enabled" type="xs:boolean">
+        <xs:attribute name="data-access-enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
-                    TODO
+                    Set to true to allow data access for Management Center execution on the member, false to disallow. Management Center can't access the data if at least one member has the data access disabled.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

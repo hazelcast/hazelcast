@@ -105,9 +105,12 @@
         Set to true to allow scripting on the member, false to disallow.
         Default value is false.
         * console-enabled:
-        Set to true to allow console commands execution on the member, false to disallow
+        Set to true to allow console commands execution on the member, false to disallow.
         Default value is false.
-        * data-access-enabled TODO
+        * data-access-enabled
+        Set to true to allow data access for Management Center via SQL Browser or Map Browser, false to disallow.
+        Management Center can't access the data if at least one member has the data access disabled.
+        Default value is true.
 
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,

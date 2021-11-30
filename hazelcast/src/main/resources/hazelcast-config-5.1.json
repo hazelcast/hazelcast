@@ -292,7 +292,7 @@
           "default": false
         },
         "data-access-enabled": {
-          "description": "TODO.",
+          "description": "Set to true to allow data access for Management Center execution on the member, false to disallow. Management Center can't access the data if at least one member has the data access disabled.",
           "type": "boolean",
           "default": true
         },
