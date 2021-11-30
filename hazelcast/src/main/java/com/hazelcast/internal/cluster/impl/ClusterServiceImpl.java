@@ -121,6 +121,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             new AtomicReference<>(new JoinHolder(false));
 
     private volatile UUID clusterId;
+    private volatile UUID masterUuid;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
 
@@ -195,19 +196,19 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.suspectMember((MemberImpl) suspectedMember, reason, destroyConnection);
     }
 
-    public void suspectAddressIfNotConnected(Address address) {
+    public void suspectMemberIfNotConnected(UUID memberUuid) {
         lock.lock();
         try {
-            MemberImpl member = getMember(address);
+            MemberImpl member = getMember(memberUuid);
             if (member == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Cannot suspect " + address + ", since it's not a member.");
+                    logger.fine("Cannot suspect for uuid=" + memberUuid + ", since it's not a member.");
                 }
 
                 return;
             }
 
-            Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(memberUuid);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);
@@ -668,12 +669,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public MemberImpl getLocalMember() {
-        return localMember;
+    public UUID getThisUuid() {
+        return node.getThisUuid();
     }
 
-    public UUID getThisUuid() {
-        return localMember.getUuid();
+    @Override
+    public MemberImpl getLocalMember() {
+        return localMember;
     }
 
     // should be called under lock

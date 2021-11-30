@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -74,6 +75,8 @@ public class TcpServerConnection implements ServerConnection {
     private final ServerContext serverContext;
 
     private Address remoteAddress;
+
+    private UUID remoteUuid;
 
     private TcpServerConnectionErrorHandler errorHandler;
 
@@ -179,6 +182,14 @@ public class TcpServerConnection implements ServerConnection {
         this.remoteAddress = remoteAddress;
     }
 
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
+    }
+
     public void setErrorHandler(TcpServerConnectionErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
     }
@@ -237,6 +248,7 @@ public class TcpServerConnection implements ServerConnection {
             .addParameter("reason", reason)
             .addParameter("cause", cause)
             .addParameter("remoteAddress", remoteAddress)
+            .addParameter("remoteUuid", remoteUuid)
             .log();
 
         logClose();
@@ -327,7 +339,7 @@ public class TcpServerConnection implements ServerConnection {
         return "Connection[id=" + connectionId
                 + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", qualifier=" + connectionManager.getEndpointQualifier()
-                + ", endpoint=" + remoteAddress
+                + ", endpoint=" + remoteAddress + "-" + remoteUuid
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
                 + ", planeIndex=" + planeIndex

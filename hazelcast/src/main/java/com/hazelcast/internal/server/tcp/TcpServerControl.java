@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -136,17 +137,19 @@ public final class TcpServerControl {
      * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
      *                             will be registered. These are the public addresses configured on the remote.
      */
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private synchronized void process0(TcpServerConnection connection,
                                        Address remoteEndpoint,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
-        final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
+        Address remoteAddress = new Address(connection.getRemoteSocketAddress());
+        Address connectedAddress = connectionManager.planes[handshake.getPlaneIndex()].getConnectedAddress(remoteAddress);
+        if (connectedAddress != null) {
             // this is the connection initiator side --> register the connection under the address that was requested
-            remoteEndpoint = remoteAddress;
+            remoteEndpoint = connectedAddress;
         }
+        UUID remoteUuid = handshake.getUuid();
         if (remoteEndpoint == null) {
             if (remoteAddressAliases == null) {
                 throw new IllegalStateException("Remote endpoint and remote address aliases cannot be both null");
@@ -162,7 +165,7 @@ public final class TcpServerControl {
                     handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
         }
 
-        if (checkAlreadyConnected(connection, remoteEndpoint, handshake.getPlaneIndex())) {
+        if (checkAlreadyConnected(connection, remoteUuid, handshake.getPlaneIndex())) {
             return;
         }
 
@@ -170,26 +173,32 @@ public final class TcpServerControl {
             logger.finest("Registering connection " + connection + " to address " + remoteEndpoint
                     + " planeIndex:" + handshake.getPlaneIndex());
         }
-        boolean registered = connectionManager.register(remoteEndpoint, connection, handshake.getPlaneIndex());
+        boolean registered = connectionManager.register(remoteEndpoint, remoteUuid, connection, handshake.getPlaneIndex());
+        if (registered) {
+            connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteUuid, connection);
+            connectionManager.addressRegistry.register(remoteUuid, remoteEndpoint);
+            connectionManager.addressRegistry.register(remoteUuid, remoteAddress);
+        }
 
         if (remoteAddressAliases != null && registered) {
             for (Address remoteAddressAlias : remoteAddressAliases) {
-                if (logger.isLoggable(Level.FINEST)) {
+                connectionManager.addressRegistry.register(remoteUuid, remoteAddressAlias);
+                if (logger.isFinestEnabled()) {
+                    // TODO [ufuk]: adjust this log statement
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
                             + " planeIndex:" + handshake.getPlaneIndex());
                 }
-                connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteAddressAlias, connection);
             }
         }
     }
 
-    private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
+    private boolean checkAlreadyConnected(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
+        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(existingConnection + " is already bound to " + remoteEndPoint
-                            + ", new one is " + connection + " planeIndex:" + planeIndex);
+                    logger.finest(existingConnection + " is already bound to Member[uuid=" + remoteUuid
+                            + "], new one is " + connection + " planeIndex:" + planeIndex);
                 }
                 // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
                 connectionManager.connections.add(connection);

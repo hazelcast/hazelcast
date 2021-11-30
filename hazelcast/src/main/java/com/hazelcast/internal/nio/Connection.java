@@ -21,6 +21,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -91,6 +92,20 @@ public interface Connection {
      * @param remoteAddress the remote address.
      */
     void setRemoteAddress(Address remoteAddress);
+
+    /**
+     * Gets the {@link UUID} of the other side of this connection.
+     * It can be null if the other side of connection is not member
+     * @return the uuid of the remote endpoint of the connection.
+     */
+    UUID getRemoteUuid();
+
+    /**
+     * Sets the {@link UUID} of the other side of this connection.
+     *
+     * @param remoteUuid the uuid of the remote endpoint of the connection.
+     */
+    void setRemoteUuid(UUID remoteUuid);
 
     /**
      * Returns remote address of this Connection.

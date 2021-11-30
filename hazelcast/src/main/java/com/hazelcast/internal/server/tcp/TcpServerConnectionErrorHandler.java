@@ -20,43 +20,50 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
+import java.util.UUID;
+
 import static java.lang.System.currentTimeMillis;
 
 class TcpServerConnectionErrorHandler {
 
     private final ILogger logger;
     private final ServerContext serverContext;
-    private final Address endPoint;
+    private final Address endpointAddress;
+    private final LocalAddressRegistry addressRegistry;
     private final long minInterval;
     private final int maxFaults;
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endPoint) {
-        this.endPoint = endPoint;
+    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endpointAddress, LocalAddressRegistry addressRegistry) {
+        this.endpointAddress = endpointAddress;
         this.serverContext = serverContext;
+        this.addressRegistry = addressRegistry;
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
         this.logger = serverContext.getLoggingService().getLogger(getClass());
     }
 
     synchronized void onError(Throwable cause) {
-        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(cause);
+        String errorMessage = "An error occurred on connection to " + endpointAddress + getCauseDescription(cause);
         logger.finest(errorMessage);
         final long now = currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
-                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(cause);
+                String removeEndpointMessage = "Removing connection to endpoint " + endpointAddress + getCauseDescription(cause);
                 logger.warning(removeEndpointMessage);
-                serverContext.removeEndpoint(endPoint);
+                UUID endpointUuid = addressRegistry.uuidOf(endpointAddress);
+                if (endpointUuid != null) {
+                    serverContext.removeEndpoint(endpointUuid);
+                }
             }
             lastFaultTime = now;
         }
     }
 
     synchronized TcpServerConnectionErrorHandler reset() {
-        String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
+        String resetMessage = "Resetting connection monitor for endpoint " + endpointAddress;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;

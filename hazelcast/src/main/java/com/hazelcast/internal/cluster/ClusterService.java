@@ -105,6 +105,13 @@ public interface ClusterService extends CoreService, Cluster {
     Address getThisAddress();
 
     /**
+     * Gets the uuid of this member.
+     *
+     * @return the uuid of this member (the returned value will never be {@code null})
+     */
+    UUID getThisUuid();
+
+    /**
      * Gets the local member instance.
      * <p>
      * The returned value will never be null, but it may change when local lite member is promoted to a data member

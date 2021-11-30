@@ -651,14 +651,15 @@ public class ClusterJoinManager {
 
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
-        Address target = joinMessage.getAddress();
-        MemberImpl member = clusterService.getMember(target);
+        Address targetAddress = joinMessage.getAddress();
+        UUID targetUuid = joinMessage.getUuid();
+        MemberImpl member = clusterService.getMember(targetUuid);
         if (member == null) {
             return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
 
         if (joinMessage.getUuid().equals(member.getUuid())) {
-            sendMasterAnswer(target);
+            sendMasterAnswer(targetAddress);
 
             if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 if (logger.isFineEnabled()) {
@@ -677,7 +678,7 @@ public class ClusterJoinManager {
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
                         clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
                 op.setCallerUuid(clusterService.getThisUuid());
-                invokeClusterOp(op, target);
+                invokeClusterOp(op, targetAddress);
             }
             return true;
         }
@@ -685,18 +686,18 @@ public class ClusterJoinManager {
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.
-        if (clusterService.isMaster() || target.equals(clusterService.getMasterAddress())) {
+        if (clusterService.isMaster() || targetAddress.equals(clusterService.getMasterAddress())) {
             String msg = format("New join request has been received from an existing endpoint %s."
                     + " Removing old member and processing join request...", member);
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            ServerConnection existing = node.getServer().getConnectionManager(MEMBER).get(target);
+            ServerConnection existing = node.getServer().getConnectionManager(MEMBER).get(targetAddress);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getServer().getConnectionManager(MEMBER).register(target, connection);
+                node.getServer().getConnectionManager(MEMBER).register(targetAddress, targetUuid, connection);
             }
         }
         return true;

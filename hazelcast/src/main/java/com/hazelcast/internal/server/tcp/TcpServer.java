@@ -87,6 +87,7 @@ public final class TcpServer implements Server {
     public TcpServer(Config config,
                      ServerContext context,
                      ServerSocketRegistry registry,
+                     LocalAddressRegistry addressRegistry,
                      MetricsRegistry metricsRegistry,
                      Networking networking,
                      Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
@@ -102,13 +103,25 @@ public final class TcpServer implements Server {
 
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new TcpServerConnectionManager(
-                    this, null, channelInitializerFn, context, ProtocolType.valuesAsSet());
+                    this,
+                    null,
+                    addressRegistry,
+                    channelInitializerFn,
+                    context,
+                    ProtocolType.valuesAsSet()
+            );
         } else {
             unifiedConnectionManager = null;
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
                 TcpServerConnectionManager cm = new TcpServerConnectionManager(
-                        this, endpointConfig, channelInitializerFn, context, singleton(endpointConfig.getProtocolType()));
+                        this,
+                        endpointConfig,
+                        addressRegistry,
+                        channelInitializerFn,
+                        context,
+                        singleton(endpointConfig.getProtocolType())
+                );
                 connectionManagers.put(qualifier, cm);
             }
             refreshStatsTask.registerMetrics(metricsRegistry);

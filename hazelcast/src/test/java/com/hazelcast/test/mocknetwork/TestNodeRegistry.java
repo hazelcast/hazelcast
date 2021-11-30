@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -134,6 +135,10 @@ public final class TestNodeRegistry {
 
     Node getNode(Address address) {
         return nodes.get(address);
+    }
+
+    UUID uuidOf(Address address) {
+        return nodes.get(address).getThisUuid();
     }
 
     Collection<Address> getJoinAddresses() {

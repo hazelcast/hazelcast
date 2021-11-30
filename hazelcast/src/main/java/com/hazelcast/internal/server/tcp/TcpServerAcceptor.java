@@ -58,11 +58,11 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Contains the logic for accepting TcpIpConnections.
+ * Contains the logic for accepting {@link TcpServerConnection}s.
  *
  * The {@link TcpServerAcceptor} and {@link TcpServerConnector} are 2 sides of the same coin. The
  * {@link TcpServerConnector} take care of the 'client' side of a connection and the {@link TcpServerAcceptor}
- * is the 'server' side of a connection (each connection has a client and server-side
+ * is the 'server' side of a connection (each connection has a client and server-side)
  */
 public class TcpServerAcceptor implements DynamicMetricsProvider {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);

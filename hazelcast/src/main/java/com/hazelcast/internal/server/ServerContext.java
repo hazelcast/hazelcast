@@ -59,6 +59,13 @@ public interface ServerContext {
     Address getThisAddress();
 
     /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getThisUuid();
+
+    /**
      * @return all server socket addresses of this Hazelcast member, as picked by the
      * configured {@link com.hazelcast.instance.AddressPicker}
      */
@@ -82,7 +89,7 @@ public interface ServerContext {
 
     TextCommandService getTextCommandService();
 
-    void removeEndpoint(Address endpoint);
+    void removeEndpoint(UUID endpoint);
 
     void onSuccessfulConnection(Address address);
 
@@ -117,11 +124,4 @@ public interface ServerContext {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
     AuditlogService getAuditLogService();
-
-    /**
-     * Returns UUID of the local member.
-     *
-     * @return member UUID
-     */
-    UUID getUuid();
 }

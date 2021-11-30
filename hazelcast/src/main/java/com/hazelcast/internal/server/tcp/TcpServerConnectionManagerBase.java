@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
@@ -53,6 +54,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.server.tcp.LinkedAddresses.getLinkedAddresses;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -78,6 +80,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     protected final NetworkStatsImpl networkStats;
     protected final EndpointConfig endpointConfig;
     protected final EndpointQualifier endpointQualifier;
+    protected final LocalAddressRegistry addressRegistry;
 
     final Plane[] planes;
     final int planeCount;
@@ -94,12 +97,17 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor;
 
-    TcpServerConnectionManagerBase(TcpServer tcpServer, EndpointConfig endpointConfig) {
+    TcpServerConnectionManagerBase(TcpServer tcpServer, EndpointConfig endpointConfig, LocalAddressRegistry addressRegistry) {
         this.server = tcpServer;
-        this.errorHandlerConstructor = endpoint -> new TcpServerConnectionErrorHandler(tcpServer.getContext(), endpoint);
+        this.errorHandlerConstructor = endpoint -> new TcpServerConnectionErrorHandler(
+                tcpServer.getContext(),
+                endpoint,
+                addressRegistry
+        );
         this.serverContext = tcpServer.getContext();
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
+        this.addressRegistry = addressRegistry;
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
         this.planeCount = serverContext.properties().getInteger(CHANNEL_COUNT);
@@ -123,23 +131,23 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
-        private final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
+        private final Map<LinkedAddresses, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<UUID, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
             this.index = index;
         }
 
-        TcpServerConnection getConnection(Address address) {
-            return connectionMap.get(address);
+        TcpServerConnection getConnection(UUID uuid) {
+            return connectionMap.get(uuid);
         }
 
-        void putConnection(Address address, TcpServerConnection connection) {
-            connectionMap.put(address, connection);
+        void putConnection(UUID uuid, TcpServerConnection connection) {
+            connectionMap.put(uuid, connection);
         }
 
-        void putConnectionIfAbsent(Address address, TcpServerConnection connection) {
-            connectionMap.putIfAbsent(address, connection);
+        void putConnectionIfAbsent(UUID uuid, TcpServerConnection connection) {
+            connectionMap.putIfAbsent(uuid, connection);
         }
 
         void removeConnection(TcpServerConnection connection) {
@@ -177,7 +185,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             connectionMap.clear();
         }
 
-        public Set<Map.Entry<Address, TcpServerConnection>> connections() {
+        public Set<Map.Entry<UUID, TcpServerConnection>> connections() {
             return Collections.unmodifiableSet(connectionMap.entrySet());
         }
 
@@ -186,22 +194,48 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            return connectionsInProgress.containsKey(address);
+            LinkedAddresses tmpLinkedAddresses = new LinkedAddresses(address);
+            return connectionsInProgress.containsKey(tmpLinkedAddresses);
         }
 
-        public Future<Void> getconnectionInProgress(Address address) {
-            return connectionsInProgress.get(address);
+        public Address getConnectedAddress(Address address) {
+            for (LinkedAddresses addresses : connectionsInProgress.keySet()) {
+                if (addresses.contains(address)) {
+                    return addresses.getPrimaryAddress();
+                }
+            }
+            // not found in in-progress connections
+            return address;
+        }
+
+        public Future<Void> getConnectionInProgress(Address address) {
+            for (Map.Entry<LinkedAddresses, Future<Void>> entry : connectionsInProgress.entrySet()) {
+                if (entry.getKey().contains(address)) {
+                    return entry.getValue();
+                }
+            }
+            return null;
         }
 
         public void addConnectionInProgressIfAbsent(
                 Address address,
-                Function<? super Address, ? extends Future<Void>> mappingFn
+                Function<? super LinkedAddresses, ? extends Future<Void>> mappingFn
         ) {
-            connectionsInProgress.computeIfAbsent(address, mappingFn);
+            connectionsInProgress.computeIfAbsent(getLinkedAddresses(address), mappingFn);
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            return connectionsInProgress.remove(address) != null;
+            // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+            boolean found = false;
+            Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
+            while (linkedAddressesIterator.hasNext()) {
+                LinkedAddresses addresses = linkedAddressesIterator.next();
+                if (addresses.contains(address)) {
+                    linkedAddressesIterator.remove();
+                    found = true;
+                }
+            }
+            return found;
         }
 
         public void clearConnectionsInProgress() {
@@ -306,7 +340,8 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     }
 
     protected boolean send(Packet packet, Address target, SendTask sendTask, int streamId) {
-        Connection connection = get(target, streamId);
+        UUID targetUuid = addressRegistry.uuidOf(target);
+        Connection connection = get(targetUuid, streamId);
         if (connection != null) {
             return connection.write(packet);
         }

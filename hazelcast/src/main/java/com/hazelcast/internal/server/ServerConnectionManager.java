@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -41,7 +42,8 @@ public interface ServerConnectionManager
      * In case of a member connection, it will also return connections that have not yet completed the
      * {@link com.hazelcast.internal.cluster.impl.MemberHandshake}.
      */
-    @Nonnull Collection<ServerConnection> getConnections();
+    @Nonnull
+    Collection<ServerConnection> getConnections();
 
     /**
      * Returns the number of connections that satisfy some predicate.
@@ -66,8 +68,8 @@ public interface ServerConnectionManager
      * @param connection    - The connection to be registered
      * @return True if the call was successful
      */
-    default boolean register(Address remoteAddress, ServerConnection connection) {
-        return register(remoteAddress, connection, 0);
+    default boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection) {
+        return register(remoteAddress, remoteUuid, connection, 0);
     }
 
     /**
@@ -80,7 +82,7 @@ public interface ServerConnectionManager
      * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
-    boolean register(Address remoteAddress, ServerConnection connection, int planeIndex);
+    boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int planeIndex);
 
     /**
      * Returns the number of connections.
@@ -91,24 +93,25 @@ public interface ServerConnectionManager
         return connectionCount(null);
     }
 
+
     /**
      * Gets the connection for a given address. If the connection does not exist, it returns null.
      *
-     * @param address the remote side of the connection
+     * @param uuid the uuid of remote side of the connection
      * @return the found Connection, or none if one doesn't exist
      */
-    default ServerConnection get(Address address) {
-        return get(address, 0);
+    default ServerConnection get(UUID uuid) {
+        return get(uuid, 0);
     }
 
     /**
      * Gets the connection for a given address and streamId. If the connection does not exist, it returns null.
      *
-     * @param address the remote side of the connection
+     * @param uuid the uuid of remote side of the connection
      * @param streamId the stream id
      * @return the found Connection, or none if one doesn't exist
      */
-    ServerConnection get(Address address, int streamId);
+    ServerConnection get(UUID uuid, int streamId);
 
     /**
      * Gets the existing connection for a given address or connects.
@@ -194,7 +197,7 @@ public interface ServerConnectionManager
      * true can be returned, even though the connection eventually can't be established.
      *
      * @param packet The Packet to transmit.
-     * @param target The address of the target machine where the Packet should be transmitted.
+     * @param target The uuid of the target machine where the Packet should be transmitted.
      * @param streamId the stream id
      * @return true if the transmit was a success, false if a failure.
      * @throws NullPointerException if packet or target is null.

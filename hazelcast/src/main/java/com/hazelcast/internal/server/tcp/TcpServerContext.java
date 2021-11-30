@@ -127,6 +127,11 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
+    public UUID getThisUuid() {
+        return node.getThisUuid();
+    }
+
+    @Override
     public Map<EndpointQualifier, Address> getThisAddresses() {
         return nodeEngine.getLocalMember().getAddressMap();
     }
@@ -174,9 +179,9 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void removeEndpoint(final Address endPoint) {
+    public void removeEndpoint(UUID endpoint) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
-                () -> node.clusterService.suspectAddressIfNotConnected(endPoint));
+                () -> node.clusterService.suspectMemberIfNotConnected(endpoint));
     }
 
     @Override
@@ -343,10 +348,5 @@ public class TcpServerContext implements ServerContext {
     @Override
     public AuditlogService getAuditLogService() {
         return node.getNodeExtension().getAuditlogService();
-    }
-
-    @Override
-    public UUID getUuid() {
-        return node.getThisUuid();
     }
 }

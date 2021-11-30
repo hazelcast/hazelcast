@@ -71,6 +71,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -161,6 +162,7 @@ public class Node {
      * For accessing a full address-map, see {@link AddressPicker#getPublicAddressMap()}
      */
     public final Address address;
+    public final UUID thisUuid;
     public final SecurityContext securityContext;
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -173,6 +175,7 @@ public class Node {
     private final BuildInfo buildInfo;
     private final HealthMonitor healthMonitor;
     private final Joiner joiner;
+    private final LocalAddressRegistry localAddressRegistry;
     private ManagementCenterService managementCenterService;
 
     private volatile NodeState state = NodeState.STARTING;
@@ -218,14 +221,15 @@ public class Node {
 
         try {
             boolean liteMember = config.isLiteMember();
-            address = addressPicker.getPublicAddress(MEMBER);
             nodeExtension = nodeContext.createNodeExtension(this);
+            address = addressPicker.getPublicAddress(MEMBER);
+            thisUuid = nodeExtension.createMemberUuid();
             final Map<String, String> memberAttributes = findMemberAttributes(
                     new MemberAttributeConfigReadOnly(config.getMemberAttributeConfig()));
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
-                    .uuid(nodeExtension.createMemberUuid())
+                    .uuid(thisUuid)
                     .attributes(memberAttributes)
                     .liteMember(liteMember)
                     .instance(hazelcastInstance)
@@ -248,8 +252,8 @@ public class Node {
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
-
-            server = nodeContext.createServer(this, serverSocketRegistry);
+            localAddressRegistry = new LocalAddressRegistry();
+            server = nodeContext.createServer(this, serverSocketRegistry, localAddressRegistry);
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -426,6 +430,10 @@ public class Node {
 
     public Address getThisAddress() {
         return address;
+    }
+
+    public UUID getThisUuid() {
+        return thisUuid;
     }
 
     public MemberImpl getLocalMember() {
@@ -725,6 +733,10 @@ public class Node {
         return discoveryService;
     }
 
+    public LocalAddressRegistry getLocalAddressRegistry() {
+        return localAddressRegistry;
+    }
+
     private enum ShutdownHookPolicy {
         TERMINATE,
         GRACEFUL
@@ -855,10 +867,6 @@ public class Node {
     private boolean usePublicAddress(JoinConfig join) {
         return properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED)
                 || allUsePublicAddress(AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
-    }
-
-    public UUID getThisUuid() {
-        return clusterService.getThisUuid();
     }
 
     public Config getConfig() {

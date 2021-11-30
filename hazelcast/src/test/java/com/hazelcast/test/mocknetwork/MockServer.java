@@ -39,6 +39,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -58,7 +59,7 @@ class MockServer implements Server {
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    private final ConcurrentMap<Address, MockServerConnection> connectionMap = new ConcurrentHashMap<>(10);
+    private final ConcurrentMap<UUID, MockServerConnection> connectionMap = new ConcurrentHashMap<>(10);
     private final TestNodeRegistry nodeRegistry;
     private final Node node;
     private final ScheduledExecutorService scheduler;
@@ -95,8 +96,8 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection get(Address address, int stream) {
-            return server.connectionMap.get(address);
+        public MockServerConnection get(UUID memberUuid, int stream) {
+            return server.connectionMap.get(memberUuid);
         }
 
         @Override
@@ -111,7 +112,12 @@ class MockServer implements Server {
 
             Node targetNode = server.nodeRegistry.getNode(address);
             if (targetNode == null || isTargetLeft(targetNode)) {
-                suspectAddress(address);
+                if (targetNode != null) {
+                    UUID targetUuid = targetNode.getThisUuid();
+                    if (targetUuid != null) {
+                        suspectAddress(targetUuid);
+                    }
+                }
                 return null;
             }
 
@@ -122,10 +128,10 @@ class MockServer implements Server {
         public void accept(Packet packet) {
         }
 
-        private void suspectAddress(final Address address) {
+        private void suspectAddress(UUID memberUuid) {
             // see ServerContext#removeEndpoint()
             server.node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR,
-                    () -> server.node.getClusterService().suspectAddressIfNotConnected(address));
+                    () -> server.node.getClusterService().suspectMemberIfNotConnected(memberUuid));
         }
 
         public static boolean isTargetLeft(Node targetNode) {
@@ -138,31 +144,35 @@ class MockServer implements Server {
             }
 
             Node node = server.node;
-            Address local = node.getThisAddress();
-            Address remote = targetNode.getThisAddress();
+            Address localAddress = node.getThisAddress();
+            Address remoteAddress = targetNode.getThisAddress();
 
-            MockServerConnection thisConnection = new MockServerConnection(lifecycleListener, remote, local,
-                    node.getNodeEngine(), targetNode.getServer().getConnectionManager(EndpointQualifier.MEMBER));
+            UUID localMemberUuid = node.getThisUuid();
+            UUID remoteMemberUuid = targetNode.getThisUuid();
 
-            MockServerConnection remoteConnection = new MockServerConnection(lifecycleListener, local, remote,
-                    targetNode.getNodeEngine(), node.getServer().getConnectionManager(EndpointQualifier.MEMBER));
+            MockServerConnection thisConnection = new MockServerConnection(lifecycleListener, remoteAddress, localAddress,
+                    localMemberUuid, node.getNodeEngine(), targetNode.getServer().getConnectionManager(EndpointQualifier.MEMBER));
+
+            MockServerConnection remoteConnection = new MockServerConnection(lifecycleListener, localAddress, remoteAddress,
+                    remoteMemberUuid, targetNode.getNodeEngine(), node.getServer().getConnectionManager(EndpointQualifier.MEMBER));
 
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
 
             if (!remoteConnection.isAlive()) {
                 // targetNode is not alive anymore.
-                suspectAddress(remote);
+                suspectAddress(remoteMemberUuid);
                 return null;
             }
 
-            server.connectionMap.put(remote, remoteConnection);
-            server.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
+            server.connectionMap.put(remoteMemberUuid, remoteConnection);
+            server.logger.info("Created connection to endpoint: " + remoteAddress + "-" + remoteMemberUuid + ", connection: "
+                    + remoteConnection);
 
             if (!remoteConnection.isAlive()) {
                 // If connection is not alive after inserting it into connection map,
                 // that means remote node is being stopping during connection creation.
-                suspectAddress(remote);
+                suspectAddress(remoteMemberUuid);
             }
             return remoteConnection;
         }
@@ -173,7 +183,7 @@ class MockServer implements Server {
         }
 
         @Override
-        public synchronized boolean register(final Address remoteAddress, final ServerConnection c, int streamId) {
+        public synchronized boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection c, int streamId) {
             MockServerConnection connection = (MockServerConnection) c;
             if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");
@@ -183,7 +193,7 @@ class MockServer implements Server {
             }
 
             connection.setLifecycleListener(lifecycleListener);
-            server.connectionMap.put(remoteAddress, connection);
+            server.connectionMap.put(remoteUuid, connection);
             server.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
@@ -205,7 +215,7 @@ class MockServer implements Server {
             connectionListeners.add(connectionListener);
         }
 
-        private void fireConnectionRemovedEvent(final MockServerConnection connection, final Address endPoint) {
+        private void fireConnectionRemovedEvent(final MockServerConnection connection, UUID endpointUuid) {
             if (server.live) {
                 server.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
@@ -215,7 +225,7 @@ class MockServer implements Server {
 
                     @Override
                     public int getKey() {
-                        return endPoint.hashCode();
+                        return endpointUuid.hashCode();
                     }
                 });
             }
@@ -235,18 +245,18 @@ class MockServer implements Server {
          * Retries sending packet maximum 5 times until connection to target becomes available.
          */
         @Override
-        public boolean transmit(Packet packet, Address target, int streamId) {
-            return send(packet, target, null);
+        public boolean transmit(Packet packet, UUID targetUuid, int streamId) {
+            return send(packet, targetUuid, null);
         }
 
-        private boolean send(Packet packet, Address target, SendTask sendTask) {
-            MockServerConnection connection = get(target, 0);
+        private boolean send(Packet packet, UUID targetUuid, SendTask sendTask) {
+            MockServerConnection connection = get(targetUuid, 0);
             if (connection != null) {
                 return connection.write(packet);
             }
 
             if (sendTask == null) {
-                sendTask = new SendTask(packet, target);
+                sendTask = new SendTask(packet, targetUuid);
             }
 
             int retries = sendTask.retries.get();
@@ -278,8 +288,8 @@ class MockServer implements Server {
 
             @Override
             public void onConnectionClose(MockServerConnection connection, Throwable t, boolean silent) {
-                final Address endPoint = connection.getRemoteAddress();
-                if (!server.connectionMap.remove(endPoint, connection)) {
+                UUID endpointUuid = connection.getRemoteUuid();
+                if (!server.connectionMap.remove(endpointUuid, connection)) {
                     return;
                 }
 
@@ -288,13 +298,14 @@ class MockServer implements Server {
                 // so we pass in null. Once they are changed to use the parameter, we should be notified
                 // and this parameter can be changed
                 Connection remoteConnection = server.getConnectionManager(null)
-                        .get(connection.localAddress);
+                        .get(connection.getRemoteUuid());
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
                 }
 
-                MockServerConnectionManager.this.server.logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
-                fireConnectionRemovedEvent(connection, endPoint);
+                MockServerConnectionManager.this.server.logger.info("Removed connection to endpoint: " + endpointUuid
+                        + ", connection: " + connection);
+                fireConnectionRemovedEvent(connection, endpointUuid);
             }
 
         }
@@ -304,20 +315,20 @@ class MockServer implements Server {
             private final AtomicInteger retries = new AtomicInteger();
 
             private final Packet packet;
-            private final Address target;
+            private final UUID targetUuid;
 
-            private SendTask(Packet packet, Address target) {
+            private SendTask(Packet packet, UUID targetUuid) {
                 this.packet = packet;
-                this.target = target;
+                this.targetUuid = targetUuid;
             }
 
             @Override
             public void run() {
                 int actualRetries = retries.incrementAndGet();
                 if (server.logger.isFinestEnabled()) {
-                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
+                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + targetUuid);
                 }
-                send(packet, target, this);
+                send(packet, targetUuid, this);
             }
         }
 

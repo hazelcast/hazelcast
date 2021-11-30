@@ -35,11 +35,13 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -77,15 +79,17 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServerConnector connector;
     private final TcpServerControl serverControl;
-
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    TcpServerConnectionManager(TcpServer server,
-                               EndpointConfig endpointConfig,
-                               Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
-                               ServerContext serverContext,
-                               Set<ProtocolType> supportedProtocolTypes) {
-        super(server, endpointConfig);
+    TcpServerConnectionManager(
+            TcpServer server,
+            EndpointConfig endpointConfig,
+            LocalAddressRegistry addressRegistry,
+            Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
+            ServerContext serverContext,
+            Set<ProtocolType> supportedProtocolTypes
+    ) {
+        super(server, endpointConfig, addressRegistry);
         this.channelInitializerFn = channelInitializerFn;
         this.connector = new TcpServerConnector(this);
         this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
@@ -97,6 +101,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
+    @Nonnull
     public Collection<ServerConnection> getConnections() {
         return unmodifiableSet(connections);
     }
@@ -114,7 +119,13 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     @Override
     public ServerConnection get(Address address, int streamId) {
-        return getPlane(streamId).getConnection(address);
+        UUID uuid = addressRegistry.uuidOf(address);
+        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
+    }
+
+    @Override
+    public ServerConnection get(UUID uuid, int streamId) {
+        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
     }
 
     @Override
@@ -125,16 +136,20 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Override
     public ServerConnection getOrConnect(final Address address, final boolean silent, int streamId) {
         Plane plane = getPlane(streamId);
-        TcpServerConnection connection = plane.getConnection(address);
+        TcpServerConnection connection = null;
+        UUID uuid = addressRegistry.uuidOf(address);
+        if (uuid != null) {
+            connection = plane.getConnection(uuid);
+        }
         if (connection == null && server.isLive()) {
             final AtomicBoolean isNotYetInProgress = new AtomicBoolean();
-            plane.addConnectionInProgressIfAbsent(address, key -> {
+            plane.addConnectionInProgressIfAbsent(address, ignored -> {
                 isNotYetInProgress.set(true);
                 return connector.asyncConnect(address, silent, plane.index);
             });
             if (isNotYetInProgress.get()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
+                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet in progress");
                 }
             } else {
                 if (logger.isFineEnabled()) {
@@ -146,17 +161,17 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public synchronized boolean register(final Address remoteAddress, final ServerConnection c, int planeIndex) {
+    public synchronized boolean register(Address remoteAddress, UUID remoteUuid, final ServerConnection c, int planeIndex) {
         Plane plane = planes[planeIndex];
         TcpServerConnection connection = (TcpServerConnection) c;
         try {
-            if (remoteAddress.equals(serverContext.getThisAddress())) {
+            if (remoteUuid.equals(serverContext.getThisUuid())) {
                 return false;
             }
 
             if (!connection.isAlive()) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(connection + " to " + remoteAddress + " is not registered since connection is not active.");
+                    logger.finest(connection + " to " + remoteUuid + " is not registered since connection is not active.");
                 }
                 return false;
             }
@@ -166,11 +181,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 throw new IllegalArgumentException(connection + " has already a different remoteAddress than: " + remoteAddress);
             }
             connection.setRemoteAddress(remoteAddress);
+            connection.setRemoteUuid(remoteUuid);
 
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(remoteAddress, plane.index).reset());
             }
-            plane.putConnection(remoteAddress, connection);
+            plane.putConnection(remoteUuid, connection);
 
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
@@ -329,8 +345,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         int clientCount = 0;
         int textCount = 0;
         for (Plane plane : planes) {
-            for (Map.Entry<Address, TcpServerConnection> entry : plane.connections()) {
-                Address bindAddress = entry.getKey();
+            for (Map.Entry<UUID, TcpServerConnection> entry : plane.connections()) {
+                UUID uuid = entry.getKey();
                 TcpServerConnection connection = entry.getValue();
                 if (connection.isClient()) {
                     clientCount++;
@@ -343,7 +359,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 if (connection.getRemoteAddress() != null) {
                     context.collect(rootDescriptor
                             .copy()
-                            .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, bindAddress.toString())
+                            .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, uuid.toString())
+                            // TODO: use configured address here after getting it by performing lookup on UUID -> AddressAlias map
                             .withTag(TCP_TAG_ENDPOINT, connection.getRemoteAddress().toString()), connection);
                 }
             }
@@ -355,11 +372,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
+    // TODO [ufuk]: use this in the first connections
     @Override
     public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         try {
-            Future<Void> future = plane.getconnectionInProgress(address);
+            Future<Void> future = plane.getConnectionInProgress(address);
             if (future != null) {
                 future.get(millis, TimeUnit.MILLISECONDS);
                 return future.isDone();

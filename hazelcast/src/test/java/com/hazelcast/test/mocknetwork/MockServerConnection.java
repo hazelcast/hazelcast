@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,21 +52,33 @@ public class MockServerConnection implements ServerConnection {
 
     private final Address remoteAddress;
 
+    private final UUID remoteUuid;
+
     private final ServerConnectionManager connectionManager;
 
     private final ConcurrentMap attributeMap = new ConcurrentHashMap();
 
-    public MockServerConnection(Address localAddress,
-                                Address remoteAddress, NodeEngineImpl remoteNodeEngine) {
-        this(null, localAddress, remoteAddress, remoteNodeEngine, null);
+    public MockServerConnection(
+            Address localAddress,
+            Address remoteAddress,
+            UUID remoteUuid,
+            NodeEngineImpl remoteNodeEngine
+    ) {
+        this(null, localAddress, remoteAddress, remoteUuid, remoteNodeEngine, null);
     }
 
-    public MockServerConnection(ConnectionLifecycleListener lifecycleListener, Address localAddress,
-                                Address remoteAddress, NodeEngineImpl remoteNodeEngine,
-                                ServerConnectionManager localConnectionManager) {
+    public MockServerConnection(
+            ConnectionLifecycleListener lifecycleListener,
+            Address localAddress,
+            Address remoteAddress,
+            UUID remoteUuid,
+            NodeEngineImpl remoteNodeEngine,
+            ServerConnectionManager localConnectionManager
+    ) {
         this.lifecycleListener = lifecycleListener;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
+        this.remoteUuid = remoteUuid;
         this.remoteNodeEngine = remoteNodeEngine;
         this.connectionManager = localConnectionManager;
     }
@@ -97,6 +110,11 @@ public class MockServerConnection implements ServerConnection {
     @Override
     public Address getRemoteAddress() {
         return remoteAddress;
+    }
+
+    @Override
+    public UUID getRemoteUuid() {
+        return remoteUuid;
     }
 
     public InetAddress getInetAddress() {
@@ -193,6 +211,11 @@ public class MockServerConnection implements ServerConnection {
 
     @Override
     public void setRemoteAddress(Address remoteAddress) {
+    }
+
+    @Override
+    public void setRemoteUuid(UUID remoteUuid) {
+
     }
 
     @Override

@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -269,8 +270,8 @@ public class FirewallingServer
         }
 
         @Override
-        public ServerConnection get(Address address, int streamId) {
-            return wrap(delegate.get(address, streamId));
+        public ServerConnection get(UUID uuid, int streamId) {
+            return wrap(delegate.get(uuid, streamId));
         }
 
         private ServerConnection wrap(ServerConnection c) {
@@ -288,8 +289,8 @@ public class FirewallingServer
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
-            return delegate.register(remoteAddress, connection, streamId);
+        public boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int streamId) {
+            return delegate.register(remoteAddress, remoteUuid, connection, streamId);
         }
 
         @Override
@@ -360,6 +361,16 @@ public class FirewallingServer
         @Override
         public void setRemoteAddress(Address remoteAddress) {
             delegate.setRemoteAddress(remoteAddress);
+        }
+
+        @Override
+        public UUID getRemoteUuid() {
+            return delegate.getRemoteUuid();
+        }
+
+        @Override
+        public void setRemoteUuid(UUID remoteUuid) {
+            delegate.setRemoteUuid(remoteUuid);
         }
 
         @Override

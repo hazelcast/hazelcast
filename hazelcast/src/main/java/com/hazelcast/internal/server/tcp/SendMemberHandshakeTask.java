@@ -72,7 +72,7 @@ public class SendMemberHandshakeTask implements Runnable {
                 getConfiguredLocalAddresses(),
                 remoteAddress,
                 reply,
-                serverContext.getUuid())
+                serverContext.getThisUuid())
                 .addOption(OPTION_PLANE_COUNT, planeCount)
                 .addOption(OPTION_PLANE_INDEX, planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);

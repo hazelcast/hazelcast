@@ -316,9 +316,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             // On such a case, `ClientEngine#connectionRemoved` will not be called for this connection since
             // we did not register the connection.
             // Endpoint removal logic(inside `ClientEngine#connectionRemoved`) will not be able to run, instead endpoint
-            // will be cleaned up by ClientHearbeatMonitor#cleanupEndpointsWithDeadConnections later.
+            // will be cleaned up by ClientHeartbeatMonitor#cleanupEndpointsWithDeadConnections later.
             if (conn.getRemoteAddress() != null) {
-                node.getServer().getConnectionManager(CLIENT).register(conn.getRemoteAddress(), conn);
+                node.getServer().getConnectionManager(CLIENT).register(conn.getRemoteAddress(), endpoint.getUuid(), conn);
             }
         }
 
@@ -480,10 +480,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 if (endpoints == null) {
                     continue;
                 }
-                //Merge connected clients according to their UUID
-                for (Map.Entry<UUID, String> entry : endpoints.entrySet()) {
-                    clientsMap.put(entry.getKey(), entry.getValue());
-                }
+                // Merge connected clients according to their UUID
+                clientsMap.putAll(endpoints);
             } catch (Exception e) {
                 logger.warning("Cannot get client information from: " + target.toString(), e);
             }
