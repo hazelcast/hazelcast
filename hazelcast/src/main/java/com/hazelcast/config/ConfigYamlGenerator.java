@@ -135,6 +135,8 @@ class ConfigYamlGenerator {
                     getPartitioningStrategyAsString(subConfigAsObject.getPartitioningStrategyConfig()));
             addNonNullToMap(subConfigAsMap, "query-caches",
                     getQueryCacheConfigsAsMap(subConfigAsObject.getQueryCacheConfigs()));
+            addNonNullToMap(subConfigAsMap, "tiered-store",
+                    getTieredStoreConfigAsMap(subConfigAsObject.getTieredStoreConfig()));
 
             child.put(subConfigAsObject.getName(), subConfigAsMap);
         }
@@ -749,6 +751,47 @@ class ConfigYamlGenerator {
         return discoveryConfigAsMap;
     }
 
+    private static Map<String, Object> getTieredStoreConfigAsMap(TieredStoreConfig tieredStoreConfig) {
+        if (tieredStoreConfig == null) {
+            return null;
+        }
+        Map<String, Object> tieredStoreConfigAsMap = new LinkedHashMap<>();
+        addNonNullToMap(tieredStoreConfigAsMap, "enabled",
+                tieredStoreConfig.isEnabled());
+        addNonNullToMap(tieredStoreConfigAsMap, "memory-tier",
+                getMemoryTierConfigAsMap(tieredStoreConfig.getMemoryTierConfig()));
+        addNonNullToMap(tieredStoreConfigAsMap, "disk-tier",
+                getDiskTierConfigAsMap(tieredStoreConfig.getDiskTierConfig()));
+
+        return tieredStoreConfigAsMap;
+    }
+
+    private static Map<String, Object> getMemoryTierConfigAsMap(MemoryTierConfig memoryTierConfig) {
+        if (memoryTierConfig == null) {
+            return null;
+        }
+        Map<String, Object> memoryTierConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(memoryTierConfigAsMap, "capacity",
+                memoryTierConfig.getCapacity().getValue()
+                        + " "
+                        + memoryTierConfig.getCapacity().getUnit().abbreviation());
+
+        return memoryTierConfigAsMap;
+    }
+
+    private static Map<String, Object> getDiskTierConfigAsMap(DiskTierConfig diskTierConfig) {
+        if (diskTierConfig == null) {
+            return null;
+        }
+        Map<String, Object> diskTierConfigAsMap = new LinkedHashMap<>();
+
+        addNonNullToMap(diskTierConfigAsMap, "enabled", diskTierConfig.isEnabled());
+        addNonNullToMap(diskTierConfigAsMap, "device-name", diskTierConfig.getDeviceName());
+
+        return diskTierConfigAsMap;
+    }
+
     private static String getPartitioningStrategyAsString(PartitioningStrategyConfig partitioningStrategyConfig) {
         if (partitioningStrategyConfig == null) {
             return null;
@@ -1015,8 +1058,8 @@ class ConfigYamlGenerator {
 
             if (
                     timedConfig != null
-                    && timedConfig.getExpiryPolicyType() != null
-                    && timedConfig.getDurationConfig() != null
+                            && timedConfig.getExpiryPolicyType() != null
+                            && timedConfig.getDurationConfig() != null
             ) {
                 Map<String, Object> timedConfigAsMap = new LinkedHashMap<>();
                 addNonNullToMap(timedConfigAsMap, "expiry-policy-type",
