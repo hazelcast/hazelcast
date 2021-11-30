@@ -418,15 +418,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
 
         op.setServiceName(serviceName);
 
-        if (operations.isEmpty()) {
-            // generally a namespace belongs to a single service only
-            operations = singleton(op);
-        } else if (operations.size() == 1) {
+        if (isEmpty(operations)) {
             operations = newOperationSet(operations);
-            operations.add(op);
-        } else {
-            operations.add(op);
         }
+
+        operations.add(op);
+
         return operations;
     }
 
