@@ -44,9 +44,12 @@ if [ -z "$HAZELCAST_CONFIG" ]; then
     if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
         HAZELCAST_CONFIG="config/hazelcast.yaml"
     fi
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yml"
+    fi
 
     if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
-        echo "Configuration file is missing. Create hazelcast.xml or hazelcast.yaml in $HAZELCAST_HOME/config or set the HAZELCAST_CONFIG environment variable."
+        echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in $HAZELCAST_HOME/config or set the HAZELCAST_CONFIG environment variable."
         exit 1
     fi
 fi
