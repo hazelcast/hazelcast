@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -50,6 +51,7 @@ public final class FieldsUtil {
     }
 
     /**
+     * TODO: refactor to support nested types?
      * Return a list of fields and their types from a {@link Class}.
      */
     @Nonnull
@@ -83,6 +85,28 @@ public final class FieldsUtil {
         }
 
         return fields;
+    }
+
+    public static SortedMap<String, Class<?>> resolveClassRecursively(Class<?> clazz) {
+        final SortedMap<String, Class<?>> baseFields = resolveClass(clazz);
+        final SortedMap<String, Class<?>> result = new TreeMap<>(baseFields);
+
+        for (final Map.Entry<String, Class<?>> entry : baseFields.entrySet()) {
+            if (!isJavaClass(entry.getValue())) {
+                continue;
+            }
+            String prefix = entry.getKey();
+            final SortedMap<String, Class<?>> subFields = resolveClassRecursively(entry.getValue());
+            for (final Map.Entry<String, Class<?>> subEntry : subFields.entrySet()) {
+                result.put(prefix + "." + subEntry.getKey(), subEntry.getValue());
+            }
+        }
+
+        return result;
+    }
+
+    private static boolean isJavaClass(Class<?> clazz) {
+        return !clazz.getPackage().getName().startsWith("java.");
     }
 
     @Nullable

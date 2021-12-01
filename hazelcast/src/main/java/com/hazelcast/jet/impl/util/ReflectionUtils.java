@@ -144,6 +144,41 @@ public final class ReflectionUtils {
         return method;
     }
 
+    // TODO: deduplicate
+    /**
+     * Return a get-method for a class and a property. The getter must start
+     * with "get", must be public and non-static.
+     *
+     * @param clazz The containing class
+     * @param propertyName Name of the property
+     *
+     * @return The found getter or null if one matching the criteria doesn't exist
+     */
+    @Nullable
+    public static Method findPropertyGetter(
+            @Nonnull Class<?> clazz,
+            @Nonnull String propertyName
+    ) {
+        String getterName = "get" + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+
+        Method method;
+        try {
+            method = clazz.getMethod(getterName);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return null;
+        }
+
+        if (Modifier.isStatic(method.getModifiers())) {
+            return null;
+        }
+
+        return method;
+    }
+
     /**
      * Return a {@link Field} object for the given {@code fieldName}. The field
      * must be public and non-static.

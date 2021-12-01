@@ -165,7 +165,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
         for (MappingField f : new ArrayList<>(topLevelFields)) {
             if (f.type().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                expandFields(f.name(), f.type().getSubFields(), topLevelFields);
+                expandMappingFields(f.name(), f.externalName(), f.type().getSubFields(), topLevelFields);
             }
         }
 
@@ -176,12 +176,20 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         return !clazz.getPackage().getName().startsWith("java.");
     }
 
-    private void expandFields(String prefix, List<QueryDataTypeField> fields, List<MappingField> projections) {
+    private void expandMappingFields(
+            final String prefix,
+            final String externalPrefix,
+            final List<QueryDataTypeField> fields,
+            final List<MappingField> projections
+    ) {
         for (final QueryDataTypeField field : fields) {
             final String newPrefix = prefix + "." + field.getName();
-            projections.add(new MappingField(newPrefix, field.getType(), newPrefix));
+            final String newExternalPrefix = externalPrefix + "." + field.getName();
+
+            projections.add(new MappingField(newPrefix, field.getType(), newExternalPrefix));
+
             if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                expandFields(newPrefix, field.getType().getSubFields(), projections);
+                expandMappingFields(newPrefix, newExternalPrefix, field.getType().getSubFields(), projections);
             }
         }
     }
@@ -280,7 +288,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> clazz
     ) {
-        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClass(clazz);
+        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClassRecursively(clazz);
 
         List<TableField> fields = new ArrayList<>();
         Map<String, String> typeNamesByPaths = new HashMap<>();

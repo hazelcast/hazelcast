@@ -26,8 +26,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
@@ -36,6 +41,7 @@ import static java.util.stream.Collectors.toMap;
 @NotThreadSafe
 class PojoUpsertTarget implements UpsertTarget {
 
+    private static final String NESTING_SEPARATOR = "\\.";
     private final Class<?> clazz;
     private final Map<String, Class<?>> typesByPaths;
 
@@ -53,6 +59,10 @@ class PojoUpsertTarget implements UpsertTarget {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
 
+        if (isNestedFieldPath(path)) {
+            return createNestedInjector(path, type);
+        }
+
         Method method = ReflectionUtils.findPropertySetter(clazz, path, typesByPaths.get(path));
         if (method != null) {
             return createMethodInjector(method);
@@ -61,9 +71,105 @@ class PojoUpsertTarget implements UpsertTarget {
             if (field != null) {
                 return createFieldInjector(field);
             } else {
-                return createFailingInjector(path);
+                return value -> {
+                    System.out.println("injecting " + path);
+                };
             }
         }
+    }
+
+    private UpsertInjector createNestedInjector(String path, QueryDataType type) {
+        final List<String> fields = Arrays.asList(path.split(NESTING_SEPARATOR));
+
+        final List<String> objFields = fields.subList(0, fields.size() - 1);
+        final String finalFieldName = fields.get(fields.size() - 1);
+        final List<Function<Object, Object>> subPathAccessors = new ArrayList<>();
+
+        Class<?> currentClass = clazz;
+        for (final String fieldName : objFields) {
+            final Method getter = ReflectionUtils.findPropertyGetter(currentClass, fieldName);
+            if (getter != null) {
+                subPathAccessors.add(o -> {
+                    try {
+                        return getter.invoke(o);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw QueryException.error("Invocation of '" + getter + "' failed: " + e, e);
+                    }
+                });
+                currentClass = getter.getReturnType();
+            } else {
+                final Field field = ReflectionUtils.findPropertyField(currentClass, fieldName);
+                if (field == null) {
+                    throw QueryException.error("Failed to find accessors for field " + fieldName
+                            + " within path: " + path);
+                }
+                subPathAccessors.add(o -> {
+                    try {
+                        return field.get(o);
+                    } catch (IllegalAccessException e) {
+                        throw QueryException.error("Failed to set field " + field + ": " + e, e);
+                    }
+                });
+                currentClass = field.getType();
+            }
+        }
+
+        // TODO: deduplicate
+        Consumer<Object> setter;
+        final Method method = ReflectionUtils.findPropertySetter(currentClass, finalFieldName, typesByPaths.get(path));
+        if (method != null) {
+            setter = value -> {
+                if (value == null && method.getParameterTypes()[0].isPrimitive()) {
+                    throw QueryException.error("Cannot pass NULL to a method with a primitive argument: " + method);
+                }
+
+                try {
+                    Object currentObject = pojo;
+                    for (final Function<Object, Object> accessor : subPathAccessors) {
+                        currentObject = accessor.apply(currentObject);
+                    }
+
+                    // TODO: fix the sub-field assignment
+                    if (currentObject == null) {
+                        return;
+                    }
+
+                    method.invoke(currentObject, value);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw QueryException.error("Invocation of '" + method + "' failed: " + e, e);
+                } catch (NullPointerException e) {
+                    System.out.println("hello");
+                }
+            };
+        } else {
+            final Field field = ReflectionUtils.findPropertyField(clazz, path);
+            if (field == null) {
+                throw QueryException.error("Failed to create field injector for field " + path);
+            }
+            setter = value -> {
+                if (value == null && field.getType().isPrimitive()) {
+                    throw QueryException.error("Cannot set NULL to a primitive field: " + field);
+                }
+
+                Object currentObject = pojo;
+                for (final Function<Object, Object> accessor : subPathAccessors) {
+                    currentObject = accessor.apply(currentObject);
+                }
+
+                try {
+                    field.set(currentObject, value);
+                } catch (IllegalAccessException e) {
+                    throw QueryException.error("Failed to set field " + field + ": " + e, e);
+                }
+            };
+        }
+
+        return setter::accept;
+    }
+
+    // We might change convention later on.
+    private boolean isNestedFieldPath(String path) {
+        return path.contains(".");
     }
 
     private UpsertInjector createMethodInjector(@Nonnull Method method) {
