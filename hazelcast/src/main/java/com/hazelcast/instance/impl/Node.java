@@ -162,8 +162,9 @@ public class Node {
      * For accessing a full address-map, see {@link AddressPicker#getPublicAddressMap()}
      */
     public final Address address;
-    public final UUID thisUuid;
     public final SecurityContext securityContext;
+    // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
+    public volatile UUID thisUuid;
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;

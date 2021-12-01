@@ -121,7 +121,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             new AtomicReference<>(new JoinHolder(false));
 
     private volatile UUID clusterId;
-    private volatile UUID masterUuid;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
 
@@ -333,6 +332,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
+    // TODO [ufuk]: investigate carefully at what times it is called. (It's
+    //  called before split brain merge. Find out if it is called elsewhere  )
     private void resetLocalMemberUuid() {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
@@ -341,7 +342,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
-
+        node.thisUuid = newUuid;
         localMember = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
