@@ -97,7 +97,8 @@ class MockServer implements Server {
 
         @Override
         public ServerConnection get(Address address, int streamId) {
-            return get(server.nodeRegistry.uuidOf(address), streamId);
+            UUID memberUuid = server.nodeRegistry.uuidOf(address);
+            return memberUuid != null ? get(memberUuid, streamId) : null;
         }
 
         @Override

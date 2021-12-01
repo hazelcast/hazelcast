@@ -108,7 +108,8 @@ public final class TestNodeRegistry {
     }
 
     public UUID uuidOf(Address address) {
-        return nodes.get(address).getThisUuid();
+        Node node = nodes.get(address);
+        return node != null ? node.getThisUuid() : null;
     }
 
     public Address addressOf(UUID memberUuid) {
