@@ -29,13 +29,13 @@ public class LocalAddressRegistry {
     protected final Map<Address, UUID> addressToUuid;
     protected final Map<UUID, LinkedAddresses> uuidToAddresses;
 
+    // TODO [ufuk]: we may need to init the addresses of local member
     public LocalAddressRegistry() {
         this.addressToUuid = new ConcurrentHashMap<>();
         this.uuidToAddresses = new ConcurrentHashMap<>();
     }
 
-    // TODO [ufuk]: we may need to init the address of local member
-    protected void register(UUID uuid, Address address) {
+    public void register(UUID uuid, Address address) {
         addressToUuid.put(address, uuid);
         if (uuidToAddresses.containsKey(uuid)) {
             uuidToAddresses.get(uuid).addLinkedAddress(address);
@@ -44,7 +44,7 @@ public class LocalAddressRegistry {
         }
     }
 
-    protected void removeRegistration(UUID removedUuid) {
+    public void removeRegistration(UUID removedUuid) {
         // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
         Iterator<UUID> iterator = addressToUuid.values().iterator();
         while (iterator.hasNext()) {

@@ -29,6 +29,7 @@ import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -351,12 +352,16 @@ public class MembershipManager {
         if (updatedLiteMember) {
             node.partitionService.updateMemberGroupSize();
         }
-
+        LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
         for (MemberImpl member : removedMembers) {
             closeConnection(member.getAddress(), "Member left event received from master");
+            addressRegistry.removeRegistration(member.getUuid());
             handleMemberRemove(memberMapRef.get(), member);
         }
 
+        for (MemberImpl member : addedMembers) {
+            addressRegistry.register(member.getUuid(), member.getAddress());
+        }
         clusterService.getClusterJoinManager().insertIntoRecentlyJoinedMemberSet(addedMembers);
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers, !clusterService.isJoined());
 
