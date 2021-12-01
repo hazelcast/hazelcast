@@ -36,6 +36,7 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
+        <module>hazelcast-isolating-test-runner</module>
     </modules>
 
     <properties>
@@ -907,6 +908,60 @@
                 <fat.dependency.classifier/>
                 <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
             </properties>
+        </profile>
+
+        <profile>
+            <id>only-explicit-tests</id>
+            <properties>
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <useFile>false</useFile>
+                            <trimStackTrace>false</trimStackTrace>
+                            <runOrder>failedfirst</runOrder>
+
+                            <!-- 1C means 1 process per cpu core -->
+                            <!-- forkCount>1C</forkCount>
+                            <reuseForks>true</reuseForks>
+
+                            <threadCount>1</threadCount>
+                            <perCoreThreadCount>true</perCoreThreadCount>
+                            <parallel>methods</parallel -->
+                            <!-- JaCoCo will use the argLine set here. Test profiles override it. -->
+                            <argLine>
+                                ${vmHeapSettings}
+                                ${javaModuleArgs}
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.test.use.network=false
+                                -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
+                            </argLine>
+                            <includes>
+                                <!-- we use -Dsurefire.includesFiles -->
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                                <exclude>**/**IT.java</exclude>
+                            </excludes>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
         </profile>
 
         <profile>
