@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.schema.view.View;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -27,6 +29,9 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -63,6 +68,21 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
         assertRowsAnyOrder("SELECT DISTINCT * FROM v", singletonList(new Row(1, 1)));
+    }
+
+    @Test
+    public void when_viewIsExpandedWithinWhereClause() {
+        map.put(1, 1);
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
+
+        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE " +
+                        "EXISTS (SELECT * FROM v WHERE __key = " + MAP_NAME + ".__key)",
+                singletonList(new Row(1, 1)));
+
+//        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE " +
+//                        "EXISTS (SELECT * FROM v WHERE v.__key = " + MAP_NAME + ".__key)",
+//                singletonList(new Row(1, 1)));
     }
 
     @Test
@@ -166,6 +186,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 "SELECT * FROM " + MAP_NAME_2 + " JOIN v ON " + MAP_NAME + ".__key = " + MAP_NAME_2 + ".__key = 1",
                 singletonList(new Row(1, 1, 1, 1))
         );
+        assertRowsAnyOrder("SELECT * FROM v CROSS JOIN v", singletonList(new Row(1, 1, 1, 1)));
     }
 
     @Test
@@ -204,11 +225,46 @@ public class SqlExpandViewTest extends SqlTestSupport {
         ));
     }
 
+    @Ignore("SCALAR query are not supported")
+    @Test
+    public void when_viewIsExpandedWithValuesAndSubQueryWithin() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT 1");
+        instance().getSql().execute("CREATE VIEW vv AS SELECT 2");
+        instance().getSql().execute("CREATE VIEW vvv AS SELECT * FROM ( VALUES(SELECT * FROM v), (SELECT * FROM vv) )");
+        assertRowsAnyOrder("SELECT (SELECT 1 FROM v limit 1) FROM " + MAP_NAME, singletonList(new Row((byte) 1)));
+    }
+
     @Test
     public void when_viewIsExpandedWithAggFunction() {
         instance().getSql().execute("CREATE VIEW v AS SELECT MAX(__key) FROM map");
 
         assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1)));
+    }
+
+    @Test
+    public void when_viewIsExpandedWithTumbleFunction() {
+        String name = createStreamingTable(
+                instance().getSql(),
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(1), null, null),
+                row(timestampTz(2), "Alice", 1),
+                row(timestampTz(3), "Bob", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        instance().getSql().execute("CREATE VIEW v " +
+                "AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND))"
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start, SUM(distance) " +
+                        "FROM TABLE(TUMBLE(TABLE (v), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "GROUP BY window_start",
+                asList(
+                        new Row(timestampTz(0L), 1L),
+                        new Row(timestampTz(2L), 2L)
+                )
+        );
     }
 
     @Test
@@ -287,5 +343,21 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
 
         assertRowsAnyOrder("SELECT * FROM vv WHERE __key = 1", singletonList(new Row(1)));
+    }
+
+    private static Object[] row(Object... values) {
+        return values;
+    }
+
+    private static String createStreamingTable(SqlService service, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(
+                service,
+                name,
+                asList("ts", "name", "distance"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR, INTEGER),
+                values
+        );
+        return name;
     }
 }

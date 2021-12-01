@@ -24,7 +24,6 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
-import com.hazelcast.jet.sql.impl.parse.SqlNonExpandableSelect;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableSourceFunction;
@@ -186,13 +185,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
-        if (node instanceof SqlNonExpandableSelect) {
-            validateSelect((SqlSelect) node, scope);
-            return;
-        }
-
         super.validateQuery(node, scope, targetRowType);
-
         if (node instanceof SqlSelect) {
             validateSelect((SqlSelect) node, scope);
         }

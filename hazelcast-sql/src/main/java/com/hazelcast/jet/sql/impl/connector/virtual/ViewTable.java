@@ -37,7 +37,7 @@ public class ViewTable extends Table {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
+        throw new UnsupportedOperationException("Never should be called");
     }
 
 }
