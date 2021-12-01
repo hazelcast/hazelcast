@@ -1,6 +1,6 @@
 @echo off
 
-SETLOCAL
+SETLOCAL ENABLEDELAYEDEXPANSION
 
 if "x%JAVA_HOME%" == "x" (
     echo JAVA_HOME environment variable not available.
@@ -41,16 +41,13 @@ IF NOT "%JAVA_VERSION%" == "8" (
 
 REM HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
 if "x%HAZELCAST_CONFIG%" == "x" (
-    set HAZELCAST_CONFIG=config/hazelcast.xml
-
-    if not exist "%HAZELCAST_HOME%/%HAZELCAST_CONFIG%" (
+    if not exist "%HAZELCAST_HOME%/!HAZELCAST_CONFIG!" (
       set HAZELCAST_CONFIG=config/hazelcast.yaml
     )
-    if not exist "%HAZELCAST_HOME%/%HAZELCAST_CONFIG%" (
+    if not exist "%HAZELCAST_HOME%/!HAZELCAST_CONFIG!" (
       set HAZELCAST_CONFIG=config/hazelcast.yml
     )
-
-    if not exist "%HAZELCAST_HOME%/%HAZELCAST_CONFIG%" (
+    if not exist "%HAZELCAST_HOME%/!HAZELCAST_CONFIG!" (
       echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in %HAZELCAST_HOME%/config or set the HAZELCAST_CONFIG environment variable."
       exit /b 2
     )
