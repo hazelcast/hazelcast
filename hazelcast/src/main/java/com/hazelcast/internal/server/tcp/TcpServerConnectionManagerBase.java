@@ -54,7 +54,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.server.tcp.LinkedAddresses.getLinkedAddresses;
+import static com.hazelcast.internal.server.tcp.LinkedAddresses.getAllLinkedAddresses;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -221,7 +221,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 Address address,
                 Function<? super LinkedAddresses, ? extends Future<Void>> mappingFn
         ) {
-            connectionsInProgress.computeIfAbsent(getLinkedAddresses(address), mappingFn);
+            connectionsInProgress.computeIfAbsent(getAllLinkedAddresses(address), mappingFn);
         }
 
         public boolean removeConnectionInProgress(Address address) {

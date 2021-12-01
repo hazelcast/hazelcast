@@ -26,10 +26,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalAddressRegistry {
-    protected final Map<Address, UUID> addressToUuid;
-    protected final Map<UUID, LinkedAddresses> uuidToAddresses;
+    private final Map<Address, UUID> addressToUuid;
+    private final Map<UUID, LinkedAddresses> uuidToAddresses;
 
-    // TODO [ufuk]: we may need to init the addresses of local member
     public LocalAddressRegistry() {
         this.addressToUuid = new ConcurrentHashMap<>();
         this.uuidToAddresses = new ConcurrentHashMap<>();
@@ -40,7 +39,7 @@ public class LocalAddressRegistry {
         if (uuidToAddresses.containsKey(uuid)) {
             uuidToAddresses.get(uuid).addLinkedAddress(address);
         } else {
-            uuidToAddresses.put(uuid, new LinkedAddresses(address));
+            uuidToAddresses.put(uuid, LinkedAddresses.getAllLinkedAddresses(address));
         }
     }
 

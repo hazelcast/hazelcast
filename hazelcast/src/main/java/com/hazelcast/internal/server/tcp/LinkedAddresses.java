@@ -20,12 +20,13 @@ import com.hazelcast.cluster.Address;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.util.Arrays.asList;
+import static java.util.Collections.newSetFromMap;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -35,14 +36,18 @@ import static java.util.Objects.requireNonNull;
  */
 public final class LinkedAddresses {
     private final Address primaryAddress;
-    // TODO [ufuk]: consider other kinds of data structures for storing linkedAddresses (esp. for duplicate elimination)
-    private final List<Address> linkedAddresses;
+    private final Set<Address> linkedAddresses;
 
     LinkedAddresses(Address primaryAddress) {
-        this(primaryAddress, new LinkedList<>());
+        this(primaryAddress, newSetFromMap(new ConcurrentHashMap<>()));
     }
 
-    private LinkedAddresses(Address primaryAddress, List<Address> linkedAddresses) {
+    /**
+     * @param primaryAddress  the primary network address for this linked addresses
+     * @param linkedAddresses the set that contains all linked address to this primary address,
+     *                        it must be a concurrent set implementation
+     */
+    private LinkedAddresses(Address primaryAddress, Set<Address> linkedAddresses) {
         this.primaryAddress = requireNonNull(primaryAddress);
         this.linkedAddresses = requireNonNull(linkedAddresses);
     }
@@ -55,25 +60,34 @@ public final class LinkedAddresses {
         linkedAddresses.add(address);
     }
 
-    public static LinkedAddresses getLinkedAddresses(Address address) {
+    public static LinkedAddresses getAllLinkedAddresses(Address primaryAddress) {
         try {
-            InetAddress inetAddress = address.getInetAddress();
-
-            String host = address.getHost();
+            InetAddress inetAddress = primaryAddress.getInetAddress();
+            // the fully qualified domain name for the given primary address
+            // or if the operation is not allowed by the security check,
+            // the textual representation of the IP address.
             String canonicalHost = inetAddress.getCanonicalHostName();
+            // ip address for the given primary address
             String ip = inetAddress.getHostAddress();
 
-            Address addressHost = new Address(host, address.getPort());
-            Address addressIp = new Address(ip, address.getPort());
-            Address addressCanonicalHost = new Address(canonicalHost, address.getPort());
-            return new LinkedAddresses(addressHost,
-                    asList(addressIp, addressCanonicalHost));
+            Address addressIp = new Address(ip, primaryAddress.getPort());
+            Address addressCanonicalHost = new Address(canonicalHost, primaryAddress.getPort());
+
+            Set<Address> linkedAddresses = newSetFromMap(new ConcurrentHashMap<>());
+            if (!addressIp.equals(primaryAddress)) {
+                linkedAddresses.add(addressIp);
+            }
+            if (!addressCanonicalHost.equals(primaryAddress)) {
+                linkedAddresses.add(addressCanonicalHost);
+            }
+            linkedAddresses.addAll(asList(addressIp, addressCanonicalHost));
+            return new LinkedAddresses(primaryAddress, linkedAddresses);
         } catch (UnknownHostException e) {
             // we have a hostname here in `address`, but we can't resolve it
             // how on earth we could come here?
             ignore(e);
         }
-        return null;
+        return new LinkedAddresses(primaryAddress);
     }
 
     @Override
