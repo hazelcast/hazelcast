@@ -183,8 +183,8 @@ public final class TcpServerControl {
             for (Address remoteAddressAlias : remoteAddressAliases) {
                 connectionManager.addressRegistry.register(remoteUuid, remoteAddressAlias);
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Registering the address alias= " + remoteAddressAlias  +
-                            " for the member uuid=" + remoteUuid);
+                    logger.finest("Registering the address alias= " + remoteAddressAlias
+                            + " for the member uuid=" + remoteUuid);
                 }
             }
         }
