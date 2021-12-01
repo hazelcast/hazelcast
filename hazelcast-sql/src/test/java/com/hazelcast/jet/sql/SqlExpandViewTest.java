@@ -105,7 +105,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
     }
-    
+
     @Test
     public void when_fullSchemaViewIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
