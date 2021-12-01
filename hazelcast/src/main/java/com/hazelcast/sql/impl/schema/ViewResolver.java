@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.schema.view.View;
 import javax.annotation.Nullable;
 
 /**
- * Generic interface that resolves mappings based on object name.
+ * Generic interface that resolves view based on view name.
  */
 @FunctionalInterface
 public interface ViewResolver {

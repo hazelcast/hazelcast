@@ -34,7 +34,6 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -124,11 +123,6 @@ public class TableResolverImpl implements TableResolver {
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
-    }
-
-    @Nullable
-    private Mapping getMapping(String name) {
-        return tableStorage.getMapping(name);
     }
 
     public void removeMapping(String name, boolean ifExists) {

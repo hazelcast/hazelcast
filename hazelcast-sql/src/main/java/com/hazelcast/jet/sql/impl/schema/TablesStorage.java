@@ -34,7 +34,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -81,16 +80,6 @@ public class TablesStorage {
         Object previous = storage().putIfAbsent(name, view);
         awaitMappingOnAllMembers(name, view);
         return previous == null;
-    }
-
-    @Nullable
-    Mapping getMapping(String name) {
-        Object candidate = storage().get(name);
-
-        if (candidate != null && candidate instanceof Mapping) {
-            return (Mapping) candidate;
-        }
-        return null;
     }
 
     Mapping removeMapping(String name) {
