@@ -46,6 +46,7 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 
@@ -204,11 +205,13 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void listXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void listXmlGenerator(XmlGenerator gen, Config config) {
         collectionXmlGenerator(gen, "list", config.getListConfigs().values());
     }
 
-    static void setXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void setXmlGenerator(XmlGenerator gen, Config config) {
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
     }
 
@@ -230,7 +233,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void replicatedMapXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void replicatedMapXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
             gen.open("replicatedmap", "name", r.getName())
@@ -563,7 +567,8 @@ public class ConfigXmlGenerator {
                 : null;
     }
 
-    static String classNameOrImplClass(String className, Object impl) {
+    @PrivateApi
+    public static String classNameOrImplClass(String className, Object impl) {
         return !isNullOrEmpty(className) ? className
                 : impl != null ? impl.getClass().getName()
                 : null;
@@ -589,7 +594,8 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    static void executorXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void executorXmlGenerator(XmlGenerator gen, Config config) {
         for (ExecutorConfig ex : config.getExecutorConfigs().values()) {
             gen.open("executor-service", "name", ex.getName())
                     .node("statistics-enabled", ex.isStatisticsEnabled())
@@ -600,7 +606,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void durableExecutorXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void durableExecutorXmlGenerator(XmlGenerator gen, Config config) {
         for (DurableExecutorConfig ex : config.getDurableExecutorConfigs().values()) {
             gen.open("durable-executor-service", "name", ex.getName())
                     .node("pool-size", ex.getPoolSize())
@@ -612,7 +619,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void scheduledExecutorXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void scheduledExecutorXmlGenerator(XmlGenerator gen, Config config) {
         for (ScheduledExecutorConfig ex : config.getScheduledExecutorConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
 
@@ -628,7 +636,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void cardinalityEstimatorXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void cardinalityEstimatorXmlGenerator(XmlGenerator gen, Config config) {
         for (CardinalityEstimatorConfig ex : config.getCardinalityEstimatorConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
 
@@ -641,7 +650,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
         for (PNCounterConfig counterConfig : config.getPNCounterConfigs().values()) {
             gen.open("pn-counter", "name", counterConfig.getName())
                     .node("replica-count", counterConfig.getReplicaCount())
@@ -651,7 +661,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void topicXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void topicXmlGenerator(XmlGenerator gen, Config config) {
         for (TopicConfig t : config.getTopicConfigs().values()) {
             gen.open("topic", "name", t.getName())
                     .node("statistics-enabled", t.isStatisticsEnabled())
@@ -669,7 +680,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void reliableTopicXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void reliableTopicXmlGenerator(XmlGenerator gen, Config config) {
         for (ReliableTopicConfig t : config.getReliableTopicConfigs().values()) {
             gen.open("reliable-topic", "name", t.getName())
                     .node("statistics-enabled", t.isStatisticsEnabled())
@@ -687,7 +699,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void multiMapXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void multiMapXmlGenerator(XmlGenerator gen, Config config) {
         for (MultiMapConfig mm : config.getMultiMapConfigs().values()) {
             gen.open("multimap", "name", mm.getName())
                     .node("backup-count", mm.getBackupCount())
@@ -704,7 +717,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void queueXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void queueXmlGenerator(XmlGenerator gen, Config config) {
         Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             gen.open("queue", "name", q.getName())
@@ -732,7 +746,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void ringbufferXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void ringbufferXmlGenerator(XmlGenerator gen, Config config) {
         Collection<RingbufferConfig> configs = config.getRingbufferConfigs().values();
         for (RingbufferConfig rbConfig : configs) {
             gen.open("ringbuffer", "name", rbConfig.getName())
@@ -759,7 +774,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
             for (WanBatchPublisherConfig p : wan.getBatchPublisherConfigs()) {
@@ -980,7 +996,8 @@ public class ConfigXmlGenerator {
         return "wan-endpoint-config";
     }
 
-    static void mapXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void mapXmlGenerator(XmlGenerator gen, Config config) {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
         for (MapConfig m : mapConfigs) {
             String cacheDeserializedVal = m.getCacheDeserializedValues() != null
@@ -1071,7 +1088,8 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    static void cacheXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void cacheXmlGenerator(XmlGenerator gen, Config config) {
         for (CacheSimpleConfig c : config.getCacheConfigs().values()) {
             gen.open("cache", "name", c.getName());
             if (c.getKeyType() != null) {
@@ -1588,7 +1606,8 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+    @PrivateApi
+    public static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
         for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())

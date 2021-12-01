@@ -761,7 +761,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
     // UTILITY - GENERATOR
 
-    abstract Config getNewConfigViaGenerator(Config config);
+    protected abstract Config getNewConfigViaGenerator(Config config);
 
     // UTILITY - TESTS
 
@@ -1042,7 +1042,7 @@ public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
 
         DiskTierConfig diskTierConfig = new DiskTierConfig()
                 .setEnabled(true)
-                .setDeviceName("devicexz04");
+                .setDeviceName("device04");
 
         return new TieredStoreConfig()
                 .setEnabled(true)

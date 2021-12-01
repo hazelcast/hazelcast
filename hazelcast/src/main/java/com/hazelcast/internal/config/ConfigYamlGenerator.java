@@ -14,8 +14,56 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.CollectionConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MemoryTierConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.ReliableTopicConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.RingbufferStoreConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TieredStoreConfig;
+import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
@@ -31,8 +79,15 @@ import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedD
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.TRUE;
 
+/**
+ * YAML counterpart of {@link ConfigXmlGenerator}. Note that this class isn't
+ * complete like its counterpart. However, since dynamic configuration
+ * persistence depends on this class, dynamically configurable configurations
+ * must be added to this class.
+ */
+@PrivateApi
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ClassFanOutComplexity"})
-class ConfigYamlGenerator {
+public class ConfigYamlGenerator {
 
     private static final int INDENT = 2;
 
@@ -69,8 +124,9 @@ class ConfigYamlGenerator {
         Dump dump = new Dump(dumpSettings);
         return dump.dumpToString(document);
     }
+
     @SuppressWarnings("checkstyle:MethodLength")
-    static void mapYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void mapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getMapConfigs().isEmpty()) {
             return;
         }
@@ -144,7 +200,7 @@ class ConfigYamlGenerator {
         parent.put("map", child);
     }
 
-    static void cacheYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void cacheYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getCacheConfigs().isEmpty()) {
             return;
         }
@@ -208,7 +264,7 @@ class ConfigYamlGenerator {
         parent.put("cache", child);
     }
 
-    static void queueYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void queueYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getQueueConfigs().isEmpty()) {
             return;
         }
@@ -244,7 +300,7 @@ class ConfigYamlGenerator {
         parent.put("queue", child);
     }
 
-    static void listYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void listYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getListConfigs().isEmpty()) {
             return;
         }
@@ -257,7 +313,7 @@ class ConfigYamlGenerator {
         parent.put("list", child);
     }
 
-    static void setYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void setYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getSetConfigs().isEmpty()) {
             return;
         }
@@ -270,7 +326,7 @@ class ConfigYamlGenerator {
         parent.put("set", child);
     }
 
-    static void multiMapYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void multiMapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getMultiMapConfigs().isEmpty()) {
             return;
         }
@@ -302,7 +358,7 @@ class ConfigYamlGenerator {
         parent.put("multimap", child);
     }
 
-    static void replicatedMapYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void replicatedMapYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReplicatedMapConfigs().isEmpty()) {
             return;
         }
@@ -330,7 +386,7 @@ class ConfigYamlGenerator {
         parent.put("replicatedmap", child);
     }
 
-    static void ringbufferYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void ringbufferYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getRingbufferConfigs().isEmpty()) {
             return;
         }
@@ -362,7 +418,7 @@ class ConfigYamlGenerator {
         parent.put("ringbuffer", child);
     }
 
-    static void topicYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void topicYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getTopicConfigs().isEmpty()) {
             return;
         }
@@ -386,7 +442,7 @@ class ConfigYamlGenerator {
         parent.put("topic", child);
     }
 
-    static void reliableTopicYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void reliableTopicYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getReliableTopicConfigs().isEmpty()) {
             return;
         }
@@ -410,7 +466,7 @@ class ConfigYamlGenerator {
         parent.put("reliable-topic", child);
     }
 
-    static void executorYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void executorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getExecutorConfigs().isEmpty()) {
             return;
         }
@@ -434,7 +490,7 @@ class ConfigYamlGenerator {
         parent.put("executor-service", child);
     }
 
-    static void durableExecutorYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void durableExecutorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getDurableExecutorConfigs().isEmpty()) {
             return;
         }
@@ -460,7 +516,7 @@ class ConfigYamlGenerator {
         parent.put("durable-executor-service", child);
     }
 
-    static void scheduledExecutorYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void scheduledExecutorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getScheduledExecutorConfigs().isEmpty()) {
             return;
         }
@@ -490,7 +546,7 @@ class ConfigYamlGenerator {
         parent.put("scheduled-executor-service", child);
     }
 
-    static void cardinalityEstimatorYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void cardinalityEstimatorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getCardinalityEstimatorConfigs().isEmpty()) {
             return;
         }
@@ -514,7 +570,7 @@ class ConfigYamlGenerator {
         parent.put("cardinality-estimator", child);
     }
 
-    static void flakeIdGeneratorYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void flakeIdGeneratorYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getFlakeIdGeneratorConfigs().isEmpty()) {
             return;
         }
@@ -546,7 +602,7 @@ class ConfigYamlGenerator {
         parent.put("flake-id-generator", child);
     }
 
-    static void pnCounterYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void pnCounterYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getPNCounterConfigs().isEmpty()) {
             return;
         }
@@ -568,7 +624,7 @@ class ConfigYamlGenerator {
         parent.put("pn-counter", child);
     }
 
-    static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {
+    public static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {
         if (config.getWanReplicationConfigs().isEmpty()) {
             return;
         }
@@ -576,8 +632,6 @@ class ConfigYamlGenerator {
         Map<String, Object> child = new LinkedHashMap<>();
         for (WanReplicationConfig subConfigAsObject : config.getWanReplicationConfigs().values()) {
             Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
-
-            Map<String, Object> wanBatchPublisherConfigsAsMap = new LinkedHashMap<>();
 
             addNonNullToMap(subConfigAsMap, "batch-publisher",
                     getWanBatchPublisherConfigsAsMap(subConfigAsObject.getBatchPublisherConfigs()));

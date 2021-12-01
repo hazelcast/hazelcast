@@ -1396,7 +1396,7 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         assertEquals(expected, actual);
     }
 
-    Config getNewConfigViaGenerator(Config config) {
+    protected Config getNewConfigViaGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
 
