@@ -91,7 +91,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
         "checkstyle:MethodCount",
 })
 @Command(
-        name = "hazelcast",
+        name = "hz-cli",
         description = "Utility to perform operations on a Hazelcast cluster.%n"
                 + "By default it uses the file config/hazelcast-client.xml to configure the client connection."
                 + "%n%n"

@@ -25,7 +25,7 @@ findScriptDir
 #shellcheck source=bin-regular/common.sh
 
 if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
-    echo "Usage: hazelcast-start [-d]"
+    echo "Usage: $0 [-d]"
     echo "  -d, --daemon   Starts Hazelcast in daemon mode"
     exit 0
 elif [[ "$1" = "-d" ]] || [[ "$1" = "--daemon" ]]; then
