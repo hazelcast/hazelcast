@@ -321,7 +321,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
         out.writeInt(storesByMapName.size());
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {

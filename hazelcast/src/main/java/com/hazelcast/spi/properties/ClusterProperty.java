@@ -440,6 +440,31 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.partition.migration.fragments.enabled", true);
 
     /**
+     * Enable to subdivide fragments into chunks.
+     * <p>
+     * Default enabled.
+     *
+     * @see ClusterProperty#PARTITION_FRAGMENTED_MIGRATION_ENABLED
+     */
+    public static final HazelcastProperty PARTITION_CHUNKED_MIGRATION_ENABLED
+            = new HazelcastProperty("hazelcast.partition.migration.chunks.enabled", true);
+
+    /**
+     * Migrating-data consists of data-chunks. Total number of bytes
+     * in all these data-chunks can be at max 100MB
+     * by default.
+     * <p>
+     * This value is only valid for a single partition migration.
+     * <p>
+     * If you have parallel migrations, max migrating data
+     * equals number-of-parallel-migrations times this value.
+     * <p>
+     * Default is 100MB
+     */
+    public static final HazelcastProperty PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB
+            = new HazelcastProperty("hazelcast.partition.migration.chunks.max.migrating.data.in.mb", 100);
+
+    /**
      * The time that a newly-appointed master node waits before forming a cluster.
      * Once a cluster is being started, a newly-appointed master node may receive
      * a flurry of join requests. If these requests were processed
@@ -1670,7 +1695,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
             .setDeprecatedName("jet.idle.cooperative.max.microseconds");
 
     /**
@@ -1693,7 +1718,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
             .setDeprecatedName("jet.idle.noncooperative.min.microseconds");
 
     /**
@@ -1716,7 +1741,7 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
+            = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
             .setDeprecatedName("jet.idle.noncooperative.max.microseconds");
 
     /**

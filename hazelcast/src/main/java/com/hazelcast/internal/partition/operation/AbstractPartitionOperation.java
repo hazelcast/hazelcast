@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -25,6 +26,7 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -34,6 +36,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +45,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
+import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
@@ -57,11 +61,13 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return createReplicationOperations(event, false);
     }
 
-    /** non-fragmented service replication operation preparation is always executed on partition operation thread */
+    /**
+     * non-fragmented service replication operation preparation is always executed on partition operation thread
+     */
     final Collection<Operation> createNonFragmentedReplicationOperations(PartitionReplicationEvent event) {
         if (ThreadUtil.isRunningOnPartitionThread()) {
             return createReplicationOperations(event, true);
-        }  else {
+        } else {
             UrgentPartitionRunnable<Collection<Operation>> runnable = new UrgentPartitionRunnable<>(
                     event.getPartitionId(), () -> createReplicationOperations(event, true));
             getNodeEngine().getOperationService().execute(runnable);
@@ -69,7 +75,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         }
     }
 
-    private Collection<Operation> createReplicationOperations(PartitionReplicationEvent event, boolean nonFragmentedOnly) {
+    private Collection<Operation> createReplicationOperations(PartitionReplicationEvent event,
+                                                              boolean nonFragmentedOnly) {
         Collection<Operation> operations = new ArrayList<>();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
@@ -88,6 +95,35 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             }
         }
         return operations;
+    }
+
+    final Collection<ChunkSupplier> collectChunkSuppliers(PartitionReplicationEvent event,
+                                                          Collection<String> serviceNames,
+                                                          ServiceNamespace namespace) {
+        getLogger().fine("Collecting chunk suppliers...");
+
+        Collection<ChunkSupplier> suppliers = EMPTY_LIST;
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        for (String serviceName : serviceNames) {
+            Object service = nodeEngine.getService(serviceName);
+            if (!(service instanceof ChunkedMigrationAwareService)) {
+                // skip not chunked services
+                continue;
+            }
+
+            if (suppliers == EMPTY_LIST) {
+                suppliers = new LinkedList<>();
+            }
+
+            suppliers.add(((ChunkedMigrationAwareService) service).newChunkSupplier(event, singleton(namespace)));
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine(String.format("Created chunk supplier:[%s, partitionId:%d]",
+                        namespace, event.getPartitionId()));
+            }
+        }
+
+        return suppliers;
     }
 
     // must be invoked on partition thread; prepares replication operations within partition thread
@@ -111,8 +147,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
-    /** used for offloaded replication op preparation while executing a migration request */
-    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event, ServiceNamespace ns,
+    /**
+     * used for offloaded replication op preparation while executing a migration request
+     */
+    final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event,
+                                                                           ServiceNamespace ns,
                                                                            Collection<String> serviceNames) {
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
 
@@ -122,13 +161,16 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             FragmentedMigrationAwareService service = nodeEngine.getService(serviceName);
             assert service.isKnownServiceNamespace(ns) : ns + " should be known by " + service;
 
-            operations = collectReplicationOperations(event, ns, isRunningOnPartitionThread(), operations, serviceName, service);
+            operations = collectReplicationOperations(event, ns,
+                    isRunningOnPartitionThread(), operations, serviceName, service);
         }
 
         return operations;
     }
 
-    /** used for partition replica sync, supporting offloaded replication op preparation */
+    /**
+     * used for partition replica sync, supporting offloaded replication op preparation
+     */
     final Collection<Operation> createFragmentReplicationOperationsOffload(PartitionReplicationEvent event, ServiceNamespace ns) {
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for fragmented services!";
 
@@ -156,13 +198,13 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
      */
     @Nullable
     private Collection<Operation> collectReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns,
-                                         boolean runsOnPartitionThread, Collection<Operation> operations,
-                                         String serviceName, FragmentedMigrationAwareService service) {
+                                                               boolean runsOnPartitionThread, Collection<Operation> operations,
+                                                               String serviceName, FragmentedMigrationAwareService service) {
         // execute on current thread if (shouldOffload() ^ runsOnPartitionThread)
         // otherwise explicitly request execution on partition or async executor thread.
         if (runsOnPartitionThread
-            ^ (service instanceof OffloadedReplicationPreparation
-               && ((OffloadedReplicationPreparation) service).shouldOffload())) {
+                ^ (service instanceof OffloadedReplicationPreparation
+                && ((OffloadedReplicationPreparation) service).shouldOffload())) {
             operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
         } else if (runsOnPartitionThread) {
             // migration aware service requested offload but we are on partition thread
@@ -208,9 +250,10 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return previous;
     }
 
-    private Operation prepareReplicationOperation(PartitionReplicationEvent event, ServiceNamespace ns,
-                    FragmentedMigrationAwareService service, String serviceName) {
-
+    private Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                                                  ServiceNamespace ns,
+                                                  FragmentedMigrationAwareService service,
+                                                  String serviceName) {
         Operation op = service.prepareReplicationOperation(event, singleton(ns));
         if (op == null) {
             return null;
@@ -220,9 +263,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return op;
     }
 
-    private Collection<Operation> prepareAndAppendReplicationOperation(PartitionReplicationEvent event, ServiceNamespace ns,
-            FragmentedMigrationAwareService service, String serviceName, Collection<Operation> operations) {
-
+    private Collection<Operation> prepareAndAppendReplicationOperation(PartitionReplicationEvent event,
+                                                                       ServiceNamespace ns,
+                                                                       FragmentedMigrationAwareService service,
+                                                                       String serviceName,
+                                                                       Collection<Operation> operations) {
         Operation op = service.prepareReplicationOperation(event, singleton(ns));
         if (op == null) {
             return operations;

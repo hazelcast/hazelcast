@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -65,11 +67,12 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        Operation op = new MigrationRequestOperation(migration, Collections.emptyList(), 0, true);
+        Operation op = new MigrationRequestOperation(migration, Collections.emptyList(),
+                0, true, true, Integer.MAX_VALUE);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
+                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -99,12 +102,15 @@ public class MasterSplitTest extends HazelcastTestSupport {
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
         ReplicaFragmentMigrationState migrationState
-                = new ReplicaFragmentMigrationState(Collections.emptyMap(), Collections.emptySet());
-        Operation op = new MigrationOperation(migration, Collections.emptyList(), 0, migrationState, true, true);
+                = new ReplicaFragmentMigrationState(Collections.emptyMap(),
+                Collections.emptySet(), Collections.emptySet(), (int) MemoryUnit.MEGABYTES.toBytes(50),
+                Logger.getLogger(getClass()), 1);
+        Operation op = new MigrationOperation(migration, Collections.emptyList(),
+                0, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
+                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -126,8 +132,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<Object> future =
                 getOperationService(member2).createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(),
-                                                                    getAddress(member3))
-                                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
+                                getAddress(member3))
+                        .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
 
         try {
             future.get();
