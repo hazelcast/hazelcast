@@ -37,9 +37,18 @@ fi
 # HAZELCAST_CONFIG holds the configuration path.
 # If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
 # The path can be absolute.
-# By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml
+# By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml, with fallback to $HAZELCAST_HOME/config/hazelcast.yaml
+# if the xml file is not present.
 if [ -z "$HAZELCAST_CONFIG" ]; then
     HAZELCAST_CONFIG="config/hazelcast.xml"
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yaml"
+    fi
+
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        echo "Configuration file is missing. Create hazelcast.xml or hazelcast.yaml in $HAZELCAST_HOME/config or set the HAZELCAST_CONFIG environment variable."
+        exit 1
+    fi
 fi
 # if the first character is /, then this is an absolute path, use as is
 # otherwise prepend (HAZELCAST_HOME)
