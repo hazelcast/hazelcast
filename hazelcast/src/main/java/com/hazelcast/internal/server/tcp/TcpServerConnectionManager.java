@@ -236,10 +236,10 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public boolean transmit(Packet packet, Address target, int streamId) {
+    public boolean transmit(Packet packet, Address targetAddress, int streamId) {
         checkNotNull(packet, "packet can't be null");
-        checkNotNull(target, "target can't be null");
-        return send(packet, target, null, streamId);
+        checkNotNull(targetAddress, "targetAddress can't be null");
+        return send(packet, targetAddress, null, streamId);
     }
 
     @Override

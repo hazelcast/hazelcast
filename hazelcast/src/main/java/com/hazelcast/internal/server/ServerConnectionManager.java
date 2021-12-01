@@ -201,12 +201,12 @@ public interface ServerConnectionManager
      * true can be returned, even though the connection eventually can't be established.
      *
      * @param packet The Packet to transmit.
-     * @param target The address of the target machine where the Packet should be transmitted.
+     * @param targetAddress The address of the target machine where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure.
      * @throws NullPointerException if packet or target is null.
      */
-    default boolean transmit(Packet packet, Address target) {
-        return transmit(packet, target, 0);
+    default boolean transmit(Packet packet, Address targetAddress) {
+        return transmit(packet, targetAddress, 0);
     }
 
     /**
@@ -216,12 +216,12 @@ public interface ServerConnectionManager
      * true can be returned, even though the connection eventually can't be established.
      *
      * @param packet The Packet to transmit.
-     * @param target The uuid of the target machine where the Packet should be transmitted.
+     * @param targetAddress The address of the target machine where the packet should be transmitted.
      * @param streamId the stream id
      * @return true if the transmit was a success, false if a failure.
      * @throws NullPointerException if packet or target is null.
      */
-    boolean transmit(Packet packet, Address target, int streamId);
+    boolean transmit(Packet packet, Address targetAddress, int streamId);
 
     /**
      * Returns network stats for inbound and outbound traffic.

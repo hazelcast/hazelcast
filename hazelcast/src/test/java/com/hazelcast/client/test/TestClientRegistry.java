@@ -189,7 +189,7 @@ class TestClientRegistry {
 
         // the bind address of client
         private final Address localAddress;
-        // the remote address of server
+        // the remote address that belongs to server side of the connection
         private final Address remoteAddress;
         private final TwoWayBlockableExecutor executor;
         private final MockedServerConnection serverConnection;

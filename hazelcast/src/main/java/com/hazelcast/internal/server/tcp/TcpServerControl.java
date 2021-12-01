@@ -89,7 +89,7 @@ public final class TcpServerControl {
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
-        List<Address> allAliases = new ArrayList<Address>();
+        List<Address> allAliases = new ArrayList<>();
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -183,9 +183,8 @@ public final class TcpServerControl {
             for (Address remoteAddressAlias : remoteAddressAliases) {
                 connectionManager.addressRegistry.register(remoteUuid, remoteAddressAlias);
                 if (logger.isFinestEnabled()) {
-                    // TODO [ufuk]: adjust this log statement
-                    logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
-                            + " planeIndex:" + handshake.getPlaneIndex());
+                    logger.finest("Registering the address alias= " + remoteAddressAlias  +
+                            " for the member uuid=" + remoteUuid);
                 }
             }
         }

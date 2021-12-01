@@ -193,8 +193,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            LinkedAddresses tmpLinkedAddresses = new LinkedAddresses(address);
-            return connectionsInProgress.containsKey(tmpLinkedAddresses);
+            return connectionsInProgress.keySet()
+                    .stream()
+                    .anyMatch(linkedAddresses -> linkedAddresses.contains(address));
         }
 
         public Address getConnectedAddress(Address address) {
@@ -248,13 +249,13 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     private final class SendTask implements Runnable {
         private final Packet packet;
-        private final Address target;
+        private final Address targetAddress;
         private final int streamId;
         private volatile int retries;
 
-        private SendTask(Packet packet, Address target, int streamId) {
+        private SendTask(Packet packet, Address targetAddress, int streamId) {
             this.packet = packet;
-            this.target = target;
+            this.targetAddress = targetAddress;
             this.streamId = streamId;
         }
 
@@ -263,9 +264,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
+                logger.finest("Retrying[" + retries + "] packet send operation to: " + targetAddress);
             }
-            send(packet, target, this, streamId);
+            send(packet, targetAddress, this, streamId);
         }
     }
 
