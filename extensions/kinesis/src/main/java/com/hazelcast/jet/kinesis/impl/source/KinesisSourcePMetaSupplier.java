@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet.kinesis.impl.source;
 
+import com.amazonaws.services.kinesis.model.Record;
+import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -33,7 +36,7 @@ import java.util.function.Function;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-public class KinesisSourcePMetaSupplier implements ProcessorMetaSupplier {
+public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
     private static final long serialVersionUID = 1L;
 
@@ -46,7 +49,9 @@ public class KinesisSourcePMetaSupplier implements ProcessorMetaSupplier {
     @Nonnull
     private final InitialShardIterators initialShardIterators;
     @Nonnull
-    private final EventTimePolicy<? super Map.Entry<String, byte[]>> eventTimePolicy;
+    private final EventTimePolicy<? super T> eventTimePolicy;
+    @Nonnull
+    private final BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn;
 
     private transient Map<Address, HashRange> assignedHashRanges;
 
@@ -55,13 +60,15 @@ public class KinesisSourcePMetaSupplier implements ProcessorMetaSupplier {
             @Nonnull String stream,
             @Nonnull RetryStrategy retryStrategy,
             @Nonnull InitialShardIterators initialShardIterators,
-            @Nonnull EventTimePolicy<? super Map.Entry<String, byte[]>> eventTimePolicy
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull BiFunctionEx<? super Record, ? super Shard, ? extends T> projectionFn
     ) {
         this.awsConfig = awsConfig;
         this.stream = stream;
         this.retryStrategy = retryStrategy;
         this.initialShardIterators = initialShardIterators;
         this.eventTimePolicy = eventTimePolicy;
+        this.projectionFn = projectionFn;
     }
 
     @Override
@@ -79,8 +86,8 @@ public class KinesisSourcePMetaSupplier implements ProcessorMetaSupplier {
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         return address -> {
             HashRange assignedRange = assignedHashRanges.get(address);
-            return new KinesisSourcePSupplier(awsConfig, stream, eventTimePolicy,
-                    assignedRange, retryStrategy, initialShardIterators);
+            return new KinesisSourcePSupplier<>(awsConfig, stream, eventTimePolicy,
+                    assignedRange, retryStrategy, initialShardIterators, projectionFn);
         };
     }
 
