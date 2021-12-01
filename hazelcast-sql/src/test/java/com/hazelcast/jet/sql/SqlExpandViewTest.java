@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.schema.view.View;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -106,17 +105,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
     }
-
-    @Test
-    public void when_circularViewsResolvedCorrectly() {
-        instance().getSql().execute("CREATE VIEW v1 AS SELECT * FROM " + MAP_NAME);
-        instance().getSql().execute("CREATE VIEW v2 AS SELECT * FROM v1");
-        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT * FROM v2");
-
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v1"))
-                .hasMessageContaining("Infinite recursion during view expanding detected");
-    }
-
+    
     @Test
     public void when_fullSchemaViewIsExpanded() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
@@ -288,10 +277,21 @@ public class SqlExpandViewTest extends SqlTestSupport {
     public void when_doubleViewIsExpandedDuringQueryWithProjection() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key = 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT __key FROM v");
-        instance().getSql().execute("CREATE VIEW vvv AS SELECT v.__key FROM v");
 
         assertRowsAnyOrder("SELECT * FROM vv", singletonList(new Row(1)));
-        assertRowsAnyOrder("SELECT * FROM vvv", singletonList(new Row(1)));
+    }
+
+    @Test
+    public void when_doubleViewIsExpandedDuringQueryWithStringConcat() {
+        IMap<String, String> map2;
+        map2 = instance().getMap("map2");
+        createMapping("map2", String.class, String.class);
+        map2.put("a", "b");
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM map2");
+        instance().getSql().execute("CREATE VIEW vv AS SELECT __key || this FROM v");
+
+        assertRowsAnyOrder("SELECT * FROM vv", singletonList(new Row("ab")));
     }
 
     @Test
@@ -307,17 +307,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
         sqlRows = instance().getSql().execute("SELECT * FROM vvv");
         Long count = sqlRows.iterator().next().getObject(0);
         assertThat(count).isEqualTo(1L);
-    }
-
-    @Test
-    public void when_doubleViewIsNotExpandedDuringViewCreation() {
-        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key > 1");
-        instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
-
-        View vv = (View) instance().getReplicatedMap("__sql.catalog").get("vv");
-
-        assertThat(vv.query()).isEqualTo("SELECT \"v\".\"__key\", \"v\".\"this\"\n"
-                + "FROM \"hazelcast\".\"public\".\"v\" AS \"v\"");
     }
 
     @Test

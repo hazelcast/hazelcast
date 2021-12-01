@@ -38,23 +38,6 @@ import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObject
 
 /**
  * CREATE VIEW statement AST tree node.
- * <p>
- * View creation process has specifics - when we're executing a query, we expand the view
- * references in the AST. However, when we're creating a view, we're not expanding them.
- * Example for better understanding:
- * <p>
- * {@code CREATE VIEW v1 AS SELECT * FROM map;}
- * <p>
- * {@code CREATE VIEW v2 AS SELECT * FROM v1;} -> view definition is based on another view.
- * We are using views as aliases, and they have similar behaviour as pointers in procedural languages.
- * <p>
- * When executing a query, we expand views like this:
- * <p>
- * {@code SELECT * FROM v2} -> {@code SELECT * FROM (SELECT * FROM map)}
- * <p>
- * To prevent the expansion when creating a view, we introduce extra SELECT AST tree node: {@link SqlNonExpandableSelect}.
- * During the {@link SqlCreateView} initialization, we explicitly rewrite all SELECT queries in aliased
- * query as {@link SqlNonExpandableSelect} by calling {@link SqlCreateView#rewriteInnerSelectsAsNonExpandable}.
  *
  * @since 5.1
  */
@@ -68,7 +51,7 @@ public class SqlCreateView extends SqlCreate {
     public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, ifNotExists);
         this.name = name;
-        this.query = rewriteInnerSelectsAsNonExpandable(query);
+        this.query = extractInnerSelects(query);
     }
 
     public String name() {
@@ -81,8 +64,6 @@ public class SqlCreateView extends SqlCreate {
 
     /**
      * @return expanded columns projection.
-     * It is extremely helpful to determine columns name
-     * in newly-created view as virtual table.
      */
     public List<String> projection() {
         List<String> projection = new ArrayList<>();
@@ -142,25 +123,17 @@ public class SqlCreateView extends SqlCreate {
         query = validator.validate(query);
     }
 
-    private SqlNode rewriteInnerSelectsAsNonExpandable(SqlNode query) {
+    private SqlNode extractInnerSelects(SqlNode query) {
         if (query instanceof SqlSelect) {
-            SqlSelect select = new SqlNonExpandableSelect((SqlSelect) query);
-            innerSelects.add(select);
-            return select;
+            innerSelects.add((SqlSelect) query);
+            return query;
         }
 
         if (query instanceof SqlOrderBy) {
             SqlOrderBy orderBy = (SqlOrderBy) query;
             if (orderBy.query instanceof SqlSelect) {
-                SqlSelect select = new SqlNonExpandableSelect((SqlSelect) orderBy.query);
-                innerSelects.add(select);
-                return new SqlOrderBy(
-                        orderBy.getParserPosition(),
-                        select,
-                        orderBy.orderList,
-                        orderBy.offset,
-                        orderBy.fetch
-                );
+                innerSelects.add((SqlSelect) orderBy.query);
+                return query;
             }
         }
 
@@ -168,7 +141,7 @@ public class SqlCreateView extends SqlCreate {
             SqlBasicCall call = (SqlBasicCall) query;
             for (int i = 0; i < call.getOperandList().size(); ++i) {
                 SqlNode node = call.getOperandList().get(i);
-                call.setOperand(i, rewriteInnerSelectsAsNonExpandable(node));
+                call.setOperand(i, extractInnerSelects(node));
             }
             return call;
         }

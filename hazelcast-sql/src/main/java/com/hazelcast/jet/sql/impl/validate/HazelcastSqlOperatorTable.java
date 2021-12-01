@@ -29,7 +29,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
-import com.hazelcast.jet.sql.impl.parse.SqlNonExpandableSelect;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
@@ -357,7 +356,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public SqlNode visit(SqlCall call) {
-            if (call instanceof SqlSelect && !(call instanceof SqlNonExpandableSelect)) {
+            if (call instanceof SqlSelect) {
                 viewExpander.expandView((SqlSelect) call);
             }
             call = rewriteCall(call);
