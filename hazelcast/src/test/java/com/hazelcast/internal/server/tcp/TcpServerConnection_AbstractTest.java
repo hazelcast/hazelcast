@@ -27,6 +27,7 @@ import com.hazelcast.internal.server.MockServerContext;
 import com.hazelcast.internal.server.NetworkingFactory;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.TestDataFactory;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.cluster.Address;
@@ -123,7 +124,7 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
         MockServerContext serverContext = null;
         while (serverContext == null) {
             try {
-                serverContext = new MockServerContext(portNumber++);
+                serverContext = new MockServerContext(portNumber++, UuidUtil.newUnsecureUUID());
             } catch (IOException e) {
                 if (portNumber >= PORT_NUMBER_UPPER_LIMIT) {
                     throw e;

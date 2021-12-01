@@ -68,14 +68,14 @@ public class MockServerContext implements ServerContext {
 
     public final ServerSocketChannel serverSocketChannel;
     public final Address thisAddress;
+    public final UUID thisUuid;
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
-    public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
     private final HazelcastProperties properties;
     public volatile Consumer<Packet> packetConsumer;
     private final ILogger logger;
 
-    public MockServerContext(int port) throws Exception {
+    public MockServerContext(int port, UUID memberUuid) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true, null);
         logger = loggingService.getLogger(MockServerContext.class);
         serverSocketChannel = ServerSocketChannel.open();
@@ -84,6 +84,7 @@ public class MockServerContext implements ServerContext {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
+        this.thisUuid = memberUuid;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
@@ -117,6 +118,11 @@ public class MockServerContext implements ServerContext {
     @Override
     public Address getThisAddress() {
         return thisAddress;
+    }
+
+    @Override
+    public UUID getThisUuid() {
+        return thisUuid;
     }
 
     @Override
@@ -396,8 +402,4 @@ public class MockServerContext implements ServerContext {
         return NoOpAuditlogService.INSTANCE;
     }
 
-    @Override
-    public UUID getThisUuid() {
-        return null;
-    }
 }
