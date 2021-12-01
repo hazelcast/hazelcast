@@ -34,15 +34,19 @@ public class LocalAddressRegistry {
         this.uuidToAddresses = new ConcurrentHashMap<>();
     }
 
+    // accessed from TcpServerControl#process(TcpServerConnection, MemberHandshake) handshake processing and MembershipManager#updateMembers
+    // when new member added event received from master
     public void register(UUID uuid, Address address) {
         addressToUuid.put(address, uuid);
-        if (uuidToAddresses.containsKey(uuid)) {
-            uuidToAddresses.get(uuid).addLinkedAddress(address);
-        } else {
-            uuidToAddresses.put(uuid, LinkedAddresses.getAllLinkedAddresses(address));
+        LinkedAddresses previousAddresses = uuidToAddresses.putIfAbsent(uuid, LinkedAddresses.getAllLinkedAddresses(address));
+        if (previousAddresses != null) {
+            previousAddresses.addLinkedAddress(address);
         }
     }
 
+    // Accessed from MembershipManager#updateMembers when member left event received from master
+    // In this case, we remove the related entries after we have already closed
+    // our connections to that member.
     public void removeRegistration(UUID removedUuid) {
         // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
         Iterator<UUID> iterator = addressToUuid.values().iterator();

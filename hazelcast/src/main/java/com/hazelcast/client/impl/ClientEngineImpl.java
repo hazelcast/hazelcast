@@ -438,7 +438,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 logger.finest("connectionRemoved: No endpoint for connection:" + connection);
                 return;
             }
-
+            node.getLocalAddressRegistry().removeRegistration(endpoint.getUuid());
             endpointManager.removeEndpoint(endpoint);
         }
     }

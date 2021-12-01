@@ -185,6 +185,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(remoteAddress, plane.index).reset());
+            } else {
+                // register the client endpoint uuid and its address to the address registry
+                addressRegistry.register(remoteUuid, remoteAddress);
             }
             plane.putConnection(remoteUuid, connection);
 
