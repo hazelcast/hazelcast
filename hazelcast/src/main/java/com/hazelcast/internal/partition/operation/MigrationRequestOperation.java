@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -410,12 +411,22 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(fragmentedMigrationEnabled);
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeBoolean(chunkedMigrationEnabled);
+            out.writeInt(maxTotalChunkedDataInBytes);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         fragmentedMigrationEnabled = in.readBoolean();
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            chunkedMigrationEnabled = in.readBoolean();
+            maxTotalChunkedDataInBytes = in.readInt();
+        }
     }
 
     /**

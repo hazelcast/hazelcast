@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
@@ -41,16 +41,17 @@ import java.util.Set;
 
 public class MapChunkContext {
 
+    protected Iterator<Map.Entry<Data, Record>> iterator;
+
     private final int partitionId;
     private final String mapName;
     private final SerializationService ss;
-    private final ExpirySystem expirySystem;
+    private final ExpirySystemIf expirySystem;
     private final MapServiceContext mapServiceContext;
     private final RecordStore recordStore;
     private final LocalMapStatsImpl mapStats;
 
     private ServiceNamespace serviceNamespace;
-    private Iterator<Map.Entry<Data, Record>> iterator;
 
     public MapChunkContext(MapServiceContext mapServiceContext,
                            int partitionId, ServiceNamespace namespaces) {

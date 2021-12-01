@@ -120,7 +120,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MIGRATION_T
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
  */
-@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling",
+        "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class MigrationManager {
 
     private static final int MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE = 3;
@@ -181,8 +182,7 @@ public class MigrationManager {
         partitionMigrationInterval = properties.getPositiveMillisOrDefault(PARTITION_MIGRATION_INTERVAL, 0);
         partitionMigrationTimeout = properties.getMillis(PARTITION_MIGRATION_TIMEOUT);
         fragmentedMigrationEnabled = properties.getBoolean(PARTITION_FRAGMENTED_MIGRATION_ENABLED);
-        chunkedMigrationEnabled = isClusterVersionGreaterOrEqualV51()
-                && properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
+        chunkedMigrationEnabled = properties.getBoolean(PARTITION_CHUNKED_MIGRATION_ENABLED);
         maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
         partitionStateManager = partitionService.getPartitionStateManager();
@@ -205,7 +205,7 @@ public class MigrationManager {
     // RU_COMPAT 5.0
     private boolean isClusterVersionGreaterOrEqualV51() {
         Version clusterVersion = node.getClusterService().getClusterVersion();
-        return clusterVersion.isUnknownOrGreaterOrEqual(Versions.V5_1);
+        return clusterVersion.isGreaterOrEqual(Versions.V5_1);
     }
 
     @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
@@ -313,6 +313,15 @@ public class MigrationManager {
 
     private void registerFinalizingMigration(MigrationInfo migration) {
         finalizingMigrationsRegistry.add(migration);
+    }
+
+    public boolean isChunkedMigrationEnabled() {
+        return isClusterVersionGreaterOrEqualV51()
+                && chunkedMigrationEnabled;
+    }
+
+    public int getMaxTotalChunkedDataInBytes() {
+        return maxTotalChunkedDataInBytes;
     }
 
     public boolean removeFinalizingMigration(MigrationInfo migration) {
@@ -1433,7 +1442,7 @@ public class MigrationManager {
 
                 List<MigrationInfo> completedMigrations = getCompletedMigrations(migration.getPartitionId());
                 Operation op = new MigrationRequestOperation(migration, completedMigrations, 0,
-                        fragmentedMigrationEnabled, chunkedMigrationEnabled, maxTotalChunkedDataInBytes);
+                        fragmentedMigrationEnabled, isChunkedMigrationEnabled(), maxTotalChunkedDataInBytes);
                 future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, fromMember.getAddress())
                         .setCallTimeout(partitionMigrationTimeout)

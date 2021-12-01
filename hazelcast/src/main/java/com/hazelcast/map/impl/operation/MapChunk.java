@@ -47,7 +47,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -91,10 +90,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     private transient UUID partitionUuid;
     private transient long currentSequence;
 
-    private transient boolean populateIndexes;
-    private transient InternalIndex[] indexesSnapshot;
-
     private boolean firstChunk;
+    private boolean lastChunk;
 
     public MapChunk() {
     }
@@ -109,17 +106,20 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             logger.finest(String.format("mapName:%s, chunkNumber:%d, partitionId:%d",
                     context.getMapName(), chunkNumber, context.getPartitionId()));
         }
-        incrementReplicationCount();
     }
 
     @Override
     public void run() throws Exception {
         RecordStore recordStore = getRecordStore(mapName);
+
         if (firstChunk) {
             addIndexes(recordStore, mapIndexInfo.getIndexConfigs());
             initializeRecordStore(mapName, recordStore);
             recordStore.setStats(stats);
             recordStore.setPreMigrationLoadedStatus(loaded);
+
+            applyWriteBehindState(recordStore);
+            applyNearCacheState(recordStore);
 
             applyIndexStateBefore(recordStore);
         }
@@ -129,11 +129,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             logProgress(recordStore);
         }
 
-        // TODO check if this is problematic or we need a flag to indicate end of chunks
-        if (firstChunk) {
-            applyIndexStateAfter();
-            applyWriteBehindState(recordStore);
-            applyNearCacheState(recordStore);
+        if (lastChunk) {
+            applyIndexStateAfter(recordStore);
         }
     }
 
@@ -167,10 +164,15 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
     }
 
-    private void applyIndexStateAfter() {
-        if (populateIndexes) {
-            Indexes.markPartitionAsIndexed(getPartitionId(), indexesSnapshot);
+    private void applyIndexStateAfter(RecordStore recordStore) {
+        MapContainer mapContainer = recordStore.getMapContainer();
+        Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
+
+        if (!indexesMustBePopulated(indexes)) {
+            return;
         }
+
+        Indexes.markPartitionAsIndexed(getPartitionId(), indexes.getIndexes());
     }
 
     private void applyIndexStateBefore(RecordStore recordStore) {
@@ -183,15 +185,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             indexes.addOrGetIndex(indexDefinition.getValue());
         }
 
-        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-        populateIndexes = indexesMustBePopulated(indexes);
+        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+        boolean populateIndexes = indexesMustBePopulated(indexes);
 
         if (populateIndexes) {
             // defensively clear possible stale
             // leftovers in non-global indexes from
             // the previous failed promotion attempt
-            indexesSnapshot = indexes.getIndexes();
-            Indexes.beginPartitionUpdate(indexesSnapshot);
+            Indexes.beginPartitionUpdate(indexes.getIndexes());
             indexes.clearAll();
         }
     }
@@ -204,9 +205,11 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             Record record = (Record) keyRecordExpiry.poll();
             ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.poll();
 
-            // TODO add indexesMustBePopulated check into IndexingObserver
+            Indexes indexes = recordStore.getMapContainer().getIndexes(recordStore.getPartitionId());
+
             recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
-                    getReplicaIndex() == 0, nowInMillis);
+                    indexesMustBePopulated(indexes), nowInMillis);
+
             if (recordStore.shouldEvict()) {
                 // No need to continue replicating records anymore.
                 // We are already over eviction threshold, each put record will cause another eviction.
@@ -241,9 +244,11 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
                     recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
                 }
             } else {
-                // TODO add indexesMustBePopulated check into IndexingObserver
+                Indexes indexes = mapContainer.getIndexes(recordStore.getPartitionId());
+
                 recordStore.putOrUpdateReplicatedRecord(dataKey, record, expiryMetadata,
-                        getReplicaIndex() == 0, nowInMillis);
+                        indexesMustBePopulated(indexes), nowInMillis);
+
                 ownedEntryCountOnThisNode++;
             }
 
@@ -368,14 +373,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         out.writeBoolean(firstChunk);
         if (firstChunk) {
             writeMetadata(out);
-            firstChunk = false;
         }
-
         writeChunk(out, context);
+
+        lastChunk = !context.getIterator().hasNext();
+        out.writeBoolean(lastChunk);
     }
 
-    protected void writeMetadata(ObjectDataOutput out)
-            throws IOException {
+    protected void writeMetadata(ObjectDataOutput out) throws IOException {
         out.writeObject(context.createMapIndexInfo());
         out.writeBoolean(context.isRecordStoreLoaded());
         context.getStats().writeData(out);
@@ -485,6 +490,9 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
             }
         }
         incrementReplicationRecordCount(recordCount);
+        if (!entries.hasNext()) {
+            incrementReplicationCount();
+        }
         // indicates end of chunk
         IOUtil.writeData(out, null);
     }
@@ -499,6 +507,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
 
         readChunk(in);
+
+        this.lastChunk = in.readBoolean();
     }
 
     protected void readMetadata(ObjectDataInput in)

@@ -450,19 +450,15 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.partition.migration.chunks.enabled", true);
 
     /**
-     * Migrating-data consists of data-chunks. Total number of bytes
-     * in all these data-chunks can be at max 100MB
-     * by default.
-     * <p>
-     * This value is only valid for a single partition migration.
+     * Total size of all chunks in bytes during a single partition migration.
      * <p>
      * If you have parallel migrations, max migrating data
      * equals number-of-parallel-migrations times this value.
      * <p>
-     * Default is 100MB
+     * Default is 250 MB.
      */
     public static final HazelcastProperty PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB
-            = new HazelcastProperty("hazelcast.partition.migration.chunks.max.migrating.data.in.mb", 100);
+            = new HazelcastProperty("hazelcast.partition.migration.chunks.max.migrating.data.in.mb", 250);
 
     /**
      * The time that a newly-appointed master node waits before forming a cluster.

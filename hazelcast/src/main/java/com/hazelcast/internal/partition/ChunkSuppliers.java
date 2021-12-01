@@ -60,6 +60,14 @@ public final class ChunkSuppliers {
             this.operationSupplier = operationSupplier;
         }
 
+        /**
+         * One usage of this method is by legacy migration
+         * operations which don't support chunked migrations.
+         * Since those migration operations can return null, their
+         * operationSupplier function can also return null.
+         *
+         * @return null or migration operation.
+         */
         @Nullable
         @Override
         public Operation next() {
@@ -78,10 +86,7 @@ public final class ChunkSuppliers {
 
         @Override
         public String toString() {
-            return "SingleChunkSupplier{"
-                    + "operationSupplier=" + operationSupplier
-                    + ", hasMoreChunks=" + hasMoreChunks
-                    + '}';
+            return "SingleChunkSupplier{" + "operationSupplier=" + operationSupplier + ", hasMoreChunks=" + hasMoreChunks + '}';
         }
     }
 
@@ -99,26 +104,23 @@ public final class ChunkSuppliers {
 
     private static final class ChainedChunkSupplier implements ChunkSupplier {
 
-        private final int length;
         private final List<ChunkSupplier> chain;
 
         private ChainedChunkSupplier(List<ChunkSupplier> chain) {
             this.chain = chain;
-            this.length = chain.size();
         }
 
         @Override
-        public void inject(BooleanSupplier isEndOfChunk) {
-            for (ChunkSupplier chunkSupplier : chain) {
-                chunkSupplier.inject(isEndOfChunk);
+        public void signalEndOfChunkWith(BooleanSupplier isEndOfChunk) {
+            for (int i = 0; i < chain.size(); i++) {
+                chain.get(i).signalEndOfChunkWith(isEndOfChunk);
             }
         }
 
         @Override
         public boolean hasNext() {
-            for (int i = 0; i < length; i++) {
-                ChunkSupplier chunkSupplier = chain.get(i);
-                if (chunkSupplier.hasNext()) {
+            for (int i = 0; i < chain.size(); i++) {
+                if (chain.get(i).hasNext()) {
                     return true;
                 }
             }
@@ -129,7 +131,7 @@ public final class ChunkSuppliers {
         @Nullable
         @Override
         public Operation next() {
-            for (int i = 0; i < length; i++) {
+            for (int i = 0; i < chain.size(); i++) {
                 ChunkSupplier chunkSupplier = chain.get(i);
                 if (chunkSupplier.hasNext()) {
                     return chunkSupplier.next();
@@ -142,9 +144,8 @@ public final class ChunkSuppliers {
         @Override
         public String toString() {
             return "ChunkSupplierChain{"
-                    + "length=" + length
-                    + ", chain=" + chain
-                    + '}';
+                    + "length=" + chain.size()
+                    + ", chain=" + chain + '}';
         }
     }
 }
