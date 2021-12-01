@@ -14,8 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config.dynamic;
 
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.ReliableTopicConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.internal.config.ConfigYamlGenerator;
 import com.hazelcast.internal.util.XmlUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.snakeyaml.engine.v2.api.Dump;

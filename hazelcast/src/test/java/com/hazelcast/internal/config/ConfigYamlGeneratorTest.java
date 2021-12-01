@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AbstractConfigGeneratorTest;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +32,7 @@ import java.io.ByteArrayInputStream;
 public class ConfigYamlGeneratorTest extends AbstractConfigGeneratorTest {
 
     @Override
-    Config getNewConfigViaGenerator(Config config) {
+    protected Config getNewConfigViaGenerator(Config config) {
         ConfigYamlGenerator configYamlGenerator = new ConfigYamlGenerator();
         String yaml = configYamlGenerator.generate(config);
         System.err.println("YAML: " + yaml);
