@@ -32,9 +32,9 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -126,6 +126,11 @@ public class TableResolverImpl implements TableResolver {
         );
     }
 
+    @Nullable
+    private Mapping getMapping(String name) {
+        return tableStorage.getMapping(name);
+    }
+
     public void removeMapping(String name, boolean ifExists) {
         if (tableStorage.removeMapping(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
@@ -199,13 +204,16 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(View view) {
+        List<TableField> tableFields = new ArrayList<>(view.viewColumnNames().size());
+        for (int i = 0; i < view.viewColumnNames().size(); ++i) {
+            tableFields.add(
+                    new TableField(view.viewColumnNames().get(i), view.viewColumnTypes().get(i), false)
+            );
+        }
         return new ViewTable(
                 SCHEMA_NAME_PUBLIC,
                 view.name(),
-                view.projection()
-                        .stream()
-                        .map(v -> new TableField(v, QueryDataType.OBJECT, false))
-                        .collect(Collectors.toList()),
+                tableFields,
                 new ConstantTableStatistics(0L)
         );
     }

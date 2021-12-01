@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.schema.ViewResolver;
+import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -34,11 +36,14 @@ import java.util.List;
  * Custom catalog reader that allows for setting predefined schema paths and wrapping of returned tables.
  */
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
+    private final ViewResolver viewResolver;
+
     public HazelcastCalciteCatalogReader(
             CalciteSchema rootSchema,
             List<List<String>> schemaPaths,
             RelDataTypeFactory typeFactory,
-            CalciteConnectionConfig config
+            CalciteConnectionConfig config,
+            ViewResolver viewResolver
     ) {
         // Call the protected constructor that is not visible otherwise.
         super(
@@ -48,6 +53,7 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
                 typeFactory,
                 config
         );
+        this.viewResolver = viewResolver;
     }
 
     /**
@@ -61,6 +67,11 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
 
         if (table == null) {
             return null;
+        }
+
+        View view = viewResolver.resolve(names.get(names.size() - 1));
+        if (view != null) {
+            return new HazelcastViewRelOptTable(table, view);
         }
 
         // Wrap it into our own table.

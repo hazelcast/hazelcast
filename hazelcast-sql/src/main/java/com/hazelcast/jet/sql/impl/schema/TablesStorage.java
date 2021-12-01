@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -82,12 +83,18 @@ public class TablesStorage {
         return previous == null;
     }
 
-    Mapping removeMapping(String name) {
-        return (Mapping) storage().remove(name);
+    @Nullable
+    Mapping getMapping(String name) {
+        Object candidate = storage().get(name);
+
+        if (candidate != null && candidate instanceof Mapping) {
+            return (Mapping) candidate;
+        }
+        return null;
     }
 
-    View getView(String name) {
-        return (View) storage().get(name);
+    Mapping removeMapping(String name) {
+        return (Mapping) storage().remove(name);
     }
 
     View removeView(String name) {

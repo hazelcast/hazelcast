@@ -118,7 +118,7 @@ public final class OptimizerContext {
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
+        Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths, viewResolver);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
                 catalogReader,
                 arguments,
@@ -177,7 +177,9 @@ public final class OptimizerContext {
 
     private static Prepare.CatalogReader createCatalogReader(
             HazelcastSchema rootSchema,
-            List<List<String>> searchPaths
+            List<List<String>> searchPaths,
+            ViewResolver viewResolver
+
     ) {
         assert searchPaths != null;
 
@@ -185,7 +187,8 @@ public final class OptimizerContext {
                 new HazelcastRootCalciteSchema(rootSchema),
                 searchPaths,
                 HazelcastTypeFactory.INSTANCE,
-                CONNECTION_CONFIG
+                CONNECTION_CONFIG,
+                viewResolver
         );
     }
 

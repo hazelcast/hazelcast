@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
+import com.hazelcast.jet.sql.impl.schema.HazelcastViewExpander;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -44,6 +45,7 @@ import javax.annotation.Nullable;
  * Converts a parse tree into a relational tree.
  */
 public class QueryConverter {
+    public static final SqlToRelConverter.Config CONFIG;
 
     /**
      * Whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
@@ -65,7 +67,6 @@ public class QueryConverter {
      */
     private static final int HAZELCAST_IN_ELEMENTS_THRESHOLD = 10_000;
 
-    private static final SqlToRelConverter.Config CONFIG;
 
     static {
         CONFIG = SqlToRelConverter.config()
@@ -77,16 +78,18 @@ public class QueryConverter {
     private final SqlValidator validator;
     private final Prepare.CatalogReader catalogReader;
     private final RelOptCluster cluster;
+    private final HazelcastViewExpander viewExpander;
 
     public QueryConverter(SqlValidator validator, Prepare.CatalogReader catalogReader, HazelcastRelOptCluster cluster) {
         this.validator = validator;
         this.catalogReader = catalogReader;
         this.cluster = cluster;
+        this.viewExpander = new HazelcastViewExpander(validator, catalogReader, cluster);
     }
 
     public QueryConvertResult convert(SqlNode node) {
         SqlToRelConverter converter = new HazelcastSqlToRelConverter(
-                null,
+                viewExpander,
                 validator,
                 catalogReader,
                 cluster,

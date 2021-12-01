@@ -66,7 +66,7 @@ import java.util.List;
  */
 public class HazelcastRelOptTable implements Prepare.PreparingTable {
 
-    private final Prepare.PreparingTable delegate;
+    protected final Prepare.PreparingTable delegate;
 
     public HazelcastRelOptTable(Prepare.PreparingTable delegate) {
         this.delegate = delegate;

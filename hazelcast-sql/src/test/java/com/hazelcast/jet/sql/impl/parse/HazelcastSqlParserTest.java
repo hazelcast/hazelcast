@@ -348,7 +348,6 @@ public class HazelcastSqlParserTest {
         // then
         assertThat(node.name()).isEqualTo("view_name");
         assertThat(node.getQuery()).isInstanceOf(SqlSelect.class);
-        assertThat(node.projection()).hasSize(1);
         assertThat(node.getReplace()).isEqualTo(toReplace);
     }
 

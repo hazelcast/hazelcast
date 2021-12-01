@@ -39,7 +39,6 @@ import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -567,28 +566,42 @@ abstract class SqlPlanImpl extends SqlPlan {
     }
 
     static class CreateViewPlan extends SqlPlanImpl {
-        private final View view;
+        private final OptimizerContext context;
+        private final String viewName;
+        private final String viewQuery;
         private final boolean replace;
         private final boolean ifNotExists;
         private final PlanExecutor planExecutor;
 
         CreateViewPlan(
                 PlanKey planKey,
-                View view,
+                final OptimizerContext context,
+                String viewName,
+                String viewQuery,
                 boolean replace,
                 boolean ifNotExists,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
-            this.view = view;
+            this.context = context;
+            this.viewName = viewName;
+            this.viewQuery = viewQuery;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
             this.planExecutor = planExecutor;
         }
 
-        View view() {
-            return view;
+        public OptimizerContext context() {
+            return context;
+        }
+
+        public String viewName() {
+            return viewName;
+        }
+
+        public String viewQuery() {
+            return viewQuery;
         }
 
         boolean isReplace() {
@@ -606,7 +619,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(view.name(), ACTION_CREATE_VIEW));
+            context.checkPermission(new SqlPermission(viewName, ACTION_CREATE_VIEW));
         }
 
         @Override

@@ -84,7 +84,6 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
-import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlUtil;
@@ -335,11 +334,9 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
      */
     static final class RewriteVisitor extends SqlBasicVisitor<SqlNode> {
         private final HazelcastSqlValidator validator;
-        private final HazelcastViewExpander viewExpander;
 
         RewriteVisitor(HazelcastSqlValidator validator) {
             this.validator = validator;
-            this.viewExpander = new HazelcastViewExpander(validator);
         }
 
         @Override
@@ -356,9 +353,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public SqlNode visit(SqlCall call) {
-            if (call instanceof SqlSelect) {
-                viewExpander.expandView((SqlSelect) call);
-            }
             call = rewriteCall(call);
             for (int i = 0; i < call.getOperandList().size(); i++) {
                 SqlNode operand = call.getOperandList().get(i);

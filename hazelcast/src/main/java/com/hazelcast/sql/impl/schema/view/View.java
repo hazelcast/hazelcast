@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,15 +31,17 @@ public class View implements IdentifiedDataSerializable {
 
     private String name;
     private String query;
-    private List<String> projection;
+    private List<String> viewColumnNames;
+    private List<QueryDataType> viewColumnTypes;
 
     public View() {
     }
 
-    public View(String name, String query, List<String> projection) {
+    public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes) {
         this.name = name;
         this.query = query;
-        this.projection = projection;
+        this.viewColumnNames = columnNames;
+        this.viewColumnTypes = columnTypes;
     }
 
     public String name() {
@@ -49,22 +52,28 @@ public class View implements IdentifiedDataSerializable {
         return query;
     }
 
-    public List<String> projection() {
-        return projection;
+    public List<String> viewColumnNames() {
+        return viewColumnNames;
+    }
+
+    public List<QueryDataType> viewColumnTypes() {
+        return viewColumnTypes;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(query);
-        SerializationUtil.writeList(projection, out);
+        SerializationUtil.writeList(viewColumnNames, out);
+        SerializationUtil.writeList(viewColumnTypes, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
         query = in.readString();
-        projection = SerializationUtil.readList(in);
+        viewColumnNames = SerializationUtil.readList(in);
+        viewColumnTypes = SerializationUtil.readList(in);
     }
 
     @Override
@@ -88,7 +97,8 @@ public class View implements IdentifiedDataSerializable {
         View view = (View) o;
         return Objects.equals(name, view.name)
                 && Objects.equals(query, view.query)
-                && Objects.equals(projection, view.projection);
+                && Objects.equals(viewColumnNames, view.viewColumnNames)
+                && Objects.equals(viewColumnTypes, view.viewColumnTypes);
     }
 
     @Override

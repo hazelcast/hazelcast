@@ -60,6 +60,18 @@ public class SqlExpandViewTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT * FROM v", Collections.singletonList(new Row(1, 1)));
     }
 
+    @Ignore("TODO")
+    @Test
+    public void when_circularViewsResolvedCorrectly_then_fails() {
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT * FROM " + MAP_NAME);
+        instance().getSql().execute("CREATE VIEW v2 AS SELECT * FROM v1");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT * FROM v2");
+
+        assertRowsAnyOrder("SELECT * FROM v1", singletonList(new Row(1, 1)));
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v1"))
+                .hasMessageContaining("Infinite recursion during view expanding detected");
+    }
+
     @Test
     public void when_viewIsExpandedWithDistinctSelect() {
         map.put(1, 1);
@@ -79,19 +91,19 @@ public class SqlExpandViewTest extends SqlTestSupport {
                         "EXISTS (SELECT * FROM v WHERE __key = " + MAP_NAME + ".__key)",
                 singletonList(new Row(1, 1)));
 
-//        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE " +
-//                        "EXISTS (SELECT * FROM v WHERE v.__key = " + MAP_NAME + ".__key)",
-//                singletonList(new Row(1, 1)));
+        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE " +
+                        "EXISTS (SELECT * FROM v WHERE v.__key = " + MAP_NAME + ".__key)",
+                singletonList(new Row(1, 1)));
     }
 
     @Test
-    public void when_incorrectQueryView_then_throws() {
+    public void when_incorrectQueryView_then_fails() {
         assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT -"))
                 .hasMessageContaining("Encountered \"<EOF>\" at line 1");
     }
 
     @Test
-    public void when_viewAfterMappingRemovedIsExpanded_then_throws() {
+    public void when_viewAfterMappingRemovedIsExpanded_then_fails() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
         instance().getSql().execute("DROP MAPPING " + MAP_NAME);
 
@@ -159,7 +171,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT * FROM v", singletonList(new Row(1, 1, 1, 1)));
     }
 
-    @Ignore("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
+    @Test
+    public void when_viewIsExpandedWithCrossProduct() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
+        assertRowsAnyOrder("SELECT * FROM v v1 CROSS JOIN v v2", singletonList(new Row(1, 1, 1, 1)));
+    }
+
     @Test
     public void when_viewIsExpandedAsJoinRHS() {
         final String MAP_NAME_2 = "map2";
@@ -172,10 +189,9 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute(sql);
 
         assertRowsAnyOrder(
-                "SELECT * FROM " + MAP_NAME_2 + " JOIN v ON " + MAP_NAME + ".__key = " + MAP_NAME_2 + ".__key = 1",
+                "SELECT * FROM " + MAP_NAME_2 + " JOIN v ON v.__key = " + MAP_NAME_2 + ".__key",
                 singletonList(new Row(1, 1, 1, 1))
         );
-        assertRowsAnyOrder("SELECT * FROM v CROSS JOIN v", singletonList(new Row(1, 1, 1, 1)));
     }
 
     @Test
@@ -214,7 +230,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
         ));
     }
 
-    @Ignore("SCALAR query are not supported")
+    @Ignore("SCALAR QUERY not supported")
     @Test
     public void when_viewIsExpandedWithValuesAndSubQueryWithin() {
         instance().getSql().execute("CREATE VIEW v AS SELECT 1");
@@ -247,7 +263,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(distance) " +
-                        "FROM TABLE(TUMBLE(TABLE (v), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "FROM TABLE(TUMBLE(TABLE(v), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY window_start",
                 asList(
                         new Row(timestampTz(0L), 1L),

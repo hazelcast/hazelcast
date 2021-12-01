@@ -386,7 +386,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * Because there is no RexNode for type reference in Calcite (see CAST implementation),
      * the type has to be instead set as the type of the parent (JSON_VALUE's RexCall), which is
      * then interpreted as the desired type of the expression.
-     *
+     * <p>
      * Supported syntax:
      * JSON_VALUE(jsonArg, jsonPathArg [returning] [onEmpty|onError])
      * returning: RETURNING dataType

@@ -86,7 +86,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
-import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -269,7 +268,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlDropSnapshot) {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
         } else if (node instanceof SqlCreateView) {
-            return toCreateViewPlan(planKey, (SqlCreateView) node);
+            return toCreateViewPlan(planKey, context, (SqlCreateView) node);
         } else if (node instanceof SqlDropView) {
             return toDropViewPlan(planKey, (SqlDropView) node);
         } else if (node instanceof SqlShowStatement) {
@@ -380,16 +379,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new DropSnapshotPlan(planKey, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
     }
 
-    private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
+    private SqlPlan toCreateViewPlan(PlanKey planKey, OptimizerContext context, SqlCreateView sqlNode) {
         SqlString sqlString = sqlNode.getQuery().toSqlString(PostgresqlSqlDialect.DEFAULT);
         String sql = sqlString.getSql();
-        List<String> projection = sqlNode.projection();
         boolean replace = sqlNode.getReplace();
         boolean ifNotExists = sqlNode.ifNotExists;
 
         return new CreateViewPlan(
                 planKey,
-                new View(sqlNode.name(), sql, projection),
+                context,
+                sqlNode.name(),
+                sql,
                 replace,
                 ifNotExists,
                 planExecutor

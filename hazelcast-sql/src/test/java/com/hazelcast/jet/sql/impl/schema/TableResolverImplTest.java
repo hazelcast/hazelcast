@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver.TableListener;
 import com.hazelcast.sql.impl.schema.view.View;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,6 +34,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -104,7 +106,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
-                .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
+                .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
@@ -122,7 +124,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
-                .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
+                .willReturn(singletonList(new MappingField("field_name", INT)));
         given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
@@ -139,7 +141,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
-                .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
+                .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when
         catalog.createMapping(mapping, true, false);
@@ -293,6 +295,6 @@ public class TableResolverImplTest {
     }
 
     private static View view() {
-        return new View("name", "SELECT * FROM map", singletonList("*"));
+        return new View("name", "SELECT * FROM map", singletonList("*"), asList(OBJECT, OBJECT));
     }
 }
