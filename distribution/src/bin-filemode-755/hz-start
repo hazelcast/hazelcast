@@ -34,9 +34,29 @@ fi
 
 . "$SCRIPT_DIR"/common.sh
 
-# HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
+# HAZELCAST_CONFIG holds the configuration path.
+# If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
+# The path can be absolute.
+# By default, it is set to $HAZELCAST_HOME/config/hazelcast.xml, with fallback to $HAZELCAST_HOME/config/hazelcast.yaml
+# if the xml file is not present.
 if [ -z "$HAZELCAST_CONFIG" ]; then
     HAZELCAST_CONFIG="config/hazelcast.xml"
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yaml"
+    fi
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        HAZELCAST_CONFIG="config/hazelcast.yml"
+    fi
+
+    if [ ! -f "$HAZELCAST_HOME/$HAZELCAST_CONFIG" ]; then
+        echo "Configuration file is missing. Create hazelcast.[xml|yaml|yml] in $HAZELCAST_HOME/config or set the HAZELCAST_CONFIG environment variable."
+        exit 1
+    fi
+fi
+# if the first character is /, then this is an absolute path, use as is
+# otherwise prepend (HAZELCAST_HOME)
+if [ "${HAZELCAST_CONFIG:0:1}" != "/" ]; then
+  HAZELCAST_CONFIG="$HAZELCAST_HOME/$HAZELCAST_CONFIG"
 fi
 
 if [ "${PROMETHEUS_PORT}" ]; then
@@ -50,7 +70,7 @@ JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
 "-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
-"-Dhazelcast.config=$HAZELCAST_HOME/$HAZELCAST_CONFIG" \
+"-Dhazelcast.config=$HAZELCAST_CONFIG" \
 "-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
 $PROMETHEUS \
 $JVM_OPTIONS \
