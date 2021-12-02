@@ -41,6 +41,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
@@ -51,6 +52,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.MemberAddressProvider;
@@ -67,6 +69,9 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import example.serialization.EmployeeDTO;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.EmployerDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -101,6 +106,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -821,6 +827,42 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
         ConfigCompatibilityChecker.checkSerializerConfigs(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
+    }
+
+    @Test
+    public void testCompactSerialization() {
+        Config config = new Config();
+
+        CompactSerializationConfig expected = new CompactSerializationConfig();
+        expected.setEnabled(true);
+        expected.register(EmployerDTO.class);
+        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+
+        config.getSerializationConfig().setCompactSerializationConfig(expected);
+
+        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+
+        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
+        // compact serialization config, when we read the config from XML/YAML, we store registered classes
+        // in a different map.
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+            String key = entry.getKey();
+            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
+            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
+
+            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
+            assertEquals(expectedRegistration.element2, actualRegistration.element2);
+
+            CompactSerializer serializer = expectedRegistration.element3;
+            if (serializer != null) {
+                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+            } else {
+                assertNull(actualRegistration.element3);
+            }
+        }
     }
 
     private static class TypeClass {

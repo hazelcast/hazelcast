@@ -31,6 +31,7 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -673,6 +674,84 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "    </directories>\n"
                 + "  </persistent-memory>\n"
                 + "</native-memory>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    public void testCompactSerialization() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\" />\n"
+                + "    </serialization>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
+    }
+
+    @Override
+    public void testCompactSerialization_explicitSerializationRegistration() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class type-name=\"obj\" serializer=\"example.serialization.EmployeeDTOSerializer\">"
+                + "                    example.serialization.EmployeeDTO\n"
+                + "                </class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
+    }
+
+    @Override
+    public void testCompactSerialization_reflectiveSerializerRegistration() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config.getSerializationConfig());
+    }
+
+    @Override
+    public void testCompactSerialization_registrationWithJustTypeName() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class type-name=\"employee\">example.serialization.EmployeeDTO</class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    public void testCompactSerialization_registrationWithJustSerializer() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <registered-classes>\n"
+                + "                <class serializer=\"example.serialization.EmployeeDTOSerializer\">\n"
+                + "                    example.serialization.EmployeeDTO\n"
+                + "                </class>\n"
+                + "            </registered-classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);

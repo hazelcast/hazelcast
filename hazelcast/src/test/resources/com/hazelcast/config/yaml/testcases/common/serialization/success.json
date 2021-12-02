@@ -49,7 +49,20 @@
             ]
           }
         },
-        "allow-override-default-serializers": true
+        "allow-override-default-serializers": true,
+        "compact-serialization": {
+          "enabled": true,
+          "registered-classes": [
+            {
+              "class": "com.hazelcast.examples.DummyType"
+            },
+            {
+              "class": "com.hazelcast.examples.DummyTypeWithSerializer",
+              "type-name": "dummy",
+              "serializer": "com.hazelcast.examples.DummyTypeSerializer"
+            }
+          ]
+        }
       }
     }
   },

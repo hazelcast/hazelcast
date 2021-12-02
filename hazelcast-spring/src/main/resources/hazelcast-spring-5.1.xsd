@@ -1508,6 +1508,77 @@
         <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
 
+    <xs:element name="compact-serialization">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    Contains configuration elements and attributes for the compact serialization.
+
+                    This feature is in the BETA status and any schema definition related
+                    to it might change in the future without a prior notice, until the feature
+                    is promoted to the stable status.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:sequence>
+                <xs:element name="registered-classes" type="registered-classes" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables/disables the compact serialization.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="registered-classes">
+        <xs:annotation>
+            <xs:documentation>
+                Contains classes registered to be serialized with compact serialization.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="class">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Fully qualified class name of the class to be serialized with
+                            compact serialization.
+
+                            If the class has an explicit serializer, it must be specified
+                            with type-name and serializer attributes.
+
+                            Those attributes must not be present if the class is to be
+                            serialized with reflective compact serializer.
+
+                            Either both or none of the attributes must be present.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attribute name="type-name" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Type name of the class.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="serializer" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Fully qualified class name of the compact serializer to be
+                                        used to serialize the class.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
     <xs:element name="hazelcast">
         <xs:annotation>
             <xs:documentation>
@@ -3102,6 +3173,7 @@
             <xs:element ref="portable-factories" minOccurs="0"/>
             <xs:element ref="serializers" minOccurs="0"/>
             <xs:element ref="java-serialization-filter" minOccurs="0"/>
+            <xs:element ref="compact-serialization" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="use-native-byte-order" type="xs:string" default="false"/>
         <xs:attribute name="byte-order" default="BIG_ENDIAN">

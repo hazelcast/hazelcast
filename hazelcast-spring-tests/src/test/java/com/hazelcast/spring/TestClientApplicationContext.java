@@ -36,6 +36,8 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -60,10 +62,14 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spring.serialization.DummyCompactSerializable;
+import com.hazelcast.spring.serialization.DummyCompactSerializer;
+import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -160,6 +166,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client22-with-overridden-default-serializers")
     private HazelcastClientProxy clientWithOverriddenDefaultSerializers;
+
+    @Resource(name = "client23-with-compact-serialization")
+    private HazelcastClientProxy clientWithCompactSerialization;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -373,6 +382,29 @@ public class TestClientApplicationContext {
         final SerializationConfig serializationConfig = config.getSerializationConfig();
 
         assertTrue(serializationConfig.isAllowOverrideDefaultSerializers());
+    }
+
+    @Test
+    public void tesCompactSerializationConfig() {
+        CompactSerializationConfig compactSerializationConfig = clientWithCompactSerialization.getClientConfig()
+                .getSerializationConfig()
+                .getCompactSerializationConfig();
+        assertTrue(compactSerializationConfig.isEnabled());
+
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        assertEquals(2, namedRegistries.size());
+
+        String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
+        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
+        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistries.get(reflectivelySerializableClassName);
+        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+
+        String compactSerializableClassName = DummyCompactSerializable.class.getName();
+        String compactSerializerClassName = DummyCompactSerializer.class.getName();
+        String typeName = "dummy";
+        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
+        TriTuple<String, String, String> actualExplicitRegistration = namedRegistries.get(typeName);
+        assertEquals(explicitClassRegistration, actualExplicitRegistration);
     }
 
     @Test

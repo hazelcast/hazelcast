@@ -635,6 +635,34 @@
         <hz:serialization allow-override-default-serializers="true"/>
     </hz:client>
 
+    <hz:client id="client23-with-compact-serialization">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:serialization>
+            <hz:compact-serialization enabled="true">
+                <hz:registered-classes>
+                    <hz:class>
+                        com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                    </hz:class>
+                    <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                        com.hazelcast.spring.serialization.DummyCompactSerializable
+                    </hz:class>
+                </hz:registered-classes>
+            </hz:compact-serialization>
+        </hz:serialization>
+    </hz:client>
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="name" value="spring-cluster"/>
         <property name="password" value="spring-cluster-pass"/>

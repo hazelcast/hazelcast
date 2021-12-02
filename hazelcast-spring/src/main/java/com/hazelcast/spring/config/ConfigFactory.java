@@ -18,17 +18,21 @@ package com.hazelcast.spring.config;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spring.HazelcastClientBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastFailoverClientBeanDefinitionParser;
 
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
@@ -104,6 +108,25 @@ public final class ConfigFactory {
             evictionConfig.setComparator(comparator);
         }
         return evictionConfig;
+    }
+
+    public static CompactSerializationConfig newCompactSerializationConfig(boolean isEnabled,
+                                                                           Map<String, TriTuple<String, String, String>> registrations) {
+        CompactSerializationConfig config = new CompactSerializationConfig();
+        config.setEnabled(isEnabled);
+
+        for (TriTuple<String, String, String> registration : registrations.values()) {
+            String className = registration.element1;
+            String typeName = registration.element2;
+            String serializerName = registration.element3;
+            if (serializerName != null) {
+                CompactSerializationConfigAccessor.registerExplicitSerializer(config, className, typeName, serializerName);
+            } else {
+                CompactSerializationConfigAccessor.registerReflectiveSerializer(config, className);
+            }
+        }
+
+        return config;
     }
 
     private static int maxSize(Integer size, boolean isIMap) {

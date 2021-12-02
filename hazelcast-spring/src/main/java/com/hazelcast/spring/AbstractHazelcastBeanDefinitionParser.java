@@ -20,6 +20,7 @@ import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -342,6 +345,60 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             serializationConfigBuilder.addPropertyValue("portableFactories", factories);
         }
 
+        private void handleCompactSerialization(Node compactNode, BeanDefinitionBuilder serializationConfigBuilder) {
+            BeanDefinitionBuilder compactSerializationConfigBuilder = createBeanBuilder(CompactSerializationConfig.class);
+            compactSerializationConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            compactSerializationConfigBuilder.setFactoryMethod("newCompactSerializationConfig");
+
+            NamedNodeMap attributes = compactNode.getAttributes();
+            Node enabledNode = attributes.getNamedItem("enabled");
+            if (enabledNode != null) {
+                String value = getTextContent(enabledNode);
+                compactSerializationConfigBuilder.addConstructorArgValue(value);
+            }
+
+            ManagedMap<String, TriTuple<String, String, String>> registrations = new ManagedMap<>();
+            for (Node child : childElements(compactNode)) {
+                String name = cleanNodeName(child);
+                if ("registered-classes".equals(name)) {
+                    handleRegisteredClasses(child, registrations);
+                }
+            }
+            compactSerializationConfigBuilder.addConstructorArgValue(registrations);
+
+            BeanDefinition compactBeanDefinition = compactSerializationConfigBuilder.getBeanDefinition();
+            serializationConfigBuilder.addPropertyValue("compactSerializationConfig", compactBeanDefinition);
+        }
+
+        private void handleRegisteredClasses(Node registeredClasses,
+                                             Map<String, TriTuple<String, String, String>> registrations) {
+            for (Node node : childElements(registeredClasses)) {
+                String nodeName = cleanNodeName(node);
+                if (!"class".equals(nodeName)) {
+                    continue;
+                }
+
+                String className = getTextContent(node);
+                NamedNodeMap classAttributes = node.getAttributes();
+                Node typeNameNode = classAttributes.getNamedItem("type-name");
+                Node serializerNode = classAttributes.getNamedItem("serializer");
+                if (typeNameNode != null ^ serializerNode != null) {
+                    throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
+                            + "must be defined to register a class with an explicit serializer, "
+                            + "or no attributes should be defined to register a class to be used with "
+                            + "reflective compact serializer.");
+                }
+
+                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : className;
+                String serializerName = serializerNode != null ? getTextContent(serializerNode) : null;
+
+                TriTuple<String, String, String> registration = TriTuple.of(className, typeName, serializerName);
+                if (registrations.put(typeName, registration) != null) {
+                    throw new InvalidConfigurationException("Found a duplicate type name registration for " + typeName);
+                }
+            }
+        }
+
         protected void handleSerialization(Node node) {
             BeanDefinitionBuilder serializationConfigBuilder = createBeanBuilder(SerializationConfig.class);
             AbstractBeanDefinition beanDefinition = serializationConfigBuilder.getBeanDefinition();
@@ -356,6 +413,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     handleSerializers(child, serializationConfigBuilder);
                 } else if ("java-serialization-filter".equals(nodeName)) {
                     handleJavaSerializationFilter(child, serializationConfigBuilder);
+                } else if ("compact-serialization".equals(nodeName)) {
+                    handleCompactSerialization(child, serializationConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("serializationConfig", beanDefinition);

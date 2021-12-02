@@ -3185,6 +3185,40 @@
         "allow-override-default-serializers": {
           "type": "boolean",
           "default": false
+        },
+        "compact-serialization": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enables/disables the compact serialization."
+            },
+            "registered-classes": {
+              "type": "array",
+              "description": "Contains classes registered to be serialized with compact serialization.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "class": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the class to be serialized with compact serialization. If the class has an explicit serializer, it must be specified with type-name and serializer attributes. Those attributes must not be present if the class is to be serialized with reflective compact serializer. Either both or none of the attributes must be present."
+                  },
+                  "serializer": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the compact serializer to be used to serialize the class."
+                  },
+                  "type-name": {
+                    "type": "string",
+                    "description": "Type name of the class."
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

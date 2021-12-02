@@ -18,7 +18,13 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.test.HazelcastTestSupport;
+import example.serialization.EmployeeDTO;
+import example.serialization.ExternalizableEmployeeDTO;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -377,6 +383,21 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testJavaSerializationFilter();
+
+    @Test
+    public abstract void testCompactSerialization();
+
+    @Test
+    public abstract void testCompactSerialization_explicitSerializationRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustTypeName();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustSerializer();
 
     @Test
     public abstract void testAllowOverrideDefaultSerializers();

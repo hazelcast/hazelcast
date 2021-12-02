@@ -32,6 +32,8 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DeviceConfig;
@@ -132,6 +134,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -152,8 +155,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
+import com.hazelcast.spring.serialization.DummyCompactSerializable;
+import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
+import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
@@ -1172,6 +1178,27 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
         assertNotNull(globalSerializerConfig);
         assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
+    }
+
+    @Test
+    public void testCompactSerializationConfig() {
+        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+        assertTrue(compactSerializationConfig.isEnabled());
+
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        assertEquals(2, namedRegistries.size());
+
+        String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
+        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
+        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistries.get(reflectivelySerializableClassName);
+        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+
+        String compactSerializableClassName = DummyCompactSerializable.class.getName();
+        String compactSerializerClassName = DummyCompactSerializer.class.getName();
+        String typeName = "dummy";
+        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
+        TriTuple<String, String, String> actualExplicitRegistration = namedRegistries.get(typeName);
+        assertEquals(explicitClassRegistration, actualExplicitRegistration);
     }
 
     @Test

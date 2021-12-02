@@ -2110,6 +2110,13 @@ hazelcast:
         prefix:
           - com.hazelcast.
           - java
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #

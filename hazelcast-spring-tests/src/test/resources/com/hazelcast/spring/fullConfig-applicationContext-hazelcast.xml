@@ -621,6 +621,16 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
+                <hz:compact-serialization enabled="true">
+                    <hz:registered-classes>
+                        <hz:class>
+                            com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                        </hz:class>
+                        <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                            com.hazelcast.spring.serialization.DummyCompactSerializable
+                        </hz:class>
+                    </hz:registered-classes>
+                </hz:compact-serialization>
             </hz:serialization>
 
             <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
