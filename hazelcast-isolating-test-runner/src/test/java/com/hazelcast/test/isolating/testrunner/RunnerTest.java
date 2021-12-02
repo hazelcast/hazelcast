@@ -40,7 +40,7 @@ import static org.awaitility.Awaitility.await;
 public class RunnerTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunnerTest.class);
     private static final int DEFAULT_RUNNERS_COUNT = Runtime.getRuntime().availableProcessors() / 2;
-    private final String runId = UUID.randomUUID().toString();
+    private final String testRunId = UUID.randomUUID().toString();
 
     @Test
     public void runHazelcastTestsInParallel() {
@@ -66,8 +66,9 @@ public class RunnerTest {
     }
 
     private GenericContainer<?> createContainer(int i) {
-        String shortName = "builder-" + i;
-        String name = shortName + "-" + runId;
+        char containerIdx = (char) ('a' + i);
+        String shortName = "builder-" + containerIdx;
+        String name = shortName + "-" + testRunId;
         GenericContainer<?> mavenContainer = new GenericContainer<>("maven:3.6.3-jdk-11")
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(4L))
@@ -75,7 +76,7 @@ public class RunnerTest {
                 .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/root/.m2", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
-                .withCommand(mvnCommandForBatch(i));
+                .withCommand(mvnCommandForBatch(containerIdx));
         mavenContainer.start();
         mavenContainer.followOutput(new Slf4jLogConsumer(LOGGER).withPrefix(shortName));
         return mavenContainer;
@@ -87,9 +88,8 @@ public class RunnerTest {
                 .build();
     }
 
-    private static String mvnCommandForBatch(int i) {
-        char suffix = (char) ('a' + i);
-        String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + suffix;
+    private static String mvnCommandForBatch(char batchSuffix) {
+        String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + batchSuffix;
         return "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile=" + listOfTests;
     }
 
