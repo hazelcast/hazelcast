@@ -70,6 +70,7 @@ public class RunnerTest {
         String name = shortName + "-" + runId;
         GenericContainer<?> mavenContainer = new GenericContainer<>("maven:3.6.3-jdk-11")
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
+                .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(4L))
                 .withFileSystemBind("..", "/usr/src/maven", BindMode.READ_WRITE)
                 .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/root/.m2", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
