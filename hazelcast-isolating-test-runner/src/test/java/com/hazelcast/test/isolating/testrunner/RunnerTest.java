@@ -93,7 +93,7 @@ public class RunnerTest {
     }
 
     private static void prepareTestBatches(int runnersCount) {
-        String listAllTestClassesCommand = "find ../hazelcast/src/test/java -name '*Test.java' | cut -sd / -f 6-";
+        String listAllTestClassesCommand = "find ../hazelcast/src/test/java -name '*.java' | cut -sd / -f 6-";
         int totalNumberOfTests = countOutputLines(listAllTestClassesCommand);
         LOGGER.info("Found " + totalNumberOfTests + " tests to run");
         int testCountInBatch = totalNumberOfTests / runnersCount + (totalNumberOfTests % runnersCount == 0 ? 0 : 1);
