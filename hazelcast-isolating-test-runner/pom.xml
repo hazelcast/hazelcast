@@ -38,6 +38,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
         <awaitility.version>4.1.1</awaitility.version>
+        <maven.test.redirectTestOutputToFile>false</maven.test.redirectTestOutputToFile>
     </properties>
 
     <dependencies>
