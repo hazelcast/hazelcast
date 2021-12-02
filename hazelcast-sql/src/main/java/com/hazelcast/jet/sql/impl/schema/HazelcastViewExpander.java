@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelRoot;
@@ -32,17 +33,20 @@ import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 import static org.apache.calcite.prepare.Prepare.CatalogReader;
 
 /**
- * Hazelcast view expander helper class.
+ * Hazelcast implementation of Calcite's {@link RelOptTable.ViewExpander}.
  */
 public class HazelcastViewExpander implements RelOptTable.ViewExpander {
     private final QueryParser parser;
     private final RelOptCluster relOptCluster;
     private final SqlToRelConverter sqlToRelConverter;
+    private final Deque<List<String>> expansionStack = new ArrayDeque<>();
 
     public HazelcastViewExpander(SqlValidator validator, CatalogReader catalogReader, RelOptCluster relOptCluster) {
         this.parser = new QueryParser((HazelcastSqlValidator) validator);
@@ -64,8 +68,13 @@ public class HazelcastViewExpander implements RelOptTable.ViewExpander {
             List<String> schemaPath,
             @Nullable List<String> viewPath
     ) {
+        if (expansionStack.contains(viewPath)) {
+            throw QueryException.error("Cycle detected in view references");
+        }
+        expansionStack.push(viewPath);
         SqlNode sqlNode = parser.parse(queryString).getNode();
         final RelRoot root = sqlToRelConverter.convertQuery(sqlNode, true, true);
+        expansionStack.pop();
         final RelRoot root2 = root.withRel(sqlToRelConverter.flattenTypes(root.rel, true));
 
         final RelBuilder relBuilder = QueryConverter.CONFIG.getRelBuilderFactory().create(relOptCluster, null);

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -34,7 +33,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlExpandViewTest extends SqlTestSupport {
@@ -54,26 +52,24 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_simpleViewIsExpanded() {
+    public void test_simpleView() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
         assertRowsAnyOrder("SELECT * FROM v", Collections.singletonList(new Row(1, 1)));
     }
 
-    @Ignore("TODO")
     @Test
-    public void when_circularViewsResolvedCorrectly_then_fails() {
+    public void when_circularViews_then_fails() {
         instance().getSql().execute("CREATE VIEW v1 AS SELECT * FROM " + MAP_NAME);
         instance().getSql().execute("CREATE VIEW v2 AS SELECT * FROM v1");
         instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT * FROM v2");
 
-        assertRowsAnyOrder("SELECT * FROM v1", singletonList(new Row(1, 1)));
         assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v1"))
-                .hasMessageContaining("Infinite recursion during view expanding detected");
+                .hasMessageContaining("Cycle detected in view references");
     }
 
     @Test
-    public void when_viewIsExpandedWithDistinctSelect() {
+    public void test_viewWithDistinctSelect() {
         map.put(1, 1);
 
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
@@ -82,7 +78,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_viewIsExpandedWithinWhereClause() {
+    public void test_viewWithinWhereClause() {
         map.put(1, 1);
 
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
@@ -97,29 +93,26 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_incorrectQueryView_then_fails() {
-        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT -"))
-                .hasMessageContaining("Encountered \"<EOF>\" at line 1");
-    }
-
-    @Test
     public void when_viewAfterMappingRemovedIsExpanded_then_fails() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
         instance().getSql().execute("DROP MAPPING " + MAP_NAME);
 
         assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME))
                 .hasMessageContaining("Object '" + MAP_NAME + "' not found, did you forget to CREATE MAPPING?");
+        assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v"))
+                .hasMessageContaining("Object '" + MAP_NAME + "' not found within 'hazelcast.public', did you forget to CREATE MAPPING? " +
+                        "If you want to use");
     }
 
     @Test
-    public void when_viewWithStreamingQueryIsExpanded() {
+    public void test_viewWithStreamingQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_SERIES(-5, 5, 5))");
 
         assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
     }
 
     @Test
-    public void when_fullSchemaViewIsExpanded() {
+    public void test_fullyQualifiedViewName() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
         List<Row> expectedRows = singletonList(new Row(1, 1));
@@ -210,7 +203,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
         final String MAP_NAME_2 = "map2";
         final IMap<Integer, Integer> map2 = instance().getMap(MAP_NAME_2);
         createMapping("map2", Integer.class, Integer.class);
-        map2.put(1, 1);
+        map2.put(2, 2);
 
         final String sql = "CREATE VIEW v AS "
                 + "(SELECT * FROM " + MAP_NAME + " UNION ALL "
@@ -218,7 +211,7 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         instance().getSql().execute(sql);
 
-        assertRowsAnyOrder("SELECT * FROM v", asList(new Row(1, 1), new Row(1, 1)));
+        assertRowsAnyOrder("SELECT * FROM v", asList(new Row(1, 1), new Row(2, 2)));
     }
 
     @Test
@@ -316,13 +309,8 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW vv AS SELECT MAX(this) FROM v");
         instance().getSql().execute("CREATE VIEW vvv AS SELECT COUNT(this) FROM v");
 
-        SqlResult sqlRows = instance().getSql().execute("SELECT * FROM vv");
-        Integer max = sqlRows.iterator().next().getObject(0);
-        assertThat(max).isEqualTo(1);
-
-        sqlRows = instance().getSql().execute("SELECT * FROM vvv");
-        Long count = sqlRows.iterator().next().getObject(0);
-        assertThat(count).isEqualTo(1L);
+        assertRowsAnyOrder("SELECT * FROM vv", rows(1, 1));
+        assertRowsAnyOrder("SELECT * FROM vvv", rows(1, 1L));
     }
 
     @Test

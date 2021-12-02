@@ -119,6 +119,12 @@ public class CreateViewStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_incorrectQuery_then_fails() {
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE VIEW v AS SELECT -"))
+                .hasMessageContaining("Encountered \"<EOF>\" at line 1");
+    }
+
+    @Test
     public void when_dropView_then_succeeds() {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
