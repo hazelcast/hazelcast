@@ -957,6 +957,9 @@
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
+                            <systemPropertyVariables>
+                                <multipleJVM>true</multipleJVM>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
 

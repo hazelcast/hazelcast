@@ -89,7 +89,7 @@ public class RunnerTest {
     private static String mvnCommandForBatch(int i) {
         char suffix = (char) ('a' + i);
         String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + suffix;
-        return "mvn --errors surefire:test --fail-at-end -PparallelTest -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile=" + listOfTests;
+        return "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile=" + listOfTests;
     }
 
     private static void prepareTestBatches(int runnersCount) {
