@@ -41,12 +41,23 @@ public class LocalAddressRegistry {
     // accessed from TcpServerControl#process(TcpServerConnection, MemberHandshake)
     // while member handshake processing and MembershipManager#updateMembers call
     // when a new member added event received from master
-    public void register(UUID uuid, Address address) {
-        addressToUuid.put(address, uuid);
-        LinkedAddresses previousAddresses = uuidToAddresses.putIfAbsent(uuid, LinkedAddresses.getAllLinkedAddresses(address));
+    public void register(@Nonnull UUID uuid, @Nonnull LinkedAddresses linkedAddresses) {
+        // If the old linked addresses set and the new one intersect, suppose
+        // that the new ones are additional addresses and add them into old
+        // address set. Otherwise, If there is no intersection between these
+        // two sets, I'll consider the old addresses as stale and remove them.
+        LinkedAddresses previousAddresses = uuidToAddresses.get(uuid);
         if (previousAddresses != null) {
-            previousAddresses.addLinkedAddress(address);
+            if (previousAddresses.intersects(linkedAddresses)) {
+                previousAddresses.addLinkedAddresses(linkedAddresses);
+            } else {
+                // override the uuid-addresses entry with the new ones (removes previous addresses)
+                uuidToAddresses.put(uuid, linkedAddresses);
+                // remove previous addresses from the addressToUuid map
+                previousAddresses.getAllAddresses().forEach(addressToUuid::remove);
+            }
         }
+        linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, uuid));
     }
 
     // Accessed from MembershipManager#updateMembers when member left event
@@ -54,16 +65,25 @@ public class LocalAddressRegistry {
     // we have already closed our connections to that member. For the entries
     // of the connections whose remote sides are clients, after the connections
     // are closed.
-    public void removeRegistration(UUID removedUuid) {
-        // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
-        Iterator<UUID> iterator = addressToUuid.values().iterator();
-        while (iterator.hasNext()) {
-            UUID uuid = iterator.next();
-            if (uuid.equals(removedUuid)) {
-                iterator.remove();
+    public void removeRegistration(@Nonnull UUID removedUuid, @Nonnull Address removedAddress) {
+        LinkedAddresses linkedAddresses = uuidToAddresses.computeIfPresent(removedUuid, (uuid, addresses) -> {
+            if (addresses.contains(removedAddress)) {
+                // remove uuid to addresses entry
+                return null;
+            }
+            return addresses;
+        });
+
+        if (linkedAddresses == null) {
+            // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+            Iterator<UUID> iterator = addressToUuid.values().iterator();
+            while (iterator.hasNext()) {
+                UUID uuid = iterator.next();
+                if (uuid.equals(removedUuid)) {
+                    iterator.remove();
+                }
             }
         }
-        uuidToAddresses.remove(removedUuid);
     }
 
     @Nullable

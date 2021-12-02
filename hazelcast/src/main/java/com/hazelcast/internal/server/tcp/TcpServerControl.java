@@ -133,16 +133,17 @@ public final class TcpServerControl {
      * ignoring the {@code primaryAddress} argument.
      *
      * @param connection           the connection that send the handshake
-     * @param primaryAddress       the address of the remote endpoint
+     * @param remoteEndpointAddress       the address of the remote endpoint
      * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
      *                             will be registered. These are the public addresses configured on the remote.
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private synchronized void process0(TcpServerConnection connection,
-                                       Address primaryAddress,
+                                       Address remoteEndpointAddress,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
+        Address primaryAddress = remoteEndpointAddress;
         Address connectedAddress = new Address(connection.getRemoteSocketAddress());
         if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(connectedAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
@@ -174,18 +175,17 @@ public final class TcpServerControl {
         }
         boolean registered = connectionManager.register(primaryAddress, remoteUuid, connection, handshake.getPlaneIndex());
         if (registered) {
-            connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteUuid, connection);
-            connectionManager.addressRegistry.register(remoteUuid, primaryAddress);
-            connectionManager.addressRegistry.register(remoteUuid, connectedAddress);
-        }
-
-        if (remoteAddressAliases != null && registered) {
-            for (Address remoteAddressAlias : remoteAddressAliases) {
-                connectionManager.addressRegistry.register(remoteUuid, remoteAddressAlias);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Registering the address alias= " + remoteAddressAlias
-                            + " for the member uuid=" + remoteUuid);
+            LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
+            addressesToRegister.addAddress(connectedAddress);
+            if (remoteAddressAliases != null) {
+                for (Address remoteAddressAlias : remoteAddressAliases) {
+                    addressesToRegister.addAddress(remoteAddressAlias);
                 }
+            }
+            connectionManager.addressRegistry.register(remoteUuid, addressesToRegister);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Registered the addresses: " + addressesToRegister
+                        + " for the member uuid=" + remoteUuid);
             }
         }
     }

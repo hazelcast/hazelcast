@@ -20,14 +20,14 @@ import com.hazelcast.cluster.Address;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static java.util.Arrays.asList;
 import static java.util.Collections.newSetFromMap;
-import static java.util.Objects.requireNonNull;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * LinkedAddresses keeps all network addresses pointing to the same Hazelcast
@@ -35,32 +35,36 @@ import static java.util.Objects.requireNonNull;
  * the primary address.
  */
 public final class LinkedAddresses {
+
     private final Address primaryAddress;
-    private final Set<Address> linkedAddresses;
+
+    // all linked addresses also includes primary address
+    private final Set<Address> allLinkedAddresses;
 
     LinkedAddresses(Address primaryAddress) {
-        this(primaryAddress, newSetFromMap(new ConcurrentHashMap<>()));
-    }
-
-    /**
-     * @param primaryAddress  the primary network address for this linked addresses
-     * @param linkedAddresses the set that contains all linked address to this primary address,
-     *                        it must be a concurrent set implementation
-     */
-    private LinkedAddresses(Address primaryAddress, Set<Address> linkedAddresses) {
-        this.primaryAddress = requireNonNull(primaryAddress);
-        this.linkedAddresses = requireNonNull(linkedAddresses);
+        this.primaryAddress = primaryAddress;
+        allLinkedAddresses = newSetFromMap(new ConcurrentHashMap<>());
+        allLinkedAddresses.add(primaryAddress);
     }
 
     public Address getPrimaryAddress() {
         return primaryAddress;
     }
 
-    public void addLinkedAddress(Address address) {
-        linkedAddresses.add(address);
+    public Set<Address> getAllAddresses() {
+        return unmodifiableSet(allLinkedAddresses);
+    }
+
+    public void addAddress(Address address) {
+        allLinkedAddresses.add(address);
+    }
+
+    public void addLinkedAddresses(LinkedAddresses other) {
+        allLinkedAddresses.addAll(other.getAllAddresses());
     }
 
     public static LinkedAddresses getAllLinkedAddresses(Address primaryAddress) {
+        LinkedAddresses linkedAddresses = new LinkedAddresses(primaryAddress);
         try {
             InetAddress inetAddress = primaryAddress.getInetAddress();
             // the fully qualified domain name for the given primary address
@@ -72,22 +76,14 @@ public final class LinkedAddresses {
 
             Address addressIp = new Address(ip, primaryAddress.getPort());
             Address addressCanonicalHost = new Address(canonicalHost, primaryAddress.getPort());
-
-            Set<Address> linkedAddresses = newSetFromMap(new ConcurrentHashMap<>());
-            if (!addressIp.equals(primaryAddress)) {
-                linkedAddresses.add(addressIp);
-            }
-            if (!addressCanonicalHost.equals(primaryAddress)) {
-                linkedAddresses.add(addressCanonicalHost);
-            }
-            linkedAddresses.addAll(asList(addressIp, addressCanonicalHost));
-            return new LinkedAddresses(primaryAddress, linkedAddresses);
+            linkedAddresses.addAddress(addressIp);
+            linkedAddresses.addAddress(addressCanonicalHost);
         } catch (UnknownHostException e) {
             // we have a hostname here in `address`, but we can't resolve it
             // how on earth we could come here?
             ignore(e);
         }
-        return new LinkedAddresses(primaryAddress);
+        return linkedAddresses;
     }
 
     @Override
@@ -110,14 +106,20 @@ public final class LinkedAddresses {
     }
 
     public boolean contains(Address address) {
-        return primaryAddress.equals(address) || linkedAddresses.contains(address);
+        return allLinkedAddresses.contains(address);
+    }
+
+    public boolean intersects(LinkedAddresses other) {
+        Set<Address> tmp = new HashSet<>(allLinkedAddresses);
+        tmp.retainAll(other.getAllAddresses());
+        return tmp.size() > 0;
     }
 
     @Override
     public String toString() {
         return "LinkedAddresses{"
                 + "primaryAddress=" + primaryAddress
-                + ", linkedAddresses=" + linkedAddresses
+                + ", allLinkedAddresses=" + allLinkedAddresses
                 + '}';
     }
 }
