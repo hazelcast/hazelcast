@@ -31,7 +31,8 @@ public class ViewTable extends Table {
             String schemaName,
             String sqlName,
             List<TableField> fields,
-            TableStatistics statistics) {
+            TableStatistics statistics
+    ) {
         super(schemaName, sqlName, fields, statistics);
     }
 
