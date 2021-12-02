@@ -52,7 +52,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         storage.put(name, mapping(name, "type"));
 
-        assertThat(storage.valuesMappings().stream().filter(m -> m.name().equals(name))).isNotEmpty();
+        assertThat(storage.mappingNames().stream().filter(m -> m.equals(name))).isNotEmpty();
     }
 
     @Test
@@ -64,8 +64,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, originalMapping);
         storage.put(name, updatedMapping);
 
-        assertThat(storage.valuesMappings().stream().filter(m -> m.equals(originalMapping))).isEmpty();
-        assertThat(storage.valuesMappings().stream().filter(m -> m.equals(updatedMapping))).isNotEmpty();
+        assertThat(storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping)));
+        assertThat(storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping)));
     }
 
     @Test
@@ -74,8 +74,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertThat(storage.valuesMappings().stream().filter(m -> m.type().equals("type-1"))).isNotEmpty();
-        assertThat(storage.valuesMappings().stream().filter(m -> m.type().equals("type-2"))).isEmpty();
+        assertThat(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping &&  ((Mapping) m).type().equals("type-1")));
+        assertThat(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping &&  ((Mapping) m).type().equals("type-2")));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, mapping(name, "type"));
 
         assertThat(storage.removeMapping(name)).isNotNull();
-        assertThat(storage.valuesMappings().stream().filter(m -> m.name().equals(name))).isEmpty();
+        assertThat(storage.mappingNames().stream().noneMatch(m -> m.equals(name)));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, view(name, "type"));
 
         assertThat(storage.removeView(name)).isNotNull();
-        assertThat(storage.valuesViews().stream().filter(m -> m.name().equals(name))).isEmpty();
+        assertThat(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
     }
 
     @Test

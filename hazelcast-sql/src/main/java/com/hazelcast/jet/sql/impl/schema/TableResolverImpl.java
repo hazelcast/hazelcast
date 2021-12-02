@@ -134,8 +134,8 @@ public class TableResolverImpl implements TableResolver {
     }
 
     @Nonnull
-    public List<String> getMappingNames() {
-        return tableStorage.valuesMappings().stream().map(Mapping::name).collect(Collectors.toList());
+    public Collection<String> getMappingNames() {
+        return tableStorage.mappingNames();
     }
 
     // endregion
@@ -169,19 +169,29 @@ public class TableResolverImpl implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Mapping> mappings = tableStorage.valuesMappings();
-        Collection<View> views = tableStorage.valuesViews();
-        List<Table> tables = new ArrayList<>(mappings.size() + views.size() + 3);
-        for (Mapping mapping : mappings) {
-            tables.add(toTable(mapping));
+        Collection<Object> objects = tableStorage.allObjects();
+        List<Table> tables = new ArrayList<>(objects.size() + 3);
+        for (Object o : objects) {
+            if (o instanceof Mapping) {
+                tables.add(toTable((Mapping) o));
+            } else if (o instanceof View) {
+                tables.add(toTable((View) o));
+            } else {
+                throw new RuntimeException("Unexpected: " + o);
+            }
         }
 
-        for (View view : views) {
-            tables.add(toTable(view));
-        }
+        Collection<Mapping> mappings = objects.stream()
+                .filter(o -> o instanceof Mapping)
+                .map(m -> (Mapping) m)
+                .collect(Collectors.toList());
+        Collection<View> views = objects.stream()
+                .filter(o -> o instanceof View)
+                .map(v -> (View) v)
+                .collect(Collectors.toList());
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, tableStorage.valuesViews()));
+        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));
         return tables;
     }
 
