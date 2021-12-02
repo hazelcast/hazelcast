@@ -122,8 +122,7 @@ public final class OptimizerContext {
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
                 catalogReader,
                 arguments,
-                iMapResolver,
-                viewResolver
+                iMapResolver
         );
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);

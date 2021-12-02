@@ -38,7 +38,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;
@@ -118,23 +117,19 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private final IMapResolver iMapResolver;
 
-    private final ViewResolver viewResolver;
-
     private boolean isCreateJob;
     private boolean isInfiniteRows;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            IMapResolver iMapResolver,
-            ViewResolver viewResolver
+            IMapResolver iMapResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
-        this.viewResolver = viewResolver;
     }
 
     @Override
@@ -559,10 +554,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public HazelcastTypeCoercion getTypeCoercion() {
         return (HazelcastTypeCoercion) super.getTypeCoercion();
-    }
-
-    public ViewResolver getViewResolver() {
-        return viewResolver;
     }
 
     public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {

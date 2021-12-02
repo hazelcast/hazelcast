@@ -37,7 +37,7 @@ public class ViewTable extends Table {
 
     @Override
     public PlanObjectKey getObjectKey() {
+        // views never participate in plans, they are expanded
         throw new UnsupportedOperationException("Never should be called");
     }
-
 }
