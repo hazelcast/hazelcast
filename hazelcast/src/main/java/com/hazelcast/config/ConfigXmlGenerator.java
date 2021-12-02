@@ -549,17 +549,26 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        CompactSerializationConfig compactSerializationConfig = c.getCompactSerializationConfig();
+        compactSerializationXmlGenerator(gen, c);
+
+        gen.close();
+    }
+
+    private static void compactSerializationXmlGenerator(XmlGenerator gen, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        if (!compactSerializationConfig.isEnabled()) {
+            return;
+        }
+
+        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
+
         Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
-        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
-        if (compactSerializationConfig.isEnabled()) {
-            gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
-            if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
-                gen.open("registered-classes");
-                appendRegisteredClasses(gen, registries);
-                appendNamedRegisteredClasses(gen, namedRegistries);
-                gen.close();
-            }
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
+            gen.open("registered-classes");
+            appendRegisteredClasses(gen, registries);
+            appendNamedRegisteredClasses(gen, namedRegistries);
             gen.close();
         }
 
@@ -1876,7 +1885,8 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void appendRegisteredClasses(XmlGenerator gen, Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
+    private static void appendRegisteredClasses(XmlGenerator gen,
+                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
         if (registries.isEmpty()) {
             return;
         }
@@ -1894,7 +1904,8 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void appendNamedRegisteredClasses(XmlGenerator gen, Map<String, TriTuple<String, String, String>> namedRegistries) {
+    private static void appendNamedRegisteredClasses(XmlGenerator gen,
+                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
         if (namedRegistries.isEmpty()) {
             return;
         }

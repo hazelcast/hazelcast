@@ -22,7 +22,6 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;

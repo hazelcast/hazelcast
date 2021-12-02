@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -64,10 +63,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.ConfigRecognizerTest.HAZELCAST_CLIENT_END_TAG;
-import static com.hazelcast.config.ConfigRecognizerTest.HAZELCAST_CLIENT_START_TAG;
-import static com.hazelcast.config.ConfigRecognizerTest.HAZELCAST_END_TAG;
-import static com.hazelcast.config.ConfigRecognizerTest.HAZELCAST_START_TAG;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;

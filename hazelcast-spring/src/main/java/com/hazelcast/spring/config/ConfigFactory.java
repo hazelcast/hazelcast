@@ -110,8 +110,9 @@ public final class ConfigFactory {
         return evictionConfig;
     }
 
-    public static CompactSerializationConfig newCompactSerializationConfig(boolean isEnabled,
-                                                                           Map<String, TriTuple<String, String, String>> registrations) {
+    public static CompactSerializationConfig newCompactSerializationConfig(
+            boolean isEnabled,
+            Map<String, TriTuple<String, String, String>> registrations) {
         CompactSerializationConfig config = new CompactSerializationConfig();
         config.setEnabled(isEnabled);
 
