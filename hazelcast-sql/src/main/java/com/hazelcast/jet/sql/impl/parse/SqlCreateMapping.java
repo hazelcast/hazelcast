@@ -175,7 +175,8 @@ public class SqlCreateMapping extends SqlCreate {
         writer.keyword("CREATE MAPPING");
         writer.identifier(mapping.name(), true);
 
-        if (mapping.externalName() != null) {
+        // external name defaults to mapping name - omit it if it's equal
+        if (mapping.externalName() != null && !mapping.externalName().equals(mapping.name())) {
             writer.keyword("EXTERNAL NAME");
             writer.identifier(mapping.externalName(), true);
         }
