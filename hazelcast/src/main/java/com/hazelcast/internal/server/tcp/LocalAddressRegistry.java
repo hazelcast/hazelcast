@@ -34,8 +34,13 @@ public class LocalAddressRegistry {
         this.uuidToAddresses = new ConcurrentHashMap<>();
     }
 
-    // accessed from TcpServerControl#process(TcpServerConnection, MemberHandshake) handshake processing and MembershipManager#updateMembers
-    // when new member added event received from master
+    // TODO [ufuk]: Check whether register and removeRegistration can be called
+    //  concurrently for the same uuid and/or addresses or not. If so, what
+    //  kind of consistency guarantee should we provide?
+
+    // accessed from TcpServerControl#process(TcpServerConnection, MemberHandshake)
+    // while member handshake processing and MembershipManager#updateMembers call
+    // when a new member added event received from master
     public void register(UUID uuid, Address address) {
         addressToUuid.put(address, uuid);
         LinkedAddresses previousAddresses = uuidToAddresses.putIfAbsent(uuid, LinkedAddresses.getAllLinkedAddresses(address));
@@ -44,9 +49,11 @@ public class LocalAddressRegistry {
         }
     }
 
-    // Accessed from MembershipManager#updateMembers when member left event received from master
-    // In this case, we remove the related entries after we have already closed
-    // our connections to that member.
+    // Accessed from MembershipManager#updateMembers when member left event
+    // received from master. In this case, we remove the related entries after
+    // we have already closed our connections to that member. For the entries
+    // of the connections whose remote sides are clients, after the connections
+    // are closed.
     public void removeRegistration(UUID removedUuid) {
         // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
         Iterator<UUID> iterator = addressToUuid.values().iterator();
