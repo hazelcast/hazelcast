@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl;
+package com.hazelcast.jet.kinesis.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.instance.impl.ModuleIntegrityChecker;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.jet.kinesis.impl.source.KinesisDataSerializerHook;
 
-public class JetSqlModuleIntegrityChecker implements ModuleIntegrityChecker {
+public class KinesisModuleIntegrityChecker implements ModuleIntegrityChecker {
     @Override
     public void check() {
         boolean isValid = false;
         try {
-            final JetSqlSerializerHook serializerHook = ServiceLoader.load(
-                    JetSqlSerializerHook.class,
+            final KinesisDataSerializerHook serializerHook = ServiceLoader.load(
+                    KinesisDataSerializerHook.class,
                     "com.hazelcast.DataSerializerHook",
                     this.getClass().getClassLoader()
             );
@@ -35,8 +36,8 @@ public class JetSqlModuleIntegrityChecker implements ModuleIntegrityChecker {
         } catch (Exception ignored) { }
 
         if (!isValid) {
-            throw new HazelcastException("Failed to verify \"hazelcast-sql\" module integrity, unable to load"
-                    + "JetSqlDataSerializer, please verify that your build system "
+            throw new HazelcastException("Failed to verify \"KinesisDataSerializerHook\" module integrity, " +
+                    "unable to load KinesisDataSerializerHook, please verify that your build system "
                     + "is preserving per-module META-INF/service files in resources");
         }
     }

@@ -21,12 +21,15 @@ import java.util.List;
 
 public final class DistributionIntegrityChecker {
     private static final List<String> MODULE_CHECKER_CLASS_NAMES = Arrays.asList(
-            "com.hazelcast.jet.sql.impl.JetSqlModuleIntegrityChecker"
+            "com.hazelcast.jet.sql.impl.JetSqlModuleIntegrityChecker",
+            "com.hazelcast.jet.kinesis.impl.KinesisModuleIntegrityChecker"
     );
 
     private DistributionIntegrityChecker() { }
 
     public static void checkModulesIntegrity() {
+        final CoreModuleIntegrityChecker coreModuleIntegrityChecker = new CoreModuleIntegrityChecker();
+        coreModuleIntegrityChecker.check();
         for (String className : MODULE_CHECKER_CLASS_NAMES) {
             final ModuleIntegrityChecker checker = loadIntegrityChecker(className);
             if (checker != null) {
