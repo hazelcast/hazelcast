@@ -211,7 +211,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
      *
      * @param targetType the target type to find the widest instance of.
      * @param types      the list of types to inspect.
-     * @return the found widest integer type.
+     * @return the widest integer type found.
      */
     private static RelDataType leastRestrictive(RelDataType targetType, List<RelDataType> types) {
         SqlTypeName typeName = targetType.getSqlTypeName();
@@ -236,12 +236,5 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         assert maxBitWidthType.getSqlTypeName() == typeName;
 
         return HazelcastIntegerType.create((HazelcastIntegerType) maxBitWidthType, targetType.isNullable());
-    }
-
-    @Override
-    public RelDataType createJoinType(RelDataType... types) {
-        // Calcite's implementation of createJoinType() returns RelCrossType.
-        // RelCrossType.getSqlTypeName() returns null. We assume in several places that it's non null...
-        return createUnknownType();
     }
 }

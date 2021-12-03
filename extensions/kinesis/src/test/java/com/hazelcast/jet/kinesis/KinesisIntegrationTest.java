@@ -147,6 +147,41 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @Test
     @Category(SerialTest.class)
+    public void customProjection() {
+        HELPER.createStream(1);
+
+        sendMessages();
+        Long expectedPerSequenceNo = 1L;
+
+        try {
+            Pipeline pipeline = Pipeline.create();
+            StreamSource<String> source = kinesisSource()
+                    .withProjectionFn((r, s) -> {
+                        byte[] payload = new byte[r.getData().remaining()];
+                        r.getData().get(payload);
+                        return r.getSequenceNumber();
+                    })
+                    .build();
+            pipeline.readFrom(source)
+                    .withoutTimestamps()
+                    .groupingKey(r -> r)
+                    .rollingAggregate(counting())
+                    .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, results -> {
+                        assertEquals(MESSAGES, results.size());
+                        results.forEach(v -> assertEquals(expectedPerSequenceNo, v.getValue()));
+                    }));
+
+            hz().getJet().newJob(pipeline).join();
+            fail("Expected exception not thrown");
+        } catch (CompletionException ce) {
+            Throwable cause = peel(ce);
+            assertTrue(cause instanceof JetException);
+            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+        }
+    }
+
+    @Test
+    @Category(SerialTest.class)
     public void staticStream_1Shard() {
         staticStream(1);
     }
