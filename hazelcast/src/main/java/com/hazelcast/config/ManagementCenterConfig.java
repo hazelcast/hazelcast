@@ -87,7 +87,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
     }
 
     /**
-     * Enables/disables data access for Management Center.
+     * Enables/disables access to contents of Hazelcast data structures (for instance map entries) for Management Center.
      * Management Center can't access the data if at least one member has the data access disabled.
      * <p>
      * Default value for this config element is {@code true}.
@@ -102,7 +102,8 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
     }
 
     /**
-     * Returns if data access for Management Center is allowed ({@code true}) or disallowed ({@code false}).
+     * Returns if Management Center is allowed to access contents of Hazelcast data structures
+     * (for instance map entries) ({@code true}) or disallowed ({@code false}).
      */
     public boolean isDataAccessEnabled() {
         return dataAccessEnabled;
