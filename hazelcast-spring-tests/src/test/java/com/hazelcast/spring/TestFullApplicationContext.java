@@ -1128,6 +1128,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isScriptingEnabled());
         assertTrue(managementCenterConfig.isConsoleEnabled());
+        assertTrue(managementCenterConfig.isDataAccessEnabled());
         Set<String> tis = managementCenterConfig.getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.1.2.*", tis.iterator().next());

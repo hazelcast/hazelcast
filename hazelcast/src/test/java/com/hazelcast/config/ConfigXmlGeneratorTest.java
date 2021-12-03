@@ -867,6 +867,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
                 .setScriptingEnabled(false)
                 .setConsoleEnabled(false)
+                .setDataAccessEnabled(true)
                 .setTrustedInterfaces(newHashSet("192.168.1.1"));
 
         Config config = new Config()
@@ -877,6 +878,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
         assertEquals(managementCenterConfig.isConsoleEnabled(), xmlMCConfig.isConsoleEnabled());
+        assertEquals(managementCenterConfig.isDataAccessEnabled(), xmlMCConfig.isDataAccessEnabled());
         assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
     }
 

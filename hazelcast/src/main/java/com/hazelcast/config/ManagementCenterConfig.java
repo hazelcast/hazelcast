@@ -32,6 +32,8 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     private boolean consoleEnabled;
 
+    private boolean dataAccessEnabled = true;
+
     private final Set<String> trustedInterfaces = newSetFromMap(new ConcurrentHashMap<>());
 
     public ManagementCenterConfig() {
@@ -85,6 +87,29 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
     }
 
     /**
+     * Enables/disables access to contents of Hazelcast data structures (for instance map entries) for Management Center.
+     * Management Center can't access the data if at least one member has the data access disabled.
+     * <p>
+     * Default value for this config element is {@code true}.
+     *
+     * @param dataAccessEnabled {@code true} to allow data access for Management Center, {@code false} to disallow
+     * @return this management center config instance
+     * @since 5.1
+     */
+    public ManagementCenterConfig setDataAccessEnabled(boolean dataAccessEnabled) {
+        this.dataAccessEnabled = dataAccessEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if Management Center is allowed to access contents of Hazelcast data structures
+     * (for instance map entries) ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isDataAccessEnabled() {
+        return dataAccessEnabled;
+    }
+
+    /**
      * Gets the trusted interfaces.
      *
      * @return the trusted interfaces
@@ -133,7 +158,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
 
     @Override
     public int hashCode() {
-        return Objects.hash(scriptingEnabled, consoleEnabled, trustedInterfaces);
+        return Objects.hash(scriptingEnabled, consoleEnabled, dataAccessEnabled, trustedInterfaces);
     }
 
     @Override
@@ -149,6 +174,7 @@ public final class ManagementCenterConfig implements TrustedInterfacesConfigurab
         }
         ManagementCenterConfig other = (ManagementCenterConfig) obj;
         return scriptingEnabled == other.scriptingEnabled && consoleEnabled == other.consoleEnabled
+                && dataAccessEnabled == other.dataAccessEnabled
                 && Objects.equals(trustedInterfaces, other.trustedInterfaces);
     }
 }

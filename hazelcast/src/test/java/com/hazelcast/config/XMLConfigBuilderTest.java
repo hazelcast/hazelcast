@@ -883,7 +883,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='true' console-enabled='true'>"
+                + "<management-center scripting-enabled='true' console-enabled='true' data-access-enabled='false'>"
                 + "  <trusted-interfaces>\n"
                 + "    <interface>127.0.0.1</interface>\n"
                 + "    <interface>192.168.1.*</interface>\n"
@@ -896,6 +896,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mcConfig.isScriptingEnabled());
         assertTrue(mcConfig.isConsoleEnabled());
+        assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -913,6 +914,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -925,6 +927,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override

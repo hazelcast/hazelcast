@@ -4,6 +4,7 @@
       "management-center": {
         "scripting-enabled": null,
         "console-enabled": null,
+        "data-access-enabled": null,
         "other": true,
         "trusted-interfaces": {}
       }
@@ -35,6 +36,13 @@
         "message": "expected type: Boolean, found: Null"
       },
       {
+        "schemaLocation": "#/definitions/ManagementCenter/properties/data-access-enabled",
+        "pointerToViolation": "#/hazelcast/management-center/data-access-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Null"
+      },
+      {
         "schemaLocation": "#/definitions/ManagementCenter/properties/trusted-interfaces",
         "pointerToViolation": "#/hazelcast/management-center/trusted-interfaces",
         "causingExceptions": [],
@@ -42,6 +50,6 @@
         "message": "expected type: JSONArray, found: JSONObject"
       }
     ],
-    "message": "4 schema violations found"
+    "message": "5 schema violations found"
   }
 }

@@ -40,6 +40,7 @@ hazelcast:
   management-center:
     scripting-enabled: false
     console-enabled: false
+    data-access-enabled: true
     trusted-interfaces:
       - 10.10.1.*
       - 10.10.2.*
