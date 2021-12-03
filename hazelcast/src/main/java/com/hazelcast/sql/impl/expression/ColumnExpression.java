@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -31,10 +32,14 @@ import java.io.IOException;
  * Column access expression.
  */
 public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
-    /** Index in the row. */
+    /**
+     * Index in the row.
+     */
     private int index;
 
-    /** Type of the returned value. */
+    /**
+     * Type of the returned value.
+     */
     private QueryDataType type;
 
     public ColumnExpression() {
@@ -76,7 +81,12 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
 
     private Object unwrapLazyValue(LazyTarget lazyValue, ExpressionEvalContext context) {
         assert type.equals(QueryDataType.OBJECT);
-
+        Data serialized = lazyValue.getSerialized();
+        boolean dataIsCompactOrPortable = serialized != null
+                && (serialized.isCompact() || serialized.isPortable());
+        if (dataIsCompactOrPortable) {
+            return lazyValue;
+        }
         return lazyValue.deserialize(context.getSerializationService());
     }
 

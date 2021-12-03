@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
@@ -27,17 +28,20 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,6 +52,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -86,28 +92,27 @@ public class SqlCompactTest extends SqlTestSupport {
         CompactSerializationConfig compactSerializationConfig =
                 config.getSerializationConfig().getCompactSerializationConfig();
         compactSerializationConfig.setEnabled(true);
-//        Left commented deliberately. See https://github.com/hazelcast/hazelcast/issues/19427
-//        // registering this class to the member to see it does not affect any of the tests.
-//        // It has a different schema than all the tests
-//        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
-//            @Nonnull
-//            @Override
-//            public Person read(@Nonnull CompactReader in) {
-//                Person person = new Person();
-//                person.surname = in.readString("surname", "NotAssigned");
-//                return person;
-//            }
-//
-//            @Override
-//            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
-//                out.writeString("surname", person.surname);
-//            }
-//        });
+        // registering this class to the member to see it does not affect any of the tests.
+        // It has a different schema than all the tests
+        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
+            @Nonnull
+            @Override
+            public Person read(@Nonnull CompactReader in) {
+                Person person = new Person();
+                person.surname = in.readString("surname", "NotAssigned");
+                return person;
+            }
+
+            @Override
+            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
+                out.writeString("surname", person.surname);
+            }
+        });
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-        initializeWithClient(1, config, clientConfig);
-        sqlService = instance().getSql();
+        initializeWithClient(3, config, clientConfig);
+        sqlService = client().getSql();
 
         serializationService = Util.getSerializationService(instance());
     }
@@ -610,11 +615,11 @@ public class SqlCompactTest extends SqlTestSupport {
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
     private static Entry<Data, Data> randomEntryFrom(String mapName) {
-        NodeEngine engine = getNodeEngine(instance());
-        MapService service = engine.getService(MapService.SERVICE_NAME);
-        MapServiceContext context = service.getMapServiceContext();
-
-        return Arrays.stream(context.getPartitionContainers())
+        return Arrays.stream(instances())
+                .flatMap((Function<HazelcastInstance, Stream<PartitionContainer>>) instance -> {
+                    MapService service = getNodeEngine(instance).getService(MapService.SERVICE_NAME);
+                    return Arrays.stream(service.getMapServiceContext().getPartitionContainers());
+                })
                 .map(partitionContainer -> partitionContainer.getExistingRecordStore(mapName))
                 .filter(Objects::nonNull)
                 .flatMap(store -> {
