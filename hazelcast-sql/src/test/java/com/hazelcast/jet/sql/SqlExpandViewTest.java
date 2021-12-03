@@ -113,9 +113,37 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
     @Test
     public void test_viewWithStreamingQuery() {
-        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_SERIES(-5, 5, 5))");
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM TABLE(GENERATE_STREAM(10))");
 
-        assertRowsAnyOrder("SELECT * FROM v", asList(new Row(-5), new Row(0), new Row(5)));
+        assertRowsEventuallyInAnyOrder("SELECT * FROM v", rows(1, 0L, 1L, 2L));
+        assertThatThrownBy(() -> instance().getSql().execute("select v.v from v order by 1"))
+                .hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+    }
+
+    @Test
+    public void when_dml_then_fail() {
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
+
+        assertThatThrownBy(() -> instance().getSql().execute("insert into v values(42, 43)"))
+                .hasMessageContaining("DML operations not supported for views");
+        assertThatThrownBy(() -> instance().getSql().execute("update v set this=44 where __key=42"))
+                .hasMessageContaining("DML operations not supported for views");
+        assertThatThrownBy(() -> instance().getSql().execute("delete from v where __key=42"))
+                .hasMessageContaining("DML operations not supported for views");
+    }
+
+    @Test
+    public void test_referencedViewChanged() {
+        createMapping("m", Integer.class, Integer.class);
+        instance().getMap("m").put(42, 43);
+
+        // We create a view v2 as reading from v1, and then change v1. This should be reflected
+        // when querying v2 later.
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM m");
+        instance().getSql().execute("CREATE VIEW v2 AS SELECT __key FROM v1");
+        instance().getSql().execute("CREATE or replace VIEW v1 AS SELECT 'key=' || __key __key FROM m");
+
+        assertRowsAnyOrder("select * from v2", rows(1, "key=42"));
     }
 
     @Test

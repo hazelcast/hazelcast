@@ -33,7 +33,7 @@ import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 
 /**
- * CREATE VIEW statement AST tree node.
+ * AST node representing a CREATE VIEW statement.
  *
  * @since 5.1
  */

@@ -67,7 +67,6 @@ public class QueryConverter {
      */
     private static final int HAZELCAST_IN_ELEMENTS_THRESHOLD = 10_000;
 
-
     static {
         CONFIG = SqlToRelConverter.config()
                 .withExpand(EXPAND)

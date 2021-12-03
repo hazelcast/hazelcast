@@ -42,8 +42,9 @@ public class ViewTable extends Table {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        // views never participate in plans, they are expanded
-        throw new UnsupportedOperationException("Never should be called");
+        // Views never participate in plans, they are expanded. We return non-cacheable - if
+        // for any reason a plan contains a view, the plan wouldn't be cached.
+        return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
 
     public String getViewQuery() {
