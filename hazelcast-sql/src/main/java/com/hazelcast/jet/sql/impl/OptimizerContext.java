@@ -34,7 +34,6 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
-import com.hazelcast.sql.impl.schema.ViewResolver;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -99,13 +98,12 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver,
-            ViewResolver viewResolver
+            IMapResolver iMapResolver
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver, viewResolver);
+        return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
     }
 
     public static OptimizerContext create(
@@ -113,12 +111,11 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            IMapResolver iMapResolver,
-            ViewResolver viewResolver
+            IMapResolver iMapResolver
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths, viewResolver);
+        Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
                 catalogReader,
                 arguments,
@@ -174,21 +171,14 @@ public final class OptimizerContext {
         cluster.setRequiresJob(requiresJob);
     }
 
-    private static Prepare.CatalogReader createCatalogReader(
-            HazelcastSchema rootSchema,
-            List<List<String>> searchPaths,
-            ViewResolver viewResolver
-
-    ) {
+    private static Prepare.CatalogReader createCatalogReader(HazelcastSchema rootSchema, List<List<String>> searchPaths) {
         assert searchPaths != null;
 
         return new HazelcastCalciteCatalogReader(
                 new HazelcastRootCalciteSchema(rootSchema),
                 searchPaths,
                 HazelcastTypeFactory.INSTANCE,
-                CONNECTION_CONFIG,
-                viewResolver
-        );
+                CONNECTION_CONFIG);
     }
 
     private static VolcanoPlanner createPlanner(DistributionTraitDef distributionTraitDef) {

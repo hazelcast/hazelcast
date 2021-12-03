@@ -108,7 +108,7 @@ public class TablesStorage {
         }
     }
 
-    protected ReplicatedMap<String, Object> storage() {
+    private ReplicatedMap<String, Object> storage() {
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 

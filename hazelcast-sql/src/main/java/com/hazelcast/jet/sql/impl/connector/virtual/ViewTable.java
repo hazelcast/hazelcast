@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.List;
 
@@ -27,18 +28,25 @@ import java.util.List;
  * Table object to represent virtual (view) table.
  */
 public class ViewTable extends Table {
+    private final View view;
+
     public ViewTable(
             String schemaName,
-            String sqlName,
+            View view,
             List<TableField> fields,
             TableStatistics statistics
     ) {
-        super(schemaName, sqlName, fields, statistics);
+        super(schemaName, view.name(), fields, statistics);
+        this.view = view;
     }
 
     @Override
     public PlanObjectKey getObjectKey() {
         // views never participate in plans, they are expanded
         throw new UnsupportedOperationException("Never should be called");
+    }
+
+    public String getViewQuery() {
+        return view.query();
     }
 }

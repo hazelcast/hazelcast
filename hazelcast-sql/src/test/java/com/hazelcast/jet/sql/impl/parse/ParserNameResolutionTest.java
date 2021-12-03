@@ -225,7 +225,6 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 1,
-                name -> null,
                 name -> null
         );
     }

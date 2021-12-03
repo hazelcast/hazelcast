@@ -67,7 +67,6 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
-import com.hazelcast.jet.sql.impl.schema.ViewResolverImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -84,7 +83,6 @@ import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.ViewResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -181,7 +179,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final NodeEngine nodeEngine;
 
     private final IMapResolver iMapResolver;
-    private final ViewResolver viewResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
 
@@ -194,7 +191,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(tableResolverImpl);
-        this.viewResolver = new ViewResolverImpl(nodeEngine);
         this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
@@ -228,9 +224,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                iMapResolver,
-                viewResolver
-        );
+                iMapResolver);
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());

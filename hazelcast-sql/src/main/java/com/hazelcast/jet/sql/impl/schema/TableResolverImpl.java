@@ -210,16 +210,9 @@ public class TableResolverImpl implements TableResolver {
     private Table toTable(View view) {
         List<TableField> tableFields = new ArrayList<>(view.viewColumnNames().size());
         for (int i = 0; i < view.viewColumnNames().size(); ++i) {
-            tableFields.add(
-                    new TableField(view.viewColumnNames().get(i), view.viewColumnTypes().get(i), false)
-            );
+            tableFields.add(new TableField(view.viewColumnNames().get(i), view.viewColumnTypes().get(i), false));
         }
-        return new ViewTable(
-                SCHEMA_NAME_PUBLIC,
-                view.name(),
-                tableFields,
-                new ConstantTableStatistics(0L)
-        );
+        return new ViewTable(SCHEMA_NAME_PUBLIC, view, tableFields, new ConstantTableStatistics(0L));
     }
 
     @Override

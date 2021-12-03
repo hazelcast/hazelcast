@@ -16,25 +16,24 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.sql.impl.schema.view.View;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 
 public class HazelcastViewRelOptTable extends HazelcastRelOptTable {
-    private final View view;
+    private final String viewQuery;
 
-    public HazelcastViewRelOptTable(Prepare.PreparingTable delegate, View view) {
+    public HazelcastViewRelOptTable(Prepare.PreparingTable delegate, String viewQuery) {
         super(delegate);
-        this.view = view;
+        this.viewQuery = viewQuery;
     }
 
     @Override
     public final RelNode toRel(RelOptTable.ToRelContext context) {
         RelNode original = context.expandView(
                 getRowType(),
-                view.query(),
+                viewQuery,
                 getQualifiedName().subList(0, 2),
                 getQualifiedName()
         ).project();
