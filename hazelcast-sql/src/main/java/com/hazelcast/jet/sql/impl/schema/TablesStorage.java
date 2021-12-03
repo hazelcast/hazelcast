@@ -52,62 +52,64 @@ public class TablesStorage {
 
     private final NodeEngine nodeEngine;
     private final ILogger logger;
-    private final ReplicatedMap<String, Object> catalogReplMap;
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-        this.catalogReplMap = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
     void put(String name, Mapping mapping) {
-        catalogReplMap.put(name, mapping);
+        storage().put(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
     }
 
     void put(String name, View view) {
-        catalogReplMap.put(name, view);
+        storage().put(name, view);
         awaitMappingOnAllMembers(name, view);
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {
-        Object previous = catalogReplMap.putIfAbsent(name, mapping);
+        Object previous = storage().putIfAbsent(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
         return previous == null;
     }
 
     boolean putIfAbsent(String name, View view) {
-        Object previous = catalogReplMap.putIfAbsent(name, view);
+        Object previous = storage().putIfAbsent(name, view);
         awaitMappingOnAllMembers(name, view);
         return previous == null;
     }
 
     Mapping removeMapping(String name) {
-        return (Mapping) catalogReplMap.remove(name);
+        return (Mapping) storage().remove(name);
     }
 
     View removeView(String name) {
-        return (View) catalogReplMap.remove(name);
+        return (View) storage().remove(name);
+    }
+
+    Collection<Object> allObjects() {
+        return storage().values();
     }
 
     Collection<String> mappingNames() {
-        return catalogReplMap.values()
+        return storage().values()
                 .stream()
                 .filter(m -> m instanceof Mapping)
                 .map(m -> ((Mapping) m).name())
                 .collect(Collectors.toList());
     }
 
-    Collection<Object> allObjects() {
-        return catalogReplMap.values();
-    }
-
     void registerListener(EntryListener<String, Object> listener) {
         // do not try to implicitly create ReplicatedMap
         // TODO: perform this check in a single place i.e. SqlService ?
         if (!nodeEngine.getLocalMember().isLiteMember()) {
-            catalogReplMap.addEntryListener(listener);
+            storage().addEntryListener(listener);
         }
+    }
+
+    protected ReplicatedMap<String, Object> storage() {
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
     private Collection<Address> getMemberAddresses() {
