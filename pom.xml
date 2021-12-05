@@ -1205,7 +1205,8 @@
                     --add-opens java.management/sun.management=ALL-UNNAMED
                     --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
                     --illegal-access=warn
-                    <!--Allow additional access as a workaround of https://openjdk.java.net/jeps/403  for JDK17 -->
+                    <!--Allow additional access as a workaround of https://openjdk.java.net/jeps/403 for JDK17 -->
+                    <!-- Details in PR  https://github.com/hazelcast/hazelcast/pull/19896-->
                     --add-opens java.base/java.util=ALL-UNNAMED
                     --add-opens java.base/java.io=ALL-UNNAMED
                     --add-opens java.base/java.net=ALL-UNNAMED
