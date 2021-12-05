@@ -36,6 +36,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -73,6 +74,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
@@ -105,6 +107,7 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
@@ -497,6 +500,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else if (physicalRel instanceof TableModify) {
+            checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             return new DmlPlan(
@@ -639,5 +643,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return visitor;
+    }
+
+    private void checkDmlOperationWithView(PhysicalRel rel) {
+        HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
+        if (table.getTarget() instanceof ViewTable) {
+            throw QueryException.error("DML operations not supported for views");
+        }
     }
 }

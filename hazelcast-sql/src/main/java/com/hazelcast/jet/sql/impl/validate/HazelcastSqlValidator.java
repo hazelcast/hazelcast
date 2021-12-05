@@ -367,6 +367,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
         Table table = extractTable((SqlIdentifier) update.getTargetTable());
         if (table != null) {
+            if (table instanceof ViewTable) {
+                throw QueryException.error("DML operations not supported for views");
+            }
             SqlConnector connector = getJetSqlConnector(table);
 
             // only tables with primary keys can be updated
@@ -427,6 +430,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
         Table table = extractTable((SqlIdentifier) delete.getTargetTable());
         if (table != null) {
+            if (table instanceof ViewTable) {
+                throw QueryException.error("DML operations not supported for views");
+            }
             SqlConnector connector = getJetSqlConnector(table);
 
             // We need to feed primary keys to the delete processor so that it can directly delete the records.

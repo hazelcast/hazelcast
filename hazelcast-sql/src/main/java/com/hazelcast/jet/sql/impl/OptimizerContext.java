@@ -116,11 +116,7 @@ public final class OptimizerContext {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(
-                catalogReader,
-                arguments,
-                iMapResolver
-        );
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
 
