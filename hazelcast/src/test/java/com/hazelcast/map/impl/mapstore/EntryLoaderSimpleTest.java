@@ -186,9 +186,11 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
             assertEquals("val" + i, entries.get("key" + i));
         }
         sleepAtLeastSeconds(8);
-        for (int i = 0; i < 50; i++) {
-            assertInMemory(instances, map.getName(), "key" + i, null);
-        }
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 50; i++) {
+                assertInMemory(instances, map.getName(), "key" + i, null);
+            }
+        }, 10);
         assertExpiredEventually(map, "key", 0, 50);
     }
 
