@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.gson.Gson;
 import org.jsfr.json.Collector;
 import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
@@ -33,6 +34,7 @@ import java.util.Map;
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
     private static final JsonSurfer SURFER = new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE);;
+    private static final Gson SERIALIZER = new Gson();
 
     private JsonPathUtil() { }
 
@@ -68,5 +70,27 @@ public final class JsonPathUtil {
 
     public static boolean isArrayOrObject(Object value) {
         return isArray(value) || isObject(value);
+    }
+
+    public static String wrapToArray(Collection<Object> resultColl, boolean unconditionally) {
+        if (resultColl.size() > 1) {
+            return serialize(resultColl);
+        }
+        if (resultColl.isEmpty()) {
+            return "[]";
+        }
+        Object result = resultColl.iterator().next();
+        final String serializedResult = serialize(result);
+        if (unconditionally) {
+                return "[" + serializedResult + "]";
+        } else {
+            return isArrayOrObject(result)
+                ? serializedResult
+                : "[" + serializedResult + "]";
+        }
+    }
+
+    public static String serialize(Object object) {
+        return SERIALIZER.toJson(object);
     }
 }

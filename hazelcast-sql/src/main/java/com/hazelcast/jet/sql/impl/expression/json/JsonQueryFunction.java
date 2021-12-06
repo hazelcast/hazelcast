@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.common.cache.Cache;
-import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,9 +28,9 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
@@ -41,11 +40,11 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.isArrayOrObject;
+import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
+import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
-    private static final Gson SERIALIZER = new Gson();
-
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
@@ -107,8 +106,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (ParseCancellationException e) {
-            throw QueryException.error("Invalid JSONPath expression: " + e, e);
+        } catch (JsonPathCompilerException e) {
+            throw QueryException.error("Invalid JSONPath expression: " + e.getMessage(), e);
         }
 
         try {
@@ -155,25 +154,21 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         if (resultColl.isEmpty()) {
             throw QueryException.error("JSON_VALUE evaluated to no value");
         }
-        if (resultColl.size() > 1) {
-            throw QueryException.error("JSON_VALUE evaluated to multiple values");
-        }
-        Object result = resultColl.iterator().next();
-        final String serializedResult = SERIALIZER.toJson(result);
-
         switch (wrapperBehavior) {
             case WITH_CONDITIONAL_ARRAY:
-                return isArrayOrObject(result)
-                        ? serializedResult
-                        : "[" + serializedResult + "]";
+                return wrapToArray(resultColl, false);
             case WITH_UNCONDITIONAL_ARRAY:
-                return "[" + serializedResult + "]";
+                return wrapToArray(resultColl, true);
             default:
             case WITHOUT_ARRAY:
+                if (resultColl.size() > 1) {
+                    throw QueryException.error("JSON_VALUE evaluated to multiple values");
+                }
+                Object result = resultColl.iterator().next();
                 if (!isArrayOrObject(result)) {
                     throw QueryException.error("JSON_QUERY result is not an array or object");
                 }
-                return serializedResult;
+                return serialize(result);
         }
     }
 
@@ -220,4 +215,5 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                 + ", onError=" + onError.name()
                 + '}';
     }
+
 }

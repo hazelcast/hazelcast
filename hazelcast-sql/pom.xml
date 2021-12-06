@@ -176,7 +176,8 @@
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
-                                    <include>com.github.jsurfer:jsurfer</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-core</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
                                     <include>net.minidev:json-smart</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
@@ -289,7 +290,13 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.github.jsurfer:jsurfer</artifact>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -471,9 +478,19 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.jsurfer</groupId>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-core</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
             <artifactId>jsurfer-jackson-jr</artifactId>
             <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>${antlr4.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

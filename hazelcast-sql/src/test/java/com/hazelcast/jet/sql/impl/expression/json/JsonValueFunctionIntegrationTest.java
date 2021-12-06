@@ -26,7 +26,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.antlr.v4.runtime.InputMismatchException;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -207,12 +207,10 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                // TODO better error
-                .hasRootCauseInstanceOf(InputMismatchException.class);
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 0 end: -1");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                // TODO better error
-                .hasRootCauseInstanceOf(InputMismatchException.class);
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 1 end: 1");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("JSONPath expression can not be null");
@@ -228,6 +226,15 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 .hasMessageContaining("JSONPath expression can not be null");
         assertNull(querySingleValue("SELECT JSON_VALUE(null, 'foo')"));
         assertNull(querySingleValue("SELECT JSON_VALUE('bad json', '$' default null on error)"));
+    }
+
+    @Test
+    public void test_quotedPropName() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "{\"first name\":\"value\"}");
+        createMapping("test", Long.class, String.class);
+        assertEquals("value",
+            querySingleValue("SELECT JSON_VALUE(this, '$.\"first name\"' DEFAULT 1 ON ERROR) FROM test"));
     }
 
     private void initMultiTypeObject() {

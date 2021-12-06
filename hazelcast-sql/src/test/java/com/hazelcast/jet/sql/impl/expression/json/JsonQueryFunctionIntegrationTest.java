@@ -50,7 +50,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
         createMapping("test", Long.class, String.class);
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
                 rows(1, json("[2,3]")));
     }
 
@@ -59,7 +59,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json("[1,2,3]"));
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
                 rows(1, json("[2,3]")));
     }
 
@@ -126,6 +126,10 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                         + "FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("JSON_QUERY result is not an array or object");
+        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[*]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) "
+            + "FROM test"))
+            .isInstanceOf(HazelcastSqlException.class)
+            .hasMessageContaining("JSON_VALUE evaluated to multiple values");
     }
 
     @Test
@@ -166,16 +170,35 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                // TODO [viliam] improve error message
-                .hasMessageEndingWith("Invalid JSONPath expression: org.antlr.v4.runtime.misc.ParseCancellationException");
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 0 end: -1");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                // TODO [viliam] improve error message
-                .hasMessageEndingWith("Invalid JSONPath expression: org.antlr.v4.runtime.misc.ParseCancellationException");
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 1 end: 1");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('[1,2,3]', jsonValue) FROM test2"))
                 .isInstanceOf(HazelcastSqlException.class)
-                // TODO [viliam] improve error message
                 .hasMessageEndingWith("JSONPath expression can not be null");
+    }
+
+    @Test
+    public void test_unsupportedJsonPathMode() {
+        initComplexObject();
+        createMapping("test2", Long.class, ObjectWithJson.class);
+        instance().getSql().execute("INSERT INTO test2 (__key, id) VALUES (1, 1)");
+
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, 'strict $[*]') FROM test"))
+            .isInstanceOf(HazelcastSqlException.class)
+            .hasMessageEndingWith("STRICT json path mode is not supported");
+    }
+
+    @Test
+    public void test_testLaxJsonPathMode() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "[1,2,3]");
+        createMapping("test", Long.class, String.class);
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, 'lax $[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
+            rows(1, json("[2,3]")));
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, 'LAX $[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
+            rows(1, json("[2,3]")));
     }
 
     @Test
@@ -187,6 +210,26 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("JSONPath expression can not be null");
         assertNull(querySingleValue("SELECT JSON_QUERY(null, 'foo')"));
+    }
+
+    @Test
+    public void test_arrayIndex() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "[1,2,3]");
+        createMapping("test", Long.class, String.class);
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[0 to 2]' WITH ARRAY WRAPPER) FROM test",
+            rows(1, json("[1,2,3]")));
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[0:2]' WITH ARRAY WRAPPER) FROM test",
+            rows(1, json("[1,2]")));
+    }
+
+    @Test
+    public void test_quotedPropName() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "{\"first name\":\"value\"}");
+        createMapping("test", Long.class, String.class);
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$.\"first name\"' WITH ARRAY WRAPPER) FROM test",
+            rows(1, json("[\"value\"]")));
     }
 
     protected void initComplexObject() {

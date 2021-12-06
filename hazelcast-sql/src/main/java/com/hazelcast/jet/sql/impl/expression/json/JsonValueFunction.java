@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
@@ -112,8 +113,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (IllegalArgumentException exception) {
-            throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
+        } catch (JsonPathCompilerException e) {
+            throw QueryException.error("Invalid JSONPath expression: " + e.getMessage(), e);
         }
 
         try {
