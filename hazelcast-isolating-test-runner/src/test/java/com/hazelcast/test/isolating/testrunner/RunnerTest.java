@@ -35,11 +35,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public class RunnerTest {
@@ -69,6 +71,8 @@ public class RunnerTest {
                 .collect(Collectors.toList());
         await("docker instances have finished").atMost(Duration.ofMinutes(60))
                 .until(() -> containers.stream().noneMatch(ContainerState::isRunning));
+        assertThat(containers).withFailMessage("All containers should exit without error code")
+                .allMatch(c -> Objects.equals(c.getCurrentContainerInfo().getState().getExitCodeLong(), 0L));
     }
 
     private GenericContainer<?> createContainer(int i) {
