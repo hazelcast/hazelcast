@@ -28,6 +28,11 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +45,7 @@ import static org.awaitility.Awaitility.await;
 public class RunnerTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunnerTest.class);
     private static final int DEFAULT_RUNNERS_COUNT = Runtime.getRuntime().availableProcessors() / 2;
+    private static final String SORT_SEED_FILENAME = "target/sort-seed";
     private final String testRunId = UUID.randomUUID().toString();
 
     @Test
@@ -98,8 +104,21 @@ public class RunnerTest {
         int totalNumberOfTests = countOutputLines(listAllTestClassesCommand);
         LOGGER.info("Found " + totalNumberOfTests + " tests to run");
         int testCountInBatch = totalNumberOfTests / runnersCount + (totalNumberOfTests % runnersCount == 0 ? 0 : 1);
-        String prepareTestBatchesCommand = listAllTestClassesCommand + " | sort -R | split -l " + testCountInBatch + " -a 1 - target/test-batch-";
+        String prepareTestBatchesCommand = listAllTestClassesCommand + " | sort -R --random-source=" + generateSeedFile() + " | split -l " + testCountInBatch + " -a 1 - target/test-batch-";
         exec(prepareTestBatchesCommand);
+    }
+
+    private static Path generateSeedFile() {
+        String sortSeed = Optional.ofNullable(System.getProperty("sortSeed"))
+                .orElse(UUID.randomUUID().toString());
+        LOGGER.info("Sorting seed: " + sortSeed);
+        byte[] bytes = sortSeed.getBytes(StandardCharsets.UTF_8);
+        try {
+            Files.write(Paths.get(SORT_SEED_FILENAME), bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return Paths.get(SORT_SEED_FILENAME);
     }
 
     private static Process exec(String command) {
