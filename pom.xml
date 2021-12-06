@@ -507,7 +507,6 @@
                     <format>ALL</format>
                     <skipProvidedScope>true</skipProvidedScope>
                     <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
-                    <failBuildOnCVSS>10</failBuildOnCVSS>
                     <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
                 </configuration>
             </plugin>
