@@ -17,12 +17,12 @@
 package com.hazelcast.client.queue;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -562,8 +562,8 @@ public class ClientQueueTest extends HazelcastTestSupport {
             }
         }.start();
 
-        assertTrue(itemAddedLatch.await(5, TimeUnit.SECONDS));
-        assertTrue(itemRemovedLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(itemAddedLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(itemRemovedLatch.await(10, TimeUnit.SECONDS));
         queue.removeItemListener(id);
     }
 
