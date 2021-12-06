@@ -50,4 +50,9 @@ public class ViewTable extends Table {
     public String getViewQuery() {
         return view.query();
     }
+
+    public boolean isStream() {
+        return view.isStream();
+    }
+
 }

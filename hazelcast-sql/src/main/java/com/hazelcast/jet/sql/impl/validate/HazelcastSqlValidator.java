@@ -20,6 +20,8 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunctio
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
@@ -278,10 +280,20 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return false;
     }
 
-    private static boolean containsOrderedWindow(SqlNode node) {
+    private boolean containsOrderedWindow(SqlNode node) {
         class OrderedWindowFinder extends SqlBasicVisitor<Void> {
+            final HazelcastSqlValidator validator;
             boolean windowingFunctionFound;
             boolean orderedInputToWindowingFunctionFound;
+
+            OrderedWindowFinder(HazelcastSqlValidator validator) {
+                this.validator = validator;
+            }
+
+            OrderedWindowFinder(HazelcastSqlValidator validator, boolean windowingFunctionFound) {
+                this.validator = validator;
+                this.windowingFunctionFound = windowingFunctionFound;
+            }
 
             @Override
             public Void visit(SqlCall call) {
@@ -295,9 +307,35 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 }
                 return super.visit(call);
             }
+
+            @Override
+            public Void visit(SqlIdentifier id) {
+                SqlValidatorTable table = getCatalogReader().getTable(id.names);
+                // not every identifier is a table
+                if (table != null) {
+                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
+                    if (hazelcastTable.getTarget() instanceof ViewTable) {
+                        String viewQuery = ((ViewTable) hazelcastTable.getTarget()).getViewQuery();
+                        QueryParser parser = new QueryParser(validator);
+                        try {
+                            QueryParseResult parseResult = parser.parse(viewQuery);
+                            OrderedWindowFinder finder = new OrderedWindowFinder(validator, windowingFunctionFound);
+                            SqlNode sqlNode = parseResult.getNode();
+                            sqlNode.accept(finder);
+                            // TODO: [sasha] did it as quick idea impl late night, need more thinking about correctness
+                            orderedInputToWindowingFunctionFound |= finder.orderedInputToWindowingFunctionFound;
+                            windowingFunctionFound |= finder.windowingFunctionFound;
+                            return null;
+                        } catch (Exception e) {
+                            throw QueryException.error(e.getMessage());
+                        }
+                    }
+                }
+                return super.visit(id);
+            }
         }
 
-        OrderedWindowFinder finder = new OrderedWindowFinder();
+        OrderedWindowFinder finder = new OrderedWindowFinder(this);
         node.accept(finder);
         return finder.orderedInputToWindowingFunctionFound;
     }
@@ -465,7 +503,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      * Goes over all the referenced tables in the given {@link SqlNode}
      * and returns true if any of them uses a streaming connector.
      */
-    private boolean containsStreamingSource(SqlNode node) {
+    public boolean containsStreamingSource(SqlNode node) {
         class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
             boolean found;
 
@@ -476,6 +514,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 if (table != null) {
                     HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
                     if (hazelcastTable.getTarget() instanceof ViewTable) {
+                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
                         return null;
                     }
                     SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());

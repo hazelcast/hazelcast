@@ -74,8 +74,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertThat(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping &&  ((Mapping) m).type().equals("type-1")));
-        assertThat(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping &&  ((Mapping) m).type().equals("type-2")));
+        assertThat(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
+        assertThat(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
     }
 
     @Test
@@ -108,6 +108,6 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static View view(String name, String query) {
-        return new View(name, query, emptyList(), emptyList());
+        return new View(name, query, true, emptyList(), emptyList());
     }
 }

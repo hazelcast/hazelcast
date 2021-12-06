@@ -251,7 +251,7 @@ public class PlanExecutor {
             fieldTypes.add(toHazelcastType(field.getType()));
         }
 
-        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes);
+        View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
 
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
