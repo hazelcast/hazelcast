@@ -77,7 +77,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -120,24 +119,16 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>${bytebuddy.version}</version>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
-            <version>${bytebuddy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
             <version>${maven.shade.plugin.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>annotations</artifactId>
-            <version>${findbugs.annotations.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>biz.aQute</groupId>

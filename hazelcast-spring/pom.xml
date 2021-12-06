@@ -115,7 +115,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -175,7 +174,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${http.components.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

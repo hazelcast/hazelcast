@@ -83,12 +83,15 @@
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
+        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+        <owasp.dependency-check.version>6.1.5</owasp.dependency-check.version>
+        <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
         <log4j2.version>2.15.0</log4j2.version>
-        <slf4j.api.version>1.7.30</slf4j.api.version>
+        <slf4j.version>1.7.30</slf4j.version>
 
         <jackson.version>2.12.1</jackson.version>
         <junit.version>4.13.2</junit.version>
@@ -103,6 +106,7 @@
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.components.version>4.3.6</http.components.version>
+        <errorprone.version>2.10.0</errorprone.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -293,6 +297,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.self="override">
+                    <trimStackTrace>false</trimStackTrace>
                     <argLine>
                         ${vmHeapSettings}
                         ${javaModuleArgs}
@@ -342,18 +347,196 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-notice-and-license</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>..</directory>
+                                    <includes>
+                                        <include>NOTICE</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <!-- Don't include the top level LICENSE file which is valid for whole repository
+                                         use rather the ASF license file located in hazelcast-build-utils module.-->
+                                    <directory>../hazelcast-build-utils/src/main/resources</directory>
+                                    <includes>
+                                        <include>LICENSE</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <goals>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                            <failOnBlacklist>true</failOnBlacklist>
+                            <failOnMissing>true</failOnMissing>
+                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
+                            <includedLicenses>
+                                <includedLicense>Apache License, Version 2.0</includedLicense>
+                                <includedLicense>MIT License</includedLicense>
+                                <includedLicense>BSD 3-Clause License</includedLicense>
+                            </includedLicenses>
+                            <licenseMerges>
+                                <licenseMerge>
+                                    Apache License, Version 2.0|Apache License v2.0|
+                                    Apache Software License 2.0|The Apache Software License, Version 2.0|
+                                    Apache License, version 2.0|The Apache Software License, version 2.0|
+                                    Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
+                                    Apache Software License - Version 2.0|Apache License Version 2.0
+                                </licenseMerge>
+                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
+                                <licenseMerge>
+                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
+                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
+                                    BSD-3-Clause
+                                </licenseMerge>
+                            </licenseMerges>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                        <excludedGroups>com.hazelcast</excludedGroups>
+                        <excludedScopes>test,provided</excludedScopes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${owasp.dependency-check.version}</version>
+                <configuration>
+                    <format>ALL</format>
+                    <skipProvidedScope>true</skipProvidedScope>
+                    <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                    <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.hazelcast.maven</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aggregated-attribution</id>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/aggregated-attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>per-jar-attribution</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-    </build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven.shade.plugin.version}</version>
+                    <configuration>
+                        <filters>
+                            <filter>
+                                <artifact>*:*</artifact>
+                                <excludes>
+                                    <exclude>module-info.class</exclude>
+                                    <exclude>META-INF/*.SF</exclude>
+                                    <exclude>META-INF/*.DSA</exclude>
+                                    <exclude>META-INF/*.RSA</exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.javadoc.plugin.version}</version>
+                    <configuration>
+                        <maxmemory>1024</maxmemory>
+                        <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
+                        <doclint>-missing</doclint>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven.jar.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven.resources.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${codehause.license.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.hazelcast.maven</groupId>
+                    <artifactId>attribution-maven-plugin</artifactId>
+                    <version>1.0.1</version>
+                    <configuration>
+                        <exclusionPatterns>
+                        <!--
+                          Exclude false positives from the attribution.txt files. Some lines matching the `copyrightPattern`
+                          are actually not the copyright lines. Let's exclude them here.
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+                          Example:
+                          com.fasterxml.jackson.core:jackson-databind:2.12.1
+                             (c) per-property override (from annotation on specific property or
+                         -->
+                        </exclusionPatterns>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <profiles>
         <profile>
@@ -400,7 +583,7 @@
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
-                                    <!-- 1C means 1 process per cpu core -->
+                                    <!-- 0.5C means half as many forks as cpu cores -->
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
@@ -445,6 +628,7 @@
                                 </goals>
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
+                                    <trimStackTrace>false</trimStackTrace>
                                     <argLine>
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
@@ -943,6 +1127,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -1014,6 +1199,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
+                            <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -1168,6 +1354,112 @@
         </repository>
     </repositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+            Pin dependencies to particular version.
+
+            This doesn't add dependencies for modules, but if any of the modules uses any listed dependency, either
+            directly or transitively, it will use the version specified here.
+            This ensures that all jars with dependencies use the same version of a particular dependency, both for tests
+            and for inclusion to the jar with dependencies.
+
+            The enforcer plugin checks that no two modules have a dependency conflict, if they do simply add an entry
+            with conflicting dependency here, using the higher version.
+            -->
+
+            <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.7</version>
+            </dependency>
+            <!-- NOTE: httpcore and httpclient versions are not in sync -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.13</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.13</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <!--
+            The following are test dependencies, they are not in the final distribution.
+            We put them there for the dependency convergence task to succeed.
+            -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${findbugs.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${errorprone.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>javax.cache</groupId>
@@ -1193,7 +1485,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
             <optional>true</optional>
         </dependency>
@@ -1201,7 +1492,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -1219,7 +1509,6 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>${reflections.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -1255,26 +1544,22 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>${findbugs.annotations.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>${bytebuddy.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
-            <version>${bytebuddy.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

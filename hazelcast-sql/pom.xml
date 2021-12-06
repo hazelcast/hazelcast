@@ -48,7 +48,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -87,7 +86,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>fat-shaded-jar</id>
@@ -143,7 +148,7 @@
                             </relocations>
                             <transformers>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                                 <transformer
