@@ -97,7 +97,9 @@ public final class LinkedAddresses {
 
         LinkedAddresses that = (LinkedAddresses) o;
 
-        return Objects.equals(primaryAddress, that.primaryAddress);
+        return Objects.equals(primaryAddress, that.primaryAddress)
+                && allLinkedAddresses.size() == that.allLinkedAddresses.size()
+                && allLinkedAddresses.containsAll(that.allLinkedAddresses);
     }
 
     @Override
