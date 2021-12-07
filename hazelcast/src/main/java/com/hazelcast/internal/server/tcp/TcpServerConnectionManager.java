@@ -232,6 +232,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
+        addressRegistry.reset();
 
         if (cleanListeners) {
             connectionListeners.clear();

@@ -107,4 +107,9 @@ public class LocalAddressRegistry {
         UUID uuid = uuidOf(address);
         return uuid != null ? getPrimaryAddress(uuid) : null;
     }
+
+    public void reset() {
+        addressToUuid.clear();
+        uuidToAddresses.clear();
+    }
 }
