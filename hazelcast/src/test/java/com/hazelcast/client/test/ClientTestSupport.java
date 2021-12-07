@@ -25,6 +25,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
@@ -100,10 +101,10 @@ public class ClientTestSupport extends HazelcastTestSupport {
 
     protected Map<Long, EventHandler> getAllEventHandlers(HazelcastInstance client) {
         ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+        Collection<Connection> activeConnections = connectionManager.getActiveConnections();
         HashMap<Long, EventHandler> map = new HashMap<>();
-        for (ClientConnection activeConnection : activeConnections) {
-            map.putAll(activeConnection.getEventHandlers());
+        for (Connection activeConnection : activeConnections) {
+            map.putAll(((ClientConnection) activeConnection).getEventHandlers());
         }
         return map;
     }

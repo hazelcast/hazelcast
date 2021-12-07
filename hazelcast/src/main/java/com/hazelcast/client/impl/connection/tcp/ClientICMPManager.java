@@ -17,20 +17,17 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.internal.cluster.fd.PingFailureDetector;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.ICMPHelper;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.io.IOException;
-import java.net.ConnectException;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.String.format;
@@ -38,33 +35,32 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Client icmp based ping manager
- * Responsible for configuration handling and
- * scheduling related tasks
+ * Periodically at each `icmpIntervalMillis` checks if the address is reachable.
+ * If the address can not be reached for `icmpTimeoutMillis` at each attempt, counts that as a failure attempt.
+ * After the configured count `icmpMaxAttempts`, closes the connection with {@link TargetDisconnectedException}
  */
-public class ClientICMPManager implements ConnectionListener {
+public final class ClientICMPManager {
 
     private static final long MIN_ICMP_INTERVAL_MILLIS = SECONDS.toMillis(1);
-    private final ClientExecutionServiceImpl clientExecutionService;
-    private final TcpClientConnectionManager clientConnectionManager;
-    private final HeartbeatManager heartbeatManager;
-    private final ILogger logger;
-    private final PingFailureDetector<Connection> icmpFailureDetector;
-    private final boolean icmpEnabled;
-    private final int icmpTtl;
-    private final int icmpTimeoutMillis;
-    private final int icmpIntervalMillis;
 
-    public ClientICMPManager(ClientIcmpPingConfig clientIcmpPingConfig, ClientExecutionServiceImpl clientExecutionService,
-                             LoggingService loggingService, TcpClientConnectionManager clientConnectionManager,
-                             HeartbeatManager heartbeatManager) {
-        this.clientExecutionService = clientExecutionService;
-        this.clientConnectionManager = clientConnectionManager;
-        this.heartbeatManager = heartbeatManager;
-        this.logger = loggingService.getLogger(ClientICMPManager.class);
-        this.icmpTtl = clientIcmpPingConfig.getTtl();
-        this.icmpTimeoutMillis = clientIcmpPingConfig.getTimeoutMilliseconds();
-        this.icmpIntervalMillis = clientIcmpPingConfig.getIntervalMilliseconds();
-        this.icmpEnabled = clientIcmpPingConfig.isEnabled();
+    private ClientICMPManager() {
+    }
+
+    public static void start(ClientIcmpPingConfig clientIcmpPingConfig,
+                             TaskScheduler taskScheduler,
+                             ILogger logger,
+                             ActiveConnections activeConnections) {
+        if (!clientIcmpPingConfig.isEnabled()) {
+            return;
+        }
+
+        if (clientIcmpPingConfig.isEchoFailFastOnStartup()) {
+            echoFailFast(logger);
+        }
+
+        int icmpTtl = clientIcmpPingConfig.getTtl();
+        int icmpTimeoutMillis = clientIcmpPingConfig.getTimeoutMilliseconds();
+        int icmpIntervalMillis = clientIcmpPingConfig.getIntervalMilliseconds();
         int icmpMaxAttempts = clientIcmpPingConfig.getMaxAttempts();
 
         if (icmpTimeoutMillis > icmpIntervalMillis) {
@@ -77,17 +73,19 @@ public class ClientICMPManager implements ConnectionListener {
                     + MIN_ICMP_INTERVAL_MILLIS + "ms");
         }
 
-        if (icmpEnabled) {
-            if (clientIcmpPingConfig.isEchoFailFastOnStartup()) {
-                echoFailFast();
+        PingFailureDetector<Connection> failureDetector = new PingFailureDetector<>(icmpMaxAttempts);
+        taskScheduler.scheduleWithRepetition(() -> {
+            Collection<Connection> connections = activeConnections.get();
+            failureDetector.retainAttemptsForAliveEndpoints(connections);
+            for (Connection connection : connections) {
+                // we don't want an isReachable call to an address stopping us to check other addresses.
+                // so we run each check in its own thread
+                taskScheduler.execute(() -> ping(logger, failureDetector, connection, icmpTtl, icmpTimeoutMillis));
             }
-            this.icmpFailureDetector = new PingFailureDetector<>(icmpMaxAttempts);
-        } else {
-            this.icmpFailureDetector = null;
-        }
+        }, icmpIntervalMillis, icmpIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
-    private void echoFailFast() {
+    private static void echoFailFast(ILogger logger) {
         logger.info("Checking that ICMP failure-detector is permitted. Attempting to create a raw-socket using JNI.");
 
         if (!ICMPHelper.isRawSocketPermitted()) {
@@ -98,94 +96,32 @@ public class ClientICMPManager implements ConnectionListener {
         logger.info("ICMP failure-detector is supported, enabling.");
     }
 
-    public void start() {
-        if (!icmpEnabled) {
+    private static boolean isReachable(ILogger logger, int icmpTtl, int icmpTimeoutMillis, Address address) {
+        try {
+            if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
+                logger.fine(format("%s is pinged successfully", address));
+                return true;
+            }
+        } catch (IOException ignored) {
+            // no route to host, means we cannot connect anymore
+            ignore(ignored);
+        }
+        return false;
+    }
+
+    private static void ping(ILogger logger, PingFailureDetector<Connection> failureDetector, Connection connection,
+                             int icmpTtl, int icmpTimeoutMillis) {
+        Address address = connection.getRemoteAddress();
+        logger.fine(format("will ping %s", address));
+        if (isReachable(logger, icmpTtl, icmpTimeoutMillis, address)) {
+            failureDetector.heartbeat(connection);
             return;
         }
-
-        clientConnectionManager.addConnectionListener(this);
-        clientExecutionService.scheduleWithRepetition(new Runnable() {
-            public void run() {
-                for (final ClientConnection connection : clientConnectionManager.getActiveConnections()) {
-                    try {
-                        clientExecutionService.execute(new PeriodicPingTask(connection));
-                    } catch (Throwable e) {
-                        logger.severe(e);
-                    }
-                }
-            }
-        }, icmpIntervalMillis, icmpIntervalMillis, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void connectionAdded(Connection connection) {
-
-    }
-
-    @Override
-    public void connectionRemoved(Connection connection) {
-        if (icmpEnabled) {
-            icmpFailureDetector.remove(connection);
-        }
-    }
-
-    public void shutdown() {
-        if (icmpEnabled) {
-            icmpFailureDetector.reset();
-        }
-    }
-
-    private class PeriodicPingTask implements Runnable {
-
-        final ClientConnection connection;
-
-        PeriodicPingTask(ClientConnection connection) {
-            this.connection = connection;
-        }
-
-        boolean doPing(Address address, Level level)
-                throws IOException {
-            try {
-                if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
-                    String msg = format("%s is pinged successfully", address);
-                    logger.log(level, msg);
-                    return true;
-                }
-            } catch (ConnectException ignored) {
-                // no route to host, means we cannot connect anymore
-                ignore(ignored);
-            }
-            return false;
-        }
-
-        public void run() {
-            try {
-                Address address = connection.getRemoteAddress();
-                logger.fine(format("will ping %s", address));
-                if (doPing(address, Level.FINE)) {
-                    icmpFailureDetector.heartbeat(connection);
-                    return;
-                }
-
-                icmpFailureDetector.logAttempt(connection);
-
-                // host not reachable
-                String reason = format("Could not ping %s", address);
-                logger.warning(reason);
-
-                if (!icmpFailureDetector.isAlive(connection)) {
-                    heartbeatManager.onHeartbeatStopped(connection, "ICMP ping time out");
-                }
-            } catch (Throwable ignored) {
-                ignore(ignored);
-            } finally {
-                //because ping and connection removal runs concurrently,
-                //it could be the case that we created an entry for a dead connection.
-                //if connection closed while we are pinging, remove the related entry
-                if (!connection.isAlive()) {
-                    icmpFailureDetector.remove(connection);
-                }
-            }
+        failureDetector.logAttempt(connection);
+        logger.warning(format("Could not ping %s", address));
+        if (!failureDetector.isAlive(connection)) {
+            connection.close("ICMP ping time out",
+                    new TargetDisconnectedException("Heartbeat timed out to connection " + connection));
         }
     }
 }

@@ -31,6 +31,8 @@ import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
+import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -154,6 +156,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_MS;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
@@ -370,7 +374,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             Collection<EventListener> configuredListeners = instantiateConfiguredListenerObjects();
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
+
             connectionManager.start();
+            startHeartbeat();
+            startIcmpPing();
+            connectionManager.connectToCluster();
+
             diagnostics.start();
 
             // static loggers at beginning of file
@@ -419,6 +428,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
             throw rethrow(e);
         }
+    }
+
+    private void startHeartbeat() {
+        long heartbeatTimeout = properties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        long heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
+        ILogger logger = loggingService.getLogger(HeartbeatManager.class);
+        HeartbeatManager.start(this, executionService, logger,
+                heartbeatInterval, heartbeatTimeout,
+                connectionManager::getActiveConnections);
+    }
+
+    private void startIcmpPing() {
+        ILogger logger = loggingService.getLogger(HeartbeatManager.class);
+        ClientICMPManager.start(config.getNetworkConfig().getClientIcmpPingConfig(), executionService, logger,
+                connectionManager::getActiveConnections);
     }
 
     public void disposeOnClusterChange(Disposable disposable) {

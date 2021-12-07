@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.fd;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,6 +47,10 @@ public class PingFailureDetector<E> {
     public boolean isAlive(E endpoint) {
         AtomicInteger attempts = pingAttempts.get(endpoint);
         return attempts != null && attempts.get() < maxPingAttempts;
+    }
+
+    public void retainAttemptsForAliveEndpoints(Collection<E> aliveEndpoints) {
+        pingAttempts.keySet().retainAll(aliveEndpoints);
     }
 
     public void remove(E endpoint) {
