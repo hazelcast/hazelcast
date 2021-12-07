@@ -80,11 +80,11 @@ public class RowProjector implements Row {
             return null;
         }
 
-        JetSqlRow row = new JetSqlRow(projection.size());
+        Object[] row = new Object[projection.size()];
         for (int i = 0; i < projection.size(); i++) {
-            row.set(i, evaluate(projection.get(i), this, evalContext));
+            row[i] = evaluate(projection.get(i), this, evalContext);
         }
-        return row;
+        return new JetSqlRow(row);
     }
 
     @SuppressWarnings("unchecked")

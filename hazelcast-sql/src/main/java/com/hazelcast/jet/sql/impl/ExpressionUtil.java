@@ -109,11 +109,11 @@ public final class ExpressionUtil {
     ) {
         return row0 -> {
             Row row = row0.getRow(context.getSerializationService());
-            JetSqlRow result = new JetSqlRow(projections.size());
+            Object[] result = new Object[projections.size()];
             for (int i = 0; i < projections.size(); i++) {
-                result.set(i, evaluate(projections.get(i), row, context));
+                result[i] = evaluate(projections.get(i), row, context);
             }
-            return result;
+            return new JetSqlRow(result);
         };
     }
 
@@ -174,11 +174,11 @@ public final class ExpressionUtil {
             return values;
         }
 
-        JetSqlRow result = new JetSqlRow(projection.size());
+        Object[] result = new Object[projection.size()];
         for (int i = 0; i < projection.size(); i++) {
-            result.set(i, evaluate(projection.get(i), row, context));
+            result[i] = evaluate(projection.get(i), row, context);
         }
-        return result;
+        return new JetSqlRow(result);
     }
 
     /**

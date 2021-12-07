@@ -63,10 +63,6 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return values[index];
     }
 
-    public void set(int index, Object value) {
-        values[index] = value;
-    }
-
     public int getFieldCount() {
         return values.length;
     }

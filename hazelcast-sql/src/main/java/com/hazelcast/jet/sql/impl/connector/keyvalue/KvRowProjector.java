@@ -111,11 +111,11 @@ public class KvRowProjector implements Row {
             return null;
         }
 
-        JetSqlRow row = new JetSqlRow(projections.size());
+        Object[] row = new Object[projections.size()];
         for (int i = 0; i < projections.size(); i++) {
-            row.set(i, evaluate(projections.get(i), this, evalContext));
+            row[i] = evaluate(projections.get(i), this, evalContext);
         }
-        return row;
+        return new JetSqlRow(row);
     }
 
     @Override

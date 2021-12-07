@@ -148,11 +148,11 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     }
                 })
                 .andExportFinish(aggregations -> {
-                    JetSqlRow row = new JetSqlRow(aggregations.size());
+                    Object[] row = new Object[aggregations.size()];
                     for (int i = 0; i < aggregations.size(); i++) {
-                        row.set(i, aggregations.get(i).collect());
+                        row[i] = aggregations.get(i).collect();
                     }
-                    return row;
+                    return new JetSqlRow(row);
                 });
     }
 }
