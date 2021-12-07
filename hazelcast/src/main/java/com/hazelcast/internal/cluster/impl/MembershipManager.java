@@ -74,6 +74,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXE
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT;
 import static java.lang.Math.min;
@@ -353,16 +354,12 @@ public class MembershipManager {
         if (updatedLiteMember) {
             node.partitionService.updateMemberGroupSize();
         }
-        LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+
         for (MemberImpl member : removedMembers) {
             closeConnection(member.getAddress(), "Member left event received from master");
-            addressRegistry.removeRegistration(member.getUuid(), member.getAddress());
             handleMemberRemove(memberMapRef.get(), member);
         }
 
-        for (MemberImpl member : addedMembers) {
-            addressRegistry.register(member.getUuid(), LinkedAddresses.getAllLinkedAddresses(member.getAddress()));
-        }
         clusterService.getClusterJoinManager().insertIntoRecentlyJoinedMemberSet(addedMembers);
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers, !clusterService.isJoined());
 
@@ -758,9 +755,12 @@ public class MembershipManager {
     }
 
     private void closeConnection(Address address, String reason) {
-        Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
-        if (conn != null) {
-            conn.close(reason, null);
+        int planeCount = node.getServer().getContext().properties().getInteger(CHANNEL_COUNT);
+        for (int planeIdx = 0; planeIdx < planeCount; planeIdx++) {
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(address, planeIdx);
+            if (conn != null) {
+                conn.close(reason, null);
+            }
         }
     }
 
