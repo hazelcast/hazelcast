@@ -62,6 +62,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -3045,6 +3047,46 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Override
+    @Test
+    public void testDynamicConfig() {
+        boolean persistenceEnabled = true;
+        String persistenceFile = "/mnt/dynamic-configuration/persistence-file";
+        String backupDir = "/mnt/dynamic-configuration/backup-dir";
+        int backupCount = 7;
+
+        String xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "    <persistence-file>" + persistenceFile + "</persistence-file>"
+                + "    <backup-dir>" + backupDir + "</backup-dir>"
+                + "    <backup-count>" + backupCount + "</backup-count>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(new File(persistenceFile).getAbsolutePath(), dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
+        assertEquals(new File(backupDir).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
+
+        xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertNull(dynamicConfigurationConfig.getPersistenceFile());
+        assertEquals(new File(DEFAULT_BACKUP_DIR).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(DEFAULT_BACKUP_COUNT, dynamicConfigurationConfig.getBackupCount());
     }
 
     @Override

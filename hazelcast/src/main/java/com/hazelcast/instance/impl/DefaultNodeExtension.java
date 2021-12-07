@@ -24,9 +24,13 @@ import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DynamicConfigurationConfig;
+import com.hazelcast.config.InMemoryXmlConfig;
+import com.hazelcast.config.InMemoryYamlConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -162,6 +166,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
+        checkDynamicConfigurationPersistenceAllowed();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
@@ -202,6 +207,23 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         if (auditlogConfig != null && auditlogConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Auditlog requires Hazelcast Enterprise Edition");
+            }
+        }
+    }
+
+    private void checkDynamicConfigurationPersistenceAllowed() {
+        Config config = node.getConfig();
+        if (config.getDynamicConfigurationConfig().isPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
+            }
+
+            if (config.getConfigurationFile() == null || !config.getConfigurationFile().exists()) {
+                throw new InvalidConfigurationException(
+                        "Dynamic Configuration Persistence is enabled but config file couldn't be found."
+                                + " This is probably because declarative configuration isn't used."
+                );
+
             }
         }
     }

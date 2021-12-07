@@ -273,6 +273,10 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
     }
 
+    public static void checkDynamicConfigurationConfig(DynamicConfigurationConfig expectedConfig, DynamicConfigurationConfig actualConfig) {
+        checkCompatibleConfigs("dynamic-configuration-config", expectedConfig, actualConfig, new DynamicConfigurationConfigChecker());
+    }
+
     public static void checkDeviceConfig(DeviceConfig expectedConfig, DeviceConfig actualConfig) {
         checkCompatibleConfigs("device-config", expectedConfig, actualConfig, new DeviceConfigChecker());
     }
@@ -1024,6 +1028,13 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(IndexConfig c1, IndexConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null) && nullSafeEqual(c1, c2);
+        }
+    }
+
+    private static class DynamicConfigurationConfigChecker extends ConfigChecker<DynamicConfigurationConfig> {
+        @Override
+        boolean check(DynamicConfigurationConfig t1, DynamicConfigurationConfig t2) {
+            return Objects.equals(t1, t2);
         }
     }
 

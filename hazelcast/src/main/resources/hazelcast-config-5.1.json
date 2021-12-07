@@ -141,6 +141,9 @@
         },
         "device": {
           "$ref": "#/definitions/Device"
+        },
+        "dynamic-configuration": {
+          "$ref": "#/definitions/DynamicConfiguration"
         }
       }
     },
@@ -3714,6 +3717,29 @@
             "default": 4,
             "description": "Write IO thread count. The default is 4."
           }
+        }
+      }
+    },
+    "DynamicConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "persistence-enabled": {
+          "type": "boolean",
+          "description": "True if dynamic configuration persistence is enabled."
+        },
+        "persistence-file": {
+          "type": "string",
+          "description": "Path for dynamic configuration persistence file. Dynamic changes will be persisted into this file. Don't forget to import this file in the root configuration file. Can be an absolute or relative path to the node startup directory. If not set, root configuration file will be used."
+        },
+        "backup-dir": {
+          "type": "string",
+          "description": "Directory for dynamic configuration persistence file backups. Each new backup will be created inside this directory. Can be an absolute or relative path to the node startup directory. If not set, new folder will be created at the node startup directory."
+        },
+        "backup-count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many backups will be kept. Default is 5. You can set this to zero to disable backups."
         }
       }
     },

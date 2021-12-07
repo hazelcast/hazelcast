@@ -171,6 +171,7 @@ public class ConfigXmlGenerator {
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
+        dynamicConfigurationXmlGenerator(gen, config);
         deviceConfigXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
@@ -1559,6 +1560,24 @@ public class ConfigXmlGenerator {
                 .node("rebalance-delay-seconds", prCfg.getRebalanceDelaySeconds());
 
         encryptionAtRestXmlGenerator(gen, prCfg.getEncryptionAtRestConfig());
+        gen.close();
+    }
+
+    private void dynamicConfigurationXmlGenerator(XmlGenerator gen, Config config) {
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        gen.open("dynamic-configuration")
+                .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
+
+        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
+            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
+        }
+
+        if (dynamicConfigurationConfig.getBackupDir() != null) {
+            gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        }
+
+        gen.node("backup-count", dynamicConfigurationConfig.getBackupCount());
         gen.close();
     }
 

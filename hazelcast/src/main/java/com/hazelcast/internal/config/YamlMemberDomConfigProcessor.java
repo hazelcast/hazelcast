@@ -107,8 +107,12 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static java.lang.Integer.parseInt;
 
-@SuppressWarnings({ "checkstyle:methodcount", "checkstyle:cyclomaticcomplexity", "checkstyle:classfanoutcomplexity",
-        "checkstyle:classdataabstractioncoupling" })
+@SuppressWarnings({
+        "checkstyle:methodcount",
+        "checkstyle:cyclomaticcomplexity",
+        "checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling"
+})
 public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     public YamlMemberDomConfigProcessor(boolean domLevel3, Config config) {
