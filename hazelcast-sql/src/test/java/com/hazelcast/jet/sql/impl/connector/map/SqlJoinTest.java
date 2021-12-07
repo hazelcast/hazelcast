@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -635,7 +636,7 @@ public class SqlJoinTest {
 
             String mapName2 = randomName();
             createMapping(mapName2, int.class, int.class);
-            instance().getMap(mapName).put(1, 2);
+            instance().getMap(mapName2).put(1, 2);
 
             assertRowsAnyOrder("SELECT * FROM " + mapName + " AS m1" +
                             " JOIN (SELECT * FROM " + mapName2 + ") AS m2" +
@@ -1229,19 +1230,38 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_whenOuterJoinWrongSide_thenExceptionThrown() {
+        public void test_whenOuterJoinHasSubquery() {
             String batchName = randomName();
-            TestBatchSqlConnector.create(sqlService, batchName, 0);
+            IMap<Integer, Integer> map = instance().getMap(batchName);
+            createMapping(batchName, int.class, int.class);
+            map.put(1, 1);
+
+            assertRowsAnyOrder(
+                    "SELECT * FROM " + joinClause(batchName, "(SELECT * FROM " + batchName + ")") + " ON true",
+                    singletonList(new Row(1, 1, 1, 1))
+            );
+
+        }
+
+        @Test
+        public void test_whenOuterJoinUseStreamingSource_thenExceptionThrown() {
+            String batchName = randomName();
+            IMap<Integer, Integer> map = instance().getMap(batchName);
+            createMapping(batchName, int.class, int.class);
+            map.put(1, 1);
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "TABLE(GENERATE_STREAM(1))") + " ON true"))
                     .hasCauseInstanceOf(QueryException.class)
                     .hasMessageContaining("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source");
+        }
 
-            assertThatThrownBy(() -> sqlService.execute(
-                    "SELECT * FROM " + joinClause(batchName, "(SELECT * FROM " + batchName + ")") + " ON true"))
-                    .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
+        @Test
+        public void test_whenOuterJoinUseValuesClause_thenExceptionThrown() {
+            String batchName = randomName();
+            IMap<Integer, Integer> map = instance().getMap(batchName);
+            createMapping(batchName, int.class, int.class);
+            map.put(1, 1);
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "(VALUES(1,2))") + " ON true"))
