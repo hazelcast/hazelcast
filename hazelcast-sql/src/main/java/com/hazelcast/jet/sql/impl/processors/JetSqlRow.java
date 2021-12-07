@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.sql.impl.SqlSerializationHooks;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
@@ -111,8 +114,9 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(values.length);
+        SerializationService ss = ((SerializationServiceSupport) out).getSerializationService();
         for (Object value : values) {
-            out.writeObject(value);
+            IOUtil.writeData(out, ss.toData(value));
         }
     }
 
@@ -120,8 +124,7 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         values = new Object[in.readInt()];
         for (int i = 0; i < values.length; i++) {
-            // TODO [viliam] always read as Data somehow
-            values[i] = in.readObject();
+            values[i] = IOUtil.readData(in);
         }
     }
 }
