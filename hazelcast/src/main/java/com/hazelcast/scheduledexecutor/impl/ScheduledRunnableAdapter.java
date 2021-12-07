@@ -19,48 +19,41 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.internal.services.NodeAware;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
-public class ScheduledRunnableAdapter<V>
-        implements IdentifiedDataSerializable, Callable<V>, NodeAware, PartitionAware, NamedTask, StatefulTask {
-
-    private Runnable task;
+public class ScheduledRunnableAdapter<V> extends AbstractTaskDecorator<V>
+        implements NodeAware, PartitionAware, NamedTask, StatefulTask {
 
     public ScheduledRunnableAdapter() {
     }
 
     public ScheduledRunnableAdapter(Runnable task) {
-        this.task = task;
+        super(task);
     }
 
     public Runnable getRunnable() {
-        return task;
+        return (Runnable) delegate;
     }
 
     public void setRunnable(Runnable runnable) {
-        task = runnable;
+        delegate = runnable;
     }
 
     @Override
     public V call()
             throws Exception {
-        task.run();
+        ((Runnable) delegate).run();
         return null;
     }
 
     @Override
     public Object getPartitionKey() {
-        if (task instanceof PartitionAware) {
-            return ((PartitionAware) task).getPartitionKey();
+        if (delegate instanceof PartitionAware) {
+            return ((PartitionAware) delegate).getPartitionKey();
         }
         return null;
     }
@@ -68,47 +61,29 @@ public class ScheduledRunnableAdapter<V>
     @Override
     public void setNode(Node node) {
         ManagedContext managedContext = node.getSerializationService().getManagedContext();
-        task = (Runnable) managedContext.initialize(task);
+        delegate = managedContext.initialize(delegate);
     }
 
     @Override
     public String getName() {
-        if (task instanceof NamedTask) {
-            return ((NamedTask) task).getName();
+        if (delegate instanceof NamedTask) {
+            return ((NamedTask) delegate).getName();
         }
-
         return null;
     }
 
     @Override
     public void save(Map snapshot) {
-        if (task instanceof StatefulTask) {
-            ((StatefulTask) task).save(snapshot);
+        if (delegate instanceof StatefulTask) {
+            ((StatefulTask) delegate).save(snapshot);
         }
     }
 
     @Override
     public void load(Map snapshot) {
-        if (task instanceof StatefulTask) {
-            ((StatefulTask) task).load(snapshot);
+        if (delegate instanceof StatefulTask) {
+            ((StatefulTask) delegate).load(snapshot);
         }
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeObject(task);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        task = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ScheduledExecutorDataSerializerHook.F_ID;
     }
 
     @Override
@@ -118,7 +93,7 @@ public class ScheduledRunnableAdapter<V>
 
     @Override
     public String toString() {
-        return "ScheduledRunnableAdapter" + "{task=" + task + '}';
+        return "ScheduledRunnableAdapter" + "{task=" + delegate + '}';
     }
 
 }
