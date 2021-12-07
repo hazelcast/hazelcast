@@ -313,6 +313,16 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_viewIsExpandedWithJsonFunctions() {
+        createMapping("test", "bigint", "json");
+        instance().getSql().execute("INSERT INTO test VALUES (1, '[1,2,3]')");
+        instance().getSql().execute("INSERT INTO test VALUES (2, '[4,5,6]')");
+        instance().getSql().execute("CREATE VIEW v AS SELECT JSON_VALUE(this, '$[1]') FROM test");
+
+        assertRowsAnyOrder("SELECT * FROM v", asList(new Row("2"), new Row("5")));
+    }
+
+    @Test
     public void when_doubleViewIsExpandedDuringQuery() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME + " WHERE __key = 1");
         instance().getSql().execute("CREATE VIEW vv AS SELECT * FROM v");
