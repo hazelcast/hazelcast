@@ -1183,6 +1183,8 @@
             </activation>
             <properties>
                 <!--
+                Java 9+ module system args to be appended during surefire/failsafe executions.
+
                 Allow access to Operating system metrics:
                    open jdk.management/com.sun.management.internal
 
@@ -1206,8 +1208,8 @@
                     --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
                     --illegal-access=warn
                     <!--
-                    Allow additional access as a workaround of https://openjdk.java.net/jeps/403 for JDK17
-                    Details in PR https://github.com/hazelcast/hazelcast/pull/19896
+                    Allow additional access as a workaround of https://openjdk.java.net/jeps/403 for JDK17+
+                    Details could be found in PR https://github.com/hazelcast/hazelcast/pull/19896
                     -->
                     --add-opens java.base/java.util=ALL-UNNAMED
                     --add-opens java.base/java.io=ALL-UNNAMED
