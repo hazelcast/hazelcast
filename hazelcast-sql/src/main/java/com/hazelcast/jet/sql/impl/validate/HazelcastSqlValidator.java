@@ -318,9 +318,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         SqlBasicVisitor<Void> joinChecker = new SqlBasicVisitor<Void>() {
             @Override
             public Void visit(SqlCall call) {
-                if (call.getKind() == SqlKind.SELECT) {
-                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
-                } else if (call.getKind() == VALUES) {
+                if (call.getKind() == VALUES) {
                     throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
                 }
 

@@ -629,21 +629,19 @@ public class SqlJoinTest {
 
         @Test
         public void test_joinSubquery() {
-            String leftName = randomName();
-            TestBatchSqlConnector.create(sqlService, leftName, 1);
-
             String mapName = randomName();
-            createMapping(mapName, int.class, String.class);
-            instance().getMap(mapName).put(1, "value-1");
+            createMapping(mapName, int.class, int.class);
+            instance().getMap(mapName).put(1, 1);
 
-            assertThatThrownBy(() ->
-                    sqlService.execute(
-                            "SELECT 1 " +
-                                    "FROM " + leftName + " AS l " +
-                                    "JOIN (SELECT * FROM " + mapName + ") AS m ON l.v = m.__key"
-                    ))
-                    .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
+            String mapName2 = randomName();
+            createMapping(mapName2, int.class, int.class);
+            instance().getMap(mapName).put(1, 2);
+
+            assertRowsAnyOrder("SELECT * FROM " + mapName + " AS m1" +
+                            " JOIN (SELECT * FROM " + mapName2 + ") AS m2" +
+                            " ON m1.__key = m2.__key",
+                    singletonList(new Row(1, 1, 1, 2))
+            );
         }
 
         @Test
