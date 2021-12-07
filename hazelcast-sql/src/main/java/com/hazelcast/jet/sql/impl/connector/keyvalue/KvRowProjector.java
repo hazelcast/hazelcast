@@ -99,11 +99,11 @@ public class KvRowProjector implements Row {
         return project(key, null, value, null);
     }
 
-    public Object[] project(Data key, Data value) {
+    public JetSqlRow project(Data key, Data value) {
         return project(null, key, null, value);
     }
 
-    private Object[] project(Object key, Data keyData, Object value, Data valueData) {
+    private JetSqlRow project(Object key, Data keyData, Object value, Data valueData) {
         keyTarget.setTarget(key, keyData);
         valueTarget.setTarget(value, valueData);
 

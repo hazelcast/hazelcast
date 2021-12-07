@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -60,6 +61,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectAllowNulls() {
         KvProjector projector = new KvProjector(
+                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new NullTarget(),
@@ -67,7 +69,7 @@ public class KvProjectorTest {
                 false
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, 2});
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isNull();
         assertThat(entry.getValue()).isNull();
@@ -76,6 +78,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectKeyNullNotAllowed() {
         KvProjector projector = new KvProjector(
+                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new NullTarget(),
@@ -83,7 +86,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new Object[]{1, 2}))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to '__key' field");
     }
@@ -91,6 +94,7 @@ public class KvProjectorTest {
     @Test
     public void test_projectValueNullNotAllowed() {
         KvProjector projector = new KvProjector(
+                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new MultiplyingTarget(),
@@ -98,7 +102,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new Object[]{1, 2}))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to 'this' field");
     }

@@ -42,16 +42,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.util.Util.extendArray;
-
 public class SqlHashJoinP extends AbstractProcessor {
 
     private final JetJoinInfo joinInfo;
     private final int rightInputColumnCount;
 
     private ExpressionEvalContext evalContext;
-    private Multimap<ObjectArrayKey, Object[]> hashMap;
-    private FlatMapper<Object[], Object[]> flatMapper;
+    private Multimap<ObjectArrayKey, JetSqlRow> hashMap;
+    private FlatMapper<JetSqlRow, JetSqlRow> flatMapper;
     private long maxItemsInHashTable;
 
     public SqlHashJoinP(JetJoinInfo joinInfo, int rightInputColumnCount) {
@@ -67,10 +65,11 @@ public class SqlHashJoinP extends AbstractProcessor {
         this.maxItemsInHashTable = context.maxProcessorAccumulatedRecords();
     }
 
-    private Traverser<Object[]> join(Object[] leftRow) {
-        ObjectArrayKey joinKeys = ObjectArrayKey.project(leftRow, joinInfo.leftEquiJoinIndices());
-        Collection<Object[]> matchedRows = hashMap.get(joinKeys);
-        List<Object[]> output = matchedRows.stream()
+    private Traverser<JetSqlRow> join(JetSqlRow leftRow) {
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(evalContext.getSerializationService(), leftRow,
+                joinInfo.leftEquiJoinIndices());
+        Collection<JetSqlRow> matchedRows = hashMap.get(joinKeys);
+        List<JetSqlRow> output = matchedRows.stream()
                 .map(right -> ExpressionUtil.join(
                         leftRow,
                         right,
@@ -80,14 +79,14 @@ public class SqlHashJoinP extends AbstractProcessor {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         if (joinInfo.isLeftOuter() && output.isEmpty()) {
-            return Traversers.singleton(extendArray(leftRow, rightInputColumnCount));
+            return Traversers.singleton(leftRow.extendedRow(rightInputColumnCount));
         }
         return Traversers.traverseIterable(output);
     }
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
-        return flatMapper.tryProcess((Object[]) item);
+        return flatMapper.tryProcess((JetSqlRow) item);
     }
 
     @Override
@@ -95,8 +94,9 @@ public class SqlHashJoinP extends AbstractProcessor {
         if (hashMap.size() == maxItemsInHashTable) {
             throw new AccumulationLimitExceededException();
         }
-        Object[] rightRow = (Object[]) item;
-        ObjectArrayKey joinKeys = ObjectArrayKey.project(rightRow, joinInfo.rightEquiJoinIndices());
+        JetSqlRow rightRow = (JetSqlRow) item;
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(evalContext.getSerializationService(), rightRow,
+                joinInfo.rightEquiJoinIndices());
         hashMap.put(joinKeys, rightRow);
         return true;
     }

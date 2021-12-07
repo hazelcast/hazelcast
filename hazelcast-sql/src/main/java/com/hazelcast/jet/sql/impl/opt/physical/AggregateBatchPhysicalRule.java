@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 
@@ -43,7 +44,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
     }
 
     private static RelNode toAggregate(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, JetSqlRow> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
@@ -80,7 +81,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
     }
 
     private static RelNode toAggregateByKey(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, JetSqlRow> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()

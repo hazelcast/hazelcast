@@ -87,7 +87,7 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(serializationService.toData(1), serializationService.toData(8));
+        JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
 
         assertThat(row).isEqualTo(new Object[]{2, 4});
     }

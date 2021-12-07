@@ -67,7 +67,7 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
 
     protected abstract RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput);
 
-    protected static AggregateOperation<?, Object[]> aggregateOperation(
+    protected static AggregateOperation<?, JetSqlRow> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls

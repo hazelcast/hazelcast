@@ -56,7 +56,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     private KvRowProjector.Supplier projectorSupplier;
 
     private transient ExpressionEvalContext evalContext;
-    private transient EventTimePolicy<Object[]> eventTimePolicy;
+    private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
     private transient Extractors extractors;
 
     @SuppressWarnings("unused")

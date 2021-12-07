@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
@@ -41,8 +42,8 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
-import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -318,8 +319,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
         ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
@@ -342,8 +343,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
         ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
@@ -364,7 +365,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
@@ -521,10 +522,8 @@ public class CreateDagVisitor {
             right = right.broadcast().distributed();
         }
         if (joinInfo.isEquiJoin()) {
-            int[] leftIndices = joinInfo.leftEquiJoinIndices();
-            int[] rightIndices = joinInfo.rightEquiJoinIndices();
-            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
-            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
         dag.edge(left);
         dag.edge(right);
