@@ -47,7 +47,8 @@ public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapt
 
     @Override
     public Object read(ObjectDataInput in) throws IOException {
-        return serializer.read((BufferObjectDataInput) in, true);
+        BufferObjectDataInput bufferObjectDataInput = (BufferObjectDataInput) in;
+        return serializer.read(bufferObjectDataInput, bufferObjectDataInput.position(), true);
     }
 
     @Override

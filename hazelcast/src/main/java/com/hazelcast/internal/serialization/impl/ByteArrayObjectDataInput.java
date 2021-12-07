@@ -25,10 +25,12 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.UTFDataFormatException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
@@ -106,7 +108,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
-    public final int read(byte[] b, int off, int len) throws EOFException {
+    public int readFully(byte[] b, int pos, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
         } else {
@@ -122,8 +124,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             len = size - pos;
         }
         System.arraycopy(data, pos, b, off, len);
-        pos += len;
         return len;
+    }
+
+    @Override
+    public final int read(byte[] b, int off, int len) throws EOFException {
+        int readBytes = readFully(b, pos, off, len);
+        pos += (readBytes == -1) ? 0 : readBytes;
+        return readBytes;
     }
 
     @Override
@@ -383,6 +391,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return Bits.readShort(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
+    @Nullable
+    @Override
+    public double[] readDoubleArray(int position) throws IOException {
+        return new double[0];
+    }
+
     @Override
     @Nullable
     public byte[] readByteArray() throws IOException {
@@ -393,6 +407,22 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         if (len > 0) {
             byte[] b = new byte[len];
             readFully(b);
+            return b;
+        }
+        return EMPTY_BYTE_ARRAY;
+    }
+
+    @Nullable
+    @Override
+    public byte[] readByteArray(int position) throws IOException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            byte[] b = new byte[len];
+            readFully(b, position, 0, len);
             return b;
         }
         return EMPTY_BYTE_ARRAY;
@@ -409,6 +439,25 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             boolean[] values = new boolean[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readBoolean();
+            }
+            return values;
+        }
+        return new boolean[0];
+    }
+
+
+    @Nullable
+    @Override
+    public boolean[] readBooleanArray(int position) throws IOException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            boolean[] values = new boolean[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readBoolean(position++);
             }
             return values;
         }
@@ -451,6 +500,25 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     @Nullable
+    public int[] readIntArray(int position) throws EOFException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readInt(position);
+                position += INT_SIZE_IN_BYTES;
+            }
+            return values;
+        }
+        return new int[0];
+    }
+
+    @Override
+    @Nullable
     public long[] readLongArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -460,6 +528,25 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             long[] values = new long[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readLong();
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
+    @Nullable
+    @Override
+    public long[] readLongArray(int position) throws IOException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readLong(position);
+                position += LONG_SIZE_IN_BYTES;
             }
             return values;
         }
@@ -500,6 +587,26 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return new float[0];
     }
 
+    @Nullable
+    @Override
+    public float[] readFloatArray(int position) throws IOException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            float[] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readFloat(position);
+                position += FLOAT_SIZE_IN_BYTES;
+            }
+            return values;
+        }
+        return new float[0];
+    }
+
+
     @Override
     @Nullable
     public short[] readShortArray() throws EOFException {
@@ -511,6 +618,25 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             short[] values = new short[len];
             for (int i = 0; i < len; i++) {
                 values[i] = readShort();
+            }
+            return values;
+        }
+        return new short[0];
+    }
+
+    @Nullable
+    @Override
+    public short[] readShortArray(int position) throws IOException {
+        int len = readInt(position);
+        position += INT_SIZE_IN_BYTES;
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            short[] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readShort(position);
+                position += SHORT_SIZE_IN_BYTES;
             }
             return values;
         }
@@ -592,6 +718,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     @Override
     public String readString() throws IOException {
         return isCompatibility ? readUTFInternalCompatibility() : readUTFInternal();
+    }
+
+    @Nullable
+    @Override
+    public String readString(int position) throws IOException {
+        return isCompatibility ? readUTFInternalCompatibility(position) : readUTFInternal(position);
     }
 
     @Override
@@ -722,7 +854,17 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return result;
     }
 
-    public final String readUTFInternalCompatibility() throws IOException {
+    private String readUTFInternal(int pos) throws EOFException {
+        int numberOfBytes = readInt(pos);
+        pos += INT_SIZE_IN_BYTES;
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+
+        return new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
+    }
+
+    private String readUTFInternalCompatibility() throws IOException {
         int charCount = readInt();
         if (charCount == NULL_ARRAY_LENGTH) {
             return null;
@@ -735,6 +877,41 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             b = readByte();
             if (b < 0) {
                 charBuffer[i] = Bits.readUtf8CharCompatibility(this, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
+        }
+        return new String(charBuffer, 0, charCount);
+    }
+
+    private String readUTFInternalCompatibility(int pos) throws IOException {
+        int charCount = readInt(pos);
+        pos += INT_SIZE_IN_BYTES;
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        char[] charBuffer = new char[charCount];
+        int b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte(pos++);
+            if (b < 0) {
+                b = b & 0xFF;
+                switch (b >> 4) {
+                    case 12:
+                    case 13:
+                        int first = (b & 0x1F) << 6;
+                        int second = readByte(pos++) & 0x3F;
+                        charBuffer[i] = (char) (first | second);
+                        break;
+                    case 14:
+                        int first2 = (b & 0x0F) << 12;
+                        int second2 = (readByte(pos++) & 0x3F) << 6;
+                        int third2 = readByte(pos++) & 0x3F;
+                        charBuffer[i] = (char) (first2 | second2 | third2);
+                        break;
+                    default:
+                        throw new UTFDataFormatException("Malformed byte sequence");
+                }
             } else {
                 charBuffer[i] = (char) b;
             }

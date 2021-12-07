@@ -71,6 +71,7 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -78,8 +79,8 @@ import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
-@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
-        "checkstyle:ClassDataAbstractionCoupling" })
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ClassDataAbstractionCoupling"})
 public final class IOUtil {
 
     private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
@@ -153,6 +154,17 @@ public final class IOUtil {
         return new BigDecimal(bigInteger, scale);
     }
 
+    public static BigDecimal readBigDecimal(BufferObjectDataInput in, int readPosition) throws IOException {
+        int len = in.readInt(readPosition);
+        readPosition += INT_SIZE_IN_BYTES;
+        final byte[] bytes = new byte[len];
+        in.readFully(bytes, readPosition, len);
+        readPosition += len;
+        BigInteger bigInteger = new BigInteger(bytes);
+        int scale = in.readInt(readPosition);
+        return new BigDecimal(bigInteger, scale);
+    }
+
     public static void writeLocalTime(ObjectDataOutput out, LocalTime value) throws IOException {
         int hour = value.getHour();
         int minute = value.getMinute();
@@ -172,6 +184,14 @@ public final class IOUtil {
         return LocalTime.of(hour, minute, second, nano);
     }
 
+    public static LocalTime readLocalTime(BufferObjectDataInput in, int readPosition) throws IOException {
+        int hour = in.readByte(readPosition++);
+        int minute = in.readByte(readPosition++);
+        int second = in.readByte(readPosition++);
+        int nano = in.readInt(readPosition);
+        return LocalTime.of(hour, minute, second, nano);
+    }
+
     public static void writeLocalDate(ObjectDataOutput out, LocalDate value) throws IOException {
         int year = value.getYear();
         int monthValue = value.getMonthValue();
@@ -185,6 +205,14 @@ public final class IOUtil {
         int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
+        return LocalDate.of(year, month, dayOfMonth);
+    }
+
+    public static LocalDate readLocalDate(BufferObjectDataInput in, int readPosition) throws IOException {
+        int year = in.readInt(readPosition);
+        readPosition += INT_SIZE_IN_BYTES;
+        int month = in.readByte(readPosition++);
+        int dayOfMonth = in.readByte(readPosition++);
         return LocalDate.of(year, month, dayOfMonth);
     }
 
@@ -202,6 +230,20 @@ public final class IOUtil {
         int minute = in.readByte();
         int second = in.readByte();
         int nano = in.readInt();
+
+        return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
+    }
+
+    public static LocalDateTime readLocalDateTime(BufferObjectDataInput in, int readPosition) throws IOException {
+        int year = in.readInt(readPosition);
+        readPosition += INT_SIZE_IN_BYTES;
+        int month = in.readByte(readPosition++);
+        int dayOfMonth = in.readByte(readPosition++);
+
+        int hour = in.readByte(readPosition++);
+        int minute = in.readByte(readPosition++);
+        int second = in.readByte(readPosition++);
+        int nano = in.readInt(readPosition);
 
         return LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano);
     }
@@ -226,6 +268,23 @@ public final class IOUtil {
         int nano = in.readInt();
 
         int zoneTotalSeconds = in.readInt();
+        ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
+        return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
+    }
+
+    public static OffsetDateTime readOffsetDateTime(BufferObjectDataInput in, int readPosition) throws IOException {
+        int year = in.readInt(readPosition);
+        readPosition += INT_SIZE_IN_BYTES;
+        int month = in.readByte(readPosition++);
+        int dayOfMonth = in.readByte(readPosition++);
+
+        int hour = in.readByte(readPosition++);
+        int minute = in.readByte(readPosition++);
+        int second = in.readByte(readPosition++);
+        int nano = in.readInt(readPosition);
+        readPosition += INT_SIZE_IN_BYTES;
+
+        int zoneTotalSeconds = in.readInt(readPosition);
         ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
         return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
     }

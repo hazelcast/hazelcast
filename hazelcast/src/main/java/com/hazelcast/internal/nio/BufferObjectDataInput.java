@@ -19,12 +19,15 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
 public interface BufferObjectDataInput extends ObjectDataInput, DataReader, SerializationServiceSupport {
 
     int UTF_BUFFER_SIZE = 1024;
+
+    int readFully(byte[] bytes, int position, int off, int len) throws IOException;
 
     int read(int position) throws IOException;
 
@@ -63,6 +66,30 @@ public interface BufferObjectDataInput extends ObjectDataInput, DataReader, Seri
     short readShort(ByteOrder byteOrder) throws IOException;
 
     short readShort(int position, ByteOrder byteOrder) throws IOException;
+
+    @Nullable
+    boolean[] readBooleanArray(int position) throws IOException;
+
+    @Nullable
+    byte[] readByteArray(int position) throws IOException;
+
+    @Nullable
+    short[] readShortArray(int position) throws IOException;
+
+    @Nullable
+    int[] readIntArray(int position) throws IOException;
+
+    @Nullable
+    long[] readLongArray(int position) throws IOException;
+
+    @Nullable
+    float[] readFloatArray(int position) throws IOException;
+
+    @Nullable
+    double[] readDoubleArray(int position) throws IOException;
+
+    @Nullable
+    String readString(int position) throws IOException;
 
     int position();
 

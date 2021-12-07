@@ -238,6 +238,7 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteArrayObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteArrayObjectDataOutput"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]nio[\\/]BufferObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteBufferObjectDataInput"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ObjectDataInputStream"/>

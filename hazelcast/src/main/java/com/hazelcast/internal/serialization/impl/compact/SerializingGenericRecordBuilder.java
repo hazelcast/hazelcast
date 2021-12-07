@@ -74,7 +74,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
         }
         defaultCompactWriter.end();
         byte[] bytes = defaultCompactWriter.toByteArray();
-        return new DefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), schema,
+        return new DefaultCompactReader(serializer, bufferObjectDataInputFunc.apply(bytes), 0, schema,
                 null, false);
     }
 

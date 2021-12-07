@@ -189,19 +189,19 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     @Override
     public Object read(@Nonnull ObjectDataInput in) throws IOException {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        return read(input, false);
+        return read(input, input.position(), false);
     }
 
-    Object read(BufferObjectDataInput input, boolean schemaIncludedInBinary) throws IOException {
+    Object read(BufferObjectDataInput input, int position, boolean schemaIncludedInBinary) throws IOException {
         Schema schema = getOrReadSchema(input, schemaIncludedInBinary);
         CompactSerializableRegistration registration = getOrCreateRegistration(schema.getTypeName());
 
         if (registration == null) {
             //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
-            return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+            return new DefaultCompactReader(this, input, position, schema, null, schemaIncludedInBinary);
         }
 
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
+        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, position, schema,
                 registration.getClazz(), schemaIncludedInBinary);
         Object object = registration.getSerializer().read(genericRecord);
         return managedContext != null ? managedContext.initialize(object) : object;
@@ -268,7 +268,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
+        return new DefaultCompactReader(this, input, input.position(), schema, null, schemaIncludedInBinary);
+    }
+
+    public GenericRecord readGenericRecord(ObjectDataInput in, int readPosition, boolean schemaIncludedInBinary)
+            throws IOException {
+        Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
+        BufferObjectDataInput input = (BufferObjectDataInput) in;
+        return new DefaultCompactReader(this, input, readPosition, schema, null, schemaIncludedInBinary);
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) throws IOException {

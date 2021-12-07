@@ -72,9 +72,10 @@ import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
  */
 public class DefaultCompactReader extends CompactInternalGenericRecord implements CompactReader {
 
-    public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
+    public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, int readPosition,
+                                Schema schema,
                                 @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
-        super(serializer, in, schema, associatedClass, schemaIncludedInBinary);
+        super(serializer, in,  readPosition, schema, associatedClass, schemaIncludedInBinary);
     }
 
 

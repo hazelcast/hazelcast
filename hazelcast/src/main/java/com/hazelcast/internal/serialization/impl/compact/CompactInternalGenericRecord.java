@@ -20,7 +20,6 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -99,7 +98,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final @Nullable
     Class associatedClass;
 
-    public CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
+    public CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in,
+                                        int readPosition, Schema schema,
                                         @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         this.in = in;
         this.serializer = serializer;
@@ -109,8 +109,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         try {
             int numberOfVariableLengthFields = schema.getNumberOfVariableSizeFields();
             if (numberOfVariableLengthFields != 0) {
-                int dataLength = in.readInt();
-                dataStartPosition = in.position();
+                int dataLength = in.readInt(readPosition);
+                readPosition += INT_SIZE_IN_BYTES;
+                dataStartPosition = readPosition;
                 variableOffsetsPosition = dataStartPosition + dataLength;
                 if (dataLength < BYTE_OFFSET_READER_RANGE) {
                     offsetReader = BYTE_OFFSET_READER;
@@ -187,7 +188,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case BOOLEAN:
                 return getBoolean(fd);
             case NULLABLE_BOOLEAN:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readBoolean, "Boolean");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readBoolean, "Boolean");
             default:
                 throw unexpectedFieldKind(BOOLEAN, fieldName);
         }
@@ -217,7 +218,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_BYTE:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readByte, "Byte");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readByte, "Byte");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -235,7 +236,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_SHORT:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readShort, "Short");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readShort, "Short");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -253,7 +254,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_INT:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readInt, "Int");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readInt, "Int");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -271,7 +272,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_LONG:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readLong, "Long");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readLong, "Long");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -289,7 +290,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_FLOAT:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readFloat, "Float");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readFloat, "Float");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -307,7 +308,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_DOUBLE:
-                return getVariableSizeAsNonNull(fd, ObjectDataInput::readDouble, "Double");
+                return getVariableSizeAsNonNull(fd, BufferObjectDataInput::readDouble, "Double");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -325,18 +326,14 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getVariableSize(FieldDescriptor fieldDescriptor,
                                   Reader<T> reader) {
-        int currentPos = in.position();
         try {
             int pos = readVariableSizeFieldPosition(fieldDescriptor);
             if (pos == NULL_OFFSET) {
                 return null;
             }
-            in.position(pos);
-            return reader.read(in);
+            return reader.read(in, pos);
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -351,18 +348,14 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                   Reader<T> reader) {
-        int currentPos = in.position();
         try {
             int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
             if (pos == NULL_OFFSET) {
                 return null;
             }
-            in.position(pos);
-            return reader.read(in);
+            return reader.read(in, pos);
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -399,13 +392,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, COMPACT, in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
+        return getVariableSize(fieldName, COMPACT, (in, pos) -> serializer.readGenericRecord(in, pos, schemaIncludedInBinary));
     }
 
     @Override
     @Nullable
     public <T> T getObject(@Nonnull String fieldName) {
-        return (T) getVariableSize(fieldName, COMPACT, in -> serializer.read(in, schemaIncludedInBinary));
+        return (T) getVariableSize(fieldName, COMPACT, (in, pos) -> serializer.read(in, pos, schemaIncludedInBinary));
     }
 
     @Override
@@ -417,7 +410,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case ARRAY_OF_BOOLEANS:
                 return getVariableSize(fd, CompactInternalGenericRecord::readBooleanBits);
             case ARRAY_OF_NULLABLE_BOOLEANS:
-                return getNullableArrayAsPrimitiveArray(fd, ObjectDataInput::readBooleanArray, "Booleans");
+                return getNullableArrayAsPrimitiveArray(fd, BufferObjectDataInput::readBooleanArray, "Booleans");
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -426,7 +419,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public byte[] getArrayOfBytes(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readByteArray, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES, "Bytes");
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readByteArray, ARRAY_OF_BYTES,
+                ARRAY_OF_NULLABLE_BYTES, "Bytes");
     }
 
     @Override
@@ -438,40 +432,42 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public short[] getArrayOfShorts(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readShortArray, ARRAY_OF_SHORTS,
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readShortArray, ARRAY_OF_SHORTS,
                 ARRAY_OF_NULLABLE_SHORTS, "Shorts");
     }
 
     @Override
     @Nullable
     public int[] getArrayOfInts(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readIntArray, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS, "Ints");
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readIntArray, ARRAY_OF_INTS,
+                ARRAY_OF_NULLABLE_INTS, "Ints");
     }
 
     @Override
     @Nullable
     public long[] getArrayOfLongs(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readLongArray, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS, "Longs");
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readLongArray, ARRAY_OF_LONGS,
+                ARRAY_OF_NULLABLE_LONGS, "Longs");
     }
 
     @Override
     @Nullable
     public float[] getArrayOfFloats(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readFloatArray, ARRAY_OF_FLOATS,
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readFloatArray, ARRAY_OF_FLOATS,
                 ARRAY_OF_NULLABLE_FLOATS, "Floats");
     }
 
     @Override
     @Nullable
     public double[] getArrayOfDoubles(@Nonnull String fieldName) {
-        return getArrayOfPrimitives(fieldName, ObjectDataInput::readDoubleArray, ARRAY_OF_DOUBLES,
+        return getArrayOfPrimitives(fieldName, BufferObjectDataInput::readDoubleArray, ARRAY_OF_DOUBLES,
                 ARRAY_OF_NULLABLE_DOUBLES, "Doubles");
     }
 
     @Override
     @Nullable
     public String[] getArrayOfStrings(@Nonnull String fieldName) {
-        return getArrayOfVariableSizes(fieldName, ARRAY_OF_STRINGS, String[]::new, ObjectDataInput::readString);
+        return getArrayOfVariableSizes(fieldName, ARRAY_OF_STRINGS, String[]::new, BufferObjectDataInput::readString);
     }
 
     @Override
@@ -509,7 +505,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
         return getArrayOfVariableSizes(fieldName, ARRAY_OF_COMPACTS, GenericRecord[]::new,
-                in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
+                (in, pos) -> serializer.readGenericRecord(in, pos, schemaIncludedInBinary));
     }
 
     private <T> T getArrayOfPrimitives(@Nonnull String fieldName, Reader<T> reader, FieldKind primitiveKind,
@@ -525,16 +521,16 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T getNullableArrayAsPrimitiveArray(FieldDescriptor fd, Reader<T> reader, String methodSuffix) {
-        int currentPos = in.position();
         try {
             int position = readVariableSizeFieldPosition(fd);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
-            in.position(position);
-            int dataLength = in.readInt();
-            int itemCount = in.readInt();
-            int dataStartPosition = in.position();
+            int dataLength = in.readInt(position);
+            position += INT_SIZE_IN_BYTES;
+            int itemCount = in.readInt(position);
+            position += INT_SIZE_IN_BYTES;
+            int dataStartPosition = position;
 
             OffsetReader offsetReader = getOffsetReader(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
@@ -544,12 +540,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), methodSuffix);
                 }
             }
-            in.position(dataStartPosition - INT_SIZE_IN_BYTES);
-            return reader.read(in);
+            return reader.read(in, dataStartPosition - INT_SIZE_IN_BYTES);
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -562,7 +555,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case BOOLEAN:
                 return getBoolean(fd);
             case NULLABLE_BOOLEAN:
-                return getVariableSize(fd, ObjectDataInput::readBoolean);
+                return getVariableSize(fd, BufferObjectDataInput::readBoolean);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -581,7 +574,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_BYTE:
-                return getVariableSize(fd, ObjectDataInput::readByte);
+                return getVariableSize(fd, BufferObjectDataInput::readByte);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -600,7 +593,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_SHORT:
-                return getVariableSize(fd, ObjectDataInput::readShort);
+                return getVariableSize(fd, BufferObjectDataInput::readShort);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -619,7 +612,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_INT:
-                return getVariableSize(fd, ObjectDataInput::readInt);
+                return getVariableSize(fd, BufferObjectDataInput::readInt);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -638,7 +631,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_LONG:
-                return getVariableSize(fd, ObjectDataInput::readLong);
+                return getVariableSize(fd, BufferObjectDataInput::readLong);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -657,7 +650,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_FLOAT:
-                return getVariableSize(fd, ObjectDataInput::readFloat);
+                return getVariableSize(fd, BufferObjectDataInput::readFloat);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -676,7 +669,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     throw illegalStateException(e);
                 }
             case NULLABLE_DOUBLE:
-                return getVariableSize(fd, ObjectDataInput::readDouble);
+                return getVariableSize(fd, BufferObjectDataInput::readDouble);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -692,7 +685,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 return getVariableSize(fieldName, ARRAY_OF_BOOLEANS, CompactInternalGenericRecord::readBooleanBitsAsNullables);
             case ARRAY_OF_NULLABLE_BOOLEANS:
                 return getArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_BOOLEANS,
-                        Boolean[]::new, ObjectDataInput::readBoolean);
+                        Boolean[]::new, BufferObjectDataInput::readBoolean);
             default:
                 throw unexpectedFieldKind(fieldKind, fieldName);
         }
@@ -701,39 +694,42 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readByte, Byte[]::new, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES);
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readByte, Byte[]::new,
+                ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES);
     }
 
     @Nullable
     @Override
     public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readShort, Short[]::new, ARRAY_OF_SHORTS,
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readShort, Short[]::new, ARRAY_OF_SHORTS,
                 ARRAY_OF_NULLABLE_SHORTS);
     }
 
     @Nullable
     @Override
     public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readInt, Integer[]::new, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS);
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readInt, Integer[]::new,
+                ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS);
     }
 
     @Nullable
     @Override
     public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readLong, Long[]::new, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS);
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readLong, Long[]::new,
+                ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS);
     }
 
     @Nullable
     @Override
     public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readFloat, Float[]::new, ARRAY_OF_FLOATS,
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readFloat, Float[]::new, ARRAY_OF_FLOATS,
                 ARRAY_OF_NULLABLE_FLOATS);
     }
 
     @Nullable
     @Override
     public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
-        return getArrayOfNullables(fieldName, ObjectDataInput::readDouble, Double[]::new, ARRAY_OF_DOUBLES,
+        return getArrayOfNullables(fieldName, BufferObjectDataInput::readDouble, Double[]::new, ARRAY_OF_DOUBLES,
                 ARRAY_OF_NULLABLE_DOUBLES);
     }
 
@@ -754,50 +750,48 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType) {
         return (T[]) getArrayOfVariableSizes(fieldName, ARRAY_OF_COMPACTS,
                 length -> (T[]) Array.newInstance(componentType, length),
-                in -> serializer.read(in, schemaIncludedInBinary));
+                (in, pos) -> serializer.read(in, pos, schemaIncludedInBinary));
     }
 
     protected interface Reader<R> {
-        R read(BufferObjectDataInput t) throws IOException;
+        R read(BufferObjectDataInput t, int readPosition) throws IOException;
     }
 
     private <T> T[] getPrimitiveArrayAsNullableArray(FieldDescriptor fieldDescriptor,
                                                      Function<Integer, T[]> constructor,
                                                      Reader<T> reader) {
-        int currentPos = in.position();
         try {
             int pos = readVariableSizeFieldPosition(fieldDescriptor);
             if (pos == NULL_OFFSET) {
                 return null;
             }
-            in.position(pos);
-            int itemCount = in.readInt();
+            int itemCount = in.readInt(pos);
+            pos += INT_SIZE_IN_BYTES;
             T[] values = constructor.apply(itemCount);
-
+            int kindSizeInBytes = FieldOperations.fieldOperations(fieldDescriptor.getKind()).kindSizeInBytes();
             for (int i = 0; i < itemCount; i++) {
-                values[i] = reader.read(in);
+                values[i] = reader.read(in, pos);
+                pos += kindSizeInBytes;
             }
             return values;
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
     private <T> T[] getArrayOfVariableSizes(FieldDescriptor fieldDescriptor,
                                             Function<Integer, T[]> constructor,
                                             Reader<T> reader) {
-        int currentPos = in.position();
         try {
             int position = readVariableSizeFieldPosition(fieldDescriptor);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
-            in.position(position);
-            int dataLength = in.readInt();
-            int itemCount = in.readInt();
-            int dataStartPosition = in.position();
+            int dataLength = in.readInt(position);
+            position += INT_SIZE_IN_BYTES;
+            int itemCount = in.readInt(position);
+            position += INT_SIZE_IN_BYTES;
+            int dataStartPosition = position;
             T[] values = constructor.apply(itemCount);
 
             OffsetReader offsetReader = getOffsetReader(dataLength);
@@ -805,15 +799,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             for (int i = 0; i < itemCount; i++) {
                 int offset = offsetReader.getOffset(in, offsetsPosition, i);
                 if (offset != NULL_ARRAY_LENGTH) {
-                    in.position(offset + dataStartPosition);
-                    values[i] = reader.read(in);
+                    values[i] = reader.read(in, offset + dataStartPosition);
                 }
             }
             return values;
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -895,7 +886,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Byte getByteFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_BYTES, ObjectDataInput::readByte, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_BYTES, BufferObjectDataInput::readByte, index);
     }
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
@@ -906,16 +897,14 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (readLength(position) <= index) {
             return null;
         }
-        int currentPos = in.position();
+        position += INT_SIZE_IN_BYTES;
         try {
             int booleanOffsetInBytes = index / Byte.SIZE;
             int booleanOffsetWithinLastByte = index % Byte.SIZE;
-            byte b = in.readByte(INT_SIZE_IN_BYTES + position + booleanOffsetInBytes);
+            byte b = in.readByte(position + booleanOffsetInBytes);
             return ((b >>> booleanOffsetWithinLastByte) & 1) != 0;
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -924,23 +913,23 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Integer getIntFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INTS, ObjectDataInput::readInt, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_INTS, BufferObjectDataInput::readInt, index);
     }
 
     public Long getLongFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_LONGS, ObjectDataInput::readLong, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_LONGS, BufferObjectDataInput::readLong, index);
     }
 
     public Double getDoubleFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_DOUBLES, ObjectDataInput::readDouble, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_DOUBLES, BufferObjectDataInput::readDouble, index);
     }
 
     public Float getFloatFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_FLOATS, ObjectDataInput::readFloat, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_FLOATS, BufferObjectDataInput::readFloat, index);
     }
 
     public Short getShortFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_SHORTS, ObjectDataInput::readShort, index);
+        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_SHORTS, BufferObjectDataInput::readShort, index);
     }
 
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldKind fieldKind,
@@ -954,16 +943,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (readLength(position) <= index) {
             return null;
         }
-        int currentPos = in.position();
+        position += INT_SIZE_IN_BYTES;
         try {
             FieldKind singleKind = FieldOperations.getSingleKind(fieldKind);
             int kindSize = FieldOperations.fieldOperations(singleKind).kindSizeInBytes();
-            in.position(INT_SIZE_IN_BYTES + position + index * kindSize);
-            return reader.read(in);
+            return reader.read(in, INT_SIZE_IN_BYTES + position + index * kindSize);
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -975,7 +961,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, ARRAY_OF_COMPACTS,
-                in -> serializer.readGenericRecord(in, schemaIncludedInBinary), index);
+                (in, pos) -> serializer.readGenericRecord(in, pos, schemaIncludedInBinary), index);
     }
 
     @Override
@@ -1010,55 +996,54 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_BYTES, ObjectDataInput::readByte, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_BYTES, BufferObjectDataInput::readByte, index);
     }
 
     @Nullable
     @Override
     public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_BOOLEANS, ObjectDataInput::readBoolean, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_BOOLEANS, BufferObjectDataInput::readBoolean, index);
     }
 
     @Nullable
     @Override
     public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_INTS, ObjectDataInput::readInt, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_INTS, BufferObjectDataInput::readInt, index);
     }
 
     @Nullable
     @Override
     public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_LONGS, ObjectDataInput::readLong, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_LONGS, BufferObjectDataInput::readLong, index);
     }
 
     @Nullable
     @Override
     public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_FLOATS, ObjectDataInput::readFloat, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_FLOATS, BufferObjectDataInput::readFloat, index);
     }
 
     @Nullable
     @Override
     public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_DOUBLES, ObjectDataInput::readDouble, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_DOUBLES, BufferObjectDataInput::readDouble, index);
     }
 
     @Nullable
     @Override
     public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
-        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_SHORTS, ObjectDataInput::readShort, index);
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_NULLABLE_SHORTS, BufferObjectDataInput::readShort, index);
     }
 
     @Override
     @Nullable
     public <T> T getObjectFromArray(@Nonnull String fieldName, int index) {
         return (T) getVariableSizeFromArray(fieldName, ARRAY_OF_COMPACTS,
-                in -> serializer.read(in, schemaIncludedInBinary), index);
+                (in, pos) -> serializer.read(in, pos, schemaIncludedInBinary), index);
     }
 
     private <T> T getVariableSizeFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                            Reader<T> reader, int index) {
-        int currentPos = in.position();
         try {
             int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
 
@@ -1066,24 +1051,23 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 return null;
             }
             int dataLength = in.readInt(pos);
-            int itemCount = in.readInt(pos + INT_SIZE_IN_BYTES);
+            pos += INT_SIZE_IN_BYTES;
+            int itemCount = in.readInt(pos);
+            pos += INT_SIZE_IN_BYTES;
             checkNotNegative(index, "Array index can not be negative");
             if (itemCount <= index) {
                 return null;
             }
-            int dataStartPosition = pos + (2 * INT_SIZE_IN_BYTES);
+            int dataStartPosition = pos;
             OffsetReader offsetReader = getOffsetReader(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
             int indexedItemOffset = offsetReader.getOffset(in, offsetsPosition, index);
             if (indexedItemOffset != NULL_OFFSET) {
-                in.position(indexedItemOffset + dataStartPosition);
-                return reader.read(in);
+                return reader.read(in, indexedItemOffset + dataStartPosition);
             }
             return null;
         } catch (IOException e) {
             throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
         }
     }
 
@@ -1102,8 +1086,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
 
-    private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
-        int len = input.readInt();
+    private static boolean[] readBooleanBits(BufferObjectDataInput input, int position) throws IOException {
+        int len = input.readInt(position);
+        position += INT_SIZE_IN_BYTES;
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
@@ -1112,11 +1097,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         boolean[] values = new boolean[len];
         int index = 0;
-        byte currentByte = input.readByte();
+        byte currentByte = input.readByte(position++);
         for (int i = 0; i < len; i++) {
             if (index == Byte.SIZE) {
                 index = 0;
-                currentByte = input.readByte();
+                currentByte = input.readByte(position++);
             }
             boolean result = ((currentByte >>> index) & 1) != 0;
             index++;
@@ -1125,8 +1110,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return values;
     }
 
-    private static Boolean[] readBooleanBitsAsNullables(BufferObjectDataInput input) throws IOException {
-        int len = input.readInt();
+    private static Boolean[] readBooleanBitsAsNullables(BufferObjectDataInput input, int position) throws IOException {
+        int len = input.readInt(position);
+        position += INT_SIZE_IN_BYTES;
         if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
@@ -1135,11 +1121,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         Boolean[] values = new Boolean[len];
         int index = 0;
-        byte currentByte = input.readByte();
+        byte currentByte = input.readByte(position++);
         for (int i = 0; i < len; i++) {
             if (index == Byte.SIZE) {
                 index = 0;
-                currentByte = input.readByte();
+                currentByte = input.readByte(position++);
             }
             boolean result = ((currentByte >>> index) & 1) != 0;
             index++;

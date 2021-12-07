@@ -94,7 +94,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
             byte[] bytes = cw.toByteArray();
             Class associatedClass = genericRecord.getAssociatedClass();
             BufferObjectDataInput dataInput = bufferObjectDataInputFunc.apply(bytes);
-            return new DefaultCompactReader(serializer, dataInput, schema, associatedClass, false);
+            return new DefaultCompactReader(serializer, dataInput, 0, schema, associatedClass, false);
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }
