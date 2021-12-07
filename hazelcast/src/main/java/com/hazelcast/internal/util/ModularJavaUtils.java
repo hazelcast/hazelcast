@@ -69,9 +69,8 @@ public final class ModularJavaUtils {
                         createRequirement(false, "jdk.internal.ref"),
                         createRequirement(true, "java.lang"),
                         createRequirement(true, "java.nio"),
-                        createRequirement(true, "java.util"),
                         createRequirement(true, "sun.nio.ch")
-                });
+                        });
         requirements.put("jdk.management", getJdkManagementRequirements());
         requirements.put("java.management", new PackageAccessRequirement[] { createRequirement(true, "sun.management") });
         checkPackageRequirements(logger, requirements);
