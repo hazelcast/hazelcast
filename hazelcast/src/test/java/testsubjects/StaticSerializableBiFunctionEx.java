@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema;
+package testsubjects;
 
-import javax.annotation.Nullable;
+import java.io.Serializable;
+import java.util.function.BiFunction;
 
 /**
- * Generic interface that resolves mappings based on object name.
+ * Serializable BiFunction Implementation to simulate
+ * client input function and throw exception if desired.
+ *
  */
-@FunctionalInterface
-public interface MappingResolver {
+public class StaticSerializableBiFunctionEx implements BiFunction<Integer, Integer, Integer>, Serializable {
 
-    @Nullable
-    Mapping resolve(String name);
+    public StaticSerializableBiFunctionEx() {
+    }
+
+    @Override
+    public Integer apply(Integer key, Integer oldValue) {
+        return key / oldValue;
+    }
 }
+

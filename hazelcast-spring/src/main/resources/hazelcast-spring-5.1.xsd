@@ -663,6 +663,7 @@
                                     <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="partition-strategy" type="xs:string" minOccurs="0"/>
+                                    <xs:element name="tiered-store" type="tiered-store" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" type="xs:string" default="BINARY">
@@ -1377,6 +1378,7 @@
                         <xs:element name="sql" type="sql" minOccurs="0"/>
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="device" type="device" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -4632,6 +4634,143 @@
                     when the cluster is being scaled up and members are being added, partition
                     rebalancing will be triggered immediately (subject to limitations imposed
                     by the current cluster state).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="device">
+        <xs:annotation>
+            <xs:documentation>
+                Device configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="tiered-store">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device base directory that will be used for tiered-store.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block-size" minOccurs="0" default="4096">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device block/sector size in bytes. The default is 4096. The minimum is 512.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="512"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="read-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Read IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="write-io-thread-count" minOccurs="0" default="4">
+                <xs:annotation>
+                    <xs:documentation>
+                        Write IO thread count. The default is 4.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:unsignedInt">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the device.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="memory-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the memory tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="capacity" minOccurs="0" default="256 MB">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                        The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB).
+                        For instance, capacity="1024 MB" is valid, whereas capacity="2^10 mb" is not.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="[1-9]([0-9]*) (B|KB|MB|GB)"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="disk-tier">
+        <xs:annotation>
+            <xs:documentation>
+                Defines configuration for the disk tier of a tiered store.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable using disk as the second memory tier, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="device-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the device for a given disk tier.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="tiered-store">
+        <xs:annotation>
+            <xs:documentation>
+                Tiered-Store enables to stack up multiple (currently two) stores in tiers.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="memory-tier" type="memory-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="disk-tier" type="disk-tier">
+                <xs:annotation>
+                    <xs:documentation>
+                        Disk tier.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True if Tiered-Store is enabled, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

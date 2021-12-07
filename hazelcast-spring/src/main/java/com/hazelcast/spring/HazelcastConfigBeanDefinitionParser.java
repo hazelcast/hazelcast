@@ -31,6 +31,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -101,7 +102,10 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -167,6 +171,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -239,6 +244,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
         private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
+        private ManagedMap<String, AbstractBeanDefinition> deviceConfigManagedMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -265,6 +271,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
             this.endpointConfigsMap = new ManagedMap<>();
+            this.deviceConfigManagedMap = createManagedMap("deviceConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -366,6 +373,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleAuditlog(node);
                     } else if ("jet".equals(nodeName)) {
                         handleJet(node);
+                    } else if ("device".equals(nodeName)) {
+                        handleDevice(node);
                     }
                 }
             }
@@ -412,6 +421,32 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("persistenceConfig", persistenceConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleDevice(Node deviceNode) {
+            BeanDefinitionBuilder deviceConfigBuilder = createBeanBuilder(DeviceConfig.class);
+            AbstractBeanDefinition beanDefinition = deviceConfigBuilder.getBeanDefinition();
+            Node attName = deviceNode.getAttributes().getNamedItem("name");
+            String deviceName = getTextContent(attName);
+            deviceConfigBuilder.addPropertyValue("name", deviceName);
+            fillAttributeValues(deviceNode, deviceConfigBuilder);
+
+            for (Node n : childElements(deviceNode)) {
+                String name = cleanNodeName(n);
+                if ("base-dir".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("baseDir", getTextContent(n));
+                } else if ("block-size".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("blockSize",
+                            getIntegerValue("block-size", getTextContent(n)));
+                } else if ("read-io-thread-count".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("readIOThreadCount",
+                            getIntegerValue("read-io-thread-count", getTextContent(n)));
+                } else if ("write-io-thread-count".equals(name)) {
+                    deviceConfigBuilder.addPropertyValue("writeIOThreadCount",
+                            getIntegerValue("write-io-thread-count", getTextContent(n)));
+                }
+            }
+            deviceConfigManagedMap.put(deviceName, beanDefinition);
         }
 
         private void handleEncryptionAtRest(BeanDefinitionBuilder hotRestartConfigBuilder, Node node) {
@@ -1265,6 +1300,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("partition-strategy".equals(nodeName)) {
                     PartitioningStrategyConfig psConfig = new PartitioningStrategyConfig(getTextContent(childNode));
                     mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
+                } else if ("tiered-store".equals(nodeName)) {
+                    handleTieredStoreConfig(mapConfigBuilder, childNode);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
@@ -1287,6 +1324,44 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder dataPersistenceConfigBuilder = createBeanBuilder(DataPersistenceConfig.class);
             fillAttributeValues(node, dataPersistenceConfigBuilder);
             configBuilder.addPropertyValue("dataPersistenceConfig", dataPersistenceConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleTieredStoreConfig(BeanDefinitionBuilder configBuilder, Node node) {
+
+            BeanDefinitionBuilder tieredStoreConfigBuilder = createBeanBuilder(TieredStoreConfig.class);
+            fillAttributeValues(node, tieredStoreConfigBuilder);
+            for (Node child: childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("memory-tier".equals(name)) {
+                    handleMemoryTierConfig(tieredStoreConfigBuilder, child);
+                } else if ("disk-tier".equals(name)) {
+                    handleDiskTierConfig(tieredStoreConfigBuilder, child);
+                }
+            }
+
+            configBuilder.addPropertyValue("tieredStoreConfig", tieredStoreConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleMemoryTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder memoryTierConfigBuilder = createBeanBuilder(MemoryTierConfig.class);
+            fillAttributeValues(node, memoryTierConfigBuilder);
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("capacity".equals(name)) {
+                    memoryTierConfigBuilder.addPropertyValue("capacity",
+                            parseMemorySize(getTextContent(child))
+                    );
+                }
+            }
+
+            configBuilder.addPropertyValue("memoryTierConfig", memoryTierConfigBuilder.getBeanDefinition());
+        }
+
+        @SuppressWarnings("checkstyle:magicnumber")
+        private void handleDiskTierConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder diskTierConfig = createBeanBuilder(DiskTierConfig.class);
+            fillAttributeValues(node, diskTierConfig);
+            configBuilder.addPropertyValue("diskTierConfig", diskTierConfig.getBeanDefinition());
         }
 
         private void handleEventJournalConfig(BeanDefinitionBuilder configBuilder, Node node) {

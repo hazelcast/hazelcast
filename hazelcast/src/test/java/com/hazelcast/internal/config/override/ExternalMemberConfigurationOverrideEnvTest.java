@@ -670,6 +670,24 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
     }
 
+    @Test
+    public void shouldHandleEmptyLicenseKey() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_LICENSEKEY", "")
+                .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+        assertEquals(config.getLicenseKey(), "");
+    }
+
+    @Test
+    public void shouldHandleShortLicenseKey() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_LICENSEKEY", "foo")
+                .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+        assertEquals(config.getLicenseKey(), "foo");
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void shouldHandleRestApiConfigInvalidEntry() throws Exception {
         Config config = new Config();

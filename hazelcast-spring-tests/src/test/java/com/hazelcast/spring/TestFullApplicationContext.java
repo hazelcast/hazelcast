@@ -34,8 +34,10 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -66,6 +68,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
@@ -100,6 +103,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
@@ -340,7 +344,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
                 .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
-        assertEquals(26, mapConfigSize);
+        assertEquals(27, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -474,6 +478,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+
+        MapConfig testMapConfig5 = config.getMapConfig("testMap5");
+        TieredStoreConfig tieredStoreConfig = testMapConfig5.getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(128L, memoryTierConfig.getCapacity().getValue());
+
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(diskTierConfig.isEnabled());
+        assertEquals("the-local0751", diskTierConfig.getDeviceName());
     }
 
     @Test
@@ -1343,6 +1358,37 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Test
+    public void testDevice() {
+        String deviceName0 = "device0";
+        String deviceName1 = "device1";
+
+        File baseDir0 = new File("/dev/devices/tiered_store_device0");
+        File baseDir1 = new File("/dev/devices/tiered_store_device1");
+
+        int blockSize = 8192;
+        int readIOThreadCount = 16;
+
+        int writeIOThreadCount0 = 8;
+        int writeIOThreadCount1 = 16;
+
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        DeviceConfig deviceConfig = config.getDeviceConfig(deviceName0);
+        assertEquals(deviceName0, deviceConfig.getName());
+        assertEquals(baseDir0, deviceConfig.getBaseDir());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount0, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig(deviceName1);
+        assertEquals(deviceName1, deviceConfig.getName());
+        assertEquals(baseDir1, deviceConfig.getBaseDir());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount1, deviceConfig.getWriteIOThreadCount());
     }
 
     @Test

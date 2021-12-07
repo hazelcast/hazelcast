@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -31,9 +32,9 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MappingStorageTest extends SimpleTestInClusterSupport {
+public class TablesStorageTest extends SimpleTestInClusterSupport {
 
-    private MappingStorage storage;
+    private TablesStorage storage;
 
     @BeforeClass
     public static void setUpClass() {
@@ -42,7 +43,7 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        storage = new MappingStorage(nodeEngine(instance()));
+        storage = new TablesStorage(nodeEngine(instance()));
     }
 
     @Test
@@ -51,7 +52,7 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
         storage.put(name, mapping(name, "type"));
 
-        assertThat(storage.values().stream().filter(m -> m.name().equals(name))).isNotEmpty();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.name().equals(name))).isNotEmpty();
     }
 
     @Test
@@ -63,8 +64,8 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, originalMapping);
         storage.put(name, updatedMapping);
 
-        assertThat(storage.values().stream().filter(m -> m.equals(originalMapping))).isEmpty();
-        assertThat(storage.values().stream().filter(m -> m.equals(updatedMapping))).isNotEmpty();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.equals(originalMapping))).isEmpty();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.equals(updatedMapping))).isNotEmpty();
     }
 
     @Test
@@ -73,26 +74,40 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertThat(storage.values().stream().filter(m -> m.type().equals("type-1"))).isNotEmpty();
-        assertThat(storage.values().stream().filter(m -> m.type().equals("type-2"))).isEmpty();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.type().equals("type-1"))).isNotEmpty();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.type().equals("type-2"))).isEmpty();
     }
 
     @Test
-    public void when_remove_then_isNotPresentInValues() {
+    public void when_removeMapping_then_isNotPresentInValues() {
         String name = randomName();
 
         storage.put(name, mapping(name, "type"));
 
-        assertThat(storage.remove(name)).isNotNull();
-        assertThat(storage.values().stream().filter(m -> m.name().equals(name))).isEmpty();
+        assertThat(storage.removeMapping(name)).isNotNull();
+        assertThat(storage.valuesMappings().stream().filter(m -> m.name().equals(name))).isEmpty();
+    }
+
+    @Test
+    public void when_removeView_then_isNotPresentInValues() {
+        String name = randomName();
+
+        storage.put(name, view(name, "type"));
+
+        assertThat(storage.removeView(name)).isNotNull();
+        assertThat(storage.valuesViews().stream().filter(m -> m.name().equals(name))).isEmpty();
     }
 
     @Test
     public void when_removeAbsentValue_then_returnsNull() {
-        assertThat(storage.remove("non-existing")).isNull();
+        assertThat(storage.removeView("non-existing")).isNull();
     }
 
     private static Mapping mapping(String name, String type) {
         return new Mapping(name, name, type, emptyList(), emptyMap());
+    }
+
+    private static View view(String name, String query) {
+        return new View(name, query);
     }
 }

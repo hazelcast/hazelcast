@@ -105,7 +105,7 @@ single-threaded. In Jet they are run on either cooperative or dedicated
 threads. There's a fixed number of cooperative threads, each can run any
 number of cooperative tasklets. Cooperative tasklets have very strict
 requirements which substantially complicate the development: they must
-not block and they must not spend too much time in one call. However
+not block, and they must not spend too much time in one call. However,
 they function as light-weight threads and are very cheap to switch.
 Dedicated threads are used for tasklets using blocking APIs, especially
 in connectors.

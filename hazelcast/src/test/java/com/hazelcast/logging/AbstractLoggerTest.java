@@ -17,13 +17,11 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
 abstract class AbstractLoggerTest extends HazelcastTestSupport {
 
@@ -36,15 +34,15 @@ abstract class AbstractLoggerTest extends HazelcastTestSupport {
     static {
         LogRecord logRecord = new LogRecord(Level.WARNING, MESSAGE);
         logRecord.setThrown(THROWABLE);
-        logRecord.setLoggerName("AbstractLogFactoryTest");
+        logRecord.setLoggerName(AbstractLoggerTest.class.getSimpleName());
 
         LogRecord logRecordOff = new LogRecord(Level.OFF, MESSAGE);
         logRecordOff.setThrown(THROWABLE);
-        logRecordOff.setLoggerName("AbstractLogFactoryTest");
+        logRecordOff.setLoggerName(AbstractLoggerTest.class.getSimpleName());
 
-        Member member = mock(Member.class);
+        Member member = new SimpleMemberImpl();
 
-        LOG_EVENT = new LogEvent(spy(logRecord), member);
-        LOG_EVENT_OFF = new LogEvent(spy(logRecordOff), member);
+        LOG_EVENT = new LogEvent(logRecord, member);
+        LOG_EVENT_OFF = new LogEvent(logRecordOff, member);
     }
 }

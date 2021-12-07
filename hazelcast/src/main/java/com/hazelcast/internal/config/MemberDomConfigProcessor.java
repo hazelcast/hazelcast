@@ -30,6 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -107,7 +108,10 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -177,6 +181,7 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
@@ -230,6 +235,7 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -364,6 +370,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSql(node);
         } else if (matches(JET.getName(), nodeName)) {
             handleJet(node);
+        } else if (matches(DEVICE.getName(), nodeName)) {
+            handleDevice(node);
         } else {
             return true;
         }
@@ -476,6 +484,71 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         config.setPersistenceConfig(prConfig);
+    }
+
+    protected void handleDevice(Node parentNode) {
+        String name = getAttribute(parentNode, "name");
+        DeviceConfig deviceConfig = ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, DeviceConfig.class);
+        handleDeviceNode(parentNode, deviceConfig);
+    }
+
+    protected void handleDeviceNode(Node deviceNode, DeviceConfig deviceConfig) {
+        String blockSizeName = "block-size";
+        String readIOThreadCountName = "read-io-thread-count";
+        String writeIOThreadCountName = "write-io-thread-count";
+
+        for (Node n : childElements(deviceNode)) {
+            String name = cleanNodeName(n);
+            if (matches("base-dir", name)) {
+                deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches(blockSizeName, name)) {
+                deviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+            } else if (matches(readIOThreadCountName, name)) {
+                deviceConfig.setReadIOThreadCount(getIntegerValue(readIOThreadCountName, getTextContent(n)));
+            } else if (matches(writeIOThreadCountName, name)) {
+                deviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
+            }
+        }
+        config.addDeviceConfig(deviceConfig);
+    }
+
+    private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
+        TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+
+        Node attrEnabled = getNamedItemNode(tsRoot, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        tieredStoreConfig.setEnabled(enabled);
+
+        for (Node n : childElements(tsRoot)) {
+            String name = cleanNodeName(n);
+
+            if (matches("memory-tier", name)) {
+                tieredStoreConfig.setMemoryTierConfig(createMemoryTierConfig(n));
+            } else if (matches("disk-tier", name)) {
+                tieredStoreConfig.setDiskTierConfig(createDiskTierConfig(n));
+            }
+        }
+        return tieredStoreConfig;
+    }
+
+    private MemoryTierConfig createMemoryTierConfig(Node node) {
+        String capacity = getTextContent(childElements(node).iterator().next());
+        return new MemoryTierConfig()
+                .setCapacity(parseMemorySize(capacity));
+    }
+
+    private DiskTierConfig createDiskTierConfig(Node node) {
+        DiskTierConfig diskTierConfig = new DiskTierConfig();
+
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        diskTierConfig.setEnabled(enabled);
+
+        Node attrDeviceName = getNamedItemNode(node, "device-name");
+        String deviceName = getTextContent(attrDeviceName);
+        diskTierConfig.setDeviceName(deviceName);
+
+        return diskTierConfig;
     }
 
     private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
@@ -1841,6 +1914,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if (matches("tiered-store", nodeName)) {
+                mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             }
         }
         config.addMapConfig(mapConfig);

@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.GetOperation;
@@ -31,33 +32,42 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-public class MappingStorage {
+public class TablesStorage {
+
+    protected static final int MAX_CHECK_ATTEMPTS = 5;
+    protected static final long SLEEP_MILLIS = 100;
 
     private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
-    private static final int MAX_CHECK_ATTEMPTS = 5;
-    private static final long SLEEP_MILLIS = 100;
+    protected final NodeEngine nodeEngine;
+    protected final ILogger logger;
+    protected final String catalogName;
 
-    private final NodeEngine nodeEngine;
-    private final ILogger logger;
-
-    public MappingStorage(NodeEngine nodeEngine) {
+    public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+        this.catalogName = CATALOG_MAP_NAME;
     }
 
     void put(String name, Mapping mapping) {
         storage().put(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
+    }
+
+    void put(String name, View view) {
+        storage().put(name, view);
+        awaitMappingOnAllMembers(name, view);
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {
@@ -66,11 +76,61 @@ public class MappingStorage {
         return previous == null;
     }
 
+    boolean putIfAbsent(String name, View view) {
+        Object previous = storage().putIfAbsent(name, view);
+        awaitMappingOnAllMembers(name, view);
+        return previous == null;
+    }
+
+    Mapping removeMapping(String name) {
+        return (Mapping) storage().remove(name);
+    }
+
+    View removeView(String name) {
+        return (View) storage().remove(name);
+    }
+
+    Collection<Mapping> valuesMappings() {
+        return storage().values()
+                .stream()
+                .filter(m -> m instanceof Mapping)
+                .map(m -> (Mapping) m)
+                .collect(Collectors.toList());
+    }
+
+
+    Collection<View> valuesViews() {
+        return storage().values()
+                .stream()
+                .filter(v -> v instanceof View)
+                .map(v -> (View) v)
+                .collect(Collectors.toList());
+    }
+
+    void registerListener(EntryListener<String, Object> listener) {
+        // do not try to implicitly create ReplicatedMap
+        // TODO: perform this check in a single place i.e. SqlService ?
+        if (!nodeEngine.getLocalMember().isLiteMember()) {
+            storage().addEntryListener(listener);
+        }
+    }
+
+    protected ReplicatedMap<String, Object> storage() {
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(catalogName);
+    }
+
+    protected Collection<Address> getMemberAddresses() {
+        return nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).stream()
+                .filter(member -> !member.localMember() && !member.isLiteMember())
+                .map(Member::getAddress)
+                .collect(toSet());
+    }
+
     /**
      * Temporary measure to ensure schema is propagated to all the members.
      */
     @SuppressWarnings("BusyWait")
-    private void awaitMappingOnAllMembers(String name, Mapping mapping) {
+    protected void awaitMappingOnAllMembers(String name, IdentifiedDataSerializable metadata) {
         Data keyData = nodeEngine.getSerializationService().toData(name);
         int keyPartitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
         OperationService operationService = nodeEngine.getOperationService();
@@ -79,7 +139,7 @@ public class MappingStorage {
         for (int i = 0; i < MAX_CHECK_ATTEMPTS && !memberAddresses.isEmpty(); i++) {
             List<CompletableFuture<Address>> futures = memberAddresses.stream()
                     .map(memberAddress -> {
-                        Operation operation = new GetOperation(CATALOG_MAP_NAME, keyData)
+                        Operation operation = new GetOperation(catalogName, keyData)
                                 .setPartitionId(keyPartitionId)
                                 .setValidateTarget(false);
                         return operationService
@@ -87,7 +147,7 @@ public class MappingStorage {
                                 .setTryCount(1)
                                 .invoke()
                                 .toCompletableFuture()
-                                .thenApply(result -> Objects.equals(mapping, result) ? memberAddress : null);
+                                .thenApply(result -> Objects.equals(metadata, result) ? memberAddress : null);
                     }).collect(toList());
             for (CompletableFuture<Address> future : futures) {
                 try {
@@ -106,52 +166,25 @@ public class MappingStorage {
         }
     }
 
-    private Collection<Address> getMemberAddresses() {
-        return nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).stream()
-                         .filter(member -> !member.localMember() && !member.isLiteMember())
-                         .map(Member::getAddress)
-                         .collect(toSet());
-    }
-
-    Collection<Mapping> values() {
-        return storage().values();
-    }
-
-    Mapping remove(String name) {
-        return storage().remove(name);
-    }
-
-    void registerListener(EntryListenerAdapter listener) {
-        // do not try to implicitly create ReplicatedMap
-        // TODO: perform this check in a single place i.e. SqlService ?
-        if (!nodeEngine.getLocalMember().isLiteMember()) {
-            storage().addEntryListener(listener);
-        }
-    }
-
-    private ReplicatedMap<String, Mapping> storage() {
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
-    }
-
-    abstract static class EntryListenerAdapter implements EntryListener<String, Mapping> {
+    abstract static class EntryListenerAdapter implements EntryListener<String, Object> {
 
         @Override
-        public final void entryAdded(EntryEvent<String, Mapping> event) {
+        public final void entryAdded(EntryEvent<String, Object> event) {
         }
 
         @Override
-        public abstract void entryUpdated(EntryEvent<String, Mapping> event);
+        public abstract void entryUpdated(EntryEvent<String, Object> event);
 
         @Override
-        public abstract void entryRemoved(EntryEvent<String, Mapping> event);
+        public abstract void entryRemoved(EntryEvent<String, Object> event);
 
         @Override
-        public final void entryEvicted(EntryEvent<String, Mapping> event) {
+        public final void entryEvicted(EntryEvent<String, Object> event) {
             throw new UnsupportedOperationException("SQL catalog entries must never be evicted - " + event);
         }
 
         @Override
-        public void entryExpired(EntryEvent<String, Mapping> event) {
+        public void entryExpired(EntryEvent<String, Object> event) {
             throw new UnsupportedOperationException("SQL catalog entries must never be expired - " + event);
         }
 

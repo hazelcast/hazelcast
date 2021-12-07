@@ -25,13 +25,13 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
-import com.hazelcast.sql.impl.optimizer.PlanKey;
-import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.schema.Mapping;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -62,7 +62,7 @@ public class PlanExecutorTest {
     private PlanExecutor planExecutor;
 
     @Mock
-    private MappingCatalog catalog;
+    private TableResolverImpl catalog;
 
     @Mock
     private HazelcastInstance hazelcastInstance;

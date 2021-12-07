@@ -273,6 +273,10 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
     }
 
+    public static void checkDeviceConfig(DeviceConfig expectedConfig, DeviceConfig actualConfig) {
+        checkCompatibleConfigs("device-config", expectedConfig, actualConfig, new DeviceConfigChecker());
+    }
+
     public static void checkRingbufferConfig(RingbufferConfig expectedConfig, RingbufferConfig actualConfig) {
         checkCompatibleConfigs("ringbuffer", expectedConfig, actualConfig, new RingbufferConfigChecker());
     }
@@ -1020,6 +1024,13 @@ public class ConfigCompatibilityChecker {
         @Override
         boolean check(IndexConfig c1, IndexConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null) && nullSafeEqual(c1, c2);
+        }
+    }
+
+    private static class DeviceConfigChecker extends ConfigChecker<DeviceConfig> {
+        @Override
+        boolean check(DeviceConfig t1, DeviceConfig t2) {
+            return Objects.equals(t1, t2);
         }
     }
 

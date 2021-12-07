@@ -30,6 +30,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -3057,6 +3058,88 @@ public class YamlConfigBuilderTest
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertEquals(rebalanceDelaySeconds, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Override
+    @Test
+    public void testDevice() {
+        String baseDir = "base-directory";
+        int blockSize = 2048;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 1;
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  device:\n"
+                + "    local-device:\n"
+                + "      base-dir: " + baseDir + "\n"
+                + "      block-size: " + blockSize + "\n"
+                + "      read-io-thread-count: " + readIOThreadCount + "\n"
+                + "      write-io-thread-count: " + writeIOThreadCount + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        DeviceConfig deviceConfig = config.getDeviceConfig("local-device");
+
+        assertEquals("local-device", deviceConfig.getName());
+        assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+
+        int device0Multiplier = 2;
+        int device1Multiplier = 4;
+        yaml = ""
+                + "hazelcast:\n"
+                + "  device:\n"
+                + "    device0:\n"
+                + "      block-size: " + (blockSize * device0Multiplier) + "\n"
+                + "      read-io-thread-count: " + (readIOThreadCount * device0Multiplier) + "\n"
+                + "      write-io-thread-count: " + (writeIOThreadCount * device0Multiplier) + "\n"
+                + "    device1:\n"
+                + "      block-size: " + (blockSize * device1Multiplier) + "\n"
+                + "      read-io-thread-count: " + (readIOThreadCount * device1Multiplier) + "\n"
+                + "      write-io-thread-count: " + (writeIOThreadCount * device1Multiplier) + "\n";
+
+        config = new InMemoryYamlConfig(yaml);
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
+    }
+
+    @Override
+    @Test
+    public void testTieredStore() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    my-map:\n"
+                + "      tiered-store:\n"
+                + "        enabled: true\n"
+                + "        memory-tier:\n"
+                + "          capacity: 1024 MB\n"
+                + "        disk-tier:\n"
+                + "          enabled: true\n"
+                + "          device-name: local-device";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1024, memoryTierConfig.getCapacity().getValue());
+
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals("local-device", diskTierConfig.getDeviceName());
     }
 
     @Override
