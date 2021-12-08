@@ -21,9 +21,11 @@ import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultAddressPicker.HostnameResolver;
+import com.hazelcast.instance.impl.DefaultAddressPicker.NetworkInterfaceInfo;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,34 +35,26 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 
-import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
-import static java.util.Collections.enumeration;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-// See https://github.com/powermock/powermock/wiki/Mock-System
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DefaultAddressPicker.class})
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultAddressPickerHostnameTest {
 
@@ -78,7 +72,6 @@ public class DefaultAddressPickerHostnameTest {
 
     @Before
     public void before() {
-        mockStatic(NetworkInterface.class);
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getTcpIpConfig().setEnabled(true).addMember(theHostname);
@@ -93,10 +86,10 @@ public class DefaultAddressPickerHostnameTest {
 
     @Test
     public void whenHostnameIsLocal_thenSelectHostname() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<>();
-        networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
-        networkInterfaces.add(createNetworkInterface("en1", theAddress));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", "192.168.1.100");
+        NetworkInterfaceInfo en1 = createNetworkInterface("en1", theAddress);
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0, en1);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         addressPicker.pickAddress();
         assertEquals(theHostname, addressPicker.getBindAddress(MEMBER).getHost());
@@ -104,8 +97,9 @@ public class DefaultAddressPickerHostnameTest {
 
     @Test
     public void whenHostnameIsNotLocal_thenSelectAnotherAddress() throws Exception {
-        NetworkInterface en0 = createNetworkInterface("en0", "192.168.1.100");
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(singleton(en0)));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", "192.168.1.100");
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         addressPicker.pickAddress();
         assertNotEquals(theHostname, addressPicker.getBindAddress(MEMBER).getHost());
@@ -113,10 +107,10 @@ public class DefaultAddressPickerHostnameTest {
 
     @Test
     public void whenHostnameIsLocal_andInterfacesMatchingHostname_thenSelectHostname() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<>();
-        networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
-        networkInterfaces.add(createNetworkInterface("en1", theAddress));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", "192.168.1.100");
+        NetworkInterfaceInfo en1 = createNetworkInterface("en1", theAddress);
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0, en1);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         enableInterfacesConfig("10.34.34.*");
 
@@ -126,10 +120,10 @@ public class DefaultAddressPickerHostnameTest {
 
     @Test
     public void whenHostnameIsLocal_andInterfacesNotMatchingAny_thenFail() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<>();
-        networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
-        networkInterfaces.add(createNetworkInterface("en1", theAddress));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", "192.168.1.100");
+        NetworkInterfaceInfo en1 = createNetworkInterface("en1", theAddress);
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0, en1);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         enableInterfacesConfig("10.34.19.*");
 
@@ -142,8 +136,9 @@ public class DefaultAddressPickerHostnameTest {
 
     @Test
     public void whenHostnameIsNotLocal_andInterfacesMatchingHostname_thenFail() throws Exception {
-        NetworkInterface en0 = createNetworkInterface("en0", "192.168.1.100");
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(singleton(en0)));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", "192.168.1.100");
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         enableInterfacesConfig("10.34.*.*");
 
@@ -157,8 +152,9 @@ public class DefaultAddressPickerHostnameTest {
     @Test
     public void whenHostnameIsNotLocal_andInterfacesMatchingAnother_thenSelectAnotherAddress() throws Exception {
         String address = "192.168.1.100";
-        NetworkInterface en0 = createNetworkInterface("en0", address);
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(singleton(en0)));
+        NetworkInterfaceInfo en0 = createNetworkInterface("en0", address);
+        DummyNetworkInterfacesEnumerator interfacesInfoProvider = new DummyNetworkInterfacesEnumerator(en0);
+        addressPicker.setNetworkInterfacesEnumerator(interfacesInfoProvider);
 
         enableInterfacesConfig("192.168.*.*");
 
@@ -172,23 +168,31 @@ public class DefaultAddressPickerHostnameTest {
         interfacesConfig.setEnabled(true).addInterface(pattern);
     }
 
-    private static NetworkInterface createNetworkInterface(String name, String... addresses) throws IOException {
-        Enumeration<InetAddress> inetAddresses = createInetAddresses(addresses);
-        NetworkInterface networkInterface = mock(NetworkInterface.class);
-        when(networkInterface.getName()).thenReturn(name);
-        when(networkInterface.isLoopback()).thenReturn(false);
-        when(networkInterface.isVirtual()).thenReturn(false);
-        when(networkInterface.isUp()).thenReturn(true);
-        when(networkInterface.getInetAddresses()).thenReturn(inetAddresses);
-        return networkInterface;
+    private static NetworkInterfaceInfo createNetworkInterface(String name, String... addresses) throws IOException {
+        List<InetAddress> inetAddresses = createInetAddresses(addresses);
+        return new NetworkInterfaceInfo(name, true, false, false, inetAddresses);
     }
 
-    private static Enumeration<InetAddress> createInetAddresses(String... addresses) throws UnknownHostException {
-        List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
+    private static List<InetAddress> createInetAddresses(String... addresses) throws UnknownHostException {
+        List<InetAddress> inetAddresses = new ArrayList<>();
         for (String address : addresses) {
             inetAddresses.add(InetAddress.getByName(address));
         }
-        return enumeration(inetAddresses);
+        return inetAddresses;
+    }
+
+    private static class DummyNetworkInterfacesEnumerator implements DefaultAddressPicker.NetworkInterfacesEnumerator {
+
+        private final List<NetworkInterfaceInfo> networkInterfaceInfos;
+
+        private DummyNetworkInterfacesEnumerator(NetworkInterfaceInfo... networkInterfaceInfos) {
+            this.networkInterfaceInfos = Arrays.asList(networkInterfaceInfos);
+        }
+
+        @Override
+        public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
+            return networkInterfaceInfos;
+        }
     }
 
     private class MockHostnameResolver implements HostnameResolver {

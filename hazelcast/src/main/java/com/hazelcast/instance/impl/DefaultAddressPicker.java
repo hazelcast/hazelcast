@@ -40,7 +40,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -87,6 +86,7 @@ class DefaultAddressPicker
     private Address publicAddress;
     private Address bindAddress;
     private ServerSocketChannel serverSocketChannel;
+    private NetworkInterfacesEnumerator networkInterfacesEnumerator = new DefaultNetworkInterfacesEnumerator();
 
     DefaultAddressPicker(Config config, ILogger logger) {
         this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
@@ -192,7 +192,7 @@ class DefaultAddressPicker
             logger.fine("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
         }
 
-        if (interfaces.size() > 0) {
+        if (!interfaces.isEmpty()) {
             AddressDefinition addressDef = pickMatchingAddress(interfaces);
             if (addressDef != null) {
                 return addressDef;
@@ -330,7 +330,7 @@ class DefaultAddressPicker
     }
 
     AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
-        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        List<NetworkInterfaceInfo> networkInterfaces = networkInterfacesEnumerator.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
         boolean preferIPv6Addresses = preferIPv6Addresses();
         AddressDefinition matchingAddress = null;
@@ -341,14 +341,11 @@ class DefaultAddressPicker
         // - preferIPv4Stack=false, preferIPv6Addresses=true: Either an IPv4 or IPv6 address may be picked
         // but IPv6 address will be preferred over IPv4.
 
-        while (networkInterfaces.hasMoreElements()) {
-            NetworkInterface ni = networkInterfaces.nextElement();
+        for (NetworkInterfaceInfo ni : networkInterfaces) {
             if (isEmpty(interfaces) && skipInterface(ni)) {
                 continue;
             }
-            Enumeration<InetAddress> e = ni.getInetAddresses();
-            while (e.hasMoreElements()) {
-                InetAddress inetAddress = e.nextElement();
+            for (InetAddress inetAddress : ni.getInetAddresses()) {
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     // IPv4 stack is preferred, so only IPv4 address can be picked.
                     continue;
@@ -388,7 +385,7 @@ class DefaultAddressPicker
      * Checks given network interface and returns true when it should not be used for picking address. Reasons for skipping are
      * the interface is: down, virtual or loopback.
      */
-    private boolean skipInterface(NetworkInterface ni) throws SocketException {
+    private boolean skipInterface(NetworkInterfaceInfo ni) throws SocketException {
         boolean skipInterface = !ni.isUp() || ni.isVirtual() || ni.isLoopback();
         if (skipInterface && logger.isFineEnabled()) {
             logger.fine("Skipping NetworkInterface '" + ni.getName() + "': isUp=" + ni.isUp() + ", isVirtual=" + ni.isVirtual()
@@ -444,6 +441,10 @@ class DefaultAddressPicker
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {
         this.hostnameResolver = checkNotNull(hostnameResolver);
+    }
+
+    void setNetworkInterfacesEnumerator(NetworkInterfacesEnumerator networkInterfacesEnumerator) {
+        this.networkInterfacesEnumerator = networkInterfacesEnumerator;
     }
 
     static class InterfaceDefinition {
@@ -539,6 +540,66 @@ class DefaultAddressPicker
         }
     }
 
+    @FunctionalInterface
+    interface NetworkInterfacesEnumerator {
+        List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException;
+    }
+
+    static class NetworkInterfaceInfo {
+        private final boolean up;
+        private final boolean virtual;
+        private final boolean loopback;
+        private final String name;
+        private final List<InetAddress> inetAddresses;
+
+        NetworkInterfaceInfo(String name, boolean up, boolean virtual, boolean loopback, List<InetAddress> inetAddresses) {
+            this.up = up;
+            this.virtual = virtual;
+            this.loopback = loopback;
+            this.name = name;
+            this.inetAddresses = inetAddresses;
+        }
+
+        NetworkInterfaceInfo(NetworkInterface networkInterface) throws SocketException {
+            this(networkInterface.getName(), networkInterface.isUp(), networkInterface.isVirtual(), networkInterface.isLoopback(),
+                    Collections.list(networkInterface.getInetAddresses()));
+        }
+
+        boolean isUp() {
+            return up;
+        }
+
+        boolean isVirtual() {
+            return virtual;
+        }
+
+        boolean isLoopback() {
+            return loopback;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        List<InetAddress> getInetAddresses() {
+            return inetAddresses;
+        }
+    }
+
+    private static class DefaultNetworkInterfacesEnumerator implements NetworkInterfacesEnumerator {
+
+        @Override
+        public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
+            List<NetworkInterfaceInfo> infos = new ArrayList<>();
+            for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                NetworkInterfaceInfo networkInterfaceInfo = new NetworkInterfaceInfo(networkInterface);
+                infos.add(networkInterfaceInfo);
+            }
+            return infos;
+        }
+    }
+
+    @FunctionalInterface
     interface HostnameResolver {
         Collection<String> resolve(String hostname) throws UnknownHostException;
     }
