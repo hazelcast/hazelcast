@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class PortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
+public abstract class PortableGenericRecord extends AbstractGenericRecord {
 
     /**
      * Returns the schema associated with this GenericRecord.

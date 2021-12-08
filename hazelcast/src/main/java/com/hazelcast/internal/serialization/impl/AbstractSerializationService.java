@@ -123,7 +123,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
         compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
-                managedContext, builder.schemaService, classLoader, this::createObjectDataInput, this::createObjectDataOutput);
+                managedContext, builder.schemaService, classLoader);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
     }
@@ -274,7 +274,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw handleException(e);
         } finally {
             ClassLocator.onFinishDeserialization();
-            serializer.conditionallyReturnInputBufferToPool(obj, in, pool);
+            pool.returnInputBuffer(in);
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -557,4 +558,210 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return schema.getTypeName();
     }
 
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName) {
+        return get(fieldName, COMPACT);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName) {
+        return get(fieldName, ARRAY_OF_COMPACT);
+    }
+
+    @Nullable
+    @Override
+    public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
+        boolean[] array = getArrayOfBoolean(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Byte getInt8FromArray(@Nonnull String fieldName, int index) {
+        byte[] array = getArrayOfInt8(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Character getCharFromArray(@Nonnull String fieldName, int index) {
+        char[] array = getArrayOfChar(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Double getFloat64FromArray(@Nonnull String fieldName, int index) {
+        double[] array = getArrayOfFloat64(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Float getFloat32FromArray(@Nonnull String fieldName, int index) {
+        float[] array = getArrayOfFloat32(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Integer getInt32FromArray(@Nonnull String fieldName, int index) {
+        int[] array = getArrayOfInt32(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Long getInt64FromArray(@Nonnull String fieldName, int index) {
+        long[] array = getArrayOfInt64(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Short getInt16FromArray(@Nonnull String fieldName, int index) {
+        short[] array = getArrayOfInt16(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public String getStringFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfString(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfGenericRecord(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public InternalGenericRecord getInternalGenericRecordFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfInternalGenericRecord(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Object getObjectFromArray(@Nonnull String fieldName, int index) {
+        return getGenericRecordFromArray(fieldName, index);
+    }
+
+    @Nullable
+    @Override
+    public <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType) {
+        return (T[]) getArrayOfGenericRecord(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Object getObject(@Nonnull String fieldName) {
+        return getGenericRecord(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfDecimal(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfTime(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfDate(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfTimestamp(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfTimestampWithTimezone(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBooleanFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableBoolean(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableInt8FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableInt8(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableInt16FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableInt16(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt32FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableInt32(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableInt64FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableInt64(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat32FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableFloat32(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableFloat64FromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfNullableFloat64(fieldName), index);
+    }
+
+    private <T> T getFromArray(T[] array, int index) {
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
 }

@@ -92,6 +92,11 @@ public interface InternalSerializationService extends SerializationService, Disp
     BufferObjectDataOutput createObjectDataOutput();
 
     /**
+     * The returned InternalGenericRecord is not thread safe.
+     * It is not meant to return to the user from our API's like IMap, IQueue etc.
+     * It will only be used with {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} for
+     * query purposes
+     *
      * @param data
      * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
      * IllegalArgumentException

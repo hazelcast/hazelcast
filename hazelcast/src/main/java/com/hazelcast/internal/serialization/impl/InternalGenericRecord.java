@@ -31,12 +31,33 @@ import java.time.OffsetDateTime;
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
  * @see GenericRecordQueryReader
+ * InternalGenericRecord should be constructed in a deserialized manner to gain maximum performance on Query
+ * @see com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord
+ * @see com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord
  * <p>
  * read*FromArray methods will return `null`
  * 1. if the array is null or empty
  * 2. there is no data at given index. In other words, the index is bigger than the length of the array
  */
 public interface InternalGenericRecord extends GenericRecord {
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -137,6 +158,16 @@ public interface InternalGenericRecord extends GenericRecord {
      */
     @Nullable
     GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    InternalGenericRecord getInternalGenericRecordFromArray(@Nonnull String fieldName, int index);
 
     /**
      * Reads same value {@link InternalGenericRecord#getGenericRecord(String)} }, but in deserialized form.

@@ -30,15 +30,13 @@ public interface FieldKindBasedOperations {
 
     int VARIABLE_SIZE = -1;
 
-    Object readObject(GenericRecord genericRecord, String fieldName);
+    Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName);
 
     /**
      * For primitives this will return boxed object.
      * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
      */
-    default Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
-        return readObject(genericRecord, fieldName);
-    }
+    Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName);
 
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
         throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");
