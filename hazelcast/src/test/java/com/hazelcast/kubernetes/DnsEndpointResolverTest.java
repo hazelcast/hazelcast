@@ -16,22 +16,21 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.kubernetes.DnsEndpointResolver.RawLookupProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import org.junit.Before;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -40,10 +39,8 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DnsEndpointResolver.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class DnsEndpointResolverTest {
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
 
@@ -56,22 +53,11 @@ public class DnsEndpointResolverTest {
     private static final String IP_SERVER_1 = "192.168.0.5";
     private static final String IP_SERVER_2 = "192.168.0.6";
 
-    @Before
-    public void setUp()
-            throws Exception {
-        PowerMockito.mockStatic(InetAddress.class);
-
-        InetAddress address1 = mock(InetAddress.class);
-        InetAddress address2 = mock(InetAddress.class);
-        when(address1.getHostAddress()).thenReturn(IP_SERVER_1);
-        when(address2.getHostAddress()).thenReturn(IP_SERVER_2);
-        PowerMockito.when(InetAddress.getAllByName(SERVICE_DNS)).thenReturn(new InetAddress[]{address1, address2});
-    }
-
     @Test
     public void resolve() {
         // given
-        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
+        RawLookupProvider lookupProvider = staticLookupProvider(SERVICE_DNS, IP_SERVER_1, IP_SERVER_2);
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
         List<DiscoveryNode> result = dnsEndpointResolver.resolve();
@@ -87,7 +73,8 @@ public class DnsEndpointResolverTest {
     @Test
     public void resolveCustomPort() {
         // given
-        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, CUSTOM_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
+        RawLookupProvider lookupProvider = staticLookupProvider(SERVICE_DNS, IP_SERVER_1, IP_SERVER_2);
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, CUSTOM_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
         List<DiscoveryNode> result = dnsEndpointResolver.resolve();
@@ -101,12 +88,11 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void resolveException()
-            throws Exception {
+    public void resolveException() throws Exception {
         // given
         ILogger logger = mock(ILogger.class);
-        PowerMockito.when(InetAddress.getAllByName(SERVICE_DNS)).thenThrow(new UnknownHostException());
-        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
+        RawLookupProvider lookupProvider = nonResolvingLookupProvider();
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, nonResolvingLookupProvider());
 
         // when
         List<DiscoveryNode> result = dnsEndpointResolver.resolve();
@@ -118,11 +104,10 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void resolveNotFound()
-            throws Exception {
+    public void resolveNotFound() throws Exception {
         // given
-        PowerMockito.when(InetAddress.getAllByName(SERVICE_DNS)).thenReturn(new InetAddress[0]);
-        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
+        RawLookupProvider lookupProvider = staticLookupProvider(SERVICE_DNS);
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(LOGGER, SERVICE_DNS, UNSET_PORT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS, lookupProvider);
 
         // when
         List<DiscoveryNode> result = dnsEndpointResolver.resolve();
@@ -132,12 +117,10 @@ public class DnsEndpointResolverTest {
     }
 
     @Test
-    public void resolveTimeout()
-            throws Exception {
+    public void resolveTimeout() {
         // given
         ILogger logger = mock(ILogger.class);
-        PowerMockito.when(InetAddress.getAllByName(SERVICE_DNS)).then(waitAndAnswer());
-        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, TEST_DNS_TIMEOUT_SECONDS);
+        DnsEndpointResolver dnsEndpointResolver = new DnsEndpointResolver(logger, SERVICE_DNS, UNSET_PORT, TEST_DNS_TIMEOUT_SECONDS, timingOutLookupProvider());
 
         // when
         List<DiscoveryNode> result = dnsEndpointResolver.resolve();
@@ -148,21 +131,40 @@ public class DnsEndpointResolverTest {
         verify(logger, never()).warning(anyString(), any(Throwable.class));
     }
 
-    private static Answer<InetAddress[]> waitAndAnswer() {
-        return new Answer<InetAddress[]>() {
-            @Override
-            public InetAddress[] answer(InvocationOnMock invocation) throws Throwable {
-                Thread.sleep(TEST_DNS_TIMEOUT_SECONDS * 5 * 1000);
-                return new InetAddress[0];
+    private static Set<?> setOf(Object... objects) {
+        return new HashSet<>(Arrays.asList(objects));
+    }
+
+    private static RawLookupProvider staticLookupProvider(String host, String... ipAddresses) {
+        Map<String, InetAddress[]> entries = new HashMap<>();
+        InetAddress[] inetAddresses = Arrays.stream(ipAddresses).map(ip -> inetAddress(host, ip)).toArray(InetAddress[]::new);
+        entries.put(host, inetAddresses);
+        return entries::get;
+    }
+
+    private static InetAddress inetAddress(String host, String ipAddress) {
+        try {
+            return InetAddress.getByAddress(host, InetAddress.getByName(ipAddress).getAddress());
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static RawLookupProvider timingOutLookupProvider() {
+        return host -> {
+            try {
+                Thread.sleep(TEST_DNS_TIMEOUT_SECONDS * 2 * 1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
+            return new InetAddress[0];
         };
     }
 
-    private static Set<?> setOf(Object... objects) {
-        Set<Object> result = new HashSet<Object>();
-        for (Object object : objects) {
-            result.add(object);
-        }
-        return result;
+    private static RawLookupProvider nonResolvingLookupProvider() {
+        return host -> {
+            throw new UnknownHostException();
+        };
     }
 }
