@@ -200,23 +200,21 @@ public final class TcpServerControl {
         TcpServerConnection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
-                // If there are duplicate connections, close the connection of which the member with the smaller uuid is on the acceptor side
-                if (serverContext.getThisUuid().compareTo(remoteUuid) < 0) {
-                    // close the connection of which the local side is the acceptor
-                    if (connection.isAccepted()) {
-                        connection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
-                        return false;
-                    } else if (existingConnection.isAccepted()) {
-                        existingConnection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
-                    }
-                } else {
-                    // close the connection that the remote side is the acceptor
-                    if (!connection.isAccepted()) {
-                        connection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
-                        return false;
-                    } else if (!existingConnection.isAccepted()) {
-                        existingConnection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
-                    }
+                // If there are duplicate connections, close the connection of which the member with
+                // the smaller uuid is on the acceptor side
+                boolean isLocalMemberUuidSmallerThanRemote = serverContext.getThisUuid().compareTo(remoteUuid) < 0;
+                if (isLocalMemberUuidSmallerThanRemote == connection.isAccepted()) {
+                    connection.close(
+                            "Duplicate connection to the same member with uuid : " + remoteUuid,
+                            null
+                    );
+                    return false;
+                } else if (isLocalMemberUuidSmallerThanRemote == existingConnection.isAccepted()) {
+                    existingConnection.close(
+                            "Duplicate connection to the same member with uuid : " + remoteUuid,
+                            null
+                    );
+                    return true;
                 }
             }
         }

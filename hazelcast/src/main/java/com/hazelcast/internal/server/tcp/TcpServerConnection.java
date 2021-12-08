@@ -200,7 +200,7 @@ public class TcpServerConnection implements ServerConnection {
         this.remoteUuid = remoteUuid;
     }
 
-    public boolean isAccepted(){
+    public boolean isAccepted() {
         return isAccepted;
     }
 
