@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
@@ -317,9 +318,17 @@ public class SqlExpandViewTest extends SqlTestSupport {
         createMapping("test", "bigint", "json");
         instance().getSql().execute("INSERT INTO test VALUES (1, '[1,2,3]')");
         instance().getSql().execute("INSERT INTO test VALUES (2, '[4,5,6]')");
-        instance().getSql().execute("CREATE VIEW v AS SELECT JSON_VALUE(this, '$[1]') FROM test");
 
-        assertRowsAnyOrder("SELECT * FROM v", asList(new Row("2"), new Row("5")));
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT JSON_VALUE(this, '$[1]' "
+                + "RETURNING BIGINT NULL ON EMPTY NULL ON ERROR) FROM test");
+        instance().getSql().execute("CREATE VIEW v2 AS SELECT JSON_QUERY(this, '$[1]' "
+                + "WITH CONDITIONAL WRAPPER EMPTY OBJECT ON ERROR EMPTY OBJECT ON ERROR) FROM test");
+
+        assertRowsAnyOrder("SELECT * FROM v1", asList(new Row(2L), new Row(5L)));
+        assertRowsAnyOrder("SELECT * FROM v2", asList(
+                new Row(new HazelcastJsonValue("[2]")),
+                new Row(new HazelcastJsonValue("[5]"))
+        ));
     }
 
     @Test
