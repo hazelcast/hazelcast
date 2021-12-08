@@ -1328,6 +1328,7 @@
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0"/>
                         <xs:element name="persistence" type="persistence" minOccurs="0"/>
+                        <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                         <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"/>
                         <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0"/>
                         <xs:element name="pn-counter" minOccurs="0" maxOccurs="unbounded">
@@ -4637,6 +4638,51 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="dynamic-configuration">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration settings related to dynamic configuration feature.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="persistence-enabled" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if dynamic configuration persistence is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persistence-file" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Path for dynamic configuration persistence file.
+                        Dynamic changes will be persisted into this file.
+                        Don't forget to import this file in the root configuration file.
+                        Can be an absolute or relative path to the node startup directory.
+                        If not set, root configuration file will be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Directory for dynamic configuration persistence file backups.
+                        Each new backup will be created inside this directory.
+                        Can be an absolute or relative path to the node startup directory.
+                        If not set, new folder will be created where dynamic configuration file exists.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="device">
