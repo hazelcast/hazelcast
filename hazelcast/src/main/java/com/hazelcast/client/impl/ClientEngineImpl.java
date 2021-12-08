@@ -317,7 +317,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             // we did not register the connection.
             // Endpoint removal logic(inside `ClientEngine#connectionRemoved`) will not be able to run, instead endpoint
             // will be cleaned up by ClientHeartbeatMonitor#cleanupEndpointsWithDeadConnections later.
-            if (conn.getRemoteAddress() != null) {
+            if (conn.getRemoteAddress() != null && endpoint.getUuid() != null) {
                 node.getServer().getConnectionManager(CLIENT).register(conn.getRemoteAddress(), endpoint.getUuid(), conn);
             }
         }
@@ -438,8 +438,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 logger.finest("connectionRemoved: No endpoint for connection:" + connection);
                 return;
             }
-            node.getLocalAddressRegistry().tryRemoveRegistration(endpoint.getUuid(),
-                    endpoint.getConnection().getRemoteAddress());
+            UUID clientUuid = endpoint.getUuid();
+            if (clientUuid != null) {
+                node.getLocalAddressRegistry().tryRemoveRegistration(clientUuid,
+                        endpoint.getConnection().getRemoteAddress());
+            }
             endpointManager.removeEndpoint(endpoint);
         }
     }

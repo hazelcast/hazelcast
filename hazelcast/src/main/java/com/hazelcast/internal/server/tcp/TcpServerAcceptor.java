@@ -305,7 +305,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         private void newConnection0(TcpServerConnectionManager connectionManager, Channel channel) {
             try {
                 serverContext.interceptSocket(connectionManager.getEndpointQualifier(), channel.socket(), true);
-                connectionManager.newConnection(channel, null);
+                connectionManager.newConnection(channel, null, true);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);

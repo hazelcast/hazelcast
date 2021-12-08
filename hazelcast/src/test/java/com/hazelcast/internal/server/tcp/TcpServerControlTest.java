@@ -111,7 +111,7 @@ public class TcpServerControlTest {
     @Parameter(1)
     public String protocolIdentifier;
 
-    // connection type of TcpIpConnection for which MemberHandshake is processed
+    // connection type of TcpServerConnection for which MemberHandshake is processed
     @Parameter(2)
     public String connectionType;
 
@@ -124,7 +124,7 @@ public class TcpServerControlTest {
     @Parameter(4)
     public boolean reply;
 
-    // addresses on which the TcpServerConnection is expected to be registered in the connectionsMap
+    // addresses on which the TcpServerConnection is expected to be registered in the address registry
     @Parameter(5)
     public List<Address> expectedAddresses;
 
@@ -132,11 +132,11 @@ public class TcpServerControlTest {
 
     private InternalSerializationService serializationService;
     private TcpServerControl tcpServerControl;
+    private LocalAddressRegistry addressRegistry;
 
     // mocks
     private Channel channel;
     private TcpServerConnectionManager connectionManager;
-    private LocalAddressRegistry addressRegistry;
 
     @Parameters
     public static List<Object> parameters() {
@@ -241,7 +241,7 @@ public class TcpServerControlTest {
         MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, MEMBER_UUID);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
-        TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel);
+        TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel, false);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }

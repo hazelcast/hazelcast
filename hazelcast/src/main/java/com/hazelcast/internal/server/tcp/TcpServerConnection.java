@@ -70,6 +70,10 @@ public class TcpServerConnection implements ServerConnection {
 
     private final ILogger logger;
 
+    // Flag that indicates if the connection is accepted on this member (server-side)
+    // See also TcpServerAcceptor and TcpServerConnector
+    private final boolean isAccepted;
+
     private final int connectionId;
 
     private final ServerContext serverContext;
@@ -92,13 +96,16 @@ public class TcpServerConnection implements ServerConnection {
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
                                int connectionId,
-                               Channel channel) {
+                               Channel channel,
+                               boolean isAccepted
+    ) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.lifecycleListener = lifecycleListener;
         this.serverContext = connectionManager.getServer().getContext();
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnection.class);
         this.channel = channel;
+        this.isAccepted = isAccepted;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
     }
@@ -178,16 +185,23 @@ public class TcpServerConnection implements ServerConnection {
         return remoteAddress;
     }
 
+    @Override
     public void setRemoteAddress(Address remoteAddress) {
         this.remoteAddress = remoteAddress;
     }
 
+    @Override
     public UUID getRemoteUuid() {
         return remoteUuid;
     }
 
+    @Override
     public void setRemoteUuid(UUID remoteUuid) {
         this.remoteUuid = remoteUuid;
+    }
+
+    public boolean isAccepted(){
+        return isAccepted;
     }
 
     public void setErrorHandler(TcpServerConnectionErrorHandler errorHandler) {

@@ -308,7 +308,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             if (planeIndex > -1) {
                 plane = planes[connection.getPlaneIndex()];
                 plane.removeConnection(connection);
-                addressRegistry.tryRemoveRegistration(connection.getRemoteUuid(), connection.getRemoteAddress());
+                UUID remoteUuid = connection.getRemoteUuid();
+                if (remoteUuid != null) {
+                    addressRegistry.tryRemoveRegistration(remoteUuid, connection.getRemoteAddress());
+                }
                 fireConnectionRemovedEvent(connection, remoteAddress);
             } else {
                 // it might be the case that the connection was closed quickly enough

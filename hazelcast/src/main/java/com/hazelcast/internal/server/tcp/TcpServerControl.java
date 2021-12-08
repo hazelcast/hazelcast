@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
@@ -165,7 +164,7 @@ public final class TcpServerControl {
                     handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
         }
 
-        if (checkAlreadyConnected(connection, remoteUuid, handshake.getPlaneIndex())) {
+        if (!handleDuplicateConnections(connection, remoteUuid, handshake.getPlaneIndex())) {
             return;
         }
 
@@ -190,19 +189,37 @@ public final class TcpServerControl {
         }
     }
 
-    private boolean checkAlreadyConnected(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
+    /**
+     * @param connection a new connection whose handshake message is being processed
+     * @param remoteUuid the member uuid of the remote side of the connection
+     * @param planeIndex the plane index to register connection
+     * @return true if the registration of the new incoming connection will continue
+     *          false if this newly created connection will be closed
+     */
+    private boolean handleDuplicateConnections(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
+        TcpServerConnection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(existingConnection + " is already bound to Member[uuid=" + remoteUuid
-                            + "], new one is " + connection + " planeIndex:" + planeIndex);
+                // If there are duplicate connections, close the connection of which the member with the smaller uuid is on the acceptor side
+                if (serverContext.getThisUuid().compareTo(remoteUuid) < 0) {
+                    // close the connection of which the local side is the acceptor
+                    if (connection.isAccepted()) {
+                        connection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
+                        return false;
+                    } else if (existingConnection.isAccepted()) {
+                        existingConnection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
+                    }
+                } else {
+                    // close the connection that the remote side is the acceptor
+                    if (!connection.isAccepted()) {
+                        connection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
+                        return false;
+                    } else if (!existingConnection.isAccepted()) {
+                        existingConnection.close("Duplicate connection to the same member with uuid : " + remoteUuid, null);
+                    }
                 }
-                // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
-                connectionManager.connections.add(connection);
             }
-            return true;
         }
-        return false;
+        return true;
     }
 }
