@@ -276,14 +276,14 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
-    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress, boolean isAccepted) {
+    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress, boolean accepted) {
         try {
             if (!server.isLive()) {
                 throw new IllegalStateException("connection manager is not live!");
             }
 
             TcpServerConnection connection = new TcpServerConnection(this, connectionLifecycleListener,
-                    connectionIdGen.incrementAndGet(), channel, isAccepted);
+                    connectionIdGen.incrementAndGet(), channel, accepted);
 
             connection.setRemoteAddress(remoteAddress);
             connections.add(connection);
@@ -376,7 +376,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
-    // TODO [ufuk]: use this in the first connections
     @Override
     public boolean blockOnConnect(Address address, long timeoutMillis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);

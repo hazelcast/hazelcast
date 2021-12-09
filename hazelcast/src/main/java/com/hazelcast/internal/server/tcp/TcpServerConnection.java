@@ -72,7 +72,7 @@ public class TcpServerConnection implements ServerConnection {
 
     // Flag that indicates if the connection is accepted on this member (server-side)
     // See also TcpServerAcceptor and TcpServerConnector
-    private final boolean isAccepted;
+    private final boolean accepted;
 
     private final int connectionId;
 
@@ -97,7 +97,7 @@ public class TcpServerConnection implements ServerConnection {
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
                                int connectionId,
                                Channel channel,
-                               boolean isAccepted
+                               boolean accepted
     ) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
@@ -105,7 +105,7 @@ public class TcpServerConnection implements ServerConnection {
         this.serverContext = connectionManager.getServer().getContext();
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnection.class);
         this.channel = channel;
-        this.isAccepted = isAccepted;
+        this.accepted = accepted;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
     }
@@ -201,7 +201,7 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     public boolean isAccepted() {
-        return isAccepted;
+        return accepted;
     }
 
     public void setErrorHandler(TcpServerConnectionErrorHandler errorHandler) {

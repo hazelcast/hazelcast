@@ -145,10 +145,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             connectionMap.put(uuid, connection);
         }
 
-        void putConnectionIfAbsent(UUID uuid, TcpServerConnection connection) {
-            connectionMap.putIfAbsent(uuid, connection);
-        }
-
         void removeConnection(TcpServerConnection connection) {
             removeConnectionInProgress(connection.getRemoteAddress());
 
@@ -221,7 +217,18 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 Address address,
                 Function<? super LinkedAddresses, ? extends Future<Void>> mappingFn
         ) {
-            connectionsInProgress.computeIfAbsent(getAllLinkedAddresses(address), mappingFn);
+            if (hasConnectionInProgress(address)) {
+                return;
+            }
+            synchronized (connectionsInProgress) {
+                connectionsInProgress.computeIfAbsent(getAllLinkedAddresses(address),
+                        linkedAddresses -> {
+                            if (hasConnectionInProgress(address)) {
+                                return null;
+                            }
+                            return mappingFn.apply(linkedAddresses);
+                        });
+            }
         }
 
         public boolean removeConnectionInProgress(Address address) {

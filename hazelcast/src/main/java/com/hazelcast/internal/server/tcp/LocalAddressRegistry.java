@@ -101,7 +101,8 @@ public class LocalAddressRegistry {
 
     @Nullable
     public LinkedAddresses linkedAddressesOf(@Nonnull UUID uuid) {
-        return uuidToAddresses.get(uuid).getAddresses();
+        Pair pair = uuidToAddresses.get(uuid);
+        return pair != null ? pair.getAddresses() : null;
     }
 
     @Nullable

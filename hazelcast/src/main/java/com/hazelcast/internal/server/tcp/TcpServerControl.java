@@ -205,7 +205,8 @@ public final class TcpServerControl {
                 boolean isLocalMemberUuidSmallerThanRemote = serverContext.getThisUuid().compareTo(remoteUuid) < 0;
                 if (isLocalMemberUuidSmallerThanRemote == connection.isAccepted()) {
                     connection.close(
-                            "Duplicate connection to the same member with uuid : " + remoteUuid,
+                            "Duplicate connection to the Member[uuid= " + remoteUuid + "]"
+                                    + " on planeIndex=" + planeIndex,
                             null
                     );
                     return false;
