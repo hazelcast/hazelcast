@@ -138,8 +138,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Data key, Object value, long now) {
-        Record record = recordFactory.newRecord(key, value);
+    public Record createRecord(Object value, long now) {
+        Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
         if (record.getMatchingRecordReaderWriter()
