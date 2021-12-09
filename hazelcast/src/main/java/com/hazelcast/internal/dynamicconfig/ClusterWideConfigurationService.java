@@ -314,7 +314,10 @@ public class ClusterWideConfigurationService implements
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
-        rewriterProxy.doRewrite(nodeEngine.getConfig(), newConfig);
+
+        if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
+            rewriterProxy.doRewrite(nodeEngine.getConfig(), newConfig);
+        }
     }
 
     private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
