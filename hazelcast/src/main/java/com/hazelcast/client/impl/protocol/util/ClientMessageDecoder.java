@@ -42,13 +42,13 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 
 /**
  * Builds {@link ClientMessage}s from byte chunks.
- *
+ * <p>
  * Fragmented messages are merged into single messages before processed.
  */
 public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer, Consumer<ClientMessage>> {
 
+    final Long2ObjectHashMap<ClientMessage> builderBySessionIdMap = new Long2ObjectHashMap<>();
     private final Connection connection;
-    private final Long2ObjectHashMap<ClientMessage> builderBySessionIdMap = new Long2ObjectHashMap<>();
     private ClientMessageReader activeReader;
 
     private boolean clientIsTrusted;
@@ -97,6 +97,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                         builderBySessionIdMap.put(fragmentationId, message);
                     } else if (ClientMessage.isFlagSet(flags, END_FRAGMENT_FLAG)) {
                         ClientMessage clientMessage = mergeIntoExistingClientMessage(fragmentationId);
+                        builderBySessionIdMap.remove(fragmentationId);
                         handleMessage(clientMessage);
                     } else {
                         mergeIntoExistingClientMessage(fragmentationId);
