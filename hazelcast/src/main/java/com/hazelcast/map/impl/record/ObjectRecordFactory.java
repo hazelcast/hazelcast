@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 
@@ -38,7 +37,7 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Override
-    public Record<Object> newRecord(Data key, Object value) {
+    public Record<Object> newRecord(Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
         boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
