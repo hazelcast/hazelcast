@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -58,7 +58,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
     protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
                                                                    ClientMessageDecoder clientMessageDecoder) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);
@@ -67,9 +67,9 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     protected <T> T invokeOnPartition(ClientMessage clientMessage, long invocationTimeoutSeconds) {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
-            clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
-            final Future future = clientInvocation.invoke();
+            ClientInvocationService invocationService = getContext().getInvocationService();
+            Future future = invocationService.invokeOnPartition(clientMessage, getName(), partitionId, false,
+                    false, invocationTimeoutSeconds);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -77,11 +77,11 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
     }
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage,
-                                                 long invocationTimeoutSeconds) throws InterruptedException {
+                                                   long invocationTimeoutSeconds) throws InterruptedException {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
-            clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
-            final Future future = clientInvocation.invoke();
+            ClientInvocationService invocationService = getContext().getInvocationService();
+            Future future = invocationService.invokeOnPartition(clientMessage, getName(), partitionId, false,
+                    false, invocationTimeoutSeconds);
             return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);

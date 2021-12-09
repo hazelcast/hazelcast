@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.EmptyCompletionListener;
-import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -47,11 +46,11 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -211,7 +210,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     @Override
     protected <T> T invoke(ClientMessage clientMessage) {
         try {
-            Future<ClientMessage> future = new ClientInvocation(getClient(), clientMessage, getName()).invoke();
+            Future<ClientMessage> future = invokeAsync(clientMessage);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -291,8 +290,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
             listenerCompleter.registerCompletionLatch(completionId, 1);
         }
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), req, name, partitionId);
-            ClientInvocationFuture future = clientInvocation.invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(req, partitionId);
             if (completionOperation) {
                 listenerCompleter.waitCompletionLatch(completionId, future);
             }
@@ -977,12 +975,12 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
     private void submitLoadAllTask(ClientMessage request, CompletionListener completionListener, final List<Data> binaryKeys) {
         final CompletionListener listener = completionListener != null
-            ? injectDependencies(completionListener)
-            : NULL_COMPLETION_LISTENER;
+                ? injectDependencies(completionListener)
+                : NULL_COMPLETION_LISTENER;
         ClientDelegatingFuture<V> delegatingFuture = null;
         try {
             final long startNanos = nowInNanosOrDefault();
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+            ClientInvocationFuture future = invokeAsync(request);
             delegatingFuture = newDelegatingFuture(future, clientMessage -> Boolean.TRUE);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, listener);
@@ -1046,8 +1044,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 Data configData = toData(cacheEntryListenerConfiguration);
                 ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
                         uuid);
-                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), uuid);
-                invocation.invoke();
+                invokeOnMember(request, uuid);
             } catch (Exception e) {
                 sneakyThrow(e);
             }
@@ -1064,8 +1061,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
 
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, name, partitionId);
-        ClientInvocationFuture future = clientInvocation.invoke();
+        ClientInvocationFuture future = invokeOnPartitionAsync(request, partitionId);
         return newDelegatingFuture(future, CacheGetCodec::decodeResponse, deserializeResponse);
     }
 
@@ -1197,7 +1193,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     private ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
             int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-            Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            Future future = invokeOnPartitionAsync(clientMessage, partitionId);
             return (ClientMessage) future.get();
         } catch (Exception e) {
             throw rethrow(e);

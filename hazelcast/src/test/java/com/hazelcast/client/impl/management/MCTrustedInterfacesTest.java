@@ -16,32 +16,9 @@
 
 package com.hazelcast.client.impl.management;
 
-import static java.util.UUID.randomUUID;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
@@ -75,19 +52,40 @@ import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+
+import static java.util.UUID.randomUUID;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
-public class MCTrustedInterfacesTest extends HazelcastTestSupport {
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class MCTrustedInterfacesTest extends ClientTestSupport {
 
     HazelcastInstance client;
     HazelcastInstance member;
@@ -111,15 +109,15 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     @Test
     public void testGetSystemPropertiesMessageTask_passing() throws Exception {
         HazelcastInstance client = factory.newHazelcastClient(new ClientConfig(), "222.222.222.222");
-        HazelcastClientInstanceImpl clientImpl = ((HazelcastClientProxy) client).client;
-        ClientInvocation invocation = new ClientInvocation(
-                clientImpl,
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        ClientInvocationService invocationService = clientImpl.getInvocationService();
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetSystemPropertiesCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<List<Map.Entry<String, String>>> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
+                invocationFuture,
                 clientImpl.getSerializationService(),
                 MCGetSystemPropertiesCodec::decodeResponse
         );
@@ -304,8 +302,8 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     }
 
     private void assertFailureOnUntrustedInterface(ClientMessage clientMessage) throws Exception {
-        ClientInvocation invocation = new ClientInvocation(((HazelcastClientProxy) client).client, clientMessage, null);
-        ClientInvocationFuture future = invocation.invoke();
+        ClientInvocationService invocationService = getHazelcastClientInstanceImpl(client).getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnRandom(clientMessage, null);
         try {
             future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
             fail("AccessControlException was expected.");

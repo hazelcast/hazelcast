@@ -73,6 +73,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -85,7 +86,6 @@ import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
-import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
@@ -93,8 +93,8 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.iterator.ClientMapIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapIterator;
@@ -219,7 +219,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected void onInitialize() {
         super.onInitialize();
 
-        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+        lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
         queryCacheContext = getContext().getQueryCacheContext();
     }
 
@@ -355,16 +355,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         try {
             Data keyData = toData(key);
             ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
-            return invokeOnKeyOwner(request, keyData);
+            return invokeOnKeyAsync(request, keyData);
         } catch (Exception e) {
             throw rethrow(e);
         }
-    }
-
-    private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
-        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
-        return clientInvocation.invoke();
     }
 
     @Override
@@ -409,7 +403,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             } else {
                 request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             }
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            ClientInvocationFuture future = invokeOnKeyAsync(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture<>(future, ss, MapPutCodec::decodeResponse);
         } catch (Exception e) {
@@ -457,7 +451,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             }
 
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            ClientInvocationFuture future = invokeOnKeyAsync(request, keyData);
             return new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null);
         } catch (Exception e) {
             throw rethrow(e);
@@ -474,7 +468,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         try {
             Data keyData = toData(key);
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            ClientInvocationFuture future = invokeOnKeyAsync(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture<>(future, ss, MapRemoveCodec::decodeResponse);
         } catch (Exception e) {
@@ -713,9 +707,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private <T> T invoke(ClientMessage clientMessage, Object key, long invocationTimeoutSeconds) {
         final int partitionId = getContext().getPartitionService().getPartitionId(key);
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
-            clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
-            final Future future = clientInvocation.invoke();
+            ClientInvocationService invocationService = getContext().getInvocationService();
+            final Future future = invocationService.invokeOnPartition(clientMessage, getName(), partitionId, false,
+                    true, invocationTimeoutSeconds);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -1146,7 +1140,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             List<Data> keyList = entry.getValue();
             if (!keyList.isEmpty()) {
                 ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+                futures.add(invokeOnPartitionAsync(request, partitionId));
             }
         }
 
@@ -1381,7 +1375,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         try {
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            ClientInvocationFuture future = invokeOnKeyAsync(request, keyData);
             SerializationService ss = getSerializationService();
             return new ClientDelegatingFuture(future, ss, MapSubmitToKeyCodec::decodeResponse);
         } catch (Exception e) {
@@ -1545,7 +1539,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                                             @Nonnull Collection<Data> dataKeys,
                                                                             @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        ClientInvocationFuture future = invokeAsync(request);
         return new ClientDelegatingFuture<>(
                 future, getSerializationService(),
                 message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message)));
@@ -1642,8 +1636,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
-            new ClientInvocation(getClient(), request, getName(), partitionId)
-                    .invoke()
+            invokeOnPartitionAsync(request, partitionId)
                     .whenCompleteAsync(callback);
         }
         // if executing in sync mode, block for the responses
@@ -1841,7 +1834,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public InternalCompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = invokeOnPartitionAsync(request, partitionId);
         return new ClientDelegatingFuture<>(fut, getSerializationService(), message -> {
             ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(message);
             return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
@@ -1864,7 +1857,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = invokeOnPartitionAsync(request, partitionId);
         return new ClientDelegatingFuture<>(fut, ss, message -> {
             MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
             ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
@@ -2204,7 +2197,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * Orchestrator method that invokes all the paritition in parallel to replace each entry's
      * value with the result of invoking the given function on that entry
      *
-     * @param function  remappingfunction
+     * @param function remappingfunction
      */
     protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
         if (SerializationUtil.isClassStaticAndSerializable(function) && !useDefaultReplaceAllOperation) {
@@ -2214,7 +2207,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 Data functionAsData = toData(function);
                 for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                     ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
-                    futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+                    futures.add(invokeOnPartitionAsync(request, partitionId));
                 }
                 for (Future<ClientMessage> future : futures) {
                     try {

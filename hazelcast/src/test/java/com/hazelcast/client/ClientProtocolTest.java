@@ -19,14 +19,13 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,11 +51,7 @@ public class ClientProtocolTest extends ClientTestSupport {
         ClientMessage s = MapSizeCodec.encodeRequest("mapName");
         int undefinedMessageType = -1;
         s.setMessageType(undefinedMessageType);
-        ClientInvocation invocation = new ClientInvocation(clientImpl, s, "mapName");
-        try {
-            invocation.invoke().get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        ClientInvocationService invocationService = clientImpl.getInvocationService();
+        invocationService.invokeOnRandom(s, "mapName").joinInternal();
     }
 }

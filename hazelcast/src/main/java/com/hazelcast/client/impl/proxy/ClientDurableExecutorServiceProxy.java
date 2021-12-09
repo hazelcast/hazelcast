@@ -28,8 +28,7 @@ import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartition
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
 import com.hazelcast.executor.impl.RunnableAdapter;
@@ -76,7 +75,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
         return new ClientDelegatingFuture<>(future, getSerializationService(),
                 DurableExecutorRetrieveResultCodec::decodeResponse);
     }
@@ -94,7 +93,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
         return new ClientDelegatingFuture<>(future, getSerializationService(),
                 DurableExecutorRetrieveResultCodec::decodeResponse);
     }
@@ -224,7 +223,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             return completedExceptionally(t, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+        ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
         long taskId = Bits.combineToLong(partitionId, sequence);
         return new ClientDurableExecutorServiceDelegatingFuture<>(future, getSerializationService(),
                 DurableExecutorRetrieveResultCodec::decodeResponse,

@@ -17,7 +17,6 @@
 package com.hazelcast.client.cp.internal;
 
 import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
@@ -67,8 +66,8 @@ public class CPSubsystemImpl implements CPSubsystem {
     private final ClientRaftProxyFactory proxyFactory;
     private volatile ClientContext context;
 
-    public CPSubsystemImpl(HazelcastClientInstanceImpl client) {
-        this.proxyFactory = new ClientRaftProxyFactory(client);
+    public CPSubsystemImpl() {
+        this.proxyFactory = new ClientRaftProxyFactory();
     }
 
     public void init(ClientContext context) {
@@ -152,6 +151,7 @@ public class CPSubsystemImpl implements CPSubsystem {
             implements EventHandler<ClientMessage> {
 
         private final CPMembershipListener listener;
+
         CPMembershipEventHandler(CPMembershipListener listener) {
             this.listener = listener;
         }
@@ -180,7 +180,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
         @Override
         public void handleGroupAvailabilityEventEvent(RaftGroupId groupId, Collection<CPMember> members,
-                Collection<CPMember> unavailableMembers) {
+                                                      Collection<CPMember> unavailableMembers) {
 
             long now = Clock.currentTimeMillis();
             recentEvents.values().removeIf(expirationTime -> expirationTime < now);

@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -73,7 +73,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 });
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
@@ -133,9 +134,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     private <S> S invokeRequestAndDecodeResponse(UUID uuid, ClientMessage request,
                                                  Function<ClientMessage, Object> decoder) {
-        ClientInvocation invocation = new ClientInvocation(client, request, null, uuid);
+        ClientInvocationService invocationService = client.getInvocationService();
         try {
-            ClientMessage response = invocation.invoke().get();
+            ClientMessage response = invocationService.invokeOnMember(request, null, uuid).get();
             return serializationService.toObject(decoder.apply(response));
         } catch (Throwable t) {
             throw rethrow(t);

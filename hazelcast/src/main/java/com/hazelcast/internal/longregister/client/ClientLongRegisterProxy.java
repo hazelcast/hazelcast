@@ -21,8 +21,7 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.internal.longregister.client.codec.LongRegisterAddAndGetCodec;
@@ -205,9 +204,9 @@ public class ClientLongRegisterProxy extends ClientProxy implements IAtomicLong 
     }
 
     private <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
-            ClientMessageDecoder clientMessageDecoder) {
+                                                                 ClientMessageDecoder clientMessageDecoder) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);

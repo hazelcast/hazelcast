@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.LocalQueueStats;
@@ -72,8 +72,8 @@ public class QueueResetAgeStatisticsTest
         assertTrue(stats.getAverageAge() > 0);
 
         ClientMessage clientMessage = MCResetQueueAgeStatisticsCodec.encodeRequest("my-queue");
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, "my-queue");
-        invocation.invoke().get();
+        ClientInvocationService invocationService = client.getInvocationService();
+        invocationService.invokeOnRandom(clientMessage, "my-queue").get();
         LocalQueueStats statsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
         assertEquals(0, statsAfterReset.getMaxAge());
         assertEquals(Long.MAX_VALUE, statsAfterReset.getMinAge());

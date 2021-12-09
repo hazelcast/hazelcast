@@ -16,9 +16,8 @@
 
 package com.hazelcast.client.map.impl.querycache.subscriber;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -38,11 +37,11 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class ClientInvokerWrapper implements InvokerWrapper {
 
     private final QueryCacheContext context;
-    private final HazelcastClientInstanceImpl client;
+    private final ClientInvocationService invocationService;
 
-    public ClientInvokerWrapper(QueryCacheContext context, HazelcastClientInstanceImpl client) {
+    public ClientInvokerWrapper(QueryCacheContext context, ClientInvocationService invocationService) {
         this.context = context;
-        this.client = client;
+        this.invocationService = invocationService;
     }
 
     @Override
@@ -51,16 +50,14 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNegative(partitionId, "partitionId");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientRequest, null, partitionId);
-        return clientInvocation.invoke();
+        return invocationService.invokeOnPartition(clientRequest, null, partitionId);
     }
 
     @Override
     public Object invokeOnAllPartitions(Object request, boolean urgent) {
         try {
             ClientMessage clientRequest = (ClientMessage) request;
-            ClientInvocation invocation = new ClientInvocation(client, clientRequest, null);
-            Future future = urgent ? invocation.invokeUrgent() : invocation.invoke();
+            Future future = invocationService.invokeOnRandom(clientRequest, null, urgent);
             Object result = future.get();
             return context.toObject(result);
         } catch (Exception e) {
@@ -74,8 +71,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNull(member, "address cannot be null");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation invocation = new ClientInvocation(client, clientRequest, null, member.getUuid());
-        return invocation.invoke();
+        return invocationService.invokeOnMember(clientRequest, null, member.getUuid());
     }
 
     @Override
@@ -83,8 +79,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNull(request, "request cannot be null");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation invocation = new ClientInvocation(client, clientRequest, null);
-        Future future = urgent ? invocation.invokeUrgent() : invocation.invoke();
+        Future future = invocationService.invokeOnRandom(clientRequest, null, urgent);
         try {
             Object result = future.get();
             return context.toObject(result);

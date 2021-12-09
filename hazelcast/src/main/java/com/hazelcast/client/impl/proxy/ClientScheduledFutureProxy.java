@@ -33,8 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromMembe
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromPartitionCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -200,13 +199,13 @@ public class ClientScheduledFutureProxy<V>
         int partitionId = handler.getPartitionId();
         if (uuid != null) {
             ClientMessage request = ScheduledExecutorGetResultFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, uuid).invoke();
+            ClientInvocationFuture future = invokeOnMemberAsync(request, uuid);
             ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromMemberCodec.decodeResponse(response);
             return toObject(data);
         } else {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(request, partitionId);
             ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response);
             return toObject(data);

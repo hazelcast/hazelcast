@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ProxyManager;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -326,7 +325,7 @@ public class ClientStatisticsService {
     private void sendStats(long collectionTimestamp, String newStats, byte[] metricsBlob, TcpClientConnection ownerConnection) {
         ClientMessage request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, newStats, metricsBlob);
         try {
-            new ClientInvocation(client, request, null, ownerConnection).invoke();
+            client.getInvocationService().invokeOnConnection(request, null, ownerConnection);
         } catch (Exception e) {
             // suppress exception, do not print too many messages
             if (logger.isFinestEnabled()) {

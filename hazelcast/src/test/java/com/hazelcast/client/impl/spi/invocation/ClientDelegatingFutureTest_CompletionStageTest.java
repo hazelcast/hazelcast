@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi.invocation;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -22,10 +22,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.CompletableFutureAbstractTest;
+import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.test.ExpectedRuntimeException;
 import org.junit.After;
 import org.junit.Before;
@@ -41,31 +44,32 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 public class ClientDelegatingFutureTest_CompletionStageTest extends CompletableFutureAbstractTest {
     /*
      * This test sets up a member & client, as required for
-     * construction of ClientInvocation. However invocations are not
+     * construction of ClientInvocation. However, invocations are not
      * sent to the member, as we need to complete invocations normally or
      * exceptionally depending on test case.
      */
-
     private TestHazelcastFactory factory;
-    private HazelcastClientInstanceImpl client;
-    private ClientMessage request;
     private ClientMessage response;
     private SerializationService serializationService;
-    private Data key;
-    private Data value;
     private ClientInvocation invocation;
+    private ClientInvocationFuture invocationFuture;
 
     @Before
     public void setup() {
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(getConfig());
-        client = getHazelcastClientInstanceImpl(factory.newHazelcastClient());
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(factory.newHazelcastClient());
         serializationService = new DefaultSerializationServiceBuilder().build();
-        key = serializationService.toData("key");
-        value = serializationService.toData(returnValue);
-        request = MapGetCodec.encodeRequest("test", key, 1L);
+        Data key = serializationService.toData("key");
+        Data value = serializationService.toData(returnValue);
+        ClientMessage request = MapGetCodec.encodeRequest("test", key, 1L);
         response = MapGetCodec.encodeResponse(value);
-        invocation = new ClientInvocation(client, request, "test");
+        ILogger logger = Logger.getLogger(ClientDelegatingFutureTest_CompletionStageTest.class);
+        invocationFuture = new ClientInvocationFuture(() -> true, request, logger,
+                new CallIdSequenceWithoutBackpressure(), Long.MAX_VALUE);
+        invocation = new ClientInvocation(invocationFuture, (ClientInvocationServiceImpl) client.getInvocationService(),
+                request, null, null,
+                throwable -> false, Long.MAX_VALUE, false, false, -1, null, null);
     }
 
     @After
@@ -82,10 +86,9 @@ public class ClientDelegatingFutureTest_CompletionStageTest extends CompletableF
     @Override
     protected CompletableFuture<Object> newCompletableFuture(boolean exceptional, long completeAfterMillis) {
         invocation.getCallIdSequence().next();
-        ClientInvocationFuture cf = invocation.getClientInvocationFuture();
 
         ClientDelegatingFuture<Object> future =
-                new ClientDelegatingFuture<>(cf, serializationService, MapGetCodec::decodeResponse);
+                new ClientDelegatingFuture<>(invocationFuture, serializationService, MapGetCodec::decodeResponse);
 
         Executor completionExecutor;
         if (completeAfterMillis <= 0) {

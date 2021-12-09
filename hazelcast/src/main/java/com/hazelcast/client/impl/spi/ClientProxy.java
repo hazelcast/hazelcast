@@ -16,10 +16,9 @@
 
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
@@ -38,6 +37,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  * <p>
  * Allows the client to proxy operations through member nodes.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;
@@ -55,11 +55,11 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected final @Nonnull
     UUID registerListener(ListenerMessageCodec codec, EventHandler handler) {
-        return getContext().getListenerService().registerListener(codec, handler);
+        return context.getListenerService().registerListener(codec, handler);
     }
 
     protected final boolean deregisterListener(@Nonnull UUID registrationId) {
-        return getContext().getListenerService().deregisterListener(registrationId);
+        return context.getListenerService().deregisterListener(registrationId);
     }
 
     // public for testing
@@ -67,21 +67,16 @@ public abstract class ClientProxy implements DistributedObject {
         return context;
     }
 
-
     protected SerializationService getSerializationService() {
         return serializationService;
     }
 
     protected <T> Data toData(T o) {
-        return getSerializationService().toData(o);
+        return serializationService.toData(o);
     }
 
     protected <T> T toObject(Object data) {
-        return getSerializationService().toObject(data);
-    }
-
-    protected final HazelcastClientInstanceImpl getClient() {
-        return (HazelcastClientInstanceImpl) getContext().getHazelcastInstance();
+        return serializationService.toObject(data);
     }
 
     @Nonnull
@@ -106,7 +101,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public final void destroy() {
-        getContext().getProxyManager().destroyProxy(this);
+        context.getProxyManager().destroyProxy(this);
     }
 
     /**
@@ -134,7 +129,7 @@ public abstract class ClientProxy implements DistributedObject {
     public final void destroyRemotely() {
         ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
         try {
-            new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
+            context.getInvocationService().invokeOnRandom(clientMessage, getName()).get();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -178,22 +173,35 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected <T> T invoke(ClientMessage clientMessage, Object key) {
-        final int partitionId = getContext().getPartitionService().getPartitionId(key);
+        final int partitionId = context.getPartitionService().getPartitionId(key);
         return invokeOnPartition(clientMessage, partitionId);
     }
 
     protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            Future future = context.getInvocationService().invokeOnPartition(clientMessage, getName(), partitionId);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
+    protected ClientInvocationFuture invokeOnMemberAsync(ClientMessage clientMessage, UUID uuid) {
+        return context.getInvocationService().invokeOnMember(clientMessage, getName(), uuid);
+    }
+
+    protected ClientInvocationFuture invokeOnKeyAsync(ClientMessage clientMessage, Object key) {
+        final int partitionId = context.getPartitionService().getPartitionId(key);
+        return invokeOnPartitionAsync(clientMessage, partitionId);
+    }
+
+    protected ClientInvocationFuture invokeOnPartitionAsync(ClientMessage clientMessage, int partitionId) {
+        return context.getInvocationService().invokeOnPartition(clientMessage, getName(), partitionId);
+    }
+
     protected <T> T invokeOnMember(ClientMessage clientMessage, UUID uuid) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), uuid).invoke();
+            Future future = context.getInvocationService().invokeOnMember(clientMessage, getName(), uuid);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -202,7 +210,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, int partitionId) throws InterruptedException {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            Future future = context.getInvocationService().invokeOnPartition(clientMessage, getName(), partitionId);
             return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);
@@ -211,11 +219,19 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invoke(ClientMessage clientMessage) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName()).invoke();
+            Future future = context.getInvocationService().invokeOnRandom(clientMessage, getName());
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage) {
+        return context.getInvocationService().invokeOnRandom(clientMessage, getName());
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage, String name) {
+        return context.getInvocationService().invokeOnRandom(clientMessage, name);
     }
 
     @Override

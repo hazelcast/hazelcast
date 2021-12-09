@@ -24,8 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartition
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.ExecutionCallback;
@@ -55,7 +54,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
@@ -435,7 +433,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         UUID uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
-        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        ClientInvocationFuture f = invokeOnPartitionAsync(request, partitionId);
         return delegatingFuture(f, uuid, partitionId, defaultValue);
     }
 
@@ -447,7 +445,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         UUID uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
-        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        ClientInvocationFuture f = invokeOnPartitionAsync(request, partitionId);
 
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
@@ -470,7 +468,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
-        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        ClientInvocationFuture f = invokeOnPartitionAsync(request, partitionId);
         return delegatingFuture(f, uuid, partitionId, defaultValue);
     }
 
@@ -480,7 +478,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
-        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        ClientInvocationFuture f = invokeOnPartitionAsync(request, partitionId);
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
         if (callback != null) {
@@ -500,7 +498,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
-        ClientInvocationFuture f = invokeOnTarget(request, member);
+        ClientInvocationFuture f = invokeOnMemberAsync(request, member.getUuid());
         return delegatingFuture(f, uuid, member, defaultValue);
     }
 
@@ -511,7 +509,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
-        ClientInvocationFuture f = invokeOnTarget(request, member);
+        ClientInvocationFuture f = invoke(request, member);
         InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, member,
                 (T) null);
         if (callback != null) {
@@ -617,24 +615,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         @Override
         public void onComplete(Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
-        }
-    }
-
-    private ClientInvocationFuture invokeOnPartitionOwner(ClientMessage request, int partitionId) {
-        try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
-            return clientInvocation.invoke();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
-    private ClientInvocationFuture invokeOnTarget(ClientMessage request, Member target) {
-        try {
-            ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), target.getUuid());
-            return invocation.invoke();
-        } catch (Exception e) {
-            throw rethrow(e);
         }
     }
 

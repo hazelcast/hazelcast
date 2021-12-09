@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientFetchSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
@@ -32,11 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientSchemaService implements SchemaService {
 
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
-    private final HazelcastClientInstanceImpl client;
+    private final ClientInvocationService invocationService;
     private final ILogger logger;
 
-    public ClientSchemaService(HazelcastClientInstanceImpl client, ILogger logger) {
-        this.client = client;
+    public ClientSchemaService(ClientInvocationService invocationService, ILogger logger) {
+        this.invocationService = invocationService;
         this.logger = logger;
     }
 
@@ -49,8 +49,8 @@ public class ClientSchemaService implements SchemaService {
         if (logger.isFinestEnabled()) {
             logger.finest("Could not find schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
         }
-        ClientInvocation invocation = new ClientInvocation(client, ClientFetchSchemaCodec.encodeRequest(schemaId), SERVICE_NAME);
-        ClientMessage message = invocation.invoke().joinInternal();
+        ClientMessage request = ClientFetchSchemaCodec.encodeRequest(schemaId);
+        ClientMessage message = invocationService.invokeOnRandom(request, SERVICE_NAME).joinInternal();
         schema = ClientFetchSchemaCodec.decodeResponse(message);
         if (schema != null) {
             schemas.put(schemaId, schema);
@@ -67,8 +67,7 @@ public class ClientSchemaService implements SchemaService {
         }
 
         ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-        invocation.invoke().joinInternal();
+        invocationService.invokeOnRandom(clientMessage, SERVICE_NAME).joinInternal();
 
         putIfAbsent(schema);
     }
@@ -103,7 +102,6 @@ public class ClientSchemaService implements SchemaService {
             logger.finest("Sending schemas to the cluster " + schemas);
         }
         ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(schemas.values()));
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-        invocation.invoke().joinInternal();
+        invocationService.invokeOnRandom(clientMessage, SERVICE_NAME).joinInternal();
     }
 }

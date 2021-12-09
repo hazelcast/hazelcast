@@ -78,9 +78,10 @@ public class TcpClientConnection implements ClientConnection {
     private String connectedServerVersion;
     private volatile UUID remoteUuid;
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
+    public TcpClientConnection(HazelcastClientInstanceImpl client,
+                               int connectionId, Channel channel) {
         this.client = client;
-        this.responseHandler = client.getInvocationService().getResponseHandler();
+        this.responseHandler = client.getResponseHandler();
         this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
@@ -90,9 +91,10 @@ public class TcpClientConnection implements ClientConnection {
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
     }
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
+    public TcpClientConnection(HazelcastClientInstanceImpl client,
+                               int connectionId) {
         this.client = client;
-        this.responseHandler = client.getInvocationService().getResponseHandler();
+        this.responseHandler = client.getResponseHandler();
         this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;

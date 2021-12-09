@@ -19,7 +19,8 @@ package com.hazelcast.internal.management;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
@@ -29,7 +30,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertEquals;
  * Tests possibility to disable scripting on members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     private static final String SCRIPT_RETURN_VAL = "John";
@@ -118,15 +118,15 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
     }
 
     private ClientDelegatingFuture<Object> runScript(HazelcastInstance client, Member member) {
-        ClientInvocation invocation = new ClientInvocation(
-                ((HazelcastClientProxy) client).client,
+        ClientInvocationService invocationService = ((HazelcastClientProxy) client).client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnMember(
                 MCRunScriptCodec.encodeRequest(ENGINE, SCRIPT),
                 null,
                 member.getUuid()
         );
 
         return new ClientDelegatingFuture<>(
-                invocation.invoke(),
+                future,
                 ((HazelcastClientProxy) client).client.getSerializationService(),
                 MCRunScriptCodec::decodeResponse
         );

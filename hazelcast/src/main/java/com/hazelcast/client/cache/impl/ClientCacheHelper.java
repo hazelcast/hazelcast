@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -61,8 +61,8 @@ final class ClientCacheHelper {
         ClientMessage request = CacheGetConfigCodec.encodeRequest(cacheName, simpleCacheName);
         try {
             int partitionId = client.getClientPartitionService().getPartitionId(cacheName);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, partitionId);
-            Future<ClientMessage> future = clientInvocation.invoke();
+            ClientInvocationService invocationService = client.getInvocationService();
+            Future<ClientMessage> future = invocationService.invokeOnPartition(request, cacheName, partitionId);
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
 
@@ -97,8 +97,8 @@ final class ClientCacheHelper {
             InternalSerializationService serializationService = client.getSerializationService();
             ClientMessage request = CacheCreateConfigCodec
                     .encodeRequest(CacheConfigHolder.of(newCacheConfig, serializationService), true);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
-            Future<ClientMessage> future = urgent ? clientInvocation.invokeUrgent() : clientInvocation.invoke();
+            ClientInvocationService invocationService = client.getInvocationService();
+            Future<ClientMessage> future = invocationService.invokeOnPartition(request, nameWithPrefix, partitionId, urgent);
             final ClientMessage response = future.get();
             final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response);
             if (cacheConfigHolder == null) {
@@ -122,12 +122,12 @@ final class ClientCacheHelper {
                                                  boolean statOrMan, boolean enabled) {
         Collection<Member> members = client.getClientClusterService().getMemberList();
         Collection<Future> futures = new ArrayList<Future>();
+        ClientInvocationService invocationService = client.getInvocationService();
         for (Member member : members) {
             try {
                 UUID uuid = member.getUuid();
                 ClientMessage request = CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, uuid);
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, uuid);
-                Future<ClientMessage> future = clientInvocation.invoke();
+                Future<ClientMessage> future = invocationService.invokeOnMember(request, cacheName, uuid);
                 futures.add(future);
             } catch (Exception e) {
                 sneakyThrow(e);

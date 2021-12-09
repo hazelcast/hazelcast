@@ -45,7 +45,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
@@ -178,9 +177,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             // without having to get back the return value
 
             ClientMessage request = MultiMapPutAllCodec.encodeRequest(name, entry.getValue());
-            new ClientInvocation(getClient(), request, getName(), partitionId)
-                    .invoke()
-                    .whenCompleteAsync(callback);
+            invokeOnPartitionAsync(request, partitionId).whenCompleteAsync(callback);
         }
     }
 
@@ -511,7 +508,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected void onInitialize() {
         super.onInitialize();
 
-        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+        lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
     }
 
     private class ClientMultiMapEventHandler extends AbstractClientMultiMapEventHandler {

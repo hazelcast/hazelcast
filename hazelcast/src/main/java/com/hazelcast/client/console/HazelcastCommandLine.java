@@ -27,7 +27,8 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.spi.ClientClusterService;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -434,15 +435,14 @@ public class HazelcastCommandLine implements Runnable {
     protected static CompletableFuture<MCClusterMetadata> getClusterMetadata(HazelcastClientInstanceImpl client, Member member) {
         checkNotNull(member);
 
-        ClientInvocation invocation = new ClientInvocation(
-                client,
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnMember(
                 MCGetClusterMetadataCodec.encodeRequest(),
                 null,
-                member.getUuid()
-        );
+                member.getUuid());
 
         return new ClientDelegatingFuture<>(
-                invocation.invoke(),
+                future,
                 client.getSerializationService(),
                 clientMessage -> {
                     MCGetClusterMetadataCodec.ResponseParameters response =

@@ -24,8 +24,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastException;
@@ -206,9 +205,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
         handler.beforeListenerRegister(connection);
 
-        ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
-        invocation.setEventHandler(handler);
-        ClientInvocationFuture future = invocation.invokeUrgent();
+        ClientInvocationFuture future = client.getInvocationService()
+                .invokeOnConnection(request, handler, null, (ClientConnection) connection, true);
 
         ClientMessage clientMessage;
         try {
@@ -333,9 +331,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                 futures[i++] = CompletableFuture.completedFuture(null);
                 continue;
             }
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
-            clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
-            futures[i++] = clientInvocation.invokeUrgent().exceptionally(throwable -> {
+            ClientInvocationFuture future = client.getInvocationService().
+                    invokeOnConnection(request, null, null, subscriber, true, false, Long.MAX_VALUE);
+            futures[i++] = future.exceptionally(throwable -> {
                 if (!(throwable instanceof HazelcastClientNotActiveException
                         || throwable instanceof IOException
                         || throwable instanceof TargetDisconnectedException)) {

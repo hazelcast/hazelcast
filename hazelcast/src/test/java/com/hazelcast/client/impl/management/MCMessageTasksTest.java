@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.management;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
@@ -51,8 +50,9 @@ import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -60,8 +60,8 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -87,9 +87,11 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MCMessageTasksTest extends HazelcastTestSupport {
+public class MCMessageTasksTest extends ClientTestSupport {
 
     HazelcastInstance client;
+    ClientInvocationService invocationService;
+    SerializationService serializationService;
     HazelcastInstance member;
     private TestHazelcastFactory factory;
 
@@ -99,6 +101,9 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
         member = factory.newHazelcastInstance(smallInstanceConfig());
         client = factory.newHazelcastClient();
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        invocationService = clientInstanceImpl.getInvocationService();
+        serializationService = clientInstanceImpl.getSerializationService();
     }
 
     @After
@@ -175,15 +180,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetClusterMetadataMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetClusterMetadataCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<MCGetClusterMetadataCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCGetClusterMetadataCodec::decodeResponse
         );
 
@@ -201,15 +205,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMapConfigMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetMapConfigCodec.encodeRequest(randomString()),
                 null
         );
 
         ClientDelegatingFuture<MCGetMapConfigCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCGetMapConfigCodec::decodeResponse
         );
 
@@ -219,15 +222,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMemberConfigMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetMemberConfigCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCGetMemberConfigCodec::decodeResponse
         );
 
@@ -236,14 +238,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetSystemPropertiesMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetSystemPropertiesCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>>> future
-                = new ClientDelegatingFuture<>(invocation.invoke(), getClientImpl().getSerializationService(),
+                = new ClientDelegatingFuture<>(invocationFuture, serializationService,
                 MCGetSystemPropertiesCodec::decodeResponse
         );
 
@@ -252,15 +253,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetThreadDumpMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetThreadDumpCodec.encodeRequest(false),
                 null
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCGetThreadDumpCodec::decodeResponse
         );
 
@@ -269,15 +269,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testGetTimedMemberStateMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCGetTimedMemberStateCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCGetTimedMemberStateCodec::decodeResponse
         );
 
@@ -286,15 +285,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestartInterruptBackupMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCInterruptHotRestartBackupCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 clientMessage -> null
         );
 
@@ -303,15 +301,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestartTriggerBackupMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCTriggerHotRestartBackupCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 clientMessage -> null
         );
 
@@ -320,15 +317,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestartTriggerForceStartMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCTriggerForceStartCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCTriggerForceStartCodec::decodeResponse
         );
 
@@ -337,15 +333,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestartTriggerPartialStartMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCTriggerPartialStartCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCTriggerPartialStartCodec::decodeResponse
         );
 
@@ -354,15 +349,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testMatchMCConfigMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCMatchMCConfigCodec.encodeRequest(randomString()),
                 null
         );
 
         ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCMatchMCConfigCodec::decodeResponse
         );
 
@@ -371,15 +365,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testPollMCEventsMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCPollMCEventsCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<List<MCEventDTO>> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 MCPollMCEventsCodec::decodeResponse
         );
 
@@ -416,15 +409,14 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testRunGCMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCRunGcCodec.encodeRequest(),
                 null
         );
 
         ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 clientMessage -> null
         );
 
@@ -440,34 +432,27 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testShutdownClusterMessageTask() {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        invocationService.invokeOnRandom(
                 MCShutdownClusterCodec.encodeRequest(),
                 null
         );
-
-        invocation.invoke();
 
         assertTrueEventually(() -> assertFalse(member.getLifecycleService().isRunning()));
     }
 
     @Test
     public void testShutdownMemberMessageTask() {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        invocationService.invokeOnRandom(
                 MCShutdownMemberCodec.encodeRequest(),
                 null
         );
-
-        invocation.invoke();
 
         assertTrueEventually(() -> assertFalse(member.getLifecycleService().isRunning()));
     }
 
     @Test
     public void testUpdateMapConfigMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnRandom(
                 MCUpdateMapConfigCodec.encodeRequest(
                         randomString(),
                         100,
@@ -481,8 +466,8 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         );
 
         ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                serializationService,
                 clientMessage -> null
         );
 
@@ -503,8 +488,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     private void assertFailure(ClientMessage clientMessage,
                                Class<? extends Exception> expectedExceptionType,
                                String expectedExceptionMsg) throws Exception {
-        ClientInvocation invocation = new ClientInvocation(getClientImpl(), clientMessage, null);
-        ClientInvocationFuture future = invocation.invoke();
+        ClientInvocationFuture future = invocationService.invokeOnRandom(clientMessage, null);
         try {
             future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
             fail("Execution was successful whereas failure was expected.");
@@ -516,7 +500,4 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         }
     }
 
-    private HazelcastClientInstanceImpl getClientImpl() {
-        return ((HazelcastClientProxy) client).client;
-    }
 }

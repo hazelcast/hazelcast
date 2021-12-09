@@ -44,7 +44,6 @@ import com.hazelcast.client.impl.proxy.ClientScheduledExecutorProxy;
 import com.hazelcast.client.impl.proxy.ClientSetProxy;
 import com.hazelcast.client.impl.proxy.ClientTopicProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XAResourceProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.impl.listener.LazyDistributedObjectEvent;
@@ -325,7 +324,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) throws Exception {
         ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getDistributedObjectName(),
                 clientProxy.getServiceName());
-        new ClientInvocation(client, clientMessage, clientProxy.getServiceName()).invoke().get();
+        context.getInvocationService().invokeOnRandom(clientMessage, clientProxy.getServiceName()).get();
         clientProxy.onInitialize();
     }
 
@@ -360,7 +359,7 @@ public final class ProxyManager {
             return;
         }
         ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
-        new ClientInvocation(client, clientMessage, null).invokeUrgent();
+        context.getInvocationService().invokeOnRandom(clientMessage, null, true);
         createCachesOnCluster();
     }
 

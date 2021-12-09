@@ -20,15 +20,14 @@ import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.client.cache.impl.ClientCacheProxy;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
@@ -277,7 +276,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.readerSupplier = readerSupplier;
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new LocalProcessorSupplier<>(readerSupplier);
         }
@@ -314,7 +314,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public List<Processor> get(int count) {
             return Arrays.stream(distributeObjects(count, memberPartitions))
                     .map(partitions ->
@@ -355,7 +356,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             }
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public List<Processor> get(int count) {
             int remotePartitionCount = client.client.getClientPartitionService().getPartitionCount();
 
@@ -430,7 +432,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.serializationService = serializationService;
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE);
             //no access to CacheOperationProvider, have to be explicit
@@ -438,7 +441,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return operationService.invokeOnPartition(cacheProxy.getServiceName(), op, partitionId);
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Object toObject(@Nonnull Entry<Data, Data> dataEntry) {
             return new LazyMapEntry<>(dataEntry.getKey(), dataEntry.getValue(), serializationService);
         }
@@ -458,22 +462,24 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.serializationService = clientCacheProxy.getContext().getSerializationService();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
             String name = clientCacheProxy.getPrefixedName();
             ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, encodePointers(pointers), MAX_FETCH_SIZE);
-            HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientCacheProxy.getContext()
-                   .getHazelcastInstance();
-            return new ClientInvocation(client, request, name, partitionId).invoke();
+            ClientInvocationService invocationService = clientCacheProxy.getContext().getInvocationService();
+            return invocationService.invokeOnPartition(request, name, partitionId);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public CacheIterateEntriesCodec.ResponseParameters toBatchResult(@Nonnull ClientInvocationFuture future)
                 throws ExecutionException, InterruptedException {
             return CacheIterateEntriesCodec.decodeResponse(future.get());
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Object toObject(@Nonnull Entry<Data, Data> dataEntry) {
             return new LazyMapEntry<>(dataEntry.getKey(), dataEntry.getValue(), serializationService);
         }
@@ -503,7 +509,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public CompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             if (isHD) {
                 return readWithOperationService(partitionId, pointers);
@@ -569,7 +576,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Object toObject(@Nonnull Entry<Data, Data> dataEntry) {
             return new LazyMapEntry<>(dataEntry.getKey(), dataEntry.getValue(), serializationService);
         }
@@ -597,7 +605,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.serializationService = serializationService;
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
             MapOperation op = operationProvider.createFetchWithQueryOperation(
@@ -605,17 +614,18 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                     pointers,
                     MAX_FETCH_SIZE,
                     Query.of()
-                         .mapName(objectName)
-                         .iterationType(IterationType.VALUE)
-                         .predicate(predicate)
-                         .projection(projection)
-                         .build()
+                            .mapName(objectName)
+                            .iterationType(IterationType.VALUE)
+                            .predicate(predicate)
+                            .projection(projection)
+                            .build()
             );
 
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Object toObject(@Nonnull QueryResultRow record) {
             return serializationService.toObject(record.getValue());
         }
@@ -634,27 +644,25 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.serializationService = clientMapProxy.getContext().getSerializationService();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
             ClientMessage request = MapFetchEntriesCodec.encodeRequest(
                     objectName, encodePointers(pointers), MAX_FETCH_SIZE
             );
-            ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
-                    request,
-                    objectName,
-                    partitionId
-            );
-            return clientInvocation.invoke();
+            ClientInvocationService invocationService = clientMapProxy.getContext().getInvocationService();
+            return invocationService.invokeOnPartition(request, objectName, partitionId);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public MapFetchEntriesCodec.ResponseParameters toBatchResult(@Nonnull ClientInvocationFuture future)
                 throws ExecutionException, InterruptedException {
             return MapFetchEntriesCodec.decodeResponse(future.get());
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Entry<Data, Data> toObject(@Nonnull Entry<Data, Data> entry) {
             return new LazyMapEntry<>(entry.getKey(), entry.getValue(), serializationService);
         }
@@ -680,29 +688,27 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.serializationService = clientMapProxy.getContext().getSerializationService();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
             ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
                     objectName, encodePointers(pointers), MAX_FETCH_SIZE,
                     serializationService.toData(projection),
                     serializationService.toData(predicate)
             );
-            ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
-                    request,
-                    objectName,
-                    partitionId
-            );
-            return clientInvocation.invoke();
+            ClientInvocationService invocationService = clientMapProxy.getContext().getInvocationService();
+            return invocationService.invokeOnPartition(request, objectName, partitionId);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public MapFetchWithQueryCodec.ResponseParameters toBatchResult(@Nonnull ClientInvocationFuture future)
                 throws ExecutionException, InterruptedException {
             return MapFetchWithQueryCodec.decodeResponse(future.get());
         }
 
-        @Nullable @Override
+        @Nullable
+        @Override
         public Object toObject(@Nonnull Data data) {
             return serializationService.toObject(data);
         }

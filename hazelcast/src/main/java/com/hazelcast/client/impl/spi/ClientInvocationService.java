@@ -13,69 +13,98 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.client.impl.spi;
 
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 
+import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
-/**
- * Invocation service for Hazelcast clients.
- * <p>
- * Allows remote invocations on different targets like {@link ClientConnection},
- * partition owners or {@link Member} based targets.
- */
 public interface ClientInvocationService {
 
-    /**
-     * @param invocation to be invoked
-     * @param connection to be invoked on
-     * @return true if successfully send to given connection, false otherwise
-     */
-    boolean invokeOnConnection(ClientInvocation invocation, ClientConnection connection);
+    //TODO sancar introduce enums for URGENT and ALLOW_RETRY
+    int USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS = -1;
+    boolean DEFAULT_ALLOW_RETRY_ON_RANDOM = true;
+    boolean DEFAULT_URGENT = false;
 
-    /**
-     * @param invocation  to be invoked
-     * @param partitionId partition id that invocation should go to
-     * @return true if successfully send to partition owner, false otherwise
-     */
-    boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId);
+    Map<Long, ClientInvocation> getUnmodifiableInvocations();
 
-    /**
-     * @param invocation to be invoked
-     * @param uuid       member uuid that invocation should go to
-     * @return true if successfully send the member with given uuid, false otherwise
-     */
-    boolean invokeOnTarget(ClientInvocation invocation, UUID uuid);
+    boolean isBackupAckToClientEnabled();
 
-    /**
-     * Behaviour of this method varies for unisocket and smart client
-     * Unisocket invokes on only available connection
-     * SmartClient randomly picks a connection to invoke on via {@link LoadBalancer}
-     *
-     * @param invocation to be invoked
-     * @return true if successfully send, false otherwise
-     */
-    boolean invoke(ClientInvocation invocation);
+    ClientInvocationFuture invokeOnPartition(ClientMessage clientMessage,
+                                             Object objectName, int partitionId,
+                                             boolean urgent,
+                                             boolean allowRetryOnRandom,
+                                             long invocationTimeoutMillis);
 
-    boolean isRedoOperation();
+    default ClientInvocationFuture invokeOnPartition(ClientMessage clientMessage, Object objectName,
+                                                     int partitionId, boolean urgent) {
+        return invokeOnPartition(clientMessage, objectName, partitionId, urgent, DEFAULT_ALLOW_RETRY_ON_RANDOM,
+                USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
 
-    Consumer<ClientMessage> getResponseHandler();
+    default ClientInvocationFuture invokeOnPartition(ClientMessage clientMessage, Object objectName, int partitionId) {
+        return invokeOnPartition(clientMessage, objectName, partitionId, DEFAULT_URGENT, DEFAULT_ALLOW_RETRY_ON_RANDOM,
+                USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
 
-    /**
-     * This will be called on each connection close.
-     * Note that is different than {@link ConnectionListener#connectionRemoved(Connection)} where `connectionRemoved`
-     * means an authenticated connection is disconnected
-     *
-     * @param connection closed connection
-     */
-    void onConnectionClose(ClientConnection connection);
+    ClientInvocationFuture invokeOnConnection(ClientMessage request, EventHandler handler, Object objectName,
+                                              ClientConnection connection, boolean urgent,
+                                              boolean allowRetryOnRandom, long invocationTimeoutMillis);
+
+    default ClientInvocationFuture invokeOnConnection(ClientMessage clientMessage,
+                                                      EventHandler handler, Object objectName,
+                                                      ClientConnection connection,
+                                                      boolean urgent) {
+        return invokeOnConnection(clientMessage, handler, objectName, connection, urgent,
+                DEFAULT_ALLOW_RETRY_ON_RANDOM, USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+    default ClientInvocationFuture invokeOnConnection(ClientMessage clientMessage,
+                                                      Object objectName,
+                                                      ClientConnection connection,
+                                                      boolean urgent) {
+        return invokeOnConnection(clientMessage, null, objectName, connection, urgent,
+                DEFAULT_ALLOW_RETRY_ON_RANDOM, USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+
+    default ClientInvocationFuture invokeOnConnection(ClientMessage clientMessage, Object objectName,
+                                                      ClientConnection connection) {
+        return invokeOnConnection(clientMessage, null, objectName, connection, DEFAULT_URGENT,
+                DEFAULT_ALLOW_RETRY_ON_RANDOM, USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+    ClientInvocationFuture invokeOnRandom(ClientMessage clientMessage,
+                                          Object objectName,
+                                          boolean urgent,
+                                          boolean allowRetryOnRandom,
+                                          long invocationTimeoutMillis);
+
+
+    default ClientInvocationFuture invokeOnRandom(ClientMessage clientMessage, Object objectName) {
+        return invokeOnRandom(clientMessage, objectName, DEFAULT_URGENT, DEFAULT_ALLOW_RETRY_ON_RANDOM,
+                USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+    default ClientInvocationFuture invokeOnRandom(ClientMessage clientMessage, Object objectName, boolean urgent) {
+        return invokeOnRandom(clientMessage, objectName, urgent, DEFAULT_ALLOW_RETRY_ON_RANDOM,
+                USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+    ClientInvocationFuture invokeOnMember(ClientMessage clientMessage,
+                                          Object objectName, UUID uuid,
+                                          boolean urgent,
+                                          boolean allowRetryOnRandom,
+                                          long invocationTimeoutMillis);
+
+    default ClientInvocationFuture invokeOnMember(ClientMessage clientMessage, Object objectName, UUID uuid) {
+        return invokeOnMember(clientMessage, objectName, uuid, DEFAULT_URGENT, DEFAULT_ALLOW_RETRY_ON_RANDOM,
+                USE_GLOBAL_INVOCATION_TIMEOUT_MILLIS);
+    }
+
+    void handleResponseMessage(ClientMessage message);
 }

@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -165,9 +166,8 @@ public class ClientUserCodeDeploymentService {
             return;
         }
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
-        ClientInvocation invocation = new ClientInvocation(client, request, null);
-        ClientInvocationFuture future = invocation.invokeUrgent();
-        future.get();
+        ClientInvocationService invocationService = client.getInvocationService();
+        invocationService.invokeOnRandom(request, null, true).get();
     }
 
     //testing purposes

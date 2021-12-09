@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
@@ -43,9 +44,15 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 
     private final HazelcastClientInstanceImpl client;
+    private final long invocationTimeoutMillis;
+    private final long invocationRetryPauseMillis;
 
-    public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client) {
+    public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client,
+                                               long invocationTimeoutMillis,
+                                               long invocationRetryPauseMillis) {
         this.client = client;
+        this.invocationTimeoutMillis = invocationTimeoutMillis;
+        this.invocationRetryPauseMillis = invocationRetryPauseMillis;
     }
 
     public HazelcastClientInstanceImpl getClient() {
@@ -107,9 +114,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     public ClientConnection connect() throws Exception {
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        ClientInvocationService invocationContext =  client.getInvocationService();
         long startTimeMillis = System.currentTimeMillis();
-        long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         ClientConfig clientConfig = client.getClientConfig();
         boolean smartRouting = clientConfig.getNetworkConfig().isSmartRouting();
 
@@ -128,7 +134,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
                     throw newOperationTimeoutException(e, invocationTimeoutMillis, startTimeMillis);
                 }
             }
-            Thread.sleep(invocationService.getInvocationRetryPauseMillis());
+            Thread.sleep(invocationRetryPauseMillis);
         }
         throw new HazelcastClientNotActiveException();
     }

@@ -19,12 +19,14 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.ClientResponseHandlerSupplier.AsyncResponseHandler;
 import com.hazelcast.client.impl.spi.impl.ClientResponseHandlerSupplier.DynamicResponseHandler;
 import com.hazelcast.client.impl.spi.impl.ClientResponseHandlerSupplier.SyncResponseHandler;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,6 +40,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -95,10 +98,11 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
                         .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount)
                         .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), "" + dynamic));
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) clientInstanceImpl.getInvocationService();
+        ClientInvocationService context = clientInstanceImpl.getInvocationService();
 
         ClientResponseHandlerSupplier responseHandlerSupplier =
-                new ClientResponseHandlerSupplier(invocationService, clientInstanceImpl.getConcurrencyDetection());
+                new ClientResponseHandlerSupplier(clientInstanceImpl, context,
+                        clientInstanceImpl.getConcurrencyDetection(), mock(ILogger.class));
         return responseHandlerSupplier.get();
     }
 }

@@ -39,8 +39,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -754,8 +754,19 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
+
+    /**
+     * This will be called on each connection close.
+     * Note that is different then {@link ConnectionListener#connectionRemoved(Connection)} where `connectionRemoved`
+     * means an authenticated connection is disconnected
+     *
+     * @param connection closed connection
+     */
     void onConnectionClose(TcpClientConnection connection) {
-        client.getInvocationService().onConnectionClose(connection);
+        for (ClientInvocation invocation : client.getInvocationService().getUnmodifiableInvocations().values()) {
+            invocation.notifyForDeadConnection(connection);
+        }
+
         Address endpoint = connection.getRemoteAddress();
         UUID memberUuid = connection.getRemoteUuid();
         if (endpoint == null) {
@@ -878,7 +889,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {
         Address memberAddress = connection.getInitAddress();
         ClientMessage request = encodeAuthenticationRequest(memberAddress);
-        ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
+        ClientInvocationFuture future = client.getInvocationService().invokeOnConnection(request, null, connection, true);
         try {
             return ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
         } catch (Exception e) {

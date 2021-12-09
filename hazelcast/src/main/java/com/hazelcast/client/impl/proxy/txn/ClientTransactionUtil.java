@@ -17,8 +17,9 @@
 package com.hazelcast.client.impl.proxy.txn;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
 
@@ -47,8 +48,9 @@ public final class ClientTransactionUtil {
     public static ClientMessage invoke(ClientMessage request, Object objectName, HazelcastClientInstanceImpl client,
                                        Connection connection) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, connection);
-            final Future<ClientMessage> future = clientInvocation.invoke();
+            ClientInvocationService invocationService = client.getInvocationService();
+            final Future<ClientMessage> future = invocationService.invokeOnConnection(request, objectName,
+                    (ClientConnection) connection);
             return future.get();
         } catch (Exception e) {
             throw rethrow(e, TRANSACTION_EXCEPTION_WRAPPER);

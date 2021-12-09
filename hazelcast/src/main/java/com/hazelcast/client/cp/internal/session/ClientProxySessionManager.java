@@ -23,8 +23,8 @@ import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec;
 import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
@@ -47,16 +47,19 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 60;
     private static final long SHUTDOWN_WAIT_SLEEP_MILLIS = 10;
 
+    private final ClientInvocationService invocationService;
     private final HazelcastClientInstanceImpl client;
 
-    public ClientProxySessionManager(HazelcastClientInstanceImpl client) {
+    public ClientProxySessionManager(HazelcastClientInstanceImpl client,
+                                     ClientInvocationService invocationService) {
         this.client = client;
+        this.invocationService = invocationService;
     }
 
     @Override
     protected long generateThreadId(RaftGroupId groupId) {
         ClientMessage request = CPSessionGenerateThreadIdCodec.encodeRequest(groupId);
-        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().joinInternal();
+        ClientMessage response = invocationService.invokeOnRandom(request, "sessionManager").joinInternal();
 
         return CPSessionGenerateThreadIdCodec.decodeResponse(response);
     }
@@ -64,7 +67,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     @Override
     protected SessionResponse requestNewSession(RaftGroupId groupId) {
         ClientMessage request = CPSessionCreateSessionCodec.encodeRequest(groupId, client.getName());
-        ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().joinInternal();
+        ClientMessage response = invocationService.invokeOnRandom(request, "sessionManager").joinInternal();
         CPSessionCreateSessionCodec.ResponseParameters params = CPSessionCreateSessionCodec.decodeResponse(response);
         return new SessionResponse(params.sessionId, params.ttlMillis, params.heartbeatMillis);
     }
@@ -77,14 +80,14 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     @Override
     protected InternalCompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
         ClientMessage request = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
-        ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
+        ClientInvocationFuture future = invocationService.invokeOnRandom(request, "sessionManager");
         return new ClientDelegatingFuture<>(future, client.getSerializationService(), clientMessage -> null);
     }
 
     @Override
     protected InternalCompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
         ClientMessage request = CPSessionCloseSessionCodec.encodeRequest(groupId, sessionId);
-        ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
+        ClientInvocationFuture future = invocationService.invokeOnRandom(request, "sessionManager");
         return new ClientDelegatingFuture<>(future, client.getSerializationService(), CPSessionCloseSessionCodec::decodeResponse);
     }
 

@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -40,12 +39,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public class ClientCacheInvalidationMetaDataFetcher extends InvalidationMetaDataFetcher {
 
     private final ClientClusterService clusterService;
-    private final HazelcastClientInstanceImpl clientImpl;
+    private final ClientInvocationService invocationService;
 
     public ClientCacheInvalidationMetaDataFetcher(ClientContext clientContext) {
         super(clientContext.getLoggingService().getLogger(ClientCacheInvalidationMetaDataFetcher.class));
         this.clusterService = clientContext.getClusterService();
-        this.clientImpl = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+        this.invocationService = clientContext.getInvocationService();
     }
 
     @Override
@@ -56,8 +55,7 @@ public class ClientCacheInvalidationMetaDataFetcher extends InvalidationMetaData
     @Override
     protected InternalCompletableFuture fetchMetadataOf(Member member, List<String> names) {
         ClientMessage message = encodeRequest(names, member.getUuid());
-        ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, member.getUuid());
-        return invocation.invoke();
+        return invocationService.invokeOnMember(message, null, member.getUuid());
     }
 
     @Override

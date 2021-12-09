@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
@@ -171,7 +171,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 } else {
                     invalidateNearCache(ncKey);
                 }
-            }, getClient().getTaskScheduler());
+            }, getContext().getTaskScheduler());
         }
 
         return new ClientDelegatingFuture<>(getAsyncInternal(key),

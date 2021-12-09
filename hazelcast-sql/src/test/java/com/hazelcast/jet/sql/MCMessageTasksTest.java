@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,15 +36,15 @@ public class MCMessageTasksTest extends SqlTestSupport {
 
     @Test
     public void test_sqlMappingDdl_nonExistingMap() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        HazelcastClientInstanceImpl clientImpl = getClientImpl();
+        ClientInvocationFuture invocationFuture = clientImpl.getInvocationService().invokeOnRandom(
                 SqlMappingDdlCodec.encodeRequest(randomMapName()),
                 null
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                clientImpl.getSerializationService(),
                 SqlMappingDdlCodec::decodeResponse
         );
 
@@ -57,15 +57,15 @@ public class MCMessageTasksTest extends SqlTestSupport {
         String name = randomMapName();
         instance().getMap(name).put(1, "value-1");
 
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
+        HazelcastClientInstanceImpl clientImpl = getClientImpl();
+        ClientInvocationFuture invocationFuture = clientImpl.getInvocationService().invokeOnRandom(
                 SqlMappingDdlCodec.encodeRequest(name),
                 null
         );
 
         ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+                invocationFuture,
+                clientImpl.getSerializationService(),
                 SqlMappingDdlCodec::decodeResponse
         );
 

@@ -30,8 +30,7 @@ import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -141,7 +140,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         Data element = toData(item);
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(request, partitionId);
             return new ClientDelegatingFuture<>(future, getSerializationService(), RingbufferAddCodec::decodeResponse);
         } catch (Exception e) {
             throw rethrow(e);
@@ -169,7 +168,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(request, partitionId);
             return new ClientDelegatingFuture<>(future, getSerializationService(), RingbufferAddAllCodec::decodeResponse);
         } catch (Exception e) {
             throw rethrow(e);
@@ -200,7 +199,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
                 toData(filter));
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            ClientInvocationFuture invocationFuture = invokeOnPartitionAsync(request, partitionId);
             return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
                     readManyAsyncResponseDecoder);
         } catch (Exception e) {
@@ -216,7 +215,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     protected <T> T invoke(ClientMessage clientMessage, int partitionId) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            ClientInvocationFuture future = invokeOnPartitionAsync(clientMessage, partitionId);
             return (T) future.joinInternal();
         } catch (StaleSequenceException e) {
             long l = headSequence();

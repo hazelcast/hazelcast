@@ -29,7 +29,8 @@ import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -81,9 +82,9 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     public JobStatus getStatus0() {
         assert !isLightJob();
-        return callAndRetryIfTargetNotFound(()  -> {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
+            ClientMessage response = invokeOnMember(request, masterId()).get();
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
         });
@@ -93,9 +94,9 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     public JobSuspensionCause getSuspensionCause() {
         checkNotLightJob("suspensionCause");
-        return callAndRetryIfTargetNotFound(()  -> {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSuspensionCauseCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
+            ClientMessage response = invokeOnMember(request, masterId()).get();
             Data data = JetGetJobSuspensionCauseCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
@@ -105,9 +106,9 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     public JobMetrics getMetrics() {
         checkNotLightJob("metrics");
-        return callAndRetryIfTargetNotFound(()  -> {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
+            ClientMessage response = invokeOnMember(request, masterId()).get();
             Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(metricsData));
         });
@@ -127,22 +128,19 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, lightJobCoordinator);
-        return invocation(request, coordinatorId()).invoke().thenApply(c -> null);
+        return invokeOnMember(request, coordinatorId()).thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), lightJobCoordinator);
-        ClientInvocation invocation = invocation(request, coordinatorId());
-        // this invocation should never time out, as the job may be running for a long time
-        invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
-        return invocation.invoke().thenApply(c -> null);
+        return invokeOnMember(request, coordinatorId()).thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
         ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), lightJobCoordinator);
-        return invocation(request, coordinatorId()).invoke().thenApply(c -> null);
+        return invokeOnMember(request, coordinatorId()).thenApply(c -> null);
     }
 
     @Override
@@ -150,7 +148,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         checkNotLightJob("resume");
         ClientMessage request = JetResumeJobCodec.encodeRequest(getId());
         try {
-            invocation(request, masterId()).invoke().get();
+            invokeOnMember(request, masterId()).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -170,7 +168,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         checkNotLightJob("export snapshot");
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {
-            invocation(request, masterId()).invoke().get();
+            invokeOnMember(request, masterId()).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -181,7 +179,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), lightJobCoordinator);
-            ClientMessage response = invocation(request, coordinatorId()).invoke().get();
+            ClientMessage response = invokeOnMember(request, coordinatorId()).get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });
     }
@@ -190,13 +188,14 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     protected JobConfig doGetJobConfig() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
+            ClientMessage response = invokeOnMember(request, masterId()).get();
             Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     protected UUID masterId() {
         Member masterMember = container().getClientClusterService().getMasterMember();
         if (masterMember == null) {
@@ -220,14 +219,14 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         return container().getLifecycleService().isRunning();
     }
 
-    private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {
-        return new ClientInvocation(
-                container(), request, "jobId=" + getIdString(), invocationUuid);
+    private ClientInvocationFuture invokeOnMember(ClientMessage request, UUID invocationUuid) {
+        ClientInvocationService invocationService = container().getInvocationService();
+        return invocationService.invokeOnMember(request, "jobId=" + getIdString(), invocationUuid);
     }
 
     private <T> T callAndRetryIfTargetNotFound(Callable<T> action) {
         long timeLimit = System.nanoTime() + RETRY_TIME_NS;
-        for (;;) {
+        for (; ; ) {
             try {
                 return action.call();
             } catch (Exception e) {

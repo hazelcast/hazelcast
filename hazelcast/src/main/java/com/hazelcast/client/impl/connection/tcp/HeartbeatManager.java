@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
@@ -41,7 +41,7 @@ public final class HeartbeatManager {
 
     }
 
-    public static void start(HazelcastClientInstanceImpl client,
+    public static void start(ClientInvocationService invocationService,
                              TaskScheduler taskScheduler,
                              ILogger logger,
                              long heartbeatIntervalMillis,
@@ -63,11 +63,9 @@ public final class HeartbeatManager {
 
                 if (now - connection.lastWriteTimeMillis() > heartbeatIntervalMillis) {
                     ClientMessage request = ClientPingCodec.encodeRequest();
-                    ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
-                    invocation.invokeUrgent();
+                    invocationService.invokeOnConnection(request, null, (ClientConnection) connection, true);
                 }
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, MILLISECONDS);
     }
-
 }

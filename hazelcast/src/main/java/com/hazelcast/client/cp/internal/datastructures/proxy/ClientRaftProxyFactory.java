@@ -22,12 +22,10 @@ import com.hazelcast.client.cp.internal.datastructures.countdownlatch.CountDownL
 import com.hazelcast.client.cp.internal.datastructures.lock.FencedLockProxy;
 import com.hazelcast.client.cp.internal.datastructures.semaphore.SessionAwareSemaphoreProxy;
 import com.hazelcast.client.cp.internal.datastructures.semaphore.SessionlessSemaphoreProxy;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -50,13 +48,11 @@ import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
  */
 public class ClientRaftProxyFactory {
 
-    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, FencedLockProxy> lockProxies
             = new ConcurrentHashMap<String, FencedLockProxy>();
     private ClientContext context;
 
-    public ClientRaftProxyFactory(HazelcastClientInstanceImpl client) {
-        this.client = client;
+    public ClientRaftProxyFactory() {
     }
 
     public void init(ClientContext context) {
@@ -111,7 +107,7 @@ public class ClientRaftProxyFactory {
 
     private ISemaphore createSemaphore(RaftGroupId groupId, String proxyName, String objectName) {
         ClientMessage request = SemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
+        ClientMessage response = context.getInvocationService().invokeOnRandom(request, objectName).join();
         boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response);
 
         return jdkCompatible
@@ -121,7 +117,7 @@ public class ClientRaftProxyFactory {
 
     private RaftGroupId getGroupId(String proxyName, String objectName) {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
-        ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
+        ClientMessage response = context.getInvocationService().invokeOnRandom(request, objectName).joinInternal();
         return CPGroupCreateCPGroupCodec.decodeResponse(response);
     }
 

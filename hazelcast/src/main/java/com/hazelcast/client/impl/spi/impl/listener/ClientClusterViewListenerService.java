@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
@@ -123,18 +123,17 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             return;
         }
         ClientMessage clientMessage = ClientAddClusterViewListenerCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
         ClusterViewListenerHandler handler = new ClusterViewListenerHandler(connection);
-        invocation.setEventHandler(handler);
         handler.beforeListenerRegister(connection);
-        invocation.invokeUrgent().whenCompleteAsync((message, throwable) -> {
-            if (message != null) {
-                handler.onListenerRegister(connection);
-                return;
-            }
-            //completes with exception, listener needs to be reregistered
-            tryReregisterToRandomConnection(connection);
-        });
+        client.getInvocationService().invokeOnConnection(clientMessage, handler, null, (ClientConnection) connection, true)
+                .whenCompleteAsync((message, throwable) -> {
+                    if (message != null) {
+                        handler.onListenerRegister(connection);
+                        return;
+                    }
+                    //completes with exception, listener needs to be reregistered
+                    tryReregisterToRandomConnection(connection);
+                });
     }
 
 }

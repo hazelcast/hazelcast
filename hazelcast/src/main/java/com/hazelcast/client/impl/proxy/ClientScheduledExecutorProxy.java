@@ -24,8 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.serialization.Data;
@@ -304,7 +303,7 @@ public class ClientScheduledExecutorProxy
     @Override
     public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         ClientMessage request = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(getName());
-        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        ClientInvocationFuture future = invokeAsync(request);
         ClientMessage response;
         try {
             response = future.get();
@@ -368,7 +367,7 @@ public class ClientScheduledExecutorProxy
     }
 
     private int getKeyPartitionId(Object key) {
-        return getClient().getPartitionService().getPartition(key).getPartitionId();
+        return getContext().getPartitionService().getPartitionId(key);
     }
 
     private int getTaskOrKeyPartitionId(Callable task, Object key) {
@@ -419,11 +418,7 @@ public class ClientScheduledExecutorProxy
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()), definition.isAutoDisposable());
-        try {
-            new ClientInvocation(getClient(), request, getName(), partitionId).invoke().get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        invokeOnPartitionAsync(request, partitionId).join();
         return createFutureProxy(partitionId, name);
     }
 
@@ -436,11 +431,7 @@ public class ClientScheduledExecutorProxy
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()), definition.isAutoDisposable());
-        try {
-            new ClientInvocation(getClient(), request, getName(), member.getUuid()).invoke().get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        invokeOnMemberAsync(request, member.getUuid()).join();
         return createFutureProxy(member.getUuid(), name);
     }
 
@@ -448,7 +439,7 @@ public class ClientScheduledExecutorProxy
                                                            ClientMessageDecoder clientMessageDecoder,
                                                            UUID uuid) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), uuid).invoke();
+            ClientInvocationFuture future = invokeOnMemberAsync(clientMessage, uuid);
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);

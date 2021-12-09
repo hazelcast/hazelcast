@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi.invocation;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -198,8 +199,9 @@ public class ClientInvocationTest extends ClientTestSupport {
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
         int ownerlessPartition = 4000;
-        ClientInvocation invocation = new ClientInvocation(client, request, "map", ownerlessPartition);
-        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()));
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnPartition(request, "map", ownerlessPartition);
+        assertEquals(0, MapSizeCodec.decodeResponse(future.get()));
     }
 
     @Test
@@ -209,8 +211,9 @@ public class ClientInvocationTest extends ClientTestSupport {
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
-        ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableTarget);
-        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()));
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnMember(request, "map", unavailableTarget);
+        assertEquals(0, MapSizeCodec.decodeResponse(future.get()));
     }
 
     @Test(expected = OperationTimeoutException.class)
@@ -222,9 +225,10 @@ public class ClientInvocationTest extends ClientTestSupport {
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
         int ownerlessPartition = 4000;
-        ClientInvocation invocation = new ClientInvocation(client, request, "map", ownerlessPartition);
-        invocation.disallowRetryOnRandom();
-        invocation.invoke().joinInternal();
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnPartition(request, "map", ownerlessPartition
+                , false, true, Long.MAX_VALUE);
+        future.joinInternal();
     }
 
     @Test(expected = OperationTimeoutException.class)
@@ -236,8 +240,9 @@ public class ClientInvocationTest extends ClientTestSupport {
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient(config));
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
-        ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableTarget);
-        invocation.disallowRetryOnRandom();
-        invocation.invoke().joinInternal();
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture future = invocationService.invokeOnMember(request, "map", unavailableTarget
+                , false, true, Long.MAX_VALUE);
+        future.joinInternal();
     }
 }

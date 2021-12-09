@@ -18,13 +18,12 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractCacheIterator;
 import com.hazelcast.cache.impl.ICacheInternal;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 
@@ -74,14 +73,13 @@ public class ClientCacheIterator<K, V> extends AbstractCacheIterator<K, V>
     }
 
     protected List fetch() {
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         String name = cacheProxy.getPrefixedName();
+        ClientInvocationService invocationService = context.getInvocationService();
         if (prefetchValues) {
             ClientMessage request = CacheIterateEntriesCodec.encodeRequest(
                     name, encodePointers(pointers), fetchSize);
             try {
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
-                ClientInvocationFuture future = clientInvocation.invoke();
+                ClientInvocationFuture future = invocationService.invokeOnPartition(request, name, partitionIndex);
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
                         future.get());
                 IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
@@ -93,8 +91,7 @@ public class ClientCacheIterator<K, V> extends AbstractCacheIterator<K, V>
         } else {
             ClientMessage request = CacheIterateCodec.encodeRequest(name, encodePointers(pointers), fetchSize);
             try {
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
-                ClientInvocationFuture future = clientInvocation.invoke();
+                ClientInvocationFuture future = invocationService.invokeOnPartition(request, name, partitionIndex);
                 CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
                 IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
                 setIterationPointers(responseParameters.keys, pointers);

@@ -80,7 +80,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).unblockTo(address);
     }
 
-    protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+    public static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
     }

@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.map.impl.iterator;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -63,20 +62,19 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
 
     @Override
     protected List fetch() {
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (prefetchValues) {
-            return fetchWithPrefetchValues(client);
+            return fetchWithPrefetchValues();
         } else {
-            return fetchWithoutPrefetchValues(client);
+            return fetchWithoutPrefetchValues();
         }
     }
 
-    private List fetchWithoutPrefetchValues(HazelcastClientInstanceImpl client) {
+    private List fetchWithoutPrefetchValues() {
         ClientMessage request = MapFetchKeysCodec.encodeRequest(
                 mapProxy.getName(), encodePointers(pointers), fetchSize);
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
+        ClientInvocationService invocationService = context.getInvocationService();
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture f = invocationService.invokeOnPartition(request, mapProxy.getName(), partitionId);
             MapFetchKeysCodec.ResponseParameters responseParameters = MapFetchKeysCodec.decodeResponse(f.get());
             IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
             setIterationPointers(responseParameters.keys, pointers);
@@ -86,12 +84,12 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
         }
     }
 
-    private List fetchWithPrefetchValues(HazelcastClientInstanceImpl client) {
+    private List fetchWithPrefetchValues() {
         ClientMessage request = MapFetchEntriesCodec.encodeRequest(
                 mapProxy.getName(), encodePointers(pointers), fetchSize);
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
+        ClientInvocationService invocationService = context.getInvocationService();
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture f = invocationService.invokeOnPartition(request, mapProxy.getName(), partitionId);
             MapFetchEntriesCodec.ResponseParameters responseParameters = MapFetchEntriesCodec.decodeResponse(f.get());
             IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
             setIterationPointers(responseParameters.entries, pointers);

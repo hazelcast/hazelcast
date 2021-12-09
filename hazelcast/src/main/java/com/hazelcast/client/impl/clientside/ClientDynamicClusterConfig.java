@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
@@ -40,8 +41,8 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -111,12 +112,16 @@ public class ClientDynamicClusterConfig extends Config {
     private static final String UNSUPPORTED_ERROR_MESSAGE =
             "Client config object only supports adding new data structure configurations";
 
-    private final HazelcastClientInstanceImpl instance;
     private final SerializationService serializationService;
+    private final ClientInvocationService invocationService;
+    private final ClientConfig clientConfig;
 
-    public ClientDynamicClusterConfig(HazelcastClientInstanceImpl instance) {
-        this.instance = instance;
-        this.serializationService = instance.getSerializationService();
+    public ClientDynamicClusterConfig(SerializationService serializationService,
+                                      ClientInvocationService invocationService,
+                                      ClientConfig clientConfig) {
+        this.serializationService = serializationService;
+        this.invocationService = invocationService;
+        this.clientConfig = clientConfig;
     }
 
     @Override
@@ -257,7 +262,7 @@ public class ClientDynamicClusterConfig extends Config {
         if (ringbufferConfig.getRingbufferStoreConfig() != null
                 && ringbufferConfig.getRingbufferStoreConfig().isEnabled()) {
             RingbufferStoreConfig storeConfig = ringbufferConfig.getRingbufferStoreConfig();
-            ringbufferStoreConfig = RingbufferStoreConfigHolder.of(storeConfig, instance.getSerializationService());
+            ringbufferStoreConfig = RingbufferStoreConfigHolder.of(storeConfig, serializationService);
         }
         ClientMessage request = DynamicConfigAddRingbufferConfigCodec.encodeRequest(
                 ringbufferConfig.getName(), ringbufferConfig.getCapacity(), ringbufferConfig.getBackupCount(),
@@ -435,7 +440,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public String getClusterName() {
-        return instance.getClientConfig().getClusterName();
+        return clientConfig.getClusterName();
     }
 
     @Override
@@ -816,7 +821,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public SerializationConfig getSerializationConfig() {
-        return instance.getClientConfig().getSerializationConfig();
+        return clientConfig.getSerializationConfig();
     }
 
     @Override
@@ -1096,13 +1101,12 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public String toString() {
-        return "DynamicClusterConfig{instance=" + instance + "}";
+        return "DynamicClusterConfig{instance=" + getInstanceName() + "}";
     }
 
     private void invoke(ClientMessage request) {
         try {
-            ClientInvocation invocation = new ClientInvocation(instance, request, null);
-            ClientInvocationFuture future = invocation.invoke();
+            ClientInvocationFuture future = invocationService.invokeOnRandom(request, null);
             future.get();
         } catch (Exception e) {
             throw rethrow(e);

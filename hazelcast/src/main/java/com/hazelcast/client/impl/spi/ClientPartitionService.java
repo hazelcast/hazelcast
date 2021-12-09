@@ -42,6 +42,7 @@ public interface ClientPartitionService {
     int getPartitionId(@Nonnull Data key);
 
     /**
+     * //TODO sancar delet this to avoid dependency to serialization service from partition service
      * @return the partition id associated with given Object
      * @throws com.hazelcast.spi.exception.RetryableHazelcastException if partition table is not arrived yet
      */

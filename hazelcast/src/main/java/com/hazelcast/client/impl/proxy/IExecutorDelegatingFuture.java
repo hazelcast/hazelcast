@@ -18,13 +18,12 @@ package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 
 import java.util.UUID;
@@ -93,24 +92,22 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
     private boolean invokeCancelRequest(boolean mayInterruptIfRunning) throws InterruptedException, ExecutionException {
         waitForRequestToBeSend();
 
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        ClientInvocationService invocationService = context.getInvocationService();
         if (partitionId > -1) {
             ClientMessage request =
                     ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, mayInterruptIfRunning);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture f = invocationService.invokeOnPartition(request, objectName, partitionId);
             return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get());
         } else {
             ClientMessage request =
                     ExecutorServiceCancelOnMemberCodec.encodeRequest(uuid, member.getUuid(), mayInterruptIfRunning);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, member.getUuid());
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture f = invocationService.invokeOnMember(request, objectName, member.getUuid());
             return ExecutorServiceCancelOnMemberCodec.decodeResponse(f.get());
         }
     }
 
     private void waitForRequestToBeSend() throws InterruptedException {
         ClientInvocationFuture future = getFuture();
-        future.getInvocation().waitInvoked();
+        future.waitInvoked();
     }
 }

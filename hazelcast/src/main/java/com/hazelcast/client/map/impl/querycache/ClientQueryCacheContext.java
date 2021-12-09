@@ -65,7 +65,7 @@ public class ClientQueryCacheContext implements QueryCacheContext {
         this.queryCacheEventService = new ClientQueryCacheEventService(client);
         this.queryCacheConfigurator = new ClientQueryCacheConfigurator(client.getClientConfig(), queryCacheEventService);
         this.queryCacheScheduler = new ClientQueryCacheScheduler(client.getTaskScheduler());
-        this.invokerWrapper = new ClientInvokerWrapper(this, client);
+        this.invokerWrapper = new ClientInvokerWrapper(this, client.getInvocationService());
         this.subscriberContext = new ClientSubscriberContext(this);
     }
 

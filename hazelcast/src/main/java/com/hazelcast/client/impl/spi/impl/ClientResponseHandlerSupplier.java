@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.MutableInteger;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec.EXCEPTION_MESSAGE_TYPE;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
@@ -70,7 +70,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     };
 
-    private final ClientInvocationServiceImpl invocationService;
+    private final ClientInvocationService invocationService;
     private final ResponseThread[] responseThreads;
     private final HazelcastClientInstanceImpl client;
 
@@ -78,17 +78,18 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private final Consumer<ClientMessage> responseHandler;
     private final boolean responseThreadsDynamic;
     private final ConcurrencyDetection concurrencyDetection;
-    private final ThreadAffinity threadAffinity = newSystemThreadAffinity("hazelcast.client.response.thread.affinity");
 
-    public ClientResponseHandlerSupplier(ClientInvocationServiceImpl invocationService,
-                                         ConcurrencyDetection concurrencyDetection) {
+    public ClientResponseHandlerSupplier(HazelcastClientInstanceImpl client,
+                                         ClientInvocationService invocationService,
+                                         ConcurrencyDetection concurrencyDetection, ILogger logger) {
         this.invocationService = invocationService;
         this.concurrencyDetection = concurrencyDetection;
-        this.client = invocationService.client;
-        this.logger = invocationService.invocationLogger;
+        this.client = client;
+        this.logger = logger;
 
         HazelcastProperties properties = client.getProperties();
         int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
+        ThreadAffinity threadAffinity = newSystemThreadAffinity("hazelcast.client.response.thread.affinity");
         if (threadAffinity.isEnabled()) {
             responseThreadCount = threadAffinity.getThreadCount();
         }
@@ -100,7 +101,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         logger.info("Running with " + responseThreadCount + " response threads, dynamic=" + responseThreadsDynamic);
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
-            responseThreads[k] = new ResponseThread(invocationService.client.getName() + ".responsethread-" + k + "-");
+            responseThreads[k] = new ResponseThread(client.getName() + ".responsethread-" + k + "-");
             responseThreads[k].setThreadAffinity(threadAffinity);
         }
 
@@ -127,6 +128,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
 
     public void shutdown() {
         for (ResponseThread responseThread : responseThreads) {
+            responseThread.isAlive = false;
             responseThread.interrupt();
         }
     }
@@ -152,19 +154,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             return;
         }
 
-        long correlationId = message.getCorrelationId();
-
-        ClientInvocation invocation = invocationService.getInvocation(correlationId);
-        if (invocation == null) {
-            logger.warning("No call for callId: " + correlationId + ", response: " + message);
-            return;
-        }
-
-        if (EXCEPTION_MESSAGE_TYPE == message.getMessageType()) {
-            invocation.notifyException(correlationId , client.getClientExceptionFactory().createException(message));
-        } else {
-            invocation.notify(message);
-        }
+        invocationService.handleResponseMessage(message);
     }
 
     private ResponseThread nextResponseThread() {
@@ -177,6 +167,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     }
 
     private class ResponseThread extends HazelcastManagedThread {
+        volatile boolean isAlive;
         private final BlockingQueue<ClientMessage> responseQueue;
         private final AtomicBoolean started = new AtomicBoolean();
 
@@ -194,12 +185,12 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             } catch (Throwable t) {
-                invocationService.invocationLogger.severe(t);
+                logger.severe(t);
             }
         }
 
         private void doRun() {
-            while (!invocationService.isShutdown()) {
+            while (!isAlive) {
                 ClientMessage response;
                 try {
                     response = responseQueue.take();
@@ -239,7 +230,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     }
 
     // dynamically switches between direct processing on io thread and processing on
-// response thread based on if concurrency is detected
+    // response thread based on if concurrency is detected
     class DynamicResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {

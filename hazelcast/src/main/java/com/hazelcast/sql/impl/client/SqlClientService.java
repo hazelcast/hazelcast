@@ -24,8 +24,8 @@ import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -122,8 +122,8 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
-        SqlClientResult res,
-        ClientMessage message
+            SqlClientResult res,
+            ClientMessage message
     ) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
@@ -179,7 +179,7 @@ public class SqlClientService implements SqlService {
      * Close remote query cursor.
      *
      * @param connection Connection.
-     * @param queryId Query ID.
+     * @param queryId    Query ID.
      */
     void close(Connection connection, QueryId queryId) {
         try {
@@ -222,7 +222,7 @@ public class SqlClientService implements SqlService {
             return getSerializationService().toData(parameter);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
+                    QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
             );
         }
     }
@@ -252,9 +252,8 @@ public class SqlClientService implements SqlService {
     }
 
     private ClientInvocationFuture invokeAsync(ClientMessage request, Connection connection) {
-        ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
-
-        return invocation.invoke();
+        ClientInvocationService invocationService = client.getInvocationService();
+        return invocationService.invokeOnConnection(request, null, (ClientConnection) connection);
     }
 
     private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
@@ -280,8 +279,8 @@ public class SqlClientService implements SqlService {
     private RuntimeException rethrow(Throwable cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
-                QueryException.memberConnection(connection.getRemoteAddress()),
-                getClientId()
+                    QueryException.memberConnection(connection.getRemoteAddress()),
+                    getClientId()
             );
         }
 
@@ -299,17 +298,18 @@ public class SqlClientService implements SqlService {
 
     /**
      * Gets a SQL Mapping suggestion for the given IMap name.
-     *
+     * <p>
      * Used by Management Center.
      */
     @Nonnull
     public CompletableFuture<String> mappingDdl(Member member, String mapName) {
         checkNotNull(mapName);
 
-        ClientInvocation invocation = new ClientInvocation(client, SqlMappingDdlCodec.encodeRequest(mapName),
+        ClientInvocationService invocationService = client.getInvocationService();
+        ClientInvocationFuture invocationFuture = invocationService.invokeOnMember(SqlMappingDdlCodec.encodeRequest(mapName),
                 null, member.getUuid());
 
-        return new ClientDelegatingFuture<>(invocation.invoke(), client.getSerializationService(),
+        return new ClientDelegatingFuture<>(invocationFuture, client.getSerializationService(),
                 SqlMappingDdlCodec::decodeResponse);
     }
 }

@@ -31,8 +31,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec.
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -383,7 +382,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public InternalCompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = invoke(request, partitionId);
         return new ClientDelegatingFuture<>(fut, getSerializationService(),
                 eventJournalSubscribeResponseDecoder);
     }
@@ -404,7 +403,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         final SerializationService ss = getSerializationService();
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
                 nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = invoke(request, partitionId);
         return new ClientDelegatingFuture<>(fut, ss, eventJournalReadResponseDecoder);
     }
 

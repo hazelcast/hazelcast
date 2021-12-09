@@ -122,7 +122,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private final HazelcastInstance client;
 
     public ClientConsoleApp(@Nonnull HazelcastInstance client) {
-       this(client, null);
+        this(client, null);
     }
 
     public ClientConsoleApp(@Nonnull HazelcastInstance client, @Nullable PrintWriter writer) {

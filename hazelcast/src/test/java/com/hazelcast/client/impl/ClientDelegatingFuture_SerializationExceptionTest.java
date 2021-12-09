@@ -18,8 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -41,29 +40,20 @@ import static org.mockito.Mockito.mock;
 public class ClientDelegatingFuture_SerializationExceptionTest
         extends DelegatingCompletableFuture_SerializationExceptionTest {
 
-    private ClientMessage request;
-    private ClientMessage response;
-    private ILogger logger;
-    private SerializationService serializationService;
-    private Data key;
-    private Data value;
-    private ClientInvocationFuture invocationFuture;
     private ClientDelegatingFuture<Object> delegatingFuture;
-    private CallIdSequence callIdSequence;
 
     @Before
     public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
-        key = serializationService.toData("key");
-        value = invalidData;
-        logger = mock(ILogger.class);
-        request = MapGetCodec.encodeRequest("test", key, 1L);
-        response = MapGetCodec.encodeResponse(value);
-        callIdSequence = mock(CallIdSequence.class);
-        invocationFuture = new ClientInvocationFuture(mock(ClientInvocation.class),
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Data key = serializationService.toData("key");
+        ILogger logger = mock(ILogger.class);
+        ClientMessage request = MapGetCodec.encodeRequest("test", key, 1L);
+        ClientMessage response = MapGetCodec.encodeResponse(invalidData);
+        CallIdSequence callIdSequence = mock(CallIdSequence.class);
+        ClientInvocationFuture invocationFuture = new ClientInvocationFuture(() -> false,
                 request,
                 logger,
-                callIdSequence);
+                callIdSequence, Long.MAX_VALUE);
         invocationFuture.complete(response);
         delegatingFuture = new ClientDelegatingFuture<>(invocationFuture, serializationService,
                 MapGetCodec::decodeResponse, true);

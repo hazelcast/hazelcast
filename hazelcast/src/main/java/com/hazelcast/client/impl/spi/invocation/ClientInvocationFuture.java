@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi.invocation;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,18 +40,23 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationFuture.retu
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
+    //TODO sancar remove this dependency
     private final ClientMessage request;
-    private final ClientInvocation invocation;
     private final CallIdSequence callIdSequence;
+    private final BooleanSupplier isRunning;
+    private final long invocationRetryPauseMillis;
+    private volatile boolean invoked;
 
-    public ClientInvocationFuture(ClientInvocation invocation,
+    public ClientInvocationFuture(BooleanSupplier isRunning,
                                   ClientMessage request,
                                   ILogger logger,
-                                  CallIdSequence callIdSequence) {
+                                  CallIdSequence callIdSequence,
+                                  long invocationRetryPauseMillis) {
         super(logger);
         this.request = request;
-        this.invocation = invocation;
         this.callIdSequence = callIdSequence;
+        this.isRunning = isRunning;
+        this.invocationRetryPauseMillis = invocationRetryPauseMillis;
     }
 
     @Override
@@ -78,10 +84,21 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     protected Exception wrapToInstanceNotActiveException(RejectedExecutionException e) {
-        if (!invocation.lifecycleService.isRunning()) {
+        if (!isRunning.getAsBoolean()) {
             return new HazelcastClientNotActiveException("Client is shut down", e);
         }
         return e;
+    }
+
+    void invoked() {
+        invoked = true;
+    }
+
+    public void waitInvoked() throws InterruptedException {
+        //it could be either invoked or cancelled before invoked
+        while (!invoked && !isDone()) {
+            Thread.sleep(invocationRetryPauseMillis);
+        }
     }
 
     @Override
@@ -93,10 +110,6 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     @Override
     public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
         return returnOrThrowWithGetConventions(response);
-    }
-
-    public ClientInvocation getInvocation() {
-        return invocation;
     }
 
     @Override

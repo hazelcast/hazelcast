@@ -16,13 +16,12 @@
 
 package com.hazelcast.client.map.impl.iterator;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.invocation.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.ClientInvocationService;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -74,16 +73,15 @@ public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPa
 
     @Override
     protected List<Data> fetch() {
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        ClientInvocationService invocationService = context.getInvocationService();
         ClientMessage request = MapFetchWithQueryCodec.encodeRequest(
                 mapProxy.getName(),
                 encodePointers(pointers),
                 fetchSize,
                 getSerializationService().toData(query.getProjection()),
                 getSerializationService().toData(query.getPredicate()));
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
+        ClientInvocationFuture f = invocationService.invokeOnPartition(request, mapProxy.getName(), partitionId);
         try {
-            ClientInvocationFuture f = clientInvocation.invoke();
             MapFetchWithQueryCodec.ResponseParameters responseParameters = MapFetchWithQueryCodec.decodeResponse(f.get());
             List<Data> results = responseParameters.results;
             IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);

@@ -17,13 +17,11 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
@@ -36,21 +34,26 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * The {@link ClientPartitionService} implementation.
  */
 public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
-    private final HazelcastClientInstanceImpl client;
+    private final Function<UUID, Member> uuidToMemberFunction;
+    private final SerializationService serializationService;
     private final ILogger logger;
     private final AtomicReference<PartitionTable> partitionTable =
             new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
     private final AtomicInteger partitionCount = new AtomicInteger(0);
 
-    public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
-        this.client = client;
-        this.logger = client.getLoggingService().getLogger(ClientPartitionService.class);
+    public ClientPartitionServiceImpl(Function<UUID, Member> uuidToMemberFunction,
+                                      SerializationService serializationService,
+                                      ILogger logger) {
+        this.uuidToMemberFunction = uuidToMemberFunction;
+        this.serializationService = serializationService;
+        this.logger = logger;
     }
 
     private static class PartitionTable {
@@ -163,7 +166,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     @Override
     public int getPartitionId(@Nonnull Object key) {
-        final Data data = client.getSerializationService().toData(key);
+        final Data data = serializationService.toData(key);
         return getPartitionId(data);
     }
 
@@ -205,13 +208,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public Member getOwner() {
             UUID owner = getPartitionOwner(partitionId);
-            if (owner == null) {
-                ClientMessage message = ClientTriggerPartitionAssignmentCodec.encodeRequest();
-                ClientInvocation invocation = new ClientInvocation(client, message, null);
-                invocation.invoke();
-                return null;
-            }
-            return client.getClientClusterService().getMember(owner);
+            return uuidToMemberFunction.apply(owner);
         }
 
         @Override

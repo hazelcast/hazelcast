@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi.invocation;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
@@ -59,28 +59,23 @@ public class ClientInvocationFutureTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private ClientMessage request;
     private ClientMessage response;
-    private ILogger logger;
-    private SerializationService serializationService;
-    private Data key;
-    private Data value;
     private InternalCompletableFuture invocationFuture;
     private CallIdSequence callIdSequence;
 
     @Before
     public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
-        key = serializationService.toData("key");
-        value = serializationService.toData("value");
-        logger = mock(ILogger.class);
-        request = MapGetCodec.encodeRequest("test", key, 1L);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Data key = serializationService.toData("key");
+        Data value = serializationService.toData("value");
+        ILogger logger = mock(ILogger.class);
+        ClientMessage request = MapGetCodec.encodeRequest("test", key, 1L);
         response = MapGetCodec.encodeResponse(value);
         callIdSequence = mock(CallIdSequence.class);
-        invocationFuture = new ClientInvocationFuture(mock(ClientInvocation.class),
+        invocationFuture = new ClientInvocationFuture(() -> true,
                 request,
                 logger,
-                callIdSequence);
+                callIdSequence, Long.MAX_VALUE);
     }
 
     @Test

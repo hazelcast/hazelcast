@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.spi;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheInvalidationMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.ClientExtension;
+import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
@@ -68,6 +70,8 @@ public class ClientContext {
     private final ClientTransactionManagerService transactionManager;
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
+    private final ClientProxySessionManager proxySessionManager;
+    private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
         this.name = client.getName();
@@ -87,7 +91,8 @@ public class ClientContext {
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
         this.clientExtension = client.getClientExtension();
-
+        this.proxySessionManager = client.getProxySessionManager();
+        this.lockReferenceIdGenerator = client.getLockReferenceIdGenerator();
         registerDisposalTasksTo(client);
     }
 
@@ -210,6 +215,14 @@ public class ClientContext {
 
     public ClientConfig getClientConfig() {
         return clientConfig;
+    }
+
+    public ClientProxySessionManager getProxySessionManager() {
+        return proxySessionManager;
+    }
+
+    public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {
+        return lockReferenceIdGenerator;
     }
 
     public boolean isActive() {

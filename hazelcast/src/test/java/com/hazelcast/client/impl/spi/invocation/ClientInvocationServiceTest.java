@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.spi.invocation;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,16 +35,15 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientInvocationServiceImplTest extends ClientTestSupport {
+public class ClientInvocationServiceTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastClientInstanceImpl client;
+    private ClientInvocationServiceImpl invocationService;
 
     @After
     public void cleanup() {
@@ -52,34 +53,44 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
     @Before
     public void setUp() {
         hazelcastFactory.newHazelcastInstance();
-        client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
+        client = getHazelcastClientInstanceImpl(client);
+        invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
     }
 
     @Test
-    public void testCleanResourcesTask_rejectsPendingInvocationsWithClosedConnections() {
-        ClientConnection closedConn = closedConnection();
-        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, closedConn);
+    public void testFutureIsCompleted_whenConnectionIsClosed() {
+        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientMessage request = ClientPingCodec.encodeRequest();
+        ClientInvocationFuture future = new ClientInvocationFuture(() -> false, request, mock(ILogger.class),
+                invocationService.callIdSequence, Long.MAX_VALUE);
+        ClientInvocation invocation = new ClientInvocation(future, (ClientInvocationServiceImpl) client.getInvocationService(),
+                request, null, null, throwable -> false, Long.MAX_VALUE,
+                false, false, -1, null, connection);
 
-        ClientInvocationFuture future = invocation.invoke();
+        //Do all the steps necessary to invoke a connection but do not put it in the write queue
+        long correlationId = invocationService.callIdSequence.next();
+        invocation.getClientMessage().setCorrelationId(correlationId);
+        invocationService.invocations.put(correlationId, invocation);
+        invocation.setSentConnection(connection);
+
+        connection.close(null, new TargetDisconnectedException(""));
         assertTrueEventually(() -> assertTrue(future.isDone() && future.isCompletedExceptionally()));
-    }
-
-    private ClientConnection closedConnection() {
-        ClientConnection conn = mock(ClientConnection.class, RETURNS_DEEP_STUBS);
-        when(conn.isAlive()).thenReturn(false);
-        return conn;
     }
 
     @Test
     public void testInvocation_willNotBeNotifiedForDeadConnection_afterResponse() {
         ClientConnection connection = client.getConnectionManager().getRandomConnection();
-        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientMessage request = ClientPingCodec.encodeRequest();
+        ClientInvocationFuture future = new ClientInvocationFuture(() -> false, request, mock(ILogger.class),
+                invocationService.callIdSequence, Long.MAX_VALUE);
+        ClientInvocation invocation = new ClientInvocation(future, (ClientInvocationServiceImpl) client.getInvocationService(),
+                request, null, null, throwable -> false, Long.MAX_VALUE,
+                false, false, -1, null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        long correlationId = invocationService.getCallIdSequence().next();
+        long correlationId = invocationService.callIdSequence.next();
         invocation.getClientMessage().setCorrelationId(correlationId);
-        invocationService.registerInvocation(invocation, connection);
+        invocationService.invocations.put(correlationId, invocation);
         invocation.setSentConnection(connection);
 
         //Simulate a response coming back
@@ -92,18 +103,22 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
     @Test
     public void testInvocation_willNotBeNotified_afterAConnectionIsNotifiedForDead() {
         ClientConnection connection = client.getConnectionManager().getRandomConnection();
-        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientMessage request = ClientPingCodec.encodeRequest();
+        ClientInvocationFuture future = new ClientInvocationFuture(() -> false, request, mock(ILogger.class),
+                invocationService.callIdSequence, Long.MAX_VALUE);
+        ClientInvocation invocation = new ClientInvocation(future, (ClientInvocationServiceImpl) client.getInvocationService(),
+                request, null, null, throwable -> false, Long.MAX_VALUE,
+                false, false, -1, null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        long correlationId = invocationService.getCallIdSequence().next();
+        long correlationId = invocationService.callIdSequence.next();
         invocation.getClientMessage().setCorrelationId(correlationId);
-        invocationService.registerInvocation(invocation, connection);
+        invocationService.invocations.put(correlationId, invocation);
         invocation.setSentConnection(connection);
 
         //Sent connection dies
         assertTrue(invocation.getPermissionToNotifyForDeadConnection(connection));
-        invocation.notifyExceptionWithOwnedPermission(new TargetDisconnectedException(""));
+        invocationService.handleException(invocation, new TargetDisconnectedException(""), request, future);
 
         //Simulate a response coming back
         assertFalse(invocation.getPermissionToNotify(correlationId));
@@ -112,13 +127,17 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
     @Test
     public void testInvocation_willNotBeNotifiedForOldStalledResponse_afterARetry() {
         ClientConnection connection = client.getConnectionManager().getRandomConnection();
-        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientMessage request = ClientPingCodec.encodeRequest();
+        ClientInvocationFuture future = new ClientInvocationFuture(() -> false, request, mock(ILogger.class),
+                invocationService.callIdSequence, Long.MAX_VALUE);
+        ClientInvocation invocation = new ClientInvocation(future, (ClientInvocationServiceImpl) client.getInvocationService(),
+                request, null, null, throwable -> false, Long.MAX_VALUE,
+                false, false, -1, null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        long correlationId = invocationService.getCallIdSequence().next();
+        long correlationId = invocationService.callIdSequence.next();
         invocation.getClientMessage().setCorrelationId(correlationId);
-        invocationService.registerInvocation(invocation, connection);
+        invocationService.invocations.put(correlationId, invocation);
         invocation.setSentConnection(connection);
 
         //Sent connection dies
@@ -126,9 +145,9 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
         //simulate a retry
         invocationService.deRegisterInvocation(correlationId);
-        long retryCorrelationId = invocationService.getCallIdSequence().next();
+        long retryCorrelationId = invocationService.callIdSequence.next();
         invocation.getClientMessage().setCorrelationId(retryCorrelationId);
-        invocationService.registerInvocation(invocation, connection);
+        invocationService.invocations.put(correlationId, invocation);
         invocation.setSentConnection(connection);
 
         //Simulate the stalled old response trying to notify the invocation
