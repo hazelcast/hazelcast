@@ -39,7 +39,7 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <calcite.version>1.28.0</calcite.version>
-        <confluent.version>4.1.4</confluent.version>
+        <confluent.version>7.0.0</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
 
