@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ModularJavaUtils;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -57,12 +58,25 @@ public final class HazelcastInstanceFactory {
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture<HazelcastInstanceProxy>> INSTANCE_MAP = new ConcurrentHashMap<>(5);
 
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceFactory.class);
+
     static {
-        ModularJavaUtils.checkJavaInternalAccess(Logger.getLogger(HazelcastInstanceFactory.class));
+        ModularJavaUtils.checkJavaInternalAccess(LOGGER);
+        checkForDuplicatesInClasspath();
     }
 
     private HazelcastInstanceFactory() {
     }
+
+    private static void checkForDuplicatesInClasspath() {
+        Class<?> markerClass = HazelcastInstance.class;
+        List<String> classFiles = ClassScanner.findClassFiles(markerClass);
+        if (classFiles.size() > 1) {
+            LOGGER.warning("WARNING: Classpath misconfiguration: found multiple " + markerClass.getName() + " classes: "
+                    + String.join(", ", classFiles));
+        }
+    }
+
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
         Set<HazelcastInstance> result = createHashSet(INSTANCE_MAP.size());

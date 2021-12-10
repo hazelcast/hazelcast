@@ -184,7 +184,7 @@ public final class HazelcastBootstrap {
     }
 
     private static void checkHazelcastCodebasePresence(JarFile jarFile) {
-        List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
+        List<String> classFiles = ClassScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
         if (!classFiles.isEmpty()) {
             System.err.format("WARNING: Hazelcast code detected in the jar: %s. "
                             + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
