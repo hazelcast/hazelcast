@@ -49,7 +49,7 @@ public final class ClientICMPManager {
     public static void start(ClientIcmpPingConfig clientIcmpPingConfig,
                              TaskScheduler taskScheduler,
                              ILogger logger,
-                             ActiveConnections activeConnections) {
+                             Collection<Connection> unmodifiableActiveConnections) {
         if (!clientIcmpPingConfig.isEnabled()) {
             return;
         }
@@ -75,9 +75,8 @@ public final class ClientICMPManager {
 
         PingFailureDetector<Connection> failureDetector = new PingFailureDetector<>(icmpMaxAttempts);
         taskScheduler.scheduleWithRepetition(() -> {
-            Collection<Connection> connections = activeConnections.get();
-            failureDetector.retainAttemptsForAliveEndpoints(connections);
-            for (Connection connection : connections) {
+            failureDetector.retainAttemptsForAliveEndpoints(unmodifiableActiveConnections);
+            for (Connection connection : unmodifiableActiveConnections) {
                 // we don't want an isReachable call to an address stopping us to check other addresses.
                 // so we run each check in its own thread
                 taskScheduler.execute(() -> ping(logger, failureDetector, connection, icmpTtl, icmpTimeoutMillis));
@@ -121,7 +120,7 @@ public final class ClientICMPManager {
         logger.warning(format("Could not ping %s", address));
         if (!failureDetector.isAlive(connection)) {
             connection.close("ICMP ping time out",
-                    new TargetDisconnectedException("Heartbeat timed out to connection " + connection));
+                    new TargetDisconnectedException("ICMP ping time out to connection " + connection));
         }
     }
 }

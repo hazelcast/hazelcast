@@ -26,6 +26,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
+import java.util.Collection;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -44,13 +46,13 @@ public final class HeartbeatManager {
                              ILogger logger,
                              long heartbeatIntervalMillis,
                              long heartbeatTimeoutMillis,
-                             ActiveConnections activeConnections) {
+                             Collection<Connection> unmodifiableActiveConnections) {
         taskScheduler.scheduleWithRepetition(() -> {
-            for (Connection connection : activeConnections.get()) {
+            long now = Clock.currentTimeMillis();
+            for (Connection connection : unmodifiableActiveConnections) {
                 if (!connection.isAlive()) {
                     return;
                 }
-                long now = Clock.currentTimeMillis();
 
                 if (now - connection.lastReadTimeMillis() > heartbeatTimeoutMillis) {
                     logger.warning("Heartbeat failed over the connection: " + connection);
