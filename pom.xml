@@ -99,7 +99,7 @@
         <grpc.version>1.34.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.13.0</jackson.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <json-path.version>2.4.0</json-path.version>
