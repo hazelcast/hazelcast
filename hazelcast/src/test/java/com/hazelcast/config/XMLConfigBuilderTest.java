@@ -62,8 +62,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_BASE_DIR;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
@@ -3092,7 +3098,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
-        assertEquals(2, config.getDeviceConfigs().size());
+        assertEquals(3, config.getDeviceConfigs().size());
 
         deviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
@@ -3103,13 +3109,41 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        // default device
+        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), deviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
+
+        // override the default device config
+        String newBaseDir = "/some/random/base/dir/for/tiered/store";
+        xml = HAZELCAST_START_TAG
+                + "<device name=\"" + DEFAULT_DEVICE_NAME + "\">"
+                + "    <base-dir>" + newBaseDir + "</base-dir>"
+                + "    <block-size>" + (DEFAULT_BLOCK_SIZE_IN_BYTES * 2) + "</block-size>"
+                + "    <read-io-thread-count>" + (DEFAULT_READ_IO_THREAD_COUNT * 2) + "</read-io-thread-count>"
+                + "</device>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(1, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
+        assertEquals(new File(newBaseDir).getAbsoluteFile(), deviceConfig.getBaseDir());
+        assertEquals(2 * DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
+        assertEquals(2 * DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override
     @Test
     public void testTieredStore() {
         String xml = HAZELCAST_START_TAG
-                + "<map name=\"my-map\">"
+                + "<map name=\"map0\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
                 + "            <capacity>1024 MB</capacity>"
@@ -3117,10 +3151,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
                 + "    </tiered-store>"
                 + "</map>\n"
+                + "<map name=\"map1\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <disk-tier enabled=\"true\"/>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + "<map name=\"map2\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <memory-tier>"
+                + "            <capacity>1 GB</capacity>"
+                + "        </memory-tier>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + "<map name=\"map3\">"
+                + "    <tiered-store enabled=\"true\"/>"
+                + "</map>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
-        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("map0").getTieredStoreConfig();
         assertTrue(tieredStoreConfig.isEnabled());
 
         MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
@@ -3130,6 +3179,27 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
         assertEquals("local-device", diskTierConfig.getDeviceName());
+
+        assertEquals(DEFAULT_DEVICE_NAME,
+                config.getMapConfig("map1").getTieredStoreConfig().getDiskTierConfig().getDeviceName());
+        assertNotNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+
+        tieredStoreConfig = config.getMapConfig("map2").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.GIGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1L, memoryTierConfig.getCapacity().getValue());
+
+        assertFalse(tieredStoreConfig.getDiskTierConfig().isEnabled());
+
+        tieredStoreConfig = config.getMapConfig("map3").getTieredStoreConfig();
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(DEFAULT_CAPACITY, memoryTierConfig.getCapacity());
+
+        diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertFalse(diskTierConfig.isEnabled());
+        assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
     }
 
     @Override
