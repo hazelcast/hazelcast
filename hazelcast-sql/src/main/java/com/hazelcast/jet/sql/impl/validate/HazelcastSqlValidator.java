@@ -79,7 +79,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
-import static org.apache.calcite.sql.SqlKind.VALUES;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -315,33 +314,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        SqlBasicVisitor<Void> joinChecker = new SqlBasicVisitor<Void>() {
-            @Override
-            public Void visit(SqlCall call) {
-                if (call.getKind() == SqlKind.SELECT) {
-                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
-                } else if (call.getKind() == VALUES) {
-                    throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
-                }
-
-                return call.getOperator().acceptCall(this, call);
-            }
-        };
-
         switch (join.getJoinType()) {
             case INNER:
             case COMMA:
             case CROSS:
-                join.getRight().accept(joinChecker);
-                break;
             case LEFT:
-                join.getRight().accept(joinChecker);
                 if (containsStreamingSource(join.getRight())) {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
             case RIGHT:
-                join.getLeft().accept(joinChecker);
                 if (containsStreamingSource(join.getLeft())) {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
