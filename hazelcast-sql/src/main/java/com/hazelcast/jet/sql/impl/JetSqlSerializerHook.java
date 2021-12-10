@@ -20,9 +20,10 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
-import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -39,8 +40,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int JSON_QUERY = 0;
     public static final int JSON_PARSE = 1;
     public static final int JSON_VALUE = 2;
+    public static final int JET_SQL_ROW = 3;
 
-    public static final int LEN = JSON_VALUE + 1;
+    public static final int LEN = JET_SQL_ROW + 1;
 
     @Override
     public int getFactoryId() {
@@ -54,7 +56,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
         constructors[JSON_PARSE] = arg -> new JsonParseFunction();
-        constructors[JSON_VALUE] = arg -> new JsonValueFunction();
+        constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
+        constructors[JET_SQL_ROW] = arg -> new JetSqlRow();
 
         return new ArrayDataSerializableFactory(constructors);
     }

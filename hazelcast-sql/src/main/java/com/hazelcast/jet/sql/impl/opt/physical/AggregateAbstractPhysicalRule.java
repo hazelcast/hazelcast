@@ -79,6 +79,7 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
 
         for (Integer groupIndex : groupSet.toList()) {
             aggregationProviders.add(ValueSqlAggregation::new);
+            // getMaybeSerialized is safe for ValueAggr because it only passes the value on
             valueProviders.add(row -> row.getMaybeSerialized(groupIndex));
         }
         for (AggregateCall aggregateCall : aggregateCalls) {
@@ -90,6 +91,7 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(() -> CountSqlAggregations.from(true, true));
+                        // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
                         valueProviders.add(row -> row.getMaybeSerialized(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
@@ -103,24 +105,24 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(row -> row.getMaybeSerialized(minIndex));
+                    valueProviders.add(row -> row.get(minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(row -> row.getMaybeSerialized(maxIndex));
+                    valueProviders.add(row -> row.get(maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
-                    valueProviders.add(row -> row.getMaybeSerialized(sumIndex));
+                    valueProviders.add(row -> row.get(sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
-                    valueProviders.add(row -> row.getMaybeSerialized(avgIndex));
+                    valueProviders.add(row -> row.get(avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);

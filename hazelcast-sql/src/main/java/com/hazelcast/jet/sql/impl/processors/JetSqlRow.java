@@ -18,9 +18,8 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jet.sql.impl.SqlSerializationHooks;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,6 +29,18 @@ import com.hazelcast.sql.impl.row.Row;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * A row object that's sent between processors in the Jet SQL engine. It
+ * contains a fixed number of values. The values can be either in
+ * serialized or deserialized form, the {@link #get} method returns a
+ * deserialized value and deserializes it if needed, the {@link
+ * #getSerialized} method returns a serialized value and serializes it
+ * if needed. The {@link #getMaybeSerialized} method might return
+ * serialized or deserialized value, depending on the current status.
+ * <p>
+ * The class is not thread-safe. Therefore, processors returning it must
+ * not modify it after returning it, otherwise races are possible.
+ */
 public class JetSqlRow implements IdentifiedDataSerializable {
 
     private Object[] values;
@@ -45,14 +56,14 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         this.values = values;
     }
 
-    public Object get(InternalSerializationService ss, int index) {
+    public Object get(SerializationService ss, int index) {
         if (values[index] instanceof Data) {
             values[index] = ss.toObject(values[index]);
         }
         return values[index];
     }
 
-    public Data getSerialized(InternalSerializationService ss, int index) {
+    public Data getSerialized(SerializationService ss, int index) {
         if (!(values[index] instanceof Data)) {
             values[index] = ss.toData(values[index]);
         }
@@ -71,7 +82,7 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return values;
     }
 
-    public Row getRow(InternalSerializationService ss) {
+    public Row getRow(SerializationService ss) {
         return new Row() {
 
             @SuppressWarnings("unchecked")
@@ -99,12 +110,12 @@ public class JetSqlRow implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return SqlSerializationHooks.FACTORY_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SqlSerializationHooks.JET_SQL_ROW;
+        return JetSqlSerializerHook.JET_SQL_ROW;
     }
 
     @Override

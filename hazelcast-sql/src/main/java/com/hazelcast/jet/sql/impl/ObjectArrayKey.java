@@ -18,7 +18,8 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -83,7 +84,7 @@ public final class ObjectArrayKey implements DataSerializable {
         return Arrays.hashCode(keyFields);
     }
 
-    public static ObjectArrayKey project(InternalSerializationService ss, JetSqlRow row, int[] indices) {
+    public static ObjectArrayKey project(SerializationService ss, JetSqlRow row, int[] indices) {
         Data[] key = new Data[indices.length];
         for (int i = 0; i < indices.length; i++) {
             key[i] = row.getSerialized(ss, indices[i]);
@@ -99,13 +100,25 @@ public final class ObjectArrayKey implements DataSerializable {
      * @return the projection function
      */
     public static FunctionEx<JetSqlRow, ObjectArrayKey> projectFn(int[] indices) {
-        return row -> {
-            Data[] key = new Data[indices.length];
-            for (int i = 0; i < indices.length; i++) {
-                // TODO [viliam]
-                key[i] = row.getSerialized(null, i);
-            }
-            return new ObjectArrayKey(key);
-        };
+        return new ProjectFn(indices);
+    }
+
+    private static class ProjectFn implements FunctionEx<JetSqlRow, ObjectArrayKey>, SerializationServiceAware {
+        private final int[] indices;
+        private SerializationService ss;
+
+        public ProjectFn(int[] indices) {
+            this.indices = indices;
+        }
+
+        @Override
+        public ObjectArrayKey applyEx(JetSqlRow row) {
+            return project(ss, row, indices);
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.ss = serializationService;
+        }
     }
 }

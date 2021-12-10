@@ -345,6 +345,7 @@ public class TaskletExecutionService {
         public void run() {
             myThread = currentThread();
             userMetricsContextContainer = MetricsImpl.container();
+            use threadLocal to access processor context
 
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
