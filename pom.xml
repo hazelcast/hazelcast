@@ -136,7 +136,7 @@
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <hamcrest.version>1.3</hamcrest.version>
         <http.components.version>4.3.6</http.components.version>
-        <jmh.version>1.27</jmh.version>
+        <jmh.version>1.33</jmh.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
         <mockito.version>3.6.0</mockito.version>
