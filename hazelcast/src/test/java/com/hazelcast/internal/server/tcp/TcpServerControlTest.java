@@ -60,9 +60,9 @@ import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -133,6 +133,8 @@ public class TcpServerControlTest {
     private InternalSerializationService serializationService;
     private TcpServerControl tcpServerControl;
     private LocalAddressRegistry addressRegistry;
+    private ConnectionLifecycleListener<TcpServerConnection> lifecycleListener;
+    private TcpServerConnection connection;
 
     // mocks
     private Channel channel;
@@ -149,7 +151,7 @@ public class TcpServerControlTest {
                 new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberWan(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
                 // when protocol type not supported by BindHandler, nothing is registered
-                new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, emptyList()},
+                new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 // when protocol type is WAN, initiator address is always registered
                 new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
@@ -172,6 +174,7 @@ public class TcpServerControlTest {
         connectionManager = (TcpServerConnectionManager) node.getServer()
                 .getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier));
         tcpServerControl = getFieldValueReflectively(connectionManager, "serverControl");
+        lifecycleListener = getFieldValueReflectively(connectionManager, "connectionLifecycleListener");
         addressRegistry = node.getLocalAddressRegistry();
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
@@ -194,6 +197,13 @@ public class TcpServerControlTest {
         tcpServerControl.process(memberHandshakeMessage());
         assertExpectedAddressesRegistered();
         assertMemberConnectionRegistered();
+        assertTrueEventually(() ->
+                assertEquals(
+                        0,
+                        connectionManager.getConnections().size()
+                ), 5);
+        connection.close("close connection", null);
+        assertAddressesCleanedUp();
     }
 
     private void assertMemberConnectionRegistered() {
@@ -216,6 +226,17 @@ public class TcpServerControlTest {
         }
 
     }
+    private void assertAddressesCleanedUp() {
+        try {
+            Map<Address, UUID> addressToUuid = getFieldValueReflectively(addressRegistry, "addressToUuid");
+            Map<Address, UUID> uuidToAddresses = getFieldValueReflectively(addressRegistry, "uuidToAddresses");
+            assertEmpty(addressToUuid);
+            assertEmpty(uuidToAddresses);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void assertExpectedAddressesRegistered() {
         try {
             for (Address address : expectedAddresses) {
@@ -241,7 +262,7 @@ public class TcpServerControlTest {
         MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, MEMBER_UUID);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
-        TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel, false);
+        connection = new TcpServerConnection(connectionManager, lifecycleListener, 1, channel, false);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }
@@ -285,5 +306,9 @@ public class TcpServerControlTest {
                 .setClientEndpointConfig(clientServerSocketConfig)
                 .addWanEndpointConfig(wanServerSocketConfig);
         return config;
+    }
+
+    public void assertEmpty(Map<?, ?> map) {
+        assertEquals("expecting an empty map, but the map is:" + map, 0, map.size());
     }
 }

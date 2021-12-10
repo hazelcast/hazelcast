@@ -173,7 +173,7 @@ public final class TcpServerControl {
                     + " planeIndex:" + handshake.getPlaneIndex());
         }
         boolean registered = connectionManager.register(primaryAddress, remoteUuid, connection, handshake.getPlaneIndex());
-        if (registered) {
+        if (registered && !connection.isClient()) {
             LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
             addressesToRegister.addAddress(connectedAddress);
             if (remoteAddressAliases != null) {
