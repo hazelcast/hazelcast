@@ -61,6 +61,16 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
                 KubernetesProperties.SERVICE_PORT));
     }
 
+    private final String tokenPath;
+
+    public HazelcastKubernetesDiscoveryStrategyFactory() {
+        this("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    }
+
+    HazelcastKubernetesDiscoveryStrategyFactory(String tokenPath) {
+        this.tokenPath = tokenPath;
+    }
+
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return HazelcastKubernetesDiscoveryStrategy.class;
     }
@@ -91,7 +101,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     boolean tokenFileExists() {
-        return new File("/var/run/secrets/kubernetes.io/serviceaccount/token").exists();
+        return new File(tokenPath).exists();
     }
 
     private boolean defaultKubernetesMasterReachable() {
