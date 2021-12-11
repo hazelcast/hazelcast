@@ -18,15 +18,13 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.hazelcast.kubernetes.KubernetesProperties.EXPOSE_EXTERNALLY;
@@ -81,8 +79,14 @@ final class KubernetesConfig {
 
     // Parameters for both DNS Lookup and Kubernetes API modes
     private final int servicePort;
+    private final FileContentsReader fileContentsReader;
 
     KubernetesConfig(Map<String, Comparable> properties) {
+        this(properties, new DefaultFileContentsReader());
+    }
+
+    KubernetesConfig(Map<String, Comparable> properties, FileContentsReader fileContentsReader) {
+        this.fileContentsReader = fileContentsReader;
         this.serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
         this.serviceDnsTimeout
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_TIMEOUT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
@@ -156,32 +160,33 @@ final class KubernetesConfig {
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private static String readAccountToken() {
-        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    private String readAccountToken() {
+        return fileContentsReader.readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private static String readCaCertificate() {
-        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+    private String readCaCertificate() {
+        return fileContentsReader.readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private static String readNamespace() {
-        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/namespace");
+    private String readNamespace() {
+        return fileContentsReader.readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/namespace");
     }
 
-    static String readFileContents(String fileName) {
-        InputStream is = null;
-        try {
-            File file = new File(fileName);
-            byte[] data = new byte[(int) file.length()];
-            is = new FileInputStream(file);
-            is.read(data);
-            return new String(data, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get " + fileName, e);
-        } finally {
-            IOUtil.closeResource(is);
+    @FunctionalInterface
+    interface FileContentsReader {
+        String readFileContents(String fileName);
+    }
+
+    static class DefaultFileContentsReader implements FileContentsReader {
+        public String readFileContents(String fileName) {
+            try {
+                byte[] data = Files.readAllBytes(Paths.get(fileName));
+                return new String(data, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not get " + fileName, e);
+            }
         }
     }
 
