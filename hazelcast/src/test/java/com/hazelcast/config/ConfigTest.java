@@ -36,7 +36,6 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Properties;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -92,19 +91,13 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalConfigOverrides() throws Exception {
-        String clusterName = randomName();
-        String instanceName = randomName();
+    public void testExternalConfigOverrides() {
+        String randomPropertyName = randomName();
+        System.setProperty("hz.properties." + randomPropertyName, "123");
 
-        System.setProperty("hz.cluster-name", clusterName);
+        Config cfg = Config.load();
 
-        Config cfg = withEnvironmentVariable("HZ_INSTANCENAME", instanceName)
-                .and("HZ_NETWORK_PORT_PORT", "6731")
-                .execute(Config::load);
-
-        assertEquals(clusterName, cfg.getClusterName());
-        assertEquals(instanceName, cfg.getInstanceName());
-        assertEquals(6731, cfg.getNetworkConfig().getPort());
+        assertEquals("123", cfg.getProperty(randomPropertyName));
     }
 
     @Test
