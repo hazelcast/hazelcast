@@ -584,6 +584,68 @@ class DefaultAddressPicker
         List<InetAddress> getInetAddresses() {
             return inetAddresses;
         }
+
+        /**
+         * Creates builder to build {@link NetworkInterfaceInfo}.
+         *
+         * @return created builder
+         */
+        public static Builder builder(String name) {
+            return new Builder(name);
+        }
+
+        /**
+         * Builder to build {@link NetworkInterfaceInfo}.
+         */
+        @SuppressWarnings("SameParameterValue")
+        static final class Builder {
+
+            private String name;
+            private boolean up = true;
+            private boolean loopback;
+            private boolean virtual;
+            private String[] addresses = {};
+
+            private Builder(String name) {
+                this.name = name;
+            }
+
+            Builder withUp(boolean up) {
+                this.up = up;
+                return this;
+            }
+
+            Builder withLoopback(boolean loopback) {
+                this.loopback = loopback;
+                return this;
+            }
+
+            Builder withVirtual(boolean virtual) {
+                this.virtual = virtual;
+                return this;
+            }
+
+            Builder withAddresses(String... addresses) {
+                this.addresses = addresses;
+                return this;
+            }
+
+            private static List<InetAddress> createInetAddresses(String... addresses) {
+                List<InetAddress> inetAddresses = new ArrayList<>();
+                for (String address : addresses) {
+                    try {
+                        inetAddresses.add(InetAddress.getByName(address));
+                    } catch (UnknownHostException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return inetAddresses;
+            }
+
+            NetworkInterfaceInfo build() {
+                return new NetworkInterfaceInfo(name, up, virtual, loopback, createInetAddresses(addresses));
+            }
+        }
     }
 
     private static class DefaultNetworkInterfacesEnumerator implements NetworkInterfacesEnumerator {

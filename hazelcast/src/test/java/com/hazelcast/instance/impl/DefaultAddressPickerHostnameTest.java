@@ -36,14 +36,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK;
@@ -168,31 +162,8 @@ public class DefaultAddressPickerHostnameTest {
         interfacesConfig.setEnabled(true).addInterface(pattern);
     }
 
-    private static NetworkInterfaceInfo createNetworkInterface(String name, String... addresses) throws IOException {
-        List<InetAddress> inetAddresses = createInetAddresses(addresses);
-        return new NetworkInterfaceInfo(name, true, false, false, inetAddresses);
-    }
-
-    private static List<InetAddress> createInetAddresses(String... addresses) throws UnknownHostException {
-        List<InetAddress> inetAddresses = new ArrayList<>();
-        for (String address : addresses) {
-            inetAddresses.add(InetAddress.getByName(address));
-        }
-        return inetAddresses;
-    }
-
-    private static class DummyNetworkInterfacesEnumerator implements DefaultAddressPicker.NetworkInterfacesEnumerator {
-
-        private final List<NetworkInterfaceInfo> networkInterfaceInfos;
-
-        private DummyNetworkInterfacesEnumerator(NetworkInterfaceInfo... networkInterfaceInfos) {
-            this.networkInterfaceInfos = Arrays.asList(networkInterfaceInfos);
-        }
-
-        @Override
-        public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
-            return networkInterfaceInfos;
-        }
+    private static NetworkInterfaceInfo createNetworkInterface(String name, String... addresses) {
+        return NetworkInterfaceInfo.builder(name).withUp(true).withVirtual(false).withLoopback(false).withAddresses(addresses).build();
     }
 
     private class MockHostnameResolver implements HostnameResolver {
