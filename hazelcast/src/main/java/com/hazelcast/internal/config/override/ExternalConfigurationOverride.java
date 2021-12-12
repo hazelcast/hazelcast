@@ -20,6 +20,7 @@ import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
+import com.hazelcast.internal.config.override.SystemPropertiesConfigProvider.SystemPropertiesProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -39,31 +40,42 @@ public class ExternalConfigurationOverride {
 
     private static final int LICENSE_KEY_VISIBLE_CHAR_COUNT = 5;
     private static final ILogger LOGGER = Logger.getLogger(ExternalConfigurationOverride.class);
+    private final Map<String, String> envVariables;
+    private final SystemPropertiesProvider systemPropertiesProvider;
+
+    public ExternalConfigurationOverride() {
+        this(System.getenv(), System::getProperties);
+    }
+
+    ExternalConfigurationOverride(Map<String, String> envVariables, SystemPropertiesProvider systemPropertiesProvider) {
+        this.envVariables = envVariables;
+        this.systemPropertiesProvider = systemPropertiesProvider;
+    }
 
     public Config overwriteMemberConfig(Config config) {
         return overwrite(config, (provider, rootNode, target) -> {
-              try {
-                  new YamlMemberDomConfigProcessor(true, target, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
-              } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
-              }
-          },
-          new EnvConfigProvider(EnvVariablesConfigParser.member()),
-          new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.member()));
+                    try {
+                        new YamlMemberDomConfigProcessor(true, target, false)
+                                .buildConfig(new ConfigOverrideElementAdapter(rootNode));
+                    } catch (Exception e) {
+                        throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
+                    }
+                },
+                new EnvConfigProvider(EnvVariablesConfigParser.member(), envVariables),
+                new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.member(), systemPropertiesProvider));
     }
 
     public ClientConfig overwriteClientConfig(ClientConfig config) {
         return overwrite(config, (provider, rootNode, target) -> {
-              try {
-                  new YamlClientDomConfigProcessor(true, target, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
-              } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
-              }
-          },
-          new EnvConfigProvider(EnvVariablesConfigParser.client()),
-          new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.client()));
+                    try {
+                        new YamlClientDomConfigProcessor(true, target, false)
+                                .buildConfig(new ConfigOverrideElementAdapter(rootNode));
+                    } catch (Exception e) {
+                        throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
+                    }
+                },
+                new EnvConfigProvider(EnvVariablesConfigParser.client(), envVariables),
+                new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.client(), systemPropertiesProvider));
     }
 
     private <T> T overwrite(T config, ConfigConsumer<T> configProcessor, ConfigProvider... providers) {

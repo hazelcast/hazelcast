@@ -21,15 +21,6 @@ import java.util.Map;
 
 class ExternalConfigTestUtils {
 
-    static void runWithSystemProperty(String key, String value, Runnable action) {
-        try {
-            System.setProperty(key, value);
-            action.run();
-        } finally {
-            System.clearProperty(key);
-        }
-    }
-
     @SafeVarargs
     static void runWithSystemProperties(Runnable action, Map.Entry<String, String>... entry) {
         try {
