@@ -130,6 +130,12 @@ public class PlanExecutor {
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
             // implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+
+            // Very rare case, but still may happens...
+            if (mapContainer == null) {
+                throw QueryException.error("Can't create index: mapping '" + plan.mapName() + "' not initialized yet");
+            }
+
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
