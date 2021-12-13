@@ -16,9 +16,17 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+/**
+ * Dynamic Configuration related configuration options.
+ * @since 5.1
+ */
 public class DynamicConfigurationConfig {
 
     /**
@@ -53,6 +61,7 @@ public class DynamicConfigurationConfig {
      * @param persistenceEnabled true if enabled
      * @return DynamicConfigurationConfig
      */
+    @Nonnull
     public DynamicConfigurationConfig setPersistenceEnabled(boolean persistenceEnabled) {
         this.persistenceEnabled = persistenceEnabled;
         return this;
@@ -66,6 +75,7 @@ public class DynamicConfigurationConfig {
      *
      * @return persistenceFile
      */
+    @Nullable
     public File getPersistenceFile() {
         return persistenceFile;
     }
@@ -74,12 +84,14 @@ public class DynamicConfigurationConfig {
      * Sets persistence file where Dynamic Configuration changes are persisted.
      * Note that if you set this file to something other than root declarative
      * configuration (hazelcast.xml for example) you must import into the root
-     * declarative configuration manually.
+     * declarative configuration manually. If set to null, then root config is
+     * used.
      *
      * @param persistenceFile can be absolute path or relative path to the node startup directory
      * @return DynamicConfigurationConfig
      */
-    public DynamicConfigurationConfig setPersistenceFile(File persistenceFile) {
+    @Nonnull
+    public DynamicConfigurationConfig setPersistenceFile(@Nullable File persistenceFile) {
         this.persistenceFile = persistenceFile;
         return this;
     }
@@ -89,6 +101,7 @@ public class DynamicConfigurationConfig {
      *
      * @return backupDir
      */
+    @Nonnull
     public File getBackupDir() {
         return backupDir;
     }
@@ -99,7 +112,9 @@ public class DynamicConfigurationConfig {
      * @param backupDir can be absolute path or relative path to the node startup directory
      * @return DynamicConfigurationConfig
      */
-    public DynamicConfigurationConfig setBackupDir(File backupDir) {
+    @Nonnull
+    public DynamicConfigurationConfig setBackupDir(@Nonnull File backupDir) {
+        checkNotNull(backupDir);
         this.backupDir = backupDir;
         return this;
     }
@@ -119,6 +134,7 @@ public class DynamicConfigurationConfig {
      * @param backupCount backup count
      * @return this DynamicConfigurationConfig
      */
+    @Nonnull
     public DynamicConfigurationConfig setBackupCount(int backupCount) {
         this.backupCount = backupCount;
         return this;
