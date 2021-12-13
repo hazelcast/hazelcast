@@ -17,231 +17,119 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.map.IMap;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.net.UnknownHostException;
+import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public class LocalAddressRegistryTest extends HazelcastTestSupport {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class LocalAddressRegistryTest {
 
-    // MEMBER & WAN & CLIENT addresses of the connection initiator
-    private static final Address INITIATOR_MEMBER_ADDRESS;
-    private static final Address INITIATOR_WAN_ADDRESS;
-    private static final Address INITIATOR_CLIENT_ADDRESS;
+    private LocalAddressRegistry addressRegistry;
 
-    // server-side member addresses
-    private static final Address SERVER_MEMBER_ADDRESS;
-    private static final Address SERVER_CLIENT_ADDRESS;
-    private static final Address SERVER_WAN_ADDRESS;
-
-    static {
-        try {
-            INITIATOR_MEMBER_ADDRESS = new Address("127.0.0.1", 5702);
-            INITIATOR_CLIENT_ADDRESS = new Address("127.0.0.1", 6001);
-            INITIATOR_WAN_ADDRESS = new Address("127.0.0.1", 9000);
-
-            SERVER_MEMBER_ADDRESS = new Address("127.0.0.1", 5701);
-            SERVER_CLIENT_ADDRESS = new Address("127.0.0.1", 6000);
-            SERVER_WAN_ADDRESS = new Address("127.0.0.1", 10000);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
-    @After
-    public void tearDown() {
-        Hazelcast.shutdownAll();
+    @Before
+    public void setUp() {
+        addressRegistry = new LocalAddressRegistry();
     }
 
     @Test
-    public void whenSomeConnectionClosedBetweenMembers_registeredAddresses_should_not_be_cleaned_up() {
-        int timeoutSecs = 10;
-        int tcpChannelsPerConnection = 3;
-        System.setProperty("tcp.channels.per.connection", String.valueOf(tcpChannelsPerConnection));
-
-        // create members
-        HazelcastInstance serverMember = Hazelcast.newHazelcastInstance(createConfigForServer());
-        HazelcastInstance initiatorMember = Hazelcast.newHazelcastInstance(createConfigForInitiator());
-        UUID initiatorMemberUuid = initiatorMember.getCluster().getLocalMember().getUuid();
-        assertClusterSize(2, serverMember, initiatorMember);
-
-        createConnectionsOnEachPlane(serverMember);
-        Node serverNode = getNode(serverMember);
-        TcpServerConnectionManager connectionManager = (TcpServerConnectionManager) serverNode.getServer()
-                .getConnectionManager(EndpointQualifier.MEMBER);
-        assertTrueEventually(() ->
-                assertEquals(
-                        tcpChannelsPerConnection,
-                        connectionManager.getConnections().size()
-                ), timeoutSecs);
-
-        LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
-                .getLocalAddressRegistry()
-                .linkedAddressesOf(initiatorMemberUuid);
-        assertNotNull(registeredAddressesOfInitiatorMember);
-        assertContains(registeredAddressesOfInitiatorMember.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
-        closeRandomConnection(new ArrayList<>(connectionManager.getConnections()));
-        assertTrueEventually(() ->
-                assertEquals(
-                        tcpChannelsPerConnection - 1,
-                        connectionManager.getConnections().size()
-                ), timeoutSecs);
-
-        LinkedAddresses registeredAddressesAfterConnectionClose = serverNode
-                .getLocalAddressRegistry()
-                .linkedAddressesOf(initiatorMemberUuid);
-        assertNotNull(registeredAddressesAfterConnectionClose);
-        assertContains(registeredAddressesAfterConnectionClose.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
-
-        waitAllForSafeState(serverMember, initiatorMember);
+    public void whenRegistrationCountEqualsToRemovalCount_addressesShouldBeRemoved() throws UnknownHostException {
+        UUID memberUuid = UuidUtil.newUnsecureUUID();
+        addressRegistry.register(memberUuid, sampleAddresses());
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+        addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses().getAllAddresses());
     }
 
     @Test
-    public void whenAllConnectionClosedBetweenMembers_registeredAddresses_should_be_cleaned_up() {
-        int timeoutSecs = 10;
-        int tcpChannelsPerConnection = 3;
-        System.setProperty("tcp.channels.per.connection", String.valueOf(tcpChannelsPerConnection));
-
-        // create members
-        HazelcastInstance serverMember = Hazelcast.newHazelcastInstance(createConfigForServer());
-        HazelcastInstance initiatorMember = Hazelcast.newHazelcastInstance(createConfigForInitiator());
-        UUID iniatiatorMemberUuid = initiatorMember.getCluster().getLocalMember().getUuid();
-        assertClusterSize(2, serverMember, initiatorMember);
-        createConnectionsOnEachPlane(serverMember);
-
-        Node serverNode = getNode(serverMember);
-        TcpServerConnectionManager connectionManager = (TcpServerConnectionManager) serverNode.getServer()
-                .getConnectionManager(EndpointQualifier.MEMBER);
-        assertTrueEventually(() ->
-                assertEquals(
-                        tcpChannelsPerConnection,
-                        connectionManager.getConnections().size()
-                ), timeoutSecs);
-
-        LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
-                .getLocalAddressRegistry()
-                .linkedAddressesOf(iniatiatorMemberUuid);
-
-        assertNotNull(registeredAddressesOfInitiatorMember);
-        assertContains(registeredAddressesOfInitiatorMember.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
-        initiatorMember.shutdown();
-        assertTrueEventually(() ->
-                assertEquals(
-                        0,
-                        connectionManager.getConnections().size()
-                ), timeoutSecs);
-        LinkedAddresses registeredAddressesAfterAllConnectionsClosed = serverNode
-                .getLocalAddressRegistry()
-                .linkedAddressesOf(iniatiatorMemberUuid);
-        assertNull(registeredAddressesAfterAllConnectionsClosed);
-
-    }
-
-
-    private Config createConfigForServer() {
-        Config config = smallInstanceConfig();
-        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
-        advancedJoinConfig.getTcpIpConfig().setEnabled(true);
-        ServerSocketEndpointConfig memberServerSocketConfig = new ServerSocketEndpointConfig()
-                .setPort(SERVER_MEMBER_ADDRESS.getPort());
-        memberServerSocketConfig.getInterfaces().addInterface(SERVER_MEMBER_ADDRESS.getHost());
-        ServerSocketEndpointConfig clientServerSocketConfig = new ServerSocketEndpointConfig()
-                .setPort(SERVER_CLIENT_ADDRESS.getPort());
-        clientServerSocketConfig.getInterfaces().addInterface(SERVER_CLIENT_ADDRESS.getHost());
-        ServerSocketEndpointConfig wanServerSocketConfig = new ServerSocketEndpointConfig()
-                .setName("wan")
-                .setPort(SERVER_WAN_ADDRESS.getPort());
-        wanServerSocketConfig.getInterfaces().addInterface(SERVER_WAN_ADDRESS.getHost());
-
-        memberServerSocketConfig.getInterfaces().addInterface("127.0.0.1");
-        advancedNetworkConfig.setEnabled(true)
-                .setMemberEndpointConfig(memberServerSocketConfig)
-                .setClientEndpointConfig(clientServerSocketConfig)
-                .addWanEndpointConfig(wanServerSocketConfig);
-        return config;
-    }
-
-    private Config createConfigForInitiator() {
-        Config config = smallInstanceConfig();
-        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
-        advancedJoinConfig.getTcpIpConfig().setEnabled(true).addMember(
-                SERVER_MEMBER_ADDRESS.getHost() + ":" + SERVER_MEMBER_ADDRESS.getPort()
-        );
-
-        ServerSocketEndpointConfig memberServerSocketConfig = new ServerSocketEndpointConfig()
-                .setPort(INITIATOR_MEMBER_ADDRESS.getPort());
-        memberServerSocketConfig.getInterfaces().addInterface(INITIATOR_MEMBER_ADDRESS.getHost());
-        ServerSocketEndpointConfig clientServerSocketConfig = new ServerSocketEndpointConfig()
-                .setPort(INITIATOR_CLIENT_ADDRESS.getPort());
-        ServerSocketEndpointConfig wanServerSocketConfig = new ServerSocketEndpointConfig()
-                .setName("wan")
-                .setPort(SERVER_WAN_ADDRESS.getPort());
-        wanServerSocketConfig.getInterfaces().addInterface(INITIATOR_WAN_ADDRESS.getHost());
-
-        memberServerSocketConfig.getInterfaces().addInterface("127.0.0.1");
-        advancedNetworkConfig.setEnabled(true)
-                .setMemberEndpointConfig(memberServerSocketConfig)
-                .setClientEndpointConfig(clientServerSocketConfig)
-                .addWanEndpointConfig(wanServerSocketConfig);
-
-        return config;
-    }
-
-    private void createConnectionsOnEachPlane(HazelcastInstance hz) {
-        IMap<String, String> dummy = hz.getMap(randomMapName());
-        hz.getPartitionService().getPartitions().forEach(
-                partition -> {
-                    String key = randomKeyNameOwnedByPartition(hz, partition.getPartitionId());
-                    dummy.put(key, key);
-                }
-        );
-        dummy.destroy();
-    }
-
-    private void closeRandomConnection(List<Connection> connections) {
-        Random random = new Random();
-        int randomIdx = random.nextInt(connections.size());
-        connections.get(randomIdx).close("Failure is injected", null);
-    }
-
-    private String randomKeyNameOwnedByPartition(HazelcastInstance hz, int partitionId) {
-        PartitionService partitionService = hz.getPartitionService();
-        while (true) {
-            String name = randomString();
-            Partition partition = partitionService.getPartition(name);
-            if (partition.getPartitionId() == partitionId) {
-                return name;
-            }
+    public void whenRegistrationCountEqualsToRemovalCount_addressesShouldBeRemoved2() throws UnknownHostException {
+        int count = 100;
+        UUID memberUuid = UuidUtil.newUnsecureUUID();
+        for (int i = 0; i < count; i++) {
+            addressRegistry.register(memberUuid, sampleAddresses());
         }
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+        for (int i = 0; i < count; i++) {
+            addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        }
+        assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses().getAllAddresses());
+    }
+
+    @Test
+    public void whenRegistrationCountNotEqualToRemovalCount_addressesShouldBeRemoved2() throws UnknownHostException {
+        int count = 100;
+        UUID memberUuid = UuidUtil.newUnsecureUUID();
+        for (int i = 0; i < count; i++) {
+            addressRegistry.register(memberUuid, sampleAddresses());
+        }
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+        for (int i = 0; i < count - 1; i++) {
+            addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        }
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+    }
+
+    @Test
+    public void whenDisjointAddressSetRegisteredToSameUUID_oldAddressesShouldBeRemoved() throws UnknownHostException {
+        UUID memberUuid = UuidUtil.newUnsecureUUID();
+        addressRegistry.register(memberUuid, sampleAddresses());
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+        // disjoint address set is registered to the same uuid
+        addressRegistry.register(memberUuid, sampleAddresses2());
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses2().getAllAddresses());
+
+        // remove registration attempts with the old registered addresses should fail.
+        // try to remove twice in case we can't remove it because of the registration count
+        addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses2().getAllAddresses());
+
+        // try removal with the last addresses
+        addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses2().getPrimaryAddress());
+        assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses2().getAllAddresses());
+    }
+
+    private void assertExpectedAddressesRegistered(UUID memberUuid, Set<Address> addresses) {
+        for (Address address : addresses) {
+            assertEquals(memberUuid, addressRegistry.uuidOf(address));
+        }
+        LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(memberUuid);
+        assertNotNull(linkedAddresses);
+        assertNotNull(linkedAddresses.getAllAddresses());
+        assertTrue(linkedAddresses.getAllAddresses().containsAll(addresses));
+    }
+
+    private void assertUUID_And_AddressesRemoved(UUID memberUuid, Set<Address> addresses) {
+        for (Address address : addresses) {
+            assertNull(addressRegistry.uuidOf(address));
+        }
+        LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(memberUuid);
+        assertNull(linkedAddresses);
+    }
+
+    private static LinkedAddresses sampleAddresses() throws UnknownHostException {
+        LinkedAddresses addresses = new LinkedAddresses(new Address("localhost", 5701));
+        addresses.addAddress(new Address("127.0.0.1", 5701));
+        return addresses;
+    }
+
+    private static LinkedAddresses sampleAddresses2() throws UnknownHostException {
+        LinkedAddresses addresses = new LinkedAddresses(new Address("localhost", 5702));
+        addresses.addAddress(new Address("127.0.0.1", 5702));
+        return addresses;
     }
 }
