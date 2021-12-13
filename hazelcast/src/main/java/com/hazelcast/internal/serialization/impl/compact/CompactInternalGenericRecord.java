@@ -52,7 +52,6 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHO
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
@@ -123,15 +122,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     offsetReader = INT_OFFSET_READER;
                     finalPosition = variableOffsetsPosition + (numberOfVariableLengthFields * INT_SIZE_IN_BYTES);
                 }
-                //set the position to final so that the next one to read something from `in` can start from
-                //correct position
-                in.position(finalPosition);
             } else {
                 offsetReader = INT_OFFSET_READER;
                 variableOffsetsPosition = 0;
                 dataStartPosition = in.position();
                 finalPosition = dataStartPosition + schema.getFixedSizeFieldsLength();
             }
+            //set the position to final so that the next one to read something from `in` can start from
+            //correct position
+            in.position(finalPosition);
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -316,12 +315,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public char getChar(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
-        try {
-            return in.readChar(readFixedSizePosition(fd));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
+        throw new UnsupportedOperationException("Compact format does not support reading a char field");
     }
 
     @Override
@@ -438,7 +432,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public char[] getArrayOfChars(@Nonnull String fieldName) {
-        return getVariableSize(fieldName, ARRAY_OF_CHARS, ObjectDataInput::readCharArray);
+        throw new UnsupportedOperationException("Compact format does not support reading an array of chars field");
     }
 
     @Override
@@ -926,7 +920,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFieldFromArray(fieldName, ARRAY_OF_CHARS, ObjectDataInput::readChar, index);
+        throw new UnsupportedOperationException("Compact format does not support reading from an array of chars field");
     }
 
     public Integer getIntFromArray(@Nonnull String fieldName, int index) {

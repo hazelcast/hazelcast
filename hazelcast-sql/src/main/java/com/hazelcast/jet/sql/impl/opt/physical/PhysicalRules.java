@@ -40,9 +40,11 @@ public final class PhysicalRules {
 
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,
+                SlidingWindowPhysicalRule.INSTANCE,
 
                 // Aggregate rules
-                AggregatePhysicalRule.INSTANCE,
+                AggregateBatchPhysicalRule.INSTANCE,
+                AggregateStreamPhysicalRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,

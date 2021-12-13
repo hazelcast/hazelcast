@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -120,6 +121,11 @@ public final class ObjectConverter extends Converter {
         } else {
             return converter.asObject(val);
         }
+    }
+
+    @Override
+    public HazelcastJsonValue asJson(final Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.JSON).asJson(val);
     }
 
     @Override

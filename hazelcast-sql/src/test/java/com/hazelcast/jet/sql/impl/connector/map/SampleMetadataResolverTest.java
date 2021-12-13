@@ -44,7 +44,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -299,12 +298,12 @@ public class SampleMetadataResolverTest {
 
             @Nonnull
             @Override
-            public CompactClass read(@Nonnull CompactReader in) throws IOException {
+            public CompactClass read(@Nonnull CompactReader in) {
                 return new CompactClass(in.readInt("field"));
             }
 
             @Override
-            public void write(@Nonnull CompactWriter out, @Nonnull CompactClass object) throws IOException {
+            public void write(@Nonnull CompactWriter out, @Nonnull CompactClass object) {
                 out.writeInt("field", object.field);
             }
         }

@@ -87,6 +87,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createJobDuplicateOption_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('autoScaling'='false', 'autoScaling'='false') AS "
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessageContaining("Option 'autoScaling' specified more than once");
+    }
+
+    @Test
     public void when_snapshotIntervalNotNumber_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('snapshotIntervalMillis'='foo') AS "
                         + "INSERT INTO t1 VALUES(1)"))

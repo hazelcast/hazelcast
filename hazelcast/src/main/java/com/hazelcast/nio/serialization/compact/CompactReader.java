@@ -196,28 +196,6 @@ public interface CompactReader {
     double readDouble(@Nonnull String fieldName, double defaultValue);
 
     /**
-     * Reads a 16-bit unsigned integer.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    char readChar(@Nonnull String fieldName);
-
-    /**
-     * Reads a 16-bit unsigned integer or returns the default value.
-     *
-     * @param fieldName    name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    char readChar(@Nonnull String fieldName, char defaultValue);
-
-    /**
      * Reads an UTF-8 encoded string.
      *
      * @param fieldName name of the field.
@@ -449,31 +427,6 @@ public interface CompactReader {
      */
     @Nullable
     byte[] readArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue);
-
-    /**
-     * Reads an array of 16-bit unsigned integers.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    @Nullable
-    char[] readArrayOfChars(@Nonnull String fieldName);
-
-    /**
-     * Reads an array of 16-bit unsigned integers or returns the default value.
-     *
-     * @param fieldName    name of the field.
-     * @param defaultValue default value to return if the field with the given name
-     *                     does not exist in the schema or the type of the field does
-     *                     not match with the one defined in the schema.
-     * @return the value or the default value of the field.
-     */
-    @Nullable
-    char[] readArrayOfChars(@Nonnull String fieldName, @Nullable char[] defaultValue);
-
 
     /**
      * Reads an array of 16-bit two's complement signed integers.
@@ -740,7 +693,7 @@ public interface CompactReader {
     OffsetDateTime[] readArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
 
     /**
-     * Reads an array of arbitrary objects.
+     * Reads an array of compact objects.
      *
      * @param fieldName name of the field.
      * @return the value of the field.
@@ -752,7 +705,7 @@ public interface CompactReader {
     <T> T[] readArrayOfCompacts(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
     /**
-     * Reads an array of arbitrary objects or returns the default value.
+     * Reads an array of compact objects or returns the default value.
      *
      * @param fieldName    name of the field.
      * @param defaultValue default value to return if the field with the given name

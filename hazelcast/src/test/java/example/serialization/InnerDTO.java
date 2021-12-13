@@ -27,7 +27,6 @@ public class InnerDTO {
 
     public boolean[] bools;
     public byte[] bb;
-    public char[] cc;
     public short[] ss;
     public int[] ii;
     public long[] ll;
@@ -55,7 +54,7 @@ public class InnerDTO {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public InnerDTO(boolean[] bools, byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedDTO[] nn,
+    public InnerDTO(boolean[] bools, byte[] bb, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedDTO[] nn,
                     BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
                     LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes,
                     Boolean[] nullableBools, Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers,
@@ -64,7 +63,6 @@ public class InnerDTO {
                     OffsetDateTime[] nullableOffsetDateTimes) {
         this.bools = bools;
         this.bb = bb;
-        this.cc = cc;
         this.ss = ss;
         this.ii = ii;
         this.ll = ll;
@@ -100,7 +98,6 @@ public class InnerDTO {
         InnerDTO that = (InnerDTO) o;
         return Arrays.equals(bb, that.bb)
                 && Arrays.equals(bools, that.bools)
-                && Arrays.equals(cc, that.cc)
                 && Arrays.equals(ss, that.ss)
                 && Arrays.equals(ii, that.ii)
                 && Arrays.equals(ll, that.ll)
@@ -128,7 +125,6 @@ public class InnerDTO {
     public int hashCode() {
         int result = Arrays.hashCode(bb);
         result = 31 * result + Arrays.hashCode(bools);
-        result = 31 * result + Arrays.hashCode(cc);
         result = 31 * result + Arrays.hashCode(ss);
         result = 31 * result + Arrays.hashCode(ii);
         result = 31 * result + Arrays.hashCode(ll);
@@ -159,7 +155,6 @@ public class InnerDTO {
         return "InnerDTO{"
                 + "+ bools=" + Arrays.toString(bools)
                 + "+ bb=" + Arrays.toString(bb)
-                + ", + cc=" + Arrays.toString(cc)
                 + ", + ss=" + Arrays.toString(ss)
                 + ", + ii=" + Arrays.toString(ii)
                 + ", + ll=" + Arrays.toString(ll)

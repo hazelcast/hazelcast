@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
@@ -67,8 +66,7 @@ final class SampleMetadataResolver {
                     ClassDefinition classDefinition = ss.getPortableContext().lookupClassDefinition(data);
                     return resolvePortable(classDefinition, key);
                 } else if (data.isCompact()) {
-                    InternalGenericRecord record = ss.readAsInternalGenericRecord(data);
-                    return resolveCompact(((CompactGenericRecord) record).getSchema(), key);
+                    return resolveCompact(ss.extractSchemaFromData(data), key);
                 } else if (data.isJson()) {
                     return null;
                 } else {
@@ -86,11 +84,11 @@ final class SampleMetadataResolver {
                 return resolvePortable(classDefinition, key);
             } else if (target instanceof PortableGenericRecord) {
                 return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key);
-            } else if (ss.isCompactSerializable(target)) {
-                InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(target));
-                return resolveCompact(((CompactGenericRecord) record).getSchema(), key);
             } else if (target instanceof CompactGenericRecord) {
                 return resolveCompact(((CompactGenericRecord) target).getSchema(), key);
+            } else if (ss.isCompactSerializable(target)) {
+                Schema schema = ss.extractSchemaFromObject(target);
+                return resolveCompact(schema, key);
             } else if (target instanceof HazelcastJsonValue) {
                 return null;
             } else {

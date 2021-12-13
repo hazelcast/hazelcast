@@ -51,7 +51,6 @@ public final class CompactTestUtil {
 
         GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
                 .setArrayOfBytes("b", inner.bb)
-                .setArrayOfChars("c", inner.cc)
                 .setArrayOfShorts("s", inner.ss)
                 .setArrayOfInts("i", inner.ii)
                 .setArrayOfLongs("l", inner.ll)
@@ -68,7 +67,6 @@ public final class CompactTestUtil {
         return GenericRecordBuilder.compact("main")
                 .setByte("b", mainDTO.b)
                 .setBoolean("bool", mainDTO.bool)
-                .setChar("c", mainDTO.c)
                 .setShort("s", mainDTO.s)
                 .setInt("i", mainDTO.i)
                 .setLong("l", mainDTO.l)
@@ -96,7 +94,7 @@ public final class CompactTestUtil {
         NamedDTO[] nn = new NamedDTO[2];
         nn[0] = new NamedDTO("name", 123);
         nn[1] = new NamedDTO("name", 123);
-        InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
+        InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
                 new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
@@ -113,7 +111,7 @@ public final class CompactTestUtil {
                 new LocalDateTime[]{LocalDateTime.now(), null},
                 new OffsetDateTime[]{OffsetDateTime.now()});
 
-        return new MainDTO((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
+        return new MainDTO((byte) 113, true, (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now(),
                 (byte) 113, true, (short) -500, 56789, -50992225L, 900.5678f,

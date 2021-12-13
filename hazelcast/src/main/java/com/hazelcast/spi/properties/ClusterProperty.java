@@ -31,6 +31,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -1733,7 +1734,8 @@ public final class ClusterProperty {
      *
      * @since 5.0
      */
-    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled", true);
+    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled",
+            !OsHelper.isWindows());
 
     /**
      * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The

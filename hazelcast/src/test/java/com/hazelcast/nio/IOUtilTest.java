@@ -91,10 +91,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -398,8 +396,12 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void testTouch_failsWhenLastModifiedCannotBeSet() {
-        File file = spy(newFile("touchMe"));
-        when(file.setLastModified(anyLong())).thenReturn(false);
+        File file = new File(tempFolder.getRoot(), "touchMe") {
+            @Override
+            public boolean setLastModified(long time) {
+                return false;
+            }
+        };
 
         touch(file);
     }

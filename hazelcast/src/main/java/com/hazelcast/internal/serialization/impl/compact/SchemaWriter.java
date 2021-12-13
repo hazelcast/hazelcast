@@ -82,11 +82,6 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public void writeChar(@Nonnull String fieldName, char value) {
-        addField(new FieldDescriptor(fieldName, FieldKind.CHAR));
-    }
-
-    @Override
     public void writeDouble(@Nonnull String fieldName, double value) {
         addField(new FieldDescriptor(fieldName, FieldKind.DOUBLE));
     }
@@ -139,11 +134,6 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] values) {
         addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_BOOLEANS));
-    }
-
-    @Override
-    public void writeArrayOfChars(@Nonnull String fieldName, @Nullable char[] values) {
-        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_CHARS));
     }
 
     @Override

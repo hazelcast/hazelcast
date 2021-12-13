@@ -29,6 +29,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
@@ -235,5 +236,9 @@ public final class CustomTypeFactory {
             map.put(field.getFieldName(), field);
         }
         return new Schema(typeName, map);
+    }
+
+    public static HazelcastJsonValue createHazelcastJsonValue(String value) {
+        return new HazelcastJsonValue(value);
     }
 }

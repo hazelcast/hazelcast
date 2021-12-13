@@ -28,10 +28,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.date;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.time;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestamp;
-import static com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector.timestampTz;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
@@ -66,55 +62,55 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 new Object[]{
                         TINYINT,
                         "1",
-                        row((byte) 0), row((Object) null), row((byte) 2)
+                        row((byte) 0), row((byte) 2)
                 },
                 new Object[]{
                         SMALLINT,
                         "2",
-                        row((short) 0), row((Object) null), row((short) 2)
+                        row((short) 0), row((short) 2)
                 },
                 new Object[]{
                         INTEGER,
                         "3",
-                        row(0), row((Object) null), row(2)
+                        row(0), row(2)
                 },
                 new Object[]{
                         BIGINT,
                         "4",
-                        row(0L), row((Object) null), row(2L)
+                        row(0L), row(2L)
                 },
                 new Object[]{
                         TIME,
                         "INTERVAL '0.005' SECOND",
-                        row(time(0)), row((Object) null), row(time(2))
+                        row(time(0)), row(time(2))
                 },
                 new Object[]{
                         DATE,
                         "INTERVAL '0.006' SECOND",
-                        row(date(0)), row((Object) null), row(date(2))
+                        row(date(0)), row(date(2))
                 },
                 new Object[]{
                         TIMESTAMP,
                         "INTERVAL '0.007' SECOND",
-                        row(timestamp(0)), row((Object) null), row(timestamp(2))
+                        row(timestamp(0)), row(timestamp(2))
                 },
                 new Object[]{
                         TIMESTAMP_WITH_TIME_ZONE,
                         "INTERVAL '0.008' SECOND",
-                        row(timestampTz(0)), row((Object) null), row(timestampTz(2))
+                        row(timestampTz(0)), row(timestampTz(2))
                 },
         };
     }
 
     @Test
     @Parameters(method = "validArguments")
-    public void test_validArguments(QueryDataTypeFamily timestampType, String maxLag, Object[]... values) {
+    public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType), values);
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))",
+                        "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))",
                 Arrays.stream(values).map(Row::new).collect(toList())
         );
     }
@@ -141,12 +137,12 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
     @Test
     @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily timestampType, String maxLag) {
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag) {
         String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(timestampType));
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
         ).hasMessageContaining("Cannot apply 'IMPOSE_ORDER' function to [ROW, COLUMN_LIST");
     }
 
@@ -159,7 +155,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT * FROM" +
                         "    TABLE(IMPOSE_ORDER(" +
-                        "      TABLE " + name +
+                        "      TABLE(" + name + ")" +
                         "      , DESCRIPTOR(ts)" +
                         "      , INTERVAL '0.001' SECOND" +
                         "    ))" +
@@ -175,10 +171,10 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
     }
 
@@ -269,8 +265,8 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 "SELECT * FROM " +
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
-                        "  , input => (TABLE " + name + ")" +
-                        "  , \"column\" => DESCRIPTOR(ts)" +
+                        "  , input => (TABLE(" + name + "))" +
+                        "  , timeCol => DESCRIPTOR(ts)" +
                         "))",
                 asList(
                         new Row(timestampTz(0), "Alice"),

@@ -60,5 +60,4 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
         return this;
     }
 
-
 }

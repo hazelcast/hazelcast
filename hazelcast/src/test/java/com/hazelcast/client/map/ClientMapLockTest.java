@@ -435,7 +435,7 @@ public class ClientMapLockTest {
             public void run() throws Exception {
                 assertFalse(map.isLocked(key));
             }
-        }, 10);
+        });
     }
 
     @Test

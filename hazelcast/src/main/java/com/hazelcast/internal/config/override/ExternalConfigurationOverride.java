@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class ExternalConfigurationOverride {
 
+    private static final int LICENSE_KEY_VISIBLE_CHAR_COUNT = 5;
     private static final ILogger LOGGER = Logger.getLogger(ExternalConfigurationOverride.class);
 
     public Config overwriteMemberConfig(Config config) {
@@ -83,11 +84,12 @@ public class ExternalConfigurationOverride {
                   properties.entrySet().stream()
                     .filter(e -> !unprocessed.containsKey(e.getKey()))
                     .map(e -> {
-                        if (e.getKey().equals("hazelcast.licensekey")) {
+                        if (e.getKey().equals("hazelcast.licensekey")
+                                && !e.getValue().isEmpty() && e.getValue().length() > LICENSE_KEY_VISIBLE_CHAR_COUNT) {
                             String[] licenceKeyParts = e.getValue().split("#");
                             String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
-                            return e.getKey() + "=" + originalKeyPart.substring(0, 5) + "*********"
-                                    + originalKeyPart.substring(originalKeyPart.length() - 5) ;
+                            return e.getKey() + "=" + originalKeyPart.substring(0, LICENSE_KEY_VISIBLE_CHAR_COUNT) + "*********"
+                                    + originalKeyPart.substring(originalKeyPart.length() - LICENSE_KEY_VISIBLE_CHAR_COUNT);
                         } else {
                             return e.getKey() + "=" + e.getValue();
                         }

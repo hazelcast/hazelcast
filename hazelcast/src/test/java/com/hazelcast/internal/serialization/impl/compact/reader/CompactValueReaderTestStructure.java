@@ -35,7 +35,6 @@ public class CompactValueReaderTestStructure {
     public enum PrimitiveFields {
         Byte("byte_"),
         Boolean("boolean_"),
-        Char("char_"),
         Short("short_"),
         Int("int_"),
         Long("long_"),
@@ -50,7 +49,6 @@ public class CompactValueReaderTestStructure {
 
         ByteArray("bytes"),
         BooleanArray("booleans"),
-        CharArray("chars"),
         ShortArray("shorts"),
         IntArray("ints"),
         LongArray("longs"),
@@ -85,13 +83,13 @@ public class CompactValueReaderTestStructure {
         final String field;
 
         static List<PrimitiveFields> getPrimitives() {
-            return asList(Boolean, Byte, Char, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
+            return asList(Boolean, Byte, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
                     LocalDate, LocalDateTime, OffsetDateTime, NullableBoolean, NullableByte, NullableShort,
                     NullableInteger, NullableInteger, NullableLong, NullableFloat, NullableDouble);
         }
 
         static List<PrimitiveFields> getPrimitiveArrays() {
-            return asList(BooleanArray, ByteArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray,
+            return asList(BooleanArray, ByteArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray,
                     UTFArray, BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray,
                     NullableBooleanArray, NullableByteArray, NullableShortArray, NullableIntegerArray, NullableLongArray,
                     NullableFloatArray, NullableDoubleArray
@@ -109,7 +107,6 @@ public class CompactValueReaderTestStructure {
         long long_;
         float float_;
         double double_;
-        char char_;
         String string_;
         BigDecimal bigDecimal_;
         LocalTime localTime_;
@@ -124,7 +121,6 @@ public class CompactValueReaderTestStructure {
         long[] longs;
         float[] floats;
         double[] doubles;
-        char[] chars;
         String[] strings;
         BigDecimal[] bigDecimals;
         LocalTime[] localTimes;
@@ -162,7 +158,6 @@ public class CompactValueReaderTestStructure {
             long_ = seed + 40;
             float_ = seed + 50.01f;
             double_ = seed + 60.01d;
-            char_ = (char) (seed + 'a');
 
             Random rnd = new Random(seed);
             if (init == Init.FULL) {
@@ -173,7 +168,6 @@ public class CompactValueReaderTestStructure {
                 longs = new long[]{seed + 41, seed + 42, seed + 43};
                 floats = new float[]{seed + 51.01f, seed + 52.01f, seed + 53.01f};
                 doubles = new double[]{seed + 61.01f, seed + 62.01f, seed + 63.01f};
-                chars = new char[]{(char) (seed + 'b'), (char) (seed + 'c'), (char) (seed + 'd')};
                 strings = new String[]{seed + 81 + "text", seed + 82 + "text", seed + 83 + "text"};
                 localTime_ = LocalTime.of(17, 41, 47, 874000000);
                 localDate_ = LocalDate.of(1, 1, 1);
@@ -225,7 +219,6 @@ public class CompactValueReaderTestStructure {
                 floats = new float[]{};
                 doubles = new double[]{};
                 booleans = new boolean[]{};
-                chars = new char[]{};
                 strings = new String[]{};
                 bigDecimals = new BigDecimal[]{};
                 localTimes = new LocalTime[]{};
@@ -282,8 +275,6 @@ public class CompactValueReaderTestStructure {
                     return byte_;
                 case Boolean:
                     return boolean_;
-                case Char:
-                    return char_;
                 case Short:
                     return short_;
                 case Int:
@@ -331,8 +322,6 @@ public class CompactValueReaderTestStructure {
                     return bytes;
                 case Boolean:
                     return booleans;
-                case Char:
-                    return chars;
                 case Short:
                     return shorts;
                 case Int:
@@ -360,8 +349,6 @@ public class CompactValueReaderTestStructure {
                     return bytes;
                 case BooleanArray:
                     return booleans;
-                case CharArray:
-                    return chars;
                 case ShortArray:
                     return shorts;
                 case IntArray:

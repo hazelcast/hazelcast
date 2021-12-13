@@ -78,6 +78,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
@@ -171,7 +172,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SEARCHABLE = 59;
     public static final int EXPRESSION_SEARCH = 60;
 
-    public static final int LEN = EXPRESSION_SEARCH + 1;
+    public static final int VIEW = 61;
+
+    public static final int LEN = VIEW + 1;
 
     @Override
     public int getFactoryId() {
@@ -259,6 +262,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
         constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+
+        constructors[VIEW] = arg -> new View();
 
         return new ArrayDataSerializableFactory(constructors);
     }

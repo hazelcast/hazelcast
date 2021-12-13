@@ -29,8 +29,8 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.MappingResolver;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
@@ -38,7 +38,7 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
 
-public class MetadataResolver implements MappingResolver {
+public class MetadataResolver implements IMapResolver {
 
     private final NodeEngine nodeEngine;
 
@@ -48,17 +48,17 @@ public class MetadataResolver implements MappingResolver {
 
     @Nullable
     @Override
-    public Mapping resolve(String name) {
+    public Mapping resolve(String iMapName) {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getExistingMapContainer(name);
+        MapContainer container = context.getExistingMapContainer(iMapName);
         if (container == null) {
             return null;
         }
 
         boolean hd = container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
-        Metadata metadata = hd ? resolveFromHd(container) : resolveFromHeap(name, context);
-        return metadata == null ? null : new Mapping(name, name, TYPE_NAME, metadata.fields(), metadata.options());
+        Metadata metadata = hd ? resolveFromHd(container) : resolveFromHeap(iMapName, context);
+        return metadata == null ? null : new Mapping(iMapName, iMapName, TYPE_NAME, metadata.fields(), metadata.options());
     }
 
     @Nullable

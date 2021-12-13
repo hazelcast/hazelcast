@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,23 +58,30 @@ public class HazelcastTypeUtilsTest {
 
     @Test
     public void testCalciteToHazelcast() {
-        assertSame(QueryDataType.VARCHAR, HazelcastTypeUtils.toHazelcastType(SqlTypeName.VARCHAR));
+        assertSame(QueryDataType.JSON, HazelcastTypeUtils.toHazelcastType(HazelcastJsonType.TYPE));
+        assertSame(QueryDataType.JSON, HazelcastTypeUtils.toHazelcastType(HazelcastJsonType.TYPE_NULLABLE));
 
-        assertSame(QueryDataType.BOOLEAN, HazelcastTypeUtils.toHazelcastType(SqlTypeName.BOOLEAN));
+        assertSame(QueryDataType.VARCHAR, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.VARCHAR)));
 
-        assertSame(QueryDataType.TINYINT, HazelcastTypeUtils.toHazelcastType(SqlTypeName.TINYINT));
-        assertSame(QueryDataType.SMALLINT, HazelcastTypeUtils.toHazelcastType(SqlTypeName.SMALLINT));
-        assertSame(QueryDataType.INT, HazelcastTypeUtils.toHazelcastType(SqlTypeName.INTEGER));
-        assertSame(QueryDataType.BIGINT, HazelcastTypeUtils.toHazelcastType(SqlTypeName.BIGINT));
+        assertSame(QueryDataType.BOOLEAN, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.BOOLEAN)));
 
-        assertSame(QueryDataType.DECIMAL, HazelcastTypeUtils.toHazelcastType(SqlTypeName.DECIMAL));
+        assertSame(QueryDataType.TINYINT, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.TINYINT)));
+        assertSame(QueryDataType.SMALLINT, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.SMALLINT)));
+        assertSame(QueryDataType.INT, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.INTEGER)));
+        assertSame(QueryDataType.BIGINT, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.BIGINT)));
 
-        assertSame(QueryDataType.REAL, HazelcastTypeUtils.toHazelcastType(SqlTypeName.REAL));
-        assertSame(QueryDataType.DOUBLE, HazelcastTypeUtils.toHazelcastType(SqlTypeName.DOUBLE));
+        assertSame(QueryDataType.DECIMAL, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.DECIMAL)));
 
-        assertSame(QueryDataType.DATE, HazelcastTypeUtils.toHazelcastType(SqlTypeName.DATE));
-        assertSame(QueryDataType.TIME, HazelcastTypeUtils.toHazelcastType(SqlTypeName.TIME));
-        assertSame(QueryDataType.TIMESTAMP, HazelcastTypeUtils.toHazelcastType(SqlTypeName.TIMESTAMP));
-        assertSame(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, HazelcastTypeUtils.toHazelcastType(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE));
+        assertSame(QueryDataType.REAL, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.REAL)));
+        assertSame(QueryDataType.DOUBLE, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.DOUBLE)));
+
+        assertSame(QueryDataType.DATE, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.DATE)));
+        assertSame(QueryDataType.TIME, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.TIME)));
+        assertSame(QueryDataType.TIMESTAMP, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.TIMESTAMP)));
+        assertSame(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, HazelcastTypeUtils.toHazelcastType(type(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE)));
+    }
+
+    private RelDataType type(SqlTypeName typeName) {
+        return HazelcastTypeFactory.INSTANCE.createSqlType(typeName);
     }
 }

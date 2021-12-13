@@ -16,33 +16,12 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.CommandParser;
-import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
-import com.hazelcast.internal.server.ServerConnection;
 
-import java.util.StringTokenizer;
-
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-
-public class HttpPostCommandParser implements CommandParser {
+public class HttpPostCommandParser extends HttpCommandParser<HttpPostCommand> {
 
     @Override
-    public TextCommand parser(TextDecoder decoder, String cmd, int space) {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public TextCommand parser(TextDecoder decoder, String cmd, int space, ServerConnection connection) {
-        StringTokenizer st = new StringTokenizer(cmd);
-        st.nextToken();
-        String uri;
-        if (st.hasMoreTokens()) {
-            uri = st.nextToken();
-        } else {
-            return new ErrorCommand(ERROR_CLIENT);
-        }
-        return new HttpPostCommand(decoder, uri, connection);
+    HttpPostCommand createHttpCommand(TextDecoder decoder, String uri) {
+        return new HttpPostCommand(decoder, uri);
     }
 }

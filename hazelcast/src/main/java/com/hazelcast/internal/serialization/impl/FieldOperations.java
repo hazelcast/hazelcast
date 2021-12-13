@@ -142,7 +142,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeChar(fieldName, genericRecord.getChar(fieldName));
+                throw new UnsupportedOperationException("Compact format does not support writing a char field");
             }
 
             @Override
@@ -173,7 +173,7 @@ public final class FieldOperations {
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfChars(fieldName, record.getArrayOfChars(fieldName));
+                throw new UnsupportedOperationException("Compact format does not support writing an array of chars field");
             }
 
             @Override

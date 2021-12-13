@@ -22,15 +22,22 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public final class DateTimeUtils {
 
-    private DateTimeUtils() { }
+    private DateTimeUtils() {
+    }
+
+    public static OffsetDateTime asTimestampWithTimezone(long millis, ZoneId zoneId) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), zoneId);
+    }
 
     public static OffsetDateTime asTimestampWithTimezone(Expression<?> expression, Row row, ExpressionEvalContext context) {
         Object res = expression.eval(row, context);

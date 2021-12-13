@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -24,7 +25,6 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_CHARS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
@@ -63,7 +62,6 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.CHAR;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
@@ -105,7 +103,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     private final Map<Class, Reader[]> readersCache = new ConcurrentHashMap<>();
 
     @Override
-    public void write(@Nonnull CompactWriter writer, @Nonnull T object) throws IOException {
+    public void write(@Nonnull CompactWriter writer, @Nonnull T object) {
         Class<?> clazz = object.getClass();
         if (writeFast(clazz, writer, object)) {
             return;
@@ -114,7 +112,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
         writeFast(clazz, writer, object);
     }
 
-    private boolean writeFast(Class clazz, CompactWriter compactWriter, Object object) throws IOException {
+    private boolean writeFast(Class clazz, CompactWriter compactWriter, Object object) {
         Writer[] writers = writersCache.get(clazz);
         if (writers == null) {
             return false;
@@ -123,13 +121,13 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             try {
                 writer.write(compactWriter, object);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e, IOException.class);
+                throw new HazelcastSerializationException(e);
             }
         }
         return true;
     }
 
-    private boolean readFast(Class clazz, DefaultCompactReader compactReader, Object object) throws IOException {
+    private boolean readFast(Class clazz, DefaultCompactReader compactReader, Object object) {
         Reader[] readers = readersCache.get(clazz);
         Schema schema = compactReader.getSchema();
         if (readers == null) {
@@ -139,7 +137,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             try {
                 reader.read(compactReader, schema, object);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e, IOException.class);
+                throw new HazelcastSerializationException(e);
             }
         }
         return true;
@@ -147,7 +145,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
     @Nonnull
     @Override
-    public T read(@Nonnull CompactReader reader) throws IOException {
+    public T read(@Nonnull CompactReader reader) {
         // We always fed DefaultCompactReader to this serializer.
         DefaultCompactReader compactReader = (DefaultCompactReader) reader;
         Class associatedClass = requireNonNull(compactReader.getAssociatedClass(),
@@ -155,16 +153,12 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
         T object;
         object = (T) createObject(associatedClass);
-        try {
-            if (readFast(associatedClass, compactReader, object)) {
-                return object;
-            }
-            createFastReadWriteCaches(associatedClass);
-            readFast(associatedClass, compactReader, object);
+        if (readFast(associatedClass, compactReader, object)) {
             return object;
-        } catch (Exception e) {
-            throw new IOException(e);
         }
+        createFastReadWriteCaches(associatedClass);
+        readFast(associatedClass, compactReader, object);
+        return object;
     }
 
     @Nonnull
@@ -263,13 +257,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     }
                 };
                 writers[index] = (w, o) -> w.writeBoolean(name, field.getBoolean(o));
-            } else if (Character.TYPE.equals(type)) {
-                readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, CHAR)) {
-                        field.setChar(o, reader.readChar(name));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeChar(name, field.getChar(o));
             } else if (String.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, STRING)) {
@@ -424,13 +411,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfDoubles(name, (double[]) field.get(o));
-                } else if (Character.TYPE.equals(componentType)) {
-                    readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_CHARS)) {
-                            field.set(o, reader.readArrayOfChars(name));
-                        }
-                    };
-                    writers[index] = (w, o) -> w.writeArrayOfChars(name, (char[]) field.get(o));
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS)) {

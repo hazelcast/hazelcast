@@ -72,6 +72,7 @@ public class CompactStreamSerializerTest {
 
         assertEquals(expected, actual);
     }
+
     @Test
     public void testDefaultsReflection_insideCollection() {
         SerializationService serializationService = createSerializationService();
@@ -89,12 +90,14 @@ public class CompactStreamSerializerTest {
 
         ArrayList<Object> expected = new ArrayList<>();
         expected.add(node);
+        expected.add(employeeDTO);
         expected.add(employerDTO);
 
         Data data = serializationService.toData(expected);
         ArrayList<Object> arrayList = serializationService.toObject(data);
         assertEquals(node, arrayList.get(0));
-        assertEquals(employerDTO, arrayList.get(1));
+        assertEquals(employeeDTO, arrayList.get(1));
+        assertEquals(employerDTO, arrayList.get(2));
     }
 
     private InternalSerializationService createSerializationService() {
@@ -482,12 +485,12 @@ public class CompactStreamSerializerTest {
                 .register(EmployeeDTO.class, "employee", new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
-                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt("age", object.getAge());
                         out.writeLong("id", object.getId());
                         out.writeString("surname", "sir");
@@ -520,12 +523,12 @@ public class CompactStreamSerializerTest {
                 .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
-                    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
                         throw new UnsupportedOperationException("We will not read from here on this test");
                     }
 
                     @Override
-                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt("age", object.getAge());
                     }
                 });

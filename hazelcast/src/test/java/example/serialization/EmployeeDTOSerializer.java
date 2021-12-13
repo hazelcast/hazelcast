@@ -21,17 +21,16 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
     @Nonnull
     @Override
-    public EmployeeDTO read(@Nonnull CompactReader in) throws IOException {
+    public EmployeeDTO read(@Nonnull CompactReader in) {
         return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) throws IOException {
+    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
         out.writeInt("age", object.getAge());
         out.writeLong("id", object.getId());
     }

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import java.util.Map;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
@@ -51,6 +53,14 @@ public class RingbufferDestroyTest extends HazelcastTestSupport {
     @Test
     public void whenDestroyAfterAdd_thenRingbufferRemoved() {
         ringbuffer.add("1");
+        ringbuffer.destroy();
+
+        assertTrueEventually(new AssertNoRingbufferContainerTask(), 10);
+    }
+
+    @Test
+    public void whenDestroyAfterAddAllAsync_thenRingbufferRemoved() throws Exception {
+        ringbuffer.addAllAsync(newArrayList("1"), OverflowPolicy.FAIL).toCompletableFuture().get();
         ringbuffer.destroy();
 
         assertTrueEventually(new AssertNoRingbufferContainerTask(), 10);

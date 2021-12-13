@@ -133,6 +133,9 @@ public final class Converters {
         // NULL converter.
         converters.add(NullConverter.INSTANCE);
 
+        // JSON converter
+        converters.add(JsonConverter.INSTANCE);
+
         return converters;
     }
 

@@ -41,7 +41,7 @@ public final class CompactUtil {
                                                                                   @Nonnull String methodSuffix) {
         return new HazelcastSerializationException("Error while reading " + fieldName + ". "
                 + "null value can not be read via getArrayOf" + methodSuffix + " methods. "
-                + "Use getArrayOf" + methodSuffix + " instead.");
+                + "Use getArrayOfNullable" + methodSuffix + " instead.");
     }
 
 

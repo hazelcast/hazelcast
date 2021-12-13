@@ -26,6 +26,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.map.IMap;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -755,5 +756,30 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
         Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
         assertEquals(1, keys.size());
+    }
+
+    @Test
+    public void testPagingPredicate() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+
+        for (int i = 0; i < 100; i++) {
+            String json = Json.object()
+                    .add("user", randomString())
+                    .add("id", i)
+                    .toString();
+            map.put(i, new HazelcastJsonValue(json));
+        }
+
+        PagingPredicate<Integer, HazelcastJsonValue> pagingPredicate = Predicates.pagingPredicate(Predicates.alwaysTrue(), 10);
+        Collection<HazelcastJsonValue> values = map.values(pagingPredicate);
+        int totalSize = values.size();
+        while (values.size() > 0) {
+            int size = values.size();
+            assertEquals(10, size);
+            pagingPredicate.nextPage();
+            values = map.values(pagingPredicate);
+            totalSize += values.size();
+        }
+        assertEquals(100, totalSize);
     }
 }

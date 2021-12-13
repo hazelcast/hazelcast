@@ -28,7 +28,6 @@ public class MainDTO {
 
     public byte b;
     public boolean bool;
-    public char c;
     public short s;
     public int i;
     public long l;
@@ -52,14 +51,13 @@ public class MainDTO {
     MainDTO() {
     }
 
-    public MainDTO(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerDTO p,
+    public MainDTO(byte b, boolean bool, short s, int i, long l, float f, double d, String str, InnerDTO p,
                    BigDecimal bigDecimal, LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime,
                    OffsetDateTime offsetDateTime,
                    Byte nullableB, Boolean nullableBool, Short nullableS, Integer nullableI,
                    Long nullableL, Float nullableF, Double nullableD) {
         this.b = b;
         this.bool = bool;
-        this.c = c;
         this.s = s;
         this.i = i;
         this.l = l;
@@ -97,9 +95,6 @@ public class MainDTO {
             return false;
         }
         if (bool != mainDTO.bool) {
-            return false;
-        }
-        if (c != mainDTO.c) {
             return false;
         }
         if (s != mainDTO.s) {
@@ -168,11 +163,10 @@ public class MainDTO {
         long temp;
         result = b;
         result = 31 * result + (bool ? 1 : 0);
-        result = 31 * result + (int) c;
         result = 31 * result + (int) s;
         result = 31 * result + i;
         result = 31 * result + (int) (l ^ (l >>> 32));
-        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+        result = 31 * result + (f != 0.0f ? Float.floatToIntBits(f) : 0);
         temp = Double.doubleToLongBits(d);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         result = 31 * result + (str != null ? str.hashCode() : 0);
@@ -197,7 +191,6 @@ public class MainDTO {
         return "MainDTO{"
                 + "+ b=" + b
                 + ", + bool=" + bool
-                + ", + c=" + c
                 + ", + s=" + s
                 + ", + i=" + i
                 + ", + l=" + l

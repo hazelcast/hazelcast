@@ -318,22 +318,27 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         PropertyDefinition second = new SimplePropertyDefinition("second", BOOLEAN);
         PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
         PropertyDefinition fourth = new SimplePropertyDefinition("fourth", true, PropertyTypeConverter.STRING);
+        PropertyDefinition onlyInEnv = new SimplePropertyDefinition("only_in_env", true, PropertyTypeConverter.INTEGER);
 
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("first", "value-first");
         properties.put("second", Boolean.FALSE);
         properties.put("third", 100);
 
+        Map<String, String> environmentVariables = new HashMap<>();
+
         // system property > system environment > configuration
         // property 'first' => "value-first"
         // property 'second' => true
-        setEnvironment("test.second", "true");
+        environmentVariables.put("test.second", "true");
         // property 'third' => 300
-        setEnvironment("test.third", "200");
+        environmentVariables.put("test.third", "200");
         System.setProperty("test.third", "300");
         // property 'fourth' => null
 
-        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties);
+        environmentVariables.put("test.only_in_env", "500");
+
+        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties, environmentVariables::get);
 
         // without lookup of environment
         assertEquals("value-first", strategy.getOrNull(first));
@@ -341,13 +346,13 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(100, ((Integer) strategy.getOrNull(third)).intValue());
         assertNull(strategy.getOrNull(fourth));
 
-        // with lookup of environment (workaround to set environment doesn't work on all JDKs)
-        if (System.getenv("test.third") != null) {
-            assertEquals("value-first", strategy.getOrNull("test", first));
-            assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
-            assertEquals(300, ((Integer) strategy.getOrNull("test", third)).intValue());
-            assertNull(strategy.getOrNull("test", fourth));
-        }
+        assertEquals("value-first", strategy.getOrNull("test", first));
+        assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
+        assertEquals(300, ((Integer) strategy.getOrNull("test", third)).intValue());
+        assertNull(strategy.getOrNull("test", fourth));
+
+        assertEquals(500, ((Integer) strategy.getOrNull("test", onlyInEnv)).intValue());
+
     }
 
     @Test
@@ -507,20 +512,6 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void setEnvironment(String key, String value) throws Exception {
-        Class[] classes = Collections.class.getDeclaredClasses();
-        Map<String, String> env = System.getenv();
-        for (Class cl : classes) {
-            if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
-                Field field = cl.getDeclaredField("m");
-                field.setAccessible(true);
-                Map<String, String> map = (Map<String, String>) field.get(env);
-                map.put(key, value);
-            }
-        }
-    }
-
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(Address address, DiscoveryConfig config, DiscoveryMode mode) {
         return new DiscoveryServiceSettings().setConfigClassLoader(DiscoverySpiTest.class.getClassLoader())
                 .setDiscoveryConfig(config).setDiscoveryMode(mode).setLogger(LOGGER)
@@ -531,6 +522,10 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
+        }
+
+        PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties, EnvVariableProvider envVariableProvider) {
+            super(logger, properties, envVariableProvider);
         }
 
         @Override

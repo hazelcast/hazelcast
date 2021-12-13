@@ -75,7 +75,7 @@ public class QueueResetAgeStatisticsTest
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, "my-queue");
         invocation.invoke().get();
         LocalQueueStats statsAfterReset = member.getQueue("my-queue").getLocalQueueStats();
-        assertEquals(Long.MIN_VALUE, statsAfterReset.getMaxAge());
+        assertEquals(0, statsAfterReset.getMaxAge());
         assertEquals(Long.MAX_VALUE, statsAfterReset.getMinAge());
         assertEquals(0, statsAfterReset.getAverageAge());
 

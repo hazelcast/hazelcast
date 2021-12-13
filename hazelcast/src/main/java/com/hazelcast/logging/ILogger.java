@@ -197,7 +197,9 @@ public interface ILogger {
      * Logs a LogEvent.
      *
      * @param logEvent the logEvent to log
+     * @deprecated Since 5.1, the method is unused
      */
+    @Deprecated
     void log(LogEvent logEvent);
 
     /**

@@ -75,8 +75,7 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        return getRingbufferWaitNotifyKey();
     }
 
     @Override

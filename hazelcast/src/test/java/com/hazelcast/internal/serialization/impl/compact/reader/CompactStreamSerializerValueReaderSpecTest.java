@@ -179,7 +179,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
      * <li>scenario(input, result.float_, adjustedPath + "float_"),</li>
      * <li>scenario(input, result.double_, adjustedPath + "double_"),</li>
      * <li>scenario(input, result.boolean_, adjustedPath + "boolean_"),</li>
-     * <li>scenario(input, result.char_, adjustedPath + "char_"),</li>
      * <li>scenario(input, result.string_, adjustedPath + "string_"),</li>
      * </ul>
      */
@@ -274,14 +273,14 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
      * PrimitiveObject. For example: "objectArray.primitive_" will be expanded two-fold, the object array and primitive
      * types will be expanded as follows:
      * <ul>
-     * <li>objects[0].byte, objects[0].short, objects[0].char, ... for all primitive types</li>
-     * <li>objects[1].byte, objects[1].short, objects[1].char, ...</li>
-     * <li>objects[2].byte, objects[2].short, objects[2].char, ...</li>
+     * <li>objects[0].byte, objects[0].short, ... for all primitive types</li>
+     * <li>objects[1].byte, objects[1].short, ...</li>
+     * <li>objects[2].byte, objects[2].short, ...</li>
      * </ul>
      * <p>
      * B.) Then the [any] case will be expanded too:
      * <ul>
-     * <li>objects[any].byte, objects[any].short, objects[any].char, ... for all primitive types</li>
+     * <li>objects[any].byte, objects[any].short, ... for all primitive types</li>
      * </ul>
      * <p>
      * The expected result should be the object that contains the object array - that's the general contract.
@@ -593,8 +592,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                         "objects[any].objects[any].int_", p),
                 scenario(input, list(null, p1.long_, p10.long_, p20.long_),
                         "objects[any].objects[any].long_", p),
-                scenario(input, list(null, p1.char_, p10.char_, p20.char_),
-                        "objects[any].objects[any].char_", p),
                 scenario(input, list(null, p1.float_, p10.float_, p20.float_),
                         "objects[any].objects[any].float_", p),
                 scenario(input, list(null, p1.double_, p10.double_, p20.double_),
@@ -617,7 +614,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(inputEmpty, null, "objects[any].objects[any].short_", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].int_", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].long_", p),
-                scenario(inputEmpty, null, "objects[any].objects[any].char_", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].float_", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].double_", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].boolean_", p),
@@ -635,7 +631,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(inputNull, null, "objects[any].objects[any].short_", p),
                 scenario(inputNull, null, "objects[any].objects[any].int_", p),
                 scenario(inputNull, null, "objects[any].objects[any].long_", p),
-                scenario(inputNull, null, "objects[any].objects[any].char_", p),
                 scenario(inputNull, null, "objects[any].objects[any].float_", p),
                 scenario(inputNull, null, "objects[any].objects[any].double_", p),
                 scenario(inputNull, null, "objects[any].objects[any].boolean_", p),
@@ -673,8 +668,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                         "objects[any].objects[any].ints[any]", p),
                 scenario(input, list(null, p10.longs, p20.longs),
                         "objects[any].objects[any].longs[any]", p),
-                scenario(input, list(null, p10.chars, p20.chars),
-                        "objects[any].objects[any].chars[any]", p),
                 scenario(input, list(null, p10.floats, p20.floats),
                         "objects[any].objects[any].floats[any]", p),
                 scenario(input, list(null, p10.doubles, p20.doubles),
@@ -698,7 +691,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(inputEmpty, null, "objects[any].objects[any].shorts[any]", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].ints[any]", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].longs[any]", p),
-                scenario(inputEmpty, null, "objects[any].objects[any].chars[any]", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].floats[any]", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].doubles[any]", p),
                 scenario(inputEmpty, null, "objects[any].objects[any].booleans[any]", p),
@@ -715,7 +707,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 scenario(inputNull, null, "objects[any].objects[any].shorts[any]", p),
                 scenario(inputNull, null, "objects[any].objects[any].ints[any]", p),
                 scenario(inputNull, null, "objects[any].objects[any].longs[any]", p),
-                scenario(inputNull, null, "objects[any].objects[any].chars[any]", p),
                 scenario(inputNull, null, "objects[any].objects[any].floats[any]", p),
                 scenario(inputNull, null, "objects[any].objects[any].doubles[any]", p),
                 scenario(inputNull, null, "objects[any].objects[any].booleans[any]", p),

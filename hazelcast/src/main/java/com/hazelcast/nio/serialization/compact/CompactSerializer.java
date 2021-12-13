@@ -19,7 +19,6 @@ package com.hazelcast.nio.serialization.compact;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 /**
  * Defines the contract of the serializers used for Compact
@@ -39,15 +38,15 @@ public interface CompactSerializer<T> {
     /**
      * @param in reader to read fields of an object
      * @return the object created as a result of read method
-     * @throws IOException in case of failure to read
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException in case of failure to read
      */
     @Nonnull
-    T read(@Nonnull CompactReader in) throws IOException;
+    T read(@Nonnull CompactReader in);
 
     /**
      * @param out    CompactWriter to serialize the fields onto
      * @param object to be serialized.
-     * @throws IOException in case of failure to write
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException in case of failure to write
      */
-    void write(@Nonnull CompactWriter out, @Nonnull T object) throws IOException;
+    void write(@Nonnull CompactWriter out, @Nonnull T object);
 }

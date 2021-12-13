@@ -55,4 +55,13 @@ public final class OsHelper {
     public static boolean isMac() {
         return (OS.contains("mac") || OS.contains("darwin"));
     }
+
+    /**
+     * Returns {@code true} if the system is a Windows.
+     *
+     * @return {@code true} if the current system is a Windows one.
+     */
+    public static boolean isWindows() {
+        return OS.contains("windows");
+    }
 }

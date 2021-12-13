@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
@@ -50,6 +51,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
@@ -205,6 +207,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but VARCHAR was found"),
                 TestParams.passingCase(1129, VARCHAR, OBJECT, "'foo'", "foo", "foo"),
+                TestParams.passingCase(1130, VARCHAR, JSON, "'foo'", "foo", new HazelcastJsonValue("foo")),
 
                 // BOOLEAN
                 TestParams.failingCase(1201, BOOLEAN, VARCHAR, "true", true)
@@ -257,6 +260,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BOOLEAN")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but BOOLEAN was found"),
                 TestParams.passingCase(1214, BOOLEAN, OBJECT, "true", true, true),
+                TestParams.failingCase(1215, BOOLEAN, JSON, "true", true)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but BOOLEAN was found"),
 
                 // TINYINT
                 TestParams.failingCase(1301, TINYINT, VARCHAR, "cast(42 as tinyint)", (byte) 42)
@@ -291,6 +298,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type TINYINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but TINYINT was found"),
                 TestParams.passingCase(1314, TINYINT, OBJECT, "cast(42 as tinyint)", (byte) 42, (byte) 42),
+                TestParams.failingCase(1315, TINYINT, JSON, "cast(42 as tinyint)", (byte) 42)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TINYINT")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TINYINT")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but TINYINT was found"),
 
                 // SMALLINT
                 TestParams.failingCase(1401, SMALLINT, VARCHAR, "cast(42 as smallint)", (short) 42)
@@ -330,6 +341,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type SMALLINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but SMALLINT was found"),
                 TestParams.passingCase(1415, SMALLINT, OBJECT, "cast(42 as smallint)", (short) 42, (short) 42),
+                TestParams.failingCase(1416, SMALLINT, JSON, "cast(42 as smallint)", (short) 42)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type SMALLINT")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type SMALLINT")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but SMALLINT was found"),
 
                 // INTEGER
                 TestParams.failingCase(1501, INTEGER, VARCHAR, "cast(42 as integer)", 42)
@@ -374,6 +389,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type INTEGER")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but INTEGER was found"),
                 TestParams.passingCase(1516, INTEGER, OBJECT, "cast(42 as integer)", 42, 42),
+                TestParams.failingCase(1517, INTEGER, JSON, "cast(42 as integer)", 42)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type INTEGER")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type INTEGER")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but INTEGER was found"),
 
                 // BIGINT
                 TestParams.failingCase(1601, BIGINT, VARCHAR, "cast(42 as bigint)", 42L)
@@ -423,6 +442,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BIGINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but BIGINT was found"),
                 TestParams.passingCase(1617, BIGINT, OBJECT, "cast(42 as bigint)", 42L, 42L),
+                TestParams.failingCase(1618, BIGINT, JSON, "cast(42 as bigint)", 42L)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type BIGINT")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type BIGINT")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but BIGINT was found"),
 
                 // DECIMAL
                 TestParams.failingCase(1701, DECIMAL, VARCHAR, "cast(42 as decimal)", new BigDecimal("42"))
@@ -479,6 +502,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(76, 38\\)")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but DECIMAL was found"),
                 TestParams.passingCase(1719, DECIMAL, OBJECT, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
+                TestParams.failingCase(1720, DECIMAL, JSON, "cast(42 as decimal)", new BigDecimal("42"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DECIMAL")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DECIMAL")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but DECIMAL was found"),
 
                 // REAL
                 TestParams.failingCase(1801, REAL, VARCHAR, "cast(42 as real)", 42F)
@@ -536,6 +563,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but REAL was found"),
                 TestParams.passingCase(1819, REAL, OBJECT, "cast(42 as real)", 42F, 42F),
+                TestParams.failingCase(1820, REAL, JSON, "cast(42 as real)", 42F)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type REAL")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type REAL")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but REAL was found"),
 
                 // DOUBLE
                 TestParams.failingCase(1901, DOUBLE, VARCHAR, "cast(42 as double)", 42D)
@@ -598,6 +629,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but DOUBLE was found"),
                 TestParams.passingCase(1920, DOUBLE, OBJECT, "cast(42 as double)", 42D, 42D),
+                TestParams.failingCase(1921, DOUBLE, JSON, "cast(42 as double)", 42D)
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DOUBLE")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DOUBLE")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but DOUBLE was found"),
 
                 // TIME
                 TestParams.failingCase(2001, TIME, VARCHAR, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0))
@@ -649,6 +684,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         ZonedDateTime.of(LocalDateTime.of(TODAY, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime(),
                         ZonedDateTime.of(LocalDateTime.of(TOMORROW, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime()),
                 TestParams.passingCase(2014, TIME, OBJECT, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0), LocalTime.of(1, 42)),
+                TestParams.failingCase(2015, TIME, JSON, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIME")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIME")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but TIME was found"),
 
                 // DATE
                 TestParams.failingCase(2101, DATE, VARCHAR, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30))
@@ -701,6 +740,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(2114, DATE, OBJECT, "cast('2020-12-30' as date)",
                         LocalDate.of(2020, 12, 30),
                         LocalDate.of(2020, 12, 30)),
+                TestParams.failingCase(2021, DATE, JSON, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DATE")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type DATE")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but DATE was found"),
 
                 // TIMESTAMP
                 TestParams.failingCase(2201, TIMESTAMP, VARCHAR, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0))
@@ -751,6 +794,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         ZonedDateTime.of(2020, 12, 30, 1, 42, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
                 TestParams.passingCase(2214, TIMESTAMP, OBJECT, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
                         LocalDateTime.of(2020, 12, 30, 1, 42)),
+                TestParams.failingCase(2215, TIMESTAMP, JSON, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIMESTAMP")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIMESTAMP")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but TIMESTAMP was found"),
 
                 // TIMESTAMP WITH TIME ZONE
                 TestParams.failingCase(2301, TIMESTAMP_WITH_TIME_ZONE, VARCHAR, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
@@ -802,6 +849,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
                 TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
                         OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
+                TestParams.failingCase(2315, TIMESTAMP_WITH_TIME_ZONE, JSON, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIMESTAMP WITH TIME ZONE")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIMESTAMP WITH TIME ZONE")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but TIMESTAMP WITH TIME ZONE was found"),
 
                 // OBJECT
                 TestParams.failingCase(2401, OBJECT, VARCHAR, "cast('foo' as object)", new Value(42))
@@ -857,6 +908,66 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'EXPR\\$\\d' of type OBJECT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but OBJECT was found"),
                 TestParams.passingCase(2414, OBJECT, OBJECT, "cast('foo' as object)", "foo", "foo"),
+                TestParams.failingCase(2415, OBJECT, JSON, "cast(cast('2020-12-30T01:42:00-05:00' as timestamp with time zone) as object)", new Value(42))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field 'EXPR\\$\\d' of type OBJECT")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type JSON from source field 'EXPR\\$\\d' of type OBJECT")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of JSON type, but OBJECT was found"),
+
+                // JSON
+                TestParams.failingCase(2501, JSON, VARCHAR, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of VARCHAR type, but JSON was found"),
+                TestParams.failingCase(2502, JSON, BOOLEAN, "CAST('true' AS JSON)", new HazelcastJsonValue("true"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BOOLEAN type, but JSON was found"),
+                TestParams.failingCase(2503, JSON, TINYINT, "CAST('42' AS JSON)", new HazelcastJsonValue("42"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but JSON was found"),
+                TestParams.failingCase(2506, JSON, SMALLINT, "CAST('42' AS JSON)", new HazelcastJsonValue("42"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of SMALLINT type, but JSON was found"),
+                TestParams.failingCase(2509, JSON, INTEGER, "CAST('42' AS JSON)", new HazelcastJsonValue("42"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of INTEGER type, but JSON was found"),
+                TestParams.failingCase(2512, JSON, BIGINT, "CAST('42' AS JSON)", new HazelcastJsonValue("42"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but JSON was found"),
+                TestParams.failingCase(2515, JSON, DECIMAL, "CAST('1.5' AS JSON)", new HazelcastJsonValue("1.5"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but JSON was found"),
+                TestParams.failingCase(2517, JSON, REAL, "CAST('1.5' AS JSON)", new HazelcastJsonValue("1.5"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but JSON was found"),
+                TestParams.failingCase(2519, JSON, DOUBLE, "CAST('1.5' AS JSON)", new HazelcastJsonValue("1.5"))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DOUBLE type, but JSON was found"),
+                TestParams.failingCase(2521, JSON, TIME, "CAST('\"01:42:01\"' AS JSON)", new HazelcastJsonValue("\"01:42:01\""))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIME type, but JSON was found"),
+                TestParams.failingCase(2523, JSON, DATE, "CAST('\"2020-12-30\"' AS JSON)", new HazelcastJsonValue("\"2020-12-30\""))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DATE type, but JSON was found"),
+                TestParams.failingCase(2525, JSON, TIMESTAMP, "CAST('\"2020-12-30T01:42:00\"' AS JSON)", new HazelcastJsonValue("\"2020-12-30T01:42:00\""))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP type, but JSON was found"),
+                TestParams.failingCase(2527, JSON, TIMESTAMP_WITH_TIME_ZONE, "CAST('\"2020-12-30T01:42:00-05:00\"' AS JSON)", new HazelcastJsonValue("\"2020-12-30T01:42:00-05:00\""))
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type JSON")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type JSON")
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but JSON was found"),
+                TestParams.passingCase(2529, JSON, OBJECT, "CAST('\"foo\"' AS JSON)", new HazelcastJsonValue("\"foo\""), new HazelcastJsonValue("\"foo\"")),
+                TestParams.passingCase(2530, JSON, JSON, "CAST('{\"k\":\"v\"}' AS JSON)", new HazelcastJsonValue("{\"k\":\"v\"}"), new HazelcastJsonValue("{\"k\":\"v\"}")),
         };
     }
 
@@ -889,6 +1000,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
     public void test_insertSelect() {
         // the TestBatchSource doesn't support OBJECT/NULL type
         assumeFalse(testParams.srcType == OBJECT || testParams.srcType == NULL);
+
+        // HazelcastJsonValue isn't java-serializable, it doesn't work with TestBatchSqlConnector
+        // TODO we might replace test-batch-source with an imap which doesn't have this issue
+        assumeFalse(testParams.srcValue instanceof HazelcastJsonValue);
 
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", singletonList("v"),
@@ -1111,10 +1226,6 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                     ", srcType=" + srcType +
                     ", targetType=" + targetType +
                     ", srcValue=" + srcValue +
-                    ", expectedTargetValues=" + expectedTargetValues +
-                    ", expectedLiteralFailureRegex=" + expectedLiteralFailureRegex +
-                    ", expectedColumnFailureRegex=" + expectedColumnFailureRegex +
-                    ", expectedDynamicParameterFailureRegex=" + expectedDynamicParameterFailureRegex +
                     '}';
         }
     }

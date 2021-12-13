@@ -32,6 +32,7 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -882,7 +883,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='true' console-enabled='true'>"
+                + "<management-center scripting-enabled='true' console-enabled='true' data-access-enabled='false'>"
                 + "  <trusted-interfaces>\n"
                 + "    <interface>127.0.0.1</interface>\n"
                 + "    <interface>192.168.1.*</interface>\n"
@@ -895,6 +896,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mcConfig.isScriptingEnabled());
         assertTrue(mcConfig.isConsoleEnabled());
+        assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -912,6 +914,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -924,6 +927,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -3044,6 +3048,88 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(persistenceConfig.isAutoRemoveStaleData());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Override
+    @Test
+    public void testDevice() {
+        String baseDir = "base-directory";
+        int blockSize = 2048;
+        int readIOThreadCount = 16;
+        int writeIOThreadCount = 1;
+
+        String xml = HAZELCAST_START_TAG
+                + "<device name=\"local-device\">"
+                + "    <base-dir>" + baseDir + "</base-dir>"
+                + "    <block-size>" + blockSize + "</block-size>"
+                + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + writeIOThreadCount + "</write-io-thread-count>"
+                + "</device>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        DeviceConfig deviceConfig = config.getDeviceConfig("local-device");
+
+        assertEquals("local-device", deviceConfig.getName());
+        assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+
+        int device0Multiplier = 2;
+        int device1Multiplier = 4;
+        xml = HAZELCAST_START_TAG
+                + "<device name=\"device0\">"
+                + "    <block-size>" + (blockSize * device0Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device0Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device0Multiplier) + "</write-io-thread-count>"
+                + "</device>\n"
+                + "<device name=\"device1\">"
+                + "    <block-size>" + (blockSize * device1Multiplier) + "</block-size>"
+                + "    <read-io-thread-count>" + (readIOThreadCount * device1Multiplier) + "</read-io-thread-count>"
+                + "    <write-io-thread-count>" + (writeIOThreadCount * device1Multiplier) + "</write-io-thread-count>"
+                + "</device>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(2, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        deviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
+    }
+
+    @Override
+    @Test
+    public void testTieredStore() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"my-map\">"
+                + "    <tiered-store enabled=\"true\">"
+                + "        <memory-tier>"
+                + "            <capacity>1024 MB</capacity>"
+                + "        </memory-tier>"
+                + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
+                + "    </tiered-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.MEGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1024, memoryTierConfig.getCapacity().getValue());
+
+        DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
+        assertEquals("local-device", diskTierConfig.getDeviceName());
     }
 
     @Override

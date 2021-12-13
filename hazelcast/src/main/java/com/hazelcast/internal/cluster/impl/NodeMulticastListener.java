@@ -73,15 +73,17 @@ public class NodeMulticastListener implements MulticastListener {
             node.multicastService.send(response);
         } else if (joinMessage.getAddress().equals(masterAddress)) {
             MemberImpl master = node.getClusterService().getMember(masterAddress);
-            UUID uuidFromMaster = master.getUuid();
-            UUID uuidInJoinRequest = joinMessage.getUuid();
-            if (master != null && !uuidFromMaster.equals(uuidInJoinRequest)) {
-                String message = "New join request has been received from current master address. "
-                        + "The UUID in the join request (" + uuidInJoinRequest + ") is different from the "
-                        + "known master one (" + uuidFromMaster + "). Suspecting the master address: " + masterAddress;
-                logger.warning(message);
-                // I just make a local suspicion. Probably other nodes will eventually suspect as well.
-                clusterService.suspectMember(master, message, false);
+            if (master != null) {
+                UUID uuidFromMaster = master.getUuid();
+                UUID uuidInJoinRequest = joinMessage.getUuid();
+                if (!uuidFromMaster.equals(uuidInJoinRequest)) {
+                    String message = "New join request has been received from current master address. "
+                            + "The UUID in the join request (" + uuidInJoinRequest + ") is different from the "
+                            + "known master one (" + uuidFromMaster + "). Suspecting the master address: " + masterAddress;
+                    logger.warning(message);
+                    // I just make a local suspicion. Probably other nodes will eventually suspect as well.
+                    clusterService.suspectMember(master, message, false);
+                }
             }
         }
     }

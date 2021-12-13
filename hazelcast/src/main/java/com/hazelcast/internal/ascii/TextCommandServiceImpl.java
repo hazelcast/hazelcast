@@ -35,6 +35,7 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
+import com.hazelcast.internal.ascii.rest.RestCallCollector;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
@@ -102,6 +103,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     private final AtomicLong decrementHits = new AtomicLong();
     private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
+    private final RestCallCollector restCallCollector = new RestCallCollector();
 
     private final Node node;
     private final HazelcastInstance hazelcast;
@@ -233,6 +235,11 @@ public class TextCommandServiceImpl implements TextCommandService {
     }
 
     @Override
+    public RestCallCollector getRestCallCollector() {
+        return restCallCollector;
+    }
+
+    @Override
     public void processRequest(TextCommand command) {
         startResponseThreadIfNotRunning();
         node.nodeEngine.getExecutionService().execute("hz:text", new CommandExecutor(command));
@@ -359,6 +366,7 @@ public class TextCommandServiceImpl implements TextCommandService {
 
     @Override
     public void sendResponse(TextCommand textCommand) {
+        textCommand.beforeSendResponse(this);
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);
         }

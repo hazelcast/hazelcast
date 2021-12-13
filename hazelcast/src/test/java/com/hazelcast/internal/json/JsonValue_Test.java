@@ -21,19 +21,21 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.TestUtil.assertException;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.internal.json.TestUtil.assertException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @Category(QuickTest.class)
 public class JsonValue_Test {
@@ -84,7 +86,7 @@ public class JsonValue_Test {
   @Test
   public void writeTo_doesNotCloseWriter() throws IOException {
     JsonValue value = new JsonObject();
-    Writer writer = spy(new StringWriter());
+    Writer writer = mock(StringWriter.class);
 
     value.writeTo(writer);
 

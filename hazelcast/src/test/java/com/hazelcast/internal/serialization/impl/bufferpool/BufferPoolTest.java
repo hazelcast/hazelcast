@@ -17,12 +17,12 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,8 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
@@ -93,7 +91,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returnOutputBuffer_whenOverflowing() throws IOException {
+    public void returnOutputBuffer_whenOverflowing() {
         for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
             bufferPool.returnOutputBuffer(mock(BufferObjectDataOutput.class));
         }
@@ -102,8 +100,6 @@ public class BufferPoolTest extends HazelcastTestSupport {
         bufferPool.returnOutputBuffer(out);
 
         assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.outputQueue.size());
-        // we need to make sure that the out was closed since we are not going to pool it.
-        verify(out, times(1)).close();
     }
 
     @Test
@@ -150,7 +146,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returnInputBuffer_whenOverflowing() throws IOException {
+    public void returnInputBuffer_whenOverflowing() {
         for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
             bufferPool.returnInputBuffer(mock(BufferObjectDataInput.class));
         }
@@ -159,8 +155,6 @@ public class BufferPoolTest extends HazelcastTestSupport {
         bufferPool.returnInputBuffer(in);
 
         assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.inputQueue.size());
-        // we need to make sure that the in was closed since we are not going to pool it.
-        verify(in, times(1)).close();
     }
 
     @Test
