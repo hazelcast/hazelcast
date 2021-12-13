@@ -1,8 +1,6 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.2.2 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.2.3 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 
-## Fixes
+## Enhancements
 
-* Fixed an issue where the client state listener was not properly working
-with failover clients (in blue-green deployments); it was failing with
-invalid configuration exception. #19115
+* Updated the version of log4j2 dependency in the pom.xml to 2.15.0. #20163
