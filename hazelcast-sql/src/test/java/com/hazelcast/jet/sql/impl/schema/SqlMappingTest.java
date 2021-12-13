@@ -22,7 +22,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.schema.Mapping;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -181,11 +180,11 @@ public class SqlMappingTest extends SqlTestSupport {
         }
 
         TablesStorage tablesStorage = new TablesStorage(getNodeEngineImpl(instance()));
-        assertEquals(aliases.length, tablesStorage.valuesMappings().size());
-        Iterator<Mapping> iterator = tablesStorage.valuesMappings().iterator();
+        assertEquals(aliases.length, tablesStorage.allObjects().size());
+        Iterator<Object> iterator = tablesStorage.allObjects().iterator();
 
         // the two mappings must be equal, except for their name & objectName
-        Mapping firstMapping = iterator.next();
+        Object firstMapping = iterator.next();
         while (iterator.hasNext()) {
             assertThat(iterator.next()).isEqualToIgnoringGivenFields(firstMapping, "name", "externalName");
         }

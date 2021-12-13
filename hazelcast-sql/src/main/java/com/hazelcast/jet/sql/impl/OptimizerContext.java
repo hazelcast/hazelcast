@@ -167,18 +167,14 @@ public final class OptimizerContext {
         cluster.setRequiresJob(requiresJob);
     }
 
-    private static Prepare.CatalogReader createCatalogReader(
-            HazelcastSchema rootSchema,
-            List<List<String>> searchPaths
-    ) {
+    private static Prepare.CatalogReader createCatalogReader(HazelcastSchema rootSchema, List<List<String>> searchPaths) {
         assert searchPaths != null;
 
         return new HazelcastCalciteCatalogReader(
                 new HazelcastRootCalciteSchema(rootSchema),
                 searchPaths,
                 HazelcastTypeFactory.INSTANCE,
-                CONNECTION_CONFIG
-        );
+                CONNECTION_CONFIG);
     }
 
     private static VolcanoPlanner createPlanner(DistributionTraitDef distributionTraitDef) {
