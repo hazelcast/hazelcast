@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -82,15 +83,15 @@ public class JoinScanProcessorTest extends SqlTestSupport {
     public void test_innerJoin() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, PROJECTIONS, TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
-                singletonList(new Object[]{1, 1, "value"}));
+                singletonList(jetRow(1)),
+                singletonList(jetRow(1, 1, "value")));
     }
 
     @Test
     public void when_innerJoinFilteredOutByProjector_then_absent() {
         map.put(1, "value");
         runTest(INNER, FALSE_PREDICATE, PROJECTIONS, TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
+                singletonList(jetRow(1)),
                 emptyList());
     }
 
@@ -98,15 +99,15 @@ public class JoinScanProcessorTest extends SqlTestSupport {
     public void when_innerJoinProjectedByProjector_then_modified() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, singletonList(ConstantExpression.create("modified", VARCHAR)), TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
-                singletonList(new Object[]{1, "modified"}));
+                singletonList(jetRow(1)),
+                singletonList(jetRow(1, "modified")));
     }
 
     @Test
     public void when_innerJoinFilteredOutByCondition_then_absent() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, PROJECTIONS, FALSE_PREDICATE,
-                singletonList(new Object[]{1}),
+                singletonList(jetRow(1)),
                 emptyList());
     }
 
@@ -114,16 +115,16 @@ public class JoinScanProcessorTest extends SqlTestSupport {
     public void test_outerJoin() {
         map.put(1, "value");
         runTest(LEFT, TRUE_PREDICATE, PROJECTIONS, EQUALS_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, 1, "value"}, new Object[]{2, null, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, 1, "value"), jetRow(2, null, null)));
     }
 
     @Test
     public void when_outerJoinFilteredOutByProjector_then_absent() {
         map.put(1, "value");
         runTest(LEFT, FALSE_PREDICATE, PROJECTIONS, TRUE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, null, null}, new Object[]{2, null, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, null, null), jetRow(2, null, null)));
     }
 
     @Test
@@ -134,16 +135,16 @@ public class JoinScanProcessorTest extends SqlTestSupport {
                 TRUE_PREDICATE,
                 asList(ColumnExpression.create(0, INT), ConstantExpression.create("modified", VARCHAR)),
                 EQUALS_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, 1, "modified"}, new Object[]{2, null, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, 1, "modified"), jetRow(2, null, null)));
     }
 
     @Test
     public void when_outerJoinFilteredOutByCondition_then_absent() {
         map.put(1, "value");
         runTest(LEFT, TRUE_PREDICATE, PROJECTIONS, FALSE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, null, null}, new Object[]{2, null, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, null, null), jetRow(2, null, null)));
     }
 
     private void runTest(
@@ -151,8 +152,8 @@ public class JoinScanProcessorTest extends SqlTestSupport {
             Expression<Boolean> rowProjectorCondition,
             List<Expression<?>> rowProjectorProjections,
             Expression<Boolean> condition,
-            List<Object[]> input,
-            List<Object[]> output
+            List<JetSqlRow> input,
+            List<JetSqlRow> output
     ) {
         KvRowProjector.Supplier projectorSupplier = KvRowProjector.supplier(
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},

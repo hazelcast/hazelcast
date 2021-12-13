@@ -115,7 +115,7 @@ public class KvRowProjector implements Row {
         for (int i = 0; i < projections.size(); i++) {
             row[i] = evaluate(projections.get(i), this, evalContext);
         }
-        return new JetSqlRow(row);
+        return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
     @Override

@@ -292,7 +292,7 @@ public class PlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setTimeoutMillis(timeout);
 
-        QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(getSerializationService(), !plan.isStreaming());
+        QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         long jobId = jet.newJobId();
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
@@ -346,7 +346,7 @@ public class PlanExecutor {
         JetSqlRow row = await(future, timeout);
         return new SqlResultImpl(
                 queryId,
-                new StaticQueryResultProducerImpl(serializationService, row),
+                new StaticQueryResultProducerImpl(row),
                 plan.rowMetadata(),
                 false,
                 serializationService

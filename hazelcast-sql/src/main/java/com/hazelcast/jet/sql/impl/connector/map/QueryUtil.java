@@ -47,7 +47,6 @@ final class QueryUtil {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static Predicate<Object, Object> toPredicate(
-            InternalSerializationService serializationService,
             JetSqlRow left,
             int[] leftEquiJoinIndices,
             int[] rightEquiJoinIndices,
@@ -56,7 +55,7 @@ final class QueryUtil {
         PredicateBuilder builder = Predicates.newPredicateBuilder();
         EntryObject entryObject = builder.getEntryObject();
         for (int i = 0; i < leftEquiJoinIndices.length; i++) {
-            Comparable leftValue = asComparable(left.get(serializationService, leftEquiJoinIndices[i]));
+            Comparable leftValue = asComparable(left.get(leftEquiJoinIndices[i]));
 
             // might need a change when/if IS NOT DISTINCT FROM is supported
             if (leftValue == null) {

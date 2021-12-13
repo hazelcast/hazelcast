@@ -84,10 +84,10 @@ public final class ObjectArrayKey implements DataSerializable {
         return Arrays.hashCode(keyFields);
     }
 
-    public static ObjectArrayKey project(SerializationService ss, JetSqlRow row, int[] indices) {
+    public static ObjectArrayKey project(JetSqlRow row, int[] indices) {
         Data[] key = new Data[indices.length];
         for (int i = 0; i < indices.length; i++) {
-            key[i] = row.getSerialized(ss, indices[i]);
+            key[i] = row.getSerialized(indices[i]);
         }
         return new ObjectArrayKey(key);
     }
@@ -113,7 +113,7 @@ public final class ObjectArrayKey implements DataSerializable {
 
         @Override
         public ObjectArrayKey applyEx(JetSqlRow row) {
-            return project(ss, row, indices);
+            return project(row, indices);
         }
 
         @Override

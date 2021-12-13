@@ -44,15 +44,15 @@ public final class ExpressionUtil {
             @Nonnull ExpressionEvalContext context
     ) {
         return row0 -> {
-            Row row = row0.getRow(context.getSerializationService());
+            Row row = row0.getRow();
             return Boolean.TRUE.equals(evaluate(predicate, row, context));
         };
     }
 
-    public static ComparatorEx<Object[]> comparisonFn(
+    public static ComparatorEx<JetSqlRow> comparisonFn(
             @Nonnull List<FieldCollation> fieldCollationList
     ) {
-        return (Object[] row1, Object[] row2) -> {
+        return (JetSqlRow row1, JetSqlRow row2) -> {
             // Comparison of row values:
             // - Compare the rows according to field collations starting from left to right.
             // - If one of the field comparison returns the non-zero value, then return it.
@@ -70,8 +70,8 @@ public final class ExpressionUtil {
                 //   Return the reverted result if DESCENDING
                 int index = fieldCollation.getIndex();
 
-                Comparable o1 = (Comparable) row1[index];
-                Object o2 = row2[index];
+                Comparable o1 = (Comparable) row1.get(index);
+                Object o2 = row2.get(index);
 
                 Direction direction = fieldCollation.getDirection();
 
@@ -108,12 +108,12 @@ public final class ExpressionUtil {
             @Nonnull ExpressionEvalContext context
     ) {
         return row0 -> {
-            Row row = row0.getRow(context.getSerializationService());
+            Row row = row0.getRow();
             Object[] result = new Object[projections.size()];
             for (int i = 0; i < projections.size(); i++) {
                 result[i] = evaluate(projections.get(i), row, context);
             }
-            return new JetSqlRow(result);
+            return new JetSqlRow(context.getSerializationService(), result);
         };
     }
 
@@ -132,8 +132,8 @@ public final class ExpressionUtil {
         Object[] joined = Arrays.copyOf(leftRow.getValues(), leftRow.getFieldCount() + rightRow.getFieldCount());
         System.arraycopy(rightRow.getValues(), 0, joined, leftRow.getFieldCount(), rightRow.getFieldCount());
 
-        JetSqlRow result = new JetSqlRow(joined);
-        Row row = result.getRow(context.getSerializationService());
+        JetSqlRow result = new JetSqlRow(context.getSerializationService(), joined);
+        Row row = result.getRow();
         return Boolean.TRUE.equals(evaluate(predicate, row, context)) ? result : null;
     }
 
@@ -164,7 +164,7 @@ public final class ExpressionUtil {
             @Nonnull JetSqlRow values,
             @Nonnull ExpressionEvalContext context
     ) {
-        Row row = values.getRow(context.getSerializationService());
+        Row row = values.getRow();
 
         if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
             return null;
@@ -178,7 +178,7 @@ public final class ExpressionUtil {
         for (int i = 0; i < projection.size(); i++) {
             result[i] = evaluate(projection.get(i), row, context);
         }
-        return new JetSqlRow(result);
+        return new JetSqlRow(context.getSerializationService(), result);
     }
 
     /**
@@ -186,7 +186,7 @@ public final class ExpressionUtil {
      * the row is rejected by the predicate.
      */
     @Nullable
-    public static Object[] evaluate(
+    public static JetSqlRow evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nonnull Row row,
@@ -200,7 +200,7 @@ public final class ExpressionUtil {
         for (int i = 0; i < projection.size(); i++) {
             result[i] = evaluate(projection.get(i), row, context);
         }
-        return result;
+        return new JetSqlRow(context.getSerializationService(), result);
     }
 
     public static <T> T evaluate(

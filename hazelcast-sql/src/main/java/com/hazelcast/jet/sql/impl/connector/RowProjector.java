@@ -84,7 +84,7 @@ public class RowProjector implements Row {
         for (int i = 0; i < projection.size(); i++) {
             row[i] = evaluate(projection.get(i), this, evalContext);
         }
-        return new JetSqlRow(row);
+        return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
     @SuppressWarnings("unchecked")

@@ -83,7 +83,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
 
     private static final List<TableField> FIELD_LIST2 = toList(FIELD_LIST, f -> new TableField(f.name(), f.type(), false));
 
-    private static final JetSqlRow VALUES = new JetSqlRow(new Object[]{
+    private static final JetSqlRow VALUES = new JetSqlRow(null, new Object[]{
             "string",
             true,
             (byte) 127,

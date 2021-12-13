@@ -122,7 +122,7 @@ final class Joiner {
 
     private static FunctionEx<Object, Data> extractPrimitiveKeyFn(int index) {
         return row -> {
-            Data value = ((JetSqlRow) row).getSerialized(null, index);
+            Data value = ((JetSqlRow) row).getSerialized(index);
             return value == null ? NULL_KEY_MARKER : value;
         };
     }

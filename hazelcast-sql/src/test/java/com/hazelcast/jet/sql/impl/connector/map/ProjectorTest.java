@@ -54,7 +54,7 @@ public class ProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object value = projector.project(null, new JetSqlRow(new Object[]{1}));
+        Object value = projector.project(new JetSqlRow(null, new Object[]{1}));
 
         assertThat(value).isEqualTo(2L);
     }

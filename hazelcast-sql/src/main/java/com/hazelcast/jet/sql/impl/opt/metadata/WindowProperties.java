@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -114,8 +113,7 @@ public final class WindowProperties {
         @Override
         public ToLongFunctionEx<JetSqlRow> orderingFn(ExpressionEvalContext context) {
             int index = this.index;
-            // TODO [viliam] cache SS
-            return row -> WindowUtils.extractMillis(row.get(Contexts.getCastedThreadContext().serializationService(), index));
+            return row -> WindowUtils.extractMillis(row.get(index));
         }
 
         @Override
@@ -149,7 +147,7 @@ public final class WindowProperties {
             int index = this.index;
             SlidingWindowPolicy windowPolicy = this.windowPolicyProvider.apply(context);
             return row -> {
-                long millis = WindowUtils.extractMillis(row.get(context.getSerializationService(), index));
+                long millis = WindowUtils.extractMillis(row.get(index));
                 return millis - windowPolicy.windowSize();
             };
         }

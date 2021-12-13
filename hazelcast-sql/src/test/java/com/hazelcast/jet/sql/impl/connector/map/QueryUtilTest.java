@@ -36,7 +36,7 @@ public class QueryUtilTest {
     @Test
     public void when_leftValueIsNull_then_returnsNull() {
         Predicate<Object, Object> predicate =
-                toPredicate(null, new JetSqlRow(1), new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
+                toPredicate(new JetSqlRow(null, new Object[1]), new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
 
         assertThat(predicate).isNull();
     }

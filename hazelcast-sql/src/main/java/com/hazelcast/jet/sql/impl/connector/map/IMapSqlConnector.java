@@ -198,7 +198,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> remainingFilter,
             @Nonnull List<Expression<?>> projection,
             @Nullable IndexFilter indexFilter,
-            @Nullable ComparatorEx<Object[]> comparator,
+            @Nullable ComparatorEx<JetSqlRow> comparator,
             boolean descending
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
@@ -345,9 +345,9 @@ public class IMapSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 toString(table),
                 // TODO do a simpler, specialized deleting-only processor
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
-                    assert row.length == 1;
-                    return row[0];
+                updateMapP(table.getMapName(), (FunctionEx<JetSqlRow, Object>) row -> {
+                    assert row.getFieldCount() == 1;
+                    return row.get(0);
                 }, (v, t) -> null));
     }
 

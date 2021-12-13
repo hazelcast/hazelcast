@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
@@ -78,8 +77,8 @@ class Projector {
         return injectors;
     }
 
-    Object project(InternalSerializationService serializationService, JetSqlRow values) {
-        Row row = values.getRow(serializationService);
+    Object project(JetSqlRow values) {
+        Row row = values.getRow();
         target.init();
         for (int i = 0; i < injectors.length; i++) {
             Object projected = evaluate(projection.get(i), row, evalContext);

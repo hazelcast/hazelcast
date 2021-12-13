@@ -142,7 +142,6 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     ) {
         return left -> {
             Predicate<Object, Object> predicate = QueryUtil.toPredicate(
-                    evalContext.getSerializationService(),
                     left,
                     joinInfo.leftEquiJoinIndices(),
                     joinInfo.rightEquiJoinIndices(),

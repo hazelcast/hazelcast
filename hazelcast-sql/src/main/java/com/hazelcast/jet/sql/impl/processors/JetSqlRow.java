@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -23,11 +24,12 @@ import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A row object that's sent between processors in the Jet SQL engine. It
@@ -43,27 +45,25 @@ import java.util.Arrays;
  */
 public class JetSqlRow implements IdentifiedDataSerializable {
 
+    private SerializationService ss;
     private Object[] values;
 
     // for deserialization
     public JetSqlRow() { }
 
-    public JetSqlRow(int fieldCount) {
-        values = new Object[fieldCount];
-    }
-
-    public JetSqlRow(Object[] values) {
+    public JetSqlRow(@Nonnull SerializationService ss, @Nonnull Object[] values) {
+        this.ss = ss;
         this.values = values;
     }
 
-    public Object get(SerializationService ss, int index) {
+    public Object get(int index) {
         if (values[index] instanceof Data) {
             values[index] = ss.toObject(values[index]);
         }
         return values[index];
     }
 
-    public Data getSerialized(SerializationService ss, int index) {
+    public Data getSerialized(int index) {
         if (!(values[index] instanceof Data)) {
             values[index] = ss.toData(values[index]);
         }
@@ -82,13 +82,17 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return values;
     }
 
-    public Row getRow(SerializationService ss) {
+    public SerializationService getSerializationService() {
+        return ss;
+    }
+
+    public Row getRow() {
         return new Row() {
 
             @SuppressWarnings("unchecked")
             @Override
             public <T> T get(int index) {
-                return (T) JetSqlRow.this.get(ss, index);
+                return (T) JetSqlRow.this.get(index);
             }
 
             @Override
@@ -105,7 +109,25 @@ public class JetSqlRow implements IdentifiedDataSerializable {
      */
     public JetSqlRow extendedRow(int extendBy) {
         assert extendBy > -1;
-        return extendBy == 0 ? this : new JetSqlRow(Arrays.copyOf(values, values.length + extendBy));
+        return extendBy == 0 ? this : new JetSqlRow(ss, Arrays.copyOf(values, values.length + extendBy));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JetSqlRow jetSqlRow = (JetSqlRow) o;
+        for (int i = 0; i < values.length; i++) {
+            // we compare the serialized form
+            if (!Objects.equals(getSerialized(i), jetSqlRow.getSerialized(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -121,7 +143,6 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(values.length);
-        SerializationService ss = ((SerializationServiceSupport) out).getSerializationService();
         for (Object value : values) {
             IOUtil.writeData(out, ss.toData(value));
         }
@@ -129,6 +150,7 @@ public class JetSqlRow implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        ss = ((BufferObjectDataInput) in).getSerializationService();
         values = new Object[in.readInt()];
         for (int i = 0; i < values.length; i++) {
             values[i] = IOUtil.readData(in);

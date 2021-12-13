@@ -75,7 +75,7 @@ public final class UpdatingEntryProcessor
             return 0L;
         } else {
             JetSqlRow row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
-            Object value = valueProjectorSupplier.get(evalContext).project(evalContext.getSerializationService(), row);
+            Object value = valueProjectorSupplier.get(evalContext).project(row);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");
             } else {

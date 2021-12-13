@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -34,8 +33,8 @@ public class StaticQueryResultProducerImpl implements QueryResultProducer {
 
     private boolean iteratorRequested;
 
-    public StaticQueryResultProducerImpl(InternalSerializationService serializationService, JetSqlRow row) {
-        this(singletonList(row.getRow(serializationService)).iterator());
+    public StaticQueryResultProducerImpl(JetSqlRow row) {
+        this(singletonList(row.getRow()).iterator());
     }
 
     public StaticQueryResultProducerImpl(Iterator<? extends Row> iterator) {

@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
@@ -99,7 +100,7 @@ final class MapIndexScanP extends AbstractProcessor {
 
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
-    private Object[] pendingItem;
+    private JetSqlRow pendingItem;
     private boolean isIndexSorted;
 
     private MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
@@ -156,7 +157,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 pendingItem = null;
             }
 
-            Object[] extreme = null;
+            JetSqlRow extreme = null;
             int extremeIndex = -1;
             for (int i = 0; i < splits.size(); ++i) {
                 Split split = splits.get(i);
@@ -269,7 +270,7 @@ final class MapIndexScanP extends AbstractProcessor {
         private final Address owner;
         private IndexIterationPointer[] pointers;
         private List<QueryableEntry<?, ?>> currentBatch = emptyList();
-        private Object[] currentRow;
+        private JetSqlRow currentRow;
         private int currentBatchPosition;
         private CompletableFuture<MapFetchIndexOperationResult> future;
 
@@ -346,7 +347,7 @@ final class MapIndexScanP extends AbstractProcessor {
             return null;
         }
 
-        private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+        private JetSqlRow projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
             row.setKeyValue(
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()

@@ -17,11 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
@@ -106,6 +108,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         private MapProxyImpl<Object, Object> map;
         private long maxAccumulatedKeys;
         private long numberOfInsertedEntries;
+        private SerializationService serializationService;
 
         private InsertP(String mapName, KvProjector projector) {
             this.mapName = mapName;
@@ -116,6 +119,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         protected void init(@Nonnull Context context) {
             map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
             maxAccumulatedKeys = context.maxProcessorAccumulatedRecords();
+            serializationService = ((ProcCtx) context).serializationService();
         }
 
         @Override
@@ -137,7 +141,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
         @Override
         public boolean complete() {
-            return tryFlushQueue() && tryEmit(new Object[]{numberOfInsertedEntries});
+            return tryFlushQueue() && tryEmit(new JetSqlRow(serializationService, new Object[]{numberOfInsertedEntries}));
         }
 
         private boolean isQueueFull() {

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -55,8 +54,7 @@ public final class WindowUtils {
      * Returns a row with two added fields: the window_start and window_end.
      */
     public static JetSqlRow addWindowBounds(JetSqlRow row, int index, SlidingWindowPolicy windowPolicy) {
-        // TODO [viliam] cache SS?
-        Object value = row.get(Contexts.getCastedThreadContext().serializationService(), index);
+        Object value = row.get(index);
         long millis = extractMillis(value);
         long windowStartMillis = windowPolicy.floorFrameTs(millis);
         long windowEndMillis = windowPolicy.higherFrameTs(millis);
@@ -86,7 +84,7 @@ public final class WindowUtils {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE);
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE);
         }
-        return new JetSqlRow(result);
+        return new JetSqlRow(row.getSerializationService(), result);
     }
 
     public static long extractMillis(Object value) {

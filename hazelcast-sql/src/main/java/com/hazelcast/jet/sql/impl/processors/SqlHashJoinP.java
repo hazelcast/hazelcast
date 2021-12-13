@@ -66,8 +66,7 @@ public class SqlHashJoinP extends AbstractProcessor {
     }
 
     private Traverser<JetSqlRow> join(JetSqlRow leftRow) {
-        ObjectArrayKey joinKeys = ObjectArrayKey.project(evalContext.getSerializationService(), leftRow,
-                joinInfo.leftEquiJoinIndices());
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(leftRow, joinInfo.leftEquiJoinIndices());
         Collection<JetSqlRow> matchedRows = hashMap.get(joinKeys);
         List<JetSqlRow> output = matchedRows.stream()
                 .map(right -> ExpressionUtil.join(
@@ -95,8 +94,7 @@ public class SqlHashJoinP extends AbstractProcessor {
             throw new AccumulationLimitExceededException();
         }
         JetSqlRow rightRow = (JetSqlRow) item;
-        ObjectArrayKey joinKeys = ObjectArrayKey.project(evalContext.getSerializationService(), rightRow,
-                joinInfo.rightEquiJoinIndices());
+        ObjectArrayKey joinKeys = ObjectArrayKey.project(rightRow, joinInfo.rightEquiJoinIndices());
         hashMap.put(joinKeys, rightRow);
         return true;
     }

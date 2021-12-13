@@ -92,7 +92,7 @@ public class ExpressionUtilTest {
     }
 
     private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
-        JetSqlRow joined = ExpressionUtil.join(new JetSqlRow(leftRow), new JetSqlRow(rightRow), predicate, mock(ExpressionEvalContext.class));
+        JetSqlRow joined = ExpressionUtil.join(new JetSqlRow(null, leftRow), new JetSqlRow(null, rightRow), predicate, mock(ExpressionEvalContext.class));
 
         if (expected == null) {
             assertNull(joined);
@@ -105,7 +105,7 @@ public class ExpressionUtilTest {
     public void test_evaluate() {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"});
 
-        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, null, rows.stream().map(JetSqlRow::new), mock(ExpressionEvalContext.class));
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, null, rows.stream().map(v -> new JetSqlRow(null, v)), mock(ExpressionEvalContext.class));
 
         assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactlyElementsOf(rows);
     }
@@ -119,7 +119,7 @@ public class ExpressionUtilTest {
             return value != 1;
         });
 
-        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, null, rows.stream().map(JetSqlRow::new), mock(ExpressionEvalContext.class));
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, null, rows.stream().map(v -> new JetSqlRow(null, v)), mock(ExpressionEvalContext.class));
 
         assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0, "a"}, new Object[]{2, "c"});
     }
@@ -131,7 +131,7 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows.stream().map(JetSqlRow::new),
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows.stream().map(v -> new JetSqlRow(null, v)),
                 mock(ExpressionEvalContext.class));
 
         assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0}, new Object[]{2}, new Object[]{4});
@@ -148,7 +148,7 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows.stream().map(JetSqlRow::new),
+        List<JetSqlRow> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows.stream().map(v -> new JetSqlRow(null, v)),
                 mock(ExpressionEvalContext.class));
 
         assertThat(toList(evaluated, JetSqlRow::getValues)).containsExactly(new Object[]{0}, new Object[]{4});

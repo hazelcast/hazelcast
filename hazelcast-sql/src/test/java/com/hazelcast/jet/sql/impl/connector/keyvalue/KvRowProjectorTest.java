@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -87,9 +88,10 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
+        use single SS for tests
         JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
 
-        assertThat(row).isEqualTo(new Object[]{2, 4});
+        assertThat(row).isEqualTo(jetRow(2, 4));
     }
 
     @Test

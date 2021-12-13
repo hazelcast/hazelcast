@@ -297,7 +297,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             eventTimeMapper.addPartitions(1);
             this.traverser = Traversers.traverseIterable(rows)
                     .flatMap(row -> {
-                        JetSqlRow evaluated = ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(row), evalContext);
+                        JetSqlRow evaluated = ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(evalContext.getSerializationService(), row), evalContext);
                         return evaluated == null ? Traversers.empty() : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
                     });
 

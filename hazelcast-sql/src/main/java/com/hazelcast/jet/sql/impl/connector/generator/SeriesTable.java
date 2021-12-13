@@ -111,7 +111,7 @@ class SeriesTable extends JetTable {
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
-                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(new Object[]{i}), evalContext))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(evalContext.getSerializationService(), new Object[]{i}), evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }

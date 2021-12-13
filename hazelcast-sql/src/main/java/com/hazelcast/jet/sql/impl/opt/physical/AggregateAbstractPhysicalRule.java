@@ -106,25 +106,24 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), minIndex));
+                    valueProviders.add(row -> row.get(minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), maxIndex));
+                    valueProviders.add(row -> row.get(maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
-                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), sumIndex));
+                    valueProviders.add(row -> row.get(sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
-                    // TODO [viliam] save SS to a local var?
-                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), avgIndex));
+                    valueProviders.add(row -> row.get(avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -156,7 +155,8 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     for (int i = 0; i < aggregations.size(); i++) {
                         row[i] = aggregations.get(i).collect();
                     }
-                    return new JetSqlRow(row);
+                    // TODO [viliam] can we do better?
+                    return new JetSqlRow(Contexts.getCastedThreadContext().serializationService(), row);
                 });
     }
 }

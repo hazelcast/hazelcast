@@ -18,9 +18,9 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -68,7 +68,7 @@ public abstract class ExpressionValues implements Serializable {
         @Override
         public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> new JetSqlRow(es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
+                    .map(es -> new JetSqlRow(context.getSerializationService(), es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
         }
 
         @Override

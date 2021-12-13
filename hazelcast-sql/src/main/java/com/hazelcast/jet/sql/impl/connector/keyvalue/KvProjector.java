@@ -91,7 +91,7 @@ public class KvProjector {
         keyTarget.init();
         valueTarget.init();
         for (int i = 0; i < row.getFieldCount(); i++) {
-            Object value = getToConverter(types[i]).convert(row.get(serializationService, i));
+            Object value = getToConverter(types[i]).convert(row.get(i));
             injectors[i].set(value);
         }
 

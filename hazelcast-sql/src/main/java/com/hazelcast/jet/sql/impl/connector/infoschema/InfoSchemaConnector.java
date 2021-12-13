@@ -123,7 +123,7 @@ final class InfoSchemaConnector implements SqlConnector {
         protected void init(@Nonnull Context context) {
             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
             List<JetSqlRow> processedRows = ExpressionUtil.evaluate(predicate, projection,
-                    rows.stream().map(row -> new JetSqlRow(row)), evalContext);
+                    rows.stream().map(row -> new JetSqlRow(evalContext.getSerializationService(), row)), evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }
 

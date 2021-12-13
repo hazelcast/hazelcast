@@ -101,14 +101,14 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
                     null,
                     MAX_CONCURRENT_OPS,
                     (IMap<Object, Object> map, JetSqlRow left) -> {
-                        Object key = left.get(evalContext.getSerializationService(), leftEquiJoinIndex);
+                        Object key = left.get(leftEquiJoinIndex);
                         if (key == null) {
                             return inner ? null : completedFuture(null);
                         }
                         return map.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
-                        JetSqlRow joined = join(left, left.get(evalContext.getSerializationService(), leftEquiJoinIndex), value,
+                        JetSqlRow joined = join(left, left.get(leftEquiJoinIndex), value,
                                 projector, condition, evalContext);
                         return joined != null ? singleton(joined)
                                 : inner ? null

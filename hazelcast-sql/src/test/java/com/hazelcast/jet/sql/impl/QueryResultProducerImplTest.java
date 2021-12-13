@@ -51,7 +51,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     private void initProducer(boolean blockForNextItem) {
-        producer = new QueryResultProducerImpl(null, blockForNextItem);
+        producer = new QueryResultProducerImpl(blockForNextItem);
         iterator = producer.iterator();
     }
 

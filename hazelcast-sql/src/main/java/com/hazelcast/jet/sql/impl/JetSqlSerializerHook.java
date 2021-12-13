@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
@@ -41,8 +42,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int JSON_PARSE = 1;
     public static final int JSON_VALUE = 2;
     public static final int JET_SQL_ROW = 3;
+    public static final int MAP_INDEX_SCAN_METADATA = 4;
 
-    public static final int LEN = JET_SQL_ROW + 1;
+    public static final int LEN = MAP_INDEX_SCAN_METADATA + 1;
 
     @Override
     public int getFactoryId() {
@@ -58,6 +60,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[JSON_PARSE] = arg -> new JsonParseFunction();
         constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
         constructors[JET_SQL_ROW] = arg -> new JetSqlRow();
+        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
@@ -44,8 +43,6 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
 
-    private final InternalSerializationService serializationService;
-
     private final boolean blockForNextItem;
 
     private final OneToOneConcurrentArrayQueue<Row> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
@@ -62,8 +59,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
      * batch jobs where low streaming latency isn't required, but rather we
      * want to return full pages of results to the client.
      */
-    public QueryResultProducerImpl(InternalSerializationService serializationService, boolean blockForNextItem) {
-        this.serializationService = serializationService;
+    public QueryResultProducerImpl(boolean blockForNextItem) {
         this.blockForNextItem = blockForNextItem;
     }
 
@@ -102,7 +98,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
-        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow(serializationService)); ) {
+        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow()); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
