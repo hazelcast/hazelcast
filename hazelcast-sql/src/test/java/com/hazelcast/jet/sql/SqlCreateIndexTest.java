@@ -105,6 +105,17 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void when_indexCreatedWithEmptyMap_then_succeeds() {
+        String mapName = "map2";
+        String indexName = SqlTestSupport.randomName();
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + mapName + " (__key) TYPE SORTED";
+
+        instance().getSql().execute(sql);
+
+        assertThat(mapContainer(instance().getMap(mapName)).getIndexes().getIndex(indexName)).isNotNull();
+    }
+
+    @Test
     public void when_indexCreatedWithDefaultType_then_succeeds() {
         String indexName = SqlTestSupport.randomName();
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";

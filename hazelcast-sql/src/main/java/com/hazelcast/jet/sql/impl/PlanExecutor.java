@@ -131,11 +131,6 @@ public class PlanExecutor {
             // implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
 
-            // Very rare case, but still may happens...
-            if (mapContainer == null) {
-                throw QueryException.error("Can't create index: mapping '" + plan.mapName() + "' not initialized yet");
-            }
-
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
@@ -495,6 +490,6 @@ public class PlanExecutor {
         MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapContainers().get(map.getName());
+        return mapServiceContext.getMapContainer(map.getName());
     }
 }
