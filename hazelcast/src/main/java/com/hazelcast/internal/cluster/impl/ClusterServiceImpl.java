@@ -121,6 +121,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             new AtomicReference<>(new JoinHolder(false));
 
     private volatile UUID clusterId;
+    private volatile UUID masterUuid;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
 
@@ -259,7 +260,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                                              @Nonnull UUID candidateUuid) {
         checkNotNull(candidateAddress);
         checkNotNull(candidateUuid);
-        checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
+        checkFalse(getThisUuid().equals(candidateUuid), "cannot accept my own mastership claim!");
 
         lock.lock();
         try {
@@ -284,7 +285,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                         + getMasterAddress() + " is already master.");
             }
 
-            setMasterAddress(masterCandidate.getAddress());
+            setMaster(masterCandidate.getAddress(), masterCandidate.getUuid());
 
             MembersView response = memberMap.toTailMembersView(masterCandidate, true);
 
@@ -340,7 +341,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
-        node.thisUuid = newUuid;
+
         localMember = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
@@ -357,7 +358,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public void resetJoinState() {
         lock.lock();
         try {
-            setMasterAddress(null);
+            setMaster(null, null);
             setJoined(false);
         } finally {
             lock.unlock();
@@ -370,10 +371,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                                 long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
-            if (!checkValidMaster(callerAddress)) {
+            if (!checkValidMaster(callerUuid)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not finalizing join because caller: " + callerAddress + " is not known master: "
-                            + getMasterAddress());
+                    logger.fine("Not finalizing join because caller: " + callerUuid + " is not known master: "
+                            + getMasterUuid());
                 }
                 MembersViewMetadata membersViewMetadata = new MembersViewMetadata(callerAddress, callerUuid,
                         callerAddress, membersView.getVersion());
@@ -433,9 +434,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return false;
             }
 
-            if (!checkValidMaster(callerAddress)) {
-                logger.warning("Not updating members because caller: " + callerAddress + " is not known master: "
-                        + getMasterAddress());
+            if (!checkValidMaster(callerUuid)) {
+                logger.warning("Not updating members because caller: " + callerUuid + " is not known master: "
+                        + getMasterUuid());
                 MembersViewMetadata callerMembersViewMetadata = new MembersViewMetadata(callerAddress, callerUuid,
                         callerAddress, membersView.getVersion());
                 if (!clusterJoinManager.isMastershipClaimInProgress()) {
@@ -473,8 +474,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private boolean checkValidMaster(Address callerAddress) {
-        return (callerAddress != null && callerAddress.equals(getMasterAddress()));
+    private boolean checkValidMaster(UUID callerUuid) {
+        return (callerUuid != null && callerUuid.equals(getMasterUuid()));
     }
 
     private boolean shouldProcessMemberUpdate(MembersView membersView) {
@@ -522,7 +523,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (!isJoined()) {
             Address masterAddress = getMasterAddress();
             if (masterAddress != null && masterAddress.equals(connection.getRemoteAddress())) {
-                setMasterAddressToJoin(null);
+                setMasterToJoin(null, null);
             }
         }
     }
@@ -621,21 +622,22 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public boolean setMasterAddressToJoin(final Address master) {
+    public boolean setMasterToJoin(final Address masterAddress, UUID masterUuid) {
         lock.lock();
         try {
             if (isJoined()) {
                 Address currentMasterAddress = getMasterAddress();
-                if (!currentMasterAddress.equals(master)) {
-                    logger.warning("Cannot set master address to " + master
-                            + " because node is already joined! Current master: " + currentMasterAddress);
+                UUID currentMasterUuid = getMasterUuid();
+                if (!(currentMasterAddress.equals(masterAddress) && currentMasterUuid.equals(masterUuid))) {
+                    logger.warning("Cannot set master to " + masterAddress + "-" + masterUuid
+                            + " because node is already joined! Current master: "
+                            + currentMasterAddress + "-" + currentMasterUuid);
                 } else if (logger.isFineEnabled()) {
-                    logger.fine("Master address is already set to " + master);
+                    logger.fine("Master is already set to " + masterAddress + "-" + masterUuid);
                 }
                 return false;
             }
-
-            setMasterAddress(master);
+            setMaster(masterAddress, masterUuid);
             return true;
         } finally {
             lock.unlock();
@@ -643,12 +645,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     // should be called under lock
-    void setMasterAddress(Address master) {
+    void setMaster(Address masterAddress, UUID masterUuid) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         if (logger.isFineEnabled()) {
-            logger.fine("Setting master address to " + master);
+            logger.fine("Setting master address to " + masterAddress + ", and master uuid to " + masterUuid);
         }
-        masterAddress = master;
+        this.masterAddress = masterAddress;
+        this.masterUuid = masterUuid;
         joined.getAndUpdate(holder -> new JoinHolder(holder.isJoined)).latch.countDown();
     }
 
@@ -658,8 +661,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    public UUID getMasterUuid() {
+        return masterUuid;
+    }
+
+    @Override
     public boolean isMaster() {
-        return node.getThisAddress().equals(masterAddress);
+        return getThisUuid().equals(masterUuid);
     }
 
     @Override
@@ -668,13 +676,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public UUID getThisUuid() {
-        return node.getThisUuid();
+    public MemberImpl getLocalMember() {
+        return localMember;
     }
 
     @Override
-    public MemberImpl getLocalMember() {
-        return localMember;
+    public UUID getThisUuid() {
+        return localMember.getUuid();
     }
 
     // should be called under lock
@@ -1063,12 +1071,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         MemberImpl master;
         lock.lock();
         try {
-            Address masterAddress = getMasterAddress();
-            if (masterAddress == null) {
+            UUID masterUuid = getMasterUuid();
+            if (masterUuid == null) {
                 throw new IllegalStateException("Master is not known yet!");
             }
 
-            master = getMember(masterAddress);
+            master = getMember(masterUuid);
         } finally {
             lock.unlock();
         }
@@ -1082,11 +1090,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     /**
      *
-     * @param millis
+     * @param timeoutMillis the maximum time to block on join
      * @return true is cluster has been joined, false if timed out
-     * @throws InterruptedException
+     * @throws InterruptedException if the current thread is interrupted while waiting
      */
-    public boolean blockOnJoin(long millis) throws InterruptedException {
-        return joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
+    public boolean blockOnJoin(long timeoutMillis) throws InterruptedException {
+        return joined.get().latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 }

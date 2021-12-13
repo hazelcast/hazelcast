@@ -117,7 +117,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 ServerConnectionManager connectionManager = node.getServer().getConnectionManager(MEMBER);
                 connection = connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
-                    //noinspection BusyWait
                     connectionManager.blockOnConnect(targetAddress, JOIN_RETRY_WAIT_TIME, 0);
                     continue;
                 }
@@ -125,7 +124,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     logger.fine("Sending joinRequest " + targetAddress);
                 }
                 clusterJoinManager.sendJoinRequest(targetAddress);
-                //noinspection BusyWait
+
                 if (!clusterService.isJoined()) {
                     clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
                 }
@@ -160,7 +159,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     return;
                 }
 
-                clusterService.setMasterAddressToJoin(null);
+                clusterService.setMasterToJoin(null, null);
             }
         } catch (Throwable t) {
             logger.severe(t);

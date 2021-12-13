@@ -84,6 +84,13 @@ public interface ClusterService extends CoreService, Cluster {
     Address getMasterAddress();
 
     /**
+     * Returns the uuid of the master member.
+     *
+     * @return the uuid of the master member (can be {@code null} if the master is not yet known)
+     */
+    UUID getMasterUuid();
+
+    /**
      * Checks if this member is the master.
      *
      * @return {@code true} if master, {@code false} otherwise

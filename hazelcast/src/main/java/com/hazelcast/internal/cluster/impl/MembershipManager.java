@@ -665,7 +665,7 @@ public class MembershipManager {
         // pause migrations until mastership claim process completes
         node.getPartitionService().pauseMigration();
 
-        clusterService.setMasterAddress(node.getThisAddress());
+        clusterService.setMaster(node.getThisAddress(), node.getThisUuid());
         return true;
     }
 
@@ -726,7 +726,7 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
-            clusterService.getClusterJoinManager().removeJoin(address);
+            clusterService.getClusterJoinManager().removeJoiningMember(member);
             clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);

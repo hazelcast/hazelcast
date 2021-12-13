@@ -61,13 +61,17 @@ public class MulticastJoiner extends AbstractJoiner {
         while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
             // clear master node
-            clusterService.setMasterAddressToJoin(null);
+            clusterService.setMasterToJoin(null, null);
 
+            // the target address of MulticastJoiner can be set via MergeClustersOp before split brain merge
             Address masterAddress = getTargetAddress();
             if (masterAddress == null) {
                 masterAddress = findMasterWithMulticast();
             }
-            clusterService.setMasterAddressToJoin(masterAddress);
+            // TODO [ufuk]: Find masterUuid. We can get the master uuid from the address registry by
+            //  ensuring that a connection to the given master address is established.
+            //  I left master uuid null for now
+            clusterService.setMasterToJoin(masterAddress, null);
 
             if (masterAddress == null || thisAddress.equals(masterAddress)) {
                 clusterJoinManager.setThisMemberAsMaster();
@@ -102,7 +106,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
 
             if (isBlacklisted(master)) {
-                clusterService.setMasterAddressToJoin(null);
+                clusterService.setMasterToJoin(null, null);
                 return;
             }
         }

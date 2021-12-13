@@ -30,7 +30,7 @@ public class NodeMulticastListener implements MulticastListener {
 
     private final Node node;
     private final ILogger logger;
-    private ConfigCheck ourConfig;
+    private final ConfigCheck ourConfig;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
@@ -106,7 +106,7 @@ public class NodeMulticastListener implements MulticastListener {
 
             ClusterServiceImpl clusterService = node.getClusterService();
             if (!clusterService.isJoined() && clusterService.getMasterAddress() == null) {
-                clusterService.setMasterAddressToJoin(joinMessage.getAddress());
+                clusterService.setMasterToJoin(joinMessage.getAddress(), joinMessage.getUuid());
             } else {
                 logDroppedMessage(joinMessage);
             }

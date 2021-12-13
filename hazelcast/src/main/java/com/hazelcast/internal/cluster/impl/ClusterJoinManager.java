@@ -41,6 +41,8 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -72,6 +74,7 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -99,7 +102,7 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
-    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
+    private final Map<UUID, MemberInfo> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
 
     /**
@@ -369,7 +372,7 @@ public class ClusterJoinManager {
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
-        if (!joiningMembers.containsKey(joinRequest.getAddress())) {
+        if (!joiningMembers.containsKey(joinRequest.getUuid())) {
             try {
                 secureLogin(joinRequest, connection);
             } catch (Exception e) {
@@ -447,15 +450,19 @@ public class ClusterJoinManager {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
-            logger.fine(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
-                    joinInProgress, timeToStart));
+            logger.fine(format("Handling join from %s-%s, joinInProgress: %b%s",
+                    memberInfo.getAddress(),
+                    memberInfo.getUuid(),
+                    joinInProgress,
+                    timeToStart)
+            );
         }
 
         if (firstJoinRequest == 0) {
             firstJoinRequest = now;
         }
 
-        final MemberInfo existing = joiningMembers.put(memberInfo.getAddress(), memberInfo);
+        final MemberInfo existing = joiningMembers.put(memberInfo.getUuid(), memberInfo);
         if (existing == null) {
             sendMasterAnswer(memberInfo.getAddress());
             if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
@@ -495,9 +502,10 @@ public class ClusterJoinManager {
 
             logger.finest("This node is being set as the master");
             Address thisAddress = node.getThisAddress();
+            UUID thisUuid = node.getThisUuid();
             MemberVersion version = node.getVersion();
 
-            clusterService.setMasterAddress(thisAddress);
+            clusterService.setMaster(thisAddress, thisUuid);
 
             if (clusterService.getClusterVersion().isUnknown()) {
                 clusterService.getClusterStateManager().setClusterVersion(version.asVersion());
@@ -518,64 +526,87 @@ public class ClusterJoinManager {
      * Set master address, if required.
      *
      * @param masterAddress address of cluster's master, as provided in {@link MasterResponseOp}
+     * @param masterUuid uuid of cluster's master, as provided in {@link MasterResponseOp}
      * @param callerAddress address of node that sent the {@link MasterResponseOp}
+     * @param callerUuid uuid of node that sent the {@link MasterResponseOp}
      * @see MasterResponseOp
      */
-    public void handleMasterResponse(Address masterAddress, Address callerAddress) {
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
+    public void handleMasterResponse(
+            Address masterAddress,
+            UUID masterUuid,
+            Address callerAddress,
+            UUID callerUuid
+    ) {
+        // RU_COMPAT V5_1
+        if (masterUuid == null) {
+            masterUuid = tryToObtainMemberUuid(masterAddress);
+            if (masterUuid == null) {
+                logger.warning("Ignoring master response since couldn't obtain the uuid of master member");
+                return;
+            }
+        }
+
         clusterServiceLock.lock();
         try {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
+                logger.fine(format("Handling master response %s-%s from %s-%s",
+                        masterAddress, masterUuid, callerAddress, callerUuid));
             }
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                            masterAddress, callerAddress));
+                    logger.fine(format("Ignoring master response member[address=%s, uuid=%s] from" +
+                                    " member[address=%s-uuid=%s], this node is already joined",
+                            masterAddress, masterUuid, callerAddress, callerUuid));
                 }
                 return;
             }
 
-            if (node.getThisAddress().equals(masterAddress)) {
-                logger.warning("Received my address as master address from " + callerAddress);
+            if (node.getThisUuid().equals(masterUuid)) {
+                logger.warning("Received my identity as master identity from" +
+                        " member[address=" + callerAddress + ", uuid=" + callerUuid + "]");
                 return;
             }
 
-            Address currentMaster = clusterService.getMasterAddress();
-            if (currentMaster == null || currentMaster.equals(masterAddress)) {
-                setMasterAndJoin(masterAddress);
+            Address currentMasterAddress = clusterService.getMasterAddress();
+            UUID currentMasterUuid = clusterService.getMasterUuid();
+            if (currentMasterUuid == null || currentMasterUuid.equals(masterUuid)) {
+                setMasterAndJoin(masterAddress, masterUuid);
                 return;
             }
 
-            if (currentMaster.equals(callerAddress)) {
-                logger.warning(format("Setting master to %s since %s says it is not master anymore", masterAddress,
-                        currentMaster));
-                setMasterAndJoin(masterAddress);
+            if (currentMasterUuid.equals(callerUuid)) {
+                logger.warning(format("Setting master to member[address=%s, uuid=%s]" +
+                                " since member[address=%s, uuid=%s] says it is not master anymore",
+                        masterAddress, masterUuid, currentMasterAddress, currentMasterUuid));
+                setMasterAndJoin(masterAddress, masterUuid);
                 return;
             }
 
-            Connection conn = node.getServer().getConnectionManager(MEMBER).get(currentMaster);
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(currentMasterAddress);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
-                        masterAddress, callerAddress, currentMaster));
-                sendJoinRequest(currentMaster);
+                        masterAddress, callerAddress, currentMasterAddress));
+                sendJoinRequest(currentMasterAddress);
             } else {
-                logger.warning(format("Ambiguous master response! Received master response %s from %s. "
-                                + "This node has a master %s, but does not have an active connection to it. "
-                                + "Master field will be unset now.",
-                        masterAddress, callerAddress, currentMaster));
-                clusterService.setMasterAddress(null);
+                logger.warning(format("Ambiguous master response! Received master response member[address=%s, uuid=%s]" +
+                                " from member[address=%s, uuid=%s]. This node has a master member[address=%s, uuid=%s]," +
+                                " but does not have an active connection to it. Master field will be unset now.",
+                        masterAddress, masterUuid, callerAddress, callerUuid, currentMasterAddress, currentMasterUuid));
+                clusterService.setMaster(null, null);
             }
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    private void setMasterAndJoin(Address masterAddress) {
-        clusterService.setMasterAddress(masterAddress);
+    private void setMasterAndJoin(Address masterAddress, UUID masterUuid) {
+        clusterService.setMaster(masterAddress, masterUuid);
         node.getServer().getConnectionManager(MEMBER).getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress)) {
-            logger.warning("Could not create connection to possible master " + masterAddress);
+            logger.warning("Could not create connection to possible master" +
+                    " member[address=" + masterAddress + "uuid=" + masterUuid + "]");
         }
     }
 
@@ -627,12 +658,14 @@ public class ClusterJoinManager {
      */
     private void sendMasterAnswer(Address target) {
         Address masterAddress = clusterService.getMasterAddress();
-        if (masterAddress == null) {
+        UUID masterUuid = clusterService.getMasterUuid();
+
+        if (masterAddress == null || masterUuid == null) {
             logger.info(format("Cannot send master answer to %s since master node is not known yet", target));
             return;
         }
 
-        if (masterAddress.equals(node.getThisAddress())
+        if (masterUuid.equals(node.getThisUuid())
                 && node.getNodeExtension().getInternalHotRestartService()
                     .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
             // I already know that I will do a force-start, so I will not allow target to join me
@@ -645,7 +678,7 @@ public class ClusterJoinManager {
             return;
         }
 
-        MasterResponseOp op = new MasterResponseOp(masterAddress);
+        Operation op = new MasterResponseOp(masterAddress, masterUuid);
         nodeEngine.getOperationService().send(op, target);
     }
 
@@ -795,7 +828,7 @@ public class ClusterJoinManager {
                     invokeClusterOp(op, member.getAddress());
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
-                    if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
+                    if (member.localMember() || joiningMembers.containsKey(member.getUuid())) {
                         continue;
                     }
                     Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time, partitionRuntimeState, true);
@@ -1000,8 +1033,8 @@ public class ClusterJoinManager {
         }
     }
 
-    void removeJoin(Address address) {
-        joiningMembers.remove(address);
+    void removeJoiningMember(Member member) {
+        joiningMembers.remove(member.getUuid());
     }
 
     void addLeftMember(Member member) {
@@ -1014,5 +1047,25 @@ public class ClusterJoinManager {
 
     public void removeLeftMember(UUID memberUuid) {
         leftMembersUuids.remove(memberUuid);
+    }
+
+    private UUID tryToObtainMemberUuid(Address address) {
+        final int maxTryCount = 5;
+        final int retryIntervalInMillis = 500;
+        LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+        UUID memberUuid = addressRegistry.uuidOf(address);
+
+        int tryCount = 0;
+        while (memberUuid == null && tryCount++ < maxTryCount) {
+            ServerConnectionManager connectionManager = node.getServer().getConnectionManager(MEMBER);
+            connectionManager.getOrConnect(address);
+            try {
+                connectionManager.blockOnConnect(address, retryIntervalInMillis, 0);
+            } catch (InterruptedException ignored) {
+                ignore(ignored);
+            }
+            memberUuid = addressRegistry.uuidOf(address);
+        }
+        return memberUuid;
     }
 }

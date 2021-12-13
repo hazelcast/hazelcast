@@ -78,14 +78,14 @@ class MockJoiner extends AbstractJoiner {
                 logger.fine("Sending join request to " + joinAddress);
                 if (!clusterJoinManager.sendJoinRequest(joinAddress)) {
                     logger.fine("Could not send join request to " + joinAddress);
-                    clusterService.setMasterAddressToJoin(null);
+                    clusterService.setMasterToJoin(null, null);
                 }
 
                 if (Clock.currentTimeMillis() > joinAddressTimeout) {
                     logger.warning("Resetting master address because join address timeout");
                     previousJoinAddress = null;
                     joinAddressTimeout = 0;
-                    clusterService.setMasterAddressToJoin(null);
+                    clusterService.setMasterToJoin(null, null);
                 }
             }
             if (!shouldRetry()) {
