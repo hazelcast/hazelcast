@@ -112,6 +112,6 @@ public class View implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
+        return Objects.hash(name, query, isStream, viewColumnNames, viewColumnTypes);
     }
 }
