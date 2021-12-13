@@ -31,8 +31,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  */
 public final class InstanceCreationUtil {
 
-    private static final Objenesis OBJENESIS = new ObjenesisStd();
-    private static final Map<Class<?>, ObjectInstantiator<?>> OBJECT_INSTANTIATORS = new ConcurrentHashMap<>();
+    private static final Objenesis OBJENESIS = new ObjenesisStd(true);
     private static final Map<Class<?>, Supplier<?>> OBJECT_SUPPLIERS = new ConcurrentHashMap<>();
 
     private InstanceCreationUtil() {
@@ -52,7 +51,7 @@ public final class InstanceCreationUtil {
            if (canUseConstructor(clz)) {
                return () -> (T) newInstanceUsingConstructor(clz);
            } else {
-               ObjectInstantiator instantiator = OBJECT_INSTANTIATORS.computeIfAbsent(klass, OBJENESIS::getInstantiatorOf);
+               ObjectInstantiator instantiator = OBJENESIS.getInstantiatorOf(klass);
                return () -> (T) instantiator.newInstance();
            }
         });
