@@ -19,6 +19,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LocalAddressRegistryTest {
+public class LocalAddressRegistryTest extends HazelcastTestSupport {
 
     private LocalAddressRegistry addressRegistry;
 
@@ -91,6 +92,7 @@ public class LocalAddressRegistryTest {
         // disjoint address set is registered to the same uuid
         addressRegistry.register(memberUuid, sampleAddresses2());
         assertExpectedAddressesRegistered(memberUuid, sampleAddresses2().getAllAddresses());
+        assertAddressesRemoved(memberUuid, sampleAddresses().getAllAddresses());
 
         // remove registration attempts with the old registered addresses should fail.
         // try to remove twice in case we can't remove it because of the registration count
@@ -103,6 +105,37 @@ public class LocalAddressRegistryTest {
         assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses2().getAllAddresses());
     }
 
+    @Test
+    public void whenDisjointAddressSetRegisteredToSameUUID_oldAddressesShouldBeRemoved2() throws UnknownHostException {
+        int registerCount = 100;
+        UUID memberUuid = UuidUtil.newUnsecureUUID();
+        for (int i = 0; i < registerCount; i++) {
+            addressRegistry.register(memberUuid, sampleAddresses());
+        }
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses().getAllAddresses());
+
+        // disjoint address set is registered to the same uuid
+        for (int i = 0; i < registerCount; i++) {
+            addressRegistry.register(memberUuid, sampleAddresses2());
+        }
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses2().getAllAddresses());
+        assertAddressesRemoved(memberUuid, sampleAddresses().getAllAddresses());
+
+        // remove registration attempts with the old registered addresses should fail.
+        // try to remove 2x times in case we can't remove it because of the registration count
+        for (int i = 0; i < 2 * registerCount; i++) {
+            addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses().getPrimaryAddress());
+        }
+        // show that removal requests on stale items do not remove the newly registered entries
+        assertExpectedAddressesRegistered(memberUuid, sampleAddresses2().getAllAddresses());
+
+        // try removal with the second set of addresses
+        for (int i = 0; i < registerCount; i++) {
+            addressRegistry.tryRemoveRegistration(memberUuid, sampleAddresses2().getPrimaryAddress());
+        }
+        assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses2().getAllAddresses());
+    }
+
     private void assertExpectedAddressesRegistered(UUID memberUuid, Set<Address> addresses) {
         for (Address address : addresses) {
             assertEquals(memberUuid, addressRegistry.uuidOf(address));
@@ -111,6 +144,18 @@ public class LocalAddressRegistryTest {
         assertNotNull(linkedAddresses);
         assertNotNull(linkedAddresses.getAllAddresses());
         assertTrue(linkedAddresses.getAllAddresses().containsAll(addresses));
+    }
+
+    private void assertAddressesRemoved(UUID memberUuid, Set<Address> removedAddresses) {
+        for (Address address : removedAddresses) {
+            assertNull(addressRegistry.uuidOf(address));
+        }
+        LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(memberUuid);
+        if (linkedAddresses != null) {
+            for (Address address : removedAddresses) {
+                assertNotContains(linkedAddresses.getAllAddresses(), address);
+            }
+        }
     }
 
     private void assertUUID_And_AddressesRemoved(UUID memberUuid, Set<Address> addresses) {
