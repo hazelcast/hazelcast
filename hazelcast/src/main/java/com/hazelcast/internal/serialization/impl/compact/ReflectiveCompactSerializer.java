@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
