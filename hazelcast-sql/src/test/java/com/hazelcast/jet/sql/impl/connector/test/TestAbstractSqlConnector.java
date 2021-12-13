@@ -203,27 +203,23 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
-                ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(null);
-
         TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+            EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
+                    ? EventTimePolicy.noEventTime()
+                    : eventTimePolicyProvider.apply(evalContext);
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 
-        ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn, eventTimePolicy);
+        ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn);
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    protected abstract ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn,
-            EventTimePolicy<JetSqlRow> eventTimePolicy
-    );
+    protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
     private static final class TestTable extends JetTable {
 

@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nullable;
@@ -84,7 +86,7 @@ public final class WindowProperties {
 
         int index();
 
-        ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context);
+        ToLongFunctionEx<JetSqlRow> orderingFn(ExpressionEvalContext context);
 
         SlidingWindowPolicy windowPolicy(ExpressionEvalContext context);
 
@@ -110,9 +112,10 @@ public final class WindowProperties {
         }
 
         @Override
-        public ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context) {
+        public ToLongFunctionEx<JetSqlRow> orderingFn(ExpressionEvalContext context) {
             int index = this.index;
-            return row -> WindowUtils.extractMillis(row[index]);
+            // TODO [viliam] cache SS
+            return row -> WindowUtils.extractMillis(row.get(Contexts.getCastedThreadContext().serializationService(), index));
         }
 
         @Override
@@ -142,11 +145,11 @@ public final class WindowProperties {
         }
 
         @Override
-        public ToLongFunctionEx<Object[]> orderingFn(ExpressionEvalContext context) {
+        public ToLongFunctionEx<JetSqlRow> orderingFn(ExpressionEvalContext context) {
             int index = this.index;
             SlidingWindowPolicy windowPolicy = this.windowPolicyProvider.apply(context);
             return row -> {
-                long millis = WindowUtils.extractMillis(row[index]);
+                long millis = WindowUtils.extractMillis(row.get(context.getSerializationService(), index));
                 return millis - windowPolicy.windowSize();
             };
         }

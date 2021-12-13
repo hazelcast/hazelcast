@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
@@ -105,24 +106,25 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(row -> row.get(minIndex));
+                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(row -> row.get(maxIndex));
+                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
-                    valueProviders.add(row -> row.get(sumIndex));
+                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
-                    valueProviders.add(row -> row.get(avgIndex));
+                    // TODO [viliam] save SS to a local var?
+                    valueProviders.add(row -> row.get(Contexts.getCastedThreadContext().serializationService(), avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);

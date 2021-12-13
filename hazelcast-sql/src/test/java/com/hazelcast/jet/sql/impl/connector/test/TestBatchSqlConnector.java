@@ -17,13 +17,11 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
@@ -73,8 +71,7 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
 
     @Override
     protected ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn,
-            EventTimePolicy<JetSqlRow> eventTimePolicy
+            FunctionEx<Context, TestDataGenerator> createContextFn
     ) {
         BatchSource<Object> source = SourceBuilder
                 .batch("batch", createContextFn)

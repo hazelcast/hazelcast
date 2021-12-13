@@ -27,7 +27,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.metrics.MetricsImpl;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -288,11 +288,11 @@ public class TaskletExecutionService {
             final Tasklet t = tracker.tasklet;
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
-            MetricsImpl.Container userMetricsContextContainer = MetricsImpl.container();
+            Contexts.Container userMetricsContextContainer = Contexts.container();
 
             try {
                 blockingWorkerCount.inc();
-                userMetricsContextContainer.setContext(t.getMetricsContext());
+                userMetricsContextContainer.setContext(t.getProcessorContext());
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -335,7 +335,7 @@ public class TaskletExecutionService {
 
         private boolean finestLogEnabled;
         private Thread myThread;
-        private MetricsImpl.Container userMetricsContextContainer;
+        private Contexts.Container userMetricsContextContainer;
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -344,8 +344,7 @@ public class TaskletExecutionService {
         @Override
         public void run() {
             myThread = currentThread();
-            userMetricsContextContainer = MetricsImpl.container();
-            use threadLocal to access processor context
+            userMetricsContextContainer = Contexts.container();
 
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
@@ -385,7 +384,7 @@ public class TaskletExecutionService {
             }
             try {
                 myThread.setContextClassLoader(t.jobClassLoader);
-                userMetricsContextContainer.setContext(t.tasklet.getMetricsContext());
+                userMetricsContextContainer.setContext(t.tasklet.getProcessorContext());
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
                     dismissTasklet(t);

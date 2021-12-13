@@ -20,6 +20,7 @@ import com.google.common.collect.Iterables;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
@@ -73,7 +74,10 @@ final class WatermarkRules {
             return context -> {
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
-                        row -> WindowUtils.extractMillis(row.get(context.getSerializationService(), orderingColumnFieldIndex)),
+                        row -> {
+                            // TODO [viliam] save SS to local var?
+                            return WindowUtils.extractMillis(row.get(Contexts.getCastedThreadContext().serializationService(), orderingColumnFieldIndex));
+                        },
                         (row, timestamp) -> row,
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,

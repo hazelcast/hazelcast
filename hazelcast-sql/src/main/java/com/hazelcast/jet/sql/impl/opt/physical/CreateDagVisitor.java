@@ -311,7 +311,7 @@ public class CreateDagVisitor {
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
                             return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),
-                        (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                        (BiFunctionEx<Function<JetSqlRow, JetSqlRow>, JetSqlRow, JetSqlRow>) Function::apply
                 )
         );
         connectInput(rel.getInput(), vertex, null);
@@ -323,7 +323,7 @@ public class CreateDagVisitor {
         AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(
@@ -347,7 +347,7 @@ public class CreateDagVisitor {
         AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(
