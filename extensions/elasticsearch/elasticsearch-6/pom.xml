@@ -76,10 +76,10 @@
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
             <!--
-            Supports Elastic server 6.8.17 and higher
+            Supports Elastic server 7.16.1 and higher
             because of security vulnerabilities see #2906
             -->
-            <version>6.8.17</version>
+            <version>7.16.1</version>
         </dependency>
 
         <!-- TEST -->
