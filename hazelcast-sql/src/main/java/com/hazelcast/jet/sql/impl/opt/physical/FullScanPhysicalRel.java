@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
@@ -98,6 +100,15 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
         return new PlanNodeSchema(fieldTypes);
+    }
+
+    @Override
+    public boolean isStream() {
+        Table target = getTable().unwrap(HazelcastTable.class).getTarget();
+        if (target != null) {
+            return getJetSqlConnector(target).isStream();
+        }
+        return false;
     }
 
     @Override

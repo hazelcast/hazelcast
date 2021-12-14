@@ -21,13 +21,13 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
-import com.hazelcast.query.impl.TypeConverters;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
+import com.hazelcast.query.impl.TypeConverters;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -71,6 +71,7 @@ import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRelTable;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCollation;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.lang.Boolean.FALSE;
@@ -196,10 +197,6 @@ public final class IndexResolver {
 
         rels.addAll(fullScanRelsMap.values());
         return rels;
-    }
-
-    private static RelCollation getCollation(RelNode rel) {
-        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
     }
 
     /**

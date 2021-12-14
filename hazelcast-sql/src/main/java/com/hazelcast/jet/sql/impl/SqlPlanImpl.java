@@ -569,7 +569,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final OptimizerContext context;
         private final String viewName;
         private final String viewQuery;
-        private final boolean viewIsStream;
         private final boolean replace;
         private final boolean ifNotExists;
         private final PlanExecutor planExecutor;
@@ -579,7 +578,6 @@ abstract class SqlPlanImpl extends SqlPlan {
                 final OptimizerContext context,
                 String viewName,
                 String viewQuery,
-                boolean viewIsStream,
                 boolean replace,
                 boolean ifNotExists,
                 PlanExecutor planExecutor
@@ -589,7 +587,6 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.context = context;
             this.viewName = viewName;
             this.viewQuery = viewQuery;
-            this.viewIsStream = viewIsStream;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
             this.planExecutor = planExecutor;
@@ -605,10 +602,6 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public String viewQuery() {
             return viewQuery;
-        }
-
-        public boolean isStream() {
-            return viewIsStream;
         }
 
         boolean isReplace() {

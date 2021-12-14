@@ -47,6 +47,8 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -417,6 +419,10 @@ public final class OptUtils {
             default:
                 return null;
         }
+    }
+
+    public static RelCollation getCollation(RelNode rel) {
+        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
     }
 
     private static int findKeyIndex(Table table) {

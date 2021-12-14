@@ -116,7 +116,7 @@ public class QueryConverter {
         }
 
         // 5. Collect original field names.
-        return new QueryConvertResult(result, Pair.right(root.fields));
+        return new QueryConvertResult(result, Pair.right(root.fields), false);
     }
 
     /**

@@ -16,12 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
-import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
-import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
@@ -45,6 +42,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -80,8 +78,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static java.util.Objects.requireNonNull;
-import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -119,7 +115,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private final IMapResolver iMapResolver;
 
     private boolean isCreateJob;
-    private boolean isInfiniteRows;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
@@ -227,8 +222,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (countOrderingFunctions(node) > 1) {
             throw newValidationError(node, RESOURCE.multipleOrderingFunctionsNotSupported());
         }
-
-        isInfiniteRows = containsStreamingSource(node);
     }
 
     private static int countOrderingFunctions(SqlNode node) {
@@ -251,125 +244,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    protected void validateGroupClause(SqlSelect select) {
-        super.validateGroupClause(select);
-
-        if (isInfiniteRows(select)
-                && containsGroupingOrAggregation(select)
-                && !containsOrderedWindow(requireNonNull(select.getFrom()))) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
-        }
-    }
-
-    private boolean containsGroupingOrAggregation(SqlSelect select) {
-        if (select.getGroup() != null && select.getGroup().size() > 0) {
-            return true;
-        }
-
-        if (select.isDistinct()) {
-            return true;
-        }
-
-        for (SqlNode node : select.getSelectList()) {
-            if (node.getKind().belongsTo(AGGREGATE)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean containsOrderedWindow(SqlNode node) {
-        class OrderedWindowFinder extends SqlBasicVisitor<Void> {
-            final HazelcastSqlValidator validator;
-            boolean windowingFunctionFound;
-            boolean orderedInputToWindowingFunctionFound;
-
-            OrderedWindowFinder(HazelcastSqlValidator validator) {
-                this.validator = validator;
-            }
-
-            OrderedWindowFinder(HazelcastSqlValidator validator, boolean windowingFunctionFound) {
-                this.validator = validator;
-                this.windowingFunctionFound = windowingFunctionFound;
-            }
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastWindowTableFunction) {
-                    windowingFunctionFound = true;
-                    orderedInputToWindowingFunctionFound = false;
-                } else if (operator instanceof ImposeOrderFunction && windowingFunctionFound) {
-                    orderedInputToWindowingFunctionFound = true;
-                    windowingFunctionFound = false;
-                }
-                return super.visit(call);
-            }
-
-            @Override
-            public Void visit(SqlIdentifier id) {
-                SqlValidatorTable table = getCatalogReader().getTable(id.names);
-                // not every identifier is a table
-                if (table != null) {
-                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-                    if (hazelcastTable.getTarget() instanceof ViewTable) {
-                        String viewQuery = ((ViewTable) hazelcastTable.getTarget()).getViewQuery();
-                        QueryParser parser = new QueryParser(validator);
-                        try {
-                            QueryParseResult parseResult = parser.parse(viewQuery);
-                            OrderedWindowFinder finder = new OrderedWindowFinder(validator, windowingFunctionFound);
-                            SqlNode sqlNode = parseResult.getNode();
-                            sqlNode.accept(finder);
-                            // TODO: [sasha] did it as quick idea impl late night, need more thinking about correctness
-                            orderedInputToWindowingFunctionFound |= finder.orderedInputToWindowingFunctionFound;
-                            windowingFunctionFound |= finder.windowingFunctionFound;
-                            return null;
-                        } catch (Exception e) {
-                            throw QueryException.error(e.getMessage());
-                        }
-                    }
-                }
-                return super.visit(id);
-            }
-        }
-
-        OrderedWindowFinder finder = new OrderedWindowFinder(this);
-        node.accept(finder);
-        return finder.orderedInputToWindowingFunctionFound;
-    }
-
-    @Override
-    protected void validateOrderList(SqlSelect select) {
-        super.validateOrderList(select);
-
-        if (select.hasOrderBy() && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
-        }
-    }
-
-    @Override
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        switch (join.getJoinType()) {
-            case INNER:
-            case COMMA:
-            case CROSS:
-            case LEFT:
-                if (containsStreamingSource(join.getRight())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
-                }
-                break;
-            case RIGHT:
-                if (containsStreamingSource(join.getLeft())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
-                }
-                break;
-            case FULL:
-                throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
-            default:
-                throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
+        if (join.getJoinType().equals(JoinType.FULL)) {
+            throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
         }
     }
 
@@ -377,8 +256,43 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public void validateInsert(SqlInsert insert) {
         super.validateInsert(insert);
 
-        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
-            throw newValidationError(insert, RESOURCE.mustUseCreateJob());
+        class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
+            boolean found;
+
+            @Override
+            public Void visit(SqlIdentifier id) {
+                SqlValidatorTable table = getCatalogReader().getTable(id.names);
+                // not every identifier is a table
+                if (table != null) {
+                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
+                    SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
+                    if (connector.isStream()) {
+                        found = true;
+                        return null;
+                    }
+                }
+                return super.visit(id);
+            }
+
+            @Override
+            public Void visit(SqlCall call) {
+                SqlOperator operator = call.getOperator();
+                if (operator instanceof HazelcastTableSourceFunction) {
+                    if (((HazelcastTableSourceFunction) operator).isStream()) {
+                        found = true;
+                        return null;
+                    }
+                }
+                return super.visit(call);
+            }
+        }
+
+        if (!isCreateJob) {
+            FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
+            insert.getSource().accept(visitor);
+            if (visitor.found) {
+                throw newValidationError(insert, RESOURCE.mustUseCreateJob());
+            }
         }
     }
 
@@ -474,56 +388,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private Table extractTable(SqlIdentifier identifier) {
         SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
         return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
-    }
-
-    private boolean isInfiniteRows(SqlNode node) {
-        isInfiniteRows |= containsStreamingSource(node);
-        return isInfiniteRows;
-    }
-
-    /**
-     * Goes over all the referenced tables in the given {@link SqlNode}
-     * and returns true if any of them uses a streaming connector.
-     */
-    public boolean containsStreamingSource(SqlNode node) {
-        class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
-            boolean found;
-
-            @Override
-            public Void visit(SqlIdentifier id) {
-                SqlValidatorTable table = getCatalogReader().getTable(id.names);
-                // not every identifier is a table
-                if (table != null) {
-                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-                    if (hazelcastTable.getTarget() instanceof ViewTable) {
-                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
-                        return null;
-                    }
-                    SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
-                    if (connector.isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(id);
-            }
-
-            @Override
-            public Void visit(SqlCall call) {
-                SqlOperator operator = call.getOperator();
-                if (operator instanceof HazelcastTableSourceFunction) {
-                    if (((HazelcastTableSourceFunction) operator).isStream()) {
-                        found = true;
-                        return null;
-                    }
-                }
-                return super.visit(call);
-            }
-        }
-
-        FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
-        node.accept(visitor);
-        return visitor.found;
     }
 
     @Override
@@ -659,15 +523,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
-    }
-
-    /**
-     * Returns whether the validated node returns an infinite number of rows.
-     *
-     * @throws IllegalStateException if called before the node is validated.
-     */
-    public boolean isInfiniteRows() {
-        return isInfiniteRows;
     }
 
     @Override

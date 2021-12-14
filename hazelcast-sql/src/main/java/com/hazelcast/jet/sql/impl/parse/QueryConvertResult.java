@@ -27,10 +27,12 @@ public class QueryConvertResult {
 
     private final RelNode rel;
     private final List<String> fieldNames;
+    private final boolean isInfiniteRows;
 
-    public QueryConvertResult(RelNode rel, List<String> fieldNames) {
+    public QueryConvertResult(RelNode rel, List<String> fieldNames, boolean isInfiniteRows) {
         this.rel = rel;
         this.fieldNames = fieldNames;
+        this.isInfiniteRows = isInfiniteRows;
     }
 
     public RelNode getRel() {
@@ -39,5 +41,9 @@ public class QueryConvertResult {
 
     public List<String> getFieldNames() {
         return fieldNames;
+    }
+
+    public boolean isInfiniteRows() {
+        return isInfiniteRows;
     }
 }

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -120,10 +121,11 @@ public class SqlExpandViewTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT * FROM v LIMIT 1", rows(1, 0L));
 
         assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v ORDER BY 1"))
-                .hasMessageContaining("Sorting is not supported for a streaming query");
+                .hasRootCauseInstanceOf(QueryException.class)
+                .hasRootCauseMessage("Sorting is not supported for a streaming query");
 
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT MAX(*) FROM v"))
-                .hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+//        assertThatThrownBy(() -> instance().getSql().execute("SELECT MAX(*) FROM v"))
+//                .hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
     }
 
     @Test
@@ -141,13 +143,14 @@ public class SqlExpandViewTest extends SqlTestSupport {
     @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
     @Test
     public void test_referencedViewChanged() {
+        map.put(2, 2);
         // We create a view v2 as reading from v1, and then change v1.
         // This should be reflected when querying v2 later.
         instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
         instance().getSql().execute("CREATE VIEW v2 AS SELECT __key FROM v1");
-        instance().getSql().execute("CREATE or replace VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME);
+        String sql = "CREATE OR REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME;
 
-        assertRowsAnyOrder("select * from v2", rows(1, "key=1"));
+        assertThatThrownBy(() -> instance().getSql().execute(sql));
     }
 
     @Test

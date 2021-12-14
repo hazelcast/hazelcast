@@ -280,7 +280,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
-                    parseResult.isInfiniteRows(),
                     false
             );
         }
@@ -332,7 +331,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
-        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
+        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
@@ -340,7 +339,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getRel(),
                 dmlConvertedResult.getFieldNames(),
                 context,
-                dmlParseResult.isInfiniteRows(),
                 true
         );
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
@@ -387,7 +385,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 context,
                 sqlNode.name(),
                 sql,
-                sqlNode.isStream(),
                 replace,
                 ifNotExists,
                 planExecutor
@@ -426,7 +423,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
-            boolean isInfiniteRows,
             boolean isCreateJob
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
@@ -525,7 +521,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
-                    isInfiniteRows,
+                    physicalRel.isStream(),
                     rowMetadata,
                     planExecutor,
                     permissions

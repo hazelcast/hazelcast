@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -63,6 +63,10 @@ public interface PhysicalRel extends RelNode {
     @Override
     default RelDataType getRowType() {
         return getTable().unwrap(HazelcastTable.class).getRowType(getCluster().getTypeFactory());
+    }
+
+    default boolean isStream() {
+        return false;
     }
 
     /**
