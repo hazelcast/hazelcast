@@ -91,23 +91,9 @@
           {
             "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
             "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
-            "causingExceptions": [
-              {
-                "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
-                "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
-                "causingExceptions": [],
-                "keyword": "required",
-                "message": "required key [device-name] not found"
-              },
-              {
-                "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/disk-tier",
-                "pointerToViolation": "#/hazelcast/map/my-map-1/tiered-store/disk-tier",
-                "causingExceptions": [],
-                "keyword": "required",
-                "message": "required key [enabled] not found"
-              }
-            ],
-            "message": "2 schema violations found"
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [enabled] not found"
           },
           {
             "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
@@ -124,9 +110,9 @@
             "message": "string [01 KB] does not match pattern ^[1-9]([0-9]*) (B|KB|MB|GB)$"
           }
         ],
-        "message": "5 schema violations found"
+        "message": "4 schema violations found"
       }
     ],
-    "message": "9 schema violations found"
+    "message": "8 schema violations found"
   }
 }

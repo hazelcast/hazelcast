@@ -4196,10 +4196,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="device-name" type="xs:string" use="required">
+        <xs:attribute name="device-name" type="xs:string" default="default-tiered-store-device">
             <xs:annotation>
                 <xs:documentation>
-                    Name of the device for a given disk tier.
+                    Name of the device for a given disk tier. The default is "default-tiered-store-device".
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4212,14 +4212,14 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="memory-tier" type="memory-tier">
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Memory tier.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="disk-tier" type="disk-tier">
+            <xs:element name="disk-tier" type="disk-tier" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Disk tier.
