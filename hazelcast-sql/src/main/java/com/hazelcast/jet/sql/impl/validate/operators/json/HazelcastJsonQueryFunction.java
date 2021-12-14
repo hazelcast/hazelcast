@@ -23,9 +23,15 @@ import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.JsonFunctionOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
+import com.hazelcast.sql.impl.QueryException;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 @SuppressWarnings("checkstyle:MagicNumber")
@@ -56,5 +62,70 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
     @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.of(5);
+    }
+
+    @Override
+    public void unparse(final SqlWriter writer, final SqlCall call, final int leftPrec, final int rightPrec) {
+        final SqlWriter.Frame frame = writer.startFunCall(this.getName());
+        call.operand(0).unparse(writer, leftPrec, rightPrec);
+        writer.sep(",");
+        call.operand(1).unparse(writer, leftPrec, rightPrec);
+
+        final SqlJsonQueryWrapperBehavior wrapperBehavior = (SqlJsonQueryWrapperBehavior)
+                ((SqlLiteral) call.operand(2)).getValue();
+
+        final SqlJsonQueryEmptyOrErrorBehavior onEmpty = (SqlJsonQueryEmptyOrErrorBehavior)
+                ((SqlLiteral) call.operand(3)).getValue();
+
+        final SqlJsonQueryEmptyOrErrorBehavior onError = (SqlJsonQueryEmptyOrErrorBehavior)
+                ((SqlLiteral) call.operand(4)).getValue();
+
+        unparseWrapperBehavior(wrapperBehavior, writer);
+
+        unparseEmptyOrErrorBehavior(onEmpty, writer);
+        writer.keyword("ON EMPTY");
+
+        unparseEmptyOrErrorBehavior(onError, writer);
+        writer.keyword("ON ERROR");
+
+        writer.endFunCall(frame);
+    }
+
+    private void unparseWrapperBehavior(final SqlJsonQueryWrapperBehavior behavior, final SqlWriter writer) {
+        switch (behavior) {
+            case WITHOUT_ARRAY:
+                writer.keyword("WITHOUT ARRAY WRAPPER");
+                break;
+            case WITH_UNCONDITIONAL_ARRAY:
+                writer.keyword("WITH UNCONDITIONAL ARRAY WRAPPER");
+                break;
+            case WITH_CONDITIONAL_ARRAY:
+                writer.keyword("WITH CONDITIONAL ARRAY WRAPPER");
+                break;
+            default:
+                throw QueryException.error("Unknown WrapperBehavior constant: " + behavior);
+        }
+    }
+
+    private void unparseEmptyOrErrorBehavior(
+            final SqlJsonQueryEmptyOrErrorBehavior behavior,
+            final SqlWriter writer
+    ) {
+        switch (behavior) {
+            case ERROR:
+                writer.keyword("ERROR");
+                break;
+            case NULL:
+                writer.keyword("NULL");
+                break;
+            case EMPTY_ARRAY:
+                writer.keyword("EMPTY ARRAY");
+                break;
+            case EMPTY_OBJECT:
+                writer.keyword("EMPTY OBJECT");
+                break;
+            default:
+                throw QueryException.error("Unknown EmptyOrErrorBehavior constant: " + behavior);
+        }
     }
 }

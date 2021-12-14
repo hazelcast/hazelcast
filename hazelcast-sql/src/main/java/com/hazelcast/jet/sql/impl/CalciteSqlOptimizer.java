@@ -36,6 +36,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -73,18 +74,18 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
-import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -106,6 +107,7 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
@@ -179,7 +181,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
 
-    private final MappingResolver mappingResolver;
+    private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
 
@@ -188,7 +190,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
 
-        this.mappingResolver = new MetadataResolver(nodeEngine);
+        this.iMapResolver = new MetadataResolver(nodeEngine);
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(tableResolverImpl);
@@ -206,7 +208,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Nullable
     @Override
     public String mappingDdl(String name) {
-        Mapping mapping = mappingResolver.resolve(name);
+        Mapping mapping = iMapResolver.resolve(name);
         return mapping != null ? SqlCreateMapping.unparse(mapping) : null;
     }
 
@@ -225,8 +227,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                mappingResolver
-        );
+                iMapResolver);
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
@@ -264,7 +265,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlDropSnapshot) {
             return toDropSnapshotPlan(planKey, (SqlDropSnapshot) node);
         } else if (node instanceof SqlCreateView) {
-            return toCreateViewPlan(planKey, (SqlCreateView) node);
+            return toCreateViewPlan(planKey, context, (SqlCreateView) node);
         } else if (node instanceof SqlDropView) {
             return toDropViewPlan(planKey, (SqlDropView) node);
         } else if (node instanceof SqlShowStatement) {
@@ -375,14 +376,22 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new DropSnapshotPlan(planKey, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
     }
 
-    private SqlPlan toCreateViewPlan(PlanKey planKey, SqlCreateView sqlNode) {
-        // TODO: should we create our own sql dialect or we may use PSQL dialect to unparse query as SQL string?
+    private SqlPlan toCreateViewPlan(PlanKey planKey, OptimizerContext context, SqlCreateView sqlNode) {
         SqlString sqlString = sqlNode.getQuery().toSqlString(PostgresqlSqlDialect.DEFAULT);
         String sql = sqlString.getSql();
         boolean replace = sqlNode.getReplace();
         boolean ifNotExists = sqlNode.ifNotExists;
 
-        return new CreateViewPlan(planKey, new View(sqlNode.name(), sql), replace, ifNotExists, planExecutor);
+        return new CreateViewPlan(
+                planKey,
+                context,
+                sqlNode.name(),
+                sql,
+                sqlNode.isStream(),
+                replace,
+                ifNotExists,
+                planExecutor
+        );
     }
 
     private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {
@@ -492,6 +501,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else if (physicalRel instanceof TableModify) {
+            checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             return new DmlPlan(
@@ -634,5 +644,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return visitor;
+    }
+
+    private void checkDmlOperationWithView(PhysicalRel rel) {
+        HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
+        if (table.getTarget() instanceof ViewTable) {
+            throw QueryException.error("DML operations not supported for views");
+        }
     }
 }

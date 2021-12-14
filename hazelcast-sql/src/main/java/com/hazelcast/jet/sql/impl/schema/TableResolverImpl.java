@@ -22,11 +22,14 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -131,8 +134,8 @@ public class TableResolverImpl implements TableResolver {
     }
 
     @Nonnull
-    public List<String> getMappingNames() {
-        return tableStorage.valuesMappings().stream().map(Mapping::name).collect(Collectors.toList());
+    public Collection<String> getMappingNames() {
+        return tableStorage.mappingNames();
     }
 
     // endregion
@@ -166,14 +169,29 @@ public class TableResolverImpl implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Mapping> mappings = tableStorage.valuesMappings();
-        List<Table> tables = new ArrayList<>(mappings.size() + 3);
-        for (Mapping mapping : mappings) {
-            tables.add(toTable(mapping));
+        Collection<Object> objects = tableStorage.allObjects();
+        List<Table> tables = new ArrayList<>(objects.size() + 3);
+        for (Object o : objects) {
+            if (o instanceof Mapping) {
+                tables.add(toTable((Mapping) o));
+            } else if (o instanceof View) {
+                tables.add(toTable((View) o));
+            } else {
+                throw new RuntimeException("Unexpected: " + o);
+            }
         }
+
+        Collection<Mapping> mappings = objects.stream()
+                .filter(o -> o instanceof Mapping)
+                .map(m -> (Mapping) m)
+                .collect(Collectors.toList());
+        Collection<View> views = objects.stream()
+                .filter(o -> o instanceof View)
+                .map(v -> (View) v)
+                .collect(Collectors.toList());
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, tableStorage.valuesViews()));
+        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));
         return tables;
     }
 
@@ -187,6 +205,14 @@ public class TableResolverImpl implements TableResolver {
                 mapping.options(),
                 mapping.fields()
         );
+    }
+
+    private Table toTable(View view) {
+        List<TableField> tableFields = new ArrayList<>(view.viewColumnNames().size());
+        for (int i = 0; i < view.viewColumnNames().size(); ++i) {
+            tableFields.add(new TableField(view.viewColumnNames().get(i), view.viewColumnTypes().get(i), false));
+        }
+        return new ViewTable(SCHEMA_NAME_PUBLIC, view, tableFields, new ConstantTableStatistics(0L));
     }
 
     @Override

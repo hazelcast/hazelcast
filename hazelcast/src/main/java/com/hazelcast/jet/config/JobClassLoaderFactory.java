@@ -23,9 +23,9 @@ import java.io.Serializable;
  * An interface that can be implemented to provide custom class loader for Jet
  * job.
  * <p>
- * The classloader must be serializable: it is set in the {@link
+ * The classloader factory must be serializable: it is set in the {@link
  * JobConfig#setClassLoaderFactory config} and sent to members in a serialized
- * form.
+ * form. The returned ClassLoader doesn't have to be serializable.
  * <p>
  * It is useful in custom class-loading environments, for example in OSGi.
  *

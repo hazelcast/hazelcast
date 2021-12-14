@@ -18,8 +18,11 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
@@ -27,7 +30,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -107,5 +116,45 @@ public class SqlClientTest extends SqlTestSupport {
         result.close();
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, FAILED);
+    }
+
+    // test for https://github.com/hazelcast/hazelcast/issues/19897
+    @Test
+    public void when_resultClosed_then_executionContextCleanedUp() {
+        HazelcastInstance client = factory().newHazelcastClient();
+        SqlService sql = client.getSql();
+
+        IMap<Integer, Integer> map = instance().getMap("map");
+        Map<Integer, Integer> tmpMap = new HashMap<>();
+        for (int i = 0; i < 100_000; i++) {
+            tmpMap.put(i, i);
+            if (i % 10_000 == 0) {
+                map.putAll(tmpMap);
+                tmpMap.clear();
+            }
+        }
+
+        createMapping("map", Integer.class, Integer.class);
+
+        for (int i = 0; i < 100; i++) {
+            SqlResult result = sql.execute("SELECT * FROM map");
+            result.close();
+        }
+
+        JetServiceBackend jetService = getJetServiceBackend(instance());
+        Collection<ExecutionContext> contexts = jetService.getJobExecutionService().getExecutionContexts();
+        // Assert that all ExecutionContexts are eventually cleaned up
+        // This assert will fail if a network packet arrives after the JobExecutionService#FAILED_EXECUTION_EXPIRY_NS
+        // time. Hopefully Jenkins isn't that slow.
+        assertTrueEventually(() -> {
+            String remainingContexts = contexts.stream()
+                    .map(c -> idToString(c.executionId()))
+                    .collect(Collectors.joining(", "));
+            assertEquals("remaining execIds: " + remainingContexts, 0, contexts.size());
+        }, 5);
+
+        // assert that failedJobs is also cleaned up
+        ConcurrentMap<Long, Long> failedJobs = jetService.getJobExecutionService().getFailedJobs();
+        assertTrueEventually(() -> assertEquals(0, failedJobs.size()));
     }
 }
