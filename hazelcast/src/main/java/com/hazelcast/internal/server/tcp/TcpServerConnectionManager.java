@@ -161,7 +161,13 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public synchronized boolean register(Address remoteAddress, UUID remoteUuid, final ServerConnection c, int planeIndex) {
+    public synchronized boolean register(
+            Address remoteAddress,
+            Address connectedAddress,
+            UUID remoteUuid,
+            final ServerConnection c,
+            int planeIndex
+    ) {
         Plane plane = planes[planeIndex];
         TcpServerConnection connection = (TcpServerConnection) c;
         try {
@@ -204,7 +210,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             return true;
         } finally {
-            plane.removeConnectionInProgress(remoteAddress);
+            plane.removeConnectionInProgress(connectedAddress);
         }
     }
 

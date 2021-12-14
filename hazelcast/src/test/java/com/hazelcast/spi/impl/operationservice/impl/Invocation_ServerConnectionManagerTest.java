@@ -98,7 +98,13 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int streamId) {
+        public boolean register(
+                Address remoteAddress,
+                Address connectedAddress,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
             return false;
         }
 

@@ -197,7 +197,13 @@ class MockServer implements Server {
         }
 
         @Override
-        public synchronized boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection c, int streamId) {
+        public synchronized boolean register(
+                Address remoteAddress,
+                Address connectedAddress,
+                UUID remoteUuid,
+                ServerConnection c,
+                int streamId
+        ) {
             MockServerConnection connection = (MockServerConnection) c;
             if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");

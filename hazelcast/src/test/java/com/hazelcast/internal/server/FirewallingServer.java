@@ -58,7 +58,7 @@ public class FirewallingServer
 
     private final Server delegate;
     private final Consumer<Packet> packetConsumer;
-    private AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<ServerConnectionManager>(null);
+    private AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
 
     @SuppressWarnings("unchecked")
     public FirewallingServer(Server delegate, Set<Address> initiallyBlockedAddresses) {
@@ -295,8 +295,14 @@ public class FirewallingServer
         }
 
         @Override
-        public boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int streamId) {
-            return delegate.register(remoteAddress, remoteUuid, connection, streamId);
+        public boolean register(
+                Address remoteAddress,
+                Address connectedAddress,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
+            return delegate.register(remoteAddress, connectedAddress, remoteUuid, connection, streamId);
         }
 
         @Override

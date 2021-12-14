@@ -144,10 +144,6 @@ public final class TcpServerControl {
                                        MemberHandshake handshake) {
         Address primaryAddress = remoteEndpointAddress;
         Address connectedAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(connectedAddress)) {
-            // this is the connection initiator side --> register the connection under the address that was requested
-            primaryAddress = connectedAddress;
-        }
         UUID remoteUuid = handshake.getUuid();
         if (primaryAddress == null) {
             if (remoteAddressAliases == null) {
@@ -172,7 +168,15 @@ public final class TcpServerControl {
             logger.finest("Registering connection " + connection + " to address " + primaryAddress
                     + " planeIndex:" + handshake.getPlaneIndex());
         }
-        boolean registered = connectionManager.register(primaryAddress, remoteUuid, connection, handshake.getPlaneIndex());
+
+        boolean registered = connectionManager.register(
+                primaryAddress,
+                connectedAddress,
+                remoteUuid,
+                connection,
+                handshake.getPlaneIndex()
+        );
+
         if (registered && !connection.isClient()) {
             LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
             addressesToRegister.addAddress(connectedAddress);

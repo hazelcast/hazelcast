@@ -69,7 +69,7 @@ public interface ServerConnectionManager
      * @return True if the call was successful
      */
     default boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection) {
-        return register(remoteAddress, remoteUuid, connection, 0);
+        return register(remoteAddress, remoteAddress, remoteUuid, connection, 0);
     }
 
     /**
@@ -82,7 +82,13 @@ public interface ServerConnectionManager
      * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
-    boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection, int planeIndex);
+    boolean register(
+            Address remoteAddress,
+            Address connectedAddress,
+            UUID remoteUuid,
+            ServerConnection connection,
+            int planeIndex
+    );
 
     /**
      * Returns the number of connections.
