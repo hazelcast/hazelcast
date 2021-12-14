@@ -3,4 +3,4 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## Enhancements
 
-* Updated the version of log4j2 dependency in the pom.xml to 2.15.0. #20163
+For the distributions packages of IMDG, we updated the vulnerable version of log4j2 in Management Center to 2.15.0. No changes were made to the IMDG code.
