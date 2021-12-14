@@ -31,7 +31,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
 
     // MEMBER & WAN & CLIENT addresses of the connection initiator

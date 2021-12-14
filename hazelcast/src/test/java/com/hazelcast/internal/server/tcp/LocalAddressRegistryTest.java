@@ -136,6 +136,34 @@ public class LocalAddressRegistryTest extends HazelcastTestSupport {
         assertUUID_And_AddressesRemoved(memberUuid, sampleAddresses2().getAllAddresses());
     }
 
+
+    @Test
+    public void test_whenDisjointAddressSetRegisteredToSameUUID_and_oldAddressSetRegisteredToDifferentUuid()
+            throws UnknownHostException {
+        UUID firstMemberUuid = UuidUtil.newUnsecureUUID();
+        UUID secondMemberUuid = UuidUtil.newUnsecureUUID();
+        addressRegistry.register(firstMemberUuid, sampleAddresses());
+        assertExpectedAddressesRegistered(firstMemberUuid, sampleAddresses().getAllAddresses());
+        // same addresses with new uuid
+        addressRegistry.register(secondMemberUuid, sampleAddresses());
+        assertExpectedAddressesRegistered(secondMemberUuid, sampleAddresses().getAllAddresses());
+        // old uuid with new addresses
+        addressRegistry.register(firstMemberUuid, sampleAddresses2());
+        assertExpectedAddressesRegistered(firstMemberUuid, sampleAddresses2().getAllAddresses());
+        assertAddressesRemoved(firstMemberUuid, sampleAddresses().getAllAddresses());
+
+        addressRegistry.tryRemoveRegistration(firstMemberUuid, sampleAddresses().getPrimaryAddress());
+        addressRegistry.tryRemoveRegistration(firstMemberUuid, sampleAddresses().getPrimaryAddress());
+        // show that removal requests on stale items do not remove the newly registered entries
+        assertExpectedAddressesRegistered(firstMemberUuid, sampleAddresses2().getAllAddresses());
+
+        addressRegistry.tryRemoveRegistration(firstMemberUuid, sampleAddresses2().getPrimaryAddress());
+        addressRegistry.tryRemoveRegistration(secondMemberUuid, sampleAddresses().getPrimaryAddress());
+
+        assertUUID_And_AddressesRemoved(firstMemberUuid, sampleAddresses2().getAllAddresses());
+        assertUUID_And_AddressesRemoved(secondMemberUuid, sampleAddresses().getAllAddresses());
+    }
+
     private void assertExpectedAddressesRegistered(UUID memberUuid, Set<Address> addresses) {
         for (Address address : addresses) {
             assertEquals(memberUuid, addressRegistry.uuidOf(address));
@@ -148,7 +176,8 @@ public class LocalAddressRegistryTest extends HazelcastTestSupport {
 
     private void assertAddressesRemoved(UUID memberUuid, Set<Address> removedAddresses) {
         for (Address address : removedAddresses) {
-            assertNull(addressRegistry.uuidOf(address));
+            UUID correspondingMemberUuid = addressRegistry.uuidOf(address);
+            assertTrue(correspondingMemberUuid == null || correspondingMemberUuid != memberUuid);
         }
         LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(memberUuid);
         if (linkedAddresses != null) {

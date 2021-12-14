@@ -253,7 +253,7 @@ public class Node {
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
-            localAddressRegistry = new LocalAddressRegistry();
+            localAddressRegistry = new LocalAddressRegistry(this);
             server = nodeContext.createServer(this, serverSocketRegistry, localAddressRegistry);
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();

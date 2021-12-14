@@ -17,6 +17,7 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.Node;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,9 +36,15 @@ public class LocalAddressRegistry {
     private final Map<Address, UUID> addressToUuid;
     private final Map<UUID, Pair> uuidToAddresses;
 
-    public LocalAddressRegistry() {
+    // protected for testing purposes
+    protected LocalAddressRegistry() {
         this.addressToUuid = new ConcurrentHashMap<>();
         this.uuidToAddresses = new ConcurrentHashMap<>();
+    }
+
+    public LocalAddressRegistry(Node node) {
+        this();
+        register(node.getThisUuid(), LinkedAddresses.getAllLinkedAddresses(node.getThisAddress()));
     }
 
     /**
@@ -83,7 +90,7 @@ public class LocalAddressRegistry {
                     // override the value pair with the new one (removes previous addresses)
                     linkedAddressesRegistrationCountPair = new Pair(linkedAddresses, new AtomicInteger(1));
                     // remove previous addresses from the addressToUuid map
-                    previousAddresses.getAllAddresses().forEach(addressToUuid::remove);
+                    previousAddresses.getAllAddresses().forEach(address -> addressToUuid.remove(address, uuid));
                 }
             }
             linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, memberUuid));

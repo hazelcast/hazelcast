@@ -65,6 +65,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -227,13 +228,10 @@ public class TcpServerControlTest {
 
     }
     private void assertAddressesCleanedUp() {
-        try {
-            Map<Address, UUID> addressToUuid = getFieldValueReflectively(addressRegistry, "addressToUuid");
-            Map<Address, UUID> uuidToAddresses = getFieldValueReflectively(addressRegistry, "uuidToAddresses");
-            assertEmpty(addressToUuid);
-            assertEmpty(uuidToAddresses);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        assertNull(addressRegistry.linkedAddressesOf(MEMBER_UUID));
+        for (Address address : expectedAddresses) {
+            UUID memberUuid = addressRegistry.uuidOf(address);
+            assertNull(memberUuid);
         }
     }
 
