@@ -1,0 +1,60 @@
+# WARNING: This file is regenerated on every build, however the generated text is stable between builds.
+modules:
+  hazelcast:
+    - com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook
+    - com.hazelcast.spi.impl.SpiDataSerializerHook
+    - com.hazelcast.internal.partition.impl.PartitionDataSerializerHook
+    - com.hazelcast.map.impl.MapDataSerializerHook
+    - com.hazelcast.collection.impl.queue.QueueDataSerializerHook
+    - com.hazelcast.multimap.impl.MultiMapDataSerializerHook
+    - com.hazelcast.collection.impl.collection.CollectionDataSerializerHook
+    - com.hazelcast.topic.impl.TopicDataSerializerHook
+    - com.hazelcast.executor.impl.ExecutorDataSerializerHook
+    - com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook
+    - com.hazelcast.internal.locksupport.LockDataSerializerHook
+    - com.hazelcast.internal.longregister.LongRegisterDataSerializerHook
+    - com.hazelcast.transaction.impl.TransactionDataSerializerHook
+    - com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
+    - com.hazelcast.cache.impl.CacheDataSerializerHook
+    - com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook
+    - com.hazelcast.wan.impl.WanDataSerializerHook
+    - com.hazelcast.query.impl.predicates.PredicateDataSerializerHook
+    - com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook
+    - com.hazelcast.client.impl.ClientDataSerializerHook
+    - com.hazelcast.internal.management.ManagementDataSerializerHook
+    - com.hazelcast.internal.ascii.TextProtocolsDataSerializerHook
+    - com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook
+    - com.hazelcast.internal.usercodedeployment.impl.UserCodeDeploymentSerializerHook
+    - com.hazelcast.aggregation.impl.AggregatorDataSerializerHook
+    - com.hazelcast.projection.impl.ProjectionDataSerializerHook
+    - com.hazelcast.internal.config.ConfigDataSerializerHook
+    - com.hazelcast.internal.journal.EventJournalDataSerializerHook
+    - com.hazelcast.flakeidgen.impl.FlakeIdGeneratorDataSerializerHook
+    - com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook
+    - com.hazelcast.internal.crdt.CRDTDataSerializerHook
+    - com.hazelcast.cp.event.impl.CpEventDataSerializerHook
+    - com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook
+    - com.hazelcast.cp.internal.RaftServiceDataSerializerHook
+    - com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
+    - com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook
+    - com.hazelcast.internal.metrics.managementcenter.MetricsDataSerializerHook
+    - com.hazelcast.sql.impl.SqlDataSerializerHook
+    - com.hazelcast.json.internal.JsonDataSerializerHook
+    - com.hazelcast.internal.util.collection.UtilCollectionSerializerHook
+    - com.hazelcast.jet.core.JetDataSerializerHook
+    - com.hazelcast.jet.core.metrics.MetricsDataSerializerHook
+    - com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook
+    - com.hazelcast.jet.impl.metrics.JetMetricsDataSerializerHook
+    - com.hazelcast.jet.impl.observer.JetObserverDataSerializerHook
+    - com.hazelcast.jet.impl.aggregate.AggregateDataSerializerHook
+    - com.hazelcast.jet.config.JetConfigDataSerializerHook
+    - com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook
+  hazelcast-jet-kinesis:
+    - com.hazelcast.jet.kinesis.impl.source.KinesisDataSerializerHook
+  hazelcast-sql:
+    - com.hazelcast.jet.sql.impl.JetSqlSerializerHook

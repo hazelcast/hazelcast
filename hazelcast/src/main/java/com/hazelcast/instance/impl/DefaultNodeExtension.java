@@ -206,7 +206,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public void beforeStart() {
-        DistributionIntegrityChecker.checkModulesIntegrity();
+        ModuleIntegrityChecker.checkIntegrity();
         if (jetExtension != null) {
             // Add configurations for the internal jet distributed objects,
             // compatible with V4.2

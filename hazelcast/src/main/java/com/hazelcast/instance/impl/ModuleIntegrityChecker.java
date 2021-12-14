@@ -16,6 +16,73 @@
 
 package com.hazelcast.instance.impl;
 
-public interface ModuleIntegrityChecker {
-    void check();
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.yaml.YamlLoader;
+import com.hazelcast.internal.yaml.YamlMapping;
+import com.hazelcast.internal.yaml.YamlNode;
+import com.hazelcast.internal.yaml.YamlScalar;
+import com.hazelcast.internal.yaml.YamlSequence;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.lang.String.format;
+
+public final class ModuleIntegrityChecker {
+    private static final String CONFIG_PATH = "/integrity-checker-config.yaml";
+    private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
+
+    private ModuleIntegrityChecker() { }
+
+    public static void checkIntegrity() {
+        final InputStream config = ModuleIntegrityChecker.class
+                .getResourceAsStream(CONFIG_PATH);
+
+        if (config == null) {
+            throw new HazelcastException("Failed to load integrity checker config file");
+        }
+
+        final YamlMapping root = (YamlMapping) YamlLoader.load(config);
+
+        for (final YamlNode moduleNode : root.childAsMapping("modules").children()) {
+           final String moduleName = moduleNode.nodeName();
+           final List<String> moduleHooks = new ArrayList<>();
+           ((YamlSequence) moduleNode).children()
+                    .forEach(node -> moduleHooks.add(((YamlScalar) node).nodeValue()));
+
+           checkModule(moduleName, moduleHooks);
+        }
+    }
+
+    private static void checkModule(String moduleName, List<String> hooks) {
+        for (String className : hooks) {
+            final Class<?> hookClass;
+            try {
+                hookClass = getClassLoader().loadClass(className);
+            } catch (ClassNotFoundException ignored) {
+                continue;
+            }
+
+            try {
+                final Object hook = ServiceLoader.load(
+                        hookClass,
+                        FACTORY_ID,
+                        getClassLoader()
+                );
+
+                if (hook == null) {
+                    throw new HazelcastException("Failed to instantiate DataSerializerHook class instance");
+                }
+            } catch (Exception e) {
+                throw new HazelcastException(format("Failed to verify module[%s] integrity, "
+                        + "unable to load DataSerializerHook: %s", moduleName, className));
+            }
+        }
+    }
+
+    private static ClassLoader getClassLoader() {
+        return ModuleIntegrityChecker.class.getClassLoader();
+    }
 }
