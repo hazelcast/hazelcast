@@ -27,7 +27,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,8 +70,10 @@ public final class DataSerializerHookScanner {
         scanForModules(rootDir);
 
         final BufferedWriter outputWriter = new BufferedWriter(new FileWriter(outputFilePath));
+
         outputWriter.write("# WARNING: This file is regenerated on every build, "
                 + "however the generated text is stable between builds.\n");
+
         outputWriter.write("modules:\n");
         for (final ModuleInfo moduleInfo : FOUND_MODULES.values()) {
             if (moduleInfo.getSerializerHooks().isEmpty()) {
@@ -185,7 +186,6 @@ public final class DataSerializerHookScanner {
         private String name;
         private String path;
         private List<String> serializerHooks = emptyList();
-        private List<ModuleInfo> children = new ArrayList<>();
 
         ModuleInfo(final String path, final String name) {
             this.path = path;
@@ -216,27 +216,6 @@ public final class DataSerializerHookScanner {
 
         public List<String> getSerializerHooks() {
             return serializerHooks;
-        }
-
-        public void setSerializerHooks(final List<String> serializerHooks) {
-            this.serializerHooks = serializerHooks;
-        }
-
-        public List<ModuleInfo> getChildren() {
-            return children;
-        }
-
-        public void setChildren(final List<ModuleInfo> children) {
-            this.children = children;
-        }
-
-        @Override
-        public String toString() {
-            return "ModuleServicesInfo{"
-                    + "name='" + name + '\''
-                    + ", path='" + path + '\''
-                    + ", serializerHooks=" + serializerHooks
-                    + '}';
         }
     }
 }
