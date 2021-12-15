@@ -85,6 +85,9 @@ final class KubernetesConfig {
         this(properties, new DefaultFileContentsReader());
     }
 
+    /**
+     * Used externally only for testing
+     */
     KubernetesConfig(Map<String, Comparable> properties, FileContentsReader fileContentsReader) {
         this.fileContentsReader = fileContentsReader;
         this.serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);

@@ -67,6 +67,9 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
         this("/var/run/secrets/kubernetes.io/serviceaccount/token");
     }
 
+    /**
+     * Used externally only for testing
+     */
     HazelcastKubernetesDiscoveryStrategyFactory(String tokenPath) {
         this.tokenPath = tokenPath;
     }
