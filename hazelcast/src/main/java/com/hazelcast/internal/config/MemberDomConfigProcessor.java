@@ -545,8 +545,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         diskTierConfig.setEnabled(enabled);
 
         Node attrDeviceName = getNamedItemNode(node, "device-name");
-        String deviceName = getTextContent(attrDeviceName);
-        diskTierConfig.setDeviceName(deviceName);
+        if (attrDeviceName != null) {
+            diskTierConfig.setDeviceName(getTextContent(attrDeviceName));
+        }
 
         return diskTierConfig;
     }
@@ -2707,6 +2708,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node consoleEnabledNode = getNamedItemNode(node, "console-enabled");
         if (consoleEnabledNode != null) {
             managementCenterConfig.setConsoleEnabled(getBooleanValue(getTextContent(consoleEnabledNode)));
+        }
+
+        Node dataAccessEnabledNode = getNamedItemNode(node, "data-access-enabled");
+        if (dataAccessEnabledNode != null) {
+            managementCenterConfig.setDataAccessEnabled(getBooleanValue(getTextContent(dataAccessEnabledNode)));
         }
 
         for (Node n : childElements(node)) {

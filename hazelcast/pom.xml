@@ -221,6 +221,10 @@
                                     <pattern>org.json</pattern>
                                     <shadedPattern>${relocation.root}.org.json</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.objenesis</pattern>
+                                    <shadedPattern>${relocation.root}.org.objenesis</shadedPattern>
+                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
@@ -292,6 +296,7 @@
                                     !io.github.classgraph.*,
                                     !org.everit.json.*,
                                     !org.json.*,
+                                    !org.objenesis.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -308,6 +313,7 @@
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
+                                <Embed-Transitive>true</Embed-Transitive>
                             </instructions>
                         </configuration>
                     </execution>
@@ -490,6 +496,12 @@
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
             <version>${snakeyaml.engine.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+            <version>${objenesis.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

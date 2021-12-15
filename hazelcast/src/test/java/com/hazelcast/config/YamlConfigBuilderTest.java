@@ -59,8 +59,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_BASE_DIR;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
+import static com.hazelcast.config.DeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
@@ -883,6 +889,7 @@ public class YamlConfigBuilderTest
                 + "  management-center:\n"
                 + "    scripting-enabled: true\n"
                 + "    console-enabled: true\n"
+                + "    data-access-enabled: false\n"
                 + "    trusted-interfaces:\n"
                 + "      - 127.0.0.1\n"
                 + "      - 192.168.1.*\n";
@@ -892,6 +899,7 @@ public class YamlConfigBuilderTest
 
         assertTrue(mcConfig.isScriptingEnabled());
         assertTrue(mcConfig.isConsoleEnabled());
+        assertFalse(mcConfig.isDataAccessEnabled());
         assertEquals(2, mcConfig.getTrustedInterfaces().size());
         assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
@@ -908,6 +916,7 @@ public class YamlConfigBuilderTest
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -920,6 +929,7 @@ public class YamlConfigBuilderTest
 
         assertFalse(mcConfig.isScriptingEnabled());
         assertFalse(mcConfig.isConsoleEnabled());
+        assertTrue(mcConfig.isDataAccessEnabled());
     }
 
     @Override
@@ -3101,7 +3111,7 @@ public class YamlConfigBuilderTest
                 + "      write-io-thread-count: " + (writeIOThreadCount * device1Multiplier) + "\n";
 
         config = new InMemoryYamlConfig(yaml);
-        assertEquals(2, config.getDeviceConfigs().size());
+        assertEquals(3, config.getDeviceConfigs().size());
 
         deviceConfig = config.getDeviceConfig("device0");
         assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
@@ -3112,6 +3122,34 @@ public class YamlConfigBuilderTest
         assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
+
+        // default device
+        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), deviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
+
+        // override the default device config
+        String newBaseDir = "/some/random/base/dir/for/tiered/store";
+        yaml = ""
+                + "hazelcast:\n"
+                + "  device:\n"
+                + "    " + DEFAULT_DEVICE_NAME + ":\n"
+                + "      base-dir: " + newBaseDir + "\n"
+                + "      block-size: " + (DEFAULT_BLOCK_SIZE_IN_BYTES * 2) + "\n"
+                + "      read-io-thread-count: " + (DEFAULT_READ_IO_THREAD_COUNT * 2) + "\n";
+
+        config = new InMemoryYamlConfig(yaml);
+        assertEquals(1, config.getDeviceConfigs().size());
+
+        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
+        assertEquals(new File(newBaseDir).getAbsoluteFile(), deviceConfig.getBaseDir());
+        assertEquals(2 * DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
+        assertEquals(2 * DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
     }
 
     @Override
@@ -3120,17 +3158,30 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
-                + "    my-map:\n"
+                + "    map0:\n"
                 + "      tiered-store:\n"
                 + "        enabled: true\n"
                 + "        memory-tier:\n"
                 + "          capacity: 1024 MB\n"
                 + "        disk-tier:\n"
                 + "          enabled: true\n"
-                + "          device-name: local-device";
+                + "          device-name: local-device\n"
+                + "    map1:\n"
+                + "      tiered-store:\n"
+                + "        enabled: true\n"
+                + "        disk-tier:\n"
+                + "          enabled: true\n"
+                + "    map2:\n"
+                + "      tiered-store:\n"
+                + "        enabled: true\n"
+                + "        memory-tier:\n"
+                + "          capacity: 1 GB\n"
+                + "    map3:\n"
+                + "      tiered-store:\n"
+                + "        enabled: true\n";
 
         Config config = new InMemoryYamlConfig(yaml);
-        TieredStoreConfig tieredStoreConfig = config.getMapConfig("my-map").getTieredStoreConfig();
+        TieredStoreConfig tieredStoreConfig = config.getMapConfig("map0").getTieredStoreConfig();
         assertTrue(tieredStoreConfig.isEnabled());
 
         MemoryTierConfig memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
@@ -3140,6 +3191,27 @@ public class YamlConfigBuilderTest
         DiskTierConfig diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertTrue(tieredStoreConfig.getDiskTierConfig().isEnabled());
         assertEquals("local-device", diskTierConfig.getDeviceName());
+
+        assertEquals(DEFAULT_DEVICE_NAME,
+                config.getMapConfig("map1").getTieredStoreConfig().getDiskTierConfig().getDeviceName());
+        assertNotNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+
+        tieredStoreConfig = config.getMapConfig("map2").getTieredStoreConfig();
+        assertTrue(tieredStoreConfig.isEnabled());
+
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(MemoryUnit.GIGABYTES, memoryTierConfig.getCapacity().getUnit());
+        assertEquals(1L, memoryTierConfig.getCapacity().getValue());
+
+        assertFalse(tieredStoreConfig.getDiskTierConfig().isEnabled());
+
+        tieredStoreConfig = config.getMapConfig("map3").getTieredStoreConfig();
+        memoryTierConfig = tieredStoreConfig.getMemoryTierConfig();
+        assertEquals(DEFAULT_CAPACITY, memoryTierConfig.getCapacity());
+
+        diskTierConfig = tieredStoreConfig.getDiskTierConfig();
+        assertFalse(diskTierConfig.isEnabled());
+        assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
     }
 
     @Override
