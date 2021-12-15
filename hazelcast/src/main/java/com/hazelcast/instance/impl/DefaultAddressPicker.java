@@ -552,6 +552,9 @@ class DefaultAddressPicker
         private final String name;
         private final List<InetAddress> inetAddresses;
 
+        /**
+         * Used externally only for testing
+         */
         NetworkInterfaceInfo(String name, boolean up, boolean virtual, boolean loopback, List<InetAddress> inetAddresses) {
             this.up = up;
             this.virtual = virtual;
@@ -586,7 +589,7 @@ class DefaultAddressPicker
         }
 
         /**
-         * Creates builder to build {@link NetworkInterfaceInfo}.
+         * Creates builder to build {@link NetworkInterfaceInfo}, used for testing.
          *
          * @return created builder
          */

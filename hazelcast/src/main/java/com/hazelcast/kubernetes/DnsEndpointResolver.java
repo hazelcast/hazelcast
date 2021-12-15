@@ -50,6 +50,9 @@ final class DnsEndpointResolver
         this(logger, serviceDns, port, serviceDnsTimeout, InetAddress::getAllByName);
     }
 
+    /**
+     * Used externally only for testing
+     */
     DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout, RawLookupProvider rawLookupProvider) {
         super(logger);
         this.serviceDns = serviceDns;
