@@ -1590,7 +1590,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.7.4</version>
+                <version>1.9</version>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
