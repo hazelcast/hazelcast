@@ -168,11 +168,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Record extractRecordFromLazy(EntryView entryView) {
-        return ((LazyEvictableEntryView) entryView).getRecord();
-    }
-
-    @Override
     public Data extractDataKeyFromLazy(EntryView entryView) {
         return ((LazyEvictableEntryView) entryView).getDataKey();
     }
