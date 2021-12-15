@@ -12,6 +12,7 @@ https://jet-start.sh/blog/.
 
 ## Enhancements
 
+* Updated log4j2 dependency version to 2.15.0 in Hazelcast's root `pom.xml`. [#20153]
 * Updated Avro dependency version to 1.11.0 and AWS SDK to 1.12.120 in Hazelcast's root `pom.xml`. [#20008], [#20007]
 * Introduced a system property for allowing you to audit that all the Hazelcast instances
 running in your environment have the instance tracking file name set correctly in the configuration.
