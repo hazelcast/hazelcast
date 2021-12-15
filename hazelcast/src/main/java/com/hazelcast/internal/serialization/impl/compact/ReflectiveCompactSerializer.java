@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
@@ -162,7 +162,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     @Nonnull
     private Object createObject(Class associatedClass) {
         try {
-            return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
+            return createNewInstance(associatedClass);
         } catch (Exception e) {
             throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
@@ -196,9 +196,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     }
 
     private void createFastReadWriteCaches(Class clazz) {
-        //Create object to test if it is empty constructable to fail-fast on the write path
-        createObject(clazz);
-
         //get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
         Writer[] writers = new Writer[allFields.size()];
