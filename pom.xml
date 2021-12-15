@@ -111,7 +111,7 @@
         <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
         <log4j2.version>2.15.0</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.63.Final</netty.version>
+        <netty.version>4.1.72.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.0</parquet.version>
