@@ -47,6 +47,9 @@ public class ExternalConfigurationOverride {
         this(System.getenv(), System::getProperties);
     }
 
+    /**
+     * Used externally only for testing
+     */
     ExternalConfigurationOverride(Map<String, String> envVariables, SystemPropertiesProvider systemPropertiesProvider) {
         this.envVariables = envVariables;
         this.systemPropertiesProvider = systemPropertiesProvider;
