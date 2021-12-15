@@ -21,20 +21,6 @@ import java.util.Map;
 
 class ExternalConfigTestUtils {
 
-    @SafeVarargs
-    static void runWithSystemProperties(Runnable action, Map.Entry<String, String>... entry) {
-        try {
-            for (Map.Entry<String, String> e : entry) {
-                System.setProperty(e.getKey(), e.getValue());
-            }
-            action.run();
-        } finally {
-            for (Map.Entry<String, String> e : entry) {
-                System.clearProperty(e.getKey());
-            }
-        }
-    }
-
     static <K, V> Map.Entry<K, V> entry(K key, V value) {
         return new AbstractMap.SimpleEntry<>(key, value);
     }
