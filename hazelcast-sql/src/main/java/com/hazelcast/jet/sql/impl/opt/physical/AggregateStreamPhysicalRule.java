@@ -51,6 +51,10 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             return false;
         }
 
+        if (logicalAggregate.getGroupSet().isEmpty()) {
+            throw QueryException.error("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        }
+
         Collection<RelNode> logicalInputs = OptUtils.extractLogicalRelsFromSubset(logicalAggregate.getInput());
         for (RelNode logicalInput : logicalInputs) {
             if (extractWindowProperty(logicalAggregate, logicalInput) == null) {

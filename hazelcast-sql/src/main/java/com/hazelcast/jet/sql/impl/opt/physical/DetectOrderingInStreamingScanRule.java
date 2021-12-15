@@ -41,7 +41,6 @@ public final class DetectOrderingInStreamingScanRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        System.err.println("MATCHED");
         throw QueryException.error("Sorting is not supported for a streaming query");
     }
 

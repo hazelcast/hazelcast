@@ -1409,7 +1409,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
     }
 
     @Test
@@ -1431,7 +1431,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
     }
 
     @Test

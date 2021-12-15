@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -279,8 +280,8 @@ public class SqlSortTest extends SqlTestSupport {
     @Test
     public void whenOrderByOnStreamingData_thenFails() {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(1)) ORDER BY 1"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Sorting is not supported for a streaming query");
+                .hasRootCauseInstanceOf(QueryException.class)
+                .hasRootCauseMessage("Sorting is not supported for a streaming query");
     }
 
     private static String createTable(String[]... values) {

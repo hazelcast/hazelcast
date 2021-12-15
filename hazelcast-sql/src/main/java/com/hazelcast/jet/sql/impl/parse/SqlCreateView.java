@@ -56,7 +56,7 @@ public class SqlCreateView extends SqlCreate {
     public SqlNode getQuery() {
         return query;
     }
-    
+
     @Override
     public List<SqlNode> getOperandList() {
         return ImmutableList.of(name, query);

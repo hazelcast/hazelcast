@@ -72,6 +72,7 @@ public final class PhysicalRules {
                 DeleteByKeyMapPhysicalRule.INSTANCE,
 
                 // Opt rules
+                DetectOrderingForSlidingWindowRule.INSTANCE,
                 DetectOrderingInStreamingScanRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
