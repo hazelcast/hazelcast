@@ -1504,10 +1504,11 @@
                   },
                   "device-name": {
                     "type": "string",
+                    "default": "default-tiered-store-device",
                     "description": "Name of the device for a given disk tier."
                   }
                 },
-                "required": ["enabled", "device-name"]
+                "required": ["enabled"]
               }
             },
             "required": ["enabled"]

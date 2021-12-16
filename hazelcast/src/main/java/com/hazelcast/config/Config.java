@@ -68,6 +68,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,6 +78,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
@@ -155,7 +157,9 @@ public class Config {
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, DeviceConfig> deviceConfigs = new ConcurrentHashMap<>();
+    private final Map<String, DeviceConfig> deviceConfigs = new ConcurrentHashMap<>(
+            Collections.singletonMap(DEFAULT_DEVICE_NAME, new DeviceConfig())
+    );
 
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();

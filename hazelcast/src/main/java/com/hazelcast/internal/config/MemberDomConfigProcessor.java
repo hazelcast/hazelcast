@@ -545,8 +545,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         diskTierConfig.setEnabled(enabled);
 
         Node attrDeviceName = getNamedItemNode(node, "device-name");
-        String deviceName = getTextContent(attrDeviceName);
-        diskTierConfig.setDeviceName(deviceName);
+        if (attrDeviceName != null) {
+            diskTierConfig.setDeviceName(getTextContent(attrDeviceName));
+        }
 
         return diskTierConfig;
     }
