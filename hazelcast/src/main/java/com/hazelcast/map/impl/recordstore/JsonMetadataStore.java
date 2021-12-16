@@ -24,6 +24,45 @@ import com.hazelcast.query.impl.JsonMetadata;
  */
 public interface JsonMetadataStore {
 
+    @SuppressWarnings("AnonInnerLength")
+    JsonMetadataStore NULL = new JsonMetadataStore() {
+
+        @Override
+        public JsonMetadata get(Data key) {
+            return null;
+        }
+
+        @Override
+        public void set(Data key, JsonMetadata metadata) {
+            // no-op
+        }
+
+        @Override
+        public void setKey(Data key, Object metadataKey) {
+            // no-op
+        }
+
+        @Override
+        public void setValue(Data key, Object metadataValue) {
+            // no-op
+        }
+
+        @Override
+        public void remove(Data key) {
+            // no-op
+        }
+
+        @Override
+        public void clear() {
+            // no-op
+        }
+
+        @Override
+        public void destroy() {
+            // no-op
+        }
+    };
+
     /**
      * @param key the key in the store
      * @return the metadata associated with the key, {@code null} if there is no the key in the store
@@ -33,27 +72,31 @@ public interface JsonMetadataStore {
     /**
      * Puts the key/metadata pair into the store. Replaces the old metadata value
      * associated with the key if it exists.
-     * @param key the key in the store
+     *
+     * @param key      the key in the store
      * @param metadata the metadata
      */
     void set(Data key, JsonMetadata metadata);
 
     /**
      * Sets the new metadata key of the metadata associated with the key
-     * @param key the key
+     *
+     * @param key         the key
      * @param metadataKey the matadata key
      */
     void setKey(Data key, Object metadataKey);
 
     /**
      * Sets the new metadata value of the metadata associated with the key
-     * @param key the key
+     *
+     * @param key           the key
      * @param metadataValue the metadata value
      */
     void setValue(Data key, Object metadataValue);
 
     /**
      * Removes the key/metadata pair from the store
+     *
      * @param key the key
      */
     void remove(Data key);
