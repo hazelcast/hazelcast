@@ -198,7 +198,8 @@ public class ConfigXmlGenerator {
         if (mcConfig != null) {
             gen.open("management-center",
                     "scripting-enabled", mcConfig.isScriptingEnabled(),
-                    "console-enabled", mcConfig.isConsoleEnabled());
+                    "console-enabled", mcConfig.isConsoleEnabled(),
+                    "data-access-enabled", mcConfig.isDataAccessEnabled());
             trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
             gen.close();
         }

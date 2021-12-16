@@ -22,42 +22,32 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory.DiscoveryStrategyLevel;
-import org.junit.Before;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.mockito.Mockito.mock;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({KubernetesApiEndpointResolver.class, HazelcastKubernetesDiscoveryStrategyFactory.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String API_TOKEN = "token";
     private static final String CA_CERTIFICATE = "ca-certificate";
 
-    @Mock
-    DiscoveryNode discoveryNode;
-
-    @Mock
-    private KubernetesClient client;
-
-    @Before
-    public void setup()
-            throws Exception {
-        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
-    }
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void checkDiscoveryStrategyType() {
@@ -76,13 +66,13 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     @Test
     public void createDiscoveryStrategy() {
-        HashMap<String, Comparable> properties = new HashMap<String, Comparable>();
+        HashMap<String, Comparable> properties = new HashMap<>();
         properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
         properties.put(KubernetesProperties.KUBERNETES_CA_CERTIFICATE.key(), CA_CERTIFICATE);
         properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
         properties.put(KubernetesProperties.NAMESPACE.key(), "default");
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
-        DiscoveryStrategy strategy = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);
+        DiscoveryStrategy strategy = factory.newDiscoveryStrategy(mock(DiscoveryNode.class), LOGGER, properties);
         assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);
         strategy.start();
         strategy.destroy();
@@ -91,11 +81,8 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
     @Test
     public void autoDetection() throws Exception {
         // given
-        File mockFile = mock(File.class);
-        Mockito.doReturn(true).when(mockFile).exists();
-        PowerMockito.whenNew(File.class).withArguments("/var/run/secrets/kubernetes.io/serviceaccount/token")
-                .thenReturn(mockFile);
-        HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
+        String token = tempFolder.newFile("some-token").getAbsolutePath();
+        HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory(token);
 
         // when & then
         assertTrue(factory.tokenFileExists());

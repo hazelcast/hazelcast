@@ -282,12 +282,12 @@ public interface RecordStore<R extends Record> {
 
     /**
      * This method is used in replication operations.
-     *
+     * <p>
      * Puts a data key and a record into a record-store.
      * Used in replication operations means does not attempt
      * loading from map store and it is not intercepted by
      * {@code MapInterceptor}.
-     *
+     * <p>
      * If an existing record is located for the same key
      * (as defined in {@link Storage#getIfSameKey(Object)}),
      * then that record is updated instead of creating a
@@ -497,7 +497,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Object value, long now);
+    R createRecord(Data key, Object value, long now);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 

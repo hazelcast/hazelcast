@@ -18,8 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +37,6 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Properties;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -45,8 +45,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("checkstyle:Indentation")
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
     static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -92,19 +92,13 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExternalConfigOverrides() throws Exception {
-        String clusterName = randomName();
-        String instanceName = randomName();
+    public void testExternalConfigOverrides() {
+        String randomPropertyName = randomName();
+        System.setProperty("hz.properties." + randomPropertyName, "123");
 
-        System.setProperty("hz.cluster-name", clusterName);
+        Config cfg = Config.load();
 
-        Config cfg = withEnvironmentVariable("HZ_INSTANCENAME", instanceName)
-                .and("HZ_NETWORK_PORT_PORT", "6731")
-                .execute(Config::load);
-
-        assertEquals(clusterName, cfg.getClusterName());
-        assertEquals(instanceName, cfg.getInstanceName());
-        assertEquals(6731, cfg.getNetworkConfig().getPort());
+        assertEquals("123", cfg.getProperty(randomPropertyName));
     }
 
     @Test

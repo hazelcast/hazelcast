@@ -30,6 +30,11 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class DeviceConfig implements NamedConfig {
 
     /**
+     * Default device name.
+     */
+    public static final String DEFAULT_DEVICE_NAME = "default-tiered-store-device";
+
+    /**
      * Default base directory for the device.
      */
     public static final String DEFAULT_DEVICE_BASE_DIR = "tiered-store";
@@ -49,7 +54,7 @@ public class DeviceConfig implements NamedConfig {
      */
     public static final int DEFAULT_WRITE_IO_THREAD_COUNT = 4;
 
-    private String name;
+    private String name = DEFAULT_DEVICE_NAME;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
     private int readIOThreadCount = DEFAULT_READ_IO_THREAD_COUNT;
