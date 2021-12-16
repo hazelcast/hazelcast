@@ -100,7 +100,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Cannot convert infinite DOUBLE to DECIMAL");
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DECIMAL) FROM test",
-                rows(1, new BigDecimal("9.123456789012345e50")));
+                rows(1, new BigDecimal("912345678901234469174827437827584684254557974298624")));
     }
 
     @Test

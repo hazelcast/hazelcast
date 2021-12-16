@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 
 /**
@@ -141,7 +142,7 @@ public final class DoubleConverter extends Converter {
             throw nanValueError(DECIMAL);
         }
 
-        return BigDecimal.valueOf(val0);
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
     }
 
     @Override
