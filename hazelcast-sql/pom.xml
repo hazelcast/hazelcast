@@ -481,6 +481,12 @@
             <groupId>com.hazelcast.jsurfer</groupId>
             <artifactId>jsurfer-core</artifactId>
             <version>${json-surfer.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-runtime</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
