@@ -169,28 +169,14 @@ public final class TcpServerControl {
                     + " planeIndex:" + handshake.getPlaneIndex());
         }
 
-        boolean registered = connectionManager.register(
+        connectionManager.register(
                 primaryAddress,
                 connectedAddress,
+                remoteAddressAliases,
                 remoteUuid,
                 connection,
                 handshake.getPlaneIndex()
         );
-
-        if (registered && !connection.isClient()) {
-            LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
-            addressesToRegister.addAddress(connectedAddress);
-            if (remoteAddressAliases != null) {
-                for (Address remoteAddressAlias : remoteAddressAliases) {
-                    addressesToRegister.addAddress(remoteAddressAlias);
-                }
-            }
-            connectionManager.addressRegistry.register(remoteUuid, addressesToRegister);
-            if (logger.isFinestEnabled()) {
-                logger.finest("Registered the addresses: " + addressesToRegister
-                        + " for the member uuid=" + remoteUuid);
-            }
-        }
     }
 
     /**

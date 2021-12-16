@@ -162,8 +162,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     @Override
     public synchronized boolean register(
-            Address remoteAddress,
+            Address primaryAddress,
             Address connectedAddress,
+            Collection<Address> remoteAddressAliases,
             UUID remoteUuid,
             final ServerConnection c,
             int planeIndex
@@ -183,17 +184,29 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             }
 
             Address currentRemoteAddress = connection.getRemoteAddress();
-            if (currentRemoteAddress != null && !currentRemoteAddress.equals(remoteAddress)) {
-                throw new IllegalArgumentException(connection + " has already a different remoteAddress than: " + remoteAddress);
+            if (currentRemoteAddress != null && !currentRemoteAddress.equals(primaryAddress)) {
+                throw new IllegalArgumentException(connection + " has already a different remoteAddress than: " + primaryAddress);
             }
-            connection.setRemoteAddress(remoteAddress);
+            connection.setRemoteAddress(primaryAddress);
             connection.setRemoteUuid(remoteUuid);
 
             if (!connection.isClient()) {
-                connection.setErrorHandler(getErrorHandler(remoteAddress, plane.index).reset());
+                connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
+                LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
+                addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(connectedAddress));
+                if (remoteAddressAliases != null) {
+                    for (Address remoteAddressAlias : remoteAddressAliases) {
+                        addressesToRegister.addAddress(remoteAddressAlias);
+                    }
+                }
+                addressRegistry.register(remoteUuid, addressesToRegister);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Registered the addresses: " + addressesToRegister
+                            + " for the member uuid=" + remoteUuid);
+                }
             } else {
                 // register the client endpoint uuid and its address to the address registry
-                addressRegistry.register(remoteUuid, new LinkedAddresses(remoteAddress));
+                addressRegistry.register(remoteUuid, new LinkedAddresses(primaryAddress));
             }
             plane.putConnection(remoteUuid, connection);
 
@@ -205,9 +218,10 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
                 @Override
                 public int getKey() {
-                    return remoteAddress.hashCode();
+                    return primaryAddress.hashCode();
                 }
             });
+
             return true;
         } finally {
             plane.removeConnectionInProgress(connectedAddress);

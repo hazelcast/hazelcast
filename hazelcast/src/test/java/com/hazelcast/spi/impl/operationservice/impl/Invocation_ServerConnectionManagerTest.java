@@ -101,6 +101,7 @@ public class Invocation_ServerConnectionManagerTest
         public boolean register(
                 Address remoteAddress,
                 Address connectedAddress,
+                Collection<Address> remoteAddressAliases,
                 UUID remoteUuid,
                 ServerConnection connection,
                 int streamId

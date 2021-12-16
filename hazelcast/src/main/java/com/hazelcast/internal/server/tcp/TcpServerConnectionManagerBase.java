@@ -194,14 +194,14 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     .anyMatch(linkedAddresses -> linkedAddresses.contains(address));
         }
 
-        public Address getConnectedAddress(Address address) {
+        public LinkedAddresses getConnectedAddresses(Address address) {
             for (LinkedAddresses addresses : connectionsInProgress.keySet()) {
                 if (addresses.contains(address)) {
-                    return addresses.getPrimaryAddress();
+                    return addresses;
                 }
             }
             // not found in in-progress connections
-            return address;
+            return LinkedAddresses.getAllLinkedAddresses(address);
         }
 
         public Future<Void> getConnectionInProgress(Address address) {

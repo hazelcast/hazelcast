@@ -200,6 +200,7 @@ class MockServer implements Server {
         public synchronized boolean register(
                 Address remoteAddress,
                 Address connectedAddress,
+                Collection<Address> remoteAddressAliases,
                 UUID remoteUuid,
                 ServerConnection c,
                 int streamId
