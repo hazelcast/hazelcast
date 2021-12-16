@@ -21,35 +21,50 @@ import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
-import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.JoinRelType;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-public final class DetectOrderingInStreamingScanRule extends RelRule<RelRule.Config> {
+public final class DetectStreamingSourceOnWrongSideRule extends RelRule<RelRule.Config> {
     static final RelOptRule INSTANCE;
     private static final Config RULE_CONFIG;
 
     static {
         RULE_CONFIG = RelRule.Config.EMPTY
-                .withDescription(DetectOrderingInStreamingScanRule.class.getSimpleName())
+                .withDescription(DetectStreamingSourceOnWrongSideRule.class.getSimpleName())
                 .withOperandSupplier(
-                        b -> b.operand(Sort.class)
+                        b -> b.operand(Join.class)
                                 .trait(LOGICAL)
-                                .predicate(sort -> !isEmptyCollation(sort) && OptUtils.isUnbounded(sort.getInput()))
+                                .predicate(DetectStreamingSourceOnWrongSideRule::matches)
                                 .noInputs());
-        INSTANCE = new DetectOrderingInStreamingScanRule();
+        INSTANCE = new DetectStreamingSourceOnWrongSideRule();
     }
 
-    private DetectOrderingInStreamingScanRule() {
+    private DetectStreamingSourceOnWrongSideRule() {
         super(RULE_CONFIG);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        throw QueryException.error("Sorting is not supported for a streaming query");
+        throw QueryException.error(
+                "The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source"
+        );
     }
 
-    private static boolean isEmptyCollation(Sort sort) {
-        return sort.collation.getFieldCollations().size() == 0;
+    private static boolean matches(Join join) {
+        if (join.getJoinType() == JoinRelType.LEFT) {
+            if (OptUtils.isUnbounded(join.getRight())) {
+                return true;
+            }
+        }
+
+        if (join.getJoinType() == JoinRelType.RIGHT) {
+            return OptUtils.isUnbounded(join.getLeft());
+        }
+
+        return false;
     }
+
+
 }

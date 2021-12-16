@@ -34,15 +34,6 @@ public interface ValidatorResource {
     @BaseMessage("Unknown argument name ''{0}''")
     ExInst<SqlValidatorException> unknownArgumentName(String name);
 
-    @BaseMessage("Grouping/aggregations over non-windowed, non-ordered streaming source not supported")
-    ExInst<SqlValidatorException> streamingAggregationsOverNonOrderedSourceNotSupported();
-
-    @BaseMessage("Sorting is not supported for a streaming query")
-    ExInst<SqlValidatorException> streamingSortingNotSupported();
-
-    @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
-    ExInst<SqlValidatorException> streamingSourceOnWrongSide();
-
     @BaseMessage("Multiple ordering functions are not supported")
     ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();
 

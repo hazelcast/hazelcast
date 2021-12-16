@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowLogicalRel;
 import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 
@@ -35,35 +36,41 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * <p>
  * - Aggregate
  * <p>
- * -- SlidingWindow
+ * -- Project (is optional)
+ * <p>
+ * --- SlidingWindow
  * <p>
  * --- FullScan [stream = ture, ordered = false]
  * <p>
  * to throw exception with a reason
  * `Grouping/aggregations over non-windowed, non-ordered streaming source not supported`
  */
-public final class DetectOrderingForSlidingWindowRule extends RelOptRule {
-    static final RelOptRule INSTANCE = new DetectOrderingForSlidingWindowRule();
+public final class DetectOrderingForSlidingWindowRule extends RelRule<RelRule.Config> {
+    static final RelOptRule INSTANCE;
+    private static final Config RULE_CONFIG;
+
+    static {
+        RULE_CONFIG = Config.EMPTY
+                .withDescription(DetectOrderingForSlidingWindowRule.class.getSimpleName())
+                .withOperandSupplier(
+                        b -> b.operand(AggregateLogicalRel.class)
+                                .trait(LOGICAL)
+                                .predicate(rel -> OptUtils.isUnbounded(rel) && detectOrderingPattern(rel.getInput()))
+                                .noInputs());
+        INSTANCE = new DetectOrderingForSlidingWindowRule();
+    }
 
     private DetectOrderingForSlidingWindowRule() {
-        super(
-                operandJ(
-                        AggregateLogicalRel.class,
-                        LOGICAL,
-                        rel -> OptUtils.isUnbounded(rel) && detectOrderingPattern(rel.getInput()),
-                        none()
-                ),
-                DetectOrderingForSlidingWindowRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        System.err.println("MATCHED");
         throw QueryException.error("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
     }
 
     private static boolean detectOrderingPattern(RelNode rel) {
+        // Projection is optional, but still need to check.
         if (rel instanceof ProjectLogicalRel) {
             rel = ((ProjectLogicalRel) rel).getInput();
         } else if (rel instanceof RelSubset) {

@@ -74,6 +74,7 @@ public final class PhysicalRules {
                 // Opt rules
                 DetectOrderingForSlidingWindowRule.INSTANCE,
                 DetectOrderingInStreamingScanRule.INSTANCE,
+                DetectStreamingSourceOnWrongSideRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

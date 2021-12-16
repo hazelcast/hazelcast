@@ -1250,8 +1250,8 @@ public class SqlJoinTest {
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "TABLE(GENERATE_STREAM(1))") + " ON true"))
-                    .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source");
+                    .hasRootCauseInstanceOf(QueryException.class)
+                    .hasRootCauseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source");
         }
 
         @Test

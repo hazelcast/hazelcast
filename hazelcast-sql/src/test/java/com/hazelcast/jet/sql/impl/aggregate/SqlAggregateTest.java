@@ -1025,15 +1025,15 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                .hasRootCauseInstanceOf(HazelcastSqlException.class)
+                .hasRootCauseMessage("not supported");
     }
 
     @Test
     public void test_distinctNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                .hasRootCauseInstanceOf(HazelcastSqlException.class)
+                .hasRootCauseMessage("not supported");
     }
 
     @Test
