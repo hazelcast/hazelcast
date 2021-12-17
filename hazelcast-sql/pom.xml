@@ -488,22 +488,11 @@
             <groupId>com.hazelcast.jsurfer</groupId>
             <artifactId>jsurfer-core</artifactId>
             <version>${json-surfer.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.antlr</groupId>
-                    <artifactId>antlr4-runtime</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jsurfer</groupId>
             <artifactId>jsurfer-jackson-jr</artifactId>
             <version>${json-surfer.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>${antlr4.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

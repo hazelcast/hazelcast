@@ -781,13 +781,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>${antlr4.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-archunit-rules</artifactId>
             <version>${project.parent.version}</version>

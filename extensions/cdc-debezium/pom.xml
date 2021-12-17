@@ -106,12 +106,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>${antlr4.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-postgres</artifactId>
             <version>${debezium.version}</version>
