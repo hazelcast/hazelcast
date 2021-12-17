@@ -67,6 +67,7 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
@@ -521,14 +522,13 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         return false;
     }
 
-    private void setCallerUuidIfNotSet(Address caller, Operation op) {
+    private void setCallerUuidIfNotSet(Address callerAddress, Operation op) {
         if (op.getCallerUuid() != null) {
             return;
-
         }
-        MemberImpl callerMember = node.clusterService.getMember(caller);
-        if (callerMember != null) {
-            op.setCallerUuid(callerMember.getUuid());
+        UUID callerUuid = node.getLocalAddressRegistry().uuidOf(callerAddress);
+        if (callerUuid != null) {
+            op.setCallerUuid(callerUuid);
         }
     }
 
