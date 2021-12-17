@@ -27,7 +27,10 @@
 
     <name>hazelcast-distribution</name>
     <artifactId>hazelcast-distribution</artifactId>
-    <packaging>pom</packaging>
+
+    <properties>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
 
     <build>
         <plugins>
@@ -54,12 +57,39 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <executions>
+                    <!-- disable standard deploy -->
+                    <execution>
+                        <id>default-deploy</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-all</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- We explicitly list the non-shaded dependencies to properly generate the THIRD-PARTY.txt file -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql-core</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
