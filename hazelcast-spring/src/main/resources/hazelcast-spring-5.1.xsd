@@ -1378,7 +1378,7 @@
                         <xs:element name="sql" type="sql" minOccurs="0"/>
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="device" type="device" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -4640,7 +4640,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="device">
+    <xs:complexType name="local-device">
         <xs:annotation>
             <xs:documentation>
                 Device configuration.

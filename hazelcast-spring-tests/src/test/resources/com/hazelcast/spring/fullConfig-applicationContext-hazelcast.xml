@@ -1058,18 +1058,18 @@
                     <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
                 </hz:edge-defaults>
             </hz:jet>
-            <hz:device name="device0">
+            <hz:local-device name="device0">
                 <hz:base-dir>/dev/devices/tiered_store_device0</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>8</hz:write-io-thread-count>
-            </hz:device>
-            <hz:device name="device1">
+            </hz:local-device>
+            <hz:local-device name="device1">
                 <hz:base-dir>/dev/devices/tiered_store_device1</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>16</hz:write-io-thread-count>
-            </hz:device>
+            </hz:local-device>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>

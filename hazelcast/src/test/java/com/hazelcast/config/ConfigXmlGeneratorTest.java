@@ -402,14 +402,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testDeviceConfig() {
-        DeviceConfig deviceConfig0 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
 
-        DeviceConfig deviceConfig1 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
                 .setBlockSize(1024)
@@ -417,13 +417,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setWriteIOThreadCount(200);
 
         Config config = new Config()
-                .addDeviceConfig(deviceConfig0)
-                .addDeviceConfig(deviceConfig1);
+                .addDeviceConfig(localDeviceConfig0)
+                .addDeviceConfig(localDeviceConfig1);
 
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig0, xmlConfig.getDeviceConfig("null-device"));
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig1, xmlConfig.getDeviceConfig("local-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig0, xmlConfig.getDeviceConfig("null-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig1, xmlConfig.getDeviceConfig("local-device"));
     }
 
     @Test

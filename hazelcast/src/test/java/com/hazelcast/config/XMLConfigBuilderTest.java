@@ -62,11 +62,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.DeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
-import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_BASE_DIR;
-import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
-import static com.hazelcast.config.DeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
-import static com.hazelcast.config.DeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
@@ -3058,85 +3058,86 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testDevice() {
+    public void testLocalDevice() {
         String baseDir = "base-directory";
         int blockSize = 2048;
         int readIOThreadCount = 16;
         int writeIOThreadCount = 1;
 
         String xml = HAZELCAST_START_TAG
-                + "<device name=\"local-device\">"
+                + "<local-device name=\"my-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
                 + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
                 + "    <write-io-thread-count>" + writeIOThreadCount + "</write-io-thread-count>"
-                + "</device>\n"
+                + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
-        DeviceConfig deviceConfig = config.getDeviceConfig("local-device");
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig("my-device");
 
-        assertEquals("local-device", deviceConfig.getName());
-        assertEquals(new File(baseDir).getAbsolutePath(), deviceConfig.getBaseDir().getAbsolutePath());
-        assertEquals(blockSize, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount, deviceConfig.getWriteIOThreadCount());
+        assertNotNull(localDeviceConfig);
+        assertEquals("my-device", localDeviceConfig.getName());
+        assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
         int device0Multiplier = 2;
         int device1Multiplier = 4;
         xml = HAZELCAST_START_TAG
-                + "<device name=\"device0\">"
+                + "<local-device name=\"device0\">"
                 + "    <block-size>" + (blockSize * device0Multiplier) + "</block-size>"
                 + "    <read-io-thread-count>" + (readIOThreadCount * device0Multiplier) + "</read-io-thread-count>"
                 + "    <write-io-thread-count>" + (writeIOThreadCount * device0Multiplier) + "</write-io-thread-count>"
-                + "</device>\n"
-                + "<device name=\"device1\">"
+                + "</local-device>\n"
+                + "<local-device name=\"device1\">"
                 + "    <block-size>" + (blockSize * device1Multiplier) + "</block-size>"
                 + "    <read-io-thread-count>" + (readIOThreadCount * device1Multiplier) + "</read-io-thread-count>"
                 + "    <write-io-thread-count>" + (writeIOThreadCount * device1Multiplier) + "</write-io-thread-count>"
-                + "</device>\n"
+                + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
         assertEquals(3, config.getDeviceConfigs().size());
 
-        deviceConfig = config.getDeviceConfig("device0");
-        assertEquals(blockSize * device0Multiplier, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount * device0Multiplier, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount * device0Multiplier, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig("device0");
+        assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
 
-        deviceConfig = config.getDeviceConfig("device1");
-        assertEquals(blockSize * device1Multiplier, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount * device1Multiplier, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount * device1Multiplier, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig("device1");
+        assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount * device1Multiplier, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount * device1Multiplier, localDeviceConfig.getWriteIOThreadCount());
 
         // default device
-        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
-        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), deviceConfig.getBaseDir());
-        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
-        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
         xml = HAZELCAST_START_TAG
-                + "<device name=\"" + DEFAULT_DEVICE_NAME + "\">"
+                + "<local-device name=\"" + DEFAULT_DEVICE_NAME + "\">"
                 + "    <base-dir>" + newBaseDir + "</base-dir>"
                 + "    <block-size>" + (DEFAULT_BLOCK_SIZE_IN_BYTES * 2) + "</block-size>"
                 + "    <read-io-thread-count>" + (DEFAULT_READ_IO_THREAD_COUNT * 2) + "</read-io-thread-count>"
-                + "</device>\n"
+                + "</local-device>\n"
                 + HAZELCAST_END_TAG;
 
         config = new InMemoryXmlConfig(xml);
         assertEquals(1, config.getDeviceConfigs().size());
 
-        deviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
-        assertEquals(DEFAULT_DEVICE_NAME, deviceConfig.getName());
-        assertEquals(new File(newBaseDir).getAbsoluteFile(), deviceConfig.getBaseDir());
-        assertEquals(2 * DEFAULT_BLOCK_SIZE_IN_BYTES, deviceConfig.getBlockSize());
-        assertEquals(2 * DEFAULT_READ_IO_THREAD_COUNT, deviceConfig.getReadIOThreadCount());
-        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig(DEFAULT_DEVICE_NAME);
+        assertEquals(DEFAULT_DEVICE_NAME, localDeviceConfig.getName());
+        assertEquals(new File(newBaseDir).getAbsoluteFile(), localDeviceConfig.getBaseDir());
+        assertEquals(2 * DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
+        assertEquals(2 * DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
     }
 
     @Override

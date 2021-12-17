@@ -67,7 +67,7 @@ public enum ConfigSections {
     INSTANCE_TRACKING("instance-tracking", false),
     SQL("sql", false),
     JET("jet", false),
-    DEVICE("device", true);
+    LOCAL_DEVICE("local-device", true);
 
     final boolean multipleOccurrence;
     private final String name;

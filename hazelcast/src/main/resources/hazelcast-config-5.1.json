@@ -139,8 +139,8 @@
         "jet": {
           "$ref": "#/definitions/Jet"
         },
-        "device": {
-          "$ref": "#/definitions/Device"
+        "local-device": {
+          "$ref": "#/definitions/LocalDevice"
         }
       }
     },
@@ -3688,7 +3688,7 @@
         }
       }
     },
-    "Device": {
+    "LocalDevice": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
