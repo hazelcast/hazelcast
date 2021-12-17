@@ -174,12 +174,6 @@ public class LocalAddressRegistry {
         return linkedAddresses != null ? linkedAddresses.getPrimaryAddress() : null;
     }
 
-    @Nullable
-    public Address getPrimaryAddress(@Nonnull Address address) {
-        UUID uuid = uuidOf(address);
-        return uuid != null ? getPrimaryAddress(uuid) : null;
-    }
-
     public void reset() {
         addressToUuid.clear();
         uuidToAddresses.clear();
