@@ -109,7 +109,7 @@
         <kotlin.version>1.5.32</kotlin.version>
         <log4j.version>1.2.17</log4j.version>
         <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
-        <log4j2.version>2.15.0</log4j2.version>
+        <log4j2.version>2.16.0</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
         <netty.version>4.1.63.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
