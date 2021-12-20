@@ -24,14 +24,16 @@ import java.util.Map;
 class EnvConfigProvider implements ConfigProvider {
 
     private final EnvVariablesConfigParser envVariablesConfigParser;
+    private final Map<String, String> envVariables;
 
-    EnvConfigProvider(EnvVariablesConfigParser envVariablesConfigParser) {
+    EnvConfigProvider(EnvVariablesConfigParser envVariablesConfigParser, Map<String, String> envVariables) {
         this.envVariablesConfigParser = envVariablesConfigParser;
+        this.envVariables = envVariables;
     }
 
     @Override
     public Map<String, String> properties() {
-        return Collections.unmodifiableMap(envVariablesConfigParser.parse(System.getenv()));
+        return Collections.unmodifiableMap(envVariablesConfigParser.parse(envVariables));
     }
 
     @Override

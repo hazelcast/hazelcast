@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.override;
+package com.hazelcast.map.impl.record;
 
-import java.util.AbstractMap;
-import java.util.Map;
+import com.hazelcast.internal.util.ConstructorFunction;
 
-class ExternalConfigTestUtils {
-
-    static <K, V> Map.Entry<K, V> entry(K key, V value) {
-        return new AbstractMap.SimpleEntry<>(key, value);
-    }
+/**
+ * A set of attributes to pass to the {@link ConstructorFunction} that it needs
+ * or may need to use for creating the {@link RecordFactory}.
+ */
+@FunctionalInterface
+public interface RecordFactoryAttributes {
+    /**
+     * Returns the id of the partition on which the given record is to be created.
+     *
+     * @return the partition id
+     */
+    int getPartitionId();
 }

@@ -105,6 +105,17 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void when_indexCreatedWithEmptyMap_then_succeeds() {
+        String mapName = "map2";
+        String indexName = SqlTestSupport.randomName();
+        String sql = "CREATE INDEX IF NOT EXISTS " + indexName + " ON " + mapName + " (__key) TYPE SORTED";
+
+        instance().getSql().execute(sql);
+
+        assertThat(mapContainer(instance().getMap(mapName)).getIndexes().getIndex(indexName)).isNotNull();
+    }
+
+    @Test
     public void when_indexCreatedWithDefaultType_then_succeeds() {
         String indexName = SqlTestSupport.randomName();
         String selectSql = "SELECT * FROM " + MAP_NAME + " ORDER BY this DESC";
@@ -193,13 +204,17 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     }
 
     private void checkPlan(boolean withIndex, boolean sorted, String sql) {
+        checkPlan(withIndex, sorted, sql, MAP_NAME);
+    }
+
+    private void checkPlan(boolean withIndex, boolean sorted, String sql, String mapName) {
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
         List<TableField> mapTableFields = asList(
                 new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
                 new MapTableField("this", QueryDataType.INT, false, QueryPath.VALUE_PATH)
         );
         HazelcastTable table = partitionedTable(
-                MAP_NAME,
+                mapName,
                 mapTableFields,
                 getPartitionedMapIndexes(mapContainer(map), mapTableFields),
                 map.size()
