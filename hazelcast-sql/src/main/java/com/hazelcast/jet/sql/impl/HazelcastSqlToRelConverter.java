@@ -146,7 +146,8 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private RexNode convertNestedFieldIdentifier(SqlIdentifier node, Blackboard blackboard) {
         final String tableName = node.names.get(0);
-        final String fieldName = String.join(".", node.names.subList(1, node.names.size()));
+        // TODO: extract and use rest of the field path
+        final String fieldName = String.join(".", node.names.subList(1, 2));
         final Prepare.PreparingTable table = catalogReader.getTable(Collections.singletonList(tableName));
         if (table == null) {
             throw QueryException.error("Can not find table " + tableName);

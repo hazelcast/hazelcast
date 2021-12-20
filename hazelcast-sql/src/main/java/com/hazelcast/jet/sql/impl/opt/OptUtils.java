@@ -368,6 +368,7 @@ public final class OptUtils {
     }
 
     private static RelDataType convertRowTypeRecursively(final QueryDataType dataType, final RelDataTypeFactory typeFactory) {
+        // TODO: add support for recursive types
         if (dataType.getSubFields() == null || dataType.getSubFields().size() == 0) {
             return new HazelcastObjectType(Collections.emptyList());
         }

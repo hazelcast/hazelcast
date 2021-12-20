@@ -150,6 +150,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
+        final Map<String, QueryDataType> customTypes = new HashMap<>();
+
         final List<MappingField> topLevelFields = fieldsInClass.entrySet().stream()
                 .map(classField -> {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
@@ -157,62 +159,44 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     String name = classField.getKey();
                     // skip Java classes like List, Map etc.
                     if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(classField.getValue())) {
-                        type = enhanceRowType(classField.getValue());
+                        expandCustomTypes(classField.getValue(), customTypes);
+                        type = customTypes.get(classField.getValue().getName());
                     }
 
                     return new MappingField(name, type, path.toString());
                 }).collect(Collectors.toList());
 
-        for (MappingField f : new ArrayList<>(topLevelFields)) {
-            if (f.type().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                expandMappingFields(f.name(), f.externalName(), f.type().getSubFields(), topLevelFields);
-            }
+        return topLevelFields.stream();
+    }
+
+    private void expandCustomTypes(final Class<?> fieldClass, final Map<String, QueryDataType> customTypes) {
+        final Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(fieldClass);
+        final QueryDataType fieldType = customTypes.computeIfAbsent(fieldClass.getName(), className ->
+                new QueryDataType(new ArrayList<>(), className));
+
+        if (!fieldType.getSubFields().isEmpty()) {
+            return;
         }
 
-        return topLevelFields.stream();
+        for (final Entry<String, Class<?>> entry : fieldsInClass.entrySet()) {
+            final String fieldName = entry.getKey();
+            final Class<?> subFieldClass = entry.getValue();
+            QueryDataType subFieldType = QueryDataTypeUtils.resolveTypeForClass(subFieldClass);
+
+            if (subFieldType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && isJavaClass(subFieldClass)) {
+                if (!customTypes.containsKey(subFieldClass.getName())) {
+                    expandCustomTypes(subFieldClass, customTypes);
+                }
+                subFieldType = customTypes.get(subFieldClass.getName());
+                fieldType.getSubFields().add(new QueryDataTypeField(fieldName, subFieldType));
+            } else {
+                fieldType.getSubFields().add(new QueryDataTypeField(fieldName, subFieldType));
+            }
+        }
     }
 
     private boolean isJavaClass(Class<?> clazz) {
         return !clazz.getPackage().getName().startsWith("java.");
-    }
-
-    private void expandMappingFields(
-            final String prefix,
-            final String externalPrefix,
-            final List<QueryDataTypeField> fields,
-            final List<MappingField> projections
-    ) {
-        for (final QueryDataTypeField field : fields) {
-            final String newPrefix = prefix + "." + field.getName();
-            final String newExternalPrefix = externalPrefix + "." + field.getName();
-
-            projections.add(new MappingField(newPrefix, field.getType(), newExternalPrefix));
-
-            if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                expandMappingFields(newPrefix, newExternalPrefix, field.getType().getSubFields(), projections);
-            }
-        }
-    }
-
-    private QueryDataType enhanceRowType(Class<?> fieldClass) {
-        final Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(fieldClass);
-
-        final List<QueryDataTypeField> subFields = fieldsInClass.entrySet().stream()
-                .map(entry -> {
-                    final QueryDataTypeField field = new QueryDataTypeField(
-                            entry.getKey(),
-                            QueryDataTypeUtils.resolveTypeForClass(entry.getValue())
-                    );
-
-                    if (field.getType().getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                        field.setType(enhanceRowType(entry.getValue()));
-                    }
-
-                    return field;
-                })
-                .collect(Collectors.toList());
-
-        return new QueryDataType(subFields);
     }
 
     private Stream<MappingField> resolveAndValidateObjectFields(
@@ -288,7 +272,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> fieldsByPath,
             Class<?> clazz
     ) {
-        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClassRecursively(clazz);
+        Map<String, Class<?>> typesByNames = FieldsUtil.resolveClass(clazz);
 
         List<TableField> fields = new ArrayList<>();
         Map<String, String> typeNamesByPaths = new HashMap<>();

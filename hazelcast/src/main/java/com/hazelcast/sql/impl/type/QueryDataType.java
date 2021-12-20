@@ -85,7 +85,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME = new QueryDataType(OffsetDateTimeConverter.INSTANCE);
     public static final QueryDataType TIMESTAMP_WITH_TZ_ZONED_DATE_TIME = new QueryDataType(ZonedDateTimeConverter.INSTANCE);
 
-    public static final QueryDataType OBJECT = new QueryDataType(Collections.emptyList());
+    public static final QueryDataType OBJECT = new QueryDataType(Collections.emptyList(), "");
 
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
 
@@ -96,15 +96,19 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType JSON = new QueryDataType(JsonConverter.INSTANCE);
 
     private Converter converter;
+    private String typeClass;
     private List<QueryDataTypeField> fields;
+
+    // TODO: introduce centralized storage here and resolve references on SerDe?
 
     public QueryDataType() {
         // No-op.
     }
 
-    public QueryDataType(List<QueryDataTypeField> fields) {
+    public QueryDataType(List<QueryDataTypeField> fields, String typeClass) {
         this.fields = fields;
         this.converter = ObjectConverter.INSTANCE;
+        this.typeClass = typeClass;
     }
 
     QueryDataType(Converter converter) {
@@ -124,6 +128,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 .findFirst()
                 .map(QueryDataTypeField::getType)
                 .orElse(null);
+    }
+
+    public String getTypeClass() {
+        return typeClass;
     }
 
     public QueryDataTypeFamily getTypeFamily() {

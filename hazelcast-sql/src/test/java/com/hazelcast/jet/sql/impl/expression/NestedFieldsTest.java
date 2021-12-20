@@ -198,6 +198,7 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         private Long id;
         private String name;
         private Office office;
+        private User ceo;
 
         public Organization() { }
 
@@ -230,6 +231,14 @@ public class NestedFieldsTest extends SqlJsonTestSupport {
         public void setOffice(final Office office) {
             this.office = office;
         }
+
+//        public User getCeo() {
+//            return ceo;
+//        }
+//
+//        public void setCeo(final User ceo) {
+//            this.ceo = ceo;
+//        }
 
         @Override
         public boolean equals(final Object o) {

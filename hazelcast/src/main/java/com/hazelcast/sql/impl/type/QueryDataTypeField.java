@@ -65,12 +65,13 @@ public class QueryDataTypeField implements IdentifiedDataSerializable, Serializa
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeObject(type);
+        // TODO: use type names instead?
+        //out.writeObject(type);
     }
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
         this.name = in.readString();
-        this.type = in.readObject();
+        //this.type = in.readObject();
     }
 }
