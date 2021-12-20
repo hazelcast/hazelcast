@@ -26,12 +26,13 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +46,9 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TcpIpHostnameJoinTest extends AbstractJoinTest {
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-hostname-join.xml");
+
 
     private static final String HOSTNAME1;
     private static final String HOSTNAME2;
