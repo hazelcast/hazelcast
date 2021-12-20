@@ -2,4 +2,4 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## Enhancements
 
-For the distributions packages of IMDG, we updated the vulnerable version of log4j2 in Management Center to 2.15.0. No changes were made to the IMDG code.
+For the distributions packages of IMDG, we updated the vulnerable version of log4j2 in Management Center to 2.17.0. No changes were made to the IMDG code.
