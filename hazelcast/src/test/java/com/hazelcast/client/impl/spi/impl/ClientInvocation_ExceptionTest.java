@@ -30,8 +30,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsNull;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -145,17 +145,17 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    static HazelcastInstance client;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
 
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void init() {
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void tearDown() {
+    @After
+    public void tearDown() {
         hazelcastFactory.terminateAll();
     }
 
