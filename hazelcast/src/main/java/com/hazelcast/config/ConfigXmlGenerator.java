@@ -170,7 +170,7 @@ public class ConfigXmlGenerator {
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
-        deviceConfigXmlGenerator(gen, config);
+        localDeviceConfigXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
@@ -1014,15 +1014,18 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void deviceConfigXmlGenerator(XmlGenerator gen, Config config) {
-        for (DeviceConfig deviceConfig : config.getDeviceConfigs().values()) {
-            gen.open("device", "name", deviceConfig.getName())
-                    .node("base-dir", deviceConfig.getBaseDir().getAbsolutePath())
-                    .node("block-size", deviceConfig.getBlockSize())
-                    .node("read-io-thread-count", deviceConfig.getReadIOThreadCount())
-                    .node("write-io-thread-count", deviceConfig.getWriteIOThreadCount())
-                    .close();
-        }
+    private static void localDeviceConfigXmlGenerator(XmlGenerator gen, Config config) {
+        config.getDeviceConfigs().values().stream()
+                .filter(DeviceConfig::isLocal)
+                .forEach(deviceConfig -> {
+                    LocalDeviceConfig localDeviceConfig = (LocalDeviceConfig) deviceConfig;
+                    gen.open("local-device", "name", localDeviceConfig.getName())
+                            .node("base-dir", localDeviceConfig.getBaseDir().getAbsolutePath())
+                            .node("block-size", localDeviceConfig.getBlockSize())
+                            .node("read-io-thread-count", localDeviceConfig.getReadIOThreadCount())
+                            .node("write-io-thread-count", localDeviceConfig.getWriteIOThreadCount())
+                            .close();
+                });
     }
 
     private static void tieredStoreConfigXmlGenerator(XmlGenerator gen, TieredStoreConfig tieredStoreConfig) {
