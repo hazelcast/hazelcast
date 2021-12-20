@@ -36,12 +36,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.mocknetwork.MockServer.MockServerConnectionManager.isTargetLeft;
+import static com.hazelcast.test.mocknetwork.MockServer.isTargetLeft;
 import static org.junit.Assert.assertNotNull;
 
 public class MockServerConnection implements ServerConnection {
 
     protected final Address localAddress;
+    protected final NodeEngineImpl localNodeEngine;
     protected final NodeEngineImpl remoteNodeEngine;
 
     volatile MockServerConnection localConnection;
@@ -64,9 +65,10 @@ public class MockServerConnection implements ServerConnection {
             Address remoteAddress,
             UUID localUuid,
             UUID remoteUuid,
+            NodeEngineImpl localNodeEngine,
             NodeEngineImpl remoteNodeEngine
     ) {
-        this(null, localAddress, remoteAddress, localUuid, remoteUuid, remoteNodeEngine, null);
+        this(null, localAddress, remoteAddress, localUuid, remoteUuid, localNodeEngine, remoteNodeEngine, null);
     }
 
     public MockServerConnection(
@@ -75,6 +77,7 @@ public class MockServerConnection implements ServerConnection {
             Address remoteAddress,
             UUID localUuid,
             UUID remoteUuid,
+            NodeEngineImpl localNodeEngine,
             NodeEngineImpl remoteNodeEngine,
             ServerConnectionManager localConnectionManager
     ) {
@@ -83,6 +86,7 @@ public class MockServerConnection implements ServerConnection {
         this.remoteAddress = remoteAddress;
         this.localUuid = localUuid;
         this.remoteUuid = remoteUuid;
+        this.localNodeEngine = localNodeEngine;
         this.remoteNodeEngine = remoteNodeEngine;
         this.connectionManager = localConnectionManager;
     }
@@ -177,7 +181,11 @@ public class MockServerConnection implements ServerConnection {
         if (!alive.compareAndSet(true, false)) {
             return;
         }
-
+        if (localNodeEngine != null) {
+            localNodeEngine.getNode()
+                    .getLocalAddressRegistry()
+                    .tryRemoveRegistration(remoteUuid, remoteAddress);
+        }
         if (localConnection != null) {
             //this is a member-to-member connection
             localConnection.close(msg, cause);

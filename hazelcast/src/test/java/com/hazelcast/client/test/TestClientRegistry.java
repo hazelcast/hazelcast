@@ -217,6 +217,7 @@ class TestClientRegistry {
                     localAddress,
                     serverUuid,
                     null,
+                    null,
                     serverNodeEngine,
                     this
             );
@@ -359,10 +360,12 @@ class TestClientRegistry {
                 Address remoteEndpointAddress,
                 UUID localEndpointUuid,
                 UUID remoteEndpointUuid,
-                NodeEngineImpl nodeEngine,
+                NodeEngineImpl localNodeEngine,
+                NodeEngineImpl remoteNodeEngine,
                 MockedTcpClientConnection responseConnection
         ) {
-            super(localEndpointAddress, remoteEndpointAddress, localEndpointUuid, remoteEndpointUuid, nodeEngine);
+            super(localEndpointAddress, remoteEndpointAddress, localEndpointUuid, remoteEndpointUuid,
+                    localNodeEngine, remoteNodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
             lastReadTimeMillis = System.currentTimeMillis();
