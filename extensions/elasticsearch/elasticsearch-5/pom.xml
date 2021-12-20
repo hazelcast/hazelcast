@@ -88,7 +88,7 @@
             Supports Elastic server 5.6.0+
             This is the oldest version of the high level client.
             -->
-            <version>5.6.16</version>
+            <version>7.16.2</version>
         </dependency>
 
         <!-- TEST -->
