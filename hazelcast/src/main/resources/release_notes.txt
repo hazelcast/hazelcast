@@ -12,4 +12,4 @@ https://jet-start.sh/blog/.
 
 ## Enhancements
 
-* Updated log4j2 dependency version to 2.15.0 in Hazelcast's root `pom.xml`. [#20234]
+* Updated log4j2 dependency version to 2.17.0 in Hazelcast's root `pom.xml`. [#20234]
