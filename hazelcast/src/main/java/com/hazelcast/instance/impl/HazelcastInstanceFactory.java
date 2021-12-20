@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.instance.impl.DuplicatedResourcesScanner.checkForDuplicates;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -62,21 +63,12 @@ public final class HazelcastInstanceFactory {
 
     static {
         ModularJavaUtils.checkJavaInternalAccess(LOGGER);
-        checkForDuplicatesInClasspath();
+        String resourceName = "META-INF/services/" + NodeExtension.class.getName();
+        checkForDuplicates(HazelcastInstanceFactory.class.getClassLoader(), LOGGER, resourceName);
     }
 
     private HazelcastInstanceFactory() {
     }
-
-    private static void checkForDuplicatesInClasspath() {
-        Class<?> markerClass = HazelcastInstance.class;
-        List<String> classFiles = ClassScanner.findClassFiles(markerClass);
-        if (classFiles.size() > 1) {
-            LOGGER.warning("WARNING: Classpath misconfiguration: found multiple " + markerClass.getName() + " classes: "
-                    + String.join(", ", classFiles));
-        }
-    }
-
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
         Set<HazelcastInstance> result = createHashSet(INSTANCE_MAP.size());

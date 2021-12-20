@@ -18,25 +18,20 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.jet.impl.util.EnumerationUtil;
 
-import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
-final class ClassScanner {
-    private static final char PATH_SEPARATOR = '/';
-
-    private ClassScanner() {
+final class JarScanner {
+    private JarScanner() {
     }
 
-    static List<String> findClassFiles(JarFile file, String simpleClassName) {
-        String filename = simpleClassName + ".class";
+    static List<String> findClassFiles(JarFile file, String className) {
+        String filename = className + ".class";
         return EnumerationUtil.stream(file.entries())
                 .map(ZipEntry::getName)
                 .map(Paths::get)
@@ -47,18 +42,5 @@ final class ClassScanner {
 
     private static Predicate<Path> byFilename(String filename) {
         return path -> path.getFileName().toString().equals(filename);
-    }
-
-    static List<String> findClassFiles(Class<?> clazz) {
-        String resourceName = clazz.getName().replace('.', PATH_SEPARATOR) + ".class";
-        try {
-            return Collections.list(clazz.getClassLoader().getResources(resourceName))
-                    .stream()
-                    .map(URL::getPath)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
     }
 }
