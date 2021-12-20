@@ -27,6 +27,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeSystem.MAX_DECIMAL_SCALE;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
@@ -137,6 +138,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
             return TYPE_TIMESTAMP;
         } else if (typeName == SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
             return TYPE_TIMESTAMP_WITH_TIME_ZONE;
+        } else if (typeName == SqlTypeName.MAP) {
+            return createMapType(createType(ANY), createType(ANY));
         }
 
         if (HazelcastTypeUtils.isNumericIntegerType(typeName)) {

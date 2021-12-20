@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Converter for arbitrary objects which do not have a more specific converter.
@@ -126,6 +127,11 @@ public final class ObjectConverter extends Converter {
     @Override
     public HazelcastJsonValue asJson(final Object val) {
         return resolveConverter(val, QueryDataTypeFamily.JSON).asJson(val);
+    }
+
+    @Override
+    public Map<Object, Object> asMap(final Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.MAP).asMap(val);
     }
 
     @Override

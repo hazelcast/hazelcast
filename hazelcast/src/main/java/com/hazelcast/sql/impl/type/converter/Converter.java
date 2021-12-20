@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * Interface to convert an item from one type to another.
@@ -85,6 +86,7 @@ public abstract class Converter implements Serializable {
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
     private final boolean convertToJson;
+    private final boolean convertToMap;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
@@ -108,6 +110,7 @@ public abstract class Converter implements Serializable {
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
             convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
+            convertToMap = canConvert(clazz.getMethod("asMap", Object.class));
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to initialize converter: " + getClass().getName(), e);
         }
@@ -201,6 +204,11 @@ public abstract class Converter implements Serializable {
     @NotConvertible
     public HazelcastJsonValue asJson(Object val) {
         throw cannotConvertError(QueryDataTypeFamily.JSON);
+    }
+
+    @NotConvertible
+    public Map<Object, Object> asMap(Object val) {
+        throw cannotConvertError(QueryDataTypeFamily.MAP);
     }
 
     public Object asObject(Object val) {

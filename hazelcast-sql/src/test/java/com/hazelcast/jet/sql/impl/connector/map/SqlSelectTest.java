@@ -25,8 +25,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -63,6 +66,31 @@ public class SqlSelectTest extends SqlTestSupport {
         List<Row> rows = fillIMapAndGetData(map, 20);
 
         assertRowsAnyOrder("SELECT * FROM " + name, rows);
+    }
+
+    @Test
+    public void test_javaMapField() {
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("ssn", "123");
+        properties.put("legalName", "testUserLegalName");
+
+        final User user = new User();
+        user.setId(1L);
+        user.setProperties(properties);
+        user.setName("testUser");
+
+        createMapping("test", Long.class, User.class);
+        instance().getMap("test").put(1L, user);
+        // TODO: fix inserts
+//        instance().getSql().execute("INSERT INTO test VALUES (?, ?, ?, ?)",
+//                1L, user.id, user.name, user.properties);
+
+        assertRowsAnyOrder("SELECT * FROM test", singletonList(new Row(
+                1L,
+                1L,
+                "testUser",
+                properties
+        )));
     }
 
     @Test
@@ -132,5 +160,35 @@ public class SqlSelectTest extends SqlTestSupport {
 
         List<Row> rows = fillIMapAndGetData(map, 20);
         assertRowsAnyOrder("SELECT * FROM v", rows);
+    }
+
+    public static class User implements Serializable {
+        private Long id;
+        private String name;
+        private Map<String, String> properties;
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public Map<String, String> getProperties() {
+            return properties;
+        }
+
+        public void setProperties(final Map<String, String> properties) {
+            this.properties = properties;
+        }
     }
 }

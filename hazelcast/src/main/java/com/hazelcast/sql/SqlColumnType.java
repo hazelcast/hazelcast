@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * SQL column type.
@@ -79,7 +80,9 @@ public enum SqlColumnType {
     NULL(14, Void.class),
 
     /** JSON type, represented by {@link HazelcastJsonValue} */
-    JSON(15, HazelcastJsonValue.class);
+    JSON(15, HazelcastJsonValue.class),
+
+    MAP(16, Map.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 

@@ -93,6 +93,7 @@ public final class HazelcastTypeUtils {
         HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, INTERVAL_DAY_SECOND);
 
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.MAP, SqlTypeName.MAP);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, OTHER);
     }
 

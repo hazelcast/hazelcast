@@ -36,6 +36,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
+import static com.hazelcast.sql.impl.type.QueryDataType.MAP;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
@@ -257,6 +258,9 @@ public final class QueryDataTypeUtils {
 
             case NULL:
                 return NULL;
+
+            case MAP:
+                return MAP;
 
             case JSON:
                 return JSON;

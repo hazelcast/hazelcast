@@ -50,4 +50,9 @@ public class MapConverter extends Converter {
 
         throw converter.cannotConvertError(converter.getTypeFamily());
     }
+
+    @Override
+    public Map<Object, Object> asMap(final Object val) {
+        return (Map<Object, Object>) val;
+    }
 }
