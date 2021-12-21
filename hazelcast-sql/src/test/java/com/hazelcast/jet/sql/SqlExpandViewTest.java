@@ -138,16 +138,16 @@ public class SqlExpandViewTest extends SqlTestSupport {
                 .hasMessageContaining("DML operations not supported for views");
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
+    //    @Ignore("https://github.com/hazelcast/hazelcast/issues/20032")
     @Test
     public void test_referencedViewChanged() {
         // We create a view v2 as reading from v1, and then change v1.
         // This should be reflected when querying v2 later.
         instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
         instance().getSql().execute("CREATE VIEW v2 AS SELECT __key FROM v1");
-        instance().getSql().execute("CREATE or replace VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME);
-
-        assertRowsAnyOrder("select * from v2", rows(1, "key=1"));
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME)
+        ).hasMessageContaining("Can't replace view v1");
     }
 
     @Test

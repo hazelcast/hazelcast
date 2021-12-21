@@ -254,6 +254,10 @@ public class PlanExecutor {
 
         View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
 
+        if (plan.isReplace()) {
+            checkProjectsCompatibility(catalog.getView(plan.viewName()), view);
+        }
+
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -453,6 +457,49 @@ public class PlanExecutor {
         }
 
         return arguments;
+    }
+
+    /**
+     * Consider
+     * <pre>
+     *  CREATE VIEW v1 AS SELECT * FROM VALUES(1, 1)
+     *  </pre>
+     * <pre>
+     *  CREATE OR REPLACE VIEW v1 AS SELECT 1 FROM VALUES(1, 1)
+     *  </pre>
+     * <p>
+     * We forbid view replacement with incompatible projection
+     * to avoid additional complexity during dependent view processing.
+     * It still doesn't cover replacement in DROP & CREATE VIEW way,
+     * but existing way is better than nothing...
+     */
+    private static void checkProjectsCompatibility(View original, View replacement) {
+        List<QueryDataType> originalTypes = original.viewColumnTypes();
+        List<QueryDataType> replacementTypes = replacement.viewColumnTypes();
+        if (originalTypes.size() != replacementTypes.size()) {
+            throw QueryException.error(
+                    String.format("Can't replace view %s: incompatible projection size. "
+                                    + "Original view size: %d, replacement view size %d",
+                            replacement.name(),
+                            originalTypes.size(),
+                            replacementTypes.size()
+                    )
+            );
+        }
+
+        for (int i = 0; i < originalTypes.size(); i++) {
+            if (!replacementTypes.get(i).equals(originalTypes.get(i))) {
+                throw QueryException.error(
+                        String.format("Can't replace view %s: incompatible projection #%d type. "
+                                        + "Original view type: %s, replacement view type %s",
+                                replacement.name(),
+                                i,
+                                originalTypes.get(i).toString(),
+                                replacementTypes.get(i).toString()
+                        )
+                );
+            }
+        }
     }
 
     private static int findQueryExceptionCode(Throwable t) {
