@@ -46,8 +46,8 @@ public class LocalAddressRegistry {
 
     // Since the requested lifecycle of local member's uuid and addresses are slightly different
     // from the remote ones, I manage these separately.
-    private UUID localUuid;
-    private LinkedAddresses localAddresses;
+    private volatile UUID localUuid;
+    private volatile LinkedAddresses localAddresses;
 
     // protected for testing purposes
     protected LocalAddressRegistry() {
@@ -216,10 +216,10 @@ public class LocalAddressRegistry {
                             .forEach(networkInterface ->
                                     Collections.list(networkInterface.getInetAddresses())
                                             .forEach(inetAddress ->
-                                                    localAddresses.addAllResolvedAddresses(new Address(inetAddress, port))));
+                                                    addresses.addAllResolvedAddresses(new Address(inetAddress, port))));
                 } else {
-                    localAddresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
-                    localAddresses.addAllResolvedAddresses(addressEntry.getValue());
+                    addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
+                    addresses.addAllResolvedAddresses(addressEntry.getValue());
                 }
             } catch (UnknownHostException | SocketException e) {
                 ignore(e);
