@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.connector.map.model.InsuredPerson;
@@ -233,6 +234,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime"
+                        + ", map"
                         + ", object"
                         + ") SELECT "
                         + "CAST(1 AS DECIMAL)"
@@ -255,6 +257,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
+                        + ", map"
                         + ", object"
                         + " FROM " + from,
                 createMap(BigInteger.valueOf(1), AllTypesValue.testValue()));
@@ -281,6 +284,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime "
+                        + ", map"
                         + ", object "
                         + "FROM " + to,
                 singletonList(new Row(
@@ -304,6 +308,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         OffsetDateTime.ofInstant(ofEpochMilli(1586953414200L), systemDefault()),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        ImmutableMap.of(42, 43),
                         null
                 )));
     }

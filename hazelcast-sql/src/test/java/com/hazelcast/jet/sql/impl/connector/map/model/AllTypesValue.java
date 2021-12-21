@@ -92,6 +92,7 @@ public final class AllTypesValue implements Serializable {
         this.instant = instant;
         this.zonedDateTime = zonedDateTime;
         this.offsetDateTime = offsetDateTime;
+        this.map = map;
         this.object = object;
     }
 

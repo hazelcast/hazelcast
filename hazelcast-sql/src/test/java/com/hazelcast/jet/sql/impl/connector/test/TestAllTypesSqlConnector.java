@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -27,13 +28,13 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -74,6 +75,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             new MappingField("date", QueryDataType.DATE),
             new MappingField("timestamp", QueryDataType.TIMESTAMP),
             new MappingField("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME),
+            new MappingField("map", QueryDataType.OBJECT),
             new MappingField("object", QueryDataType.OBJECT)
     );
 
@@ -93,6 +95,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             LocalDate.of(2020, 4, 15),
             LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
             OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+            ImmutableMap.of(42, 43),
             null
     };
 
