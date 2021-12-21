@@ -44,6 +44,11 @@ public class LocalAddressRegistry {
     private final Map<Address, UUID> addressToUuid;
     private final Map<UUID, Pair> uuidToAddresses;
 
+    // Since the requested lifecycle of local member's uuid and addresses are slightly different
+    // from the remote ones, I manage these separately.
+    private UUID localUuid;
+    private LinkedAddresses localAddresses;
+
     // protected for testing purposes
     protected LocalAddressRegistry() {
         this.addressToUuid = new ConcurrentHashMap<>();
@@ -155,6 +160,9 @@ public class LocalAddressRegistry {
      */
     @Nullable
     public UUID uuidOf(@Nonnull Address address) {
+        if (localAddresses.contains(address)) {
+            return localUuid;
+        }
         return addressToUuid.get(address);
     }
 
@@ -166,6 +174,9 @@ public class LocalAddressRegistry {
      */
     @Nullable
     public LinkedAddresses linkedAddressesOf(@Nonnull UUID uuid) {
+        if (uuid.equals(localUuid)) {
+            return localAddresses;
+        }
         Pair pair = uuidToAddresses.get(uuid);
         return pair != null ? pair.getAddresses() : null;
     }
@@ -178,6 +189,9 @@ public class LocalAddressRegistry {
      */
     @Nullable
     public Address getPrimaryAddress(@Nonnull UUID uuid) {
+        if (uuid.equals(localUuid)) {
+            return localAddresses.getPrimaryAddress();
+        }
         LinkedAddresses linkedAddresses = linkedAddressesOf(uuid);
         return linkedAddresses != null ? linkedAddresses.getPrimaryAddress() : null;
     }
@@ -187,8 +201,12 @@ public class LocalAddressRegistry {
         uuidToAddresses.clear();
     }
 
+    public void setLocalUuid(UUID newUuid) {
+        localUuid = newUuid;
+    }
+
     private void registerLocalAddresses(UUID thisUuid, AddressPicker addressPicker) {
-        LinkedAddresses localAddresses =
+        LinkedAddresses addresses =
                 LinkedAddresses.getResolvedAddresses(addressPicker.getPublicAddress(EndpointQualifier.MEMBER));
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressPicker.getBindAddressMap().entrySet()) {
             try {
@@ -207,7 +225,8 @@ public class LocalAddressRegistry {
                 ignore(e);
             }
         }
-        register(thisUuid, localAddresses);
+        localUuid = thisUuid;
+        localAddresses = addresses;
     }
 
     private static final class Pair {

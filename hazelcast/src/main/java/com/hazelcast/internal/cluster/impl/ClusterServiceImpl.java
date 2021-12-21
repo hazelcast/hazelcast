@@ -332,8 +332,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    // TODO [ufuk]: investigate carefully at what times it is called. (It's
-    //  called before split brain merge. Find out if it is called elsewhere  )
     private void resetLocalMemberUuid() {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
@@ -352,8 +350,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 .memberListJoinVersion(localMember.getMemberListJoinVersion())
                 .instance(node.hazelcastInstance)
                 .build();
-
         node.loggingService.setThisMember(localMember);
+        node.getLocalAddressRegistry().setLocalUuid(newUuid);
     }
 
     public void resetJoinState() {
