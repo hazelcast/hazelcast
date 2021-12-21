@@ -27,6 +27,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
@@ -36,10 +37,10 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -257,6 +258,11 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public DynamicConfigListener createDynamicConfigListener() {
         return nodeExtension.createDynamicConfigListener();
+    }
+
+    @Override
+    public ReloaderProxy createReloaderProxy() {
+        return nodeExtension.createReloaderProxy();
     }
 
     @Override

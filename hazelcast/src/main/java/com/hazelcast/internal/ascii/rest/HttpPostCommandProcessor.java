@@ -127,6 +127,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleLogLevelReset(command);
             } else if (uri.startsWith(URI_LOG_LEVEL)) {
                 handleLogLevelSet(command);
+            } else if (uri.startsWith(URI_CONFIG_RELOAD)) {
+                handleConfigReload(command);
+            } else if (uri.startsWith(URI_INTERNAL_CONFIG_RELOAD)) {
+                handleInternalConfigReload(command);
             } else {
                 command.send404();
             }
@@ -624,4 +628,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         prepareResponse(command, response(SUCCESS, "message", "log level is reset"));
     }
 
+    protected void handleConfigReload(HttpPostCommand command) throws UnsupportedEncodingException {
+        prepareResponse(
+                command,
+                response(FAIL, "message", "Configuration Reload requires Hazelcast Enterprise Edition")
+        );
+    }
+
+    protected void handleInternalConfigReload(HttpPostCommand command) throws UnsupportedEncodingException {
+        prepareResponse(
+                command,
+                response(FAIL, "message", "Configuration Reload requires Hazelcast Enterprise Edition")
+        );
+    }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -35,6 +36,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -207,6 +209,11 @@ class EmptyConfigurationService implements ConfigurationService {
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
+    }
+
+    @Override
+    public Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig) {
+        throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
     }
 
 }

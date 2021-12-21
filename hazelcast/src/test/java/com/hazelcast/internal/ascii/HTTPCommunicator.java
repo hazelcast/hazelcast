@@ -61,6 +61,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.URI_CONFIG_RELOAD;
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.URI_INTERNAL_CONFIG_RELOAD;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.test.Accessors.getNode;
 
@@ -153,6 +155,9 @@ public class HTTPCommunicator {
     }
 
     public String getUrl(String suffix) {
+        if (suffix.startsWith("/hazelcast/rest/")) {
+            suffix = suffix.substring("/hazelcast/rest/".length());
+        }
         return address + suffix;
     }
 
@@ -369,6 +374,16 @@ public class HTTPCommunicator {
                                String wanRepConfigJson) throws IOException {
         String url = getUrl(URI_ADD_WAN_CONFIG);
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
+    }
+
+    public ConnectionResponse configReload(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_CONFIG_RELOAD);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
+    public ConnectionResponse internalConfigReload(String clusterName, String clusterPassword, String configAsString) throws IOException {
+        String url = getUrl(URI_INTERNAL_CONFIG_RELOAD);
+        return doPost(url, clusterName, clusterPassword, configAsString);
     }
 
     public ConnectionResponse getCPGroupIds() throws IOException {

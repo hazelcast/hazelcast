@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -39,6 +40,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -61,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -89,6 +92,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
     private final DynamicConfigListener listener;
+    private final ReloaderProxy reloaderProxy;
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
@@ -144,9 +148,14 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         CONFIG_TO_VERSION = initializeConfigToVersionMap();
     }
 
-    public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
+    public ClusterWideConfigurationService(
+            NodeEngine nodeEngine,
+            DynamicConfigListener dynamicConfigListener,
+            ReloaderProxy reloaderProxy
+    ) {
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
+        this.reloaderProxy = reloaderProxy;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
         this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
     }
@@ -200,6 +209,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     public void broadcastConfig(IdentifiedDataSerializable config) {
         InternalCompletableFuture<Object> future = broadcastConfigAsync(config);
         future.joinInternal();
+    }
+
+    @Override
+    public Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig) {
+        return reloaderProxy.doReload(oldConfig, newConfig);
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {

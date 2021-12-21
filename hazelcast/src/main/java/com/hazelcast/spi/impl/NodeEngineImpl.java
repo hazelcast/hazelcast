@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
@@ -149,7 +150,8 @@ public class NodeEngineImpl implements NodeEngine {
             this.operationParker = new OperationParkerImpl(this);
             UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
             DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
-            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            ReloaderProxy reloaderProxy = node.getNodeExtension().createReloaderProxy();
+            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener, reloaderProxy);
             ClassLoader configClassLoader = node.getConfigClassLoader();
             if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
                 ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);

@@ -50,13 +50,12 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SqlConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
@@ -69,6 +68,7 @@ import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
@@ -76,7 +76,10 @@ import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.wan.impl.WanReplicationService;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -84,6 +87,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger.merge;
@@ -120,6 +124,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final DynamicCPSubsystemConfig dynamicCPSubsystemConfig;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
+    private volatile WanReplicationService wanReplicationService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
     private volatile Searcher configSearcher;
 
@@ -867,6 +872,20 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.getWanReplicationConfigs();
     }
 
+    public Config addWanReplicationConfigInternal(WanReplicationConfig wanReplicationConfig) {
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(
+                staticConfig.getWanReplicationConfigs(),
+                wanReplicationConfig.getName(),
+                wanReplicationConfig
+        );
+
+        if (staticConfigDoesNotExist) {
+            wanReplicationService.addWanReplicationConfig(wanReplicationConfig);
+        }
+
+        return this;
+    }
+
     @Override
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
@@ -1092,8 +1111,11 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.toString();
     }
 
-    public void setConfigurationService(ConfigurationService configurationService) {
-        this.configurationService = configurationService;
+    public void setServices(NodeEngineImpl nodeEngine) {
+        // Wan service should set before configuration service.
+        this.wanReplicationService = nodeEngine.getWanReplicationService();
+
+        this.configurationService = nodeEngine.getConfigurationService();
         this.configSearcher = initConfigSearcher();
     }
 
@@ -1173,5 +1195,15 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setJetConfig(JetConfig jetConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    public Map<String, Set<String>> reload(@Nullable Config newConfig) {
+        if (newConfig == null) {
+            newConfig = Config.load();
+            if (newConfig.getConfigurationFile() == null) {
+                throw new IllegalStateException("Couldn't locate declarative configuration.");
+            }
+        }
+        return configurationService.reloadConfig(this, newConfig);
     }
 }

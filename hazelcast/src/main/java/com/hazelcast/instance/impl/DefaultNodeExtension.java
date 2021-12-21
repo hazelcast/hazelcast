@@ -46,6 +46,8 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.config.dynamic.reload.EmptyReloaderProxy;
+import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -563,6 +565,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public DynamicConfigListener createDynamicConfigListener() {
         return new EmptyDynamicConfigListener();
+    }
+
+    @Override
+    public ReloaderProxy createReloaderProxy() {
+        return new EmptyReloaderProxy();
     }
 
     @Override

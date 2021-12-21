@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Dynamic configurations.
@@ -56,6 +58,8 @@ public interface ConfigurationService {
      *                                       same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
+
+    Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig);
 
     /**
      * Finds existing Multimap config.

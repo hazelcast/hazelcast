@@ -48,6 +48,7 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetConfig;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -450,6 +452,23 @@ public class Config {
         }
 
         throw new IllegalArgumentException("interpretation error: the resource is neither valid XML nor valid YAML");
+    }
+
+    /**
+     * Reloads the configuration. It means that it will look up to the
+     * declarative configuration and will apply the dynamically changeable
+     * differences to the run time configuration.
+     *
+     * @return added configurations as map
+     */
+    public Map<String, Set<String>> reload() {
+        if (!(this instanceof DynamicConfigurationAwareConfig)) {
+            throw new UnsupportedOperationException("Can't call reload from static configuration. "
+                    + "Please use instance.getConfig.reload() instead.");
+        }
+
+        DynamicConfigurationAwareConfig dynamicConfigurationAwareConfig = (DynamicConfigurationAwareConfig) this;
+        return dynamicConfigurationAwareConfig.reload(null);
     }
 
     /**
