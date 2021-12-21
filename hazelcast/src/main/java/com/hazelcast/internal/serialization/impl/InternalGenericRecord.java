@@ -56,16 +56,6 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Byte getByteFromArray(@Nonnull String fieldName, int index);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value from the given index, returns null if index is larger than the array size or if array itself
-     * is null
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
-     *                                         the type of the field does not match the one in the class definition/schema.
-     */
-    @Nullable
     Character getCharFromArray(@Nonnull String fieldName, int index);
 
     /**
@@ -76,7 +66,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Short getShortFromArray(@Nonnull String fieldName, int index);
+    Byte getInt8FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -86,7 +76,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Integer getIntFromArray(@Nonnull String fieldName, int index);
+    Short getInt16FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -96,7 +86,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Long getLongFromArray(@Nonnull String fieldName, int index);
+    Integer getInt32FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -106,7 +96,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Float getFloatFromArray(@Nonnull String fieldName, int index);
+    Long getInt64FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -116,7 +106,17 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Double getDoubleFromArray(@Nonnull String fieldName, int index);
+    Float getFloat32FromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Double getFloat64FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -243,7 +243,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Byte getNullableByteFromArray(@Nonnull String fieldName, int index);
+    Byte getNullableInt8FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -253,7 +253,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Short getNullableShortFromArray(@Nonnull String fieldName, int index);
+    Short getNullableInt16FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -263,7 +263,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Integer getNullableIntFromArray(@Nonnull String fieldName, int index);
+    Integer getNullableInt32FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -273,7 +273,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Long getNullableLongFromArray(@Nonnull String fieldName, int index);
+    Long getNullableInt64FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -283,7 +283,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Float getNullableFloatFromArray(@Nonnull String fieldName, int index);
+    Float getNullableFloat32FromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -293,5 +293,5 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    Double getNullableDoubleFromArray(@Nonnull String fieldName, int index);
+    Double getNullableFloat64FromArray(@Nonnull String fieldName, int index);
 }

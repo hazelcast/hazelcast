@@ -114,12 +114,12 @@ public class PortableUpsertTargetTest {
         assertThat(record.getString("string")).isEqualTo("1");
         assertThat(record.getChar("character")).isEqualTo('2');
         assertThat(record.getBoolean("boolean")).isEqualTo(true);
-        assertThat(record.getByte("byte")).isEqualTo((byte) 3);
-        assertThat(record.getShort("short")).isEqualTo((short) 4);
-        assertThat(record.getInt("int")).isEqualTo(5);
-        assertThat(record.getLong("long")).isEqualTo(6L);
-        assertThat(record.getFloat("float")).isEqualTo(7.1F);
-        assertThat(record.getDouble("double")).isEqualTo(7.2D);
+        assertThat(record.getInt8("byte")).isEqualTo((byte) 3);
+        assertThat(record.getInt16("short")).isEqualTo((short) 4);
+        assertThat(record.getInt32("int")).isEqualTo(5);
+        assertThat(record.getInt64("long")).isEqualTo(6L);
+        assertThat(record.getFloat32("float")).isEqualTo(7.1F);
+        assertThat(record.getFloat64("double")).isEqualTo(7.2D);
         assertThat(record.getDecimal("decimal")).isEqualTo(new BigDecimal("8.1"));
         assertThat(record.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
         assertThat(record.getDate("date")).isEqualTo(LocalDate.of(2021, 2, 9));
@@ -141,37 +141,37 @@ public class PortableUpsertTargetTest {
                         new ClassDefinitionBuilder(1, 2, 3).addByteField("field").build(),
                         QueryDataType.TINYINT,
                         (byte) 0,
-                        (Function<InternalGenericRecord, Object>) record -> record.getByte("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getInt8("field")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addShortField("field").build(),
                         QueryDataType.SMALLINT,
                         (short) 0,
-                        (Function<InternalGenericRecord, Object>) record -> record.getShort("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getInt16("field")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addIntField("field").build(),
                         QueryDataType.INT,
                         0,
-                        (Function<InternalGenericRecord, Object>) record -> record.getInt("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getInt32("field")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addLongField("field").build(),
                         QueryDataType.BIGINT,
                         0L,
-                        (Function<InternalGenericRecord, Object>) record -> record.getLong("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getInt64("field")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addFloatField("field").build(),
                         QueryDataType.REAL,
                         0F,
-                        (Function<InternalGenericRecord, Object>) record -> record.getFloat("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getFloat32("field")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDoubleField("field").build(),
                         QueryDataType.DOUBLE,
                         0D,
-                        (Function<InternalGenericRecord, Object>) record -> record.getDouble("field")
+                        (Function<InternalGenericRecord, Object>) record -> record.getFloat64("field")
                 }
         };
     }
@@ -252,22 +252,22 @@ public class PortableUpsertTargetTest {
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBytes("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
                         new byte[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBytes("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfShorts("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
                         new short[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfShorts("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(),
@@ -282,42 +282,42 @@ public class PortableUpsertTargetTest {
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInts("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
                         new int[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInts("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfLongs("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
                         new long[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfLongs("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloats("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
                         new float[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloats("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDoubles("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
                         new double[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDoubles("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64s("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(),

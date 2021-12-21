@@ -97,11 +97,11 @@ class PortableUpsertTarget implements UpsertTarget {
                         break;
                     case BYTE:
                         ensureNotNull(value);
-                        portable.setByte(name, value == NOT_SET ? (byte) 0 : (byte) value);
+                        portable.setInt8(name, value == NOT_SET ? (byte) 0 : (byte) value);
                         break;
                     case SHORT:
                         ensureNotNull(value);
-                        portable.setShort(name, value == NOT_SET ? (short) 0 : (short) value);
+                        portable.setInt16(name, value == NOT_SET ? (short) 0 : (short) value);
                         break;
                     case CHAR:
                         ensureNotNull(value);
@@ -109,19 +109,19 @@ class PortableUpsertTarget implements UpsertTarget {
                         break;
                     case INT:
                         ensureNotNull(value);
-                        portable.setInt(name, value == NOT_SET ? 0 : (int) value);
+                        portable.setInt32(name, value == NOT_SET ? 0 : (int) value);
                         break;
                     case LONG:
                         ensureNotNull(value);
-                        portable.setLong(name, value == NOT_SET ? 0L : (long) value);
+                        portable.setInt64(name, value == NOT_SET ? 0L : (long) value);
                         break;
                     case FLOAT:
                         ensureNotNull(value);
-                        portable.setFloat(name, value == NOT_SET ? 0F : (float) value);
+                        portable.setFloat32(name, value == NOT_SET ? 0F : (float) value);
                         break;
                     case DOUBLE:
                         ensureNotNull(value);
-                        portable.setDouble(name, value == NOT_SET ? 0D : (double) value);
+                        portable.setFloat64(name, value == NOT_SET ? 0D : (double) value);
                         break;
                     case DECIMAL:
                         portable.setDecimal(name, value == NOT_SET ? null : (BigDecimal) value);
@@ -148,25 +148,25 @@ class PortableUpsertTarget implements UpsertTarget {
                         portable.setArrayOfBooleans(name, value == NOT_SET ? null : (boolean[]) value);
                         break;
                     case BYTE_ARRAY:
-                        portable.setArrayOfBytes(name, value == NOT_SET ? null : (byte[]) value);
+                        portable.setArrayOfInt8s(name, value == NOT_SET ? null : (byte[]) value);
                         break;
                     case SHORT_ARRAY:
-                        portable.setArrayOfShorts(name, value == NOT_SET ? null : (short[]) value);
+                        portable.setArrayOfInt16s(name, value == NOT_SET ? null : (short[]) value);
                         break;
                     case CHAR_ARRAY:
                         portable.setArrayOfChars(name, value == NOT_SET ? null : (char[]) value);
                         break;
                     case INT_ARRAY:
-                        portable.setArrayOfInts(name, value == NOT_SET ? null : (int[]) value);
+                        portable.setArrayOfInt32s(name, value == NOT_SET ? null : (int[]) value);
                         break;
                     case LONG_ARRAY:
-                        portable.setArrayOfLongs(name, value == NOT_SET ? null : (long[]) value);
+                        portable.setArrayOfInt64s(name, value == NOT_SET ? null : (long[]) value);
                         break;
                     case FLOAT_ARRAY:
-                        portable.setArrayOfFloats(name, value == NOT_SET ? null : (float[]) value);
+                        portable.setArrayOfFloat32s(name, value == NOT_SET ? null : (float[]) value);
                         break;
                     case DOUBLE_ARRAY:
-                        portable.setArrayOfDoubles(name, value == NOT_SET ? null : (double[]) value);
+                        portable.setArrayOfFloat64s(name, value == NOT_SET ? null : (double[]) value);
                         break;
                     case DECIMAL_ARRAY:
                         portable.setArrayOfDecimals(name, value == NOT_SET ? null : (BigDecimal[]) value);

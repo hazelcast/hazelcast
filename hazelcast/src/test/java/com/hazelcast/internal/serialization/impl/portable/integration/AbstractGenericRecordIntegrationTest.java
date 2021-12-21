@@ -78,7 +78,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         GenericRecord expected = createGenericRecord(expectedPortable);
 
         assertEquals(expectedPortable.c, expected.getChar("c"));
-        assertEquals(expectedPortable.f, expected.getFloat("f"), 0.1);
+        assertEquals(expectedPortable.f, expected.getFloat32("f"), 0.1);
         HazelcastInstance[] instances = createCluster();
         IMap<Object, Object> clusterMap = instances[0].getMap("test");
         clusterMap.put(1, expected);
@@ -95,7 +95,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         GenericRecord expected = createGenericRecord(expectedPortable);
 
         assertEquals(expectedPortable.c, expected.getChar("c"));
-        assertEquals(expectedPortable.f, expected.getFloat("f"), 0.1);
+        assertEquals(expectedPortable.f, expected.getFloat32("f"), 0.1);
         HazelcastInstance[] instances = createCluster();
         IMap<Object, Object> clusterMap = instances[0].getMap("test");
         clusterMap.put(1, expected);
@@ -128,7 +128,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         assertTrue(actualRecord.hasField("myint"));
 
         assertEquals(expected.name, actualRecord.getString("name"));
-        assertEquals(expected.myint, actualRecord.getInt("myint"));
+        assertEquals(expected.myint, actualRecord.getInt32("myint"));
 
 
         //read from the instance with serialization config
@@ -153,7 +153,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         assertTrue(actual.hasField("myint"));
 
         assertEquals(expected.name, actual.getString("name"));
-        assertEquals(expected.myint, actual.getInt("myint"));
+        assertEquals(expected.myint, actual.getInt32("myint"));
     }
 
     @Test
@@ -173,11 +173,11 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
 
             GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
                     .setString("name", "bar")
-                    .setInt("myint", 4).build();
+                    .setInt32("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
-            return genericRecord.getInt("myint");
+            return genericRecord.getInt32("myint");
         });
         assertEquals(expected.myint, returnValue);
 
@@ -202,11 +202,11 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
             GenericRecord genericRecord = (GenericRecord) value;
 
             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
-                    .setInt("myint", 4).build();
+                    .setInt32("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
-            return genericRecord.getInt("myint");
+            return genericRecord.getInt32("myint");
         });
         assertEquals(expected.myint, returnValue);
 
@@ -228,7 +228,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         public Integer call() throws Exception {
             IMap<Object, Object> map = instance.getMap("test");
             GenericRecord genericRecord = (GenericRecord) map.get(1);
-            return genericRecord.getInt("myint");
+            return genericRecord.getInt32("myint");
         }
     }
 
@@ -366,18 +366,18 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         for (NamedPortable namedPortable : inner.nn) {
             GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
                     .setString("name", inner.nn[i].name)
-                    .setInt("myint", inner.nn[i].myint).build();
+                    .setInt32("myint", inner.nn[i].myint).build();
             namedRecords[i++] = namedRecord;
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.portable(innerPortableClassDefinition)
-                .setArrayOfBytes("b", inner.bb)
+                .setArrayOfInt8s("b", inner.bb)
                 .setArrayOfChars("c", inner.cc)
-                .setArrayOfShorts("s", inner.ss)
-                .setArrayOfInts("i", inner.ii)
-                .setArrayOfLongs("l", inner.ll)
-                .setArrayOfFloats("f", inner.ff)
-                .setArrayOfDoubles("d", inner.dd)
+                .setArrayOfInt16s("s", inner.ss)
+                .setArrayOfInt32s("i", inner.ii)
+                .setArrayOfInt64s("l", inner.ll)
+                .setArrayOfFloat32s("f", inner.ff)
+                .setArrayOfFloat64s("d", inner.dd)
                 .setArrayOfGenericRecords("nn", namedRecords)
                 .setArrayOfDecimals("bigDecimals", inner.bigDecimals)
                 .setArrayOfTimes("localTimes", inner.localTimes)
@@ -387,14 +387,14 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
                 .build();
 
         return GenericRecordBuilder.portable(mainPortableClassDefinition)
-                .setByte("b", expectedPortable.b)
+                .setInt8("b", expectedPortable.b)
                 .setBoolean("bool", expectedPortable.bool)
                 .setChar("c", expectedPortable.c)
-                .setShort("s", expectedPortable.s)
-                .setInt("i", expectedPortable.i)
-                .setLong("l", expectedPortable.l)
-                .setFloat("f", expectedPortable.f)
-                .setDouble("d", expectedPortable.d)
+                .setInt16("s", expectedPortable.s)
+                .setInt32("i", expectedPortable.i)
+                .setInt64("l", expectedPortable.l)
+                .setFloat32("f", expectedPortable.f)
+                .setFloat64("d", expectedPortable.d)
                 .setString("str", expectedPortable.str)
                 .setGenericRecord("p", innerRecord)
                 .setDecimal("bigDecimal", expectedPortable.bigDecimal)
@@ -416,11 +416,11 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
 
         GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
                 .setString("name", "foo")
-                .setInt("myint", 123).build();
+                .setInt32("myint", 123).build();
 
         GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
                 .setString("WrongName", "foo")
-                .setInt("myint", 123).build();
+                .setInt32("myint", 123).build();
 
         return BiTuple.of(record, inConsistentNamedRecord);
     }
@@ -447,7 +447,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
         GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
                 .setString("name", "foo")
                 .setGenericRecord("child", GenericRecordBuilder.portable(childCd)
-                        .setInt("a", 1)
+                        .setInt32("a", 1)
                         .build()
                 ).build();
 

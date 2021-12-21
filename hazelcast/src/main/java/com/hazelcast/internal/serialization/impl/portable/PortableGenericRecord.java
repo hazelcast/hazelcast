@@ -47,37 +47,37 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Byte getNullableByte(@Nonnull String fieldName) {
+    public Byte getNullableInt8(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double getNullableDouble(@Nonnull String fieldName) {
+    public Double getNullableFloat64(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float getNullableFloat(@Nonnull String fieldName) {
+    public Float getNullableFloat32(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer getNullableInt(@Nonnull String fieldName) {
+    public Integer getNullableInt32(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long getNullableLong(@Nonnull String fieldName) {
+    public Long getNullableInt64(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short getNullableShort(@Nonnull String fieldName) {
+    public Short getNullableInt16(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
@@ -89,43 +89,43 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Byte[] getArrayOfNullableBytes(@Nonnull String fieldName) {
+    public Byte[] getArrayOfNullableInt8s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double[] getArrayOfNullableDoubles(@Nonnull String fieldName) {
+    public Double[] getArrayOfNullableFloat64s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float[] getArrayOfNullableFloats(@Nonnull String fieldName) {
+    public Float[] getArrayOfNullableFloat32s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer[] getArrayOfNullableInts(@Nonnull String fieldName) {
+    public Integer[] getArrayOfNullableInt32s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long[] getArrayOfNullableLongs(@Nonnull String fieldName) {
+    public Long[] getArrayOfNullableInt64s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short[] getArrayOfNullableShorts(@Nonnull String fieldName) {
+    public Short[] getArrayOfNullableInt16s(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Byte getNullableByteFromArray(@Nonnull String fieldName, int index) {
+    public Byte getNullableInt8FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
@@ -137,31 +137,31 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Short getNullableShortFromArray(@Nonnull String fieldName, int index) {
+    public Short getNullableInt16FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer getNullableIntFromArray(@Nonnull String fieldName, int index) {
+    public Integer getNullableInt32FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long getNullableLongFromArray(@Nonnull String fieldName, int index) {
+    public Long getNullableInt64FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float getNullableFloatFromArray(@Nonnull String fieldName, int index) {
+    public Float getNullableFloat32FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double getNullableDoubleFromArray(@Nonnull String fieldName, int index) {
+    public Double getNullableFloat64FromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 }

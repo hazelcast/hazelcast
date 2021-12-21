@@ -144,14 +144,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    byte getByte(@Nonnull String fieldName);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
     char getChar(@Nonnull String fieldName);
 
     /**
@@ -160,7 +152,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    double getDouble(@Nonnull String fieldName);
+    byte getInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -168,7 +160,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    float getFloat(@Nonnull String fieldName);
+    short getInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -176,7 +168,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    int getInt(@Nonnull String fieldName);
+    int getInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -184,7 +176,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    long getLong(@Nonnull String fieldName);
+    long getInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -192,7 +184,15 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short getShort(@Nonnull String fieldName);
+    float getFloat32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    double getFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -275,15 +275,6 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    byte[] getArrayOfBytes(@Nonnull String fieldName);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
-    @Nullable
     char[] getArrayOfChars(@Nonnull String fieldName);
 
     /**
@@ -293,7 +284,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    double[] getArrayOfDoubles(@Nonnull String fieldName);
+    byte[] getArrayOfInt8s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -302,7 +293,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    float[] getArrayOfFloats(@Nonnull String fieldName);
+    short[] getArrayOfInt16s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -311,7 +302,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    int[] getArrayOfInts(@Nonnull String fieldName);
+    int[] getArrayOfInt32s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -320,7 +311,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    long[] getArrayOfLongs(@Nonnull String fieldName);
+    long[] getArrayOfInt64s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -329,7 +320,16 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    short[] getArrayOfShorts(@Nonnull String fieldName);
+    float[] getArrayOfFloat32s(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    double[] getArrayOfFloat64s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -415,7 +415,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Byte getNullableByte(@Nonnull String fieldName);
+    Byte getNullableInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -424,7 +424,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Double getNullableDouble(@Nonnull String fieldName);
+    Short getNullableInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -433,7 +433,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Float getNullableFloat(@Nonnull String fieldName);
+    Integer getNullableInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -442,7 +442,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Integer getNullableInt(@Nonnull String fieldName);
+    Long getNullableInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -451,7 +451,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Long getNullableLong(@Nonnull String fieldName);
+    Float getNullableFloat32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -460,7 +460,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Short getNullableShort(@Nonnull String fieldName);
+    Double getNullableFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -478,7 +478,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Byte[] getArrayOfNullableBytes(@Nonnull String fieldName);
+    Byte[] getArrayOfNullableInt8s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -487,7 +487,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Double[] getArrayOfNullableDoubles(@Nonnull String fieldName);
+    Short[] getArrayOfNullableInt16s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -496,7 +496,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Float[] getArrayOfNullableFloats(@Nonnull String fieldName);
+    Integer[] getArrayOfNullableInt32s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -505,7 +505,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Integer[] getArrayOfNullableInts(@Nonnull String fieldName);
+    Long[] getArrayOfNullableInt64s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -514,7 +514,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Long[] getArrayOfNullableLongs(@Nonnull String fieldName);
+    Float[] getArrayOfNullableFloat32s(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -523,5 +523,5 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Short[] getArrayOfNullableShorts(@Nonnull String fieldName);
+    Double[] getArrayOfNullableFloat64s(@Nonnull String fieldName);
 }

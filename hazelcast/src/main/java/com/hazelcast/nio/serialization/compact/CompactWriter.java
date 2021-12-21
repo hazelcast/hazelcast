@@ -48,7 +48,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeByte(@Nonnull String fieldName, byte value);
+    void writeInt8(@Nonnull String fieldName, byte value);
 
     /**
      * Writes a 16-bit two's complement signed integer.
@@ -56,7 +56,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeShort(@Nonnull String fieldName, short value);
+    void writeInt16(@Nonnull String fieldName, short value);
 
     /**
      * Writes a 32-bit two's complement signed integer.
@@ -64,7 +64,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeInt(@Nonnull String fieldName, int value);
+    void writeInt32(@Nonnull String fieldName, int value);
 
     /**
      * Writes a 64-bit two's complement signed integer.
@@ -72,7 +72,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeLong(@Nonnull String fieldName, long value);
+    void writeInt64(@Nonnull String fieldName, long value);
 
     /**
      * Writes a 32-bit IEEE 754 floating point number.
@@ -80,7 +80,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeFloat(@Nonnull String fieldName, float value);
+    void writeFloat32(@Nonnull String fieldName, float value);
 
     /**
      * Writes a 64-bit IEEE 754 floating point number.
@@ -88,7 +88,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeDouble(@Nonnull String fieldName, double value);
+    void writeFloat64(@Nonnull String fieldName, double value);
 
     /**
      * Writes an UTF-8 encoded string.
@@ -160,7 +160,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value);
+    void writeArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
      * Writes an array of 16-bit two's complement signed integers.
@@ -168,7 +168,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value);
+    void writeArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] value);
 
     /**
      * Writes an array of 32-bit two's complement signed integers.
@@ -176,7 +176,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfInts(@Nonnull String fieldName, @Nullable int[] value);
+    void writeArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] value);
 
     /**
      * Writes an array of 64-bit two's complement signed integers.
@@ -184,7 +184,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value);
+    void writeArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] value);
 
     /**
      * Writes an array of 32-bit IEEE 754 floating point numbers.
@@ -192,7 +192,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value);
+    void writeArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] value);
 
     /**
      * Writes an array of 64-bit IEEE 754 floating point numbers.
@@ -200,7 +200,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value);
+    void writeArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] value);
 
     /**
      * Writes an array of UTF-8 encoded strings.
@@ -272,7 +272,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableByte(@Nonnull String fieldName, @Nullable Byte value);
+    void writeNullableInt8(@Nonnull String fieldName, @Nullable Byte value);
 
     /**
      * Writes a nullable 16-bit two's complement signed integer.
@@ -280,7 +280,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableShort(@Nonnull String fieldName, @Nullable Short value);
+    void writeNullableInt16(@Nonnull String fieldName, @Nullable Short value);
 
     /**
      * Writes a nullable 32-bit two's complement signed integer.
@@ -288,7 +288,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableInt(@Nonnull String fieldName, @Nullable Integer value);
+    void writeNullableInt32(@Nonnull String fieldName, @Nullable Integer value);
 
     /**
      * Writes a nullable 64-bit two's complement signed integer.
@@ -296,7 +296,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableLong(@Nonnull String fieldName, @Nullable Long value);
+    void writeNullableInt64(@Nonnull String fieldName, @Nullable Long value);
 
     /**
      * Writes a nullable 32-bit IEEE 754 floating point number.
@@ -304,7 +304,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableFloat(@Nonnull String fieldName, @Nullable Float value);
+    void writeNullableFloat32(@Nonnull String fieldName, @Nullable Float value);
 
     /**
      * Writes a nullable 64-bit IEEE 754 floating point number.
@@ -312,7 +312,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeNullableDouble(@Nonnull String fieldName, @Nullable Double value);
+    void writeNullableFloat64(@Nonnull String fieldName, @Nullable Double value);
 
     /**
      * Writes a nullable array of nullable booleans.
@@ -328,7 +328,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value);
+    void writeArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value);
 
     /**
      * Writes a nullable array of nullable 16-bit two's complement signed integers.
@@ -336,7 +336,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value);
+    void writeArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value);
 
     /**
      * Writes a nullable array of nullable 32-bit two's complement signed integers.
@@ -344,7 +344,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value);
+    void writeArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value);
 
     /**
      * Writes a nullable array of nullable 64-bit two's complement signed integers.
@@ -352,7 +352,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value);
+    void writeArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value);
 
     /**
      * Writes a nullable array of nullable 32-bit IEEE 754 floating point numbers.
@@ -360,7 +360,7 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value);
+    void writeArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value);
 
     /**
      * Writes a nullable array of nullable 64-bit IEEE 754 floating point numbers.
@@ -368,5 +368,5 @@ public interface CompactWriter {
      * @param fieldName name of the field.
      * @param value     to be written.
      */
-    void writeArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value);
+    void writeArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value);
 }

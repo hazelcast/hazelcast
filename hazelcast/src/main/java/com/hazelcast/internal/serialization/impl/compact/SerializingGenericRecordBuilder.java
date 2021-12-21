@@ -80,17 +80,17 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
+    public GenericRecordBuilder setInt32(@Nonnull String fieldName, int value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeInt(fieldName, value);
+        defaultCompactWriter.writeInt32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
+    public GenericRecordBuilder setInt64(@Nonnull String fieldName, long value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeLong(fieldName, value);
+        defaultCompactWriter.writeInt64(fieldName, value);
         return this;
     }
 
@@ -112,9 +112,9 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
+    public GenericRecordBuilder setInt8(@Nonnull String fieldName, byte value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeByte(fieldName, value);
+        defaultCompactWriter.writeInt8(fieldName, value);
         return this;
     }
 
@@ -126,25 +126,25 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
+    public GenericRecordBuilder setFloat64(@Nonnull String fieldName, double value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeDouble(fieldName, value);
+        defaultCompactWriter.writeFloat64(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
+    public GenericRecordBuilder setFloat32(@Nonnull String fieldName, float value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeFloat(fieldName, value);
+        defaultCompactWriter.writeFloat32(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
+    public GenericRecordBuilder setInt16(@Nonnull String fieldName, short value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeShort(fieldName, value);
+        defaultCompactWriter.writeInt16(fieldName, value);
         return this;
     }
 
@@ -158,49 +158,49 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableByte(@Nonnull String fieldName, @Nullable Byte value) {
+    public GenericRecordBuilder setNullableInt8(@Nonnull String fieldName, @Nullable Byte value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableByte(fieldName, value);
+        defaultCompactWriter.writeNullableInt8(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableDouble(@Nonnull String fieldName, @Nullable Double value) {
+    public GenericRecordBuilder setNullableFloat64(@Nonnull String fieldName, @Nullable Double value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableDouble(fieldName, value);
+        defaultCompactWriter.writeNullableFloat64(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableFloat(@Nonnull String fieldName, @Nullable Float value) {
+    public GenericRecordBuilder setNullableFloat32(@Nonnull String fieldName, @Nullable Float value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableFloat(fieldName, value);
+        defaultCompactWriter.writeNullableFloat32(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableInt(@Nonnull String fieldName, @Nullable Integer value) {
+    public GenericRecordBuilder setNullableInt32(@Nonnull String fieldName, @Nullable Integer value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableInt(fieldName, value);
+        defaultCompactWriter.writeNullableInt32(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableLong(@Nonnull String fieldName, @Nullable Long value) {
+    public GenericRecordBuilder setNullableInt64(@Nonnull String fieldName, @Nullable Long value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableLong(fieldName, value);
+        defaultCompactWriter.writeNullableInt64(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableShort(@Nonnull String fieldName, @Nullable Short value) {
+    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeNullableShort(fieldName, value);
+        defaultCompactWriter.writeNullableInt16(fieldName, value);
         return this;
     }
 
@@ -262,9 +262,9 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value) {
+    public GenericRecordBuilder setArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfBytes(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt8s(fieldName, value);
         return this;
     }
 
@@ -284,41 +284,41 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfInts(@Nonnull String fieldName, @Nullable int[] value) {
+    public GenericRecordBuilder setArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfInts(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt32s(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value) {
+    public GenericRecordBuilder setArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfLongs(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt64s(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value) {
+    public GenericRecordBuilder setArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfDoubles(fieldName, value);
+        defaultCompactWriter.writeArrayOfFloat64s(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value) {
+    public GenericRecordBuilder setArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfFloats(fieldName, value);
+        defaultCompactWriter.writeArrayOfFloat32s(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value) {
+    public GenericRecordBuilder setArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfShorts(fieldName, value);
+        defaultCompactWriter.writeArrayOfInt16s(fieldName, value);
         return this;
     }
 
@@ -332,49 +332,49 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableBytes(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableInt8s(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value) {
+    public GenericRecordBuilder setArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableFloats(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableFloat32s(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableInts(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableInt32s(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value) {
+    public GenericRecordBuilder setArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableDoubles(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableFloat64s(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableLongs(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableInt64s(fieldName, value);
         return this;
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeArrayOfNullableShorts(fieldName, value);
+        defaultCompactWriter.writeArrayOfNullableInt16s(fieldName, value);
         return this;
     }
 

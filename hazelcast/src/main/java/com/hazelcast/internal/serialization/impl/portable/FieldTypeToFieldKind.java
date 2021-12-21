@@ -36,41 +36,41 @@ public final class FieldTypeToFieldKind {
             case PORTABLE:
                 return FieldKind.PORTABLE;
             case BYTE:
-                return FieldKind.BYTE;
+                return FieldKind.INT8;
             case BOOLEAN:
                 return FieldKind.BOOLEAN;
             case CHAR:
                 return FieldKind.CHAR;
             case SHORT:
-                return FieldKind.SHORT;
+                return FieldKind.INT16;
             case INT:
-                return FieldKind.INT;
+                return FieldKind.INT32;
             case LONG:
-                return FieldKind.LONG;
+                return FieldKind.INT64;
             case FLOAT:
-                return FieldKind.FLOAT;
+                return FieldKind.FLOAT32;
             case DOUBLE:
-                return FieldKind.DOUBLE;
+                return FieldKind.FLOAT64;
             case UTF:
                 return FieldKind.STRING;
             case PORTABLE_ARRAY:
                 return FieldKind.ARRAY_OF_PORTABLES;
             case BYTE_ARRAY:
-                return FieldKind.ARRAY_OF_BYTES;
+                return FieldKind.ARRAY_OF_INT8S;
             case BOOLEAN_ARRAY:
                 return FieldKind.ARRAY_OF_BOOLEANS;
             case CHAR_ARRAY:
                 return FieldKind.ARRAY_OF_CHARS;
             case SHORT_ARRAY:
-                return FieldKind.ARRAY_OF_SHORTS;
+                return FieldKind.ARRAY_OF_INT16S;
             case INT_ARRAY:
-                return FieldKind.ARRAY_OF_INTS;
+                return FieldKind.ARRAY_OF_INT32S;
             case LONG_ARRAY:
-                return FieldKind.ARRAY_OF_LONGS;
+                return FieldKind.ARRAY_OF_INT64S;
             case FLOAT_ARRAY:
-                return FieldKind.ARRAY_OF_FLOATS;
+                return FieldKind.ARRAY_OF_FLOAT32S;
             case DOUBLE_ARRAY:
-                return FieldKind.ARRAY_OF_DOUBLES;
+                return FieldKind.ARRAY_OF_FLOAT64S;
             case UTF_ARRAY:
                 return FieldKind.ARRAY_OF_STRINGS;
             case DECIMAL:

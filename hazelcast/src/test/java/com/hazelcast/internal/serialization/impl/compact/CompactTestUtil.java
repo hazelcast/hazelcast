@@ -45,17 +45,17 @@ public final class CompactTestUtil {
         for (NamedDTO named : inner.nn) {
             GenericRecord namedRecord = GenericRecordBuilder.compact("named")
                     .setString("name", named.name)
-                    .setInt("myint", named.myint).build();
+                    .setInt32("myint", named.myint).build();
             namedRecords[i++] = namedRecord;
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
-                .setArrayOfBytes("b", inner.bb)
-                .setArrayOfShorts("s", inner.ss)
-                .setArrayOfInts("i", inner.ii)
-                .setArrayOfLongs("l", inner.ll)
-                .setArrayOfFloats("f", inner.ff)
-                .setArrayOfDoubles("d", inner.dd)
+                .setArrayOfInt8s("b", inner.bb)
+                .setArrayOfInt16s("s", inner.ss)
+                .setArrayOfInt32s("i", inner.ii)
+                .setArrayOfInt64s("l", inner.ll)
+                .setArrayOfFloat32s("f", inner.ff)
+                .setArrayOfFloat64s("d", inner.dd)
                 .setArrayOfGenericRecords("nn", namedRecords)
                 .setArrayOfDecimals("bigDecimals", inner.bigDecimals)
                 .setArrayOfTimes("localTimes", inner.localTimes)
@@ -65,13 +65,13 @@ public final class CompactTestUtil {
                 .build();
 
         return GenericRecordBuilder.compact("main")
-                .setByte("b", mainDTO.b)
+                .setInt8("b", mainDTO.b)
                 .setBoolean("bool", mainDTO.bool)
-                .setShort("s", mainDTO.s)
-                .setInt("i", mainDTO.i)
-                .setLong("l", mainDTO.l)
-                .setFloat("f", mainDTO.f)
-                .setDouble("d", mainDTO.d)
+                .setInt16("s", mainDTO.s)
+                .setInt32("i", mainDTO.i)
+                .setInt64("l", mainDTO.l)
+                .setFloat32("f", mainDTO.f)
+                .setFloat64("d", mainDTO.d)
                 .setString("str", mainDTO.str)
                 .setDecimal("bigDecimal", mainDTO.bigDecimal)
                 .setGenericRecord("p", innerRecord)
@@ -79,13 +79,13 @@ public final class CompactTestUtil {
                 .setDate("localDate", mainDTO.localDate)
                 .setTimestamp("localDateTime", mainDTO.localDateTime)
                 .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
-                .setNullableByte("nullable_b", mainDTO.b)
+                .setNullableInt8("nullable_b", mainDTO.b)
                 .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableShort("nullable_s", mainDTO.s)
-                .setNullableInt("nullable_i", mainDTO.i)
-                .setNullableLong("nullable_l", mainDTO.l)
-                .setNullableFloat("nullable_f", mainDTO.f)
-                .setNullableDouble("nullable_d", mainDTO.d)
+                .setNullableint16("nullable_s", mainDTO.s)
+                .setNullableInt32("nullable_i", mainDTO.i)
+                .setNullableInt64("nullable_l", mainDTO.l)
+                .setNullableFloat32("nullable_f", mainDTO.f)
+                .setNullableFloat64("nullable_d", mainDTO.d)
                 .build();
     }
 

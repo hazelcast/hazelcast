@@ -102,9 +102,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.INT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeInt(fieldName, value)) != null) {
+    public GenericRecordBuilder setInt32(@Nonnull String fieldName, int value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.INT32);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeInt32(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -112,9 +112,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.LONG);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeLong(fieldName, value)) != null) {
+    public GenericRecordBuilder setInt64(@Nonnull String fieldName, long value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.INT64);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeInt64(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -142,9 +142,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.BYTE);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeByte(fieldName, value)) != null) {
+    public GenericRecordBuilder setInt8(@Nonnull String fieldName, byte value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.INT8);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeInt8(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -158,9 +158,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.DOUBLE);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeDouble(fieldName, value)) != null) {
+    public GenericRecordBuilder setFloat64(@Nonnull String fieldName, double value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.FLOAT64);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeFloat64(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -168,9 +168,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.FLOAT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeFloat(fieldName, value)) != null) {
+    public GenericRecordBuilder setFloat32(@Nonnull String fieldName, float value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.FLOAT32);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeFloat32(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -178,9 +178,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.SHORT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeShort(fieldName, value)) != null) {
+    public GenericRecordBuilder setInt16(@Nonnull String fieldName, short value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.INT16);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeInt16(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -198,9 +198,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableByte(@Nonnull String fieldName, @Nullable Byte value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_BYTE);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableByte(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableInt8(@Nonnull String fieldName, @Nullable Byte value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT8);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt8(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -208,9 +208,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableDouble(@Nonnull String fieldName, @Nullable Double value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_DOUBLE);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableDouble(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableFloat64(@Nonnull String fieldName, @Nullable Double value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_FLOAT64);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableFloat64(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -218,9 +218,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableFloat(@Nonnull String fieldName, @Nullable Float value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_FLOAT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableFloat(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableFloat32(@Nonnull String fieldName, @Nullable Float value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_FLOAT32);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableFloat32(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -228,9 +228,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableInt(@Nonnull String fieldName, @Nullable Integer value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableInt32(@Nonnull String fieldName, @Nullable Integer value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT32);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt32(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -238,9 +238,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableLong(@Nonnull String fieldName, @Nullable Long value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_LONG);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableLong(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableInt64(@Nonnull String fieldName, @Nullable Long value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT64);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt64(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -248,9 +248,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableShort(@Nonnull String fieldName, @Nullable Short value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_SHORT);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableShort(fieldName, value)) != null) {
+    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT16);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt16(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -328,9 +328,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_BYTES);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfBytes(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_INT8S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfInt8s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -354,9 +354,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfInts(@Nonnull String fieldName, @Nullable int[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_INTS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfInts(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_INT32S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfInt32s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -364,9 +364,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfLongs(@Nonnull String fieldName, @Nullable long[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_LONGS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfLongs(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_INT64S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfInt64s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -374,9 +374,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_DOUBLES);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfDoubles(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_FLOAT64S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfFloat64s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -384,9 +384,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfFloats(@Nonnull String fieldName, @Nullable float[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_FLOATS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfFloats(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_FLOAT32S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfFloat32s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -394,9 +394,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setArrayOfShorts(@Nonnull String fieldName, @Nullable short[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_SHORTS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfShorts(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_INT16S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfInt16s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -415,9 +415,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_BYTES);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableBytes(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_INT8S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableInt8s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -425,9 +425,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_DOUBLES);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableDoubles(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_FLOAT64S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableFloat64s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -435,9 +435,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_FLOATS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableFloats(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_FLOAT32S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableFloat32s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -445,9 +445,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_INTS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableInts(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_INT32S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableInt32s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -455,9 +455,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_LONGS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableLongs(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_INT64S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableInt64s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;
@@ -465,9 +465,9 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_SHORTS);
-        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableShorts(fieldName, value)) != null) {
+    public GenericRecordBuilder setArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value) {
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_NULLABLE_INT16S);
+        if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfNullableInt16s(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
         return this;

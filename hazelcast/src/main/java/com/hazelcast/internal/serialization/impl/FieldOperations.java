@@ -87,15 +87,15 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getArrayOfBooleans(fieldName)));
             }
         };
-        ALL[FieldKind.BYTE.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.INT8.getId()] = new FieldKindBasedOperations() {
             @Override
             public Byte readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getByte(fieldName);
+                return genericRecord.getInt8(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeByte(fieldName, genericRecord.getByte(fieldName));
+                writer.writeInt8(fieldName, genericRecord.getInt8(fieldName));
             }
 
             @Override
@@ -105,33 +105,33 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getByte(fieldName));
+                stringBuilder.append(record.getInt8(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_BYTES.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_INT8S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfBytes(fieldName);
+                return genericRecord.getArrayOfInt8s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getByteFromArray(fieldName, index);
+                return record.getInt8FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfBytes(fieldName));
+                return Arrays.hashCode(record.getArrayOfInt8s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfBytes(fieldName, record.getArrayOfBytes(fieldName));
+                writer.writeArrayOfInt8s(fieldName, record.getArrayOfInt8s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfBytes(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfInt8s(fieldName)));
             }
         };
         ALL[FieldKind.CHAR.getId()] = new FieldKindBasedOperations() {
@@ -197,15 +197,15 @@ public final class FieldOperations {
             }
 
         };
-        ALL[FieldKind.SHORT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.INT16.getId()] = new FieldKindBasedOperations() {
             @Override
             public Short readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getShort(fieldName);
+                return genericRecord.getInt16(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeShort(fieldName, genericRecord.getShort(fieldName));
+                writer.writeInt16(fieldName, genericRecord.getInt16(fieldName));
             }
 
             @Override
@@ -215,44 +215,44 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getShort(fieldName));
+                stringBuilder.append(record.getInt16(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_SHORTS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_INT16S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfShorts(fieldName);
+                return genericRecord.getArrayOfInt16s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getShortFromArray(fieldName, index);
+                return record.getInt16FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfShorts(fieldName));
+                return Arrays.hashCode(record.getArrayOfInt16s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfShorts(fieldName, record.getArrayOfShorts(fieldName));
+                writer.writeArrayOfInt16s(fieldName, record.getArrayOfInt16s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfShorts(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfInt16s(fieldName)));
             }
         };
-        ALL[FieldKind.INT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.INT32.getId()] = new FieldKindBasedOperations() {
             @Override
             public Integer readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getInt(fieldName);
+                return genericRecord.getInt32(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeInt(fieldName, genericRecord.getInt(fieldName));
+                writer.writeInt32(fieldName, genericRecord.getInt32(fieldName));
             }
 
             @Override
@@ -262,44 +262,44 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getInt(fieldName));
+                stringBuilder.append(record.getInt32(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_INTS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_INT32S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfInts(fieldName);
+                return genericRecord.getArrayOfInt32s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getIntFromArray(fieldName, index);
+                return record.getInt32FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfInts(fieldName));
+                return Arrays.hashCode(record.getArrayOfInt32s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfInts(fieldName, record.getArrayOfInts(fieldName));
+                writer.writeArrayOfInt32s(fieldName, record.getArrayOfInt32s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfInts(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfInt32s(fieldName)));
             }
         };
-        ALL[FieldKind.LONG.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.INT64.getId()] = new FieldKindBasedOperations() {
             @Override
             public Long readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getLong(fieldName);
+                return genericRecord.getInt64(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeLong(fieldName, genericRecord.getLong(fieldName));
+                writer.writeInt64(fieldName, genericRecord.getInt64(fieldName));
             }
 
             @Override
@@ -309,44 +309,44 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getLong(fieldName));
+                stringBuilder.append(record.getInt64(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_LONGS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_INT64S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfLongs(fieldName);
+                return genericRecord.getArrayOfInt64s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getLongFromArray(fieldName, index);
+                return record.getInt64FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfLongs(fieldName));
+                return Arrays.hashCode(record.getArrayOfInt64s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfLongs(fieldName, record.getArrayOfLongs(fieldName));
+                writer.writeArrayOfInt64s(fieldName, record.getArrayOfInt64s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfLongs(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfInt64s(fieldName)));
             }
         };
-        ALL[FieldKind.FLOAT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
             public Float readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getFloat(fieldName);
+                return genericRecord.getFloat32(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeFloat(fieldName, genericRecord.getFloat(fieldName));
+                writer.writeFloat32(fieldName, genericRecord.getFloat32(fieldName));
             }
 
             @Override
@@ -356,44 +356,44 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getFloat(fieldName));
+                stringBuilder.append(record.getFloat32(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_FLOATS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_FLOAT32S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfFloats(fieldName);
+                return genericRecord.getArrayOfFloat32s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getFloatFromArray(fieldName, index);
+                return record.getFloat32FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfFloats(fieldName));
+                return Arrays.hashCode(record.getArrayOfFloat32s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfFloats(fieldName, record.getArrayOfFloats(fieldName));
+                writer.writeArrayOfFloat32s(fieldName, record.getArrayOfFloat32s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfFloats(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfFloat32s(fieldName)));
             }
         };
-        ALL[FieldKind.DOUBLE.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
             public Double readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getDouble(fieldName);
+                return genericRecord.getFloat64(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeDouble(fieldName, genericRecord.getDouble(fieldName));
+                writer.writeFloat64(fieldName, genericRecord.getFloat64(fieldName));
             }
 
             @Override
@@ -403,33 +403,33 @@ public final class FieldOperations {
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(record.getDouble(fieldName));
+                stringBuilder.append(record.getFloat64(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_DOUBLES.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_FLOAT64S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfDoubles(fieldName);
+                return genericRecord.getArrayOfFloat64s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getDoubleFromArray(fieldName, index);
+                return record.getFloat64FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfDoubles(fieldName));
+                return Arrays.hashCode(record.getArrayOfFloat64s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfDoubles(fieldName, record.getArrayOfDoubles(fieldName));
+                writer.writeArrayOfFloat64s(fieldName, record.getArrayOfFloat64s(fieldName));
             }
 
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-                stringBuilder.append(Arrays.toString(record.getArrayOfDoubles(fieldName)));
+                stringBuilder.append(Arrays.toString(record.getArrayOfFloat64s(fieldName)));
             }
         };
         ALL[FieldKind.STRING.getId()] = new FieldKindBasedOperations() {
@@ -869,15 +869,15 @@ public final class FieldOperations {
             }
 
         };
-        ALL[FieldKind.NULLABLE_BYTE.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_INT8.getId()] = new FieldKindBasedOperations() {
             @Override
             public Byte readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableByte(fieldName);
+                return genericRecord.getNullableInt8(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableByte(fieldName, genericRecord.getNullableByte(fieldName));
+                writer.writeNullableInt8(fieldName, genericRecord.getNullableInt8(fieldName));
             }
 
             @Override
@@ -885,25 +885,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_BYTES.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_INT8S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableBytes(fieldName);
+                return genericRecord.getArrayOfNullableInt8s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableByteFromArray(fieldName, index);
+                return record.getNullableInt8FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableBytes(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableInt8s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableBytes(fieldName, record.getArrayOfNullableBytes(fieldName));
+                writer.writeArrayOfNullableInt8s(fieldName, record.getArrayOfNullableInt8s(fieldName));
             }
 
             @Override
@@ -911,15 +911,15 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, record.readAny(fieldName), StringBuilder::append);
             }
         };
-        ALL[FieldKind.NULLABLE_SHORT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_INT16.getId()] = new FieldKindBasedOperations() {
             @Override
             public Short readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableShort(fieldName);
+                return genericRecord.getNullableInt16(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableShort(fieldName, genericRecord.getNullableShort(fieldName));
+                writer.writeNullableInt16(fieldName, genericRecord.getNullableInt16(fieldName));
             }
 
             @Override
@@ -927,25 +927,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_SHORTS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_INT16S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableShorts(fieldName);
+                return genericRecord.getArrayOfNullableInt16s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableShortFromArray(fieldName, index);
+                return record.getNullableInt16FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableShorts(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableInt16s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableShorts(fieldName, record.getArrayOfNullableShorts(fieldName));
+                writer.writeArrayOfNullableInt16s(fieldName, record.getArrayOfNullableInt16s(fieldName));
             }
 
             @Override
@@ -953,15 +953,15 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, record.readAny(fieldName), StringBuilder::append);
             }
         };
-        ALL[FieldKind.NULLABLE_INT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_INT32.getId()] = new FieldKindBasedOperations() {
             @Override
             public Integer readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableInt(fieldName);
+                return genericRecord.getNullableInt32(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableInt(fieldName, genericRecord.getNullableInt(fieldName));
+                writer.writeNullableInt32(fieldName, genericRecord.getNullableInt32(fieldName));
             }
 
             @Override
@@ -969,25 +969,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_INTS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_INT32S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableInts(fieldName);
+                return genericRecord.getArrayOfNullableInt32s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableIntFromArray(fieldName, index);
+                return record.getNullableInt32FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableInts(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableInt32s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableInts(fieldName, record.getArrayOfNullableInts(fieldName));
+                writer.writeArrayOfNullableInt32s(fieldName, record.getArrayOfNullableInt32s(fieldName));
             }
 
             @Override
@@ -995,15 +995,15 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, record.readAny(fieldName), StringBuilder::append);
             }
         };
-        ALL[FieldKind.NULLABLE_LONG.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_INT64.getId()] = new FieldKindBasedOperations() {
             @Override
             public Long readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableLong(fieldName);
+                return genericRecord.getNullableInt64(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableLong(fieldName, genericRecord.getNullableLong(fieldName));
+                writer.writeNullableInt64(fieldName, genericRecord.getNullableInt64(fieldName));
             }
 
             @Override
@@ -1011,25 +1011,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_LONGS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_INT64S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableLongs(fieldName);
+                return genericRecord.getArrayOfNullableInt64s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableLongFromArray(fieldName, index);
+                return record.getNullableInt64FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableLongs(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableInt64s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableLongs(fieldName, record.getArrayOfNullableLongs(fieldName));
+                writer.writeArrayOfNullableInt64s(fieldName, record.getArrayOfNullableInt64s(fieldName));
             }
 
             @Override
@@ -1037,15 +1037,15 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, record.readAny(fieldName), StringBuilder::append);
             }
         };
-        ALL[FieldKind.NULLABLE_FLOAT.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_FLOAT32.getId()] = new FieldKindBasedOperations() {
             @Override
             public Float readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableFloat(fieldName);
+                return genericRecord.getNullableFloat32(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableFloat(fieldName, genericRecord.getNullableFloat(fieldName));
+                writer.writeNullableFloat32(fieldName, genericRecord.getNullableFloat32(fieldName));
             }
 
             @Override
@@ -1053,25 +1053,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_FLOATS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_FLOAT32S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableFloats(fieldName);
+                return genericRecord.getArrayOfNullableFloat32s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableFloatFromArray(fieldName, index);
+                return record.getNullableFloat32FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableFloats(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableFloat32s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableFloats(fieldName, record.getArrayOfNullableFloats(fieldName));
+                writer.writeArrayOfNullableFloat32s(fieldName, record.getArrayOfNullableFloat32s(fieldName));
             }
 
             @Override
@@ -1079,15 +1079,15 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, record.readAny(fieldName), StringBuilder::append);
             }
         };
-        ALL[FieldKind.NULLABLE_DOUBLE.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.NULLABLE_FLOAT64.getId()] = new FieldKindBasedOperations() {
             @Override
             public Double readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getNullableDouble(fieldName);
+                return genericRecord.getNullableFloat64(fieldName);
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
-                writer.writeNullableDouble(fieldName, genericRecord.getNullableDouble(fieldName));
+                writer.writeNullableFloat64(fieldName, genericRecord.getNullableFloat64(fieldName));
             }
 
             @Override
@@ -1095,25 +1095,25 @@ public final class FieldOperations {
                 stringBuilder.append(readObject(record, fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_NULLABLE_DOUBLES.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_NULLABLE_FLOAT64S.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfNullableDoubles(fieldName);
+                return genericRecord.getArrayOfNullableFloat64s(fieldName);
             }
 
             @Override
             public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-                return record.getNullableDoubleFromArray(fieldName, index);
+                return record.getNullableFloat64FromArray(fieldName, index);
             }
 
             @Override
             public int hashCode(GenericRecord record, String fieldName) {
-                return Arrays.hashCode(record.getArrayOfNullableDoubles(fieldName));
+                return Arrays.hashCode(record.getArrayOfNullableFloat64s(fieldName));
             }
 
             @Override
             public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
-                writer.writeArrayOfNullableDoubles(fieldName, record.getArrayOfNullableDoubles(fieldName));
+                writer.writeArrayOfNullableFloat64s(fieldName, record.getArrayOfNullableFloat64s(fieldName));
             }
 
             @Override

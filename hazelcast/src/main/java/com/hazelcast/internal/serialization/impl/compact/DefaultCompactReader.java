@@ -28,40 +28,40 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8S;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_LONGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64S;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16S;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.INT8;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.INT;
-import static com.hazelcast.nio.serialization.FieldKind.LONG;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.INT32;
+import static com.hazelcast.nio.serialization.FieldKind.INT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.INT16;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
@@ -89,63 +89,63 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public byte readByte(@Nonnull String fieldName) {
-        return getByte(fieldName);
+    public byte readInt8(@Nonnull String fieldName) {
+        return getInt8(fieldName);
     }
 
     @Override
-    public byte readByte(@Nonnull String fieldName, byte defaultValue) {
-        return isFieldExists(fieldName, BYTE) ? getByte(fieldName) : defaultValue;
+    public byte readInt8(@Nonnull String fieldName, byte defaultValue) {
+        return isFieldExists(fieldName, INT8) ? getInt8(fieldName) : defaultValue;
     }
 
     @Override
-    public short readShort(@Nonnull String fieldName) {
-        return getShort(fieldName);
+    public short readInt16(@Nonnull String fieldName) {
+        return getInt16(fieldName);
     }
 
     @Override
-    public short readShort(@Nonnull String fieldName, short defaultValue) {
-        return isFieldExists(fieldName, SHORT) ? readShort(fieldName) : defaultValue;
+    public short readInt16(@Nonnull String fieldName, short defaultValue) {
+        return isFieldExists(fieldName, INT16) ? readInt16(fieldName) : defaultValue;
     }
 
     @Override
-    public int readInt(@Nonnull String fieldName) {
-        return getInt(fieldName);
+    public int readInt32(@Nonnull String fieldName) {
+        return getInt32(fieldName);
     }
 
     @Override
-    public int readInt(@Nonnull String fieldName, int defaultValue) {
-        return isFieldExists(fieldName, INT) ? getInt(fieldName) : defaultValue;
+    public int readInt32(@Nonnull String fieldName, int defaultValue) {
+        return isFieldExists(fieldName, INT32) ? getInt32(fieldName) : defaultValue;
     }
 
     @Override
-    public long readLong(@Nonnull String fieldName) {
-        return getLong(fieldName);
+    public long readInt64(@Nonnull String fieldName) {
+        return getInt64(fieldName);
     }
 
     @Override
-    public long readLong(@Nonnull String fieldName, long defaultValue) {
-        return isFieldExists(fieldName, LONG) ? getLong(fieldName) : defaultValue;
+    public long readInt64(@Nonnull String fieldName, long defaultValue) {
+        return isFieldExists(fieldName, INT64) ? getInt64(fieldName) : defaultValue;
     }
 
     @Override
-    public float readFloat(@Nonnull String fieldName) {
-        return getFloat(fieldName);
+    public float readFloat32(@Nonnull String fieldName) {
+        return getFloat32(fieldName);
     }
 
     @Override
-    public float readFloat(@Nonnull String fieldName, float defaultValue) {
-        return isFieldExists(fieldName, FLOAT) ? getFloat(fieldName) : defaultValue;
+    public float readFloat32(@Nonnull String fieldName, float defaultValue) {
+        return isFieldExists(fieldName, FLOAT32) ? getFloat32(fieldName) : defaultValue;
     }
 
     @Override
-    public double readDouble(@Nonnull String fieldName) {
-        return getDouble(fieldName);
+    public double readFloat64(@Nonnull String fieldName) {
+        return getFloat64(fieldName);
     }
 
     @Override
-    public double readDouble(@Nonnull String fieldName, double defaultValue) {
-        return isFieldExists(fieldName, DOUBLE) ? getDouble(fieldName) : defaultValue;
+    public double readFloat64(@Nonnull String fieldName, double defaultValue) {
+        return isFieldExists(fieldName, FLOAT64) ? getFloat64(fieldName) : defaultValue;
     }
 
     @Override
@@ -230,14 +230,14 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public byte[] readArrayOfBytes(@Nonnull String fieldName) {
-        return getArrayOfBytes(fieldName);
+    public byte[] readArrayOInt8s(@Nonnull String fieldName) {
+        return getArrayOfInt8s(fieldName);
     }
 
     @Nullable
     @Override
-    public byte[] readArrayOfBytes(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_BYTES) ? getArrayOfBytes(fieldName) : defaultValue;
+    public byte[] readArrayOInt8s(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_INT8S) ? getArrayOfInt8s(fieldName) : defaultValue;
     }
 
     @Override
@@ -252,58 +252,58 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public int[] readArrayOfInts(@Nonnull String fieldName) {
-        return getArrayOfInts(fieldName);
+    public int[] readArrayOfInt32s(@Nonnull String fieldName) {
+        return getArrayOfInt32s(fieldName);
     }
 
     @Nullable
     @Override
-    public int[] readArrayOfInts(@Nonnull String fieldName, @Nullable int[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_INTS) ? getArrayOfInts(fieldName) : defaultValue;
+    public int[] readArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_INT32S) ? getArrayOfInt32s(fieldName) : defaultValue;
     }
 
     @Override
-    public long[] readArrayOfLongs(@Nonnull String fieldName) {
-        return getArrayOfLongs(fieldName);
-    }
-
-    @Nullable
-    @Override
-    public long[] readArrayOfLongs(@Nonnull String fieldName, @Nullable long[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_LONGS) ? getArrayOfLongs(fieldName) : defaultValue;
-    }
-
-    @Override
-    public double[] readArrayOfDoubles(@Nonnull String fieldName) {
-        return getArrayOfDoubles(fieldName);
+    public long[] readArrayOfInt64s(@Nonnull String fieldName) {
+        return getArrayOfInt64s(fieldName);
     }
 
     @Nullable
     @Override
-    public double[] readArrayOfDoubles(@Nonnull String fieldName, @Nullable double[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_DOUBLES) ? getArrayOfDoubles(fieldName) : defaultValue;
+    public long[] readArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_INT64S) ? getArrayOfInt64s(fieldName) : defaultValue;
     }
 
     @Override
-    public float[] readArrayOfFloats(@Nonnull String fieldName) {
-        return getArrayOfFloats(fieldName);
-    }
-
-    @Nullable
-    @Override
-    public float[] readArrayOfFloats(@Nonnull String fieldName, @Nullable float[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_FLOATS) ? getArrayOfFloats(fieldName) : defaultValue;
-    }
-
-    @Override
-    public short[] readArrayOfShorts(@Nonnull String fieldName) {
-        return getArrayOfShorts(fieldName);
+    public double[] readArrayOfFloat64s(@Nonnull String fieldName) {
+        return getArrayOfFloat64s(fieldName);
     }
 
     @Nullable
     @Override
-    public short[] readArrayOfShorts(@Nonnull String fieldName, @Nullable short[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_SHORTS) ? getArrayOfShorts(fieldName) : defaultValue;
+    public double[] readArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_FLOAT64S) ? getArrayOfFloat64s(fieldName) : defaultValue;
+    }
+
+    @Override
+    public float[] readArrayOfFloat32s(@Nonnull String fieldName) {
+        return getArrayOfFloat32s(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public float[] readArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_FLOAT32S) ? getArrayOfFloat32s(fieldName) : defaultValue;
+    }
+
+    @Override
+    public short[] readArrayOfInt16s(@Nonnull String fieldName) {
+        return getArrayOfInt16s(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public short[] readArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_INT16S) ? getArrayOfInt16s(fieldName) : defaultValue;
     }
 
     @Override
@@ -399,72 +399,72 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Nullable
     @Override
-    public Byte readNullableByte(@Nonnull String fieldName) {
-        return getNullableByte(fieldName);
+    public Byte readNullableInt8(@Nonnull String fieldName) {
+        return getNullableInt8(fieldName);
     }
 
     @Nullable
     @Override
-    public Byte readNullableByte(@Nonnull String fieldName, @Nullable Byte defaultValue) {
-        return isFieldExists(fieldName, BYTE) ? getNullableByte(fieldName) : defaultValue;
+    public Byte readNullableInt8(@Nonnull String fieldName, @Nullable Byte defaultValue) {
+        return isFieldExists(fieldName, INT8) ? getNullableInt8(fieldName) : defaultValue;
     }
 
     @Override
-    public Short readNullableShort(@Nonnull String fieldName) {
-        return getNullableShort(fieldName);
+    public Short readNullableInt16(@Nonnull String fieldName) {
+        return getNullableInt16(fieldName);
     }
 
     @Override
-    public Short readNullableShort(@Nonnull String fieldName, @Nullable Short defaultValue) {
-        return isFieldExists(fieldName, SHORT) ? getNullableShort(fieldName) : defaultValue;
-    }
-
-    @Nullable
-    @Override
-    public Integer readNullableInt(@Nonnull String fieldName) {
-        return getNullableInt(fieldName);
+    public Short readNullableInt16(@Nonnull String fieldName, @Nullable Short defaultValue) {
+        return isFieldExists(fieldName, INT16) ? getNullableInt16(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Integer readNullableInt(@Nonnull String fieldName, @Nullable Integer defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_INT) ? getNullableInt(fieldName) : defaultValue;
+    public Integer readNullableInt32(@Nonnull String fieldName) {
+        return getNullableInt32(fieldName);
     }
 
     @Nullable
     @Override
-    public Long readNullableLong(@Nonnull String fieldName) {
-        return getNullableLong(fieldName);
+    public Integer readNullableInt32(@Nonnull String fieldName, @Nullable Integer defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_INT32) ? getNullableInt32(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Long readNullableLong(@Nonnull String fieldName, @Nullable Long defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_LONG) ? getNullableLong(fieldName) : defaultValue;
+    public Long readNullableInt64(@Nonnull String fieldName) {
+        return getNullableInt64(fieldName);
     }
 
     @Nullable
     @Override
-    public Float readNullableFloat(@Nonnull String fieldName) {
-        return getNullableFloat(fieldName);
+    public Long readNullableInt64(@Nonnull String fieldName, @Nullable Long defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_INT64) ? getNullableInt64(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Float readNullableFloat(@Nonnull String fieldName, @Nullable Float defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_FLOAT) ? getNullableFloat(fieldName) : defaultValue;
+    public Float readNullableFloat32(@Nonnull String fieldName) {
+        return getNullableFloat32(fieldName);
     }
 
     @Nullable
     @Override
-    public Double readNullableDouble(@Nonnull String fieldName) {
-        return getNullableDouble(fieldName);
+    public Float readNullableFloat32(@Nonnull String fieldName, @Nullable Float defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_FLOAT32) ? getNullableFloat32(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Double readNullableDouble(@Nonnull String fieldName, @Nullable Double defaultValue) {
-        return isFieldExists(fieldName, NULLABLE_DOUBLE) ? getNullableDouble(fieldName) : defaultValue;
+    public Double readNullableFloat64(@Nonnull String fieldName) {
+        return getNullableFloat64(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Double readNullableFloat64(@Nonnull String fieldName, @Nullable Double defaultValue) {
+        return isFieldExists(fieldName, NULLABLE_FLOAT64) ? getNullableFloat64(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -481,73 +481,73 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Nullable
     @Override
-    public Byte[] readArrayOfNullableBytes(@Nonnull String fieldName) {
-        return getArrayOfNullableBytes(fieldName);
+    public Byte[] readArrayOfNullableInt8s(@Nonnull String fieldName) {
+        return getArrayOfNullableInt8s(fieldName);
     }
 
     @Nullable
     @Override
-    public Byte[] readArrayOfNullableBytes(@Nonnull String fieldName, @Nullable Byte[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_BYTES) ? getArrayOfNullableBytes(fieldName) : defaultValue;
+    public Byte[] readArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INT8S) ? getArrayOfNullableInt8s(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Short[] readArrayOfNullableShorts(@Nonnull String fieldName) {
-        return getArrayOfNullableShorts(fieldName);
+    public Short[] readArrayOfNullableInt16s(@Nonnull String fieldName) {
+        return getArrayOfNullableInt16s(fieldName);
     }
 
     @Nullable
     @Override
-    public Short[] readArrayOfNullableShorts(@Nonnull String fieldName, @Nullable Short[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_SHORTS) ? getArrayOfNullableShorts(fieldName) : defaultValue;
+    public Short[] readArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INT16S) ? getArrayOfNullableInt16s(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Integer[] readArrayOfNullableInts(@Nonnull String fieldName) {
-        return getArrayOfNullableInts(fieldName);
+    public Integer[] readArrayOfNullableInt32s(@Nonnull String fieldName) {
+        return getArrayOfNullableInt32s(fieldName);
     }
 
     @Nullable
     @Override
-    public Integer[] readArrayOfNullableInts(@Nonnull String fieldName, @Nullable Integer[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INTS) ? getArrayOfNullableInts(fieldName) : defaultValue;
+    public Integer[] readArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INT32S) ? getArrayOfNullableInt32s(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Long[] readArrayOfNullableLongs(@Nonnull String fieldName) {
-        return getArrayOfNullableLongs(fieldName);
+    public Long[] readArrayOfNullableInt64s(@Nonnull String fieldName) {
+        return getArrayOfNullableInt64s(fieldName);
     }
 
     @Nullable
     @Override
-    public Long[] readArrayOfNullableLongs(@Nonnull String fieldName, @Nullable Long[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_LONGS) ? getArrayOfNullableLongs(fieldName) : defaultValue;
+    public Long[] readArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_INT64S) ? getArrayOfNullableInt64s(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Float[] readArrayOfNullableFloats(@Nonnull String fieldName) {
-        return getArrayOfNullableFloats(fieldName);
+    public Float[] readArrayOfNullableFloat32s(@Nonnull String fieldName) {
+        return getArrayOfNullableFloat32s(fieldName);
     }
 
     @Nullable
     @Override
-    public Float[] readArrayOfNullableFloats(@Nonnull String fieldName, @Nullable Float[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_FLOATS) ? getArrayOfNullableFloats(fieldName) : defaultValue;
+    public Float[] readArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_FLOAT32S) ? getArrayOfNullableFloat32s(fieldName) : defaultValue;
     }
 
     @Nullable
     @Override
-    public Double[] readArrayOfNullableDoubles(@Nonnull String fieldName) {
-        return getArrayOfNullableDoubles(fieldName);
+    public Double[] readArrayOfNullableFloat64s(@Nonnull String fieldName) {
+        return getArrayOfNullableFloat64s(fieldName);
     }
 
     @Nullable
     @Override
-    public Double[] readArrayOfNullableDoubles(@Nonnull String fieldName, @Nullable Double[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_DOUBLES) ? getArrayOfNullableDoubles(fieldName) : defaultValue;
+    public Double[] readArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] defaultValue) {
+        return isFieldExists(fieldName, ARRAY_OF_NULLABLE_FLOAT64S) ? getArrayOfNullableFloat64s(fieldName) : defaultValue;
     }
 }

@@ -121,7 +121,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public byte getByte(@Nonnull String fieldName) {
+    public byte getInt8(@Nonnull String fieldName) {
         try {
             return in.readByte(readPosition(fieldName, FieldType.BYTE));
         } catch (IOException e) {
@@ -139,7 +139,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public double getDouble(@Nonnull String fieldName) {
+    public double getFloat64(@Nonnull String fieldName) {
         try {
             return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
         } catch (IOException e) {
@@ -148,7 +148,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public float getFloat(@Nonnull String fieldName) {
+    public float getFloat32(@Nonnull String fieldName) {
         try {
             return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
@@ -157,7 +157,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public int getInt(@Nonnull String fieldName) {
+    public int getInt32(@Nonnull String fieldName) {
         try {
             return in.readInt(readPosition(fieldName, FieldType.INT));
         } catch (IOException e) {
@@ -166,7 +166,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public long getLong(@Nonnull String fieldName) {
+    public long getInt64(@Nonnull String fieldName) {
         try {
             return in.readLong(readPosition(fieldName, FieldType.LONG));
         } catch (IOException e) {
@@ -175,7 +175,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public short getShort(@Nonnull String fieldName) {
+    public short getInt16(@Nonnull String fieldName) {
         try {
             return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
@@ -267,7 +267,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public byte[] getArrayOfBytes(@Nonnull String fieldName) {
+    public byte[] getArrayOfInt8s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
@@ -302,7 +302,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public double[] getArrayOfDoubles(@Nonnull String fieldName) {
+    public double[] getArrayOfFloat64s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
@@ -319,7 +319,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public float[] getArrayOfFloats(@Nonnull String fieldName) {
+    public float[] getArrayOfFloat32s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
@@ -336,7 +336,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public int[] getArrayOfInts(@Nonnull String fieldName) {
+    public int[] getArrayOfInt32s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.INT_ARRAY);
@@ -353,7 +353,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public long[] getArrayOfLongs(@Nonnull String fieldName) {
+    public long[] getArrayOfInt64s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.LONG_ARRAY);
@@ -370,7 +370,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public short[] getArrayOfShorts(@Nonnull String fieldName) {
+    public short[] getArrayOfInt16s(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
@@ -626,7 +626,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Byte getByteFromArray(@Nonnull String fieldName, int index) {
+    public Byte getInt8FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -666,7 +666,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Double getDoubleFromArray(@Nonnull String fieldName, int index) {
+    public Double getFloat64FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -679,7 +679,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Float getFloatFromArray(@Nonnull String fieldName, int index) {
+    public Float getFloat32FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -692,7 +692,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Integer getIntFromArray(@Nonnull String fieldName, int index) {
+    public Integer getInt32FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.INT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -705,7 +705,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Long getLongFromArray(@Nonnull String fieldName, int index) {
+    public Long getInt64FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.LONG_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -718,7 +718,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public Short getShortFromArray(@Nonnull String fieldName, int index) {
+    public Short getInt16FromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
