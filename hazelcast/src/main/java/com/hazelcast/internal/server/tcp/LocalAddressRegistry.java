@@ -160,7 +160,7 @@ public class LocalAddressRegistry {
      */
     @Nullable
     public UUID uuidOf(@Nonnull Address address) {
-        if (localAddresses.contains(address)) {
+        if (localAddresses != null && localAddresses.contains(address)) {
             return localUuid;
         }
         return addressToUuid.get(address);
