@@ -55,15 +55,15 @@ public final class LinkedAddresses {
         return unmodifiableSet(allLinkedAddresses);
     }
 
-    public void addAddress(Address address) {
-        allLinkedAddresses.add(address);
+    public void addAllResolvedAddresses(Address address) {
+        this.addLinkedAddresses(getResolvedAddresses(address));
     }
 
     public void addLinkedAddresses(LinkedAddresses other) {
         allLinkedAddresses.addAll(other.getAllAddresses());
     }
 
-    public static LinkedAddresses getAllLinkedAddresses(Address primaryAddress) {
+    public static LinkedAddresses getResolvedAddresses(Address primaryAddress) {
         LinkedAddresses linkedAddresses = new LinkedAddresses(primaryAddress);
         try {
             InetAddress inetAddress = primaryAddress.getInetAddress();
@@ -123,5 +123,9 @@ public final class LinkedAddresses {
                 + "primaryAddress=" + primaryAddress
                 + ", allLinkedAddresses=" + allLinkedAddresses
                 + '}';
+    }
+
+    private void addAddress(Address address) {
+        allLinkedAddresses.add(address);
     }
 }

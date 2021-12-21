@@ -55,6 +55,8 @@ public interface AddressPicker {
 
     Map<EndpointQualifier, Address> getPublicAddressMap();
 
+    Map<EndpointQualifier, Address> getBindAddressMap();
+
     /**
      * Returns a server channel.
      *

@@ -54,7 +54,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.server.tcp.LinkedAddresses.getAllLinkedAddresses;
+import static com.hazelcast.internal.server.tcp.LinkedAddresses.getResolvedAddresses;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -201,7 +201,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 }
             }
             // not found in in-progress connections
-            return LinkedAddresses.getAllLinkedAddresses(address);
+            return LinkedAddresses.getResolvedAddresses(address);
         }
 
         public Future<Void> getConnectionInProgress(Address address) {
@@ -221,7 +221,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 return;
             }
             synchronized (connectionsInProgress) {
-                connectionsInProgress.computeIfAbsent(getAllLinkedAddresses(address),
+                connectionsInProgress.computeIfAbsent(getResolvedAddresses(address),
                         linkedAddresses -> {
                             if (hasConnectionInProgress(address)) {
                                 return null;

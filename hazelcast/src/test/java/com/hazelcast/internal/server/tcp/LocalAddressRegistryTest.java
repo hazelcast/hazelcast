@@ -197,13 +197,13 @@ public class LocalAddressRegistryTest extends HazelcastTestSupport {
 
     private static LinkedAddresses sampleAddresses() throws UnknownHostException {
         LinkedAddresses addresses = new LinkedAddresses(new Address("localhost", 5701));
-        addresses.addAddress(new Address("127.0.0.1", 5701));
+        addresses.addAllResolvedAddresses(new Address("127.0.0.1", 5701));
         return addresses;
     }
 
     private static LinkedAddresses sampleAddresses2() throws UnknownHostException {
         LinkedAddresses addresses = new LinkedAddresses(new Address("localhost", 5702));
-        addresses.addAddress(new Address("127.0.0.1", 5702));
+        addresses.addAllResolvedAddresses(new Address("127.0.0.1", 5702));
         return addresses;
     }
 }

@@ -181,9 +181,9 @@ class MockServer implements Server {
                 return null;
             }
 
-            addressRegistry.register(remoteMemberUuid, LinkedAddresses.getAllLinkedAddresses(remoteAddress));
+            addressRegistry.register(remoteMemberUuid, LinkedAddresses.getResolvedAddresses(remoteAddress));
             LocalAddressRegistry remoteAddressRegistry = targetNode.getLocalAddressRegistry();
-            remoteAddressRegistry.register(localMemberUuid, LinkedAddresses.getAllLinkedAddresses(localAddress));
+            remoteAddressRegistry.register(localMemberUuid, LinkedAddresses.getResolvedAddresses(localAddress));
 
             server.connectionMap.put(remoteMemberUuid, connectionFromLocalToRemote);
             server.logger.info("Created connection to endpoint: " + remoteAddress + "-" + remoteMemberUuid + ", connection: "
@@ -223,11 +223,11 @@ class MockServer implements Server {
             connection.setRemoteAddress(remoteAddress);
             connection.setRemoteUuid(remoteUuid);
             server.connectionMap.put(remoteUuid, connection);
-            LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(remoteAddress);
-            addressesToRegister.addAddress(connectedAddress);
+            LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(remoteAddress);
+            addressesToRegister.addAllResolvedAddresses(connectedAddress);
             if (remoteAddressAliases != null) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
-                    addressesToRegister.addAddress(remoteAddressAlias);
+                    addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
                 }
             }
             addressRegistry.register(remoteUuid, addressesToRegister);

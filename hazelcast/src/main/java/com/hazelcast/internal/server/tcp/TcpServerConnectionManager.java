@@ -192,11 +192,11 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
-                LinkedAddresses addressesToRegister = LinkedAddresses.getAllLinkedAddresses(primaryAddress);
+                LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
                 addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(connectedAddress));
                 if (remoteAddressAliases != null) {
                     for (Address remoteAddressAlias : remoteAddressAliases) {
-                        addressesToRegister.addAddress(remoteAddressAlias);
+                        addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
                     }
                 }
                 addressRegistry.register(remoteUuid, addressesToRegister);

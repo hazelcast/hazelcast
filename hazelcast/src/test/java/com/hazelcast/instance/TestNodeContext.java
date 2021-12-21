@@ -128,6 +128,11 @@ public class TestNodeContext implements NodeContext {
         }
 
         @Override
+        public Map<EndpointQualifier, Address> getBindAddressMap() {
+            return Collections.singletonMap(EndpointQualifier.MEMBER, address);
+        }
+
+        @Override
         public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
             return null;
         }

@@ -17,15 +17,23 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * A LocalAddressRegistry contains maps to store `UUID -> Addresses`
@@ -42,9 +50,9 @@ public class LocalAddressRegistry {
         this.uuidToAddresses = new ConcurrentHashMap<>();
     }
 
-    public LocalAddressRegistry(Node node) {
+    public LocalAddressRegistry(Node node, AddressPicker addressPicker) {
         this();
-        register(node.getThisUuid(), LinkedAddresses.getAllLinkedAddresses(node.getThisAddress()));
+        registerLocalAddresses(node.getThisUuid(), addressPicker);
     }
 
     /**
@@ -177,6 +185,29 @@ public class LocalAddressRegistry {
     public void reset() {
         addressToUuid.clear();
         uuidToAddresses.clear();
+    }
+
+    private void registerLocalAddresses(UUID thisUuid, AddressPicker addressPicker) {
+        LinkedAddresses localAddresses =
+                LinkedAddresses.getResolvedAddresses(addressPicker.getPublicAddress(EndpointQualifier.MEMBER));
+        for (Map.Entry<EndpointQualifier, Address> addressEntry : addressPicker.getBindAddressMap().entrySet()) {
+            try {
+                if (addressEntry.getValue().getInetAddress().getHostAddress().equals("0.0.0.0")) {
+                    int port = addressEntry.getValue().getPort();
+                    Collections.list(NetworkInterface.getNetworkInterfaces())
+                            .forEach(networkInterface ->
+                                    Collections.list(networkInterface.getInetAddresses())
+                                            .forEach(inetAddress ->
+                                                    localAddresses.addAllResolvedAddresses(new Address(inetAddress, port))));
+                } else {
+                    localAddresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
+                    localAddresses.addAllResolvedAddresses(addressEntry.getValue());
+                }
+            } catch (UnknownHostException | SocketException e) {
+                ignore(e);
+            }
+        }
+        register(thisUuid, localAddresses);
     }
 
     private static final class Pair {
