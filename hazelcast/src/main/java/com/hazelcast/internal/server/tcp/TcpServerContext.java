@@ -218,7 +218,8 @@ public class TcpServerContext implements ServerContext {
 
     @Override
     public void shouldConnectTo(Address address) {
-        if (node.getThisAddress().equals(address)) {
+        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(address);
+        if (memberUuid != null && memberUuid.equals(node.getThisUuid())) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }
