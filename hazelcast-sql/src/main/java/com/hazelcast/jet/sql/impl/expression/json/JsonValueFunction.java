@@ -117,11 +117,23 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             throw QueryException.error("Invalid JSONPath expression: " + e.getMessage(), e);
         }
 
+        Exception exception = null;
+        T result = null;
         try {
-            return execute(json, jsonPath);
-        } catch (Exception exception) {
+            result = execute(json, jsonPath);
+        } catch (Exception evalException) {
+            exception = evalException;
+        }
+
+        if (result != null) {
+            return result;
+        }
+
+        if (exception != null) {
             return onErrorResponse(onError, exception, defaultOnError);
         }
+
+        return onEmptyResponse(onEmpty, defaultOnEmpty);
     }
 
     private T onEmptyResponse(SqlJsonValueEmptyOrErrorBehavior onEmpty, Object defaultValue) {
@@ -151,7 +163,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T execute(final String json, final JsonPath path) {
         final Collection<Object> resultColl = JsonPathUtil.read(json, path);
         if (resultColl.isEmpty()) {
-            throw QueryException.error("JSON_VALUE evaluated to no value");
+            return null;
         }
         if (resultColl.size() > 1) {
             throw QueryException.error("JSON_VALUE evaluated to multiple values");
