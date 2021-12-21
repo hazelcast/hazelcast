@@ -152,14 +152,20 @@ public class LocalAddressRegistry {
     }
 
     /**
-     * If this address has been registered before, it returns
-     * the member uuid corresponding to this address.
+     * If this address or its resolved IP address has been registered before,
+     * it returns the member uuid corresponding to this address.
      * @param address hz member address
      * @return the registered member uuid corresponds to given member address,
      *  null if the address isn't registered
      */
     @Nullable
     public UUID uuidOf(@Nonnull Address address) {
+        try {
+            // try to resolve this address first
+            address = new Address(address.getInetSocketAddress());
+        } catch (UnknownHostException e) {
+            ignore(e);
+        }
         if (localAddresses != null && localAddresses.contains(address)) {
             return localUuid;
         }
