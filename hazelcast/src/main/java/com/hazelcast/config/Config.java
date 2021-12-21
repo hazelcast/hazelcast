@@ -78,7 +78,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
@@ -158,7 +158,7 @@ public class Config {
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
 
     private final Map<String, DeviceConfig> deviceConfigs = new ConcurrentHashMap<>(
-            Collections.singletonMap(DEFAULT_DEVICE_NAME, new DeviceConfig())
+            Collections.singletonMap(DEFAULT_DEVICE_NAME, new LocalDeviceConfig())
     );
 
     // @since 3.12
@@ -2641,7 +2641,7 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link DeviceConfig}s mapped by device name.
+     * Returns the map of {@link LocalDeviceConfig}s mapped by device name.
      *
      * @return the device configurations mapped by device name
      */
@@ -2668,8 +2668,8 @@ public class Config {
      * @return device config or {@code null} if absent
      */
     @Nullable
-    public DeviceConfig getDeviceConfig(String name) {
-        return deviceConfigs.get(name);
+    public <T extends DeviceConfig> T getDeviceConfig(String name) {
+        return (T) deviceConfigs.get(name);
     }
 
     /**

@@ -34,7 +34,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -1377,19 +1377,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertEquals(2, config.getDeviceConfigs().size());
 
-        DeviceConfig deviceConfig = config.getDeviceConfig(deviceName0);
-        assertEquals(deviceName0, deviceConfig.getName());
-        assertEquals(baseDir0, deviceConfig.getBaseDir());
-        assertEquals(blockSize, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount0, deviceConfig.getWriteIOThreadCount());
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(deviceName0);
+        assertEquals(deviceName0, localDeviceConfig.getName());
+        assertEquals(baseDir0, localDeviceConfig.getBaseDir());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
 
-        deviceConfig = config.getDeviceConfig(deviceName1);
-        assertEquals(deviceName1, deviceConfig.getName());
-        assertEquals(baseDir1, deviceConfig.getBaseDir());
-        assertEquals(blockSize, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount1, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig(deviceName1);
+        assertEquals(deviceName1, localDeviceConfig.getName());
+        assertEquals(baseDir1, localDeviceConfig.getBaseDir());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount1, localDeviceConfig.getWriteIOThreadCount());
     }
 
     @Test

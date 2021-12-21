@@ -927,7 +927,7 @@ hazelcast:
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
 
-  device:
+  local-device:
     my-local-device:
       base-dir: base-dir
       block-size: 4096

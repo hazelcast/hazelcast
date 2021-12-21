@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.map.impl.record;
+
+import com.hazelcast.internal.util.ConstructorFunction;
 
 /**
- * Device configuration for the Tiered-Store
- *
- * @since 5.1
+ * A set of attributes to pass to the {@link ConstructorFunction} that it needs
+ * or may need to use for creating the {@link RecordFactory}.
  */
-public interface DeviceConfig extends NamedConfig {
+@FunctionalInterface
+public interface RecordFactoryAttributes {
     /**
-     * Returns {@code true} if the device configuration is for a local device,
-     * otherwise, returns {@code false} if this configuration is for a remote device.
+     * Returns the id of the partition on which the given record is to be created.
+     *
+     * @return the partition id
      */
-    boolean isLocal();
+    int getPartitionId();
 }

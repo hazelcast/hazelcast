@@ -30,7 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -181,7 +181,7 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.DEVICE;
+import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
@@ -370,8 +370,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSql(node);
         } else if (matches(JET.getName(), nodeName)) {
             handleJet(node);
-        } else if (matches(DEVICE.getName(), nodeName)) {
-            handleDevice(node);
+        } else if (matches(LOCAL_DEVICE.getName(), nodeName)) {
+            handleLocalDevice(node);
         } else {
             return true;
         }
@@ -486,13 +486,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setPersistenceConfig(prConfig);
     }
 
-    protected void handleDevice(Node parentNode) {
+    protected void handleLocalDevice(Node parentNode) {
         String name = getAttribute(parentNode, "name");
-        DeviceConfig deviceConfig = ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, DeviceConfig.class);
-        handleDeviceNode(parentNode, deviceConfig);
+        LocalDeviceConfig localDeviceConfig =
+                (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
+
+        handleLocalDeviceNode(parentNode, localDeviceConfig);
     }
 
-    protected void handleDeviceNode(Node deviceNode, DeviceConfig deviceConfig) {
+    protected void handleLocalDeviceNode(Node deviceNode, LocalDeviceConfig localDeviceConfig) {
         String blockSizeName = "block-size";
         String readIOThreadCountName = "read-io-thread-count";
         String writeIOThreadCountName = "write-io-thread-count";
@@ -500,16 +502,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(deviceNode)) {
             String name = cleanNodeName(n);
             if (matches("base-dir", name)) {
-                deviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+                localDeviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches(blockSizeName, name)) {
-                deviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+                localDeviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
             } else if (matches(readIOThreadCountName, name)) {
-                deviceConfig.setReadIOThreadCount(getIntegerValue(readIOThreadCountName, getTextContent(n)));
+                localDeviceConfig.setReadIOThreadCount(getIntegerValue(readIOThreadCountName, getTextContent(n)));
             } else if (matches(writeIOThreadCountName, name)) {
-                deviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
+                localDeviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
             }
         }
-        config.addDeviceConfig(deviceConfig);
+        config.addDeviceConfig(localDeviceConfig);
     }
 
     private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {

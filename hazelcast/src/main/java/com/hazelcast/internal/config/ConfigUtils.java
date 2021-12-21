@@ -133,8 +133,8 @@ public final class ConfigUtils {
      * the matching config. Otherwise creates a new config with the given
      * name, adds it to {@code configs} and returns it.
      */
-    public static <T extends NamedConfig> T getByNameOrNew(Map<String, T> configs, String name,
-                                      Class<T> clazz) {
+    public static <T extends NamedConfig, S extends T> T getByNameOrNew(Map<String, T> configs, String name,
+                                      Class<S> clazz) {
         T config = configs.get(name);
         if (config != null) {
             return config;
