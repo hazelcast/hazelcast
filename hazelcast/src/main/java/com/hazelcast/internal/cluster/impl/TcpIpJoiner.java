@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -392,9 +393,9 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    private boolean isLocalAddress(final Address address) throws UnknownHostException {
-        final Address thisAddress = node.getThisAddress();
-        final boolean local = thisAddress.getInetSocketAddress().equals(address.getInetSocketAddress());
+    private boolean isLocalAddress(final Address address) {
+        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(address);
+        boolean local = memberUuid != null && memberUuid.equals(node.getThisUuid());
         if (logger.isFineEnabled()) {
             logger.fine(address + " is local? " + local);
         }
