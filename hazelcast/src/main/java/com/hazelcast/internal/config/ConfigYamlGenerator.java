@@ -63,7 +63,6 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.spi.annotation.PrivateApi;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
@@ -85,7 +84,6 @@ import static java.lang.Boolean.TRUE;
  * persistence depends on this class, dynamically configurable configurations
  * must be added to this class.
  */
-@PrivateApi
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ClassFanOutComplexity"})
 public class ConfigYamlGenerator {
 
