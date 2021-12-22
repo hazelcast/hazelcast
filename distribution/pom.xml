@@ -177,9 +177,13 @@
         </dependency>
         <!-- HazelcastCommandLine dependencies-->
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-command-line</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>

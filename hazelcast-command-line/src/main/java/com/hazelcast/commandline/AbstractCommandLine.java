@@ -28,9 +28,9 @@ import java.util.Stack;
  * Abstract command line class. The methods and properties in this class are shared in other commandline implementations.
  */
 abstract class AbstractCommandLine implements Runnable {
-    static final String WORKING_DIRECTORY = System.getProperty("hazelcast.commandline.workingdirectory", "distro/src");
-    static final String LOGGING_PROPERTIES_FINE_LEVEL = "/bin/hazelcast-fine-level-logging.properties";
-    static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/bin/hazelcast-finest-level-logging.properties";
+    static final String WORKING_DIRECTORY = System.getProperty("hazelcast.commandline.workingdirectory", ".");
+    static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
+    static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
     static final String CLASSPATH_SEPARATOR = ":";
     static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
 

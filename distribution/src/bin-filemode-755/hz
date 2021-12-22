@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+# find the current directory
+SCRIPT="$0"
+
+# if SCRIPT is a series of symbolic links; loop to get the concrete path
+while [ -h "$SCRIPT" ] ; do
+  ls=`ls -ld "$SCRIPT"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    SCRIPT="$link"
+  else
+    SCRIPT=`dirname "$SCRIPT"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$SCRIPT"`
+# make PRGDIR absolute
+PRGDIR=`cd "$PRGDIR"; pwd`
+
+# set the parent directory as HAZELCAST_HOME.
+export HAZELCAST_HOME=${HAZELCAST_HOME:-$(cd "$PRGDIR/.." >/dev/null; pwd -P)}
+
+# common.sh needs it
+SCRIPT_DIR="$PRGDIR"
+
+. "$PRGDIR"/common.sh
+
+
+if [ "${PROMETHEUS_PORT}" ]; then
+    echo "Prometheus enabled on port ${PROMETHEUS_PORT}"
+    PROMETHEUS="-javaagent:${HAZELCAST_HOME}/lib/jmx_prometheus_javaagent-0.14.0.jar=${PROMETHEUS_PORT}:${HAZELCAST_HOME}/config/jmx_agent_config.yaml"
+fi
+
+readJvmOptionsFile "jvm.options"
+
+if [ "$HAZELCAST_LICENSE_KEY" ]; then
+    LICENSING_OPT="-Dhazelcast.enterprise.license.key=${HAZELCAST_LICENSE_KEY}"
+fi
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.logging.type=log4j2" \
+"-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
+"-Dhazelcast.config=$HAZELCAST_HOME/config/hazelcast.xml" \
+"-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
+$PROMETHEUS \
+$LICENSING_OPT\
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+if [ -z "$LOGGING_LEVEL" ]; then
+    export LOGGING_LEVEL="INFO"
+fi
+
+if [ "$(arch)" == "s390x" ]; then
+  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n"
+else
+  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n"
+fi
+
+
+CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
+for filename in "$HAZELCAST_HOME"/lib/*; do
+  case "$filename" in
+    picocli*)
+      ;;
+    *)
+      CLASSPATH="$CLASSPATH:$filename"
+      ;;
+  esac
+done
+
+J_OPTS=""
+for arg in "${JAVA_OPTS_ARRAY[@]}"
+do
+  if [ "$J_OPTS" = "" ]; then
+    J_OPTS="$arg"
+  else
+    J_OPTS="$J_OPTS,$arg"
+  fi
+done
+
+export CLASSPATH="$CLASSPATH:$HAZELCAST_HOME/bin/download:$HAZELCAST_HOME/bin/download/hazelcast-download.properties"
+
+HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} -Dhazelcast.commandline.workingdirectory=${HAZELCAST_HOME} com.hazelcast.commandline.HazelcastCommandLine"
+
+if [ "$1" = "start" ] ; then
+
+  for arg in "$@"
+  do
+   if [ "$arg" = "--help" ]; then
+     HELP=true
+   fi
+  done
+
+  if [ "$HELP" != "true" ] ; then
+    echo "########################################"
+    echo "# JAVA=$JAVA"
+    echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+    echo "# CLASSPATH=$CLASSPATH"
+    echo "########################################"
+  fi
+
+  ${HZ_CMD} "$@" "--JAVA_OPTS=$J_OPTS"
+else
+  ${HZ_CMD} "$@"
+fi

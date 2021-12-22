@@ -32,6 +32,7 @@
                 <include>com.hazelcast:hazelcast-sql</include>
                 <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-wm</include>
+                <include>com.hazelcast:hazelcast-command-line</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
                 <include>javax.cache:cache-api</include>
                 <include>org.apache.logging.log4j:*</include>
