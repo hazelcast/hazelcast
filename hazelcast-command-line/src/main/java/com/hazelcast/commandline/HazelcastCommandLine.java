@@ -91,7 +91,8 @@ class HazelcastCommandLine
                     description = "Bind to the specified <interface>.")
                     String hzInterface,
             @Option(names = {"-j", "--jar"}, paramLabel = "<path>", split = ",", description = "Add <path> to Hazelcast "
-                    + "classpath (Use ',' to separate multiple paths). You can add jars, classes, or the directories that contain classes/jars.")
+                    + "classpath (Use ',' to separate multiple paths). You can add jars, classes, "
+                    + "or the directories that contain classes/jars.")
                     String[] additionalClassPath,
             @Option(names = {"-J", "--JAVA_OPTS"}, paramLabel = "<option>", parameterConsumer = JavaOptionsConsumer.class,
                     split = ",", description = "Specify additional Java <option> (Use ',' to separate multiple options).")
