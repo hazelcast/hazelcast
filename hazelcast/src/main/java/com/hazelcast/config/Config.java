@@ -465,14 +465,10 @@ public class Config {
      * @throws UnsupportedOperationException if called without Hazelcast Enterprise
      * @since 5.1
      */
+    @Nonnull
     public Map<String, Set<String>> reload() {
-        if (!(this instanceof DynamicConfigurationAwareConfig)) {
-            throw new UnsupportedOperationException("Can't call reload from static configuration. "
+        throw new UnsupportedOperationException("Can't call reload from static configuration. "
                     + "Please use instance.getConfig.reload() instead.");
-        }
-
-        DynamicConfigurationAwareConfig dynamicConfigurationAwareConfig = (DynamicConfigurationAwareConfig) this;
-        return dynamicConfigurationAwareConfig.reload(null);
     }
 
     /**

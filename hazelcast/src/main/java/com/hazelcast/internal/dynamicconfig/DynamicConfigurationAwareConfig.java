@@ -1197,6 +1197,12 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Nonnull
+    @Override
+    public Map<String, Set<String>> reload() {
+        return this.reload(null);
+    }
+
     public Map<String, Set<String>> reload(@Nullable Config newConfig) {
         if (newConfig == null) {
             newConfig = Config.load();
