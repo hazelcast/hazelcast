@@ -24,19 +24,19 @@ import java.util.List;
  */
 class ProcessExecutor {
 
-    void buildAndStart(List<String> commandList)
-            throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = createProcessBuilder(commandList);
-        processBuilder.redirectErrorStream(true);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.start().waitFor();
+    int buildAndStart(List<String> commandList) throws IOException, InterruptedException {
+        return buildAndStart(commandList, ProcessBuilder.Redirect.INHERIT);
     }
 
     /**
-     * For test purposes.
+     * Used externaly only for tests
      */
-    ProcessBuilder createProcessBuilder(List<String> commandList) {
-        return new ProcessBuilder(commandList);
+    int buildAndStart(List<String> commandList, ProcessBuilder.Redirect redirect) throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder(commandList);
+        processBuilder.redirectErrorStream(true);
+        processBuilder.redirectOutput(redirect);
+        return processBuilder.start().waitFor();
     }
+
 }
 

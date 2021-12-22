@@ -16,31 +16,32 @@
 
 package com.hazelcast.commandline;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.contentOf;
+
 
 public class ProcessExecutorTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
-    public void test_buildAndStart()
-            throws IOException, InterruptedException {
+    public void test_buildAndStart() throws IOException, InterruptedException {
         // given
-        List<String> commandList = mock(List.class);
-        ProcessBuilder processBuilder = mock(ProcessBuilder.class);
-        ProcessExecutor processExecutor = spy(ProcessExecutor.class);
-        doReturn(processBuilder).when(processExecutor).createProcessBuilder(commandList);
-        when(processBuilder.start()).thenReturn(mock(Process.class));
+        File outputFile = temporaryFolder.newFile();
+        ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        processExecutor.buildAndStart(commandList);
+        int exitCode = processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile));
         // then
-        verify(processBuilder, times(1)).start();
+        assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
+        assertThat(exitCode).isZero();
     }
 }
