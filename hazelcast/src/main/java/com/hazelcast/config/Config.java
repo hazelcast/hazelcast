@@ -457,9 +457,12 @@ public class Config {
     /**
      * Reloads the configuration. It means that it will look up to the
      * declarative configuration and will apply the dynamically changeable
-     * differences to the run time configuration.
+     * differences to the run time configuration. Please note that this is an
+     * enterprise feature, and it will throw {@code UnsupportedOperationException}
+     * without it.
      *
      * @return added configurations as map
+     * @throws UnsupportedOperationException if called without Hazelcast Enterprise
      */
     public Map<String, Set<String>> reload() {
         if (!(this instanceof DynamicConfigurationAwareConfig)) {

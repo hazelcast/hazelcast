@@ -25,7 +25,6 @@ public class EmptyReloaderProxy implements ReloaderProxy {
 
     @Override
     public Map<String, Set<String>> doReload(Config oldConfig, Config newConfig) {
-        // intentionally no-op
-        return null;
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 }
