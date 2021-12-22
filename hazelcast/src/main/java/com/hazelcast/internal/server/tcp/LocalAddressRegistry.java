@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -217,7 +218,8 @@ public class LocalAddressRegistry {
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressPicker.getBindAddressMap().entrySet()) {
             addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
             addresses.addAllResolvedAddresses(addressEntry.getValue());
-            if (addressPicker.getServerSocketChannel(addressEntry.getKey()).socket().getInetAddress()
+            ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel(addressEntry.getKey());
+            if (serverSocketChannel != null && serverSocketChannel.socket().getInetAddress()
                     .getHostAddress().equals("0.0.0.0")) {
                 int port = addressEntry.getValue().getPort();
                 try {
