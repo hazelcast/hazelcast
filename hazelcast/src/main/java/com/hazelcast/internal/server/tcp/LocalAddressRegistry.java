@@ -216,19 +216,19 @@ public class LocalAddressRegistry {
                 LinkedAddresses.getResolvedAddresses(addressPicker.getPublicAddress(EndpointQualifier.MEMBER));
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressPicker.getBindAddressMap().entrySet()) {
             addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
-            try {
-                if (addressEntry.getValue().getInetAddress().getHostAddress().equals("0.0.0.0")) {
-                    int port = addressEntry.getValue().getPort();
+            addresses.addAllResolvedAddresses(addressEntry.getValue());
+            if (addressPicker.getServerSocketChannel(addressEntry.getKey()).socket().getInetAddress()
+                    .getHostAddress().equals("0.0.0.0")) {
+                int port = addressEntry.getValue().getPort();
+                try {
                     Collections.list(NetworkInterface.getNetworkInterfaces())
                             .forEach(networkInterface ->
                                     Collections.list(networkInterface.getInetAddresses())
                                             .forEach(inetAddress ->
                                                     addresses.addAllResolvedAddresses(new Address(inetAddress, port))));
-                } else {
-                    addresses.addAllResolvedAddresses(addressEntry.getValue());
+                } catch (SocketException e) {
+                    ignore(e);
                 }
-            } catch (UnknownHostException | SocketException e) {
-                ignore(e);
             }
         }
         localUuid = thisUuid;
