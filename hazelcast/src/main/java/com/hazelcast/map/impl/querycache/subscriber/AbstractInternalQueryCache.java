@@ -63,7 +63,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final QueryCacheConfig queryCacheConfig;
     protected final QueryCacheRecordStore recordStore;
     protected final PartitioningStrategy partitioningStrategy;
-    protected final InternalSerializationService serializationService;
+    protected final InternalSerializationService ss;
     protected final Extractors extractors;
     /**
      * ID of registered listener on publisher side.
@@ -78,18 +78,18 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.mapName = delegate.getName();
         this.delegate = delegate;
         this.context = context;
-        this.serializationService = context.getSerializationService();
+        this.ss = context.getSerializationService();
         // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
         // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
         // the EE side would create HD indexes which is undesired.
-        this.indexes = Indexes.newBuilder(serializationService, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
+        this.indexes = Indexes.newBuilder(ss, COPY_ON_READ, queryCacheConfig.getInMemoryFormat())
                 .partitionCount(context.getPartitionCount())
                 .build();
 
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
-        this.extractors = Extractors.newBuilder(serializationService).build();
-        this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
+        this.extractors = Extractors.newBuilder(ss).build();
+        this.recordStore = new DefaultQueryCacheRecordStore(ss, indexes,
                 queryCacheConfig, getEvictionListener(), extractors);
 
         assert indexes.isGlobal();
@@ -145,8 +145,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         return null;
     }
 
-    protected void doFullKeyScan(Predicate predicate, Set<K> resultingSet) {
-        InternalSerializationService serializationService = this.serializationService;
+    protected void doFullKeyScan(Predicate predicate, List resultSet) {
+        InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
@@ -159,13 +159,13 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                resultingSet.add((K) queryEntry.getKey());
+                resultSet.add(keyData);
             }
         }
     }
 
-    protected void doFullEntryScan(Predicate predicate, Set<Map.Entry<K, V>> resultingSet) {
-        InternalSerializationService serializationService = this.serializationService;
+    protected void doFullEntryScan(Predicate predicate, List<Map.Entry> resultingSet) {
+        InternalSerializationService ss = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
@@ -173,19 +173,17 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            queryEntry.init(serializationService, keyData, value, extractors);
+            queryEntry.init(ss, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Map.Entry simpleEntry = new LazyMapEntry(queryEntry.getKeyData(), queryEntry.getValueData(),
-                        serializationService);
-                resultingSet.add(simpleEntry);
+                resultingSet.add(new LazyMapEntry(keyData, value, ss));
             }
         }
     }
 
-    protected void doFullValueScan(Predicate predicate, List<Data> resultingSet) {
-        InternalSerializationService serializationService = this.serializationService;
+    protected void doFullValueScan(Predicate predicate, List resultingSet) {
+        InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
@@ -198,7 +196,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                resultingSet.add(queryEntry.getValueData());
+                resultingSet.add(value);
             }
         }
     }
@@ -213,11 +211,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     protected <T> T toObject(Object valueInRecord) {
-        return serializationService.toObject(valueInRecord);
+        return ss.toObject(valueInRecord);
     }
 
     protected Data toData(Object key) {
-        return serializationService.toData(key, partitioningStrategy);
+        return ss.toData(key, partitioningStrategy);
     }
 
     @Override

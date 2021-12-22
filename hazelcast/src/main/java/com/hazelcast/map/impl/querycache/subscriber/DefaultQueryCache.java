@@ -43,12 +43,12 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -335,38 +335,42 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<K> resultingSet = new HashSet<>();
+        List resultSet = new ArrayList<>();
 
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 K key = toObject(entry.getKeyData());
-                resultingSet.add(key);
+                resultSet.add(key);
             }
         } else {
-            doFullKeyScan(predicate, resultingSet);
+            doFullKeyScan(predicate, resultSet);
         }
 
-        return resultingSet;
+        return toImmutableLazySet(resultSet);
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
+        List<Map.Entry> resultSet = new ArrayList<>();
 
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
+                Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(ss, entry.getKeyData(),
                         entry.getValueData(), null);
-                resultingSet.add(copyEntry);
+                resultSet.add(copyEntry);
             }
         } else {
-            doFullEntryScan(predicate, resultingSet);
+            doFullEntryScan(predicate, resultSet);
         }
-        return resultingSet;
+        return toImmutableLazySet(resultSet);
+    }
+
+    private Set toImmutableLazySet(List resultSet) {
+        return new UnmodifiableLazySet(resultSet, ss);
     }
 
     @Override
@@ -377,7 +381,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        List<Data> resultingList = new ArrayList<>();
+        List<Object> resultingList = new ArrayList<>();
 
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
@@ -387,7 +391,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         } else {
             doFullValueScan(predicate, resultingList);
         }
-        return new UnmodifiableLazyList(resultingList, serializationService);
+        return new UnmodifiableLazyList(resultingList, ss);
     }
 
     @Override
