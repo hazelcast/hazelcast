@@ -16,6 +16,7 @@
 
 package com.hazelcast.commandline;
 
+import com.hazelcast.instance.GeneratedBuildProperties;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -24,12 +25,9 @@ public class VersionProviderTest {
     @Test
     public void test_gerVersion() {
         // given
-        String toolVersion = "toolVersion";
-        String hzVersion = "hzVersion";
-        String[] expected = {"CLI tool: " + toolVersion,
-                "Hazelcast: " + hzVersion};
+        String[] expected = {"Version: " + GeneratedBuildProperties.VERSION};
         // when
-        String[] version = new VersionProvider(toolVersion, hzVersion).getVersion();
+        String[] version = new VersionProvider().getVersion();
         // then
         assertArrayEquals(expected, version);
     }

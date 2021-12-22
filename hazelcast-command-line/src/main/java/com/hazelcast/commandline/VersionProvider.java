@@ -16,38 +16,17 @@
 
 package com.hazelcast.commandline;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import picocli.CommandLine;
-
-import java.io.IOException;
-import java.util.Properties;
 
 /**
  * Implementation of {@link picocli.CommandLine.IVersionProvider} for providing version information.
  */
 class VersionProvider
         implements CommandLine.IVersionProvider {
-    protected static final String TOOL_VERSION_NAME = "tool.version";
-    protected static final String HZ_VERSION_NAME = "hz.version";
-
-    private final String toolVersion;
-    private final String hzVersion;
-
-    VersionProvider()
-            throws IOException {
-        Properties commandlineProperties = new Properties();
-        commandlineProperties.load(getClass().getClassLoader().getResourceAsStream("version.properties"));
-        toolVersion = commandlineProperties.getProperty(TOOL_VERSION_NAME);
-        hzVersion = commandlineProperties.getProperty(HZ_VERSION_NAME);
-    }
-
-    VersionProvider(String toolVersion, String hzVersion) {
-        this.toolVersion = toolVersion;
-        this.hzVersion = hzVersion;
-    }
 
     public String[] getVersion() {
-        return new String[]{"CLI tool: " + toolVersion,
-                "Hazelcast: " + hzVersion};
+        return new String[]{"Version: " + BuildInfoProvider.getBuildInfo().getVersion()};
     }
 
 }
