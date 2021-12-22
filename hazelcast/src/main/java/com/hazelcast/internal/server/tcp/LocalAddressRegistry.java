@@ -215,6 +215,7 @@ public class LocalAddressRegistry {
         LinkedAddresses addresses =
                 LinkedAddresses.getResolvedAddresses(addressPicker.getPublicAddress(EndpointQualifier.MEMBER));
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressPicker.getBindAddressMap().entrySet()) {
+            addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
             try {
                 if (addressEntry.getValue().getInetAddress().getHostAddress().equals("0.0.0.0")) {
                     int port = addressEntry.getValue().getPort();
@@ -224,7 +225,6 @@ public class LocalAddressRegistry {
                                             .forEach(inetAddress ->
                                                     addresses.addAllResolvedAddresses(new Address(inetAddress, port))));
                 } else {
-                    addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
                     addresses.addAllResolvedAddresses(addressEntry.getValue());
                 }
             } catch (UnknownHostException | SocketException e) {

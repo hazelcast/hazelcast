@@ -89,6 +89,12 @@ public final class TcpServerControl {
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
         List<Address> allAliases = new ArrayList<>();
+        // if we support member protocol in the corresponding cm, we want to give priority to member
+        // public address in address registration phase
+        if (supportedProtocolTypes.contains(ProtocolType.MEMBER)
+                && remoteAddressesPerProtocolType.containsKey(ProtocolType.MEMBER)) {
+            allAliases.addAll(remoteAddressesPerProtocolType.remove(ProtocolType.MEMBER));
+        }
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
