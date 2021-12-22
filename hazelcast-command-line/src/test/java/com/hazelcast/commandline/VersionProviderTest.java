@@ -26,12 +26,10 @@ public class VersionProviderTest {
         // given
         String toolVersion = "toolVersion";
         String hzVersion = "hzVersion";
-        String mcVersion = "mcVersion";
         String[] expected = {"CLI tool: " + toolVersion,
-                "Hazelcast: " + hzVersion,
-                "Hazelcast Management Center: " + mcVersion};
+                "Hazelcast: " + hzVersion};
         // when
-        String[] version = new VersionProvider(toolVersion, hzVersion, mcVersion).getVersion();
+        String[] version = new VersionProvider(toolVersion, hzVersion).getVersion();
         // then
         assertArrayEquals(expected, version);
     }

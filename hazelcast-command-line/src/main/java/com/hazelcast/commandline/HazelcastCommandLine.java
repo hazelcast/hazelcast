@@ -56,7 +56,6 @@ class HazelcastCommandLine
         PrintStream err = System.err;
         ProcessExecutor processExecutor = new ProcessExecutor();
         CommandLine cmd = new CommandLine(new HazelcastCommandLine(out, err, processExecutor))
-                .addSubcommand("mc", new ManagementCenterCommandLine(out, err, processExecutor))
                 .setOut(createPrintWriter(out))
                 .setErr(createPrintWriter(err))
                 .setTrimQuotes(true)

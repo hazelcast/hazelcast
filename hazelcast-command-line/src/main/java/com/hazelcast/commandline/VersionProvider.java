@@ -28,11 +28,9 @@ class VersionProvider
         implements CommandLine.IVersionProvider {
     protected static final String TOOL_VERSION_NAME = "tool.version";
     protected static final String HZ_VERSION_NAME = "hz.version";
-    protected static final String MC_VERSION_NAME = "mc.version";
 
     private final String toolVersion;
     private final String hzVersion;
-    private final String mcVersion;
 
     VersionProvider()
             throws IOException {
@@ -40,22 +38,16 @@ class VersionProvider
         commandlineProperties.load(getClass().getClassLoader().getResourceAsStream("version.properties"));
         toolVersion = commandlineProperties.getProperty(TOOL_VERSION_NAME);
         hzVersion = commandlineProperties.getProperty(HZ_VERSION_NAME);
-        mcVersion = commandlineProperties.getProperty(MC_VERSION_NAME);
     }
 
-    VersionProvider(String toolVersion, String hzVersion, String mcVersion) {
+    VersionProvider(String toolVersion, String hzVersion) {
         this.toolVersion = toolVersion;
         this.hzVersion = hzVersion;
-        this.mcVersion = mcVersion;
     }
 
     public String[] getVersion() {
         return new String[]{"CLI tool: " + toolVersion,
-                "Hazelcast: " + hzVersion,
-                "Hazelcast Management Center: " + mcVersion};
+                "Hazelcast: " + hzVersion};
     }
 
-    String getMcVersion() {
-        return mcVersion;
-    }
 }
