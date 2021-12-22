@@ -463,6 +463,7 @@ public class Config {
      *
      * @return added configurations as map
      * @throws UnsupportedOperationException if called without Hazelcast Enterprise
+     * @since 5.1
      */
     public Map<String, Set<String>> reload() {
         if (!(this instanceof DynamicConfigurationAwareConfig)) {
