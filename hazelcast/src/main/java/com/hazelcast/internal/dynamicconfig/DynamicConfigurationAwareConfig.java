@@ -79,9 +79,9 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.wan.impl.WanReplicationService;
-import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
