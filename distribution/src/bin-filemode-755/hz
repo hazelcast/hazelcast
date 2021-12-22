@@ -52,7 +52,7 @@ fi
 
 if [ "${PROMETHEUS_PORT}" ]; then
     echo "Prometheus enabled on port ${PROMETHEUS_PORT}"
-    PROMETHEUS="-javaagent:${HAZELCAST_HOME}/lib/jmx_prometheus_javaagent-0.14.0.jar=${PROMETHEUS_PORT}:${HAZELCAST_HOME}/config/jmx_agent_config.yaml"
+    PROMETHEUS="-javaagent:${HAZELCAST_HOME}/lib/jmx_prometheus_javaagent-${prometheus.version}.jar=${PROMETHEUS_PORT}:${HAZELCAST_HOME}/config/jmx_agent_config.yaml"
 fi
 
 readJvmOptionsFile "jvm.options"
