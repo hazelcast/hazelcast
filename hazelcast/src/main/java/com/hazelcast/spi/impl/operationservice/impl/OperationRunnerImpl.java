@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
