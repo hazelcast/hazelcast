@@ -81,8 +81,6 @@ do
   fi
 done
 
-export CLASSPATH="$CLASSPATH:$HAZELCAST_HOME/bin/download:$HAZELCAST_HOME/bin/download/hazelcast-download.properties"
-
 HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} -Dhazelcast.commandline.workingdirectory=${HAZELCAST_HOME} com.hazelcast.commandline.HazelcastCommandLine"
 
 if [ "$1" = "start" ] ; then
