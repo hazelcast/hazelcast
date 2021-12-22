@@ -394,7 +394,10 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + to + " SELECT 13, 'a', f.* FROM " + from + " f");
+        sqlService.execute("SINK INTO " + to + " " +
+                "SELECT 13, 'a', string, \"boolean\", byte, short, \"int\", long, \"float\", \"double\", \"decimal\", " +
+                "\"time\", \"date\", \"timestamp\", timestampTz, \"object\" " +
+                "FROM " + from + " f");
 
         InternalGenericRecord valueRecord = serializationService
                 .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
