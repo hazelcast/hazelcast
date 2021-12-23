@@ -17,8 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.cluster.impl.MemberHandshake;
-import com.hazelcast.internal.server.tcp.SendMemberHandshakeTask;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
@@ -58,7 +56,8 @@ public interface AddressPicker {
     /**
      * Returns all public {@link Address}es of this member which are advertised to other
      * members, mapped by corresponding {@link EndpointQualifier}. Also, see
-     * {@link MemberHandshake} and {@link SendMemberHandshakeTask}.
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake} and
+     * {@link com.hazelcast.internal.server.tcp.SendMemberHandshakeTask}.
      *
      * @return a {@code Map<EndpointQualifier, Address>} of this member's public addresses
      * or an empty map if called before {@link #pickAddress()}

@@ -296,14 +296,14 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
-    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress, boolean accepted) {
+    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress, boolean acceptorSide) {
         try {
             if (!server.isLive()) {
                 throw new IllegalStateException("connection manager is not live!");
             }
 
             TcpServerConnection connection = new TcpServerConnection(this, connectionLifecycleListener,
-                    connectionIdGen.incrementAndGet(), channel, accepted);
+                    connectionIdGen.incrementAndGet(), channel, acceptorSide);
 
             connection.setRemoteAddress(remoteAddress);
             connections.add(connection);
