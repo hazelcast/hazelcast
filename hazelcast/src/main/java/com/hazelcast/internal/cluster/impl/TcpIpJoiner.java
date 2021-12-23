@@ -27,6 +27,7 @@ import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMerge
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
@@ -236,8 +237,15 @@ public class TcpIpJoiner extends AbstractJoiner {
                 continue;
             }
             if (node.getServer().getConnectionManager(MEMBER).get(address) != null) {
-                if (thisHashCode > address.hashCode()) {
-                    return false;
+                LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+                UUID memberUuid = addressRegistry.uuidOf(address);
+                if (memberUuid != null) {
+                    Address primaryAddress = addressRegistry.getPrimaryAddress(memberUuid);
+                    if (primaryAddress != null) {
+                        if (thisHashCode > primaryAddress.hashCode()){
+                            return false;
+                        }
+                    }
                 }
             }
         }
