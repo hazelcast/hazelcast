@@ -224,7 +224,9 @@ class MockServer implements Server {
             connection.setRemoteUuid(remoteUuid);
             server.connectionMap.put(remoteUuid, connection);
             LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(remoteAddress);
-            addressesToRegister.addAllResolvedAddresses(targetAddress);
+            if (targetAddress != null) {
+                addressesToRegister.addAllResolvedAddresses(targetAddress);
+            }
             if (remoteAddressAliases != null) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
                     addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);

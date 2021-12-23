@@ -193,7 +193,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
                 LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
-                addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(targetAddress));
+                if (targetAddress != null) {
+                    addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(targetAddress));
+                }
                 if (remoteAddressAliases != null) {
                     for (Address remoteAddressAlias : remoteAddressAliases) {
                         addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
@@ -224,7 +226,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
             return true;
         } finally {
-            plane.removeConnectionInProgress(targetAddress);
+            if (targetAddress != null) {
+                plane.removeConnectionInProgress(targetAddress);
+            }
         }
     }
 
