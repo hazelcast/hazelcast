@@ -1,0 +1,87 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.sql.impl.expression.json;
+
+import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class JsonObjectFunctionIntegrationTest extends SqlJsonTestSupport {
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
+
+    @Test
+    public void test_basicCreation() {
+        assertRowsAnyOrder("SELECT JSON_OBJECT('id': 1, 'name': 'hello')",
+                jsonObjRow(objectMap("id", 1, "name", "hello")));
+        assertRowsAnyOrder("SELECT JSON_OBJECT(KEY 'id' VALUE 1, 'name' VALUE 'hello')",
+                jsonObjRow(objectMap("id", 1, "name", "hello")));
+        assertRowsAnyOrder("SELECT JSON_OBJECT(KEY 'id' VALUE 1, 'name' VALUE null NULL ON NULL)",
+                jsonObjRow(objectMap("id", 1, "name", null)));
+        assertRowsAnyOrder("SELECT JSON_OBJECT(KEY 'id' VALUE 1, 'name' VALUE null ABSENT ON NULL)",
+                jsonObjRow(objectMap("id", 1)));
+    }
+
+    @Test
+    public void test_creationFromTableColumns() {
+        createMapping("test", Long.class, ClassObj.class);
+        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'testValue')");
+        instance().getSql().execute("INSERT INTO test (__key, id) VALUES (2, 2)");
+
+        assertRowsAnyOrder("SELECT JSON_OBJECT('objId': id, 'objName': name) FROM test WHERE id = 1",
+                jsonObjRow(objectMap("objId", 1L, "objName", "testValue")));
+        assertRowsAnyOrder("SELECT JSON_OBJECT(KEY 'objId' VALUE id, 'objName' VALUE name) FROM test WHERE id = 1",
+                jsonObjRow(objectMap("objId", 1L, "objName", "testValue")));
+        assertRowsAnyOrder("SELECT JSON_OBJECT('objId': id, 'objName': name NULL ON NULL) "
+                        + "FROM test WHERE id = 2",
+                jsonObjRow(objectMap("objId", 2L, "objName", null)));
+        assertRowsAnyOrder("SELECT JSON_OBJECT(KEY 'objId' VALUE id, 'objName' VALUE name ABSENT ON NULL)"
+                        + " FROM test WHERE id = 2",
+                jsonObjRow(objectMap("objId", 2L)));
+    }
+
+    private List<Row> jsonObjRow(final Map<Object, Object> values) {
+        return rows(1, json(jsonString(values)));
+    }
+
+    public static final class ClassObj implements Serializable {
+        public Long id;
+        public String name;
+
+        public ClassObj() {
+        }
+
+        public ClassObj(final Long id, final String name) {
+            this.id = id;
+            this.name = name;
+        }
+    }
+}
