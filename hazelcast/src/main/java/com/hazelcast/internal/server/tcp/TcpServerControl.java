@@ -171,10 +171,6 @@ public final class TcpServerControl {
                     handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
         }
 
-        if (!handleDuplicateConnections(connection, remoteUuid, handshake.getPlaneIndex())) {
-            return;
-        }
-
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest("Registering connection " + connection + " to address " + primaryAddress
                     + " planeIndex:" + handshake.getPlaneIndex());
@@ -188,16 +184,17 @@ public final class TcpServerControl {
                 connection,
                 handshake.getPlaneIndex()
         );
+        // handle duplicates after registering the addresses to avoid the later duplicate connections
+        // occur because target addresses are not registered.
+        handleDuplicateConnections(connection, remoteUuid, handshake.getPlaneIndex());
     }
 
     /**
      * @param connection a new connection whose handshake message is being processed
      * @param remoteUuid the member uuid of the remote side of the connection
-     * @param planeIndex the plane index to register connection
-     * @return true if the registration of the new incoming connection will continue
-     *          false if this newly created connection will be closed
+     * @param planeIndex the plane index for the connection
      */
-    private boolean handleDuplicateConnections(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
+    private void handleDuplicateConnections(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
         TcpServerConnection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
@@ -210,17 +207,14 @@ public final class TcpServerControl {
                                     + " on planeIndex=" + planeIndex,
                             null
                     );
-                    return false;
                 } else {
                     existingConnection.close(
                             "Duplicate connection to the member[uuid=" + remoteUuid + "]"
                                     + " on planeIndex=" + planeIndex,
                             null
                     );
-                    return true;
                 }
             }
         }
-        return true;
     }
 }
