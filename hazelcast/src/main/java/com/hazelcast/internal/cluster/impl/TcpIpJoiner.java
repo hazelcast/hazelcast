@@ -230,6 +230,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private boolean isThisNodeMasterCandidate(Collection<Address> addresses) {
         int thisHashCode = node.getThisAddress().hashCode();
         for (Address address : addresses) {
@@ -242,7 +243,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (memberUuid != null) {
                     Address primaryAddress = addressRegistry.getPrimaryAddress(memberUuid);
                     if (primaryAddress != null) {
-                        if (thisHashCode > primaryAddress.hashCode()){
+                        if (thisHashCode > primaryAddress.hashCode()) {
                             return false;
                         }
                     }
