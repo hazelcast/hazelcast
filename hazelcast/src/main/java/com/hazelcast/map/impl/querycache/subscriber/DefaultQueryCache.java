@@ -100,15 +100,15 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
      *                        #reachedMaxCapacity()}, eviction is not needed.
      */
     private void setInternal(K key, V value, EntryEventType eventType, boolean doEvictionCheck) {
-        Data keyData = toData(key);
+        Object queryCacheKey = recordStore.toQueryCacheKey(key);
         Data valueData = toData(value);
 
         QueryCacheRecord oldRecord = doEvictionCheck
-                ? recordStore.add(keyData, valueData) : recordStore.addWithoutEvictionCheck(keyData, valueData);
+                ? recordStore.add(queryCacheKey, valueData) : recordStore.addWithoutEvictionCheck(queryCacheKey, valueData);
 
         if (eventType != null) {
             publishEntryEvent(context, mapName, cacheId,
-                    keyData, valueData, oldRecord, eventType, extractors);
+                    queryCacheKey, valueData, oldRecord, eventType, extractors);
         }
     }
 
@@ -116,14 +116,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public void delete(Object key, EntryEventType eventType) {
         checkNotNull(key, "key cannot be null");
 
-        Data keyData = toData(key);
+        Object queryCacheKey = recordStore.toQueryCacheKey(key);
 
-        QueryCacheRecord oldRecord = recordStore.remove(keyData);
+        QueryCacheRecord oldRecord = recordStore.remove(queryCacheKey);
         if (oldRecord == null) {
             return;
         }
         if (eventType != null) {
-            publishEntryEvent(context, mapName, cacheId, keyData,
+            publishEntryEvent(context, mapName, cacheId, key,
                     null, oldRecord, eventType, extractors);
         }
     }
@@ -259,8 +259,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public boolean containsKey(Object key) {
         checkNotNull(key, "key cannot be null");
 
-        Data keyData = toData(key);
-        return recordStore.containsKey(keyData);
+        Object queryCacheKey = recordStore.toQueryCacheKey(key);
+        return recordStore.containsKey(queryCacheKey);
     }
 
     @Override
@@ -274,8 +274,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public V get(Object key) {
         checkNotNull(key, "key cannot be null");
 
-        Data keyData = toData(key);
-        QueryCacheRecord record = recordStore.get(keyData);
+        Object queryCacheKey = recordStore.toQueryCacheKey(key);
+        QueryCacheRecord record = recordStore.get(queryCacheKey);
         // this is not a known key for the scope of this query-cache.
         if (record == null) {
             return null;
@@ -287,7 +287,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         } else {
             // if value caching is not enabled, we fetch the value from underlying IMap
             // for every request
-            return (V) getDelegate().get(keyData);
+            return (V) getDelegate().get(queryCacheKey);
         }
     }
 
@@ -306,8 +306,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Map<K, V> map = MapUtil.createHashMap(keys.size());
         for (K key : keys) {
-            Data keyData = toData(key);
-            QueryCacheRecord record = recordStore.get(keyData);
+            Object queryCacheKey = recordStore.toQueryCacheKey(key);
+            QueryCacheRecord record = recordStore.get(queryCacheKey);
             if (record != null) {
                 V value = toObject(record.getValue());
                 map.put(key, value);
@@ -335,7 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        List resultSet = new ArrayList<>();
+        List resultSet = newArrayList(predicate);
 
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
@@ -351,10 +351,31 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
+    public Collection<V> values(Predicate predicate) {
+        checkNotNull(predicate, "Predicate cannot be null!");
+
+        if (!includeValue) {
+            return Collections.emptySet();
+        }
+
+        List resultingList = newArrayList(predicate);
+
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        if (query != null) {
+            for (QueryableEntry entry : query) {
+                resultingList.add(entry.getValueData());
+            }
+        } else {
+            doFullValueScan(predicate, resultingList);
+        }
+        return new UnmodifiableLazyList(resultingList, ss);
+    }
+
+    @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        List<Map.Entry> resultSet = new ArrayList<>();
+        List<Map.Entry> resultSet = newArrayList(predicate);
 
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
@@ -369,29 +390,13 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         return toImmutableLazySet(resultSet);
     }
 
-    private Set toImmutableLazySet(List resultSet) {
-        return new UnmodifiableLazySet(resultSet, ss);
+    private ArrayList<Map.Entry> newArrayList(Predicate predicate) {
+        return Predicates.alwaysTrue().equals(predicate)
+                ? new ArrayList<>(size()) : new ArrayList<>();
     }
 
-    @Override
-    public Collection<V> values(Predicate predicate) {
-        checkNotNull(predicate, "Predicate cannot be null!");
-
-        if (!includeValue) {
-            return Collections.emptySet();
-        }
-
-        List<Object> resultingList = new ArrayList<>();
-
-        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
-        if (query != null) {
-            for (QueryableEntry entry : query) {
-                resultingList.add(entry.getValueData());
-            }
-        } else {
-            doFullValueScan(predicate, resultingList);
-        }
-        return new UnmodifiableLazyList(resultingList, ss);
+    private Set toImmutableLazySet(List resultSet) {
+        return new UnmodifiableLazySet(resultSet, ss);
     }
 
     @Override
@@ -472,11 +477,13 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         InternalSerializationService serializationService = context.getSerializationService();
 
         CachedQueryEntry<?, ?> newEntry = new CachedQueryEntry<>(serializationService, extractors);
-        Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
-            Data keyData = entry.getKey();
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
+
+            Data keyData = toData(queryCacheKey);
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
             newEntry.init(keyData, value);
             indexes.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
@@ -548,10 +555,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public int removeEntriesOf(int partitionId) {
         int removedEntryCount = 0;
 
-        Set<Data> keys = recordStore.keySet();
-        for (Data keyData : keys) {
-            if (context.getPartitionId(keyData) == partitionId) {
-                if (recordStore.remove(keyData) != null) {
+        Set keys = recordStore.keySet();
+        for (Object queryCacheKey : keys) {
+            if (context.getPartitionId(queryCacheKey) == partitionId) {
+                if (recordStore.remove(queryCacheKey) != null) {
                     removedEntryCount++;
                 }
             }

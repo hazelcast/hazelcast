@@ -53,6 +53,7 @@ import static java.util.Objects.requireNonNull;
  * @param <V> the value type for this {@link InternalQueryCache}
  */
 abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K, V> {
+
     protected final boolean includeValue;
     protected final String mapName;
     protected final String cacheId;
@@ -133,9 +134,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     private EvictionListener getEvictionListener() {
-        return (EvictionListener<Data, QueryCacheRecord>) (dataKey, record, wasExpired)
+        return (EvictionListener<Object, QueryCacheRecord>) (queryCacheKey, record, wasExpired)
                 -> EventPublisherHelper.publishEntryEvent(context, mapName, cacheId,
-                dataKey, null, record, EVICTED, extractors);
+                queryCacheKey, null, record, EVICTED, extractors);
     }
 
     PartitioningStrategy getPartitioningStrategy() {
@@ -149,17 +150,17 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
-        Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
-            Data keyData = entry.getKey();
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, extractors);
+            queryEntry.init(serializationService, queryCacheKey, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                resultSet.add(keyData);
+                resultSet.add(queryCacheKey);
             }
         }
     }
@@ -168,16 +169,16 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         InternalSerializationService ss = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
-        Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
-            Data keyData = entry.getKey();
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            queryEntry.init(ss, keyData, value, extractors);
+            queryEntry.init(ss, queryCacheKey, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                resultingSet.add(new LazyMapEntry(keyData, value, ss));
+                resultingSet.add(new LazyMapEntry(queryCacheKey, value, ss));
             }
         }
     }
@@ -186,13 +187,13 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
-        Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
-            Data keyData = entry.getKey();
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, extractors);
+            queryEntry.init(serializationService, queryCacheKey, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
