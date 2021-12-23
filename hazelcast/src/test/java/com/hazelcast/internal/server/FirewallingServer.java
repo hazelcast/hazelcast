@@ -297,13 +297,13 @@ public class FirewallingServer
         @Override
         public boolean register(
                 Address remoteAddress,
-                Address connectedAddress,
+                Address targetAddress,
                 Collection<Address> remoteAddressAliases,
                 UUID remoteUuid,
                 ServerConnection connection,
                 int streamId
         ) {
-            return delegate.register(remoteAddress, connectedAddress, remoteAddressAliases, remoteUuid, connection, streamId);
+            return delegate.register(remoteAddress, targetAddress, remoteAddressAliases, remoteUuid, connection, streamId);
         }
 
         @Override

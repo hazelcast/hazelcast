@@ -205,7 +205,7 @@ class MockServer implements Server {
         @Override
         public synchronized boolean register(
                 Address remoteAddress,
-                Address connectedAddress,
+                Address targetAddress,
                 Collection<Address> remoteAddressAliases,
                 UUID remoteUuid,
                 ServerConnection c,
@@ -224,7 +224,7 @@ class MockServer implements Server {
             connection.setRemoteUuid(remoteUuid);
             server.connectionMap.put(remoteUuid, connection);
             LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(remoteAddress);
-            addressesToRegister.addAllResolvedAddresses(connectedAddress);
+            addressesToRegister.addAllResolvedAddresses(targetAddress);
             if (remoteAddressAliases != null) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
                     addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);

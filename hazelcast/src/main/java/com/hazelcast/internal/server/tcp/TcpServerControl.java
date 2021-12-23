@@ -148,9 +148,8 @@ public final class TcpServerControl {
                                        Address remoteEndpointAddress,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
-        Address primaryAddress = remoteEndpointAddress;
-        Address connectedAddress = new Address(connection.getRemoteSocketAddress());
         UUID remoteUuid = handshake.getUuid();
+        Address primaryAddress = remoteEndpointAddress;
         if (primaryAddress == null) {
             if (remoteAddressAliases == null) {
                 throw new IllegalStateException("Remote endpoint and remote address aliases cannot be both null");
@@ -159,6 +158,12 @@ public final class TcpServerControl {
                 primaryAddress = remoteAddressAliases.iterator().next();
             }
         }
+        // On the acceptor side, this target address is null, on the connector side,
+        // it may not be the same as the connected address in some conditions.
+        Address targetAddress = connection.getRemoteAddress();
+        Address connectedAddress = new Address(connection.getRemoteSocketAddress());
+        remoteAddressAliases.add(connectedAddress);
+
         connection.setRemoteAddress(primaryAddress);
         serverContext.onSuccessfulConnection(primaryAddress);
         if (handshake.isReply()) {
@@ -177,7 +182,7 @@ public final class TcpServerControl {
 
         connectionManager.register(
                 primaryAddress,
-                connectedAddress,
+                targetAddress,
                 remoteAddressAliases,
                 remoteUuid,
                 connection,

@@ -100,7 +100,7 @@ public class Invocation_ServerConnectionManagerTest
         @Override
         public boolean register(
                 Address remoteAddress,
-                Address connectedAddress,
+                Address targetAddress,
                 Collection<Address> remoteAddressAliases,
                 UUID remoteUuid,
                 ServerConnection connection,

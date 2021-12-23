@@ -110,7 +110,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             @Override
             public boolean register(
                     Address remoteAddress,
-                    Address connectedAddress,
+                    Address targetAddress,
                     Collection<Address> remoteAddressAliases,
                     UUID remoteUuid,
                     ServerConnection connection,

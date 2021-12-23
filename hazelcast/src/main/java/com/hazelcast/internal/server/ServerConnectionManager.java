@@ -78,13 +78,14 @@ public interface ServerConnectionManager
      * the relevant {@link Connection} resource.
      *
      * @param remoteAddress - The remote address to register the connection under
+     * @param targetAddress - Requested target address on the connector side, null if acceptor side
      * @param connection    - The connection to be registered
      * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
     boolean register(
             Address remoteAddress,
-            Address connectedAddress,
+            Address targetAddress,
             Collection<Address> remoteAddressAliases,
             UUID remoteUuid,
             ServerConnection connection,

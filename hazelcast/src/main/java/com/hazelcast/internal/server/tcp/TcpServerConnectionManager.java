@@ -163,7 +163,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Override
     public synchronized boolean register(
             Address primaryAddress,
-            Address connectedAddress,
+            Address targetAddress,
             Collection<Address> remoteAddressAliases,
             UUID remoteUuid,
             final ServerConnection c,
@@ -193,7 +193,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
                 LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
-                addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(connectedAddress));
+                addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(targetAddress));
                 if (remoteAddressAliases != null) {
                     for (Address remoteAddressAlias : remoteAddressAliases) {
                         addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
@@ -224,7 +224,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
             return true;
         } finally {
-            plane.removeConnectionInProgress(connectedAddress);
+            plane.removeConnectionInProgress(targetAddress);
         }
     }
 
