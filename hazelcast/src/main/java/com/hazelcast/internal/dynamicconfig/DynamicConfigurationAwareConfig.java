@@ -1198,7 +1198,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Nonnull
-    @Override
     public Map<String, Set<String>> reload() {
         return this.reload(null);
     }

@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -451,23 +450,6 @@ public class Config {
         }
 
         throw new IllegalArgumentException("interpretation error: the resource is neither valid XML nor valid YAML");
-    }
-
-    /**
-     * Reloads the configuration. It means that it will look up to the
-     * declarative configuration and will apply the dynamically changeable
-     * differences to the run time configuration. Please note that this is an
-     * enterprise feature, and it will throw {@code UnsupportedOperationException}
-     * without it.
-     *
-     * @return added configurations as map
-     * @throws UnsupportedOperationException if called without Hazelcast Enterprise
-     * @since 5.1
-     */
-    @Nonnull
-    public Map<String, Set<String>> reload() {
-        throw new UnsupportedOperationException("Can't call reload from static configuration. "
-                    + "Please use instance.getConfig.reload() instead.");
     }
 
     /**

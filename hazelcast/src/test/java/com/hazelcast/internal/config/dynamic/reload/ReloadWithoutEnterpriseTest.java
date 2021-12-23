@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config.dynamic.reload;
 
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,6 +47,6 @@ public class ReloadWithoutEnterpriseTest extends HazelcastTestSupport {
         Files.write(configFile.toPath(), configAsString.getBytes());
         System.setProperty(SYSPROP_MEMBER_CONFIG, configFile.getAbsolutePath());
 
-        createHazelcastInstance().getConfig().reload();
+        ((DynamicConfigurationAwareConfig) createHazelcastInstance().getConfig()).reload();
     }
 }

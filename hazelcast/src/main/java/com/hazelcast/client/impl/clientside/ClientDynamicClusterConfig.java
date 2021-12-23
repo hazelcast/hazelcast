@@ -97,7 +97,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -1081,12 +1080,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Nonnull
     @Override
     public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Nonnull
-    @Override
-    public Map<String, Set<String>> reload() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
