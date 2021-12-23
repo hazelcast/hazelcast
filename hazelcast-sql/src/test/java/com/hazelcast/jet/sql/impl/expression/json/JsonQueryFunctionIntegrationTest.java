@@ -170,10 +170,10 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 0 end: -1");
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 0 to 0");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1 start: 1 end: 1");
+                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 1 to 2");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('[1,2,3]', jsonValue) FROM test2"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageEndingWith("JSONPath expression can not be null");
@@ -187,7 +187,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, 'strict $[*]') FROM test"))
             .isInstanceOf(HazelcastSqlException.class)
-            .hasMessageEndingWith("STRICT json path mode is not supported");
+            .hasMessageEndingWith("Strict JsonPath mode not yet supported");
     }
 
     @Test
@@ -196,8 +196,6 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         test.put(1L, "[1,2,3]");
         createMapping("test", Long.class, String.class);
         assertRowsAnyOrder("SELECT JSON_QUERY(this, 'lax $[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
-            rows(1, json("[2,3]")));
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, 'LAX $[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
             rows(1, json("[2,3]")));
     }
 
