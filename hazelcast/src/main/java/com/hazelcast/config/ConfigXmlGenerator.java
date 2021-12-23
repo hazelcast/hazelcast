@@ -38,6 +38,7 @@ import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -45,6 +46,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -547,6 +549,30 @@ public class ConfigXmlGenerator {
             appendFilterList(gen, "whitelist", javaSerializationFilterConfig.getWhitelist());
             gen.close();
         }
+
+        compactSerializationXmlGenerator(gen, c);
+
+        gen.close();
+    }
+
+    private static void compactSerializationXmlGenerator(XmlGenerator gen, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        if (!compactSerializationConfig.isEnabled()) {
+            return;
+        }
+
+        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
+
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
+            gen.open("registered-classes");
+            appendRegisteredClasses(gen, registries);
+            appendNamedRegisteredClasses(gen, namedRegistries);
+            gen.close();
+        }
+
         gen.close();
     }
 
@@ -1861,6 +1887,43 @@ public class ConfigXmlGenerator {
             gen.node("prefix", prefix);
         }
         gen.close();
+    }
+
+    private static void appendRegisteredClasses(XmlGenerator gen,
+                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
+        if (registries.isEmpty()) {
+            return;
+        }
+
+        for (TriTuple<Class, String, CompactSerializer> registration : registries.values()) {
+            Class registeredClass = registration.element1;
+            String typeName = registration.element2;
+            CompactSerializer serializer = registration.element3;
+            if (serializer != null) {
+                String serializerClassName = serializer.getClass().getName();
+                gen.node("class", registeredClass.getName(), "type-name", typeName, "serializer", serializerClassName);
+            } else {
+                gen.node("class", registeredClass.getName());
+            }
+        }
+    }
+
+    private static void appendNamedRegisteredClasses(XmlGenerator gen,
+                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
+        if (namedRegistries.isEmpty()) {
+            return;
+        }
+
+        for (TriTuple<String, String, String> registration : namedRegistries.values()) {
+            String registeredClassName = registration.element1;
+            String typeName = registration.element2;
+            String serializerClassName = registration.element3;
+            if (serializerClassName != null) {
+                gen.node("class", registeredClassName, "type-name", typeName, "serializer", serializerClassName);
+            } else {
+                gen.node("class", registeredClassName);
+            }
+        }
     }
 
     /**
