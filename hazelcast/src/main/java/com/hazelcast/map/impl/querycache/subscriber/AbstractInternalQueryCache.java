@@ -35,6 +35,7 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 
 import java.util.List;
 import java.util.Map;
@@ -147,6 +148,10 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     protected void doFullKeyScan(Predicate predicate, List resultSet) {
+        if (predicate == TruePredicate.INSTANCE) {
+            dumpAllKeys(resultSet);
+            return;
+        }
         InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
@@ -154,9 +159,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
             Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
-            Object value = record.getValue();
+            Object rawValue = record.getRawValue();
 
-            queryEntry.init(serializationService, queryCacheKey, value, extractors);
+            queryEntry.init(serializationService, queryCacheKey, rawValue, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
@@ -165,7 +170,18 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         }
     }
 
+    private void dumpAllKeys(List resultSet) {
+        for (Object queryCacheKey : recordStore.keySet()) {
+            resultSet.add(queryCacheKey);
+        }
+    }
+
     protected void doFullEntryScan(Predicate predicate, List<Map.Entry> resultingSet) {
+        if (predicate == TruePredicate.INSTANCE) {
+            dumpAllEntries(resultingSet);
+            return;
+        }
+
         InternalSerializationService ss = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
@@ -183,7 +199,22 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         }
     }
 
+    private void dumpAllEntries(List resultingSet) {
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            Object queryCacheKey = entry.getKey();
+            QueryCacheRecord record = entry.getValue();
+            Object rawValue = record.getRawValue();
+            resultingSet.add(new LazyMapEntry(queryCacheKey, rawValue, ss));
+        }
+    }
+
     protected void doFullValueScan(Predicate predicate, List resultingSet) {
+        if (predicate == TruePredicate.INSTANCE) {
+            dumpAllValues(resultingSet);
+            return;
+        }
+
         InternalSerializationService serializationService = this.ss;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
@@ -191,14 +222,21 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
             Object queryCacheKey = entry.getKey();
             QueryCacheRecord record = entry.getValue();
-            Object value = record.getValue();
+            Object rawValue = record.getRawValue();
 
-            queryEntry.init(serializationService, queryCacheKey, value, extractors);
+            queryEntry.init(serializationService, queryCacheKey, rawValue, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                resultingSet.add(value);
+                resultingSet.add(queryEntry.getByPrioritizingObjectValue());
             }
+        }
+    }
+
+    private void dumpAllValues(List resultingSet) {
+        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
+        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
+            resultingSet.add(entry.getValue().getRawValue());
         }
     }
 

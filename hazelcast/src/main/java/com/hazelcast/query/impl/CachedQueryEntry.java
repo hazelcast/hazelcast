@@ -169,6 +169,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         return null;
     }
 
+    public Object getByPrioritizingObjectValue() {
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        if (valueData != null) {
+            return valueData;
+        }
+
+        return null;
+    }
+
     @Override
     protected Object getTargetObject(boolean key) {
         Object targetObject;

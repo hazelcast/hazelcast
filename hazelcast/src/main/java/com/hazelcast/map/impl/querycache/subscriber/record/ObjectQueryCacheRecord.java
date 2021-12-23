@@ -34,4 +34,9 @@ class ObjectQueryCacheRecord extends AbstractQueryCacheRecord {
     public Object getValue() {
         return value;
     }
+
+    @Override
+    public Object getRawValue() {
+        return value;
+    }
 }
