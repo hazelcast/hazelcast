@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
@@ -24,7 +25,6 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
@@ -34,16 +34,20 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.TruePredicate;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -147,96 +151,73 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         return null;
     }
 
-    protected void doFullKeyScan(Predicate predicate, List resultSet) {
+    protected Set scan(Predicate predicate, BiConsumer biConsumer, List resultList) {
+        if (!canQueryOverIndex(predicate) || !queryIndexes(predicate, biConsumer)) {
+            doFullScan(predicate, biConsumer);
+        }
+
+        return toImmutableLazySet(resultList);
+    }
+
+    private Set toImmutableLazySet(List resultSet) {
+        return new UnmodifiableLazySet(resultSet, ss);
+    }
+
+    private boolean queryIndexes(Predicate predicate, BiConsumer biConsumer) {
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        if (query == null) {
+            return false;
+        }
+
+        for (QueryableEntry entry : query) {
+            biConsumer.accept(entry.getKeyData(), entry.getValueData());
+        }
+        return true;
+    }
+
+    private boolean canQueryOverIndex(Predicate predicate) {
+        // when predicate is true-predicate no need to scan indexes.
+        return predicate != TruePredicate.INSTANCE;
+    }
+
+    private void doFullScan(Predicate predicate, BiConsumer biConsumer) {
         if (predicate == TruePredicate.INSTANCE) {
-            dumpAllKeys(resultSet);
-            return;
-        }
-        InternalSerializationService serializationService = this.ss;
-
-        CachedQueryEntry queryEntry = new CachedQueryEntry();
-        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
-            Object queryCacheKey = entry.getKey();
-            QueryCacheRecord record = entry.getValue();
-            Object rawValue = record.getRawValue();
-
-            queryEntry.init(serializationService, queryCacheKey, rawValue, extractors);
-
-            boolean valid = predicate.apply(queryEntry);
-            if (valid) {
-                resultSet.add(queryCacheKey);
-            }
-        }
-    }
-
-    private void dumpAllKeys(List resultSet) {
-        for (Object queryCacheKey : recordStore.keySet()) {
-            resultSet.add(queryCacheKey);
-        }
-    }
-
-    protected void doFullEntryScan(Predicate predicate, List<Map.Entry> resultingSet) {
-        if (predicate == TruePredicate.INSTANCE) {
-            dumpAllEntries(resultingSet);
-            return;
-        }
-
-        InternalSerializationService ss = this.ss;
-
-        CachedQueryEntry queryEntry = new CachedQueryEntry();
-        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
-            Object queryCacheKey = entry.getKey();
-            QueryCacheRecord record = entry.getValue();
-            Object value = record.getValue();
-            queryEntry.init(ss, queryCacheKey, value, extractors);
-
-            boolean valid = predicate.apply(queryEntry);
-            if (valid) {
-                resultingSet.add(new LazyMapEntry(queryCacheKey, value, ss));
-            }
-        }
-    }
-
-    private void dumpAllEntries(List resultingSet) {
-        Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
-        for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
-            Object queryCacheKey = entry.getKey();
-            QueryCacheRecord record = entry.getValue();
-            Object rawValue = record.getRawValue();
-            resultingSet.add(new LazyMapEntry(queryCacheKey, rawValue, ss));
-        }
-    }
-
-    protected void doFullValueScan(Predicate predicate, List resultingSet) {
-        if (predicate == TruePredicate.INSTANCE) {
-            dumpAllValues(resultingSet);
+            dumpAll(biConsumer);
             return;
         }
 
-        InternalSerializationService serializationService = this.ss;
+        scanEntrySet(predicate, biConsumer);
+    }
 
-        CachedQueryEntry queryEntry = new CachedQueryEntry();
+    private void dumpAll(BiConsumer consumer) {
         Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
-            Object queryCacheKey = entry.getKey();
-            QueryCacheRecord record = entry.getValue();
-            Object rawValue = record.getRawValue();
-
-            queryEntry.init(serializationService, queryCacheKey, rawValue, extractors);
-
-            boolean valid = predicate.apply(queryEntry);
-            if (valid) {
-                resultingSet.add(queryEntry.getByPrioritizingObjectValue());
-            }
+            consumer.accept(entry.getKey(), entry.getValue().getRawValue());
         }
     }
 
-    private void dumpAllValues(List resultingSet) {
+    private void scanEntrySet(Predicate predicate, BiConsumer consumer) {
+        // key and value are not an instance of Data type
+        final boolean areKeyValueObjectType = !queryCacheConfig.isSerializeKeys()
+                && InMemoryFormat.OBJECT == queryCacheConfig.getInMemoryFormat();
+
+        CachedQueryEntry queryEntry = new CachedQueryEntry(ss, extractors);
         Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
-            resultingSet.add(entry.getValue().getRawValue());
+            Object queryCacheKey = entry.getKey();
+            Object rawValue = entry.getValue().getRawValue();
+
+            if (areKeyValueObjectType) {
+                queryEntry.initWithObjectKeyValue(queryCacheKey, rawValue);
+            } else {
+                queryEntry.init(queryCacheKey, rawValue);
+            }
+
+            if (!predicate.apply(queryEntry)) {
+                continue;
+            }
+
+            consumer.accept(queryCacheKey, queryEntry.getByPrioritizingObjectValue());
         }
     }
 

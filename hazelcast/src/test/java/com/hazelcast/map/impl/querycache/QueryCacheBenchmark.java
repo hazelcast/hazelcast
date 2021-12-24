@@ -42,7 +42,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -56,14 +55,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @BenchmarkMode({Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 2, time = 10, timeUnit = SECONDS)
-@Measurement(iterations = 2, time = 10, timeUnit = SECONDS)
+@Warmup(iterations = 2, time = 5, timeUnit = SECONDS)
+@Measurement(iterations = 2, time = 5, timeUnit = SECONDS)
 @Fork(value = 2, jvmArgsAppend = {"-Xms8G", "-Xmx8G"})
 @State(Scope.Benchmark)
 public class QueryCacheBenchmark {
 
     @Benchmark
-    public Object testValues(BenchmarkContext context, Blackhole blackhole) {
+    public Object testValues(BenchmarkContext context) {
         return context.getQueryCache().values(Predicates.alwaysTrue());
     }
 

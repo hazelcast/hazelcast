@@ -87,6 +87,16 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         return this;
     }
 
+    @SuppressWarnings("unchecked")
+    public CachedQueryEntry<K, V> initWithObjectKeyValue(Object key, Object value) {
+        this.keyObject = (K) key;
+        this.keyData = null;
+        this.valueObject = (V) value;
+        this.valueData = null;
+
+        return this;
+    }
+
     @Override
     public K getKey() {
         if (keyObject == null) {
