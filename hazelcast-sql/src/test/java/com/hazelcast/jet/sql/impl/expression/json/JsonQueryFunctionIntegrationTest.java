@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNull;
 public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(2, null);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Empty JSON object");
+                .hasMessageContaining("JSON_QUERY evaluated to no value");
 
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertEquals(json("[]"),
@@ -168,7 +168,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 0 to 0");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, column 0");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 1 to 2");
@@ -205,7 +205,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("SQL/JSON path expression cannot be null");
-        assertNull(querySingleValue("SELECT JSON_QUERY(null, 'foo')"));
+        assertNull(querySingleValue("SELECT JSON_QUERY(null, '$.a')"));
     }
 
     @Test
@@ -248,6 +248,11 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_onEmptyBehavior() {
         initComplexObject();
 
+        // test NULL ON EMPTY as the default option
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]') from test", rows(1, (Object) null));
+        assertRowsAnyOrder("SELECT JSON_QUERY('', '$[4]') from test", rows(1, (Object) null));
+        assertRowsAnyOrder("SELECT JSON_QUERY(null, '$[4]') from test", rows(1, (Object) null));
+
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' NULL ON EMPTY) from test", rows(1, (Object) null));
         assertRowsAnyOrder("SELECT JSON_QUERY('', '$[4]' NULL ON EMPTY) from test", rows(1, (Object) null));
         assertRowsAnyOrder("SELECT JSON_QUERY(null, '$[4]' NULL ON EMPTY) from test", rows(1, (Object) null));
@@ -258,6 +263,9 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('', '$[4]' ERROR ON EMPTY) from test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageEndingWith("JSON_QUERY evaluated to no value");
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, '$[4]' ERROR ON EMPTY) from test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith("JSON_QUERY evaluated to no value");
 
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' EMPTY OBJECT ON EMPTY) from test", rows(1, json("{}")));
         assertRowsAnyOrder("SELECT JSON_QUERY('', '$[4]' EMPTY OBJECT ON EMPTY) from test", rows(1, json("{}")));
@@ -266,6 +274,23 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' EMPTY ARRAY ON EMPTY) from test", rows(1, json("[]")));
         assertRowsAnyOrder("SELECT JSON_QUERY('', '$[4]' EMPTY ARRAY ON EMPTY) from test", rows(1, json("[]")));
         assertRowsAnyOrder("SELECT JSON_QUERY(null, '$[4]' EMPTY ARRAY ON EMPTY) from test", rows(1, json("[]")));
+    }
+
+    @Test
+    public void test_onErrorBehavior() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        createMapping("test", "bigint", "json");
+        test.put(1L, json("bad json"));
+
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' NULL ON ERROR) from test", rows(1, (Object) null));
+
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$[4]' ERROR ON ERROR) from test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith("Failed to parse JSON document");
+
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' EMPTY OBJECT ON ERROR) from test", rows(1, json("{}")));
+
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' EMPTY ARRAY ON ERROR) from test", rows(1, json("[]")));
     }
 
     protected void initComplexObject() {

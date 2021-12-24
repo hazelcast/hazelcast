@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.expression.json;
 import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -43,6 +45,8 @@ import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArra
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
+    private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
+
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
@@ -113,7 +117,11 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private String onErrorResponse(final Exception exception) {
         switch (onError) {
             case ERROR:
-                throw QueryException.error("JSON_QUERY failed: " + exception, exception);
+                // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+                // serializable, they can contain references to parser context and other objects, which are not.
+                // That's why we also log the exception here.
+                LOGGER.fine("JSON_QUERY failed", exception);
+                throw QueryException.error("JSON_QUERY failed: " + exception);
             case EMPTY_ARRAY:
                 return "[]";
             case EMPTY_OBJECT:
@@ -178,15 +186,17 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeString(onEmpty.name());
-        out.writeString(onError.name());
+        out.writeInt(wrapperBehavior.ordinal());
+        out.writeInt(onEmpty.ordinal());
+        out.writeInt(onError.ordinal());
     }
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
         super.readData(in);
-        this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.valueOf(in.readString());
-        this.onError = SqlJsonQueryEmptyOrErrorBehavior.valueOf(in.readString());
+        this.wrapperBehavior = SqlJsonQueryWrapperBehavior.values()[in.readInt()];
+        this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
+        this.onError = SqlJsonQueryEmptyOrErrorBehavior.values()[in.readInt()];
     }
 
     @Override

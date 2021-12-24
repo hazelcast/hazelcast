@@ -20,10 +20,13 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.jsfr.json.Collector;
+import org.jsfr.json.DefaultErrorHandlingStrategy;
+import org.jsfr.json.ErrorHandlingStrategy;
 import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.exception.JsonSurfingException;
 import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
 
@@ -34,7 +37,19 @@ import java.util.Map;
 
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
-    private static final JsonSurfer SURFER = new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE);;
+    private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
+        @Override
+        public void handleParsingException(Exception e) {
+            // We deliberately do not add `e.getMessage` to the message of the exception thrown here.
+            // The reason is that it might contain user data, and the error messages should not contain
+            // user data. However, we add it to the cause so that it might still appear in member logs, but
+            // we need this to investigate issues. We're only preventing it from being sent to the client and
+            // to the application logs. This is a compromise.
+            throw new JsonSurfingException("Failed to parse JSON document", e);
+        }
+    };
+    private static final JsonSurfer SURFER =
+            new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE, ERROR_HANDLING_STRATEGY);
 
     private JsonPathUtil() { }
 
