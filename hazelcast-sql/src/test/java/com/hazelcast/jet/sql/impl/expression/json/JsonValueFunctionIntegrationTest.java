@@ -206,23 +206,23 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 0 to 0");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, column 0");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 1 to 2");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 1 to 2");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
     }
 
     @Test
     public void test_nullLiteral() {
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(null, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertNull(querySingleValue("SELECT JSON_VALUE(null, 'foo')"));
         assertNull(querySingleValue("SELECT JSON_VALUE('bad json', '$' default null on error)"));
     }
