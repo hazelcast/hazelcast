@@ -212,8 +212,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig) {
-        throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
+    public Map<String, Set<String>> reload() {
+        return reload(null);
     }
 
+    @Override
+    public Map<String, Set<String>> reload(Config newConfig) {
+        throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
+    }
 }

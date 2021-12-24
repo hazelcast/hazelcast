@@ -81,13 +81,11 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger.merge;
@@ -1195,20 +1193,5 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setJetConfig(JetConfig jetConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Nonnull
-    public Map<String, Set<String>> reload() {
-        return this.reload(null);
-    }
-
-    public Map<String, Set<String>> reload(@Nullable Config newConfig) {
-        if (newConfig == null) {
-            newConfig = Config.load();
-            if (newConfig.getConfigurationFile() == null) {
-                throw new IllegalStateException("Couldn't locate declarative configuration.");
-            }
-        }
-        return configurationService.reloadConfig(this, newConfig);
     }
 }

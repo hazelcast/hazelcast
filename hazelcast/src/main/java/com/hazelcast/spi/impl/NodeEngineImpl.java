@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.management.ManagementCenterService;

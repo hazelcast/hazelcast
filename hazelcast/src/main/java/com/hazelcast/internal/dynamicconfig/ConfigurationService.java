@@ -59,7 +59,22 @@ public interface ConfigurationService {
      */
     void broadcastConfig(IdentifiedDataSerializable config);
 
-    Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig);
+    /**
+     * Reloads the configuration with the given configuration. Reloading means
+     * dynamically changing all the differences dynamically changeable.
+     *
+     * @param newConfig config to find any new dynamically changeable sub configs
+     * @return name of the added configurations
+     */
+    Map<String, Set<String>> reload(Config newConfig);
+
+    /**
+     * Reloads the configuration with the declarative configuration. Reloading
+     * means dynamically changing all the differences dynamically changeable.
+     *
+     * @return name of the added configurations
+     */
+    Map<String, Set<String>> reload();
 
     /**
      * Finds existing Multimap config.

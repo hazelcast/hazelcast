@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.config.dynamic.reload;
 
-import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.test.Accessors.getService;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -47,6 +49,7 @@ public class ReloadWithoutEnterpriseTest extends HazelcastTestSupport {
         Files.write(configFile.toPath(), configAsString.getBytes());
         System.setProperty(SYSPROP_MEMBER_CONFIG, configFile.getAbsolutePath());
 
-        ((DynamicConfigurationAwareConfig) createHazelcastInstance().getConfig()).reload();
+        ConfigurationService configurationService = getService(createHazelcastInstance(), ClusterWideConfigurationService.SERVICE_NAME);
+        configurationService.reload();
     }
 }

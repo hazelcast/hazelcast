@@ -40,7 +40,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -56,6 +55,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,7 +94,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     protected NodeEngine nodeEngine;
 
     private final DynamicConfigListener listener;
-    private final ReloaderProxy reloaderProxy;
 
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
@@ -151,12 +150,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     public ClusterWideConfigurationService(
             NodeEngine nodeEngine,
-            DynamicConfigListener dynamicConfigListener,
-            ReloaderProxy reloaderProxy
+            DynamicConfigListener dynamicConfigListener
     ) {
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
-        this.reloaderProxy = reloaderProxy;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
         this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
     }
@@ -213,8 +210,13 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public Map<String, Set<String>> reloadConfig(Config oldConfig, Config newConfig) {
-        return reloaderProxy.doReload(oldConfig, newConfig);
+    public Map<String, Set<String>> reload() {
+        return reload(null);
+    }
+
+    @Override
+    public Map<String, Set<String>> reload(@Nullable Config newConfig) {
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {

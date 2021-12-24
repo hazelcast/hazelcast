@@ -24,7 +24,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.config.dynamic.reload.ReloaderProxy;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
@@ -364,13 +363,6 @@ public interface NodeExtension {
      * @return Listener to be notfied about changes in data structure configurations
      */
     DynamicConfigListener createDynamicConfigListener();
-
-    /**
-     * Creates a proxy for Configuration Reloading.
-     *
-     * @return Proxy which will be used for Configuration Reload
-     */
-    ReloaderProxy createReloaderProxy();
 
     /**
      * Register the node extension specific diagnostics plugins on the provided
