@@ -212,10 +212,11 @@ public interface NodeExtension {
      * Creates a service which is an implementation of given type parameter.
      *
      * @param type type of service
+     * @param params additional parameter to create the service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
-    <T> T createService(Class<T> type);
+    <T> T createService(Class<T> type, Object... params);
 
     /**
      * Creates additional extension services, which will be registered by

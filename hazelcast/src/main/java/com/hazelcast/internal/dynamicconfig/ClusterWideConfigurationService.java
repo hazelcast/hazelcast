@@ -91,10 +91,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND =
             getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
+    protected NodeEngine nodeEngine;
+
     private final DynamicConfigListener listener;
     private final ReloaderProxy reloaderProxy;
 
-    private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =

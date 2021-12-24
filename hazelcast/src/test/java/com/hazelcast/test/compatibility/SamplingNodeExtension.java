@@ -132,7 +132,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public <T> T createService(Class<T> type) {
+    public <T> T createService(Class<T> type, Object... params) {
         return nodeExtension.createService(type);
     }
 
