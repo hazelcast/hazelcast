@@ -66,7 +66,6 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
@@ -574,11 +573,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance) {
         return new TimedMemberStateFactory(instance);
-    }
-
-    @Override
-    public DynamicConfigListener createDynamicConfigListener() {
-        return new EmptyDynamicConfigListener();
     }
 
     @Override

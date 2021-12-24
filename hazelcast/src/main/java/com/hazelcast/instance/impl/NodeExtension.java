@@ -25,7 +25,6 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -356,13 +355,6 @@ public interface NodeExtension {
     ManagementService createJMXManagementService(HazelcastInstanceImpl instance);
 
     TextCommandService createTextCommandService();
-
-    /**
-     * Creates a listener for changes in dynamic data structure configurations
-     *
-     * @return Listener to be notfied about changes in data structure configurations
-     */
-    DynamicConfigListener createDynamicConfigListener();
 
     /**
      * Register the node extension specific diagnostics plugins on the provided
