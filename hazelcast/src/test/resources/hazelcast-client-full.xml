@@ -299,6 +299,7 @@
             <in-memory-format>BINARY</in-memory-format>
             <coalesce>false</coalesce>
             <populate>true</populate>
+            <serialize-keys>false</serialize-keys>
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>

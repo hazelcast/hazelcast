@@ -166,7 +166,6 @@ public class QueryCacheBenchmark {
         }
     }
 
-
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(QueryCacheBenchmark.class.getSimpleName())

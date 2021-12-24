@@ -30,7 +30,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -57,6 +56,7 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -182,7 +182,6 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -196,6 +195,7 @@ import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
 import static com.hazelcast.internal.config.ConfigSections.LITE_MEMBER;
+import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
@@ -2365,6 +2365,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if (matches("populate", nodeName)) {
                     boolean populate = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setPopulate(populate);
+                } else if (matches("serialize-keys", nodeName)) {
+                    boolean serializeKeys = getBooleanValue(getTextContent(childNode));
+                    queryCacheConfig.setSerializeKeys(serializeKeys);
                 } else if (matches("indexes", nodeName)) {
                     queryCacheIndexesHandle(childNode, queryCacheConfig);
                 } else if (matches("predicate", nodeName)) {

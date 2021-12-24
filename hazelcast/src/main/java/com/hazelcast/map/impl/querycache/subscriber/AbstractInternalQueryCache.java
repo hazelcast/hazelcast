@@ -39,6 +39,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.TruePredicate;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -151,19 +152,70 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         return null;
     }
 
-    protected Set scan(Predicate predicate, BiConsumer biConsumer, List resultList) {
-        if (!canQueryOverIndex(predicate) || !queryIndexes(predicate, biConsumer)) {
-            doFullScan(predicate, biConsumer);
+    protected Set scanAndGetResult(Predicate predicate, ResultType resultType) {
+        ResulCollector resulCollector = new ResulCollector(resultType);
+
+        // 1. Optimization when predicate is true-predicate,
+        // in this case no need to scan indexes.
+        if (predicate == TruePredicate.INSTANCE) {
+            doFullScan(predicate, resulCollector);
+            return toImmutableLazySet(resulCollector.getResult());
         }
 
-        return toImmutableLazySet(resultList);
+        // 2. Try to query over indexes
+        if (tryQueryOverIndexes(predicate, resulCollector)) {
+            return toImmutableLazySet(resulCollector.getResult());
+        }
+
+        // 3. If query can't be performed over indexes, scan full data set.
+        doFullScan(predicate, resulCollector);
+        return toImmutableLazySet(resulCollector.getResult());
     }
 
     private Set toImmutableLazySet(List resultSet) {
         return new UnmodifiableLazySet(resultSet, ss);
     }
 
-    private boolean queryIndexes(Predicate predicate, BiConsumer biConsumer) {
+    /**
+     * Type of element that we expect to
+     * see in the resulting collection.
+     */
+    enum ResultType {
+        KEY, VALUE, ENTRY
+    }
+
+    private final class ResulCollector implements BiConsumer {
+
+        private final ResultType resultType;
+        private final List result = new ArrayList();
+
+        private ResulCollector(ResultType resultType) {
+            this.resultType = resultType;
+        }
+
+        @Override
+        public void accept(Object key, Object value) {
+            switch (resultType) {
+                case KEY:
+                    result.add(key);
+                    break;
+                case VALUE:
+                    result.add(value);
+                    break;
+                case ENTRY:
+                    result.add(new CachedQueryEntry<>(ss, key, value, extractors));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected type: " + resultType);
+            }
+        }
+
+        public List getResult() {
+            return result;
+        }
+    }
+
+    private boolean tryQueryOverIndexes(Predicate predicate, BiConsumer biConsumer) {
         Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query == null) {
             return false;
@@ -175,20 +227,18 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         return true;
     }
 
-    private boolean canQueryOverIndex(Predicate predicate) {
-        // when predicate is true-predicate no need to scan indexes.
-        return predicate != TruePredicate.INSTANCE;
-    }
-
     private void doFullScan(Predicate predicate, BiConsumer biConsumer) {
         if (predicate == TruePredicate.INSTANCE) {
             dumpAll(biConsumer);
             return;
         }
 
-        scanEntrySet(predicate, biConsumer);
+        scanWithPredicate(predicate, biConsumer);
     }
 
+    /**
+     * Add all key-value pairs to result.
+     */
     private void dumpAll(BiConsumer consumer) {
         Set<Map.Entry<Object, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Object, QueryCacheRecord> entry : entries) {
@@ -196,8 +246,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         }
     }
 
-    private void scanEntrySet(Predicate predicate, BiConsumer consumer) {
-        // key and value are not an instance of Data type
+    /**
+     * Scan all key-value pairs and add matching ones with predicate to result.
+     */
+    private void scanWithPredicate(Predicate predicate, BiConsumer consumer) {
+        // needed for optimization where key and value are not an instance of Data type
         final boolean areKeyValueObjectType = !queryCacheConfig.isSerializeKeys()
                 && InMemoryFormat.OBJECT == queryCacheConfig.getInMemoryFormat();
 

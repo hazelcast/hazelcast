@@ -1445,6 +1445,10 @@
                   "type": "boolean",
                   "default": false
                 },
+                "serialize-keys": {
+                  "type": "boolean",
+                  "default": false
+                },
                 "delay-seconds": {
                   "type": "integer",
                   "minimum": 0,

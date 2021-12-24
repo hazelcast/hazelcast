@@ -53,7 +53,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -336,10 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        List resultList = new ArrayList();
-        BiConsumer biConsumer = (key, value) -> resultList.add(key);
-
-        return scan(predicate, biConsumer, resultList);
+        return scanAndGetResult(predicate, ResultType.KEY);
     }
 
     @Override
@@ -350,21 +346,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        List resultList = new ArrayList();
-        BiConsumer biConsumer = (key, value) -> resultList.add(value);
-
-        return scan(predicate, biConsumer, resultList);
+        return scanAndGetResult(predicate, ResultType.VALUE);
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        List resultList = new ArrayList();
-        BiConsumer biConsumer
-                = (key, value) -> resultList.add(new CachedQueryEntry<>(ss, key, value, extractors));
-
-        return scan(predicate, biConsumer, resultList);
+        return scanAndGetResult(predicate, ResultType.ENTRY);
     }
 
     @Override

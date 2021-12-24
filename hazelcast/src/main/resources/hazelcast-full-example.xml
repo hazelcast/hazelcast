@@ -1450,6 +1450,7 @@
                 <delay-seconds>3</delay-seconds>
                 <batch-size>2</batch-size>
                 <buffer-size>32</buffer-size>
+                <serialize-keys>false</serialize-keys>
                 <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                 <indexes>
                     <index>

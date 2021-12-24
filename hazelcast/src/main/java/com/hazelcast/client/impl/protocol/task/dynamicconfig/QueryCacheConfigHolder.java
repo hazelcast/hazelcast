@@ -108,6 +108,10 @@ public class QueryCacheConfigHolder {
         this.populate = populate;
     }
 
+    public void setSerializeKeys(boolean serializeKeys) {
+        this.serializeKeys = serializeKeys;
+    }
+
     public boolean isCoalesce() {
         return coalesce;
     }
@@ -223,6 +227,7 @@ public class QueryCacheConfigHolder {
         }
         holder.setPredicateConfigHolder(PredicateConfigHolder.of(config.getPredicateConfig(), serializationService));
         holder.setPopulate(config.isPopulate());
+        holder.setSerializeKeys(config.isSerializeKeys());
         return holder;
     }
 

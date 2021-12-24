@@ -596,6 +596,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("delay-seconds", queryCacheConfig.getDelaySeconds());
                 gen.node("batch-size", queryCacheConfig.getBatchSize());
                 gen.node("buffer-size", queryCacheConfig.getBufferSize());
+                gen.node("serialize-keys", queryCacheConfig.isSerializeKeys());
 
                 evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
                 IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs());
