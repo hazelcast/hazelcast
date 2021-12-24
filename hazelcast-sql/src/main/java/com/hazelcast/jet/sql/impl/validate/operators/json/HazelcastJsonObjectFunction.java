@@ -17,12 +17,20 @@
 package com.hazelcast.jet.sql.impl.validate.operators.json;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
+import com.hazelcast.sql.impl.QueryException;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
+import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 public class HazelcastJsonObjectFunction extends HazelcastFunction {
     public static final HazelcastJsonObjectFunction INSTANCE = new HazelcastJsonObjectFunction();
@@ -32,18 +40,70 @@ public class HazelcastJsonObjectFunction extends HazelcastFunction {
                 "JSON_OBJECT",
                 SqlKind.OTHER_FUNCTION,
                 opBinding -> HazelcastJsonType.create(false),
-                (callBinding, returnType, operandTypes) -> { },
+                new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),
                 SqlFunctionCategory.SYSTEM
         );
     }
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
-        return true;
+        boolean isValid = TypedOperandChecker.SYMBOL.check(callBinding, throwOnFailure, 0);
+        if (!validOperandCount(callBinding.getOperandCount())) {
+            isValid = false;
+        }
+
+        for (int i = 1; i < callBinding.getOperandCount(); i += 2) {
+            boolean isValidKey = TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, i);
+            if (!isValidKey) {
+                isValid = false;
+            }
+        }
+
+        if (!isValid && throwOnFailure) {
+            throw callBinding.newValidationSignatureError();
+        }
+
+        return isValid;
     }
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.from(2);
+        return SqlOperandCountRanges.from(1);
+    }
+
+    @Override
+    public void unparse(final SqlWriter writer, final SqlCall call, final int leftPrec, final int rightPrec) {
+        final SqlWriter.Frame frame = writer.startFunCall(this.getName());
+        if (call.operandCount() == 1) {
+            writer.endFunCall(frame);
+            return;
+        }
+
+        for (int i = 1; i < call.operandCount(); i += 2) {
+            writer.sep(",");
+            writer.keyword("KEY");
+            call.operand(i).unparse(writer, leftPrec, rightPrec);
+            writer.keyword("VALUE");
+            call.operand(i + 1).unparse(writer, leftPrec, rightPrec);
+        }
+
+        final SqlJsonConstructorNullClause nullClause = (SqlJsonConstructorNullClause)
+                ((SqlLiteral) call.operand(0)).getValue();
+        switch (nullClause) {
+            case ABSENT_ON_NULL:
+                writer.keyword("ABSENT ON NULL");
+                break;
+            case NULL_ON_NULL:
+                writer.keyword("NULL ON NULL");
+                break;
+            default:
+                throw QueryException.error("Unknown SqlJsonConstructorNullClause constant: " + nullClause);
+        }
+
+        writer.endFunCall(frame);
+    }
+
+    private boolean validOperandCount(final int count) {
+        return (count % 2) == 1;
     }
 }
