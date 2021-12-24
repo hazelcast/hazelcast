@@ -453,7 +453,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] value);
+    GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -469,7 +469,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] value);
+    GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -485,7 +485,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value);
+    GenericRecordBuilder setArrayOfChar(@Nonnull String fieldName, @Nullable char[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -501,7 +501,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] value);
+    GenericRecordBuilder setArrayOfInt16(@Nonnull String fieldName, @Nullable short[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -517,7 +517,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] value);
+    GenericRecordBuilder setArrayOfInt32(@Nonnull String fieldName, @Nullable int[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -533,7 +533,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] value);
+    GenericRecordBuilder setArrayOfInt64(@Nonnull String fieldName, @Nullable long[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -549,7 +549,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] value);
+    GenericRecordBuilder setArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -565,7 +565,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] value);
+    GenericRecordBuilder setArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -581,7 +581,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value);
+    GenericRecordBuilder setArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -597,7 +597,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value);
+    GenericRecordBuilder setArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -613,7 +613,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value);
+    GenericRecordBuilder setArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -629,7 +629,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value);
+    GenericRecordBuilder setArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -645,7 +645,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value);
+    GenericRecordBuilder setArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -661,7 +661,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value);
+    GenericRecordBuilder setArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -677,7 +677,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value);
+    GenericRecordBuilder setArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -694,7 +694,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfStrings(@Nonnull String fieldName, @Nullable String[] value);
+    GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value);
 
     /**
      * Sets an array of Decimals
@@ -713,7 +713,7 @@ interface GenericRecordBuilder {
      * @see #setDecimal(String, BigDecimal)
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] value);
+    GenericRecordBuilder setArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
     /**
      * Sets an array of Time's
@@ -732,7 +732,7 @@ interface GenericRecordBuilder {
      * @see #setTime(String, LocalTime)
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value);
+    GenericRecordBuilder setArrayOfTime(@Nonnull String fieldName, @Nullable LocalTime[] value);
 
     /**
      * Sets an array of Date's
@@ -751,7 +751,7 @@ interface GenericRecordBuilder {
      * @see #setDate(String, LocalDate)
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value);
+    GenericRecordBuilder setArrayOfDate(@Nonnull String fieldName, @Nullable LocalDate[] value);
 
     /**
      * Sets an array of Timestamp's
@@ -770,7 +770,7 @@ interface GenericRecordBuilder {
      * @see #setTimestamp(String, LocalDateTime)
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
+    GenericRecordBuilder setArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
 
     /**
      * Sets an array of TimestampWithTimezone's
@@ -789,7 +789,7 @@ interface GenericRecordBuilder {
      * @see #setTimestampWithTimezone(String, OffsetDateTime)
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
+    GenericRecordBuilder setArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -808,5 +808,5 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value);
+    GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value);
 }

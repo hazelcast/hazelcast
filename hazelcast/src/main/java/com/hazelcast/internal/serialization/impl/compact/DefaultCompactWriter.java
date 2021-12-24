@@ -41,45 +41,45 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHO
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
 import static com.hazelcast.nio.serialization.FieldKind.INT8;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.INT32;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.INT64;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT8;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT32;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT32;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT64;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT16;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.INT16;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16S;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
 
 /**
  * Default implementation of the {@link CompactWriter} that writes
@@ -294,50 +294,50 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_INT8S, values, ObjectDataOutput::writeByteArray);
+    public void writeArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_INT8, values, ObjectDataOutput::writeByteArray);
     }
 
     @Override
-    public void writeArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] values) {
+    public void writeArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] values) {
         writeVariableSizeField(fieldName, ARRAY_OF_BOOLEANS, values, DefaultCompactWriter::writeBooleanBits);
     }
 
     @Override
-    public void writeArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_INT32S, values, ObjectDataOutput::writeIntArray);
+    public void writeArrayOfInt32(@Nonnull String fieldName, @Nullable int[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_INT32, values, ObjectDataOutput::writeIntArray);
     }
 
     @Override
-    public void writeArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_INT64S, values, ObjectDataOutput::writeLongArray);
+    public void writeArrayOfInt64(@Nonnull String fieldName, @Nullable long[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_INT64, values, ObjectDataOutput::writeLongArray);
     }
 
     @Override
-    public void writeArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_FLOAT64S, values, ObjectDataOutput::writeDoubleArray);
+    public void writeArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_FLOAT64, values, ObjectDataOutput::writeDoubleArray);
     }
 
     @Override
-    public void writeArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_FLOAT32S, values, ObjectDataOutput::writeFloatArray);
+    public void writeArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_FLOAT32, values, ObjectDataOutput::writeFloatArray);
     }
 
     @Override
-    public void writeArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_INT16S, values, ObjectDataOutput::writeShortArray);
+    public void writeArrayOfInt16(@Nonnull String fieldName, @Nullable short[] values) {
+        writeVariableSizeField(fieldName, ARRAY_OF_INT16, values, ObjectDataOutput::writeShortArray);
     }
 
     @Override
-    public void writeArrayOfStrings(@Nonnull String fieldName, @Nullable String[] values) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_STRINGS, values, ObjectDataOutput::writeString);
+    public void writeArrayOfString(@Nonnull String fieldName, @Nullable String[] values) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_STRING, values, ObjectDataOutput::writeString);
     }
 
     interface Writer<T> {
         void write(BufferObjectDataOutput out, T value) throws IOException;
     }
 
-    protected <T> void writeArrayOfVariableSizes(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
+    protected <T> void writeArrayOfVariableSize(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
                                                  @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
             setPositionAsNull(fieldName, fieldKind);
@@ -369,28 +369,28 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_DECIMALS, values, IOUtil::writeBigDecimal);
+    public void writeArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_DECIMAL, values, IOUtil::writeBigDecimal);
     }
 
     @Override
-    public void writeArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_TIMES, value, IOUtil::writeLocalTime);
+    public void writeArrayOfTime(@Nonnull String fieldName, @Nullable LocalTime[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_TIME, value, IOUtil::writeLocalTime);
     }
 
     @Override
-    public void writeArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_DATES, value, IOUtil::writeLocalDate);
+    public void writeArrayOfDate(@Nonnull String fieldName, @Nullable LocalDate[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_DATE, value, IOUtil::writeLocalDate);
     }
 
     @Override
-    public void writeArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_TIMESTAMPS, value, IOUtil::writeLocalDateTime);
+    public void writeArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_TIMESTAMP, value, IOUtil::writeLocalDateTime);
     }
 
     @Override
-    public void writeArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONES, value, IOUtil::writeOffsetDateTime);
+    public void writeArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE, value, IOUtil::writeOffsetDateTime);
     }
 
     protected void setPositionAsNull(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
@@ -424,13 +424,13 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public <T> void writeArrayOfCompacts(@Nonnull String fieldName, @Nullable T[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_COMPACTS, value,
+    public <T> void writeArrayOfCompact(@Nonnull String fieldName, @Nullable T[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
                 (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
-    public void writeArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_COMPACTS, value,
+    public void writeArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
@@ -470,38 +470,38 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
-    public void writeArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_INT8S, value, (Writer<Byte>) DataOutput::writeByte);
+    public void writeArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_INT8, value, (Writer<Byte>) DataOutput::writeByte);
     }
 
     @Override
-    public void writeArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_BOOLEANS, value, DataOutput::writeBoolean);
+    public void writeArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_BOOLEAN, value, DataOutput::writeBoolean);
     }
 
     @Override
-    public void writeArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_INT16S, value, (Writer<Short>) DataOutput::writeShort);
+    public void writeArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_INT16, value, (Writer<Short>) DataOutput::writeShort);
     }
 
     @Override
-    public void writeArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_INT32S, value, DataOutput::writeInt);
+    public void writeArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_INT32, value, DataOutput::writeInt);
     }
 
     @Override
-    public void writeArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_INT64S, value, DataOutput::writeLong);
+    public void writeArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_INT64, value, DataOutput::writeLong);
     }
 
     @Override
-    public void writeArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_FLOAT32S, value, DataOutput::writeFloat);
+    public void writeArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_FLOAT32, value, DataOutput::writeFloat);
     }
 
     @Override
-    public void writeArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value) {
-        writeArrayOfVariableSizes(fieldName, ARRAY_OF_NULLABLE_FLOAT64S, value, DataOutput::writeDouble);
+    public void writeArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_FLOAT64, value, DataOutput::writeDouble);
     }
 
     static void writeBooleanBits(BufferObjectDataOutput out, @Nullable boolean[] booleans) throws IOException {

@@ -83,43 +83,43 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord implem
 
     @Nullable
     @Override
-    public Boolean[] getArrayOfNullableBooleans(@Nonnull String fieldName) {
+    public Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Byte[] getArrayOfNullableInt8s(@Nonnull String fieldName) {
+    public Byte[] getArrayOfNullableInt8(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Double[] getArrayOfNullableFloat64s(@Nonnull String fieldName) {
+    public Double[] getArrayOfNullableFloat64(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Float[] getArrayOfNullableFloat32s(@Nonnull String fieldName) {
+    public Float[] getArrayOfNullableFloat32(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Integer[] getArrayOfNullableInt32s(@Nonnull String fieldName) {
+    public Integer[] getArrayOfNullableInt32(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Long[] getArrayOfNullableInt64s(@Nonnull String fieldName) {
+    public Long[] getArrayOfNullableInt64(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 
     @Nullable
     @Override
-    public Short[] getArrayOfNullableInt16s(@Nonnull String fieldName) {
+    public Short[] getArrayOfNullableInt16(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
 

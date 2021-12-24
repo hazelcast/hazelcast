@@ -217,9 +217,9 @@ public class CompactStreamSerializerTest {
                         String name = in.readString("n");
                         String status = in.readString("hs");
                         int age = in.readInt32("a");
-                        long[] ids = in.readArrayOfInt64s("ids");
+                        long[] ids = in.readArrayOfInt64("ids");
                         EmployeeDTO s = in.readCompact("s");
-                        EmployeeDTO[] ss = in.readArrayOfCompacts("ss", EmployeeDTO.class);
+                        EmployeeDTO[] ss = in.readArrayOfCompact("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, status == null ? null : HiringStatus.valueOf(status), ids, s, ss);
                     }
 
@@ -228,9 +228,9 @@ public class CompactStreamSerializerTest {
                         out.writeString("n", object.getName());
                         out.writeString("hs", object.getHiringStatus() == null ? null : object.getHiringStatus().name());
                         out.writeInt32("a", object.getZcode());
-                        out.writeArrayOfInt64s("ids", object.getIds());
+                        out.writeArrayOfInt64("ids", object.getIds());
                         out.writeCompact("s", object.getSingleEmployee());
-                        out.writeArrayOfCompacts("ss", object.getOtherEmployees());
+                        out.writeArrayOfCompact("ss", object.getOtherEmployees());
                     }
                 });
 

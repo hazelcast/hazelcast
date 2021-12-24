@@ -206,133 +206,133 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfGenericRecords(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+    public GenericRecordBuilder setArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         return set(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfInt8s(@Nonnull String fieldName, @Nullable byte[] value) {
+    public GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value) {
         return set(fieldName, value, FieldType.BYTE_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfBooleans(@Nonnull String fieldName, @Nullable boolean[] value) {
+    public GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value) {
         return set(fieldName, value, FieldType.BOOLEAN_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfChars(@Nonnull String fieldName, @Nullable char[] value) {
+    public GenericRecordBuilder setArrayOfChar(@Nonnull String fieldName, @Nullable char[] value) {
         return set(fieldName, value, FieldType.CHAR_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfInt32s(@Nonnull String fieldName, @Nullable int[] value) {
+    public GenericRecordBuilder setArrayOfInt32(@Nonnull String fieldName, @Nullable int[] value) {
         return set(fieldName, value, FieldType.INT_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfInt64s(@Nonnull String fieldName, @Nullable long[] value) {
+    public GenericRecordBuilder setArrayOfInt64(@Nonnull String fieldName, @Nullable long[] value) {
         return set(fieldName, value, FieldType.LONG_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfFloat64s(@Nonnull String fieldName, @Nullable double[] value) {
+    public GenericRecordBuilder setArrayOfFloat64(@Nonnull String fieldName, @Nullable double[] value) {
         return set(fieldName, value, FieldType.DOUBLE_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfFloat32s(@Nonnull String fieldName, @Nullable float[] value) {
+    public GenericRecordBuilder setArrayOfFloat32(@Nonnull String fieldName, @Nullable float[] value) {
         return set(fieldName, value, FieldType.FLOAT_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfInt16s(@Nonnull String fieldName, @Nullable short[] value) {
+    public GenericRecordBuilder setArrayOfInt16(@Nonnull String fieldName, @Nullable short[] value) {
         return set(fieldName, value, FieldType.SHORT_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableBooleans(@Nonnull String fieldName, @Nullable Boolean[] value) {
+    public GenericRecordBuilder setArrayOfNullableBoolean(@Nonnull String fieldName, @Nullable Boolean[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInt8s(@Nonnull String fieldName, @Nullable Byte[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt8(@Nonnull String fieldName, @Nullable Byte[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableFloat32s(@Nonnull String fieldName, @Nullable Float[] value) {
+    public GenericRecordBuilder setArrayOfNullableFloat32(@Nonnull String fieldName, @Nullable Float[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInt32s(@Nonnull String fieldName, @Nullable Integer[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt32(@Nonnull String fieldName, @Nullable Integer[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableFloat64s(@Nonnull String fieldName, @Nullable Double[] value) {
+    public GenericRecordBuilder setArrayOfNullableFloat64(@Nonnull String fieldName, @Nullable Double[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInt64s(@Nonnull String fieldName, @Nullable Long[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt64(@Nonnull String fieldName, @Nullable Long[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfNullableInt16s(@Nonnull String fieldName, @Nullable Short[] value) {
+    public GenericRecordBuilder setArrayOfNullableInt16(@Nonnull String fieldName, @Nullable Short[] value) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfStrings(@Nonnull String fieldName, @Nullable String[] value) {
+    public GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value) {
         return set(fieldName, value, FieldType.UTF_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfDecimals(@Nonnull String fieldName, @Nullable BigDecimal[] value) {
+    public GenericRecordBuilder setArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] value) {
         return set(fieldName, value, FieldType.DECIMAL_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfTimes(@Nonnull String fieldName, @Nullable LocalTime[] value) {
+    public GenericRecordBuilder setArrayOfTime(@Nonnull String fieldName, @Nullable LocalTime[] value) {
         return set(fieldName, value, FieldType.TIME_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfDates(@Nonnull String fieldName, @Nullable LocalDate[] value) {
+    public GenericRecordBuilder setArrayOfDate(@Nonnull String fieldName, @Nullable LocalDate[] value) {
         return set(fieldName, value, FieldType.DATE_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfTimestamps(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
+    public GenericRecordBuilder setArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] value) {
         return set(fieldName, value, FieldType.TIMESTAMP_ARRAY);
     }
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setArrayOfTimestampWithTimezones(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
+    public GenericRecordBuilder setArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
         return set(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 

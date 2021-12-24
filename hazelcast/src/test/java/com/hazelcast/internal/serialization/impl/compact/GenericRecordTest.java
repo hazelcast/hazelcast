@@ -217,12 +217,12 @@ public class GenericRecordTest {
     @Test
     public void testReadWriteCharArray() {
         assertThrows(UnsupportedOperationException.class, () -> {
-            compact("writeCharArray").setArrayOfChars("ca", new char[]{'c'});
+            compact("writeCharArray").setArrayOfChar("ca", new char[]{'c'});
         });
 
         assertThrows(UnsupportedOperationException.class, () -> {
             GenericRecord record = compact("readCharArray").build();
-            record.getArrayOfChars("ca");
+            record.getArrayOfChar("ca");
         });
     }
 

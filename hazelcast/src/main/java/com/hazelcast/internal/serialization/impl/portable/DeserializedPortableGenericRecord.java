@@ -70,7 +70,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
+    public GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName) {
         return get(fieldName, FieldType.PORTABLE_ARRAY);
     }
 
@@ -168,85 +168,85 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Override
     @Nullable
-    public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
+    public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
         return get(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
     @Nullable
-    public byte[] getArrayOfInt8s(@Nonnull String fieldName) {
+    public byte[] getArrayOfInt8(@Nonnull String fieldName) {
         return get(fieldName, FieldType.BYTE_ARRAY);
     }
 
     @Override
     @Nullable
-    public char[] getArrayOfChars(@Nonnull String fieldName) {
+    public char[] getArrayOfChar(@Nonnull String fieldName) {
         return get(fieldName, FieldType.CHAR_ARRAY);
     }
 
     @Override
     @Nullable
-    public double[] getArrayOfFloat64s(@Nonnull String fieldName) {
+    public double[] getArrayOfFloat64(@Nonnull String fieldName) {
         return get(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
     @Nullable
-    public float[] getArrayOfFloat32s(@Nonnull String fieldName) {
+    public float[] getArrayOfFloat32(@Nonnull String fieldName) {
         return get(fieldName, FieldType.FLOAT_ARRAY);
     }
 
     @Override
     @Nullable
-    public int[] getArrayOfInt32s(@Nonnull String fieldName) {
+    public int[] getArrayOfInt32(@Nonnull String fieldName) {
         return get(fieldName, FieldType.INT_ARRAY);
     }
 
     @Override
     @Nullable
-    public long[] getArrayOfInt64s(@Nonnull String fieldName) {
+    public long[] getArrayOfInt64(@Nonnull String fieldName) {
         return get(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override
     @Nullable
-    public short[] getArrayOfInt16s(@Nonnull String fieldName) {
+    public short[] getArrayOfInt16(@Nonnull String fieldName) {
         return get(fieldName, FieldType.SHORT_ARRAY);
     }
 
     @Override
     @Nullable
-    public String[] getArrayOfStrings(@Nonnull String fieldName) {
+    public String[] getArrayOfString(@Nonnull String fieldName) {
         return get(fieldName, FieldType.UTF_ARRAY);
     }
 
     @Override
     @Nullable
-    public BigDecimal[] getArrayOfDecimals(@Nonnull String fieldName) {
+    public BigDecimal[] getArrayOfDecimal(@Nonnull String fieldName) {
         return get(fieldName, FieldType.DECIMAL_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalTime[] getArrayOfTimes(@Nonnull String fieldName) {
+    public LocalTime[] getArrayOfTime(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIME_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalDate[] getArrayOfDates(@Nonnull String fieldName) {
+    public LocalDate[] getArrayOfDate(@Nonnull String fieldName) {
         return get(fieldName, FieldType.DATE_ARRAY);
     }
 
     @Override
     @Nullable
-    public LocalDateTime[] getArrayOfTimestamps(@Nonnull String fieldName) {
+    public LocalDateTime[] getArrayOfTimestamp(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP_ARRAY);
     }
 
     @Override
     @Nullable
-    public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
+    public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return get(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 
@@ -258,7 +258,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
-        boolean[] array = getArrayOfBooleans(fieldName);
+        boolean[] array = getArrayOfBoolean(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -268,7 +268,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Byte getInt8FromArray(@Nonnull String fieldName, int index) {
-        byte[] array = getArrayOfInt8s(fieldName);
+        byte[] array = getArrayOfInt8(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -278,7 +278,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
-        char[] array = getArrayOfChars(fieldName);
+        char[] array = getArrayOfChar(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -288,7 +288,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Double getFloat64FromArray(@Nonnull String fieldName, int index) {
-        double[] array = getArrayOfFloat64s(fieldName);
+        double[] array = getArrayOfFloat64(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -298,7 +298,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Float getFloat32FromArray(@Nonnull String fieldName, int index) {
-        float[] array = getArrayOfFloat32s(fieldName);
+        float[] array = getArrayOfFloat32(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -308,7 +308,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Integer getInt32FromArray(@Nonnull String fieldName, int index) {
-        int[] array = getArrayOfInt32s(fieldName);
+        int[] array = getArrayOfInt32(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -318,7 +318,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Long getInt64FromArray(@Nonnull String fieldName, int index) {
-        long[] array = getArrayOfInt64s(fieldName);
+        long[] array = getArrayOfInt64(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -328,7 +328,7 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public Short getInt16FromArray(@Nonnull String fieldName, int index) {
-        short[] array = getArrayOfInt16s(fieldName);
+        short[] array = getArrayOfInt16(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }
@@ -338,13 +338,13 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public String getStringFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfStrings(fieldName), index);
+        return getFromArray(getArrayOfString(fieldName), index);
     }
 
     @Nullable
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfGenericRecords(fieldName), index);
+        return getFromArray(getArrayOfGenericRecord(fieldName), index);
     }
 
     @Nullable
@@ -355,8 +355,8 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nullable
     @Override
-    public <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType) {
-        return (T[]) getArrayOfGenericRecords(fieldName);
+    public <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType) {
+        return (T[]) getArrayOfGenericRecord(fieldName);
     }
 
     @Nullable
@@ -368,31 +368,31 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Nullable
     @Override
     public BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfDecimals(fieldName), index);
+        return getFromArray(getArrayOfDecimal(fieldName), index);
     }
 
     @Nullable
     @Override
     public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfTimes(fieldName), index);
+        return getFromArray(getArrayOfTime(fieldName), index);
     }
 
     @Nullable
     @Override
     public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfDates(fieldName), index);
+        return getFromArray(getArrayOfDate(fieldName), index);
     }
 
     @Nullable
     @Override
     public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfTimestamps(fieldName), index);
+        return getFromArray(getArrayOfTimestamp(fieldName), index);
     }
 
     @Nullable
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
-        return getFromArray(getArrayOfTimestampWithTimezones(fieldName), index);
+        return getFromArray(getArrayOfTimestampWithTimezone(fieldName), index);
     }
 
     private <T> T get(@Nonnull String fieldName, FieldType fieldType) {

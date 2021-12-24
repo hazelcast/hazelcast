@@ -61,13 +61,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setInt64("long", 4444L);
         builder.setFloat32("float", 8321.321F);
         builder.setFloat64("double", 41231.32);
-        builder.setArrayOfBooleans("booleans", new boolean[]{true, false});
-        builder.setArrayOfInt8s("bytes", new byte[]{1, 2});
-        builder.setArrayOfInt16s("shorts", new short[]{1, 4});
-        builder.setArrayOfInt32s("ints", new int[]{1, 8});
-        builder.setArrayOfInt64s("longs", new long[]{1, 4444L});
-        builder.setArrayOfFloat32s("floats", new float[]{1, 8321.321F});
-        builder.setArrayOfFloat64s("doubles", new double[]{41231.32, 2});
+        builder.setArrayOfBoolean("booleans", new boolean[]{true, false});
+        builder.setArrayOfInt8("bytes", new byte[]{1, 2});
+        builder.setArrayOfInt16("shorts", new short[]{1, 4});
+        builder.setArrayOfInt32("ints", new int[]{1, 8});
+        builder.setArrayOfInt64("longs", new long[]{1, 4444L});
+        builder.setArrayOfFloat32("floats", new float[]{1, 8321.321F});
+        builder.setArrayOfFloat64("doubles", new double[]{41231.32, 2});
         GenericRecord record = builder.build();
 
         assertTrue(record instanceof DeserializedGenericRecord);
@@ -90,13 +90,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         assertEquals(Float.valueOf(8321.321F), record.getNullableFloat32("float"));
         assertEquals(Double.valueOf(41231.32), record.getNullableFloat64("double"));
 
-        assertArrayEquals(new Boolean[]{true, false}, record.getArrayOfNullableBooleans("booleans"));
-        assertArrayEquals(new Byte[]{1, 2}, record.getArrayOfNullableInt8s("bytes"));
-        assertArrayEquals(new Short[]{1, 4}, record.getArrayOfNullableInt16s("shorts"));
-        assertArrayEquals(new Integer[]{1, 8}, record.getArrayOfNullableInt32s("ints"));
-        assertArrayEquals(new Long[]{1L, 4444L}, record.getArrayOfNullableInt64s("longs"));
-        assertArrayEquals(new Float[]{1F, 8321.321F}, record.getArrayOfNullableFloat32s("floats"));
-        assertArrayEquals(new Double[]{41231.32, 2.0}, record.getArrayOfNullableFloat64s("doubles"));
+        assertArrayEquals(new Boolean[]{true, false}, record.getArrayOfNullableBoolean("booleans"));
+        assertArrayEquals(new Byte[]{1, 2}, record.getArrayOfNullableInt8("bytes"));
+        assertArrayEquals(new Short[]{1, 4}, record.getArrayOfNullableInt16("shorts"));
+        assertArrayEquals(new Integer[]{1, 8}, record.getArrayOfNullableInt32("ints"));
+        assertArrayEquals(new Long[]{1L, 4444L}, record.getArrayOfNullableInt64("longs"));
+        assertArrayEquals(new Float[]{1F, 8321.321F}, record.getArrayOfNullableFloat32("floats"));
+        assertArrayEquals(new Double[]{41231.32, 2.0}, record.getArrayOfNullableFloat64("doubles"));
     }
 
     @Test
@@ -109,13 +109,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setNullableInt64("long", 4444L);
         builder.setNullableFloat32("float", 8321.321F);
         builder.setNullableFloat64("double", 41231.32);
-        builder.setArrayOfNullableBooleans("booleans", new Boolean[]{true, false});
-        builder.setArrayOfNullableInt8s("bytes", new Byte[]{1, 2});
-        builder.setArrayOfNullableInt16s("shorts", new Short[]{1, 2});
-        builder.setArrayOfNullableInt32s("ints", new Integer[]{1, 8});
-        builder.setArrayOfNullableInt64s("longs", new Long[]{1L, 4444L});
-        builder.setArrayOfNullableFloat32s("floats", new Float[]{1F, 8321.321F});
-        builder.setArrayOfNullableFloat64s("doubles", new Double[]{41231.32, 2.0});
+        builder.setArrayOfNullableBoolean("booleans", new Boolean[]{true, false});
+        builder.setArrayOfNullableInt8("bytes", new Byte[]{1, 2});
+        builder.setArrayOfNullableInt16("shorts", new Short[]{1, 2});
+        builder.setArrayOfNullableInt32("ints", new Integer[]{1, 8});
+        builder.setArrayOfNullableInt64("longs", new Long[]{1L, 4444L});
+        builder.setArrayOfNullableFloat32("floats", new Float[]{1F, 8321.321F});
+        builder.setArrayOfNullableFloat64("doubles", new Double[]{41231.32, 2.0});
         GenericRecord record = builder.build();
 
         assertTrue(record instanceof DeserializedGenericRecord);
@@ -138,13 +138,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         assertEquals(8321.321F, record.getFloat32("float"), 0);
         assertEquals(41231.32, record.getFloat64("double"), 0);
 
-        assertArrayEquals(new boolean[]{true, false}, record.getArrayOfBooleans("booleans"));
-        assertArrayEquals(new byte[]{1, 2}, record.getArrayOfInt8s("bytes"));
-        assertArrayEquals(new short[]{1, 2}, record.getArrayOfInt16s("shorts"));
-        assertArrayEquals(new int[]{1, 8}, record.getArrayOfInt32s("ints"));
-        assertArrayEquals(new long[]{1L, 4444L}, record.getArrayOfInt64s("longs"));
-        assertArrayEquals(new float[]{1F, 8321.321F}, record.getArrayOfFloat32s("floats"), 0);
-        assertArrayEquals(new double[]{41231.32, 2.0}, record.getArrayOfFloat64s("doubles"), 0);
+        assertArrayEquals(new boolean[]{true, false}, record.getArrayOfBoolean("booleans"));
+        assertArrayEquals(new byte[]{1, 2}, record.getArrayOfInt8("bytes"));
+        assertArrayEquals(new short[]{1, 2}, record.getArrayOfInt16("shorts"));
+        assertArrayEquals(new int[]{1, 8}, record.getArrayOfInt32("ints"));
+        assertArrayEquals(new long[]{1L, 4444L}, record.getArrayOfInt64("longs"));
+        assertArrayEquals(new float[]{1F, 8321.321F}, record.getArrayOfFloat32("floats"), 0);
+        assertArrayEquals(new double[]{41231.32, 2.0}, record.getArrayOfFloat64("doubles"), 0);
     }
 
     @Test
@@ -157,13 +157,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setNullableInt64("long", null);
         builder.setNullableFloat32("float", null);
         builder.setNullableFloat64("double", null);
-        builder.setArrayOfNullableBooleans("booleans", new Boolean[]{null, false});
-        builder.setArrayOfNullableInt8s("bytes", new Byte[]{1, null});
-        builder.setArrayOfNullableInt16s("shorts", new Short[]{null, 2});
-        builder.setArrayOfNullableInt32s("ints", new Integer[]{1, null});
-        builder.setArrayOfNullableInt64s("longs", new Long[]{null, 2L});
-        builder.setArrayOfNullableFloat32s("floats", new Float[]{null, 2F});
-        builder.setArrayOfNullableFloat64s("doubles", new Double[]{1.0, null});
+        builder.setArrayOfNullableBoolean("booleans", new Boolean[]{null, false});
+        builder.setArrayOfNullableInt8("bytes", new Byte[]{1, null});
+        builder.setArrayOfNullableInt16("shorts", new Short[]{null, 2});
+        builder.setArrayOfNullableInt32("ints", new Integer[]{1, null});
+        builder.setArrayOfNullableInt64("longs", new Long[]{null, 2L});
+        builder.setArrayOfNullableFloat32("floats", new Float[]{null, 2F});
+        builder.setArrayOfNullableFloat64("doubles", new Double[]{1.0, null});
         GenericRecord record = builder.build();
 
         assertReadNullAsPrimitiveThrowsException(record);
@@ -184,13 +184,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         assertThrows(HazelcastSerializationException.class, () -> record.getFloat32("float"));
         assertThrows(HazelcastSerializationException.class, () -> record.getFloat64("double"));
 
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfBooleans("booleans"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt8s("bytes"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt16s("shorts"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt32s("ints"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt64s("longs"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfFloat32s("floats"));
-        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfFloat64s("doubles"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfBoolean("booleans"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt8("bytes"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt16("shorts"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt32("ints"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfInt64("longs"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfFloat32("floats"));
+        assertThrows(HazelcastSerializationException.class, () -> record.getArrayOfFloat64("doubles"));
     }
 
     @Test
@@ -205,13 +205,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setNullableInt64("long_", 4444L);
         builder.setNullableFloat32("float_", 8321.321F);
         builder.setNullableFloat64("double_", 41231.32);
-        builder.setArrayOfNullableBooleans("booleans", new Boolean[]{true, false});
-        builder.setArrayOfNullableInt8s("bytes", new Byte[]{1, 2});
-        builder.setArrayOfNullableInt16s("shorts", new Short[]{1, 4});
-        builder.setArrayOfNullableInt32s("ints", new Integer[]{1, 8});
-        builder.setArrayOfNullableInt64s("longs", new Long[]{1L, 4444L});
-        builder.setArrayOfNullableFloat32s("floats", new Float[]{1F, 8321.321F});
-        builder.setArrayOfNullableFloat64s("doubles", new Double[]{41231.32, 2.0});
+        builder.setArrayOfNullableBoolean("booleans", new Boolean[]{true, false});
+        builder.setArrayOfNullableInt8("bytes", new Byte[]{1, 2});
+        builder.setArrayOfNullableInt16("shorts", new Short[]{1, 4});
+        builder.setArrayOfNullableInt32("ints", new Integer[]{1, 8});
+        builder.setArrayOfNullableInt64("longs", new Long[]{1L, 4444L});
+        builder.setArrayOfNullableFloat32("floats", new Float[]{1F, 8321.321F});
+        builder.setArrayOfNullableFloat64("doubles", new Double[]{41231.32, 2.0});
         builder.setBoolean("nullableBoolean", true);
         builder.setInt8("nullableByte", (byte) 4);
         builder.setInt16("nullableShort", (short) 6);
@@ -219,13 +219,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setInt64("nullableLong", 4444L);
         builder.setFloat32("nullableFloat", 8321.321F);
         builder.setFloat64("nullableDouble", 41231.32);
-        builder.setArrayOfBooleans("nullableBooleans", new boolean[]{true, false});
-        builder.setArrayOfInt8s("nullableBytes", new byte[]{1, 2});
-        builder.setArrayOfInt16s("nullableShorts", new short[]{1, 4});
-        builder.setArrayOfInt32s("nullableInts", new int[]{1, 8});
-        builder.setArrayOfInt64s("nullableLongs", new long[]{1L, 4444L});
-        builder.setArrayOfFloat32s("nullableFloats", new float[]{1F, 8321.321F});
-        builder.setArrayOfFloat64s("nullableDoubles", new double[]{41231.32, 2.0});
+        builder.setArrayOfBoolean("nullableBooleans", new boolean[]{true, false});
+        builder.setArrayOfInt8("nullableBytes", new byte[]{1, 2});
+        builder.setArrayOfInt16("nullableShorts", new short[]{1, 4});
+        builder.setArrayOfInt32("nullableInts", new int[]{1, 8});
+        builder.setArrayOfInt64("nullableLongs", new long[]{1L, 4444L});
+        builder.setArrayOfFloat32("nullableFloats", new float[]{1F, 8321.321F});
+        builder.setArrayOfFloat64("nullableDoubles", new double[]{41231.32, 2.0});
         GenericRecord record = builder.build();
 
         Data data = serializationService.toData(record);

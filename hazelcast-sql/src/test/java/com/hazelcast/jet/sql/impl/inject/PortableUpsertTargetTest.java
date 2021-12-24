@@ -232,152 +232,152 @@ public class PortableUpsertTargetTest {
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfGenericRecords("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfGenericRecord("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(),
                         new GenericRecord[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfGenericRecords("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfGenericRecord("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBooleans("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBoolean("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(),
                         new boolean[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBooleans("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfBoolean("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
                         new byte[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt8("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
                         new short[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt16("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfChars("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfChar("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(),
                         new char[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfChars("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfChar("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
                         new int[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt32("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
                         new long[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfInt64("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
                         new float[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat32("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
                         new double[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64s("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfFloat64("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDecimals("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDecimal("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(),
                         new BigDecimal[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDecimals("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDecimal("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfStrings("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfString("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(),
                         new String[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfStrings("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfString("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimes("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTime("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(),
                         new LocalTime[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimes("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTime("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDates("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDate("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(),
                         new LocalDate[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDates("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfDate("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestamps("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestamp("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(),
                         new LocalDateTime[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestamps("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestamp("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(),
                         null,
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestampWithTimezones("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestampWithTimezone("object")
                 },
                 new Object[]{
                         new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(),
                         new OffsetDateTime[0],
-                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestampWithTimezones("object")
+                        (Function<InternalGenericRecord, Object>) record -> record.getArrayOfTimestampWithTimezone("object")
                 }
         };
     }

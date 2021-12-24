@@ -152,7 +152,7 @@ public interface InternalGenericRecord extends GenericRecord {
     <T> T getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link GenericRecord#getArrayOfGenericRecords(String)} (String)}, but in deserialized form.
+     * Reads same value {@link GenericRecord#getArrayOfGenericRecord(String)} (String)}, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -161,7 +161,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
-    <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType);
+    <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.

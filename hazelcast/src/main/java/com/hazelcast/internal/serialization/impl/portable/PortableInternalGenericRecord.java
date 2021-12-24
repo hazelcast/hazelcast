@@ -250,7 +250,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public boolean[] getArrayOfBooleans(@Nonnull String fieldName) {
+    public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
@@ -267,7 +267,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public byte[] getArrayOfInt8s(@Nonnull String fieldName) {
+    public byte[] getArrayOfInt8(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
@@ -285,7 +285,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public char[] getArrayOfChars(@Nonnull String fieldName) {
+    public char[] getArrayOfChar(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
@@ -302,7 +302,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public double[] getArrayOfFloat64s(@Nonnull String fieldName) {
+    public double[] getArrayOfFloat64(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
@@ -319,7 +319,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public float[] getArrayOfFloat32s(@Nonnull String fieldName) {
+    public float[] getArrayOfFloat32(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
@@ -336,7 +336,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public int[] getArrayOfInt32s(@Nonnull String fieldName) {
+    public int[] getArrayOfInt32(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.INT_ARRAY);
@@ -353,7 +353,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public long[] getArrayOfInt64s(@Nonnull String fieldName) {
+    public long[] getArrayOfInt64(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.LONG_ARRAY);
@@ -370,7 +370,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public short[] getArrayOfInt16s(@Nonnull String fieldName) {
+    public short[] getArrayOfInt16(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
@@ -387,7 +387,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public String[] getArrayOfStrings(@Nonnull String fieldName) {
+    public String[] getArrayOfString(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.UTF_ARRAY);
@@ -437,27 +437,27 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public BigDecimal[] getArrayOfDecimals(@Nonnull String fieldName) {
+    public BigDecimal[] getArrayOfDecimal(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
     @Override
-    public LocalTime[] getArrayOfTimes(@Nonnull String fieldName) {
+    public LocalTime[] getArrayOfTime(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, PortableUtil::readLocalTime);
     }
 
     @Override
-    public LocalDate[] getArrayOfDates(@Nonnull String fieldName) {
+    public LocalDate[] getArrayOfDate(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, PortableUtil::readLocalDate);
     }
 
     @Override
-    public LocalDateTime[] getArrayOfTimestamps(@Nonnull String fieldName) {
+    public LocalDateTime[] getArrayOfTimestamp(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, PortableUtil::readLocalDateTime);
     }
 
     @Override
-    public OffsetDateTime[] getArrayOfTimestampWithTimezones(@Nonnull String fieldName) {
+    public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
                 PortableUtil::readOffsetDateTime);
     }
@@ -524,7 +524,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public GenericRecord[] getArrayOfGenericRecords(@Nonnull String fieldName) {
+    public GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName) {
         return readNestedArray(fieldName, GenericRecord[]::new, true);
     }
 
@@ -859,7 +859,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
-    public <T> T[] getArrayOfObjects(@Nonnull String fieldName, Class<T> componentType) {
+    public <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType) {
         return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), false);
     }
 
