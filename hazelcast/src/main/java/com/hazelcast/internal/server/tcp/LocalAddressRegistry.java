@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,11 +40,12 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 /**
  * A LocalAddressRegistry contains maps to store `UUID -> Addresses`
  * and its reverse `Address->UUID` mappings which is used to manage
- * multiple addresses of a Hazelcast member.
+ * addresses of a Hazelcast instance.
  */
 public class LocalAddressRegistry {
     private final Map<Address, UUID> addressToUuid;
     private final Map<UUID, Pair> uuidToAddresses;
+    private final ILogger logger;
 
     // Since the requested lifecycle of local member's uuid and addresses are slightly different
     // from the remote ones, I manage these separately.
@@ -54,18 +56,21 @@ public class LocalAddressRegistry {
     protected LocalAddressRegistry() {
         this.addressToUuid = new ConcurrentHashMap<>();
         this.uuidToAddresses = new ConcurrentHashMap<>();
+        this.logger = null;
     }
 
     public LocalAddressRegistry(Node node, AddressPicker addressPicker) {
-        this();
+        this.addressToUuid = new ConcurrentHashMap<>();
+        this.uuidToAddresses = new ConcurrentHashMap<>();
+        this.logger = node.getLogger(LocalAddressRegistry.class);
         registerLocalAddresses(node.getThisUuid(), addressPicker);
     }
 
     /**
-     * Binds a set of address to given member uuid. While registering these
+     * Binds a set of address to given instance uuid. While registering these
      * addresses, we use the LinkedAddresses, it stores one of these addresses
      * as the primary address.
-     * We count the registrations made to the same member uuid, and we require
+     * We count the registrations made to the same instance uuid, and we require
      * to removal as much as this registration count in order to delete a
      * registry entry. If multiple registration is performed on the same uuid
      * (it can happen when there are multiple connections between the members),
@@ -82,15 +87,15 @@ public class LocalAddressRegistry {
      * registration stale and remove it completely. In this case, we reset the
      * registration count to 1.
      *
-     * @param memberUuid member uuid
+     * @param instanceUuid the uuid of instance (member or client)
      * @param linkedAddresses a set of addresses
      */
-    public void register(@Nonnull UUID memberUuid, @Nonnull LinkedAddresses linkedAddresses) {
+    public void register(@Nonnull UUID instanceUuid, @Nonnull LinkedAddresses linkedAddresses) {
         // If the old linked addresses set and the new one intersect, suppose
         // that the new ones are additional addresses and add them into old
         // address set. Otherwise, If there is no intersection between these
         // two sets, I'll consider the old addresses as stale and remove them.
-        uuidToAddresses.compute(memberUuid, (uuid, linkedAddressesRegistrationCountPair) -> {
+        uuidToAddresses.compute(instanceUuid, (uuid, linkedAddressesRegistrationCountPair) -> {
             if (linkedAddressesRegistrationCountPair == null) {
                 linkedAddressesRegistrationCountPair = new Pair(linkedAddresses, new AtomicInteger(1));
             } else {
@@ -107,14 +112,18 @@ public class LocalAddressRegistry {
                     previousAddresses.getAllAddresses().forEach(address -> addressToUuid.remove(address, uuid));
                 }
             }
-            linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, memberUuid));
-
+            linkedAddresses.getAllAddresses().forEach(address -> addressToUuid.put(address, instanceUuid));
+            if (logger.isFinestEnabled()) {
+                logger.finest(linkedAddresses + " registered for the instance uuid=" + instanceUuid
+                        + " currently all registered addresses for this instance uuid: "
+                        + linkedAddressesRegistrationCountPair.getAddresses());
+            }
             return linkedAddressesRegistrationCountPair;
         });
     }
 
     /**
-     * Try to remove the registry entry for given member uuid and primary address.
+     * Try to remove the registry entry for given instance uuid and primary address.
      * To make sure not delete a new entry of a rejoined member with the same uuid
      * by a stale connection close event, both member uuid and primary address of
      * the connection that was closed is checked if it matches with the entry inside
@@ -125,12 +134,12 @@ public class LocalAddressRegistry {
      * keep track the number of active connections belongs to this member uuid entry
      * and remove if there is no active connection to this member uuid.
      *
-     * @param memberUuid      member uuid to remove the registration entry
-     * @param primaryAddress  primary member address which is set as a Connection#remoteAddress
+     * @param instanceUuid    instance uuid of which we try to remove its registration entry
+     * @param primaryAddress  primary address which is set as a Connection#remoteAddress
      *                       to remove the registration entry
      */
-    public void tryRemoveRegistration(@Nonnull UUID memberUuid, @Nonnull Address primaryAddress) {
-        uuidToAddresses.computeIfPresent(memberUuid, (uuid, linkedAddressesRegistrationCountPair) -> {
+    public void tryRemoveRegistration(@Nonnull UUID instanceUuid, @Nonnull Address primaryAddress) {
+        uuidToAddresses.computeIfPresent(instanceUuid, (uuid, linkedAddressesRegistrationCountPair) -> {
             LinkedAddresses addresses = linkedAddressesRegistrationCountPair.getAddresses();
             if (addresses.contains(primaryAddress)) {
                 AtomicInteger registrationCount = linkedAddressesRegistrationCountPair.getRegistrationCount();
@@ -140,9 +149,13 @@ public class LocalAddressRegistry {
                     Iterator<UUID> iterator = addressToUuid.values().iterator();
                     while (iterator.hasNext()) {
                         UUID currUuid = iterator.next();
-                        if (currUuid.equals(memberUuid)) {
+                        if (currUuid.equals(instanceUuid)) {
                             iterator.remove();
                         }
+                    }
+                    if (logger.isFineEnabled()) {
+                        logger.fine(addresses + " previously registered for the instance uuid=" + instanceUuid
+                                + " are removed from the registry");
                     }
                     // remove the entry
                     return null;
@@ -154,10 +167,10 @@ public class LocalAddressRegistry {
 
     /**
      * If this address or its resolved IP address has been registered before,
-     * it returns the member uuid corresponding to this address.
-     * @param address hz member address
-     * @return the registered member uuid corresponds to given member address,
-     *  null if the address isn't registered
+     * it returns the instance uuid corresponding to this address.
+     * @param address address of hz instance
+     * @return the registered instance uuid corresponds to given address,
+     *          null if the address is not registered
      */
     @Nullable
     public UUID uuidOf(@Nonnull Address address) {
@@ -174,10 +187,10 @@ public class LocalAddressRegistry {
     }
 
     /**
-     * If this member uuid and its addresses has been registered before, it returns
-     * the addresses corresponding to this member uuid.
-     * @param uuid member uuid
-     * @return the registered member addresses corresponds to given member uuid
+     * If this instance uuid and its addresses has been registered before, it returns
+     * the addresses corresponding to this instance uuid.
+     * @param uuid instance uuid
+     * @return the registered addresses corresponds to given instance uuid
      */
     @Nullable
     public LinkedAddresses linkedAddressesOf(@Nonnull UUID uuid) {
@@ -189,10 +202,10 @@ public class LocalAddressRegistry {
     }
 
     /**
-     * If this member uuid and its addresses has been registered before, it returns
-     * the primary address corresponding to this member uuid.
-     * @param uuid member uuid
-     * @return the primary address for the member corresponds to given member uuid
+     * If this instance uuid and its addresses has been registered before, it returns
+     * the primary address corresponding to this instance uuid.
+     * @param uuid instance uuid
+     * @return the primary address for the instance corresponds to given uuid
      */
     @Nullable
     public Address getPrimaryAddress(@Nonnull UUID uuid) {
@@ -232,6 +245,9 @@ public class LocalAddressRegistry {
                     ignore(e);
                 }
             }
+        }
+        if (logger.isFineEnabled()) {
+            logger.fine(addresses + " are registered for the local member");
         }
         localUuid = thisUuid;
         localAddresses = addresses;

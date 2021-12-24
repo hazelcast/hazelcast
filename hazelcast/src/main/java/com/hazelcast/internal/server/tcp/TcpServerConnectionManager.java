@@ -202,12 +202,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                     }
                 }
                 addressRegistry.register(remoteUuid, addressesToRegister);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Registered the addresses: " + addressesToRegister
-                            + " for the member uuid=" + remoteUuid);
-                }
             } else {
-                // register the client endpoint uuid and its address to the address registry
+                // for the sake of completeness, register the client endpoint uuid and its address
                 addressRegistry.register(remoteUuid, new LinkedAddresses(primaryAddress));
             }
             plane.putConnection(remoteUuid, connection);
