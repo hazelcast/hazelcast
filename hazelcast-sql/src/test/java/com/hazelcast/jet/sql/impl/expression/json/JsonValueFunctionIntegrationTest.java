@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -200,19 +199,16 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
     @Test
     public void test_invalidJsonPath() {
-        createMapping("test", Long.class, ObjectWithJson.class);
+        createMapping("test", Long.class, String.class);
 
-        instance().getSql().execute("INSERT INTO test (__key, jsonValue) VALUES (1, '[1,2,3]')");
+        instance().getSql().execute("INSERT INTO test (__key, this) VALUES (1, '[1,2,3]')");
 
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, column 0");
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 1 to 2");
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("SQL/JSON path expression cannot be null");
     }
 
     @Test
@@ -266,6 +262,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         test.put(1L, new HazelcastJsonValue(serializedValue));
     }
 
+    @SuppressWarnings("unused")
     private static class MultiTypeObject {
         public Byte byteField = Byte.MAX_VALUE;
         public Short shortField = Short.MAX_VALUE;
@@ -276,10 +273,5 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         public Float floatField = 8.1f;
         public Double doubleField = 9.123456789012345e50;
         public BigDecimal bigDecimalField = new BigDecimal("1e1000");
-    }
-
-    public static class ObjectWithJson implements Serializable {
-        public String jsonValue;
-        public String jsonPath;
     }
 }
