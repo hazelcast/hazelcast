@@ -74,7 +74,7 @@ class TranslateToPublicAddressProvider {
         if (publicIpEnabledProperty == null) {
             SSLConfig sslConfig = config.getSSLConfig();
             //When ssl is enabled, we don't want to check if addresses are accessible and return false with a log.
-            // Because when try the check if addresses are reachable, because of SSL handshakes the members prints
+            // Because when client tries to check if addresses are reachable, because of SSL handshakes the members prints
             // too many warnings which will alarm the users even if the behaviour is expected.
             if (sslConfig != null && sslConfig.isEnabled()) {
                 if (logger.isFineEnabled()) {
