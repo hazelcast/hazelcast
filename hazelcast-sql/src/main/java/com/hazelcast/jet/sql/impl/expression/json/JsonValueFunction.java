@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
 
@@ -103,11 +101,11 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         final Object defaultOnError = operands[3].eval(row, context);
 
         final Object operand0 = operands[0].eval(row, context);
-        final String json = operand0 instanceof HazelcastJsonValue
+        String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        if (isNullOrEmpty(json)) {
-            return onEmptyResponse(onEmpty, defaultOnEmpty);
+        if (json == null) {
+            json = "";
         }
 
         final JsonPath jsonPath;
@@ -117,29 +115,35 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
         }
 
-        Exception exception = null;
-        T result = null;
+        Collection<Object> resultColl;
         try {
-            result = execute(json, jsonPath);
-        } catch (Exception evalException) {
-            exception = evalException;
+            resultColl = JsonPathUtil.read(json, jsonPath);
+        } catch (Exception e) {
+            return onErrorResponse(e, defaultOnError);
         }
 
-        if (result != null) {
-            return result;
+        if (resultColl.isEmpty()) {
+            return onEmptyResponse(defaultOnEmpty);
         }
 
-        if (exception != null) {
-            return onErrorResponse(onError, exception, defaultOnError);
+        if (resultColl.size() > 1) {
+            throw QueryException.error("JSON_VALUE evaluated to multiple values");
         }
 
-        return onEmptyResponse(onEmpty, defaultOnEmpty);
+        Object onlyResult = resultColl.iterator().next();
+        if (JsonPathUtil.isArrayOrObject(onlyResult)) {
+            return onErrorResponse(QueryException.error("Result of JSON_VALUE cannot be array or object"), defaultOnError);
+        }
+        @SuppressWarnings("unchecked")
+        T result = (T) convertResultType(onlyResult);
+        return result;
     }
 
-    private T onEmptyResponse(SqlJsonValueEmptyOrErrorBehavior onEmpty, Object defaultValue) {
+    @SuppressWarnings("unchecked")
+    private T onEmptyResponse(Object defaultValue) {
         switch (onEmpty) {
             case ERROR:
-                throw QueryException.error("JSON argument is empty");
+                throw QueryException.error("JSON_VALUE evaluated to no value");
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
@@ -148,7 +152,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
     }
 
-    private T onErrorResponse(SqlJsonValueEmptyOrErrorBehavior onError, Exception exception, Object defaultValue) {
+    @SuppressWarnings("unchecked")
+    private T onErrorResponse(Exception exception, Object defaultValue) {
         switch (onError) {
             case ERROR:
                 throw QueryException.error("JSON_VALUE failed: " + exception, exception);
@@ -158,22 +163,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             default:
                 return null;
         }
-    }
-
-    private T execute(final String json, final JsonPath path) {
-        final Collection<Object> resultColl = JsonPathUtil.read(json, path);
-        if (resultColl.isEmpty()) {
-            return null;
-        }
-        if (resultColl.size() > 1) {
-            throw QueryException.error("JSON_VALUE evaluated to multiple values");
-        }
-        Object result = resultColl.iterator().next();
-
-        if (JsonPathUtil.isArrayOrObject(result)) {
-            throw QueryException.error("Result of JSON_VALUE can not be array or object");
-        }
-        return (T) convertResultType(result);
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")

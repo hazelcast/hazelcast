@@ -113,7 +113,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSON argument is empty");
+                .hasMessageContaining("JSON_VALUE evaluated to no value");
 
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test WHERE __key = 2"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
@@ -150,7 +150,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
+                .hasMessageContaining("Result of JSON_VALUE cannot be array or object");
     }
 
     @Test
@@ -163,7 +163,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
+                .hasMessageContaining("Result of JSON_VALUE cannot be array or object");
     }
 
     @Test
@@ -223,7 +223,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> query("SELECT JSON_VALUE('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("SQL/JSON path expression cannot be null");
-        assertNull(querySingleValue("SELECT JSON_VALUE(null, 'foo')"));
+        assertNull(querySingleValue("SELECT JSON_VALUE(null, '$.foo')"));
         assertNull(querySingleValue("SELECT JSON_VALUE('bad json', '$' default null on error)"));
     }
 
@@ -251,7 +251,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> query(
                 "SELECT JSON_VALUE(this, '$.nonExistingProperty' ERROR ON EMPTY DEFAULT 2 ON ERROR) "
                         + "AS c1 FROM test WHERE __key = 1"
-        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("JSON argument is empty");
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("JSON_VALUE evaluated to no value");
     }
 
     private void initMultiTypeObject() {
