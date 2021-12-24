@@ -18,20 +18,22 @@ package com.hazelcast.instance;
 
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.memory.DefaultMemoryStats;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.Server;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
 import org.mockito.ArgumentMatchers;
@@ -41,6 +43,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,12 +76,18 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.createService(MapService.class)).thenReturn(mock(MapService.class));
         when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
         when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
+        when(nodeExtension.createService(eq(ClusterWideConfigurationService.class), any()))
+                .thenAnswer(
+                        invocation -> new ClusterWideConfigurationService(
+                                (NodeEngine) invocation.getArguments()[1],
+                                mock(DynamicConfigListener.class)
+                        )
+                );
         when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
         when(nodeExtension.isStartCompleted()).thenReturn(true);
         when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
         when(nodeExtension.getMemoryStats()).thenReturn(new DefaultMemoryStats());
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
-        when(nodeExtension.createDynamicConfigListener()).thenReturn(mock(DynamicConfigListener.class));
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
         when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         return nodeExtension;
