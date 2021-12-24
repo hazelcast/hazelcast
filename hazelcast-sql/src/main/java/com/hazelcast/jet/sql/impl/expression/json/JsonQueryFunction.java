@@ -39,7 +39,6 @@ import java.util.Collection;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.isArrayOrObject;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
 
@@ -64,15 +63,14 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         this.onError = onError;
     }
 
-    public static JsonQueryFunction create(Expression<?> json,
-                                           Expression<?> path,
-                                           SqlJsonQueryWrapperBehavior wrapperBehavior,
-                                           SqlJsonQueryEmptyOrErrorBehavior onEmpty,
-                                           SqlJsonQueryEmptyOrErrorBehavior onError) {
-        final Expression<?>[] operands = new Expression<?>[] {
-                json,
-                path
-        };
+    public static JsonQueryFunction create(
+            Expression<?> json,
+            Expression<?> path,
+            SqlJsonQueryWrapperBehavior wrapperBehavior,
+            SqlJsonQueryEmptyOrErrorBehavior onEmpty,
+            SqlJsonQueryEmptyOrErrorBehavior onError
+    ) {
+        final Expression<?>[] operands = new Expression<?>[]{json, path};
 
         return new JsonQueryFunction(operands, wrapperBehavior, onEmpty, onError);
     }
@@ -92,7 +90,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
         if (path == null) {
-            throw QueryException.error("JSONPath expression can not be null");
+            throw QueryException.error("SQL/JSON path expression cannot be null");
         }
 
         final Object operand0 = operands[0].eval(row, context);
@@ -107,11 +105,11 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
-            throw QueryException.error("Invalid JSONPath expression: " + e.getMessage(), e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
         }
 
         try {
-            return wrap(execute(json, jsonPath, wrapperBehavior));
+            return wrap(execute(json, jsonPath));
         } catch (Exception exception) {
              return onErrorResponse(onError, exception);
         }
@@ -149,10 +147,10 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         return new HazelcastJsonValue(json);
     }
 
-    private String execute(final String json, final JsonPath path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
+    private String execute(final String json, final JsonPath path) {
         final Collection<Object> resultColl = JsonPathUtil.read(json, path);
         if (resultColl.isEmpty()) {
-            throw QueryException.error("JSON_VALUE evaluated to no value");
+            throw QueryException.error("JSON_QUERY evaluated to no value");
         }
         switch (wrapperBehavior) {
             case WITH_CONDITIONAL_ARRAY:
@@ -162,12 +160,9 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             default:
             case WITHOUT_ARRAY:
                 if (resultColl.size() > 1) {
-                    throw QueryException.error("JSON_VALUE evaluated to multiple values");
+                    throw QueryException.error("JSON_QUERY evaluated to multiple values");
                 }
                 Object result = resultColl.iterator().next();
-                if (!isArrayOrObject(result)) {
-                    throw QueryException.error("JSON_QUERY result is not an array or object");
-                }
                 return serialize(result);
         }
     }
@@ -215,5 +210,4 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                 + ", onError=" + onError.name()
                 + '}';
     }
-
 }

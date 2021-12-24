@@ -103,48 +103,46 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_defaultWrapperBehavior() {
         initComplexObject();
 
-        assertEquals("[1,\"2\",3,{\"t\":1}]",
-                querySingleValue("SELECT JSON_QUERY(this, '$[0]') FROM test").toString());
-        assertEquals("{\"t\":1}",
-                querySingleValue("SELECT JSON_QUERY(this, '$[1]') FROM test").toString());
-        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' ERROR ON ERROR) FROM test"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSON_QUERY result is not an array or object");
+        assertEquals(json("[1,\"2\",3,{\"t\":1}]"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]') FROM test"));
+        assertEquals(json("{\"t\":1}"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]') FROM test"));
+        assertEquals(json("3"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[2]') FROM test"));
+        assertEquals(json("\"foo\""),
+                querySingleValue("SELECT JSON_QUERY(this, '$[3]') FROM test"));
     }
 
     @Test
     public void test_noArrayWrapper() {
         initComplexObject();
 
-        assertEquals("[1,\"2\",3,{\"t\":1}]",
-                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITHOUT ARRAY WRAPPER) FROM test")
-                        .toString());
-        assertEquals("{\"t\":1}",
-                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITHOUT ARRAY WRAPPER) FROM test")
-                        .toString());
-        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) "
-                        + "FROM test"))
+        assertEquals(json("[1,\"2\",3,{\"t\":1}]"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITHOUT WRAPPER) FROM test"));
+        assertEquals(json("{\"t\":1}"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITHOUT WRAPPER) FROM test"));
+        assertEquals(json("3"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITHOUT WRAPPER) FROM test"));
+        assertEquals(json("\"foo\""),
+                querySingleValue("SELECT JSON_QUERY(this, '$[3]' WITHOUT WRAPPER) FROM test"));
+        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[*]' WITHOUT WRAPPER ERROR ON ERROR) "
+                + "FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSON_QUERY result is not an array or object");
-        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[*]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) "
-            + "FROM test"))
-            .isInstanceOf(HazelcastSqlException.class)
-            .hasMessageContaining("JSON_VALUE evaluated to multiple values");
+                .hasMessageContaining("JSON_QUERY evaluated to multiple values");
     }
 
     @Test
     public void test_conditionalArrayWrapper() {
         initComplexObject();
 
-        assertEquals("[1,\"2\",3,{\"t\":1}]",
-                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH CONDITIONAL ARRAY WRAPPER) FROM test")
-                        .toString());
-        assertEquals("{\"t\":1}",
-                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITH CONDITIONAL ARRAY WRAPPER) FROM test")
-                        .toString());
-        assertEquals("[3]",
-                querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITH CONDITIONAL ARRAY WRAPPER ERROR ON ERROR) FROM test")
-                        .toString());
+        assertEquals(json("[1,\"2\",3,{\"t\":1}]"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("{\"t\":1}"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("3"),
+                querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("\"foo\""),
+                querySingleValue("SELECT JSON_QUERY(this, '$[3]' WITH CONDITIONAL WRAPPER) FROM test"));
     }
 
     @Test
@@ -170,24 +168,24 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 0 to 0");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 0 to 0");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("Invalid JSONPath expression: Unexpected token at line 1, columns 1 to 2");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 1 to 2");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('[1,2,3]', jsonValue) FROM test2"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith("JSONPath expression can not be null");
+                .hasMessageEndingWith("SQL/JSON path expression cannot be null");
     }
 
     @Test
-    public void test_unsupportedJsonPathMode() {
+    public void when_strictJsonPathMode_then_failNotSupported() {
         initComplexObject();
         createMapping("test2", Long.class, ObjectWithJson.class);
         instance().getSql().execute("INSERT INTO test2 (__key, id) VALUES (1, 1)");
 
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, 'strict $[*]') FROM test"))
             .isInstanceOf(HazelcastSqlException.class)
-            .hasMessageEndingWith("Strict JsonPath mode not yet supported");
+            .hasMessageEndingWith("Strict SQL/JSON path mode not supported");
     }
 
     @Test
@@ -203,10 +201,10 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
     public void test_nullLiteral() {
         assertThatThrownBy(() -> query("SELECT JSON_QUERY(null, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertThatThrownBy(() -> query("SELECT JSON_QUERY('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertNull(querySingleValue("SELECT JSON_QUERY(null, 'foo')"));
     }
 
@@ -226,8 +224,24 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "{\"first name\":\"value\"}");
         createMapping("test", Long.class, String.class);
+        // sql style
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$.\"first name\"' WITH ARRAY WRAPPER) FROM test",
             rows(1, json("[\"value\"]")));
+        // node.js style - not supported
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$.[\"first name\"]' WITH ARRAY WRAPPER) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Invalid SQL/JSON path expression: Line 1, column 2: no viable alternative at input '.['");
+    }
+
+    @Test
+    public void when_singleQuotedString_then_notSupported() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "{\"a\":\"b\"}");
+        createMapping("test", Long.class, String.class);
+
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$.''a''') from test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Line 1, column 2: token recognition error at: '''");
     }
 
     protected void initComplexObject() {
@@ -236,7 +250,8 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         test.put(1L, json("["
                 + "[1,\"2\",3,{\"t\":1}],"
                 + "{\"t\":1},"
-                + "3"
+                + "3,"
+                + "\"foo\""
                 + "]"));
     }
 

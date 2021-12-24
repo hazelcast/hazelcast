@@ -95,7 +95,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
         if (path == null) {
-            throw QueryException.error("JSONPath expression can not be null");
+            throw QueryException.error("SQL/JSON path expression cannot be null");
         }
 
         // needed for further checks, can be a dynamic expression, therefore can not be inlined as part of function args
@@ -114,7 +114,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
-            throw QueryException.error("Invalid JSONPath expression: " + e.getMessage(), e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
         }
 
         Exception exception = null;

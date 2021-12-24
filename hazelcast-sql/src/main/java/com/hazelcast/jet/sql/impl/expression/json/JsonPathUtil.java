@@ -77,11 +77,9 @@ public final class JsonPathUtil {
         Object result = resultColl.iterator().next();
         final String serializedResult = serialize(result);
         if (unconditionally) {
-                return "[" + serializedResult + "]";
+            return "[" + serializedResult + "]";
         } else {
-            return isArrayOrObject(result)
-                ? serializedResult
-                : "[" + serializedResult + "]";
+            return serializedResult;
         }
     }
 
