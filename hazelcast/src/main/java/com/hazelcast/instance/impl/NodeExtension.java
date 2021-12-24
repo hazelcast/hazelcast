@@ -26,7 +26,6 @@ import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.config.dynamic.rewrite.RewriterProxy;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -212,10 +211,11 @@ public interface NodeExtension {
      * Creates a service which is an implementation of given type parameter.
      *
      * @param type type of service
+     * @param params additional parameter to create the service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
-    <T> T createService(Class<T> type);
+    <T> T createService(Class<T> type, Object... params);
 
     /**
      * Creates additional extension services, which will be registered by
@@ -363,12 +363,6 @@ public interface NodeExtension {
      * @return Listener to be notfied about changes in data structure configurations
      */
     DynamicConfigListener createDynamicConfigListener();
-
-    /**
-     * Creates a proxy for persisting changes in dynamic configurations.
-     * @return Proxy which will be used for persisting changes in dynamic configurations
-     */
-    RewriterProxy createRewriterProxy();
 
     /**
      * Register the node extension specific diagnostics plugins on the provided

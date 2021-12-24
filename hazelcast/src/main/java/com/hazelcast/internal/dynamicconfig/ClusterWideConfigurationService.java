@@ -39,7 +39,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.config.dynamic.rewrite.RewriterProxy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -93,10 +92,10 @@ public class ClusterWideConfigurationService implements
     //this is meant to be used as a workaround for buggy equals/hashcode implementations
     private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND = getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
-    private final DynamicConfigListener listener;
-    private final RewriterProxy rewriterProxy;
+    protected NodeEngine nodeEngine;
 
-    private final NodeEngine nodeEngine;
+    private final DynamicConfigListener listener;
+
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs = new ConcurrentHashMap<>();
@@ -145,12 +144,10 @@ public class ClusterWideConfigurationService implements
 
     public ClusterWideConfigurationService(
             NodeEngine nodeEngine,
-            DynamicConfigListener dynamicConfigListener,
-            RewriterProxy rewriterProxy
+            DynamicConfigListener dynamicConfigListener
     ) {
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
-        this.rewriterProxy = rewriterProxy;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
         this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
     }
@@ -314,7 +311,7 @@ public class ClusterWideConfigurationService implements
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
-        rewriterProxy.doRewrite(nodeEngine.getConfig(), newConfig);
+        rewrite(newConfig);
     }
 
     private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
@@ -340,6 +337,13 @@ public class ClusterWideConfigurationService implements
                     throw new UnsupportedOperationException("Unknown consistency check mode: " + checkMode);
             }
         }
+    }
+
+    @Override
+    public void rewrite(IdentifiedDataSerializable subConfig) {
+        // Code should never come here. We should fast fail in
+        // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()
+        throw new UnsupportedOperationException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
     }
 
     @Override

@@ -58,6 +58,16 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
+     * Rewrites any dynamically changeable sub configuration to this member's
+     * declarative configuration. Preserves file format of the existing dynamic
+     * configuration persistence file. Also note that this method is
+     * idempotent.
+     *
+     * @param subConfig configuration to persist
+     */
+    void rewrite(IdentifiedDataSerializable subConfig);
+
+    /**
      * Finds existing Multimap config.
      *
      * @param name name of the config
