@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
 
@@ -94,11 +93,11 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         }
 
         final Object operand0 = operands[0].eval(row, context);
-        final String json = operand0 instanceof HazelcastJsonValue
+        String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        if (isNullOrEmpty(json)) {
-            return onEmptyResponse(onEmpty);
+        if (json == null) {
+            json = "";
         }
 
         final JsonPath jsonPath;
@@ -108,35 +107,31 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
         }
 
-        try {
-            return wrap(execute(json, jsonPath));
-        } catch (Exception exception) {
-             return onErrorResponse(onError, exception);
-        }
+        return wrap(execute(json, jsonPath));
     }
 
-    private HazelcastJsonValue onErrorResponse(final SqlJsonQueryEmptyOrErrorBehavior onError, final Exception exception) {
+    private String onErrorResponse(final Exception exception) {
         switch (onError) {
             case ERROR:
                 throw QueryException.error("JSON_QUERY failed: " + exception, exception);
             case EMPTY_ARRAY:
-                return wrap("[]");
+                return "[]";
             case EMPTY_OBJECT:
-                return wrap("{}");
+                return "{}";
             default:
             case NULL:
                 return null;
         }
     }
 
-    private HazelcastJsonValue onEmptyResponse(final SqlJsonQueryEmptyOrErrorBehavior onEmpty) {
+    private String onEmptyResponse() {
         switch (onEmpty) {
             case ERROR:
-                throw QueryException.error("Empty JSON object");
+                throw QueryException.error("JSON_QUERY evaluated to no value");
             case EMPTY_ARRAY:
-                return wrap("[]");
+                return "[]";
             case EMPTY_OBJECT:
-                return wrap("{}");
+                return "{}";
             case NULL:
             default:
                 return null;
@@ -144,13 +139,21 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     }
 
     private HazelcastJsonValue wrap(String json) {
+        if (json == null) {
+            return null;
+        }
         return new HazelcastJsonValue(json);
     }
 
     private String execute(final String json, final JsonPath path) {
-        final Collection<Object> resultColl = JsonPathUtil.read(json, path);
+        Collection<Object> resultColl;
+        try {
+            resultColl = JsonPathUtil.read(json, path);
+        } catch (Exception exception) {
+            return onErrorResponse(exception);
+        }
         if (resultColl.isEmpty()) {
-            throw QueryException.error("JSON_QUERY evaluated to no value");
+            return onEmptyResponse();
         }
         switch (wrapperBehavior) {
             case WITH_CONDITIONAL_ARRAY:
