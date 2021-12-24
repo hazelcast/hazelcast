@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.gson.Gson;
 import org.jsfr.json.Collector;
 import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
@@ -27,6 +27,7 @@ import org.jsfr.json.compiler.JsonPathCompiler;
 import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -34,7 +35,6 @@ import java.util.Map;
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
     private static final JsonSurfer SURFER = new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE);;
-    private static final Gson SERIALIZER = new Gson();
 
     private JsonPathUtil() { }
 
@@ -46,11 +46,6 @@ public final class JsonPathUtil {
 
     public static JsonPath compile(String path) {
         return JsonPathCompiler.compile(path);
-    }
-
-    // TODO [viliam] remove this?
-    public static Object read(String json, String pathString) {
-        return read(json, compile(pathString));
     }
 
     public static Collection<Object> read(String json, JsonPath path) {
@@ -91,6 +86,11 @@ public final class JsonPathUtil {
     }
 
     public static String serialize(Object object) {
-        return SERIALIZER.toJson(object);
+        try {
+            return JSON.std.asString(object);
+        } catch (IOException e) {
+            // should not happen
+            throw new RuntimeException(e);
+        }
     }
 }
