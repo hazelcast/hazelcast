@@ -77,7 +77,7 @@ public class AddMapConfigMessageTask
         }
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfg(serializationService));
+        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
         config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
         if (parameters.nearCacheConfig != null) {
             config.setNearCacheConfig(parameters.nearCacheConfig.asNearCacheConfig(serializationService));
