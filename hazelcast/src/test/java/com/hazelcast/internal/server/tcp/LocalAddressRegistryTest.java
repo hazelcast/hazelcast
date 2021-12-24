@@ -18,6 +18,8 @@ package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,11 +42,12 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalAddressRegistryTest extends HazelcastTestSupport {
 
+    private final ILogger logger = Logger.getLogger(LocalAddressRegistry.class);
     private LocalAddressRegistry addressRegistry;
 
     @Before
     public void setUp() {
-        addressRegistry = new LocalAddressRegistry();
+        addressRegistry = new LocalAddressRegistry(logger);
     }
 
     @Test

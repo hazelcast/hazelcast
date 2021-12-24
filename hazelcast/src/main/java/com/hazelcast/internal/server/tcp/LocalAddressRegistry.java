@@ -53,16 +53,14 @@ public class LocalAddressRegistry {
     private volatile LinkedAddresses localAddresses;
 
     // protected for testing purposes
-    protected LocalAddressRegistry() {
+    protected LocalAddressRegistry(ILogger logger) {
         this.addressToUuid = new ConcurrentHashMap<>();
         this.uuidToAddresses = new ConcurrentHashMap<>();
-        this.logger = null;
+        this.logger = logger;
     }
 
     public LocalAddressRegistry(Node node, AddressPicker addressPicker) {
-        this.addressToUuid = new ConcurrentHashMap<>();
-        this.uuidToAddresses = new ConcurrentHashMap<>();
-        this.logger = node.getLogger(LocalAddressRegistry.class);
+        this(node.getLogger(LocalAddressRegistry.class));
         registerLocalAddresses(node.getThisUuid(), addressPicker);
     }
 
