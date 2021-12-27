@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,8 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -75,6 +78,20 @@ public class JsonObjectFunctionIntegrationTest extends SqlJsonTestSupport {
                         + "'b' : cast('42' as json)," // json number
                         + "'c' : cast('[1,2,3]' as json))", // json array
                 rows(1, json("{\"a\":\"foo\",\"b\":42,\"c\":[1,2,3]}")));
+    }
+
+    @Test
+    public void when_badInputType_then_fail() {
+        assertThatThrownBy(() -> query("select json_object(1:2)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith("The type of keys must be VARCHAR");
+    }
+
+    @Test
+    public void when_keyWithoutValue_then_fail() {
+        assertThatThrownBy(() -> query("select json_object(key \"foo\")"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \")\" at line 1, column 29.");
     }
 
     private List<Row> jsonObjRow(final Map<Object, Object> values) {

@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
@@ -47,17 +48,21 @@ public class HazelcastJsonObjectFunction extends HazelcastFunction {
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
+        // The 1st argument is always the SYMBOL: NULL ON NULL or ABSENT ON NULL
+        // The rest of arguments are: key1, value2, key1, value2, ...
+        // This is handled by Calcite, so we expect that the number of arguments is always odd at this point.
+        if (callBinding.getOperandCount() % 2 != 1) {
+            // we throw even if throwOnFailure=false because this is more like an assertion than a run-time check
+            throw QueryException.error(SqlErrorCode.PARSING, "Unexpected number of arguments to JSON_OBJECT");
+        }
+
         boolean isValid = TypedOperandChecker.SYMBOL.check(callBinding, throwOnFailure, 0);
-        if (!validOperandCount(callBinding.getOperandCount())) {
-            isValid = false;
-        }
 
-        for (int i = 1; i < callBinding.getOperandCount(); i += 2) {
-            isValid &= TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, i);
-        }
-
-        if (!isValid && throwOnFailure) {
-            throw callBinding.newValidationSignatureError();
+        for (int i = 1; isValid && i < callBinding.getOperandCount(); i += 2) {
+            isValid = TypedOperandChecker.VARCHAR.check(callBinding, false, i);
+            if (!isValid && throwOnFailure) {
+                throw QueryException.error(SqlErrorCode.PARSING, "The type of keys must be VARCHAR");
+            }
         }
 
         return isValid;
@@ -98,9 +103,5 @@ public class HazelcastJsonObjectFunction extends HazelcastFunction {
         }
 
         writer.endFunCall(frame);
-    }
-
-    private boolean validOperandCount(final int count) {
-        return (count % 2) == 1;
     }
 }
