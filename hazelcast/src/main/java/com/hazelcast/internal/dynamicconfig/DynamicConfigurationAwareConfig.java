@@ -78,7 +78,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.wan.impl.WanReplicationService;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -122,7 +121,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final DynamicCPSubsystemConfig dynamicCPSubsystemConfig;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
-    private volatile WanReplicationService wanReplicationService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
     private volatile Searcher configSearcher;
 
@@ -870,20 +868,6 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.getWanReplicationConfigs();
     }
 
-    public Config addWanReplicationConfigInternal(WanReplicationConfig wanReplicationConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(
-                staticConfig.getWanReplicationConfigs(),
-                wanReplicationConfig.getName(),
-                wanReplicationConfig
-        );
-
-        if (staticConfigDoesNotExist) {
-            wanReplicationService.addWanReplicationConfig(wanReplicationConfig);
-        }
-
-        return this;
-    }
-
     @Override
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
@@ -1110,9 +1094,6 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     public void setServices(NodeEngineImpl nodeEngine) {
-        // Wan service should set before configuration service.
-        this.wanReplicationService = nodeEngine.getWanReplicationService();
-
         this.configurationService = nodeEngine.getConfigurationService();
         this.configSearcher = initConfigSearcher();
     }
