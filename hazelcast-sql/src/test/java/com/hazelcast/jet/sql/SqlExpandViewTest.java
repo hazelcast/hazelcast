@@ -146,8 +146,13 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
         instance().getSql().execute("CREATE VIEW v2 AS SELECT __key FROM v1");
         assertThatThrownBy(() -> instance().getSql().execute(
-                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME)
-        ).hasMessageContaining("Can't replace view v1");
+                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME))
+                .hasMessageContaining("Can't replace view v1")
+                .hasMessageContaining("Original view type: INTEGER, replacement view type VARCHAR");
+
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT __key AS a FROM " + MAP_NAME)
+        ).hasMessageContaining("Can't replace view v1").hasMessageContaining("incompatible column names");
     }
 
     @Test

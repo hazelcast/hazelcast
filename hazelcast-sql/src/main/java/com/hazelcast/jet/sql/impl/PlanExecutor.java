@@ -474,8 +474,12 @@ public class PlanExecutor {
      * but existing way is better than nothing...
      */
     private static void checkProjectsCompatibility(View original, View replacement) {
+        List<String> originalNames = replacement.viewColumnNames();
         List<QueryDataType> originalTypes = original.viewColumnTypes();
+
+        List<String> replacementNames = original.viewColumnNames();
         List<QueryDataType> replacementTypes = replacement.viewColumnTypes();
+
         if (originalTypes.size() != replacementTypes.size()) {
             throw QueryException.error(
                     String.format("Can't replace view %s: incompatible projection size. "
@@ -494,9 +498,21 @@ public class PlanExecutor {
                                         + "Original view type: %s, replacement view type %s",
                                 replacement.name(),
                                 i,
-                                originalTypes.get(i).toString(),
-                                replacementTypes.get(i).toString()
+                                originalTypes.get(i).getTypeFamily().getPublicType().toString(),
+                                replacementTypes.get(i).getTypeFamily().getPublicType().toString()
                         )
+                );
+            }
+
+            if (!replacementNames.get(i).equals(originalNames.get(i))) {
+                throw QueryException.error(
+                        String.format("Can't replace view %s: incompatible column names. "
+                                        + "Original view name: %s, replacement view name %s",
+                                replacement.name(),
+                                i,
+                                originalNames.get(i),
+                                replacementNames.get(i)
+                                )
                 );
             }
         }
