@@ -31,9 +31,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class JsonArrayFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final Gson SERIALIZER = new GsonBuilder()
@@ -44,13 +41,13 @@ public class JsonArrayFunction extends VariExpression<HazelcastJsonValue> implem
 
     public JsonArrayFunction() { }
 
-    private JsonArrayFunction(final Expression<?>[] fields, final SqlJsonConstructorNullClause nullClause) {
-        super(fields);
+    private JsonArrayFunction(final Expression<?>[] operands, final SqlJsonConstructorNullClause nullClause) {
+        super(operands);
         this.nullClause = nullClause;
     }
 
-    public static Expression<?> create(final Expression<?>[] fields, final SqlJsonConstructorNullClause nullClause) {
-        return new JsonArrayFunction(fields, nullClause);
+    public static Expression<?> create(final Expression<?>[] operands, final SqlJsonConstructorNullClause nullClause) {
+        return new JsonArrayFunction(operands, nullClause);
     }
 
     @Override
@@ -65,12 +62,28 @@ public class JsonArrayFunction extends VariExpression<HazelcastJsonValue> implem
 
     @Override
     public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
-        final List<?> result = Arrays.stream(operands)
-                .map(expr -> expr.eval(row, context))
-                .filter(o -> keepNulls() || o != null)
-                .collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        boolean isFirst = true;
+        for (Expression<?> operand : operands) {
+            Object result = operand.eval(row, context);
+            if (result == null && !keepNulls()) {
+                continue;
+            }
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                sb.append(',');
+            }
+            if (result instanceof HazelcastJsonValue) {
+                sb.append(result);
+            } else {
+                sb.append(SERIALIZER.toJson(result));
+            }
+        }
+        sb.append(']');
 
-        return new HazelcastJsonValue(SERIALIZER.toJson(result));
+        return new HazelcastJsonValue(sb.toString());
     }
 
     private boolean keepNulls() {

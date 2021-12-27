@@ -31,8 +31,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final Gson SERIALIZER = new GsonBuilder()
@@ -67,16 +65,32 @@ public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> imple
 
     @Override
     public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
-        final Map<Object, Object> result = new HashMap<>();
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        boolean isFirst = true;
         for (int i = 0; i < operands.length; i += 2) {
             final Object key = operands[i].eval(row, context);
             final Object value = operands[i + 1].eval(row, context);
-            if (keepNulls() || value != null) {
-                result.put(key, value);
+            if (value == null && !keepNulls()) {
+                continue;
+            }
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                sb.append(',');
+            }
+            assert key instanceof String;
+            sb.append(SERIALIZER.toJson(key));
+            sb.append(':');
+            if (value instanceof HazelcastJsonValue) {
+                sb.append(value);
+            } else {
+                sb.append(SERIALIZER.toJson(value));
             }
         }
+        sb.append('}');
 
-        return new HazelcastJsonValue(SERIALIZER.toJson(result));
+        return new HazelcastJsonValue(sb.toString());
     }
 
     private boolean keepNulls() {

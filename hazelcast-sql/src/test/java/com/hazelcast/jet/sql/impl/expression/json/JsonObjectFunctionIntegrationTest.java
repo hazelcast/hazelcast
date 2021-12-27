@@ -68,6 +68,15 @@ public class JsonObjectFunctionIntegrationTest extends SqlJsonTestSupport {
                 jsonObjRow(objectMap("objId", 2L)));
     }
 
+    @Test
+    public void test_nestedJson() {
+        assertRowsAnyOrder("select json_object("
+                        + "'a' : cast('\"foo\"' as json)," // json string inside an SQL string
+                        + "'b' : cast('42' as json)," // json number
+                        + "'c' : cast('[1,2,3]' as json))", // json array
+                rows(1, json("{\"a\":\"foo\",\"b\":42,\"c\":[1,2,3]}")));
+    }
+
     private List<Row> jsonObjRow(final Map<Object, Object> values) {
         return rows(1, json(jsonString(values)));
     }

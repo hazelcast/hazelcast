@@ -67,6 +67,15 @@ public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
                 jsonArrayRow(2L, 1L, 2L));
     }
 
+    @Test
+    public void test_nestedJson() {
+        assertRowsAnyOrder("select json_array("
+                + "cast('\"foo\"' as json)," // json string inside an SQL string
+                + "cast('42' as json)," // json number
+                + "cast('[1,2,3]' as json))", // json array
+                rows(1, json("[\"foo\",42,[1,2,3]]")));
+    }
+
     private List<Row> jsonArrayRow(final Object ...values) {
         return rows(1, json(jsonString(values)));
     }

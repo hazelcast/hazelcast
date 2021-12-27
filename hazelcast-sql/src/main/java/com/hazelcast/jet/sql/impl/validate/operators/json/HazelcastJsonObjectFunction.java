@@ -53,10 +53,7 @@ public class HazelcastJsonObjectFunction extends HazelcastFunction {
         }
 
         for (int i = 1; i < callBinding.getOperandCount(); i += 2) {
-            boolean isValidKey = TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, i);
-            if (!isValidKey) {
-                isValid = false;
-            }
+            isValid &= TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, i);
         }
 
         if (!isValid && throwOnFailure) {

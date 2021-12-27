@@ -25,6 +25,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,8 +64,8 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         return results;
     }
 
-    public static Map<Object, Object> objectMap(Object ...kvPairs) {
-        final Map<Object, Object> result = new HashMap<>();
+    public static Map<Object, Object> objectMap(Object... kvPairs) {
+        final Map<Object, Object> result = new LinkedHashMap<>();
 
         for (int i = 0; i < kvPairs.length; i += 2) {
             result.put(kvPairs[i], kvPairs[i + 1]);
