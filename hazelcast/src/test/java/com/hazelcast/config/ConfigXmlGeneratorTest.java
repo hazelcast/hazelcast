@@ -44,15 +44,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.wan.WanPublisherState;
 import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
@@ -70,6 +66,7 @@ import java.util.Arrays;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -818,7 +815,7 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
 
         config.getSerializationConfig().setCompactSerializationConfig(expected);
 
-        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        CompactSerializationConfig actual = getNewConfigViaGenerator(config).getSerializationConfig().getCompactSerializationConfig();
         assertEquals(expected.isEnabled(), actual.isEnabled());
 
         // Since we don't have APIs of the form register(String) or register(String, String, String) in the
