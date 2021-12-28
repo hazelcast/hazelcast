@@ -76,6 +76,7 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -255,7 +256,7 @@ public class PlanExecutor {
         View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
 
         if (plan.isReplace()) {
-            checkProjectsCompatibility(catalog.getView(plan.viewName()), view);
+            checkViewNewRowType(catalog.getView(plan.viewName()), view);
         }
 
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
@@ -460,60 +461,33 @@ public class PlanExecutor {
     }
 
     /**
-     * Consider
-     * <pre>
-     *  CREATE VIEW v1 AS SELECT * FROM VALUES(1, 1)
-     *  </pre>
-     * <pre>
-     *  CREATE OR REPLACE VIEW v1 AS SELECT 1 FROM VALUES(1, 1)
-     *  </pre>
+     * When a view is replaced, the new view must contain all the
+     * original columns with the same types. Adding new columns or
+     * reordering them is allowed.
      * <p>
-     * We forbid view replacement with incompatible projection
-     * to avoid additional complexity during dependent view processing.
-     * It still doesn't cover replacement in DROP & CREATE VIEW way,
-     * but existing way is better than nothing...
+     * This is an interim mitigation for
+     * https://github.com/hazelcast/hazelcast/issues/20032. It disallows
+     * incompatible changes when doing CREATE OR REPLACE VIEW, however
+     * incompatible changes are still possible with DROP VIEW followed
+     * by a CREATE VIEW.
      */
-    private static void checkProjectsCompatibility(View original, View replacement) {
-        List<String> originalNames = replacement.viewColumnNames();
-        List<QueryDataType> originalTypes = original.viewColumnTypes();
-
-        List<String> replacementNames = original.viewColumnNames();
-        List<QueryDataType> replacementTypes = replacement.viewColumnTypes();
-
-        if (originalTypes.size() != replacementTypes.size()) {
-            throw QueryException.error(
-                    String.format("Can't replace view %s: incompatible projection size. "
-                                    + "Original view size: %d, replacement view size %d",
-                            replacement.name(),
-                            originalTypes.size(),
-                            replacementTypes.size()
-                    )
-            );
+    private static void checkViewNewRowType(View original, View replacement) {
+        Map<String, QueryDataType> newTypes = new HashMap<>();
+        for (int i = 0; i < replacement.viewColumnNames().size(); i++) {
+            newTypes.put(replacement.viewColumnNames().get(i), replacement.viewColumnTypes().get(i));
         }
 
-        for (int i = 0; i < originalTypes.size(); i++) {
-            if (!replacementTypes.get(i).equals(originalTypes.get(i))) {
-                throw QueryException.error(
-                        String.format("Can't replace view %s: incompatible projection #%d type. "
-                                        + "Original view type: %s, replacement view type %s",
-                                replacement.name(),
-                                i,
-                                originalTypes.get(i).getTypeFamily().getPublicType().toString(),
-                                replacementTypes.get(i).getTypeFamily().getPublicType().toString()
-                        )
-                );
+        // each original name must be present and have the same type
+        for (int i = 0; i < original.viewColumnNames().size(); i++) {
+            QueryDataType origType = original.viewColumnTypes().get(i);
+            String origName = original.viewColumnNames().get(i);
+            QueryDataType newType = newTypes.get(origName);
+            if (newType == null) {
+                throw QueryException.error("Can't replace view, the new view doesn't contain column '" + origName + "'");
             }
-
-            if (!replacementNames.get(i).equals(originalNames.get(i))) {
-                throw QueryException.error(
-                        String.format("Can't replace view %s: incompatible column names. "
-                                        + "Original view name: %s, replacement view name %s",
-                                replacement.name(),
-                                i,
-                                originalNames.get(i),
-                                replacementNames.get(i)
-                                )
-                );
+            if (newType.getTypeFamily() != origType.getTypeFamily()) {
+                throw QueryException.error("Can't replace view, the type for column '" + origName + "' changed from "
+                        + origType.getTypeFamily() + " to " + newType.getTypeFamily());
             }
         }
     }

@@ -86,7 +86,7 @@ public class TablesStorage {
 
     View getView(String name) {
         Object obj = storage().get(name);
-        if (obj != null && obj instanceof View) {
+        if (obj instanceof View) {
             return (View) obj;
         }
         return null;
