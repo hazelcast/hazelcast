@@ -47,7 +47,7 @@ import java.util.function.BiConsumer;
 public final class DynamicConfigGeneratorUtil {
 
     private DynamicConfigGeneratorUtil() {
-        //not called
+        // not called
     }
 
     static String wanReplicationConfigGenerator(WanReplicationConfig subConfig, boolean configIsXml, int indent) {

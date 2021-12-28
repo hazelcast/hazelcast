@@ -77,7 +77,11 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.lang.Boolean.TRUE;
 
-public class DynamicConfigXmlGenerator {
+@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ClassFanOutComplexity"})
+public final class DynamicConfigXmlGenerator {
+    private DynamicConfigXmlGenerator() {
+        // not called
+    }
 
     public static void mapXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
@@ -408,7 +412,9 @@ public class DynamicConfigXmlGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private static void collectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, String type, Collection<? extends CollectionConfig> configs) {
+    private static void collectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen,
+                                               String type,
+                                               Collection<? extends CollectionConfig> configs) {
         if (CollectionUtil.isNotEmpty(configs)) {
             for (CollectionConfig<? extends CollectionConfig> config : configs) {
                 gen.open(type, "name", config.getName())
@@ -535,14 +541,16 @@ public class DynamicConfigXmlGenerator {
         gen.node("cache-loader", null, "class-name", cacheLoader);
     }
 
-    private static void cacheExpiryPolicyFactoryConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, CacheSimpleConfig.ExpiryPolicyFactoryConfig config) {
+    private static void cacheExpiryPolicyFactoryConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen,
+                                                                   CacheSimpleConfig.ExpiryPolicyFactoryConfig config) {
         if (config == null) {
             return;
         }
         if (!isNullOrEmpty(config.getClassName())) {
             gen.node("expiry-policy-factory", null, "class-name", config.getClassName());
         } else {
-            CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedConfig = config.getTimedExpiryPolicyFactoryConfig();
+            CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedConfig
+                    = config.getTimedExpiryPolicyFactoryConfig();
             if (timedConfig != null && timedConfig.getExpiryPolicyType() != null && timedConfig.getDurationConfig() != null) {
                 CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig duration = timedConfig.getDurationConfig();
                 gen.open("expiry-policy-factory")
@@ -745,7 +753,8 @@ public class DynamicConfigXmlGenerator {
         }
     }
 
-    public static void aliasedDiscoveryConfigsGenerator(ConfigXmlGenerator.XmlGenerator gen, List<AliasedDiscoveryConfig<?>> configs) {
+    public static void aliasedDiscoveryConfigsGenerator(ConfigXmlGenerator.XmlGenerator gen,
+                                                        List<AliasedDiscoveryConfig<?>> configs) {
         if (configs == null) {
             return;
         }
