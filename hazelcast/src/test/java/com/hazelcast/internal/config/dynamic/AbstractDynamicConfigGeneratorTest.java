@@ -14,10 +14,68 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config.dynamic;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigCompatibilityChecker;
+import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
+import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.MemoryTierConfig;
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.ReliableTopicConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.config.RingbufferStoreConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TieredStoreConfig;
+import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
+import com.hazelcast.config.WanQueueFullBehavior;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
@@ -51,7 +109,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public abstract class AbstractConfigGeneratorTest extends HazelcastTestSupport {
+public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSupport {
 
     // MAP
 

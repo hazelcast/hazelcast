@@ -35,7 +35,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ConfigYamlGenerator;
 import com.hazelcast.internal.util.XmlUtil;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
@@ -63,9 +62,9 @@ import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 
-public final class DynamicConfigGenerator {
+public final class DynamicConfigGeneratorUtil {
 
-    private DynamicConfigGenerator() {
+    private DynamicConfigGeneratorUtil() {
         //not called
     }
 
@@ -75,8 +74,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 WAN_REPLICATION.getName(),
                 Config::addWanReplicationConfig,
-                ConfigXmlGenerator::wanReplicationXmlGenerator,
-                ConfigYamlGenerator::wanReplicationYamlGenerator
+                DynamicConfigXmlGenerator::wanReplicationXmlGenerator,
+                DynamicConfigYamlGenerator::wanReplicationYamlGenerator
         );
     }
 
@@ -84,8 +83,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 MAP.getName(),
                 Config::addMapConfig,
-                ConfigXmlGenerator::mapXmlGenerator,
-                ConfigYamlGenerator::mapYamlGenerator
+                DynamicConfigXmlGenerator::mapXmlGenerator,
+                DynamicConfigYamlGenerator::mapYamlGenerator
         );
     }
 
@@ -93,8 +92,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 CACHE.getName(),
                 Config::addCacheConfig,
-                ConfigXmlGenerator::cacheXmlGenerator,
-                ConfigYamlGenerator::cacheYamlGenerator
+                DynamicConfigXmlGenerator::cacheXmlGenerator,
+                DynamicConfigYamlGenerator::cacheYamlGenerator
         );
     }
 
@@ -102,8 +101,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 QUEUE.getName(),
                 Config::addQueueConfig,
-                ConfigXmlGenerator::queueXmlGenerator,
-                ConfigYamlGenerator::queueYamlGenerator
+                DynamicConfigXmlGenerator::queueXmlGenerator,
+                DynamicConfigYamlGenerator::queueYamlGenerator
         );
     }
 
@@ -111,8 +110,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 LIST.getName(),
                 Config::addListConfig,
-                ConfigXmlGenerator::listXmlGenerator,
-                ConfigYamlGenerator::listYamlGenerator
+                DynamicConfigXmlGenerator::listXmlGenerator,
+                DynamicConfigYamlGenerator::listYamlGenerator
         );
     }
 
@@ -120,8 +119,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 SET.getName(),
                 Config::addSetConfig,
-                ConfigXmlGenerator::setXmlGenerator,
-                ConfigYamlGenerator::setYamlGenerator
+                DynamicConfigXmlGenerator::setXmlGenerator,
+                DynamicConfigYamlGenerator::setYamlGenerator
         );
     }
 
@@ -129,8 +128,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 MULTIMAP.getName(),
                 Config::addMultiMapConfig,
-                ConfigXmlGenerator::multiMapXmlGenerator,
-                ConfigYamlGenerator::multiMapYamlGenerator
+                DynamicConfigXmlGenerator::multiMapXmlGenerator,
+                DynamicConfigYamlGenerator::multiMapYamlGenerator
         );
     }
 
@@ -138,8 +137,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 REPLICATED_MAP.getName(),
                 Config::addReplicatedMapConfig,
-                ConfigXmlGenerator::replicatedMapXmlGenerator,
-                ConfigYamlGenerator::replicatedMapYamlGenerator
+                DynamicConfigXmlGenerator::replicatedMapXmlGenerator,
+                DynamicConfigYamlGenerator::replicatedMapYamlGenerator
         );
     }
 
@@ -147,8 +146,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 RINGBUFFER.getName(),
                 Config::addRingBufferConfig,
-                ConfigXmlGenerator::ringbufferXmlGenerator,
-                ConfigYamlGenerator::ringbufferYamlGenerator
+                DynamicConfigXmlGenerator::ringbufferXmlGenerator,
+                DynamicConfigYamlGenerator::ringbufferYamlGenerator
         );
     }
 
@@ -156,8 +155,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 TOPIC.getName(),
                 Config::addTopicConfig,
-                ConfigXmlGenerator::topicXmlGenerator,
-                ConfigYamlGenerator::topicYamlGenerator
+                DynamicConfigXmlGenerator::topicXmlGenerator,
+                DynamicConfigYamlGenerator::topicYamlGenerator
         );
     }
 
@@ -165,8 +164,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 RELIABLE_TOPIC.getName(),
                 Config::addReliableTopicConfig,
-                ConfigXmlGenerator::reliableTopicXmlGenerator,
-                ConfigYamlGenerator::reliableTopicYamlGenerator
+                DynamicConfigXmlGenerator::reliableTopicXmlGenerator,
+                DynamicConfigYamlGenerator::reliableTopicYamlGenerator
         );
     }
 
@@ -174,8 +173,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 EXECUTOR_SERVICE.getName(),
                 Config::addExecutorConfig,
-                ConfigXmlGenerator::executorXmlGenerator,
-                ConfigYamlGenerator::executorYamlGenerator
+                DynamicConfigXmlGenerator::executorXmlGenerator,
+                DynamicConfigYamlGenerator::executorYamlGenerator
         );
     }
 
@@ -185,8 +184,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 DURABLE_EXECUTOR_SERVICE.getName(),
                 Config::addDurableExecutorConfig,
-                ConfigXmlGenerator::durableExecutorXmlGenerator,
-                ConfigYamlGenerator::durableExecutorYamlGenerator
+                DynamicConfigXmlGenerator::durableExecutorXmlGenerator,
+                DynamicConfigYamlGenerator::durableExecutorYamlGenerator
         );
     }
 
@@ -196,8 +195,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 SCHEDULED_EXECUTOR_SERVICE.getName(),
                 Config::addScheduledExecutorConfig,
-                ConfigXmlGenerator::scheduledExecutorXmlGenerator,
-                ConfigYamlGenerator::scheduledExecutorYamlGenerator
+                DynamicConfigXmlGenerator::scheduledExecutorXmlGenerator,
+                DynamicConfigYamlGenerator::scheduledExecutorYamlGenerator
         );
     }
 
@@ -207,8 +206,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 CARDINALITY_ESTIMATOR.getName(),
                 Config::addCardinalityEstimatorConfig,
-                ConfigXmlGenerator::cardinalityEstimatorXmlGenerator,
-                ConfigYamlGenerator::cardinalityEstimatorYamlGenerator
+                DynamicConfigXmlGenerator::cardinalityEstimatorXmlGenerator,
+                DynamicConfigYamlGenerator::cardinalityEstimatorYamlGenerator
         );
     }
 
@@ -218,8 +217,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 FLAKE_ID_GENERATOR.getName(),
                 Config::addFlakeIdGeneratorConfig,
-                ConfigXmlGenerator::flakeIdGeneratorXmlGenerator,
-                ConfigYamlGenerator::flakeIdGeneratorYamlGenerator
+                DynamicConfigXmlGenerator::flakeIdGeneratorXmlGenerator,
+                DynamicConfigYamlGenerator::flakeIdGeneratorYamlGenerator
         );
     }
 
@@ -227,8 +226,8 @@ public final class DynamicConfigGenerator {
         return configGenerator(subConfig, configIsXml, indent,
                 PN_COUNTER.getName(),
                 Config::addPNCounterConfig,
-                ConfigXmlGenerator::pnCounterXmlGenerator,
-                ConfigYamlGenerator::pnCounterYamlGenerator
+                DynamicConfigXmlGenerator::pnCounterXmlGenerator,
+                DynamicConfigYamlGenerator::pnCounterYamlGenerator
         );
     }
 

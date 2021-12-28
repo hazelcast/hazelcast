@@ -35,6 +35,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.config.dynamic.AbstractDynamicConfigGeneratorTest;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.memory.MemorySize;
@@ -85,7 +86,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
+public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {

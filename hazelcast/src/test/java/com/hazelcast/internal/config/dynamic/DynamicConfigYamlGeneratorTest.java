@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config;
+package com.hazelcast.internal.config.dynamic;
 
-import com.hazelcast.config.AbstractConfigGeneratorTest;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryYamlConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -27,12 +26,12 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConfigYamlGeneratorTest extends AbstractConfigGeneratorTest {
+public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
-        ConfigYamlGenerator configYamlGenerator = new ConfigYamlGenerator();
-        String yaml = configYamlGenerator.generate(config);
+        DynamicConfigYamlGenerator dynamicConfigYamlGenerator = new DynamicConfigYamlGenerator();
+        String yaml = dynamicConfigYamlGenerator.generate(config);
         return new InMemoryYamlConfig(yaml);
     }
 }
