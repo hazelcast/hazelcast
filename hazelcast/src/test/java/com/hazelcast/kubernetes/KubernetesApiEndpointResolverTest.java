@@ -20,13 +20,12 @@ import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import org.junit.Before;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,9 +33,10 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(KubernetesApiEndpointResolver.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KubernetesApiEndpointResolverTest {
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String SERVICE_NAME = "serviceName";
@@ -46,14 +46,7 @@ public class KubernetesApiEndpointResolverTest {
     private static final String POD_LABEL_VALUE = "podLabelValue";
     private static final Boolean RESOLVE_NOT_READY_ADDRESSES = true;
 
-    @Mock
-    private KubernetesClient client;
-
-    @Before
-    public void setup()
-            throws Exception {
-        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
-    }
+    private final KubernetesClient client = mock(KubernetesClient.class);
 
     @Test
     public void resolveWhenNodeInFound() {

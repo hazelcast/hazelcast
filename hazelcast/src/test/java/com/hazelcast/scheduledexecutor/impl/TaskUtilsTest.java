@@ -50,8 +50,7 @@ public class TaskUtilsTest extends ScheduledExecutorServiceTestSupport {
 
         assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
         assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
-        NamedTask namedTask = decoratedTask.undecorateTo(NamedTask.class);
-        assertEquals(taskName, namedTask.getName());
+        assertEquals(taskName, decoratedTask.undecorateTo(NamedTask.class).getName());
     }
 
     @Test
@@ -62,6 +61,7 @@ public class TaskUtilsTest extends ScheduledExecutorServiceTestSupport {
         AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator) named(taskName, autoDisposableTask);
 
         assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
+        assertEquals(taskName, decoratedTask.undecorateTo(NamedTask.class).getName());
         assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
     }
 
@@ -73,7 +73,42 @@ public class TaskUtilsTest extends ScheduledExecutorServiceTestSupport {
 
         assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
         assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
-        assertEquals(decoratedTask.undecorateTo(NamedTask.class).getName(), NamedCallable.NAME);
+        assertEquals(NamedCallable.NAME, decoratedTask.undecorateTo(NamedTask.class).getName());
     }
 
+    @Test
+    public void decoratedTask_whenPlainRunnableTask() {
+        String taskName = "Name 1";
+        String taskName2 = "Name 2";
+        PlainRunnableTask plainRunnableTask = new PlainRunnableTask();
+
+        AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator) autoDisposable(named(taskName, named(taskName2, autoDisposable(autoDisposable(plainRunnableTask)))));
+
+        assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
+        assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
+        assertEquals(taskName, decoratedTask.undecorateTo(NamedTask.class).getName());
+    }
+
+    @Test
+    public void decoratedTask_whenRunnableImplementingAutoDisposableRunnableTask() {
+        String taskName = "Name 2";
+        AutoDisposableRunnable autoDisposableRunnable = new AutoDisposableRunnable();
+
+        AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator) named(taskName, autoDisposableRunnable);
+
+        assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
+        assertEquals(taskName, decoratedTask.undecorateTo(NamedTask.class).getName());
+        assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
+    }
+
+    @Test
+    public void decoratedTask_whenRunnableImplementingNamedTask() {
+        NamedRunnable namedTaskRunnable = new NamedRunnable();
+
+        AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator) autoDisposable(namedTaskRunnable);
+
+        assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
+        assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
+        assertEquals(NamedRunnable.NAME, decoratedTask.undecorateTo(NamedTask.class).getName());
+    }
 }

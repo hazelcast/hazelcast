@@ -139,8 +139,8 @@
         "jet": {
           "$ref": "#/definitions/Jet"
         },
-        "device": {
-          "$ref": "#/definitions/Device"
+        "local-device": {
+          "$ref": "#/definitions/LocalDevice"
         }
       }
     },
@@ -290,6 +290,11 @@
           "description": "Set to true to allow console commands execution on the member, false to disallow.",
           "type": "boolean",
           "default": false
+        },
+        "data-access-enabled": {
+          "description": "Set to true to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow. Management Center can't access the data if at least one member has the data access disabled.",
+          "type": "boolean",
+          "default": true
         },
         "trusted-interfaces": {
           "type": "array",
@@ -1499,10 +1504,11 @@
                   },
                   "device-name": {
                     "type": "string",
+                    "default": "default-tiered-store-device",
                     "description": "Name of the device for a given disk tier."
                   }
                 },
-                "required": ["enabled", "device-name"]
+                "required": ["enabled"]
               }
             },
             "required": ["enabled"]
@@ -3188,6 +3194,40 @@
         "allow-override-default-serializers": {
           "type": "boolean",
           "default": false
+        },
+        "compact-serialization": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enables/disables the compact serialization."
+            },
+            "registered-classes": {
+              "type": "array",
+              "description": "Contains classes registered to be serialized with compact serialization.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "class": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the class to be serialized with compact serialization. If the class has an explicit serializer, it must be specified with type-name and serializer attributes. Those attributes must not be present if the class is to be serialized with reflective compact serializer. Either both or none of the attributes must be present."
+                  },
+                  "serializer": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the compact serializer to be used to serialize the class."
+                  },
+                  "type-name": {
+                    "type": "string",
+                    "description": "Type name of the class."
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3685,7 +3725,7 @@
         }
       }
     },
-    "Device": {
+    "LocalDevice": {
       "type": "object",
       "additionalProperties": {
         "type": "object",

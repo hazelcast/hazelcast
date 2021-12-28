@@ -40,6 +40,7 @@ hazelcast:
   management-center:
     scripting-enabled: false
     console-enabled: false
+    data-access-enabled: true
     trusted-interfaces:
       - 10.10.1.*
       - 10.10.2.*
@@ -601,6 +602,13 @@ hazelcast:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -926,7 +934,7 @@ hazelcast:
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
 
-  device:
+  local-device:
     my-local-device:
       base-dir: base-dir
       block-size: 4096

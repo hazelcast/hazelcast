@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ModularJavaUtils;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -37,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.instance.impl.DuplicatedResourcesScanner.checkForDuplicates;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -57,8 +59,12 @@ public final class HazelcastInstanceFactory {
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture<HazelcastInstanceProxy>> INSTANCE_MAP = new ConcurrentHashMap<>(5);
 
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceFactory.class);
+
     static {
-        ModularJavaUtils.checkJavaInternalAccess(Logger.getLogger(HazelcastInstanceFactory.class));
+        ModularJavaUtils.checkJavaInternalAccess(LOGGER);
+        String resourceName = "META-INF/services/" + NodeExtension.class.getName();
+        checkForDuplicates(HazelcastInstanceFactory.class.getClassLoader(), LOGGER, resourceName);
     }
 
     private HazelcastInstanceFactory() {

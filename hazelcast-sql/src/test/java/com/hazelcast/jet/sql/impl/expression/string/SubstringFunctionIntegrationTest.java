@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
@@ -179,7 +179,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", (byte) 2);
         checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", (short) 2);
         checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", 2);
-        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), 2L);
+        checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", 2L);
         checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE);
         checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE);
         checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, REAL), 2f);
@@ -225,7 +225,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", (byte) 2);
         checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", (short) 2);
         checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", 2);
-        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), 2L);
+        checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", 2L);
         checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE);
         checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE);
         checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, REAL), 2f);
