@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
-import com.hazelcast.map.impl.record.Record;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -130,8 +129,6 @@ public interface Storage<K, R> {
      * @return fetched entries and the new iteration state
      */
     MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
-
-    Record extractRecordFromLazy(EntryView entryView);
 
     Data extractDataKeyFromLazy(EntryView entryView);
 

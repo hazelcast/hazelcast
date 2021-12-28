@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.override;
+package com.hazelcast.spring.serialization;
 
-import java.util.AbstractMap;
-import java.util.Map;
-
-class ExternalConfigTestUtils {
-
-    static <K, V> Map.Entry<K, V> entry(K key, V value) {
-        return new AbstractMap.SimpleEntry<>(key, value);
-    }
+public class DummyCompactSerializable {
 }

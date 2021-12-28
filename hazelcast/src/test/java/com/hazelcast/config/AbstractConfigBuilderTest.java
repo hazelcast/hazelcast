@@ -379,6 +379,21 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJavaSerializationFilter();
 
     @Test
+    public abstract void testCompactSerialization();
+
+    @Test
+    public abstract void testCompactSerialization_explicitSerializationRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustTypeName();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustSerializer();
+
+    @Test
     public abstract void testAllowOverrideDefaultSerializers();
 
     @Test
@@ -394,7 +409,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testPersistence();
 
     @Test
-    public abstract void testDevice();
+    public abstract void testLocalDevice();
 
     @Test
     public abstract void testTieredStore();

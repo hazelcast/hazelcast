@@ -312,11 +312,15 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         // Start another instance so the job can restart and be cleaned up correctly
         HazelcastInstance instance7 = createHazelcastInstance(createConfig());
         waitAllForSafeState(newArrayList(instances[0], instance6, instance7));
-        assertJobStatusEventually(job, RUNNING);
+        assertTrueEventually(() -> assertStatusRunningOrCompleted(job.getStatus()), 5);
     }
 
     private void assertStatusNotRunningOrStarting(JobStatus status) {
         assertTrue("status=" + status, status == NOT_RUNNING || status == STARTING);
+    }
+
+    private void assertStatusRunningOrCompleted(JobStatus status) {
+        assertTrue("status=" + status, status == RUNNING || status == COMPLETED);
     }
 
     @Test

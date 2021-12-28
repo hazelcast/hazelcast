@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.override;
+package com.hazelcast.spring.serialization;
 
-import java.util.AbstractMap;
-import java.util.Map;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 
-class ExternalConfigTestUtils {
+import javax.annotation.Nonnull;
 
-    static <K, V> Map.Entry<K, V> entry(K key, V value) {
-        return new AbstractMap.SimpleEntry<>(key, value);
+public class DummyCompactSerializer implements CompactSerializer<DummyCompactSerializable> {
+    @Nonnull
+    @Override
+    public DummyCompactSerializable read(@Nonnull CompactReader in) {
+        return new DummyCompactSerializable();
+    }
+
+    @Override
+    public void write(@Nonnull CompactWriter out, @Nonnull DummyCompactSerializable object) {
+
     }
 }

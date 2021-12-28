@@ -36,7 +36,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     @Override
-    public Record<Data> newRecord(Object value) {
+    public Record<Data> newRecord(Data key, Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
         boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
