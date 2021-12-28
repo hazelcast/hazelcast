@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config;
+package com.hazelcast.internal.config.dynamic;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
@@ -73,8 +73,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.config.ConfigXmlGenerator.classNameOrImplClass;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.classNameOrImplClass;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.TRUE;
 
@@ -85,7 +85,7 @@ import static java.lang.Boolean.TRUE;
  * must be added to this class.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:ClassFanOutComplexity"})
-public class ConfigYamlGenerator {
+public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
 
