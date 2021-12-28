@@ -35,6 +35,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
@@ -42,11 +43,19 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.ringbuffer.RingbufferStore;
+import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
+import example.serialization.EmployeeDTO;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.EmployerDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -74,6 +83,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -390,14 +400,14 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
 
     @Test
     public void testDeviceConfig() {
-        DeviceConfig deviceConfig0 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
 
-        DeviceConfig deviceConfig1 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
                 .setBlockSize(1024)
@@ -405,13 +415,13 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
                 .setWriteIOThreadCount(200);
 
         Config config = new Config()
-                .addDeviceConfig(deviceConfig0)
-                .addDeviceConfig(deviceConfig1);
+                .addDeviceConfig(localDeviceConfig0)
+                .addDeviceConfig(localDeviceConfig1);
 
         Config xmlConfig = getNewConfigViaGenerator(config);
 
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig0, xmlConfig.getDeviceConfig("null-device"));
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig1, xmlConfig.getDeviceConfig("local-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig0, xmlConfig.getDeviceConfig("null-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig1, xmlConfig.getDeviceConfig("local-device"));
     }
 
     @Test
@@ -811,6 +821,42 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
+    @Test
+    public void testCompactSerialization() {
+        Config config = new Config();
+
+        CompactSerializationConfig expected = new CompactSerializationConfig();
+        expected.setEnabled(true);
+        expected.register(EmployerDTO.class);
+        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+
+        config.getSerializationConfig().setCompactSerializationConfig(expected);
+
+        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+
+        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
+        // compact serialization config, when we read the config from XML/YAML, we store registered classes
+        // in a different map.
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+            String key = entry.getKey();
+            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
+            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
+
+            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
+            assertEquals(expectedRegistration.element2, actualRegistration.element2);
+
+            CompactSerializer serializer = expectedRegistration.element3;
+            if (serializer != null) {
+                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+            } else {
+                assertNull(actualRegistration.element3);
+            }
+        }
+    }
+
     private static class TypeClass {
     }
 
@@ -855,6 +901,7 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
                 .setScriptingEnabled(false)
                 .setConsoleEnabled(false)
+                .setDataAccessEnabled(true)
                 .setTrustedInterfaces(newHashSet("192.168.1.1"));
 
         Config config = new Config()
@@ -865,6 +912,7 @@ public class ConfigXmlGeneratorTest extends AbstractConfigGeneratorTest {
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
         assertEquals(managementCenterConfig.isConsoleEnabled(), xmlMCConfig.isConsoleEnabled());
+        assertEquals(managementCenterConfig.isDataAccessEnabled(), xmlMCConfig.isDataAccessEnabled());
         assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
     }
 

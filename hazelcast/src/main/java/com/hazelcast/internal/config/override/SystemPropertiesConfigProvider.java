@@ -17,6 +17,7 @@ package com.hazelcast.internal.config.override;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * A {@link ConfigProvider} extracting config entries from system properties.
@@ -24,18 +25,26 @@ import java.util.Map;
 class SystemPropertiesConfigProvider implements ConfigProvider {
 
     private final SystemPropertiesConfigParser systemPropertiesConfigParser;
+    private final SystemPropertiesProvider systemPropertiesProvider;
 
-    SystemPropertiesConfigProvider(SystemPropertiesConfigParser systemPropertiesConfigParser) {
+    SystemPropertiesConfigProvider(SystemPropertiesConfigParser systemPropertiesConfigParser,
+                                   SystemPropertiesProvider systemPropertiesProvider) {
         this.systemPropertiesConfigParser = systemPropertiesConfigParser;
+        this.systemPropertiesProvider = systemPropertiesProvider;
     }
 
     @Override
     public Map<String, String> properties() {
-        return Collections.unmodifiableMap(systemPropertiesConfigParser.parse(System.getProperties()));
+        return Collections.unmodifiableMap(systemPropertiesConfigParser.parse(systemPropertiesProvider.get()));
     }
 
     @Override
     public String name() {
         return "system properties";
+    }
+
+    @FunctionalInterface
+    interface SystemPropertiesProvider {
+        Properties get();
     }
 }

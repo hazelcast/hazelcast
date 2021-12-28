@@ -221,7 +221,7 @@ hazelcast:
     # - false: Allows all actions that have no permission mapping
     client-block-unmapped-actions: true
 
-  device:
+  local-device:
     # Configuration for a device, which a tiered-store can reference and use for its disk-tier.
     default:
       base-dir: "tiered-store"

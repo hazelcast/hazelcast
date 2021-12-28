@@ -257,12 +257,12 @@
     <!--
         Configuration for a device, which a tiered-store can reference and use for its disk-tier.
     -->
-    <device name="default">
+    <local-device name="default">
         <base-dir>tiered-store</base-dir>
         <block-size>4096</block-size>
         <read-io-thread-count>16</read-io-thread-count>
         <write-io-thread-count>4</write-io-thread-count>
-    </device>
+    </local-device>
 
     <map name="default">
         <!--

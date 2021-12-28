@@ -32,9 +32,11 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
@@ -133,6 +135,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -153,8 +156,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
+import com.hazelcast.spring.serialization.DummyCompactSerializable;
+import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
+import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
@@ -1129,6 +1135,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isScriptingEnabled());
         assertTrue(managementCenterConfig.isConsoleEnabled());
+        assertTrue(managementCenterConfig.isDataAccessEnabled());
         Set<String> tis = managementCenterConfig.getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.1.2.*", tis.iterator().next());
@@ -1173,6 +1180,27 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
         assertNotNull(globalSerializerConfig);
         assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
+    }
+
+    @Test
+    public void testCompactSerializationConfig() {
+        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+        assertTrue(compactSerializationConfig.isEnabled());
+
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        assertEquals(2, namedRegistries.size());
+
+        String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
+        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
+        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistries.get(reflectivelySerializableClassName);
+        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+
+        String compactSerializableClassName = DummyCompactSerializable.class.getName();
+        String compactSerializerClassName = DummyCompactSerializer.class.getName();
+        String typeName = "dummy";
+        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
+        TriTuple<String, String, String> actualExplicitRegistration = namedRegistries.get(typeName);
+        assertEquals(explicitClassRegistration, actualExplicitRegistration);
     }
 
     @Test
@@ -1392,19 +1420,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertEquals(2, config.getDeviceConfigs().size());
 
-        DeviceConfig deviceConfig = config.getDeviceConfig(deviceName0);
-        assertEquals(deviceName0, deviceConfig.getName());
-        assertEquals(baseDir0, deviceConfig.getBaseDir());
-        assertEquals(blockSize, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount0, deviceConfig.getWriteIOThreadCount());
+        LocalDeviceConfig localDeviceConfig = config.getDeviceConfig(deviceName0);
+        assertEquals(deviceName0, localDeviceConfig.getName());
+        assertEquals(baseDir0, localDeviceConfig.getBaseDir());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
 
-        deviceConfig = config.getDeviceConfig(deviceName1);
-        assertEquals(deviceName1, deviceConfig.getName());
-        assertEquals(baseDir1, deviceConfig.getBaseDir());
-        assertEquals(blockSize, deviceConfig.getBlockSize());
-        assertEquals(readIOThreadCount, deviceConfig.getReadIOThreadCount());
-        assertEquals(writeIOThreadCount1, deviceConfig.getWriteIOThreadCount());
+        localDeviceConfig = config.getDeviceConfig(deviceName1);
+        assertEquals(deviceName1, localDeviceConfig.getName());
+        assertEquals(baseDir1, localDeviceConfig.getBaseDir());
+        assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
+        assertEquals(writeIOThreadCount1, localDeviceConfig.getWriteIOThreadCount());
     }
 
     @Test
