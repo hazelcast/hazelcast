@@ -65,7 +65,7 @@ import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 public final class DynamicConfigGeneratorUtil {
 
     private DynamicConfigGeneratorUtil() {
-        //not called
+        // not called
     }
 
     public static String wanReplicationConfigGenerator(
