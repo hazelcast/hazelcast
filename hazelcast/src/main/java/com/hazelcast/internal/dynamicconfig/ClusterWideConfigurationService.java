@@ -341,9 +341,11 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void rewrite(IdentifiedDataSerializable subConfig) {
-        // Code should never come here. We should fast fail in
-        // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()
-        throw new UnsupportedOperationException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
+        if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
+            // Code should never come here. We should fast fail in
+            // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()
+            throw new UnsupportedOperationException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
+        }
     }
 
     @Override
