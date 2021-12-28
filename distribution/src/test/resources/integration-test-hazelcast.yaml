@@ -1,0 +1,14 @@
+hazelcast:
+  cluster-name: hz-it-cluster
+  properties:
+    hazelcast.socket.bind.any: false
+  network:
+    interfaces:
+      enabled: true
+      interfaces:
+        - 127.0.0.1
+    rest-api:
+      enabled: true
+      endpoint-groups:
+        HEALTH_CHECK:
+          enabled: true
