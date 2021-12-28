@@ -45,7 +45,10 @@ public final class EventMetadata {
         WAN_CONFIGURATION_ADDED(8),
         ADD_WAN_CONFIGURATION_IGNORED(9),
         WAN_SYNC_IGNORED(10),
-        WAN_CONFIGURATION_EXTENDED(11);
+        WAN_CONFIGURATION_EXTENDED(11),
+        RELOAD_STARTED(12),
+        RELOAD_PROGRESS(13),
+        RELOAD_FINISHED(14);
 
         private static final Map<Integer, EventType> CODE_MAPPING = stream(EventType.values())
                 .collect(toMap(EventType::getCode, eventType -> eventType));
