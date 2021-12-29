@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -43,8 +44,8 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
  * addresses of a Hazelcast instance.
  */
 public class LocalAddressRegistry {
-    private final Map<Address, UUID> addressToUuid;
-    private final Map<UUID, Pair> uuidToAddresses;
+    private final ConcurrentMap<Address, UUID> addressToUuid;
+    private final ConcurrentMap<UUID, Pair> uuidToAddresses;
     private final ILogger logger;
 
     // Since the requested lifecycle of local member's uuid and addresses are slightly different

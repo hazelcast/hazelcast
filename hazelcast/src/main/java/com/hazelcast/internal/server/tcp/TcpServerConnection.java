@@ -353,7 +353,8 @@ public class TcpServerConnection implements ServerConnection {
         return "Connection[id=" + connectionId
                 + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", qualifier=" + connectionManager.getEndpointQualifier()
-                + ", endpoint=" + remoteAddress + "-" + remoteUuid
+                + ", endpoint=" + remoteAddress
+                + ", remoteUuid=" + remoteUuid
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
                 + ", planeIndex=" + planeIndex

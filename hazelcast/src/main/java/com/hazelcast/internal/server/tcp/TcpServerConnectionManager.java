@@ -384,7 +384,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                     context.collect(rootDescriptor
                             .copy()
                             .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, uuid.toString())
-                            // TODO: use configured address here after getting it by performing lookup on UUID -> AddressAlias map
                             .withTag(TCP_TAG_ENDPOINT, connection.getRemoteAddress().toString()), connection);
                 }
             }
