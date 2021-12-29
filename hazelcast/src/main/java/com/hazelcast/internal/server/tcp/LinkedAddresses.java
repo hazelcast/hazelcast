@@ -67,17 +67,11 @@ public final class LinkedAddresses {
         LinkedAddresses linkedAddresses = new LinkedAddresses(primaryAddress);
         try {
             InetAddress inetAddress = primaryAddress.getInetAddress();
-            // the fully qualified domain name for the given primary address
-            // or if the operation is not allowed by the security check,
-            // the textual representation of the IP address.
-            String canonicalHost = inetAddress.getCanonicalHostName();
             // ip address for the given primary address
             String ip = inetAddress.getHostAddress();
 
             Address addressIp = new Address(ip, primaryAddress.getPort());
-            Address addressCanonicalHost = new Address(canonicalHost, primaryAddress.getPort());
             linkedAddresses.addAddress(addressIp);
-            linkedAddresses.addAddress(addressCanonicalHost);
         } catch (UnknownHostException e) {
             // we have a hostname here in `address`, but we can't resolve it
             // how on earth we could come here?
