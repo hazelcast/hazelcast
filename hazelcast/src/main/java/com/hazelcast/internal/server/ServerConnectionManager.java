@@ -73,18 +73,27 @@ public interface ServerConnectionManager
     }
 
     /**
-     * Registers (i.e. stores) the connection for the given remote remoteAddress.
+     * Registers (i.e. stores) the connection for the given primary address.
      * Once this call finishes every subsequent call to {@link #get(Address)} will return
      * the relevant {@link Connection} resource.
      *
-     * @param remoteAddress - The remote address to register the connection under
-     * @param targetAddress - Requested target address on the connector side, null if acceptor side
+     * @param primaryAddress - The primary address to register the connection under.
+     *                       If the remote side of connection is a Hazelcast member, we prefer one
+     *                       of the available public addresses as a primary address. If the underlying
+     *                       connection manager supports multiple endpoints, the public address corresponding
+     *                       to {@link com.hazelcast.instance.EndpointQualifier#MEMBER} has the priority.
+     * @param targetAddress - Requested target address on the connector side, null if acceptor side.
+     *                      We register this targetAddress as an alias to primaryAddress and also remove
+     *                      the connection from in progress connections set by using this target address.
+     *      address.
+     * @param remoteAddressAliases the other address aliases to be registered which are incoming as part of remote
+     *                            member's MemberHandshake
      * @param connection    - The connection to be registered
      * @param planeIndex    - The index of the plane
      * @return True if the call was successful
      */
     boolean register(
-            Address remoteAddress,
+            Address primaryAddress,
             Address targetAddress,
             Collection<Address> remoteAddressAliases,
             UUID remoteUuid,
@@ -249,11 +258,11 @@ public interface ServerConnectionManager
     /**
      * blocks the caller thread until a connection is established (or failed)
      * or the time runs out. Callers must ensure a connection is established after this method returns {@code true}.
-     * @param address the address of the remote side of connection that  for
+     * @param address the address of the remote side of connection that we're waiting for its establishment
      * @param timeoutMillis the maximum time to block on
      * @param streamId the stream id for the connection
      * @return true if connected successfully, false if timed out
-     * @throws java.lang.InterruptedException
+     * @throws java.lang.InterruptedException if the current thread was interrupted while blocking
      */
     default boolean blockOnConnect(Address address, long timeoutMillis, int streamId) throws InterruptedException {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(timeoutMillis));
