@@ -163,8 +163,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
-    // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
-    public volatile UUID thisUuid;
+
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;
@@ -179,6 +178,8 @@ public class Node {
     private final LocalAddressRegistry localAddressRegistry;
     private ManagementCenterService managementCenterService;
 
+    // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
+    private volatile UUID thisUuid;
     private volatile NodeState state = NodeState.STARTING;
 
     /**
@@ -435,6 +436,10 @@ public class Node {
 
     public UUID getThisUuid() {
         return thisUuid;
+    }
+
+    public void setThisUuid(UUID uuid) {
+        thisUuid = uuid;
     }
 
     public MemberImpl getLocalMember() {

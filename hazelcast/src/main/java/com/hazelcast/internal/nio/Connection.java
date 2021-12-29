@@ -19,6 +19,7 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 
+import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.UUID;
@@ -77,6 +78,7 @@ public interface Connection {
      * <p>
      * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
      */
+    @Nullable
     InetSocketAddress getRemoteSocketAddress();
 
     /**
@@ -98,6 +100,7 @@ public interface Connection {
      * It can be null if the other side of connection is not member
      * @return the uuid of the remote endpoint of the connection.
      */
+    @Nullable
     UUID getRemoteUuid();
 
     /**
@@ -112,6 +115,7 @@ public interface Connection {
      *
      * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
      */
+    @Nullable
     InetAddress getInetAddress();
 
     /**

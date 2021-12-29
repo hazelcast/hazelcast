@@ -340,7 +340,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         UUID newUuid = UuidUtil.newUnsecureUUID();
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
-        node.thisUuid = newUuid;
+        node.setThisUuid(newUuid);
         localMember = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
@@ -585,6 +585,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Collection<MemberImpl> getMemberImpls() {
         return membershipManager.getMembers();
     }
@@ -594,6 +595,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Set<Member> getMembers() {
         return membershipManager.getMemberSet();
     }
@@ -663,16 +665,19 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Address getThisAddress() {
         return node.getThisAddress();
     }
 
     @Override
+    @Nonnull
     public UUID getThisUuid() {
         return node.getThisUuid();
     }
 
     @Override
+    @Nonnull
     public MemberImpl getLocalMember() {
         return localMember;
     }
@@ -707,6 +712,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public ClusterClockImpl getClusterClock() {
         return clusterClock;
     }
@@ -734,6 +740,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterId = null;
     }
 
+    @Nonnull
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
@@ -828,6 +835,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public Version getClusterVersion() {
         return clusterStateManager.getClusterVersion();
     }
@@ -838,6 +846,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    @Nonnull
     public PersistenceService getPersistenceService() {
         return node.getNodeExtension().getHotRestartService();
     }
