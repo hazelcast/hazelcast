@@ -153,7 +153,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobSuspendedDueToFailure_then_canBeResumed() {
         int numItems = 100;
-        int interuptItem = 50;
+        int interruptItem = 50;
 
         StreamSource<Integer> source = SourceBuilder.stream("src", procCtx -> new int[1])
                 .<Integer>fillBufferFn((ctx, buf) -> {
@@ -172,7 +172,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
                 .<String, Boolean, Map.Entry<Integer, Integer>>mapUsingIMap("SuspendExecutionOnFailureTest_failureMap",
                         item -> "key",
                         (item, value) -> {
-                            if (value && item == interuptItem) {
+                            if (value && item == interruptItem) {
                                 throw new RuntimeException("Fail deliberately");
                             }
                             return entry(item, item);
@@ -189,10 +189,11 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         assertJobStatusEventually(job, SUSPENDED);
 
         IMap<Integer, Integer> sinkMap = hz().getMap("SuspendExecutionOnFailureTest_sinkMap");
-        assertTrueEventually(() -> assertEquals(interuptItem, sinkMap.size()));
 
         counterMap.put("key", false);
         job.resume();
+        // sinkMap is an idempotent sink, so even we're using at-least-once, no key will be duplicated, so the
+        // must contain expected number of items.
         assertTrueEventually(() -> assertEquals(numItems, sinkMap.size()));
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 
