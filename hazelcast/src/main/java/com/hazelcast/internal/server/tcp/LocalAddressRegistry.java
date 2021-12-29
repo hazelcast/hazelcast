@@ -230,11 +230,18 @@ public class LocalAddressRegistry {
             addresses.addAllResolvedAddresses(addressPicker.getPublicAddress(addressEntry.getKey()));
             addresses.addAllResolvedAddresses(addressEntry.getValue());
             ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel(addressEntry.getKey());
-            if (serverSocketChannel != null && serverSocketChannel.socket().getInetAddress()
-                    .getHostAddress().equals("0.0.0.0")) {
+            if (serverSocketChannel != null && serverSocketChannel.socket().getInetAddress().isAnyLocalAddress()) {
                 int port = addressEntry.getValue().getPort();
                 try {
                     Collections.list(NetworkInterface.getNetworkInterfaces())
+                            .stream().filter(netInterface -> {
+                                try {
+                                    return !netInterface.isVirtual() && netInterface.isUp();
+                                } catch (SocketException e) {
+                                    ignore(e);
+                                    return false;
+                                }
+                            })
                             .forEach(networkInterface ->
                                     Collections.list(networkInterface.getInetAddresses())
                                             .forEach(inetAddress ->
