@@ -1090,12 +1090,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     /**
-     *
-     * @param millis
+     * @param timeoutMillis the maximum time in millis to block on join
      * @return true is cluster has been joined, false if timed out
      * @throws InterruptedException
      */
-    public boolean blockOnJoin(long millis) throws InterruptedException {
-        return joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
+    public boolean blockOnJoin(long timeoutMillis) throws InterruptedException {
+        return joined.get().latch.await(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 }

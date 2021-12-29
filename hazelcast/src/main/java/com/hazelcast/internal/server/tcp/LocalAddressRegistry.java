@@ -26,7 +26,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Iterator;
@@ -173,12 +172,6 @@ public class LocalAddressRegistry {
      */
     @Nullable
     public UUID uuidOf(@Nonnull Address address) {
-        try {
-            // try to resolve this address first
-            address = new Address(address.getInetSocketAddress());
-        } catch (UnknownHostException e) {
-            ignore(e);
-        }
         if (localAddresses != null && localAddresses.contains(address)) {
             return localUuid;
         }
