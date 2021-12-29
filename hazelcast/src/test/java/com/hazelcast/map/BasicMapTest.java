@@ -307,7 +307,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchUpdated = new CountDownLatch(1);
         final CountDownLatch latchCleared = new CountDownLatch(1);
         final CountDownLatch latchEvicted = new CountDownLatch(1);
-        final CountDownLatch latchExpired = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
             @Override
@@ -1269,17 +1268,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "axyz");
         map.remove("key1");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("key1", addedKey[0]);
-                assertEquals("abc", addedValue[0]);
-                assertEquals("key2", updatedKey[0]);
-                assertEquals("bcd", oldValue[0]);
-                assertEquals("axyz", newValue[0]);
-                assertEquals("key1", removedKey[0]);
-                assertEquals("abc", removedValue[0]);
-            }
+        assertTrueEventually(() -> {
+            assertEquals("key1", addedKey[0]);
+            assertEquals("abc", addedValue[0]);
+            assertEquals("key2", updatedKey[0]);
+            assertEquals("bcd", oldValue[0]);
+            assertEquals("axyz", newValue[0]);
+            assertEquals("key1", removedKey[0]);
+            assertEquals("abc", removedValue[0]);
         });
     }
 
@@ -1361,17 +1357,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("key");
         map.remove("keyz");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(addedKey[0], "key");
-                assertEquals(addedValue[0], "value");
-                assertEquals(updatedKey[0], "key");
-                assertEquals(oldValue[0], "value");
-                assertEquals(newValue[0], "value2");
-                assertEquals(removedKey[0], "key");
-                assertEquals(removedValue[0], "value2");
-            }
+        assertTrueEventually(() -> {
+            assertEquals(addedKey[0], "key");
+            assertEquals(addedValue[0], "value");
+            assertEquals(updatedKey[0], "key");
+            assertEquals(oldValue[0], "value");
+            assertEquals(newValue[0], "value2");
+            assertEquals(removedKey[0], "key");
+            assertEquals(removedValue[0], "value2");
         });
     }
 
@@ -1425,17 +1418,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value2");
         map.remove("key");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(addedKey[0], "key");
-                assertEquals(addedValue[0], null);
-                assertEquals(updatedKey[0], "key");
-                assertEquals(oldValue[0], null);
-                assertEquals(newValue[0], null);
-                assertEquals(removedKey[0], "key");
-                assertEquals(removedValue[0], null);
-            }
+        assertTrueEventually(() -> {
+            assertEquals(addedKey[0], "key");
+            assertEquals(addedValue[0], null);
+            assertEquals(updatedKey[0], "key");
+            assertEquals(oldValue[0], null);
+            assertEquals(newValue[0], null);
+            assertEquals(removedKey[0], "key");
+            assertEquals(removedValue[0], null);
         });
     }
 
@@ -1445,12 +1435,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         map.put("key", "value", 2, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get("key"));
-            }
-        }, 30);
+        assertTrueEventually(() -> assertNull(map.get("key")), 30);
     }
 
     @Test
@@ -1559,7 +1544,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void github_11489_verifyNoFailingCastOnValue() throws Exception {
+    public void github_11489_verifyNoFailingCastOnValue() {
         // always run map.values on a map proxy backed by the current-version instance otherwise, when running as compatibility
         // test, the TestPagingPredicate will be proxied and fail with a NullPointerException during serialization
         IMap<Integer, Integer> test = instances[instances.length - 1].getMap("github_11489");

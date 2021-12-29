@@ -37,7 +37,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -57,7 +57,7 @@ import java.util.function.BiConsumer;
  */
 public interface RecordStore<R extends Record> {
 
-    ExpirySystem getExpirySystem();
+    ExpirySystemIf getExpirySystem();
 
     LocalRecordStoreStats getLocalRecordStoreStats();
 
@@ -656,4 +656,12 @@ public interface RecordStore<R extends Record> {
     LocalRecordStoreStatsImpl getStats();
 
     void setStats(LocalRecordStoreStats stats);
+
+    default void beforeOperation() {
+        // no-op
+    }
+
+    default void afterOperation() {
+        // no-op
+    }
 }
