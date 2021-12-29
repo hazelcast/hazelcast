@@ -49,14 +49,6 @@ public interface Storage<K, R> {
      */
     R updateRecordValue(K key, R record, Object value);
 
-    default boolean isUpdatableInPlace() {
-        return false;
-    }
-
-    default boolean isUpdatableInPlace(R record, Data newValue) {
-        return false;
-    }
-
     R get(K key);
 
     /**
@@ -78,7 +70,7 @@ public interface Storage<K, R> {
      * Returned iterator from this method doesn't throw {@link
      * java.util.ConcurrentModificationException} to fail fast. Because fail
      * fast may not be the desired behaviour always. For example if you are
-     * caching an iterator as in, and you know that in next rounds you will
+     * caching an iterator as in and you know that in next rounds you will
      * eventually visit all entries, you don't need fail fast behaviour.
      *
      * @return new read only iterator instance
@@ -156,14 +148,6 @@ public interface Storage<K, R> {
     }
 
     default void afterOperation() {
-        // no-op
-    }
-
-    default void pinRecord(R record) {
-        // no-op
-    }
-
-    default void unpinRecord(R record) {
         // no-op
     }
 }
