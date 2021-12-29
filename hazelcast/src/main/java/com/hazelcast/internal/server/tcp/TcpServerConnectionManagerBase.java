@@ -352,6 +352,11 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     protected boolean send(Packet packet, Address target, SendTask sendTask, int streamId) {
         UUID targetUuid = addressRegistry.uuidOf(target);
+        if (targetUuid == serverContext.getThisUuid()) {
+            logger.warning("Packet send task is rejected. Target is this node! Target[uuid=" + targetUuid
+                    + ", address=" + target + "]");
+            return false;
+        }
         Connection connection = get(targetUuid, streamId);
         if (connection != null) {
             return connection.write(packet);

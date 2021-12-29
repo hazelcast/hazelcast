@@ -184,9 +184,16 @@ public final class TcpServerControl {
                 connection,
                 handshake.getPlaneIndex()
         );
-        // handle duplicates after registering the addresses to avoid the later duplicate connections
+        // handle error cases after registering the addresses to avoid the later duplicate connections
         // occur because target addresses are not registered.
+
+        // handle duplicate connections
         handleDuplicateConnections(connection, remoteUuid, handshake.getPlaneIndex());
+
+        // handle self connection
+        if (remoteUuid.equals(serverContext.getThisUuid())) {
+            connection.close("Connecting to self!", null);
+        }
     }
 
     /**

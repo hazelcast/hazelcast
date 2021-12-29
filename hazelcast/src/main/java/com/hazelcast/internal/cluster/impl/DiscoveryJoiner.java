@@ -29,6 +29,7 @@ import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -72,12 +73,12 @@ public class DiscoveryJoiner
                 "Discovered nodes cannot be null!");
 
         MemberImpl localMember = node.nodeEngine.getLocalMember();
-        Address localAddress = localMember.getAddress();
+        Set<Address> localAddresses = node.getLocalAddressRegistry().getLocalAddresses().getAllAddresses();
 
         Collection<Address> possibleMembers = new ArrayList<>();
         for (DiscoveryNode discoveryNode : discoveredNodes) {
             Address discoveredAddress = usePublicAddress ? discoveryNode.getPublicAddress() : discoveryNode.getPrivateAddress();
-            if (localAddress.equals(discoveredAddress)) {
+            if (localAddresses.contains(discoveredAddress)) {
                 if (!usePublicAddress && discoveryNode.getPublicAddress() != null) {
                     // enrich member with client public address
                     localMember.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"),

@@ -89,6 +89,16 @@ public class LocalAddressRegistry {
      * @param linkedAddresses a set of addresses
      */
     public void register(@Nonnull UUID instanceUuid, @Nonnull LinkedAddresses linkedAddresses) {
+        if (instanceUuid.equals(localUuid)) {
+            localAddresses.addLinkedAddresses(linkedAddresses);
+            if (logger.isFineEnabled()) {
+                logger.fine("This member connected to itself since some its addresses are unknown to itself."
+                        + linkedAddresses + "registered for the local member uuid=" + instanceUuid
+                        + " currently all registered addresses for this local member: " + localAddresses);
+            }
+            return;
+        }
+
         // If the old linked addresses set and the new one intersect, suppose
         // that the new ones are additional addresses and add them into old
         // address set. Otherwise, If there is no intersection between these
@@ -213,8 +223,13 @@ public class LocalAddressRegistry {
         uuidToAddresses.clear();
     }
 
-    public void setLocalUuid(UUID newUuid) {
+    public void setLocalUuid(@Nonnull UUID newUuid) {
         localUuid = newUuid;
+    }
+
+    @Nonnull
+    public LinkedAddresses getLocalAddresses() {
+        return localAddresses;
     }
 
     private void registerLocalAddresses(UUID thisUuid, AddressPicker addressPicker) {

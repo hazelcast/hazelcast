@@ -148,7 +148,17 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (clusterService.isJoined()) {
                     return;
                 }
-
+                possibleAddresses.removeIf(address -> {
+                    try {
+                        return isLocalAddress(address);
+                    } catch (UnknownHostException e) {
+                        if (logger.isFineEnabled()) {
+                            logger.fine("Error during resolving possible target address!", e);
+                        }
+                        ignore(e);
+                        return false;
+                    }
+                });
                 if (isAllBlacklisted(possibleAddresses)) {
                     logger.fine(
                             "This node will assume master role since none of the possible members accepted join request.");
@@ -204,8 +214,13 @@ public class TcpIpJoiner extends AbstractJoiner {
         OperationServiceImpl operationService = node.getNodeEngine().getOperationService();
         Collection<Future<Boolean>> futures = new LinkedList<>();
         for (Address address : possibleAddresses) {
-            if (isBlacklisted(address)) {
-                continue;
+            try {
+                if (isBlacklisted(address) && isLocalAddress(address)) {
+                    continue;
+                }
+            } catch (UnknownHostException e) {
+                logger.warning(e);
+                ignore(e);
             }
 
             Future<Boolean> future = operationService
@@ -274,6 +289,18 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (!clusterService.isJoined()) {
                 clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
             }
+
+            addresses.removeIf(address -> {
+                try {
+                    return isLocalAddress(address);
+                } catch (UnknownHostException e) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Error during resolving possible target address!", e);
+                    }
+                    ignore(e);
+                    return false;
+                }
+            });
         }
     }
 
@@ -441,8 +468,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             logger.severe(e);
             return;
         }
-        possibleAddresses.remove(node.getThisAddress());
-        possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
+        possibleAddresses.removeAll(node.getLocalAddressRegistry().getLocalAddresses().getAllAddresses());
 
         if (possibleAddresses.isEmpty()) {
             return;
