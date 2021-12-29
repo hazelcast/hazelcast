@@ -228,14 +228,6 @@ public class LocalAddressRegistry {
                 int port = addressEntry.getValue().getPort();
                 try {
                     Collections.list(NetworkInterface.getNetworkInterfaces())
-                            .stream().filter(netInterface -> {
-                                try {
-                                    return !netInterface.isVirtual() && netInterface.isUp();
-                                } catch (SocketException e) {
-                                    ignore(e);
-                                    return false;
-                                }
-                            })
                             .forEach(networkInterface ->
                                     Collections.list(networkInterface.getInetAddresses())
                                             .forEach(inetAddress ->
