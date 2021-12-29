@@ -88,7 +88,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
-            ? serializationService.toData(value) : serializationService.toObject(value));
+                ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
         return record;

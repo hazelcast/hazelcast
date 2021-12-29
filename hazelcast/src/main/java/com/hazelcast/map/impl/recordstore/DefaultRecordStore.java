@@ -197,7 +197,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record newRecord = storage.get(dataKey);
         if (newRecord == null) {
             newRecord = createRecord(dataKey, replicatedRecord != null
-                ? replicatedRecord.getValue() : null, now);
+                    ? replicatedRecord.getValue() : null, now);
             storage.put(dataKey, newRecord);
         } else {
             newRecord = storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
@@ -931,7 +931,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             updateRecord(record, key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
-                transactionId, store, countAsAccess, backup);
+                    transactionId, store, countAsAccess, backup);
         }
         return oldValue;
     }
