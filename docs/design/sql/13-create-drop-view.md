@@ -47,6 +47,8 @@ Proposed grammar:
 CREATE [ OR REPLACE ] VIEW [ IF NOT EXISTS ] name AS query
 ```
 
+Note: the `query` must be a SELECT statement.
+
 Example:
 
 ```

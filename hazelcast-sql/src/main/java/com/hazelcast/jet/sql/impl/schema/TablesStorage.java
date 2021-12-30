@@ -45,19 +45,17 @@ import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
 
-    protected static final int MAX_CHECK_ATTEMPTS = 5;
-    protected static final long SLEEP_MILLIS = 100;
+    private static final int MAX_CHECK_ATTEMPTS = 5;
+    private static final long SLEEP_MILLIS = 100;
 
     private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
-    protected final NodeEngine nodeEngine;
-    protected final ILogger logger;
-    protected final String catalogName;
+    private final NodeEngine nodeEngine;
+    private final ILogger logger;
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-        this.catalogName = CATALOG_MAP_NAME;
     }
 
     void put(String name, Mapping mapping) {
@@ -90,20 +88,15 @@ public class TablesStorage {
         return (View) storage().remove(name);
     }
 
-    Collection<Mapping> valuesMappings() {
+    Collection<Object> allObjects() {
+        return storage().values();
+    }
+
+    Collection<String> mappingNames() {
         return storage().values()
                 .stream()
                 .filter(m -> m instanceof Mapping)
-                .map(m -> (Mapping) m)
-                .collect(Collectors.toList());
-    }
-
-
-    Collection<View> valuesViews() {
-        return storage().values()
-                .stream()
-                .filter(v -> v instanceof View)
-                .map(v -> (View) v)
+                .map(m -> ((Mapping) m).name())
                 .collect(Collectors.toList());
     }
 
@@ -115,11 +108,11 @@ public class TablesStorage {
         }
     }
 
-    protected ReplicatedMap<String, Object> storage() {
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(catalogName);
+    private ReplicatedMap<String, Object> storage() {
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
-    protected Collection<Address> getMemberAddresses() {
+    private Collection<Address> getMemberAddresses() {
         return nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).stream()
                 .filter(member -> !member.localMember() && !member.isLiteMember())
                 .map(Member::getAddress)
@@ -130,7 +123,7 @@ public class TablesStorage {
      * Temporary measure to ensure schema is propagated to all the members.
      */
     @SuppressWarnings("BusyWait")
-    protected void awaitMappingOnAllMembers(String name, IdentifiedDataSerializable metadata) {
+    private void awaitMappingOnAllMembers(String name, IdentifiedDataSerializable metadata) {
         Data keyData = nodeEngine.getSerializationService().toData(name);
         int keyPartitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
         OperationService operationService = nodeEngine.getOperationService();
@@ -139,7 +132,7 @@ public class TablesStorage {
         for (int i = 0; i < MAX_CHECK_ATTEMPTS && !memberAddresses.isEmpty(); i++) {
             List<CompletableFuture<Address>> futures = memberAddresses.stream()
                     .map(memberAddress -> {
-                        Operation operation = new GetOperation(catalogName, keyData)
+                        Operation operation = new GetOperation(CATALOG_MAP_NAME, keyData)
                                 .setPartitionId(keyPartitionId)
                                 .setValidateTarget(false);
                         return operationService

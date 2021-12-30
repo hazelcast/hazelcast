@@ -16,8 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import example.serialization.EmployeeDTO;
+import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
@@ -30,6 +36,9 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public final class CompactTestUtil {
 
@@ -143,5 +152,32 @@ public final class CompactTestUtil {
                 put(schema);
             }
         };
+    }
+
+    public static void verifyReflectiveSerializerIsUsed(SerializationConfig serializationConfig) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+
+        ExternalizableEmployeeDTO object = new ExternalizableEmployeeDTO();
+        Data data = serializationService.toData(object);
+        assertFalse(object.usedExternalizableSerialization());
+
+        ExternalizableEmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertFalse(deserializedObject.usedExternalizableSerialization());
+    }
+
+    public static void verifyExplicitSerializerIsUsed(SerializationConfig serializationConfig) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+
+        EmployeeDTO object = new EmployeeDTO(1, 1);
+        Data data = serializationService.toData(object);
+
+        EmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertEquals(object, deserializedObject);
     }
 }

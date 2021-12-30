@@ -34,12 +34,6 @@ public interface ValidatorResource {
     @BaseMessage("Unknown argument name ''{0}''")
     ExInst<SqlValidatorException> unknownArgumentName(String name);
 
-    @BaseMessage("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
-    ExInst<SqlValidatorException> joiningSubqueryNotSupported();
-
-    @BaseMessage("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN")
-    ExInst<SqlValidatorException> joiningValuesNotSupported();
-
     @BaseMessage("Grouping/aggregations over non-windowed, non-ordered streaming source not supported")
     ExInst<SqlValidatorException> streamingAggregationsOverNonOrderedSourceNotSupported();
 

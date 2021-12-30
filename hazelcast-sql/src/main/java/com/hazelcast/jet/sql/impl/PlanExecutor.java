@@ -69,8 +69,14 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.sql.SqlNode;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +94,7 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
@@ -125,6 +132,7 @@ public class PlanExecutor {
             // common case. There's no atomic operation to create an index in IMDG, so it's not easy to
             // implement.
             MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(plan.mapName()));
+
             if (mapContainer.getIndexes().getIndex(plan.indexName()) != null) {
                 throw QueryException.error("Can't create index: index '" + plan.indexName() + "' already exists");
             }
@@ -233,7 +241,22 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateViewPlan plan) {
-        catalog.createView(plan.view(), plan.isReplace(), plan.ifNotExists());
+        OptimizerContext context = plan.context();
+        SqlNode sqlNode = context.parse(plan.viewQuery()).getNode();
+        RelNode relNode = context.convert(sqlNode).getRel();
+        List<RelDataTypeField> fieldList = relNode.getRowType().getFieldList();
+
+        List<String> fieldNames = new ArrayList<>();
+        List<QueryDataType> fieldTypes = new ArrayList<>();
+
+        for (RelDataTypeField field : fieldList) {
+            fieldNames.add(field.getName());
+            fieldTypes.add(toHazelcastType(field.getType()));
+        }
+
+        View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
+
+        catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -473,6 +496,6 @@ public class PlanExecutor {
         MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapContainers().get(map.getName());
+        return mapServiceContext.getMapContainer(map.getName());
     }
 }

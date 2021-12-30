@@ -500,6 +500,11 @@ public class ProcessorTasklet implements Tasklet {
         assert inbox.isEmpty() : "inbox is not empty";
         assert pendingWatermark == null : "null wm expected, but was " + pendingWatermark;
 
+        // We need to collect metrics before draining the queues into Inbox,
+        // otherwise they would appear empty even for slow processors
+        queuesCapacity.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::capacities));
+        queuesSize.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::sizes));
+
         if (instreamCursor == null) {
             return;
         }
@@ -558,8 +563,6 @@ public class ProcessorTasklet implements Tasklet {
         if (!inbox.isEmpty()) {
             lazyIncrement(receivedBatches, currInstream.ordinal());
         }
-        queuesCapacity.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::capacities));
-        queuesSize.set(instreamCursor == null ? 0 : sum(instreamCursor.getList(), InboundEdgeStream::sizes));
     }
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {

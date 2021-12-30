@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCreateViewOperator;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -32,11 +33,17 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 
+/**
+ * AST node representing a CREATE VIEW statement.
+ *
+ * @since 5.1
+ */
 public class SqlCreateView extends SqlCreate {
     private static final SqlOperator CREATE_VIEW = new HazelcastCreateViewOperator();
 
     private final SqlIdentifier name;
     private SqlNode query;
+    private boolean isStream;
 
     public SqlCreateView(SqlParserPos pos, boolean replace, boolean ifNotExists, SqlIdentifier name, SqlNode query) {
         super(CREATE_VIEW, pos, replace, ifNotExists);
@@ -52,8 +59,8 @@ public class SqlCreateView extends SqlCreate {
         return query;
     }
 
-    public void setQuery(SqlNode query) {
-        this.query = query;
+    public boolean isStream() {
+        return isStream;
     }
 
     @Override
@@ -95,6 +102,8 @@ public class SqlCreateView extends SqlCreate {
         if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.viewIncorrectSchema());
         }
+
         query = validator.validate(query);
+        isStream = ((HazelcastSqlValidator) validator).containsStreamingSource(query);
     }
 }
