@@ -273,7 +273,7 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
     }
 
-    public static void checkDeviceConfig(DeviceConfig expectedConfig, DeviceConfig actualConfig) {
+    public static void checkDeviceConfig(LocalDeviceConfig expectedConfig, LocalDeviceConfig actualConfig) {
         checkCompatibleConfigs("device-config", expectedConfig, actualConfig, new DeviceConfigChecker());
     }
 
@@ -1027,9 +1027,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DeviceConfigChecker extends ConfigChecker<DeviceConfig> {
+    private static class DeviceConfigChecker extends ConfigChecker<LocalDeviceConfig> {
         @Override
-        boolean check(DeviceConfig t1, DeviceConfig t2) {
+        boolean check(LocalDeviceConfig t1, LocalDeviceConfig t2) {
             return Objects.equals(t1, t2);
         }
     }
@@ -1810,7 +1810,8 @@ public class ConfigCompatibilityChecker {
         boolean check(ManagementCenterConfig c1, ManagementCenterConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null
                     && (c1.isScriptingEnabled() == c2.isScriptingEnabled())
-                    && (c1.isConsoleEnabled() == c2.isConsoleEnabled()))
+                    && (c1.isConsoleEnabled() == c2.isConsoleEnabled())
+                    && (c1.isDataAccessEnabled() == c2.isDataAccessEnabled()))
                     && nullSafeEqual(c1.getTrustedInterfaces(), c2.getTrustedInterfaces());
         }
     }

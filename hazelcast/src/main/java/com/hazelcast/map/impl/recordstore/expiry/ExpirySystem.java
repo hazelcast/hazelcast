@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * can be ttl or idleness. An instance of this class is created for
  * each {@link RecordStore} and it is always accessed by same single thread.
  */
-public class ExpirySystem {
+public class ExpirySystem implements ExpirySystemIf {
     private static final long DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
             = TimeUnit.MILLISECONDS.toNanos(1);
     private static final String PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
@@ -96,6 +96,7 @@ public class ExpirySystem {
         this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
     }
 
+    @Override
     public final boolean isEmpty() {
         return MapUtil.isNullOrEmpty(expireTimeByKey);
     }
@@ -111,6 +112,7 @@ public class ExpirySystem {
     }
 
     // this method is overridden
+    @Override
     public void clear() {
         Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
         map.clear();
@@ -138,6 +140,7 @@ public class ExpirySystem {
     /**
      * Add expiryMetadata of key to this expiry system.
      */
+    @Override
     public final void add(Data key, ExpiryMetadata expiryMetadata, long now) {
         if (expiryMetadata == ExpiryMetadata.NULL) {
             removeKeyFromExpirySystem(key);
@@ -153,6 +156,7 @@ public class ExpirySystem {
     /**
      * Add expirable key to this expiry system.
      */
+    @Override
     public final void add(Data key, long ttl, long maxIdle,
                           long expiryTime, long lastUpdateTime, long now) {
         // If expiry-time <= 0, no expiry-time exists, this is update
@@ -205,6 +209,7 @@ public class ExpirySystem {
                 .setLastUpdateTime(lastUpdateTime);
     }
 
+    @Override
     public final long calculateExpirationTime(long ttl, long maxIdle,
                                               long now, long lastUpdateTime) {
         MapConfig mapConfig = mapContainer.getMapConfig();
@@ -213,6 +218,7 @@ public class ExpirySystem {
         return nextExpirationTime(ttlMillis, maxIdleMillis, now, lastUpdateTime);
     }
 
+    @Override
     public final void removeKeyFromExpirySystem(Data key) {
         if (isEmpty()) {
             return;
@@ -220,6 +226,7 @@ public class ExpirySystem {
         callRemove(key, expireTimeByKey);
     }
 
+    @Override
     public final void extendExpiryTime(Data dataKey, long now) {
         if (isEmpty()) {
             return;
@@ -244,6 +251,7 @@ public class ExpirySystem {
                 maxIdle, now, expiryMetadata.getLastUpdateTime()));
     }
 
+    @Override
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
         if (isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
@@ -275,10 +283,12 @@ public class ExpirySystem {
         return expiryReason;
     }
 
+    @Override
     public final InvalidationQueue<ExpiredKey> getExpiredKeys() {
         return expiredKeys;
     }
 
+    @Override
     @Nonnull
     public final ExpiryMetadata getExpiryMetadata(Data key) {
         ExpiryMetadata expiryMetadata = getOrCreateExpireTimeByKeyMap(false).get(key);
@@ -286,6 +296,7 @@ public class ExpirySystem {
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
+    @Override
     public final void evictExpiredEntries(final int percentage, final long now, final boolean backup) {
         // 1. Find how many keys we can scan at max.
         final int maxScannableCount = findMaxScannableCount(percentage);
@@ -407,10 +418,12 @@ public class ExpirySystem {
     }
 
     // this method is overridden
+    @Override
     public void destroy() {
         getOrCreateExpireTimeByKeyMap(false).clear();
     }
 
+    @Override
     public final void accumulateOrSendExpiredKey(Data dataKey, long valueHashCode) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;

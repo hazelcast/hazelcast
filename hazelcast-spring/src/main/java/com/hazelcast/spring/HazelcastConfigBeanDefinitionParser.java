@@ -31,7 +31,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -373,8 +373,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleAuditlog(node);
                     } else if ("jet".equals(nodeName)) {
                         handleJet(node);
-                    } else if ("device".equals(nodeName)) {
-                        handleDevice(node);
+                    } else if ("local-device".equals(nodeName)) {
+                        handleLocalDevice(node);
                     }
                 }
             }
@@ -423,8 +423,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("persistenceConfig", persistenceConfigBuilder.getBeanDefinition());
         }
 
-        private void handleDevice(Node deviceNode) {
-            BeanDefinitionBuilder deviceConfigBuilder = createBeanBuilder(DeviceConfig.class);
+        private void handleLocalDevice(Node deviceNode) {
+            BeanDefinitionBuilder deviceConfigBuilder = createBeanBuilder(LocalDeviceConfig.class);
             AbstractBeanDefinition beanDefinition = deviceConfigBuilder.getBeanDefinition();
             Node attName = deviceNode.getAttributes().getNamedItem("name");
             String deviceName = getTextContent(attName);

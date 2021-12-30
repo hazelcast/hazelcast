@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.JsonFunctionOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlJsonValueReturning;
@@ -30,6 +31,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -59,6 +61,20 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
     @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.from(2);
+    }
+
+    @Override
+    public void unparse(final SqlWriter writer, final SqlCall call, final int leftPrec, final int rightPrec) {
+        final SqlWriter.Frame frame = writer.startFunCall(this.getName());
+        call.operand(0).unparse(writer, leftPrec, rightPrec);
+        writer.sep(",");
+        call.operand(1).unparse(writer, leftPrec, rightPrec);
+
+        for (int i = 2; i < call.operandCount(); i++) {
+            call.operand(i).unparse(writer, leftPrec, rightPrec);
+        }
+
+        writer.endFunCall(frame);
     }
 
     private static final class JsonValueFunctionReturnTypeInference implements SqlReturnTypeInference {
