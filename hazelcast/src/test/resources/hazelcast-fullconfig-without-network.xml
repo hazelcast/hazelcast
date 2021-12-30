@@ -619,6 +619,16 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
