@@ -46,6 +46,11 @@ import static org.apache.calcite.plan.RelOptRule.operand;
 
 final class WatermarkRules {
 
+    /**
+     * This rule converts IMPOSE_ORDER function call into
+     * WatermarkLogicalRel. This rel is later pushed down into scan in
+     * {@link #WATERMARK_INTO_SCAN_INSTANCE}.
+     */
     @SuppressWarnings("AnonInnerLength")
     static final RelOptRule IMPOSE_ORDER_INSTANCE = new ConverterRule(
             LogicalTableFunctionScan.class, scan -> extractImposeOrderFunction(scan) != null,
@@ -60,8 +65,7 @@ final class WatermarkRules {
                     function.getCluster(),
                     OptUtils.toLogicalConvention(function.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(function.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(function)
-            );
+                    toEventTimePolicyProvider(function));
         }
 
         private FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> toEventTimePolicyProvider(
@@ -77,8 +81,7 @@ final class WatermarkRules {
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,
                         0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT
-                );
+                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
             };
         }
 
@@ -93,6 +96,10 @@ final class WatermarkRules {
         }
     };
 
+    /**
+     * Push down {@link WatermarkLogicalRel} into {@link
+     * FullScanLogicalRel}, if one is its input.
+     */
     static final RelOptRule WATERMARK_INTO_SCAN_INSTANCE = new RelOptRule(
             operand(WatermarkLogicalRel.class, operand(FullScanLogicalRel.class, none())),
             WatermarkRules.class.getSimpleName() + "(Watermark Into Scan)"

@@ -44,7 +44,7 @@ final class FullScanLogicalRule extends ConverterRule {
         return new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
-                scan.getTable()
-        );
+                scan.getTable(),
+                null);
     }
 }

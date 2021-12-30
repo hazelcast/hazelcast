@@ -23,6 +23,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -68,6 +69,7 @@ import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
@@ -304,14 +306,15 @@ public class CreateDagVisitor {
         int orderingFieldIndex = rel.orderingFieldIndex();
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider();
 
+        // this vertex is used only if there's no aggregation by a window bound
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",
-                mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
+                flatMapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
                             return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy); // TODO: single row belongs to multiple windows...
                         }),
-                        (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                        (BiFunctionEx<Function<Object[], Traverser<Object[]>>, Object[], Traverser<Object[]>>) Function::apply
                 )
         );
         connectInput(rel.getInput(), vertex, null);

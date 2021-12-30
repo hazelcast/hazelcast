@@ -83,9 +83,8 @@ final class UpdateLogicalRules {
                             OptUtils.createRelTable(
                                     relTable.getDelegate().getQualifiedName(),
                                     hazelcastTable.withProject(keyProjects(hazelcastTable.getTarget())),
-                                    scan.getCluster().getTypeFactory()
-                            )
-                    );
+                                    scan.getCluster().getTypeFactory()),
+                            null);
                 }
 
                 private List<Integer> keyProjects(Table table) {

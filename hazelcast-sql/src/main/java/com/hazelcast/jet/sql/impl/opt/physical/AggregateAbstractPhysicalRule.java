@@ -30,9 +30,9 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptRuleOperand;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -44,10 +44,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-abstract class AggregateAbstractPhysicalRule extends RelOptRule {
+abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
-    protected AggregateAbstractPhysicalRule(RelOptRuleOperand operand, String description) {
-        super(operand, description);
+    protected AggregateAbstractPhysicalRule(Config config) {
+        super(config);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
@@ -63,41 +64,62 @@ public final class WindowUtils {
     }
 
     /**
-     * Returns a row with two added fields: the window_start and window_end.
+     * Returns a traverser of rows with two added fields: the
+     * window_start and window_end. For tumbling windows, the returned
+     * traverser always contains a single row. For hopping windows, it
+     * contains multiple rows.
      */
-    public static Object[] addWindowBounds(Object[] row, int index, SlidingWindowPolicy windowPolicy) {
-        Object value = row[index];
+    public static Traverser<Object[]> addWindowBounds(Object[] row, int timeStampIndex, SlidingWindowPolicy windowPolicy) {
+        Object value = row[timeStampIndex];
         long millis = extractMillis(value);
 
-        long windowStartMillis = windowPolicy.floorFrameTs(millis);
-        long windowEndMillis = windowPolicy.higherFrameTs(millis);
+        long slideStep = windowPolicy.frameSize();
+        long firstWindowStart = windowPolicy.floorFrameTs(millis - windowPolicy.windowSize() + slideStep);
 
+        return new Traverser<Object[]>() {
+            long currentStart = firstWindowStart;
+
+            @Override
+            public Object[] next() {
+                if (currentStart >= firstWindowStart + windowPolicy.windowSize()) {
+                    return null;
+                }
+                try {
+                    return addWindowBoundsSingleRow(row, value, currentStart, currentStart + windowPolicy.windowSize());
+                } finally {
+                    currentStart += slideStep;
+                }
+            }
+        };
+    }
+
+    private static Object[] addWindowBoundsSingleRow(Object[] row, Object timeStamp, long windowStartMillis, long windowEndMillis) {
         Object[] result = Arrays.copyOf(row, row.length + 2);
-        if (value instanceof Byte) {
+        if (timeStamp instanceof Byte) {
             result[result.length - 2] = (byte) windowStartMillis;
             result[result.length - 1] = (byte) windowEndMillis;
             return result;
-        } else if (value instanceof Short) {
+        } else if (timeStamp instanceof Short) {
             result[result.length - 2] = (short) windowStartMillis;
             result[result.length - 1] = (short) windowEndMillis;
             return result;
-        } else if (value instanceof Integer) {
+        } else if (timeStamp instanceof Integer) {
             result[result.length - 2] = (int) windowStartMillis;
             result[result.length - 1] = (int) windowEndMillis;
             return result;
-        } else if (value instanceof Long) {
+        } else if (timeStamp instanceof Long) {
             result[result.length - 2] = windowStartMillis;
             result[result.length - 1] = windowEndMillis;
             return result;
-        } else if (value instanceof LocalTime) {
+        } else if (timeStamp instanceof LocalTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalTime();
             return result;
-        } else if (value instanceof LocalDate) {
+        } else if (timeStamp instanceof LocalDate) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDate();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDate();
             return result;
-        } else if (value instanceof LocalDateTime) {
+        } else if (timeStamp instanceof LocalDateTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDateTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDateTime();
             return result;

@@ -32,22 +32,21 @@ import static java.util.Objects.requireNonNull;
 
 final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
 
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
+                    .trait(LOGICAL)
+                    .predicate(AggregateStreamPhysicalRule::matches)
+                    .inputs(b1 -> b1.operand(RelNode.class).anyInputs()));
+
     static final RelOptRule INSTANCE = new AggregateStreamPhysicalRule();
 
     private AggregateStreamPhysicalRule() {
-        super(
-                operand(
-                        AggregateLogicalRel.class,
-                        LOGICAL,
-                        AggregateStreamPhysicalRule::matches,
-                        some(operand(RelNode.class, any()))
-                ),
-                AggregateStreamPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     private static boolean matches(AggregateLogicalRel logicalAggregate) {
-        if (!OptUtils.isUnbounded(logicalAggregate)) {
+        if (OptUtils.isBounded(logicalAggregate)) {
             return false;
         }
 

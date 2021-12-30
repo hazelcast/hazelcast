@@ -26,13 +26,17 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
 
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(AggregateBatchPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
+                    .trait(LOGICAL)
+                    .predicate(OptUtils::isBounded)
+                    .inputs(b1 -> b1.operand(RelNode.class).anyInputs()));
+
     static final RelOptRule INSTANCE = new AggregateBatchPhysicalRule();
 
     private AggregateBatchPhysicalRule() {
-        super(
-                operand(AggregateLogicalRel.class, LOGICAL, OptUtils::isBounded, some(operand(RelNode.class, any()))),
-                AggregateBatchPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override

@@ -38,14 +38,6 @@ public class FullScanLogicalRel extends TableScan implements LogicalRel {
     FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            RelOptTable table
-    ) {
-        this(cluster, traitSet, table, null);
-    }
-
-    FullScanLogicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traitSet,
             RelOptTable table,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
     ) {
