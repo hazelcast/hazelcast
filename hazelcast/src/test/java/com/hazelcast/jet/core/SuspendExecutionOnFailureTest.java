@@ -192,8 +192,8 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
         counterMap.put("key", false);
         job.resume();
-        // sinkMap is an idempotent sink, so even we're using at-least-once, no key will be duplicated, so the
-        // must contain expected number of items.
+        // sinkMap is an idempotent sink, so even though we're using at-least-once, no key will be duplicated, so it
+        // must contain the expected number of items.
         assertTrueEventually(() -> assertEquals(numItems, sinkMap.size()));
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 
