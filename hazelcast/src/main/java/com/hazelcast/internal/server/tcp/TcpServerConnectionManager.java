@@ -202,6 +202,18 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 // for the sake of completeness, register the client endpoint uuid and its address
                 addressRegistry.register(remoteUuid, new LinkedAddresses(primaryAddress));
             }
+
+            // handle error cases after registering the addresses to avoid the later failing connections
+            // occur because target addresses are not registered.
+            if (!handleDuplicateConnections(connection, remoteUuid, planeIndex)) {
+                return false;
+            }
+            // handle self connection
+            if (remoteUuid.equals(serverContext.getThisUuid())) {
+                connection.close("Connecting to self!", null);
+                return false;
+            }
+
             plane.putConnection(remoteUuid, connection);
 
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {

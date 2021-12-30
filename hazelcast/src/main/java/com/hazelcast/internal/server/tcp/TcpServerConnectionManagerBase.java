@@ -429,4 +429,38 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             bytesSentOnClosed.inc(connection.getChannel().bytesWritten());
         }
     }
+
+    /**
+     * @param connection a new connection whose handshake message is being processed
+     * @param remoteUuid the member uuid of the remote side of the connection
+     * @param planeIndex the plane index to register connection
+     * @return true if the registration of the new incoming connection will continue
+     *          false if this newly created connection will be closed
+     */
+    protected boolean handleDuplicateConnections(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
+        TcpServerConnection existingConnection = planes[planeIndex].getConnection(remoteUuid);
+        if (existingConnection != null && existingConnection.isAlive()) {
+            if (existingConnection != connection) {
+                // If there are duplicate connections, close the connection of which the member with
+                // the smaller uuid is on the acceptor side
+                boolean isLocalMemberUuidSmallerThanRemote = serverContext.getThisUuid().compareTo(remoteUuid) < 0;
+                if (isLocalMemberUuidSmallerThanRemote == connection.isAcceptorSide()) {
+                    connection.close(
+                            "Duplicate connection to the member[uuid=" + remoteUuid + "]"
+                                    + " on planeIndex=" + planeIndex,
+                            null
+                    );
+                    return false;
+                } else {
+                    existingConnection.close(
+                            "Duplicate connection to the member[uuid=" + remoteUuid + "]"
+                                    + " on planeIndex=" + planeIndex,
+                            null
+                    );
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
 }

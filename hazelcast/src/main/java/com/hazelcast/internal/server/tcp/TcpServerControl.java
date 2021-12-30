@@ -184,44 +184,5 @@ public final class TcpServerControl {
                 connection,
                 handshake.getPlaneIndex()
         );
-        // handle error cases after registering the addresses to avoid the later duplicate connections
-        // occur because target addresses are not registered.
-
-        // handle duplicate connections
-        handleDuplicateConnections(connection, remoteUuid, handshake.getPlaneIndex());
-
-        // handle self connection
-        if (remoteUuid.equals(serverContext.getThisUuid())) {
-            connection.close("Connecting to self!", null);
-        }
-    }
-
-    /**
-     * @param connection a new connection whose handshake message is being processed
-     * @param remoteUuid the member uuid of the remote side of the connection
-     * @param planeIndex the plane index for the connection
-     */
-    private void handleDuplicateConnections(TcpServerConnection connection, UUID remoteUuid, int planeIndex) {
-        TcpServerConnection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUuid);
-        if (existingConnection != null && existingConnection.isAlive()) {
-            if (existingConnection != connection) {
-                // If there are duplicate connections, close the connection of which the member with
-                // the smaller uuid is on the acceptor side
-                boolean isLocalMemberUuidSmallerThanRemote = serverContext.getThisUuid().compareTo(remoteUuid) < 0;
-                if (isLocalMemberUuidSmallerThanRemote == connection.isAcceptorSide()) {
-                    connection.close(
-                            "Duplicate connection to the member[uuid=" + remoteUuid + "]"
-                                    + " on planeIndex=" + planeIndex,
-                            null
-                    );
-                } else {
-                    existingConnection.close(
-                            "Duplicate connection to the member[uuid=" + remoteUuid + "]"
-                                    + " on planeIndex=" + planeIndex,
-                            null
-                    );
-                }
-            }
-        }
     }
 }
