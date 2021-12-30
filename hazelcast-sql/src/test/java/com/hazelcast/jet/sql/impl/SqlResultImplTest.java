@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,19 +56,21 @@ public class SqlResultImplTest extends SqlTestSupport {
     public void when_hasNextInterrupted_then_interrupted() {
         // this query is a continuous one, but never returns any rows (all are filtered out)
         SqlResult sqlResult = instance().getSql().execute("select * from table(generate_stream(1)) where v < 0");
-        AtomicBoolean interrupted = new AtomicBoolean();
+        AtomicBoolean interruptedOk = new AtomicBoolean();
         Thread t = new Thread(() -> {
             try {
                 sqlResult.iterator().hasNext();
-            } catch (HazelcastSqlException e) {
+            } catch (Throwable e) {
                 if (e.getCause() instanceof RuntimeException
                         && e.getCause().getCause() instanceof InterruptedException) {
-                    interrupted.set(true);
+                    interruptedOk.set(true);
+                } else {
+                    logger.severe("Unexpected exception caught", e);
                 }
             }
         });
         t.start();
         t.interrupt();
-        assertTrueEventually(() -> assertTrue(interrupted.get()));
+        assertTrueEventually(() -> assertTrue(interruptedOk.get()));
     }
 }
