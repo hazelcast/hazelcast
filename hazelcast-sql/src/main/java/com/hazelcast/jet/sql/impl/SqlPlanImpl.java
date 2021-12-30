@@ -52,7 +52,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -62,6 +64,12 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     protected SqlPlanImpl(PlanKey planKey) {
         super(planKey);
+    }
+
+    public boolean isPlanValid(PlanCheckContext context) {
+        throw new UnsupportedOperationException(isCacheable()
+                ? "override this method"
+                : "method should not be called for non-cacheable plans");
     }
 
     protected void checkPermissions(SqlSecurityContext context, DAG dag) {
@@ -119,11 +127,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new SqlPermission(mapping.name(), ACTION_CREATE));
         }
@@ -170,11 +173,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -255,11 +253,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new SqlPermission(name, ACTION_INDEX));
         }
@@ -306,11 +299,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -426,11 +414,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -482,11 +465,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -528,11 +506,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -580,8 +553,80 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class CreateViewPlan extends SqlPlanImpl {
+        private final OptimizerContext context;
+        private final String viewName;
+        private final String viewQuery;
+        private final boolean viewIsStream;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final PlanExecutor planExecutor;
+
+        CreateViewPlan(
+                PlanKey planKey,
+                final OptimizerContext context,
+                String viewName,
+                String viewQuery,
+                boolean viewIsStream,
+                boolean replace,
+                boolean ifNotExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.context = context;
+            this.viewName = viewName;
+            this.viewQuery = viewQuery;
+            this.viewIsStream = viewIsStream;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.planExecutor = planExecutor;
+        }
+
+        public OptimizerContext context() {
+            return context;
+        }
+
+        public String viewName() {
+            return viewName;
+        }
+
+        public String viewQuery() {
+            return viewQuery;
+        }
+
+        public boolean isStream() {
+            return viewIsStream;
+        }
+
+        boolean isReplace() {
+            return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(viewName, ACTION_CREATE_VIEW));
         }
 
         @Override
@@ -591,8 +636,57 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("DROP SNAPSHOT", arguments);
-            SqlPlanImpl.ensureNoTimeout("DROP SNAPSHOT", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE VIEW", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE VIEW", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropViewPlan extends SqlPlanImpl {
+        private final String viewName;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropViewPlan(
+                PlanKey planKey,
+                String viewName,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.viewName = viewName;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String viewName() {
+            return viewName;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(viewName, ACTION_DROP_VIEW));
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("DROP VIEW", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP VIEW", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -619,11 +713,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -660,11 +749,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isCacheable() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override

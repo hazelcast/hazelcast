@@ -47,6 +47,7 @@ public abstract class BasePutOperation
         invalidateNearCache(dataKey);
         publishWanUpdate(dataKey, value);
         evict(dataKey);
+        super.afterRunInternal();
     }
 
     private EntryEventType getEventType() {

@@ -64,7 +64,6 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         return () -> uncheckCall(() -> {
             Object key = in.readObject();
             if (key == SnapshotDataValueTerminator.INSTANCE) {
-                in.close();
                 return null;
             }
             Object value = in.readObject();

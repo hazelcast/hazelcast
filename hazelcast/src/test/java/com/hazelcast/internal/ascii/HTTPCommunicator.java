@@ -517,7 +517,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private ConnectionResponse doDelete(String url) throws IOException {
+    public ConnectionResponse doDelete(String url) throws IOException {
         CloseableHttpClient client = newClient();
         CloseableHttpResponse response = null;
         try {

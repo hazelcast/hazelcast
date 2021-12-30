@@ -246,6 +246,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -624,6 +625,7 @@ import com.hazelcast.client.impl.protocol.task.map.MapRemoveIfSameMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemoveInterceptorMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemoveMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapRemovePartitionLostListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapReplaceAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapReplaceIfSameMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapReplaceMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetMessageTask;
@@ -1398,6 +1400,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapEvictMessageTask(cm, node, con));
         factories.put(MapGetAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapGetAllMessageTask(cm, node, con));
+        factories.put(MapReplaceAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new MapReplaceAllMessageTask(cm, node, con));
         factories.put(MapForceUnlockCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapForceUnlockMessageTask(cm, node, con));
         factories.put(MapLoadAllCodec.REQUEST_MESSAGE_TYPE,

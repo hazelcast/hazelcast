@@ -968,21 +968,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertCompletesEventually(final Future future) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Future has not completed", future.isDone());
-            }
-        });
+        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
     public static void assertCompletesEventually(final Future future, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Future has not completed", future.isDone());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Collection collection) {
@@ -990,13 +980,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertSizeEventually(final int expectedSize, final Collection collection, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
-                        collection.size());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
+                collection.size()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {
@@ -1004,31 +989,18 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertSizeEventually(final int expectedSize, final Map<?, ?> map, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the map is not correct", expectedSize, map.size());
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertEquals("the size of the map is not correct", expectedSize, map.size()), timeoutSeconds);
     }
 
     public static <E> void assertEqualsEventually(final FutureTask<E> task, final E expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue("FutureTask is not complete", task.isDone());
-                assertEquals(expected, task.get());
-            }
+        assertTrueEventually(() -> {
+            assertTrue("FutureTask is not complete", task.isDone());
+            assertEquals(expected, task.get());
         });
     }
 
     public static <E> void assertEqualsEventually(final Callable<E> task, final E expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, task.call());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, task.call()));
     }
 
     public static void assertEqualsEventually(final int expected, final AtomicInteger value) {
@@ -1069,12 +1041,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance,
                                                    long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertClusterSize(expectedSize, instance);
-            }
-        }, timeoutSeconds);
+        assertTrueEventually(() -> assertClusterSize(expectedSize, instance), timeoutSeconds);
     }
 
     public static void assertMasterAddress(Address masterAddress, HazelcastInstance... instances) {
@@ -1084,12 +1051,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance... instances) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    assertMasterAddress(masterAddress, instance);
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                assertMasterAddress(masterAddress, instance);
             }
         });
     }
@@ -1151,15 +1115,12 @@ public abstract class HazelcastTestSupport {
 
     public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
                                              long timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
-                    if (latch.getCount() != expectedCount) {
-                        throw new AssertionError("Latch count has not been met. " + message);
-                    }
-                    sleepMillis(50);
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                if (latch.getCount() != expectedCount) {
+                    throw new AssertionError("Latch count has not been met. " + message);
                 }
+                sleepMillis(50);
             }
         }, timeoutInSeconds);
     }

@@ -16,14 +16,17 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.nio.Connection;
@@ -48,9 +51,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 
 /**
@@ -319,8 +324,24 @@ public class SqlClientService implements SqlService {
         return QueryUtils.toPublicException(cause, getClientId());
     }
 
+    /**
+     * Gets a SQL Mapping suggestion for the given IMap name.
+     *
+     * Used by Management Center.
+     */
+    @Nonnull
+    public CompletableFuture<String> mappingDdl(Member member, String mapName) {
+        checkNotNull(mapName);
+
+        ClientInvocation invocation = new ClientInvocation(client, SqlMappingDdlCodec.encodeRequest(mapName),
+                null, member.getUuid());
+
+        return new ClientDelegatingFuture<>(invocation.invoke(), client.getSerializationService(),
+                SqlMappingDdlCodec::decodeResponse);
+    }
+
     // for tests
     public int numberOfShuttingDownMembers() {
         return shuttingDownMembers.size();
-}
+    }
 }

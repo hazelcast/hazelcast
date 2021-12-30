@@ -41,6 +41,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
@@ -51,6 +52,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.MemberAddressProvider;
@@ -67,6 +69,9 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import example.serialization.EmployeeDTO;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.EmployerDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -101,6 +106,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -398,6 +404,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testDeviceConfig() {
+        LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
+                .setName("null-device")
+                .setBaseDir(new File("null-dir").getAbsoluteFile())
+                .setBlockSize(512)
+                .setReadIOThreadCount(100)
+                .setWriteIOThreadCount(100);
+
+        LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
+                .setName("local-device")
+                .setBaseDir(new File("local-dir").getAbsoluteFile())
+                .setBlockSize(1024)
+                .setReadIOThreadCount(200)
+                .setWriteIOThreadCount(200);
+
+        Config config = new Config()
+                .addDeviceConfig(localDeviceConfig0)
+                .addDeviceConfig(localDeviceConfig1);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig0, xmlConfig.getDeviceConfig("null-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig1, xmlConfig.getDeviceConfig("local-device"));
     }
 
     @Test
@@ -797,6 +829,42 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
+    @Test
+    public void testCompactSerialization() {
+        Config config = new Config();
+
+        CompactSerializationConfig expected = new CompactSerializationConfig();
+        expected.setEnabled(true);
+        expected.register(EmployerDTO.class);
+        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+
+        config.getSerializationConfig().setCompactSerializationConfig(expected);
+
+        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+
+        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
+        // compact serialization config, when we read the config from XML/YAML, we store registered classes
+        // in a different map.
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+            String key = entry.getKey();
+            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
+            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
+
+            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
+            assertEquals(expectedRegistration.element2, actualRegistration.element2);
+
+            CompactSerializer serializer = expectedRegistration.element3;
+            if (serializer != null) {
+                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+            } else {
+                assertNull(actualRegistration.element3);
+            }
+        }
+    }
+
     private static class TypeClass {
     }
 
@@ -841,6 +909,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
                 .setScriptingEnabled(false)
                 .setConsoleEnabled(false)
+                .setDataAccessEnabled(true)
                 .setTrustedInterfaces(newHashSet("192.168.1.1"));
 
         Config config = new Config()
@@ -851,6 +920,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
         assertEquals(managementCenterConfig.isConsoleEnabled(), xmlMCConfig.isConsoleEnabled());
+        assertEquals(managementCenterConfig.isDataAccessEnabled(), xmlMCConfig.isDataAccessEnabled());
         assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
     }
 
@@ -1608,7 +1678,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setCoalesce(true)
                 .addIndexConfig(indexConfig);
 
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("carMap")
                 .setEvictionConfig(evictionConfig1)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -1650,7 +1720,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithoutMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithoutMerkleTreeConfig");
         Config config = new Config()
                 .addMapConfig(expectedConfig);
@@ -1662,7 +1732,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithEnabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
         Config config = new Config()
@@ -1675,7 +1745,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWithDisabledMerkleTreeConfig() {
-        MapConfig expectedConfig = new MapConfig()
+        MapConfig expectedConfig = newMapConfig()
                 .setName("testMapWithEnabledMerkleTreeConfig");
         expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
         Config config = new Config()
@@ -1699,7 +1769,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(evictionConfig())
                 .setSerializeKeys(true);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -1718,7 +1788,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setName("nearCache");
         expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
 
-        MapConfig mapConfig = new MapConfig()
+        MapConfig mapConfig = newMapConfig()
                 .setName("nearCacheTest")
                 .setNearCacheConfig(expectedConfig);
 
@@ -2379,6 +2449,24 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
+    }
+
+    private static MapConfig newMapConfig() {
+        return new MapConfig().setTieredStoreConfig(tieredStoreConfig());
+    }
+
+    private static TieredStoreConfig tieredStoreConfig() {
+        MemoryTierConfig memTierConfig = new MemoryTierConfig()
+                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
+
+        DiskTierConfig diskTierConfig = new DiskTierConfig()
+                .setEnabled(true)
+                .setDeviceName("devicexz04");
+
+        return new TieredStoreConfig()
+                .setEnabled(true)
+                .setMemoryTierConfig(memTierConfig)
+                .setDiskTierConfig(diskTierConfig);
     }
 
     private static WanReplicationRef wanReplicationRef() {

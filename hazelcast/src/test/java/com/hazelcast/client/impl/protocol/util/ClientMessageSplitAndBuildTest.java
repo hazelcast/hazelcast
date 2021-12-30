@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.protocol;
+package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.UuidUtil;
@@ -107,6 +105,7 @@ public class ClientMessageSplitAndBuildTest {
 
         assertEquals(getNumberOfFrames(clientMessage1), getNumberOfFrames(resultingMessage.get()));
         assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(0, decoder.builderBySessionIdMap.size());
     }
 
     @Test
@@ -158,6 +157,7 @@ public class ClientMessageSplitAndBuildTest {
 
         assertMessageEquals(clientMessage1, actualMessage1);
         assertMessageEquals(clientMessage2, actualMessage2);
+        assertEquals(0, decoder.builderBySessionIdMap.size());
     }
 
     @Test
@@ -189,6 +189,7 @@ public class ClientMessageSplitAndBuildTest {
         decoder.onRead();
 
         assertEquals(clientMessage1.getFrameLength(), resultingMessage.get().getFrameLength());
+        assertEquals(0, decoder.builderBySessionIdMap.size());
     }
 
     private void assertMessageEquals(ClientMessage expected, ClientMessage actual) {

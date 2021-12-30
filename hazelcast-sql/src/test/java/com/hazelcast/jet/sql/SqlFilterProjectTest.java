@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
@@ -27,6 +29,7 @@ import org.junit.Test;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -677,5 +680,16 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT CAST(? AS VARCHAR) FROM t", 1, 2))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Unexpected parameter count: expected 1, got 2");
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/19983
+    // Checks the case when select-by-key optimization is used, but the __key (the 0-th) field isn't selected.
+    public void test_selectByKey_keyNotSelected() {
+        IMap<Long, Person> map = instance().getMap("test");
+        map.put(1L, new Person(10, "foo"));
+
+        createMapping("test", Long.class, Person.class);
+        assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("foo")));
     }
 }

@@ -19,9 +19,12 @@ package com.hazelcast.jet.sql.impl.validate;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
+import static com.hazelcast.jet.sql.impl.schema.TableResolverImpl.SCHEMA_NAME_PUBLIC;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static org.apache.calcite.sql.SqlKind.ARGUMENT_ASSIGNMENT;
 import static org.apache.calcite.sql.SqlKind.AS;
 
@@ -54,5 +57,23 @@ public final class ValidationUtil {
      */
     public static RexNode unwrapFunctionOperand(RexNode operand) {
         return operand.getKind() == AS ? ((RexCall) operand).getOperands().get(0) : operand;
+    }
+
+
+    /**
+     * Returns true if the view name is in a valid schema,
+     * that is it must be either:
+     * <ul>
+     *     <li>a simple name
+     *     <li>a name in schema "public"
+     *     <li>a name in schema "hazelcast.public"
+     * </ul>
+     */
+    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "BooleanMethodIsAlwaysInverted"})
+    public static boolean isCatalogObjectNameValid(SqlIdentifier name) {
+        return name.names.size() == 1
+                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
+                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
+                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

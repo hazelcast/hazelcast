@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema;
+package com.hazelcast.spring.serialization;
 
-import javax.annotation.Nullable;
-
-/**
- * Generic interface that resolves mappings based on object name.
- */
-@FunctionalInterface
-public interface MappingResolver {
-
-    @Nullable
-    Mapping resolve(String name);
+public class DummyReflectiveSerializable {
 }

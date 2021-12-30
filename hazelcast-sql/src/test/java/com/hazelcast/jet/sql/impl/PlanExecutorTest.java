@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -62,7 +62,7 @@ public class PlanExecutorTest {
     private PlanExecutor planExecutor;
 
     @Mock
-    private MappingCatalog catalog;
+    private TableResolverImpl catalog;
 
     @Mock
     private HazelcastInstance hazelcastInstance;

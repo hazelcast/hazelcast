@@ -122,8 +122,6 @@
               files="com[\\/]hazelcast[\\/]config[\\/]MapConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]SerializationConfig"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]MemberDomConfigProcessor"/>
-    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]override[\\/]ExternalConfigurationOverride"/>
-
     <!-- YAML -->
     <suppress checks="BooleanExpressionComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]yaml[\\/]YamlUtil"/>
 
@@ -361,6 +359,7 @@
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]LazyEntryViewFromRecord"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
+    <suppress checks="FileLength" files="RecordStore.java"/>
 
     <!-- Adopted public domain code with different style -->
     <suppress

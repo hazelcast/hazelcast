@@ -20,6 +20,7 @@ import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
+import com.hazelcast.internal.config.override.SystemPropertiesConfigProvider.SystemPropertiesProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -37,32 +38,47 @@ import static java.util.stream.Collectors.joining;
  */
 public class ExternalConfigurationOverride {
 
+    private static final int LICENSE_KEY_VISIBLE_CHAR_COUNT = 5;
     private static final ILogger LOGGER = Logger.getLogger(ExternalConfigurationOverride.class);
+    private final Map<String, String> envVariables;
+    private final SystemPropertiesProvider systemPropertiesProvider;
+
+    public ExternalConfigurationOverride() {
+        this(System.getenv(), System::getProperties);
+    }
+
+    /**
+     * Used externally only for testing
+     */
+    ExternalConfigurationOverride(Map<String, String> envVariables, SystemPropertiesProvider systemPropertiesProvider) {
+        this.envVariables = envVariables;
+        this.systemPropertiesProvider = systemPropertiesProvider;
+    }
 
     public Config overwriteMemberConfig(Config config) {
         return overwrite(config, (provider, rootNode, target) -> {
-              try {
-                  new YamlMemberDomConfigProcessor(true, target, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
-              } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
-              }
-          },
-          new EnvConfigProvider(EnvVariablesConfigParser.member()),
-          new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.member()));
+                    try {
+                        new YamlMemberDomConfigProcessor(true, target, false)
+                                .buildConfig(new ConfigOverrideElementAdapter(rootNode));
+                    } catch (Exception e) {
+                        throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
+                    }
+                },
+                new EnvConfigProvider(EnvVariablesConfigParser.member(), envVariables),
+                new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.member(), systemPropertiesProvider));
     }
 
     public ClientConfig overwriteClientConfig(ClientConfig config) {
         return overwrite(config, (provider, rootNode, target) -> {
-              try {
-                  new YamlClientDomConfigProcessor(true, target, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
-              } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
-              }
-          },
-          new EnvConfigProvider(EnvVariablesConfigParser.client()),
-          new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.client()));
+                    try {
+                        new YamlClientDomConfigProcessor(true, target, false)
+                                .buildConfig(new ConfigOverrideElementAdapter(rootNode));
+                    } catch (Exception e) {
+                        throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
+                    }
+                },
+                new EnvConfigProvider(EnvVariablesConfigParser.client(), envVariables),
+                new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.client(), systemPropertiesProvider));
     }
 
     private <T> T overwrite(T config, ConfigConsumer<T> configProcessor, ConfigProvider... providers) {
@@ -83,11 +99,12 @@ public class ExternalConfigurationOverride {
                   properties.entrySet().stream()
                     .filter(e -> !unprocessed.containsKey(e.getKey()))
                     .map(e -> {
-                        if (e.getKey().equals("hazelcast.licensekey")) {
+                        if (e.getKey().equals("hazelcast.licensekey")
+                                && !e.getValue().isEmpty() && e.getValue().length() > LICENSE_KEY_VISIBLE_CHAR_COUNT) {
                             String[] licenceKeyParts = e.getValue().split("#");
                             String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
-                            return e.getKey() + "=" + originalKeyPart.substring(0, 5) + "*********"
-                                    + originalKeyPart.substring(originalKeyPart.length() - 5) ;
+                            return e.getKey() + "=" + originalKeyPart.substring(0, LICENSE_KEY_VISIBLE_CHAR_COUNT) + "*********"
+                                    + originalKeyPart.substring(originalKeyPart.length() - LICENSE_KEY_VISIBLE_CHAR_COUNT);
                         } else {
                             return e.getKey() + "=" + e.getValue();
                         }

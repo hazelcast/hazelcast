@@ -106,6 +106,7 @@ import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -137,7 +138,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
-    private final HeartbeatManager heartbeat;
+
     private final long authenticationTimeout;
     private final String connectionType;
     private final UUID clientUuid = UuidUtil.newUnsecureUUID();
@@ -208,8 +209,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         this.networking = initNetworking();
         this.outboundPorts.addAll(getOutboundPorts());
         this.outboundPortCount = outboundPorts.size();
-        this.heartbeat = new HeartbeatManager(this, client);
-        this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
+        this.authenticationTimeout = client.getProperties().getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
@@ -322,9 +322,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return;
         }
         startNetworking();
-
-        heartbeat.start();
-        connectToCluster();
     }
 
     public void tryConnectToAllClusterMembers(boolean sync) {
@@ -361,7 +358,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
         stopNetworking();
         connectionListeners.clear();
-        heartbeat.shutdown();
         clusterDiscoveryService.current().destroy();
     }
 
@@ -369,7 +365,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         networking.shutdown();
     }
 
-    private void connectToCluster() {
+    public void connectToCluster() {
         clusterDiscoveryService.current().start();
 
         if (asyncStart) {
@@ -589,7 +585,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public Collection<ClientConnection> getActiveConnections() {
+    public Collection<Connection> getActiveConnections() {
         return (Collection) activeConnections.values();
     }
 

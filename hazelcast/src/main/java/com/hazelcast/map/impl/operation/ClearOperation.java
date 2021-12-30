@@ -54,6 +54,7 @@ public class ClearOperation extends MapOperation
     protected void afterRunInternal() {
         invalidateAllKeysInNearCaches();
         hintMapEvent();
+        super.afterRunInternal();
     }
 
     private void hintMapEvent() {

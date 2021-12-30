@@ -16,24 +16,24 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.ByteArrayProcessor;
-import com.hazelcast.internal.util.OsHelper;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -268,11 +268,7 @@ public final class MulticastService implements Runnable {
                             + ", Sender -> " + datagramPacketReceive.getAddress());
                     return null;
                 }
-                try {
-                    return input.readObject();
-                } finally {
-                    input.close();
-                }
+                return input.readObject();
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
                     long now = System.currentTimeMillis();

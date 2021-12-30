@@ -37,7 +37,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -57,7 +57,7 @@ import java.util.function.BiConsumer;
  */
 public interface RecordStore<R extends Record> {
 
-    ExpirySystem getExpirySystem();
+    ExpirySystemIf getExpirySystem();
 
     LocalRecordStoreStats getLocalRecordStoreStats();
 
@@ -282,12 +282,12 @@ public interface RecordStore<R extends Record> {
 
     /**
      * This method is used in replication operations.
-     *
+     * <p>
      * Puts a data key and a record into a record-store.
      * Used in replication operations means does not attempt
      * loading from map store and it is not intercepted by
      * {@code MapInterceptor}.
-     *
+     * <p>
      * If an existing record is located for the same key
      * (as defined in {@link Storage#getIfSameKey(Object)}),
      * then that record is updated instead of creating a
@@ -497,7 +497,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Object value, long now);
+    R createRecord(Data key, Object value, long now);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
@@ -656,4 +656,12 @@ public interface RecordStore<R extends Record> {
     LocalRecordStoreStatsImpl getStats();
 
     void setStats(LocalRecordStoreStats stats);
+
+    default void beforeOperation() {
+        // no-op
+    }
+
+    default void afterOperation() {
+        // no-op
+    }
 }
