@@ -306,6 +306,7 @@ public class PlanExecutor {
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
+                null,
                 metadata,
                 false,
                 serializationService
