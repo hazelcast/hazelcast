@@ -251,12 +251,12 @@ public class LocalAddressRegistry {
                     ignore(e);
                 }
             }
-        }
-        if (logger.isFineEnabled()) {
-            logger.fine(addresses + " are registered for the local member");
-        }
         localUuid = thisUuid;
         localAddresses = addresses;
+        }
+        if (logger.isFineEnabled()) {
+            logger.fine(localAddresses + " are registered for the local member with local uuid=" + localUuid);
+        }
     }
 
     private static final class Pair {

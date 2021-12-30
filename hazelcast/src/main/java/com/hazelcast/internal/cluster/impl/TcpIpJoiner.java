@@ -215,7 +215,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         Collection<Future<Boolean>> futures = new LinkedList<>();
         for (Address address : possibleAddresses) {
             try {
-                if (isBlacklisted(address) && isLocalAddress(address)) {
+                if (isBlacklisted(address) || isLocalAddress(address)) {
                     continue;
                 }
             } catch (UnknownHostException e) {

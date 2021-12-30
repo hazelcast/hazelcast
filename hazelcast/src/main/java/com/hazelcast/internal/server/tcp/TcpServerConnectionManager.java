@@ -172,10 +172,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         Plane plane = planes[planeIndex];
         TcpServerConnection connection = (TcpServerConnection) c;
         try {
-            if (remoteUuid.equals(serverContext.getThisUuid())) {
-                return false;
-            }
-
             if (!connection.isAlive()) {
                 if (logger.isFinestEnabled()) {
                     logger.finest(connection + " to " + remoteUuid + " is not registered since connection is not active.");
