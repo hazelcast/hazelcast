@@ -33,7 +33,6 @@
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <maven.failsafe.plugin.version>3.0.0-M5</maven.failsafe.plugin.version>
-        <awaitility.version>4.1.1</awaitility.version>
         <rest-assured.version>4.4.0</rest-assured.version>
     </properties>
 
@@ -389,7 +388,6 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>${awaitility.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -148,6 +148,7 @@
         <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.21.0</archunit.version>
         <errorprone.version>2.10.0</errorprone.version>
+        <awaitility.version>4.1.1</awaitility.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -1712,6 +1713,11 @@
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
                 <version>${picocli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

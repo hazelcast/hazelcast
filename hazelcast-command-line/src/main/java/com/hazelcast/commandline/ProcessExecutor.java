@@ -17,6 +17,7 @@
 package com.hazelcast.commandline;
 
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
 
 /**
@@ -24,18 +25,14 @@ import java.util.List;
  */
 class ProcessExecutor {
 
-    int buildAndStart(List<String> commandList) throws IOException, InterruptedException {
-        return buildAndStart(commandList, ProcessBuilder.Redirect.INHERIT);
-    }
-
-    /**
-     * Used externaly only for tests
-     */
-    int buildAndStart(List<String> commandList, ProcessBuilder.Redirect redirect) throws IOException, InterruptedException {
+    void buildAndStart(List<String> commandList, Redirect redirect, boolean daemon) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(commandList);
         processBuilder.redirectErrorStream(true);
         processBuilder.redirectOutput(redirect);
-        return processBuilder.start().waitFor();
+        Process process = processBuilder.start();
+        if (!daemon) {
+            process.waitFor();
+        }
     }
 
 }

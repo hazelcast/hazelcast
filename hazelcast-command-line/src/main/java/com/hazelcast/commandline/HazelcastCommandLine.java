@@ -18,11 +18,14 @@ package com.hazelcast.commandline;
 
 import picocli.CommandLine;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -96,6 +99,9 @@ class HazelcastCommandLine
             @Option(names = {"-J", "--JAVA_OPTS"}, paramLabel = "<option>", parameterConsumer = JavaOptionsConsumer.class,
                     split = ",", description = "Specify additional Java <option> (Use ',' to separate multiple options).")
                     List<String> javaOptions,
+            @Option(names = {"-d", "--daemon"},
+                    description = "Starts in daemon mode.")
+                    boolean daemon,
             @Option(names = {"-v", "--verbose"},
                     description = "Output with FINE level verbose logging.")
                     boolean verbose,
@@ -117,11 +123,11 @@ class HazelcastCommandLine
         args.add("-Djava.net.preferIPv4Stack=true");
         addLogging(args, verbose, finestVerbose);
 
-        if (javaOptions != null && javaOptions.size() > 0) {
+        if (javaOptions != null && !javaOptions.isEmpty()) {
             addJavaOptionsToArgs(javaOptions, args);
         }
 
-        buildAndStartJavaProcess(args, additionalClassPath);
+        buildAndStartJavaProcess(args, additionalClassPath, daemon);
     }
 
     private void addJavaOptionsToArgs(List<String> javaOptions, List<String> args) {
@@ -136,7 +142,7 @@ class HazelcastCommandLine
         }
     }
 
-    private void buildAndStartJavaProcess(List<String> parameters, String[] additionalClassPath)
+    private void buildAndStartJavaProcess(List<String> parameters, String[] additionalClassPath, boolean daemon)
             throws IOException, InterruptedException {
         List<String> commandList = new ArrayList<>();
         StringBuilder classpath = new StringBuilder(System.getProperty("java.class.path"));
@@ -152,7 +158,18 @@ class HazelcastCommandLine
         commandList.addAll(parameters);
         fixModularJavaOptions(commandList);
         commandList.add(HazelcastMember.class.getName());
-        processExecutor.buildAndStart(commandList);
+        processExecutor.buildAndStart(commandList, getRedirect(daemon), daemon);
+    }
+
+    private ProcessBuilder.Redirect getRedirect(boolean daemon) {
+        Clock clock = Clock.systemDefaultZone();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd.HH.mm.ss").withZone(clock.getZone());
+        String formattedDate = formatter.format(clock.instant());
+        String logFile = WORKING_DIRECTORY + "/logs/hazelcast." + formattedDate + ".out";
+        if (daemon) {
+            err.println("Starting Hazelcast in daemon mode. Standard out and error will be written to " + logFile);
+        }
+        return daemon ? ProcessBuilder.Redirect.to(new File(logFile)) : ProcessBuilder.Redirect.INHERIT;
     }
 
     private void fixModularJavaOptions(List<String> commandList) {

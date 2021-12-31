@@ -24,8 +24,10 @@ import java.io.File;
 import java.io.IOException;
 
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.contentOf;
+import static org.awaitility.Awaitility.await;
 
 
 public class ProcessExecutorTest {
@@ -39,9 +41,21 @@ public class ProcessExecutorTest {
         File outputFile = temporaryFolder.newFile();
         ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        int exitCode = processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile));
+        processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile), false);
         // then
         assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
-        assertThat(exitCode).isZero();
+    }
+
+    @Test
+    public void test_buildAndStart_daemon() throws IOException, InterruptedException {
+        // given
+        File outputFile = temporaryFolder.newFile();
+        ProcessExecutor processExecutor = new ProcessExecutor();
+        // when
+        processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile), true);
+        // then
+        await().atMost(5, SECONDS).untilAsserted(() -> {
+            assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
+        });
     }
 }
