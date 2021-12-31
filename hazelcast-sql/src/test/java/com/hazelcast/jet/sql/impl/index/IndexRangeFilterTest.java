@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,7 +76,7 @@ public class IndexRangeFilterTest extends IndexFilterTestSupport {
 
     @Test
     public void testComparable() {
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         assertEquals(
             1,

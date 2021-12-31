@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,7 +68,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
