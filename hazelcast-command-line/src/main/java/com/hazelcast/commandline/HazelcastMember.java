@@ -23,10 +23,15 @@ import com.hazelcast.config.FileSystemYamlConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
@@ -37,9 +42,28 @@ final class HazelcastMember {
     private HazelcastMember() {
     }
 
+    /**
+     * Creates a server instance of Hazelcast.
+     * <p>
+     * If user sets the system property "print.port", the server writes the port number of the Hazelcast instance to a file.
+     * The file name is the same as the "print.port" property.
+     *
+     * @param args none
+     */
     public static void main(String[] args)
             throws Exception {
-        Hazelcast.newHazelcastInstance(config());
+        System.setProperty("hazelcast.tracking.server", "true");
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config());
+        printMemberPort(hz);
+    }
+
+    private static void printMemberPort(HazelcastInstance hz) throws FileNotFoundException, UnsupportedEncodingException {
+        String printPort = System.getProperty("print.port");
+        if (printPort != null) {
+            try (PrintWriter printWriter = new PrintWriter("ports" + File.separator + printPort, "UTF-8")) {
+                printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
+            }
+        }
     }
 
     static Config config()
