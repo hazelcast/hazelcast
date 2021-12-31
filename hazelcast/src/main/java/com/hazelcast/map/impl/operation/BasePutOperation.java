@@ -39,15 +39,18 @@ public abstract class BasePutOperation
 
     @Override
     protected void afterRunInternal() {
-        Object value = isPostProcessing(recordStore)
-                ? recordStore.getRecord(dataKey).getValue() : dataValue;
-        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
-                dataKey, oldValue, value);
-        invalidateNearCache(dataKey);
-        publishWanUpdate(dataKey, value);
-        evict(dataKey);
-        super.afterRunInternal();
+        try {
+            Object value = isPostProcessing(recordStore)
+                    ? recordStore.getRecord(dataKey).getValue() : dataValue;
+            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
+                    dataKey, oldValue, value);
+            invalidateNearCache(dataKey);
+            publishWanUpdate(dataKey, value);
+            evict(dataKey);
+        } finally {
+            super.afterRunInternal();
+        }
     }
 
     private EntryEventType getEventType() {

@@ -252,7 +252,6 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
-            op.afterRunFinal();
             if (publishCurrentTask) {
                 currentTask = null;
             }

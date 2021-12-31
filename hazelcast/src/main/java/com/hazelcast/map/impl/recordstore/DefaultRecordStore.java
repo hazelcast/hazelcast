@@ -86,6 +86,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
+
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
@@ -194,21 +195,27 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putOrUpdateReplicatedRecord(Data dataKey, Record replicatedRecord,
                                               ExpiryMetadata expiryMetadata,
                                               boolean indexesMustBePopulated, long now) {
-        Record newRecord = storage.get(dataKey);
-        if (newRecord == null) {
-            newRecord = createRecord(dataKey, replicatedRecord != null
-                    ? replicatedRecord.getValue() : null, now);
-            storage.put(dataKey, newRecord);
-        } else {
-            storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
+        Record newRecord = null;
+        try {
+            newRecord = storage.get(dataKey);
+            if (newRecord == null) {
+                newRecord = createRecord(dataKey, replicatedRecord != null
+                        ? replicatedRecord.getValue() : null, now);
+                onBeforeRecordPut(newRecord);
+                storage.put(dataKey, newRecord);
+            } else {
+                newRecord = storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
+                onBeforeRecordPut(newRecord);
+            }
+
+            Records.copyMetadataFrom(replicatedRecord, newRecord);
+            expirySystem.add(dataKey, expiryMetadata, now);
+            mutationObserver.onReplicationPutRecord(dataKey, newRecord, indexesMustBePopulated);
+            updateStatsOnPut(replicatedRecord.getHits(), now);
+            return newRecord;
+        } finally {
+            onAfterRecordPut(newRecord);
         }
-
-        Records.copyMetadataFrom(replicatedRecord, newRecord);
-        expirySystem.add(dataKey, expiryMetadata, now);
-        mutationObserver.onReplicationPutRecord(dataKey, newRecord, indexesMustBePopulated);
-        updateStatsOnPut(replicatedRecord.getHits(), now);
-
-        return newRecord;
     }
 
     @Override
@@ -929,8 +936,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
-        storage.put(key, record);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+
+        onBeforeRecordPut(record);
+        try {
+            storage.put(key, record);
+            expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        } finally {
+            onAfterRecordPut(record);
+        }
 
         if (entryEventType == EntryEventType.LOADED) {
             mutationObserver.onLoadRecord(key, record, backup);
@@ -940,10 +953,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
+    protected void onAfterRecordPut(Record record) {
+        // NOP
+    }
+
+    protected void onBeforeRecordPut(Record record) {
+        // NOP
+    }
+
     @SuppressWarnings("checkstyle:parameternumber")
     protected Object updateRecord(Record record, Data key, Object oldValue, Object newValue,
-                                long ttl, long maxIdle, long expiryTime, long now, UUID transactionId,
-                                boolean store, boolean countAsAccess, boolean backup) {
+                                  long ttl, long maxIdle, long expiryTime, long now, UUID transactionId,
+                                  boolean store, boolean countAsAccess, boolean backup) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
 
@@ -956,9 +977,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     ttl, maxIdle, now, transactionId);
         }
 
-        storage.updateRecordValue(key, record, newValue);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
-        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+        onBeforeRecordPut(record);
+        try {
+            storage.updateRecordValue(key, record, newValue);
+            expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+        } finally {
+            onAfterRecordPut(record);
+        }
         return oldValue;
     }
 

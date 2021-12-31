@@ -136,9 +136,13 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public final void afterRun() throws Exception {
-        afterRunInternal();
-        disposeDeferredBlocks();
-        super.afterRun();
+        try {
+            afterRunInternal();
+            disposeDeferredBlocks();
+            super.afterRun();
+        } finally {
+            afterRunFinal();
+        }
     }
 
     protected void afterRunInternal() {

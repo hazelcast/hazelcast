@@ -36,13 +36,16 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
 
     @Override
     protected void afterRunInternal() {
-        mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), dataOldValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name,
-                EntryEventType.REMOVED, dataKey, dataOldValue, null);
-        invalidateNearCache(dataKey);
-        publishWanRemove(dataKey);
-        evict(dataKey);
-        super.afterRunInternal();
+        try {
+            mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), dataOldValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name,
+                    EntryEventType.REMOVED, dataKey, dataOldValue, null);
+            invalidateNearCache(dataKey);
+            publishWanRemove(dataKey);
+            evict(dataKey);
+        } finally {
+            super.afterRunInternal();
+        }
     }
 
     @Override
