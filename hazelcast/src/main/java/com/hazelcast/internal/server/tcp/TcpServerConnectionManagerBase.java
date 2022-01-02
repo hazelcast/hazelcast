@@ -34,6 +34,7 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -221,25 +222,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 return;
             }
             synchronized (connectionsInProgress) {
-                connectionsInProgress.computeIfAbsent(getResolvedAddresses(address),
-                        linkedAddresses -> {
-                            if (hasConnectionInProgress(address)) {
-                                return null;
-                            }
-                            return mappingFn.apply(linkedAddresses);
-                        });
+                if (!hasConnectionInProgress(address)) {
+                    connectionsInProgress.computeIfAbsent(getResolvedAddresses(address), mappingFn);
+                }
             }
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
             boolean found = false;
-            Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
-            while (linkedAddressesIterator.hasNext()) {
-                LinkedAddresses addresses = linkedAddressesIterator.next();
-                if (addresses.contains(address)) {
-                    linkedAddressesIterator.remove();
-                    found = true;
+            synchronized (connectionsInProgress) {
+                Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
+                while (linkedAddressesIterator.hasNext()) {
+                    LinkedAddresses addresses = linkedAddressesIterator.next();
+                    if (addresses.contains(address)) {
+                        linkedAddressesIterator.remove();
+                        found = true;
+                    }
                 }
             }
             return found;
@@ -428,6 +426,23 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             bytesReceivedOnClosed.inc(connection.getChannel().bytesRead());
             bytesSentOnClosed.inc(connection.getChannel().bytesWritten());
         }
+    }
+
+    /**
+     * Registers the given addresses to the address registry
+     */
+    protected void registerAddresses(UUID remoteUuid, Address primaryAddress, LinkedAddresses targetAddresses,
+                                     Collection<Address> remoteAddressAliases) {
+        LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
+        if (targetAddresses != null) {
+            addressesToRegister.addLinkedAddresses(targetAddresses);
+        }
+        if (remoteAddressAliases != null) {
+            for (Address remoteAddressAlias : remoteAddressAliases) {
+                addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
+            }
+        }
+        addressRegistry.register(remoteUuid, addressesToRegister);
     }
 
     /**

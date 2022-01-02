@@ -179,29 +179,15 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 return false;
             }
 
-            Address currentRemoteAddress = connection.getRemoteAddress();
-            if (currentRemoteAddress != null && !currentRemoteAddress.equals(primaryAddress)) {
-                throw new IllegalArgumentException(connection + " has already a different remoteAddress than: " + primaryAddress);
-            }
             connection.setRemoteAddress(primaryAddress);
             connection.setRemoteUuid(remoteUuid);
 
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
-                LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
-                if (targetAddress != null) {
-                    addressesToRegister.addLinkedAddresses(plane.getConnectedAddresses(targetAddress));
-                }
-                if (remoteAddressAliases != null) {
-                    for (Address remoteAddressAlias : remoteAddressAliases) {
-                        addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
-                    }
-                }
-                addressRegistry.register(remoteUuid, addressesToRegister);
-            } else {
-                // for the sake of completeness, register the client endpoint uuid and its address
-                addressRegistry.register(remoteUuid, new LinkedAddresses(primaryAddress));
             }
+
+            registerAddresses(remoteUuid, primaryAddress,
+                    targetAddress != null ? plane.getConnectedAddresses(targetAddress) : null, remoteAddressAliases);
 
             // handle error cases after registering the addresses to avoid the later failing connections
             // occur because target addresses are not registered.
