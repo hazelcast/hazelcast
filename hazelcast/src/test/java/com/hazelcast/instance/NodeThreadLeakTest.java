@@ -17,23 +17,23 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.server.tcp.TcpServer;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
-import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
-import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Set;
 
@@ -44,9 +44,8 @@ import static org.junit.Assert.fail;
 /**
  * Tests that an exception in the {@link Node} and {@link NodeEngineImpl} constructor leads to properly finished services.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DefaultNodeContext.class, NodeEngineImpl.class})
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     private static final HazelcastException HAZELCAST_EXCEPTION
@@ -54,33 +53,42 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     @Test
     public void testLeakWhenCreatingConnectionManager() throws Exception {
-        mockConstructorAndTest(TcpServer.class);
+        testFailingHazelcastCreation(new DefaultNodeContext() {
+            @Override
+            public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+                super.createServer(node, registry, addressRegistry);
+                throw HAZELCAST_EXCEPTION;
+            }
+        });
     }
 
     @Test
-    public void testCreatingEventServiceImplFails() throws Exception {
-        mockConstructorAndTest(EventServiceImpl.class);
+    public void testFailingInNodeEngineImplConstructor() throws Exception {
+        testFailingHazelcastCreation(new DefaultNodeContext() {
+            @Override
+            public NodeExtension createNodeExtension(Node node) {
+                return new DefaultNodeExtension(node) {
+                    @Override
+                    public <T> T createService(Class<T> clazz, Object... params) {
+                        throw HAZELCAST_EXCEPTION;
+                    }
+                };
+            }
+        });
     }
 
-    @Test
-    public void testCreatingExecutionServiceImplFails() throws Exception {
-        mockConstructorAndTest(ExecutionServiceImpl.class);
-    }
-
-    @Test
-    public void testCreatingOperationParkerImplFails() throws Exception {
-        mockConstructorAndTest(OperationParkerImpl.class);
-    }
-
-    private void mockConstructorAndTest(Class<?> clazzToMock) throws Exception {
-        PowerMockito.whenNew(clazzToMock).withAnyArguments().thenThrow(HAZELCAST_EXCEPTION);
+    private void testFailingHazelcastCreation(DefaultNodeContext nodeContext) throws Exception {
 
         Set<Thread> threads = getThreads();
         try {
             Config config = new Config();
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-            Hazelcast.newHazelcastInstance(config);
+            HazelcastInstanceFactory.newHazelcastInstance(
+                    config,
+                    config.getInstanceName(),
+                    nodeContext
+            );
             fail("Starting the member should have failed");
         } catch (HazelcastException expected) {
             ignore(expected);
