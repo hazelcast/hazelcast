@@ -148,17 +148,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (clusterService.isJoined()) {
                     return;
                 }
-                possibleAddresses.removeIf(address -> {
-                    try {
-                        return isLocalAddress(address);
-                    } catch (UnknownHostException e) {
-                        if (logger.isFineEnabled()) {
-                            logger.fine("Error during resolving possible target address!", e);
-                        }
-                        ignore(e);
-                        return false;
-                    }
-                });
                 if (isAllBlacklisted(possibleAddresses)) {
                     logger.fine(
                             "This node will assume master role since none of the possible members accepted join request.");
@@ -429,9 +418,12 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private boolean isLocalAddress(final Address address) throws UnknownHostException {
-        // try to resolve this address first
-        Address resolvedAddress = new Address(address.getInetSocketAddress());
-        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(resolvedAddress);
+        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(address);
+        if (memberUuid == null) {
+            // also try to resolve this address
+            Address resolvedAddress = new Address(address.getInetSocketAddress());
+            memberUuid = node.getLocalAddressRegistry().uuidOf(resolvedAddress);
+        }
         boolean local = memberUuid != null && memberUuid.equals(node.getThisUuid());
 
         if (logger.isFineEnabled()) {
