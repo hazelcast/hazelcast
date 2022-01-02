@@ -117,7 +117,8 @@ public interface ServerConnectionManager
      * @param address the address of remote side of the connection
      * @return the found Connection, or none if one doesn't exist
      */
-    default ServerConnection get(Address address) {
+    @Nullable
+    default ServerConnection get(@Nonnull Address address) {
         return get(address, 0);
     }
 
@@ -129,7 +130,8 @@ public interface ServerConnectionManager
      * @param streamId the stream id
      * @return the found Connection, or none if one doesn't exist
      */
-    ServerConnection get(Address address, int streamId);
+    @Nullable
+    ServerConnection get(@Nonnull Address address, int streamId);
 
     /**
      * Gets all the connections for a given address on all planes. If
@@ -140,7 +142,8 @@ public interface ServerConnectionManager
      * @return the list of connections to the given address or an
      * empty list if one doesn't exist
      */
-    List<ServerConnection> getAllConnections(Address address);
+    @Nonnull
+    List<ServerConnection> getAllConnections(@Nonnull Address address);
 
     /**
      * Gets the existing connection for a given address or connects.
@@ -154,7 +157,8 @@ public interface ServerConnectionManager
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
-    default ServerConnection getOrConnect(Address address) {
+    @Nullable
+    default ServerConnection getOrConnect(@Nonnull Address address) {
         return getOrConnect(address, false, 0);
     }
 
@@ -171,7 +175,8 @@ public interface ServerConnectionManager
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
-    ServerConnection getOrConnect(Address address, int streamId);
+    @Nullable
+    ServerConnection getOrConnect(@Nonnull Address address, int streamId);
 
     /**
      * Gets the existing connection for a given address. If it does not exist, the system will try to connect
@@ -185,7 +190,8 @@ public interface ServerConnectionManager
      *                 otherwise errors are not reported and logged on debug level
      * @return the existing connection
      */
-    default ServerConnection getOrConnect(Address address, boolean silent) {
+    @Nullable
+    default ServerConnection getOrConnect(@Nonnull Address address, boolean silent) {
         return getOrConnect(address, silent, 0);
     }
 
@@ -202,7 +208,8 @@ public interface ServerConnectionManager
      * @param streamId the stream id
      * @return the existing connection
      */
-    ServerConnection getOrConnect(Address address, boolean silent, int streamId);
+    @Nullable
+    ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId);
 
     /**
      * Transmits a packet to a certain address.

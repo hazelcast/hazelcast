@@ -273,12 +273,13 @@ public class FirewallingServer
 
 
         @Override
-        public ServerConnection get(Address address, int streamId) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             return wrap(delegate.get(address, streamId));
         }
 
         @Override
-        public List<ServerConnection> getAllConnections(Address address) {
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
             return delegate.getAllConnections(address).stream().map(this::wrap).collect(Collectors.toList());
         }
 
@@ -287,12 +288,12 @@ public class FirewallingServer
         }
 
         @Override
-        public synchronized ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
             return wrap(delegate.getOrConnect(address, streamId));
         }
 
         @Override
-        public synchronized ServerConnection getOrConnect(Address address, int streamId) {
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
             return wrap(delegate.getOrConnect(address, streamId));
         }
 

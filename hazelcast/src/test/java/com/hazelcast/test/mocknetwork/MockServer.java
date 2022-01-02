@@ -102,7 +102,7 @@ class MockServer implements Server {
         }
 
         @Override
-        public ServerConnection get(Address address, int streamId) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             UUID memberUuid = server.nodeRegistry.uuidOf(address);
             return memberUuid != null ? get(memberUuid, 0) : null;
         }
@@ -112,12 +112,14 @@ class MockServer implements Server {
         }
 
         @Override
-        public List<ServerConnection> getAllConnections(Address address) {
-            return Collections.singletonList(get(server.nodeRegistry.uuidOf(address), 0));
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+            ServerConnection conn = get(server.nodeRegistry.uuidOf(address), 0);
+            return conn != null ? Collections.singletonList(conn) : Collections.emptyList();
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address, int stream) {
+        public MockServerConnection getOrConnect(@Nonnull Address address, int stream) {
             MockServerConnection conn = server.connectionMap.get(server.nodeRegistry.uuidOf(address));
             if (conn != null && conn.isAlive()) {
                 return conn;
@@ -204,7 +206,7 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address, boolean silent, int stream) {
+        public MockServerConnection getOrConnect(@Nonnull Address address, boolean silent, int stream) {
             return getOrConnect(address, stream);
         }
 
@@ -350,8 +352,8 @@ class MockServer implements Server {
                 // all mock implementations of networking service ignore the provided endpoint qualifier
                 // so we pass in null. Once they are changed to use the parameter, we should be notified
                 // and this parameter can be changed
-                Connection remoteConnection = ((MockServerConnectionManager) server.getConnectionManager(null))
-                        .get(connection.getRemoteUuid(), 0);
+                Connection remoteConnection = server.getConnectionManager(null)
+                        .get(connection.getRemoteAddress(), 0);
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
                 }

@@ -111,22 +111,23 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public ServerConnection get(Address address, int streamId) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             return null;
         }
 
         @Override
-        public List<ServerConnection> getAllConnections(Address address) {
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
             return Collections.emptyList();
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address , int streamId) {
+        public ServerConnection getOrConnect(@Nonnull Address address , int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
+        public ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 

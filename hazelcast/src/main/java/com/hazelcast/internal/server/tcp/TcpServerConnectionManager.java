@@ -121,13 +121,14 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public ServerConnection get(Address address, int streamId) {
+    public ServerConnection get(@Nonnull Address address, int streamId) {
         UUID uuid = addressRegistry.uuidOf(address);
         return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
     }
 
     @Override
-    public List<ServerConnection> getAllConnections(Address address) {
+    @Nonnull
+    public List<ServerConnection> getAllConnections(@Nonnull Address address) {
         UUID uuid = addressRegistry.uuidOf(address);
         return uuid != null
                 ? Collections.emptyList()
@@ -135,12 +136,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public ServerConnection getOrConnect(Address address, int streamId) {
+    public ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
         return getOrConnect(address, false, streamId);
     }
 
     @Override
-    public ServerConnection getOrConnect(final Address address, final boolean silent, int streamId) {
+    public ServerConnection getOrConnect(@Nonnull final Address address, final boolean silent, int streamId) {
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = null;
         UUID uuid = addressRegistry.uuidOf(address);
