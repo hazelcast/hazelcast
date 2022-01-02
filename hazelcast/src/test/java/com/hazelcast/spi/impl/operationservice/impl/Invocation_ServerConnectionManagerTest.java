@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -115,8 +116,8 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public ServerConnection get(UUID uuid, int streamId) {
-            return null;
+        public List<ServerConnection> getAllConnections(Address address) {
+            return Collections.emptyList();
         }
 
         @Override

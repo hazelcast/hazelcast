@@ -38,7 +38,10 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -50,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -66,7 +70,6 @@ import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableSet;
 
@@ -124,8 +127,11 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public ServerConnection get(UUID uuid, int streamId) {
-        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
+    public List<ServerConnection> getAllConnections(Address address) {
+        UUID uuid = addressRegistry.uuidOf(address);
+        return uuid != null
+                ? Collections.emptyList()
+                : Arrays.stream(planes).map(plane -> plane.getConnection(uuid)).collect(Collectors.toList());
     }
 
     @Override
@@ -220,17 +226,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 plane.removeConnectionInProgress(targetAddress);
             }
         }
-    }
-
-    public Plane getPlane(int streamId) {
-        int planeIndex;
-        if (streamId == -1 || streamId == Integer.MIN_VALUE) {
-            planeIndex = 0;
-        } else {
-            planeIndex = abs(streamId) % planeCount;
-        }
-
-        return planes[planeIndex];
     }
 
     public synchronized void reset(boolean cleanListeners) {

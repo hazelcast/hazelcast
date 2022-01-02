@@ -33,6 +33,7 @@ import org.junit.After;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,8 +94,8 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public ServerConnection get(UUID uuid, int streamId) {
-                return null;
+            public List<ServerConnection> getAllConnections(Address address) {
+                return Collections.emptyList();
             }
 
             @Override

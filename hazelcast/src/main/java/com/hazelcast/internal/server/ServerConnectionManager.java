@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -60,16 +61,16 @@ public interface ServerConnectionManager
     }
 
     /**
-     * Registers (i.e. stores) the connection for the given remote remoteAddress.
-     * Once this call finishes every subsequent call to {@link #get(Address)} will return
-     * the relevant {@link Connection} resource.
+     * Registers (i.e. stores) the connection for the given primaryAddress.
+     * Once this call finishes every subsequent call to {@link #get(Address)}
+     * will return the relevant {@link Connection} resource.
      *
-     * @param remoteAddress - The remote address to register the connection under
+     * @param primaryAddress - The primary address to register the connection under
      * @param connection    - The connection to be registered
      * @return True if the call was successful
      */
-    default boolean register(Address remoteAddress, UUID remoteUuid, ServerConnection connection) {
-        return register(remoteAddress, remoteAddress, null, remoteUuid, connection, 0);
+    default boolean register(Address primaryAddress, UUID remoteUuid, ServerConnection connection) {
+        return register(primaryAddress, primaryAddress, null, remoteUuid, connection, 0);
     }
 
     /**
@@ -131,23 +132,15 @@ public interface ServerConnectionManager
     ServerConnection get(Address address, int streamId);
 
     /**
-     * Gets the connection for a given address. If the connection does not exist, it returns null.
+     * Gets all the connections for a given address on all planes. If
+     * there is no connection exist on any plane, it returns an
+     * empty list.
      *
-     * @param uuid the uuid of remote side of the connection
-     * @return the found Connection, or none if one doesn't exist
+     * @param address the address of connections
+     * @return the list of connections to the given address or an
+     * empty list if one doesn't exist
      */
-    default ServerConnection get(UUID uuid) {
-        return get(uuid, 0);
-    }
-
-    /**
-     * Gets the connection for a given address and streamId. If the connection does not exist, it returns null.
-     *
-     * @param uuid the uuid of remote side of the connection
-     * @param streamId the stream id
-     * @return the found Connection, or none if one doesn't exist
-     */
-    ServerConnection get(UUID uuid, int streamId);
+    List<ServerConnection> getAllConnections(Address address);
 
     /**
      * Gets the existing connection for a given address or connects.

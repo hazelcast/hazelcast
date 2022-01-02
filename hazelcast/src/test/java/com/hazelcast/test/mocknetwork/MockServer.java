@@ -39,6 +39,8 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -102,12 +104,16 @@ class MockServer implements Server {
         @Override
         public ServerConnection get(Address address, int streamId) {
             UUID memberUuid = server.nodeRegistry.uuidOf(address);
-            return memberUuid != null ? get(memberUuid, streamId) : null;
+            return memberUuid != null ? get(memberUuid, 0) : null;
+        }
+
+        public MockServerConnection get(UUID memberUuid, int streamId) {
+            return server.connectionMap.get(memberUuid);
         }
 
         @Override
-        public MockServerConnection get(UUID memberUuid, int streamId) {
-            return server.connectionMap.get(memberUuid);
+        public List<ServerConnection> getAllConnections(Address address) {
+            return Collections.singletonList(get(server.nodeRegistry.uuidOf(address), 0));
         }
 
         @Override
@@ -344,8 +350,8 @@ class MockServer implements Server {
                 // all mock implementations of networking service ignore the provided endpoint qualifier
                 // so we pass in null. Once they are changed to use the parameter, we should be notified
                 // and this parameter can be changed
-                Connection remoteConnection = server.getConnectionManager(null)
-                        .get(connection.getRemoteUuid());
+                Connection remoteConnection = ((MockServerConnectionManager) server.getConnectionManager(null))
+                        .get(connection.getRemoteUuid(), 0);
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
                 }

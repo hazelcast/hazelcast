@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -276,8 +278,8 @@ public class FirewallingServer
         }
 
         @Override
-        public ServerConnection get(UUID uuid, int streamId) {
-            return wrap(delegate.get(uuid, streamId));
+        public List<ServerConnection> getAllConnections(Address address) {
+            return delegate.getAllConnections(address).stream().map(this::wrap).collect(Collectors.toList());
         }
 
         private ServerConnection wrap(ServerConnection c) {

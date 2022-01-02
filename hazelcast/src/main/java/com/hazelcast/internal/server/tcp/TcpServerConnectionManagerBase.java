@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -59,6 +60,7 @@ import static com.hazelcast.internal.server.tcp.LinkedAddresses.getResolvedAddre
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
+import static java.lang.Math.abs;
 import static java.util.Collections.newSetFromMap;
 
 /**
@@ -348,6 +350,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
     }
 
+    protected ServerConnection get(UUID uuid, int streamId) {
+        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
+    }
+
     protected boolean send(Packet packet, Address target, SendTask sendTask, int streamId) {
         UUID targetUuid = addressRegistry.uuidOf(target);
         if (targetUuid == serverContext.getThisUuid()) {
@@ -385,6 +391,17 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     protected TcpServerConnectionErrorHandler getErrorHandler(Address endpoint, int planeIndex) {
         ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = planes[planeIndex].errorHandlers;
         return getErrorHandler(endpoint, errorHandlers);
+    }
+
+    protected Plane getPlane(int streamId) {
+        int planeIndex;
+        if (streamId == -1 || streamId == Integer.MIN_VALUE) {
+            planeIndex = 0;
+        } else {
+            planeIndex = abs(streamId) % planeCount;
+        }
+
+        return planes[planeIndex];
     }
 
     private TcpServerConnectionErrorHandler getErrorHandler(
