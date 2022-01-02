@@ -652,8 +652,7 @@ public class ClusterJoinManager {
     @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
         Address targetAddress = joinMessage.getAddress();
-        UUID targetUuid = joinMessage.getUuid();
-        MemberImpl member = clusterService.getMember(targetUuid);
+        MemberImpl member = clusterService.getMember(targetAddress);
         if (member == null) {
             return checkIfUsingAnExistingMemberUuid(joinMessage);
         }
@@ -697,7 +696,7 @@ public class ClusterJoinManager {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getServer().getConnectionManager(MEMBER).register(targetAddress, targetUuid, connection);
+                node.getServer().getConnectionManager(MEMBER).register(targetAddress, joinMessage.getUuid(), connection);
             }
         }
         return true;
