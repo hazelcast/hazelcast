@@ -109,6 +109,7 @@ public class DistributionIT {
     private static Process executeAsync(String... commandAndArgs) throws IOException {
         ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
         Map<String, String> environment = processBuilder.environment();
+        environment.put("JAVA_OPTS", "-Dhazelcast.phone.home.enabled=false");
         environment.put("JAVA_HOME", System.getProperty("java.home")); //workaround for IntelliJ on Mac
         return processBuilder.redirectErrorStream(true).inheritIO().start();
     }
