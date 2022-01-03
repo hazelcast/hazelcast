@@ -232,14 +232,12 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         public boolean removeConnectionInProgress(Address address) {
             boolean found = false;
-            synchronized (connectionsInProgress) {
-                Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
-                while (linkedAddressesIterator.hasNext()) {
-                    LinkedAddresses addresses = linkedAddressesIterator.next();
-                    if (addresses.contains(address)) {
-                        linkedAddressesIterator.remove();
-                        found = true;
-                    }
+            Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
+            while (linkedAddressesIterator.hasNext()) {
+                LinkedAddresses addresses = linkedAddressesIterator.next();
+                if (addresses.contains(address)) {
+                    linkedAddressesIterator.remove();
+                    found = true;
                 }
             }
             return found;
