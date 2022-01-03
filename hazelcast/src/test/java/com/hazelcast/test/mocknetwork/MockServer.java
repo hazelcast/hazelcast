@@ -114,7 +114,11 @@ class MockServer implements Server {
         @Override
         @Nonnull
         public List<ServerConnection> getAllConnections(@Nonnull Address address) {
-            ServerConnection conn = get(server.nodeRegistry.uuidOf(address), 0);
+            UUID memberUuid = server.nodeRegistry.uuidOf(address);
+            if (memberUuid == null) {
+                return Collections.emptyList();
+            }
+            ServerConnection conn = get(memberUuid, 0);
             return conn != null ? Collections.singletonList(conn) : Collections.emptyList();
         }
 
