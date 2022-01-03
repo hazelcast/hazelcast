@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -50,19 +49,7 @@ public final class WindowUtils {
 
     private WindowUtils() {
     }
-
-    public static Object[] insert(Object[] row, WatermarkedFields.WindowProperty windowProperty, long window_start, long window_end) {
-        Object[] result = new Object[row.length + 1];
-
-        int index = windowProperty.index();
-
-        System.arraycopy(row, 0, result, 0, index);
-        result[windowProperty.index()] = windowProperty.choose(window_start, window_end);
-        System.arraycopy(row, index, result, index + 1, result.length - index - 1);
-
-        return result;
-    }
-
+    
     /**
      * Returns a traverser of rows with two added fields: the
      * window_start and window_end. For tumbling windows, the returned

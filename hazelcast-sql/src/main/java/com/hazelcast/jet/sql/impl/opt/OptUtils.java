@@ -259,7 +259,8 @@ public final class OptUtils {
     }
 
     public static boolean isUnbounded(RelNode rel) {
-        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
+        boolean res = metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
+        return res;
     }
 
     public static HazelcastRelMetadataQuery metadataQuery(RelNode rel) {

@@ -16,14 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
@@ -32,12 +40,16 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate implements PhysicalRel {
+import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
+
+public class SlidingWindowAggregatePhysicalRel extends Aggregate implements PhysicalRel {
 
     private final AggregateOperation<?, Object[]> aggrOp;
     private final RexNode timestampExpression;
+    private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
+    private final int numStages;
 
-    SlidingWindowAggregateCombineByKeyPhysicalRel(
+    SlidingWindowAggregatePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
@@ -45,20 +57,41 @@ public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate imp
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls,
             AggregateOperation<?, Object[]> aggrOp,
-            RexNode timestampExpression
+            RexNode timestampExpression,
+            FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider,
+            int numStages
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
         this.aggrOp = aggrOp;
         this.timestampExpression = timestampExpression;
+        this.windowPolicyProvider = windowPolicyProvider;
+        this.numStages = numStages;
+    }
+
+    public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
+        return ObjectArrayKey.projectFn(getGroupSet().toArray());
     }
 
     public AggregateOperation<?, Object[]> aggrOp() {
         return aggrOp;
     }
 
-    public RexNode timestampExpression() {
-        return timestampExpression;
+    public Expression<Long> timestampExpression() {
+        QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
+
+        @SuppressWarnings("unchecked")
+        Expression<Long> result = (Expression<Long>) timestampExpression.accept(visitor);
+        return result;
+    }
+
+    public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider() {
+        return windowPolicyProvider;
+    }
+
+    public int numStages() {
+        return numStages;
     }
 
     @Override
@@ -67,8 +100,14 @@ public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate imp
     }
 
     @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("group", groupSet);
+    }
+
+    @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onSlidingWindowCombineByKey(this);
+        return visitor.onSlidingWindowAggregate(this);
     }
 
     @Override
@@ -79,15 +118,17 @@ public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate imp
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls
     ) {
-        return new SlidingWindowAggregateCombineByKeyPhysicalRel(
+        return new SlidingWindowAggregatePhysicalRel(
                 getCluster(),
                 traitSet,
                 input,
                 groupSet,
                 groupSets,
                 aggCalls,
-                aggrOp,
-                timestampExpression
+                aggrOp(),
+                timestampExpression,
+                windowPolicyProvider,
+                numStages
         );
     }
 }

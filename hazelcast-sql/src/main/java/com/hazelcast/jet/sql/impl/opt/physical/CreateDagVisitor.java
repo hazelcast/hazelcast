@@ -44,7 +44,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -327,70 +326,121 @@ public class CreateDagVisitor {
         return vertex;
     }
 
-    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
+    public Vertex onSlidingWindowAggregate(SlidingWindowAggregatePhysicalRel rel) {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        Expression<Long> timestampExpression = rel.timestampExpression();
         // todo [viliam] real ExpressionEvalContext
-        ToLongFunctionEx<Object[]> timestampFn = row -> timestampExpression.eval(new HeapRow(row), MOCK_EEC);
-        SlidingWindowPolicy windowPolicy = rel.windowPolicy();
+        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
+        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-AggregateByKey",
-                Processors.aggregateToSlidingWindowP(
-                        singletonList(groupKeyFn),
-                        singletonList(timestampFn),
-                        TimestampKind.EVENT,
-                        windowPolicy,
-                        0,
-                        aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, timestampExpression, start, end)
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
-        return vertex;
+        if (rel.numStages() == 1) {
+            Vertex vertex = dag.newUniqueVertex(
+                    "Sliding-Window-AggregateByKey",
+                    Processors.aggregateToSlidingWindowP(
+                            singletonList(groupKeyFn),
+                            singletonList(timestampFn),
+                            TimestampKind.EVENT,
+                            windowPolicy,
+                            0,
+                            aggregateOperation,
+                            // TODO [viliam] small optimization possible: remove the win_start/end props ValueAggregations, add them from the result.
+                            //  Same in #onSlidingWindowCombineByKey()
+                            (start, end, ignoredKey, result, isEarly) -> result
+                    )
+            );
+            connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+            return vertex;
+        } else {
+            assert rel.numStages() == 2;
+
+            Vertex vertex1 = dag.newUniqueVertex(
+                    "Sliding-Window-AccumulateByKey",
+                    Processors.accumulateByFrameP(
+                            singletonList(groupKeyFn),
+                            singletonList(timestampFn),
+                            TimestampKind.EVENT,
+                            windowPolicy,
+                            aggregateOperation));
+
+            Vertex vertex2 = dag.newUniqueVertex(
+                    "Sliding-Window-CombineByKey",
+                    Processors.combineToSlidingWindowP(
+                            windowPolicy,
+                            aggregateOperation,
+                            (start, end, ignoredKey, result, isEarly) -> result));
+
+            connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
+            dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
+            return vertex2;
+        }
     }
 
-    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
-
-        WatermarkedFields.WindowProperty windowProperty = rel.timestampExpression();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
-
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-AccumulateByKey",
-                Processors.accumulateByFrameP(
-                        singletonList(groupKeyFn),
-                        singletonList(timestampFn),
-                        TimestampKind.EVENT,
-                        windowPolicy,
-                        aggregateOperation
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
-        return vertex;
-    }
-
-    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
-
-        WatermarkedFields.WindowProperty windowProperty = rel.timestampExpression();
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
-
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-CombineByKey",
-                Processors.combineToSlidingWindowP(
-                        windowPolicy,
-                        aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, windowProperty, start, end)
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
-        return vertex;
-    }
+//    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
+//        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+//
+//        // todo [viliam] real ExpressionEvalContext
+//        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
+//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
+//
+//        Vertex vertex = dag.newUniqueVertex(
+//                "Sliding-Window-AggregateByKey",
+//                Processors.aggregateToSlidingWindowP(
+//                        singletonList(groupKeyFn),
+//                        singletonList(timestampFn),
+//                        TimestampKind.EVENT,
+//                        windowPolicy,
+//                        0,
+//                        aggregateOperation,
+//                        // TODO [viliam] small optimization possible: remove the win_start/end props ValueAggregations, add them from the result.
+//                        //  Same in #onSlidingWindowCombineByKey()
+//                        (start, end, ignoredKey, result, isEarly) -> result
+//                )
+//        );
+//        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+//        return vertex;
+//    }
+//
+//    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
+//        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
+//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+//
+//        // todo [viliam] real ExpressionEvalContext
+//        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
+//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
+//
+//        Vertex vertex = dag.newUniqueVertex(
+//                "Sliding-Window-AccumulateByKey",
+//                Processors.accumulateByFrameP(
+//                        singletonList(groupKeyFn),
+//                        singletonList(timestampFn),
+//                        TimestampKind.EVENT,
+//                        windowPolicy,
+//                        aggregateOperation
+//                )
+//        );
+//        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
+//        return vertex;
+//    }
+//
+//    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
+//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+//
+//        // todo [viliam] real ExpressionEvalContext
+//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
+//
+//        Vertex vertex = dag.newUniqueVertex(
+//                "Sliding-Window-CombineByKey",
+//                Processors.combineToSlidingWindowP(
+//                        windowPolicy,
+//                        aggregateOperation,
+//                        (start, end, ignoredKey, result, isEarly) -> result
+//                )
+//        );
+//        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
+//        return vertex;
+//    }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();

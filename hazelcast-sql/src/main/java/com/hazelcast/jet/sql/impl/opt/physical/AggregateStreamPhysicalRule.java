@@ -16,18 +16,21 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.ProjectLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 
@@ -42,20 +45,22 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
 
     private static final Config CONFIG_PROJECT = Config.EMPTY
-            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName())
+            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName() + "-project")
             .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
                     .predicate(OptUtils::isUnbounded)
                     .inputs(b1 -> b1
-                            .operand(LogicalProject.class)
-                            .inputs(b2 -> b2.operand(SlidingWindowLogicalRel.class).anyInputs())));
+                            .operand(ProjectLogicalRel.class)
+                            .inputs(b2 -> b2
+                                    .operand(SlidingWindowLogicalRel.class).anyInputs())));
 
     private static final Config CONFIG_NO_PROJECT = Config.EMPTY
-            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName())
+            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName() + "-no-project")
             .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
                     .predicate(OptUtils::isUnbounded)
-                    .inputs(b1 -> b1.operand(SlidingWindowLogicalRel.class).anyInputs()));
+                    .inputs(b1 -> b1
+                            .operand(SlidingWindowLogicalRel.class).anyInputs()));
 
     static final RelOptRule NO_PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_NO_PROJECT, false);
     static final RelOptRule PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_PROJECT, true);
@@ -94,58 +99,44 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         RelNode convertedInput = OptUtils.toPhysicalInput(input);
         Collection<RelNode> transformedInputs = OptUtils.extractPhysicalRelsFromSubset(convertedInput);
         for (RelNode transformedInput : transformedInputs) {
-            RelNode transformedRel = optimize(logicalAggregate, transformedInput);
+            RelNode transformedRel = optimize(logicalAggregate, transformedInput, windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);
             }
         }
     }
 
-    private RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        Entry<Integer, RexNode> watermarkedGroupedField = findWatermarkedGroupedField(logicalAggregate, physicalInput);
-        if (watermarkedGroupedField == null) {
+    private RelNode optimize(
+            AggregateLogicalRel logicalAggregate,
+            RelNode physicalInput,
+            FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
+    ) {
+        Entry<Integer, RexNode> watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
+        if (watermarkedField == null) {
             // there's no field that we group by, that also has watermarks
             return null;
         }
 
         AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
-                logicalAggregate.getGroupSet().clear(watermarkedGroupedField.getKey()),
+                logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList());
 
-        if (logicalAggregate.containsDistinctCall()) {
-            return new SlidingWindowAggregateByKeyPhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp,
-                    watermarkedGroupedField.getValue());
-        } else {
-            RelNode rel = new SlidingWindowAggregateAccumulateByKeyPhysicalRel(
-                    physicalInput.getCluster(),
-                    physicalInput.getTraitSet(),
-                    physicalInput,
-                    logicalAggregate.getGroupSet(),
-                    aggrOp,
-                    watermarkedGroupedField.getValue());
-
-            return new SlidingWindowAggregateCombineByKeyPhysicalRel(
-                    rel.getCluster(),
-                    rel.getTraitSet(),
-                    rel,
-                    logicalAggregate.getGroupSet(),
-                    logicalAggregate.getGroupSets(),
-                    logicalAggregate.getAggCallList(),
-                    aggrOp,
-                    watermarkedGroupedField.getValue());
-        }
+        return new SlidingWindowAggregatePhysicalRel(
+                physicalInput.getCluster(),
+                physicalInput.getTraitSet(),
+                physicalInput,
+                logicalAggregate.getGroupSet(),
+                logicalAggregate.getGroupSets(),
+                logicalAggregate.getAggCallList(),
+                aggrOp,
+                watermarkedField.getValue(),
+                windowPolicyProvider,
+                logicalAggregate.containsDistinctCall() ? 1 : 2);
     }
 
     @Nullable
-    private static Entry<Integer, RexNode> findWatermarkedGroupedField(
+    private static Entry<Integer, RexNode> findWatermarkedField(
             AggregateLogicalRel logicalAggregate,
             RelNode input
     ) {
