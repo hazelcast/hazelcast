@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -27,6 +26,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.List;
 public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate implements PhysicalRel {
 
     private final AggregateOperation<?, Object[]> aggrOp;
-    private final WindowProperties.WindowProperty windowProperty;
+    private final RexNode timestampExpression;
 
     SlidingWindowAggregateCombineByKeyPhysicalRel(
             RelOptCluster cluster,
@@ -45,20 +45,20 @@ public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate imp
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls,
             AggregateOperation<?, Object[]> aggrOp,
-            WindowProperties.WindowProperty windowProperty
+            RexNode timestampExpression
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
         this.aggrOp = aggrOp;
-        this.windowProperty = windowProperty;
+        this.timestampExpression = timestampExpression;
     }
 
     public AggregateOperation<?, Object[]> aggrOp() {
         return aggrOp;
     }
 
-    public WindowProperties.WindowProperty windowProperty() {
-        return windowProperty;
+    public RexNode timestampExpression() {
+        return timestampExpression;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SlidingWindowAggregateCombineByKeyPhysicalRel extends Aggregate imp
                 groupSets,
                 aggCalls,
                 aggrOp,
-                windowProperty
+                timestampExpression
         );
     }
 }

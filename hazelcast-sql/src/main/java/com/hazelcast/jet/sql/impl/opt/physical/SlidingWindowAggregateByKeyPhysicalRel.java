@@ -21,14 +21,15 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import java.util.List;
 public class SlidingWindowAggregateByKeyPhysicalRel extends Aggregate implements PhysicalRel {
 
     private final AggregateOperation<?, Object[]> aggrOp;
-    private final WindowProperties.WindowProperty windowProperty;
+    private final RexNode timestampExpression;
 
     SlidingWindowAggregateByKeyPhysicalRel(
             RelOptCluster cluster,
@@ -47,25 +48,24 @@ public class SlidingWindowAggregateByKeyPhysicalRel extends Aggregate implements
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls,
             AggregateOperation<?, Object[]> aggrOp,
-            WindowProperties.WindowProperty windowProperty
+            RexNode timestampExpression
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
         this.aggrOp = aggrOp;
-        this.windowProperty = windowProperty;
+        this.timestampExpression = timestampExpression;
     }
 
     public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
-        return ObjectArrayKey.projectFn(getGroupSet().clear(windowProperty().index()).toArray());
-        //return ObjectArrayKey.projectFn(getGroupSet().toArray());
+        return ObjectArrayKey.projectFn(getGroupSet().toArray());
     }
 
     public AggregateOperation<?, Object[]> aggrOp() {
         return aggrOp;
     }
 
-    public WindowProperties.WindowProperty windowProperty() {
-        return windowProperty;
+    public Expression<Long> timestampExpression() {
+        return timestampExpression;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class SlidingWindowAggregateByKeyPhysicalRel extends Aggregate implements
                 groupSets,
                 aggCalls,
                 aggrOp,
-                windowProperty
+                timestampExpression
         );
     }
 }

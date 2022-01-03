@@ -20,7 +20,11 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
+import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Aggregate.Group;
+
+import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -40,7 +44,20 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
     }
 
     @Override
-    protected RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
+    public void onMatch(RelOptRuleCall call) {
+        AggregateLogicalRel logicalAggregate = call.rel(0);
+        RelNode input = logicalAggregate.getInput();
+
+        assert logicalAggregate.getGroupType() == Group.SIMPLE;
+
+        RelNode convertedInput = OptUtils.toPhysicalInput(input);
+        Collection<RelNode> transformedInputs = OptUtils.extractPhysicalRelsFromSubset(convertedInput);
+        for (RelNode transformedInput : transformedInputs) {
+            call.transformTo(optimize(logicalAggregate, transformedInput));
+        }
+    }
+
+    private RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
         return logicalAggregate.getGroupSet().cardinality() == 0
                 ? toAggregate(logicalAggregate, physicalInput)
                 : toAggregateByKey(logicalAggregate, physicalInput);

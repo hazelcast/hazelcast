@@ -23,6 +23,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
@@ -43,7 +44,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -52,6 +53,7 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
@@ -76,9 +78,13 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+
+    // TODO [viliam] use real EEC
+    private static final SimpleExpressionEvalContext MOCK_EEC = new SimpleExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
@@ -325,9 +331,10 @@ public class CreateDagVisitor {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+        Expression<Long> timestampExpression = rel.timestampExpression();
+        // todo [viliam] real ExpressionEvalContext
+        ToLongFunctionEx<Object[]> timestampFn = row -> timestampExpression.eval(new HeapRow(row), MOCK_EEC);
+        SlidingWindowPolicy windowPolicy = rel.windowPolicy();
 
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window-AggregateByKey",
@@ -338,7 +345,7 @@ public class CreateDagVisitor {
                         windowPolicy,
                         0,
                         aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, windowProperty, start, end)
+                        (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, timestampExpression, start, end)
                 )
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
@@ -349,7 +356,7 @@ public class CreateDagVisitor {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        WatermarkedFields.WindowProperty windowProperty = rel.timestampExpression();
         ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
@@ -370,7 +377,7 @@ public class CreateDagVisitor {
     public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
+        WatermarkedFields.WindowProperty windowProperty = rel.timestampExpression();
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(

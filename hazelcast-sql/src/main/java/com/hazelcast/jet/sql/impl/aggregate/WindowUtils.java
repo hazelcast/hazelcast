@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -51,7 +51,7 @@ public final class WindowUtils {
     private WindowUtils() {
     }
 
-    public static Object[] insert(Object[] row, WindowProperties.WindowProperty windowProperty, long window_start, long window_end) {
+    public static Object[] insert(Object[] row, WatermarkedFields.WindowProperty windowProperty, long window_start, long window_end) {
         Object[] result = new Object[row.length + 1];
 
         int index = windowProperty.index();
