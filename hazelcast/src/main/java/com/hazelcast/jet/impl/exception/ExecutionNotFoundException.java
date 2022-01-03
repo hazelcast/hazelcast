@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.exception;
 
 import com.hazelcast.jet.JetException;
+import com.hazelcast.spi.exception.SilentException;
 
 import static com.hazelcast.jet.Util.idToString;
 
@@ -24,7 +25,7 @@ import static com.hazelcast.jet.Util.idToString;
  * Thrown in response to operations sent from the coordinator, if the
  * target doesn't know the execution.
  */
-public class ExecutionNotFoundException extends JetException {
+public class ExecutionNotFoundException extends JetException implements SilentException {
 
     private static final long serialVersionUID = 1L;
 
