@@ -37,6 +37,5 @@ public interface NodeContext {
 
     Joiner createJoiner(Node node);
 
-    // TODO Consider the changes here (JET?)
     Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry);
 }
