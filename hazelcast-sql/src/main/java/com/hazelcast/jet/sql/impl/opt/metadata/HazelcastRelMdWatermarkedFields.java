@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.metadata;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
+import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
@@ -58,11 +59,24 @@ public final class HazelcastRelMdWatermarkedFields
         return WatermarkedFieldsMetadata.DEF;
     }
 
-
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(FullScan rel, RelMetadataQuery mq) {
-        // todo
-        return null;
+        return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(WatermarkLogicalRel rel) {
+        return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
+    }
+
+    private static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
+        if (watermarkedFieldIndex < 0) {
+            return null;
+        }
+
+        RelDataType type = rel.getRowType().getFieldList().get(watermarkedFieldIndex).getType();
+        RexNode expr = rel.getCluster().getRexBuilder().makeInputRef(type, watermarkedFieldIndex);
+        return new WatermarkedFields(ImmutableMap.of(watermarkedFieldIndex, expr));
     }
 
     @SuppressWarnings("unused")

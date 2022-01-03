@@ -54,10 +54,10 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
-
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
     ) {
-        super(cluster, traitSet, table, eventTimePolicyProvider);
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
@@ -143,6 +143,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider());
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
+                watermarkedColumnIndex());
     }
 }

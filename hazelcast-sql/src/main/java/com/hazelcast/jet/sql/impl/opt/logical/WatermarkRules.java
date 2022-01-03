@@ -65,7 +65,8 @@ final class WatermarkRules {
                     function.getCluster(),
                     OptUtils.toLogicalConvention(function.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(function.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(function));
+                    toEventTimePolicyProvider(function),
+                    orderingColumnFieldIndex(function));
         }
 
         private FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> toEventTimePolicyProvider(
@@ -74,6 +75,7 @@ final class WatermarkRules {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
             return context -> {
+                // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
                         row -> WindowUtils.extractMillis(row[orderingColumnFieldIndex]),
@@ -113,7 +115,8 @@ final class WatermarkRules {
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
-                    logicalWatermark.eventTimePolicyProvider()
+                    logicalWatermark.eventTimePolicyProvider(),
+                    logicalWatermark.watermarkedColumnIndex()
             );
             call.transformTo(rel);
         }

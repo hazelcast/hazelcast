@@ -84,7 +84,8 @@ final class UpdateLogicalRules {
                                     relTable.getDelegate().getQualifiedName(),
                                     hazelcastTable.withProject(keyProjects(hazelcastTable.getTarget())),
                                     scan.getCluster().getTypeFactory()),
-                            null);
+                            null,
+                            -1);
                 }
 
                 private List<Integer> keyProjects(Table table) {

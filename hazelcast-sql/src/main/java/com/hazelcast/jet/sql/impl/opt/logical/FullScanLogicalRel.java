@@ -34,13 +34,14 @@ public class FullScanLogicalRel extends FullScan implements LogicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
     ) {
-        super(cluster, traitSet, table, eventTimePolicyProvider);
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
     @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanLogicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider());
+        return new FullScanLogicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(), watermarkedColumnIndex());
     }
 }
