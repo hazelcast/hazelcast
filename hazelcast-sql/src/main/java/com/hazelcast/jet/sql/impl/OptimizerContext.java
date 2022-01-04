@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
