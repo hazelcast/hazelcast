@@ -284,17 +284,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                         boolean backup, boolean includeExpiredRecords) {
 
         long now = getNow();
-        Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();
-        while (entries.hasNext()) {
-            Map.Entry<Data, Record> entry = entries.next();
+        storage.beforeOperation();
+        try {
+            Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();
+            while (entries.hasNext()) {
+                Map.Entry<Data, Record> entry = entries.next();
 
-            Data key = entry.getKey();
-            Record record = entry.getValue();
+                Data key = entry.getKey();
+                Record record = entry.getValue();
 
-            if (includeExpiredRecords
+                if (includeExpiredRecords
                     || hasExpired(key, now, backup) == ExpiryReason.NOT_EXPIRED) {
-                consumer.accept(key, record);
+                    consumer.accept(key, record);
+                }
             }
+        } finally {
+            storage.afterOperation();
         }
     }
 

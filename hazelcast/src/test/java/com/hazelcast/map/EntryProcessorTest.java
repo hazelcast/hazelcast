@@ -958,7 +958,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         setCustomTtl(entryProcessor, "executeOnKey");
     }
 
-    private void setCustomTtl(EntryProcessor entryProcessor, String methodName) {
+    protected void setCustomTtl(EntryProcessor entryProcessor, String methodName) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
