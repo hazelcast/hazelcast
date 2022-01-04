@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 public class ReloadStartedEvent extends AbstractEventBase implements ReloadEvent {
     @Override
     public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.RELOAD_STARTED;
+        return EventMetadata.EventType.CONFIG_RELOAD_STARTED;
     }
 
     @Override

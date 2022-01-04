@@ -34,7 +34,7 @@ public class ReloadProgressEvent extends AbstractEventBase implements ReloadEven
 
     @Override
     public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.RELOAD_PROGRESS;
+        return EventMetadata.EventType.CONFIG_RELOAD_PROGRESS;
     }
 
     @Override

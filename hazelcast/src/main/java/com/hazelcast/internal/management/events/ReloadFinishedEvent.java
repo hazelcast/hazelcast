@@ -27,7 +27,7 @@ public class ReloadFinishedEvent extends AbstractEventBase implements ReloadEven
 
     @Override
     public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.RELOAD_FINISHED;
+        return EventMetadata.EventType.CONFIG_RELOAD_FINISHED;
     }
 
     @Override
