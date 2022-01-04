@@ -178,8 +178,10 @@
                                     <include>org.checkerframework:checker-qual</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-core</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
+                                    <include>com.fasterxml.jackson.core:jackson-core</include>
                                     <include>org.antlr:antlr4-runtime</include>
-                                    <include>net.minidev:json-smart</include>
+                                    <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
@@ -223,10 +225,6 @@
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>net.minidev</pattern>
-                                    <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>org.apache.commons</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
                                 </relocation>
@@ -245,6 +243,14 @@
                                 <relocation>
                                     <pattern>org.slf4</pattern>
                                     <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jsfr</pattern>
+                                    <shadedPattern>${relocation.root}.org.jsfr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -303,13 +309,19 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.antlr:antlr4-runtime</artifact>
+                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>net.minidev:json-smart</artifact>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.antlr:antlr4-runtime</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -502,7 +514,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
