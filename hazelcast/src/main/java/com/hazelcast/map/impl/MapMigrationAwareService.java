@@ -240,7 +240,7 @@ class MapMigrationAwareService
     public void onBeforeRun(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            recordStore.beforeOperation();
+            recordStore.registerBeforeOp();
         }
     }
 
@@ -248,7 +248,7 @@ class MapMigrationAwareService
     public void onAfterRunFinal(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            recordStore.afterOperation();
+            recordStore.unregisterAfterOp();
         }
     }
 

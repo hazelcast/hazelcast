@@ -657,11 +657,11 @@ public interface RecordStore<R extends Record> {
 
     void setStats(LocalRecordStoreStats stats);
 
-    default void beforeOperation() {
+    default void registerBeforeOp() {
         // no-op
     }
 
-    default void afterOperation() {
+    default void unregisterAfterOp() {
         // no-op
     }
 }

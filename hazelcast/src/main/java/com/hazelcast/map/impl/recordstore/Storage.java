@@ -143,11 +143,11 @@ public interface Storage<K, R> {
 
     Data toBackingDataKeyFormat(Data key);
 
-    default void beforeOperation() {
+    default void registerBeforeOp() {
         // no-op
     }
 
-    default void afterOperation() {
+    default void unregisterAfterOp() {
         // no-op
     }
 }

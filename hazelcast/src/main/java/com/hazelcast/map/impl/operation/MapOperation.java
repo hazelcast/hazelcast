@@ -106,7 +106,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected void innerBeforeRun() throws Exception {
         if (recordStore != null) {
-            recordStore.beforeOperation();
+            recordStore.registerBeforeOp();
         }
         // Concrete classes can override this method.
     }
@@ -141,7 +141,7 @@ public abstract class MapOperation extends AbstractNamedOperation
             disposeDeferredBlocks();
             super.afterRun();
         } finally {
-            afterRunFinal();
+            unregisterAfterOp();
         }
     }
 
@@ -150,10 +150,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         // Concrete classes can override this method.
     }
 
-    @Override
-    public void afterRunFinal() {
+    public void unregisterAfterOp() {
         if (recordStore != null) {
-            recordStore.afterOperation();
+            recordStore.unregisterAfterOp();
         }
     }
 
@@ -189,9 +188,19 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     @Override
-    public void onExecutionFailure(Throwable e) {
-        disposeDeferredBlocks();
-        super.onExecutionFailure(e);
+    public final void onExecutionFailure(Throwable e) {
+        try {
+            onExecutionFailureInternal(e);
+            disposeDeferredBlocks();
+            unregisterAfterOp();
+        } finally {
+            super.onExecutionFailure(e);
+        }
+    }
+
+    protected void onExecutionFailureInternal(Throwable e) {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
     }
 
     @Override

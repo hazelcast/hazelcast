@@ -92,7 +92,7 @@ public class MapReplicationOperation extends Operation
                 return;
             }
             for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
-                recordStore.beforeOperation();
+                recordStore.registerBeforeOp();
             }
         } finally {
             super.beforeRun();
@@ -119,7 +119,7 @@ public class MapReplicationOperation extends Operation
                 return;
             }
             for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
-                recordStore.afterOperation();
+                recordStore.unregisterAfterOp();
             }
         } finally {
             super.afterRunFinal();

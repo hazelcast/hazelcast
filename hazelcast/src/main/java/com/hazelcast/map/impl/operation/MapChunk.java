@@ -145,13 +145,13 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     @Override
     public final void beforeRun() {
         RecordStore recordStore = getRecordStore(mapName);
-        recordStore.beforeOperation();
+        recordStore.registerBeforeOp();
     }
 
     @Override
     public final void afterRunFinal() {
         RecordStore recordStore = getRecordStore(mapName);
-        recordStore.afterOperation();
+        recordStore.unregisterAfterOp();
     }
 
     protected void incrementReplicationCount() {

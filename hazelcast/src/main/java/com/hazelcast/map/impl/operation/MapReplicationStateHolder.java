@@ -363,7 +363,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
-        recordStore.beforeOperation();
+        recordStore.registerBeforeOp();
         try {
             recordStore.forEach((dataKey, record) -> {
                 try {
@@ -376,7 +376,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 }
             }, operation.getReplicaIndex() != 0, true);
         } finally {
-            recordStore.afterOperation();
+            recordStore.unregisterAfterOp();
         }
         LocalReplicationStatsImpl replicationStats = statsByMapName.get(recordStore.getName());
         replicationStats.incrementFullPartitionReplicationCount();

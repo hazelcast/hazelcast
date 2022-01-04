@@ -254,7 +254,7 @@ EntryOperation extends LockAwareOperation
     }
 
     @Override
-    public void onExecutionFailure(Throwable e) {
+    protected void onExecutionFailureInternal(Throwable e) {
         if (offload) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
