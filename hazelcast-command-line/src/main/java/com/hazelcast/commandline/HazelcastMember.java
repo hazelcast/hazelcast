@@ -16,24 +16,13 @@
 
 package com.hazelcast.commandline;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigStream;
-import com.hazelcast.config.FileSystemXmlConfig;
-import com.hazelcast.config.FileSystemYamlConfig;
-import com.hazelcast.config.InterfacesConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
-import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Class for starting new Hazelcast members
@@ -53,7 +42,7 @@ final class HazelcastMember {
     public static void main(String[] args)
             throws Exception {
         System.setProperty("hazelcast.tracking.server", "true");
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config());
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         printMemberPort(hz);
     }
 
@@ -66,37 +55,4 @@ final class HazelcastMember {
         }
     }
 
-    static Config config()
-            throws Exception {
-        String hazelcastConfig = System.getProperty("hazelcast.config");
-        Config config;
-        if (!isNullOrEmpty(hazelcastConfig)) {
-            config = createConfig(hazelcastConfig);
-        } else {
-            config = Config.load();
-        }
-        config.getJetConfig().setEnabled(true);
-        String port = System.getProperty("network.port");
-        if (port != null && !port.equalsIgnoreCase("null")) {
-            config.getNetworkConfig().setPort(Integer.parseInt(port));
-        }
-        String networkInterface = System.getProperty("network.interface");
-        if (networkInterface != null && !networkInterface.equalsIgnoreCase("null")) {
-            config.setProperty("hazelcast.socket.bind.any", "false");
-            InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
-            interfaces.setEnabled(true).addInterface(networkInterface);
-        }
-        return config;
-    }
-
-    private static Config createConfig(String configPath)
-            throws Exception {
-        if (new MemberYamlConfigRootTagRecognizer().isRecognized(new ConfigStream(new FileInputStream(configPath)))) {
-            return new FileSystemYamlConfig(configPath);
-        } else if (new MemberXmlConfigRootTagRecognizer().isRecognized(new ConfigStream(new FileInputStream(configPath)))) {
-            return new FileSystemXmlConfig(configPath);
-        } else {
-            throw new InvalidConfigurationException("Provided configuration file is invalid.");
-        }
-    }
 }
