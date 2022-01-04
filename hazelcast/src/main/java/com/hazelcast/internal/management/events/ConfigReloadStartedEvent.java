@@ -20,22 +20,13 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-abstract class AbstractWanEvent extends AbstractEventBase {
-    private final UUID uuid;
-
-    protected AbstractWanEvent(UUID uuid) {
-        assert uuid != null : "UUID must not be null";
-        this.uuid = uuid;
-    }
-
-    public UUID getUuid() {
-        return uuid;
+public class ConfigReloadStartedEvent extends AbstractIdentifiedEvent {
+    public ConfigReloadStartedEvent(UUID uuid) {
+        super(uuid);
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("uuid", uuid != null ? uuid.toString() : "null");
-        return json;
+    public EventMetadata.EventType getType() {
+        return EventMetadata.EventType.CONFIG_RELOAD_STARTED;
     }
 }

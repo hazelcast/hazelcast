@@ -18,10 +18,13 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
-public class ReloadFinishedEvent extends AbstractEventBase {
+import java.util.UUID;
+
+public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
     private final String reloadResponseMessage;
 
-    public ReloadFinishedEvent(String reloadResponseMessage) {
+    public ConfigReloadFinishedEvent(UUID uuid, String reloadResponseMessage) {
+        super(uuid);
         this.reloadResponseMessage = reloadResponseMessage;
     }
 
@@ -32,7 +35,7 @@ public class ReloadFinishedEvent extends AbstractEventBase {
 
     @Override
     public JsonObject toJson() {
-        JsonObject json = new JsonObject();
+        JsonObject json = super.toJson();
         json.add("reloadResponseMessage", reloadResponseMessage);
         return json;
     }

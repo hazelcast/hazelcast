@@ -18,14 +18,24 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
-public class ReloadStartedEvent extends AbstractEventBase {
-    @Override
-    public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.CONFIG_RELOAD_STARTED;
+import java.util.Objects;
+import java.util.UUID;
+
+abstract class AbstractIdentifiedEvent extends AbstractEventBase {
+    private final UUID uuid;
+
+    protected AbstractIdentifiedEvent(UUID uuid) {
+        this.uuid = Objects.requireNonNull(uuid, "UUID must not be null");
+    }
+
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
     public JsonObject toJson() {
-        return new JsonObject();
+        JsonObject json = new JsonObject();
+        json.add("uuid", uuid.toString());
+        return json;
     }
 }
