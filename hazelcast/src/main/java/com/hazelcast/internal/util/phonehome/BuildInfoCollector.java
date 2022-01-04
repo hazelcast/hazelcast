@@ -36,13 +36,13 @@ import static java.lang.Math.min;
  */
 class BuildInfoCollector implements MetricsCollector {
 
-    private static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
-
     static final int CLASSPATH_MAX_LENGTH = 100_000;
+
+    private static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
 
     private final Map<String, String> envVars;
 
-    public BuildInfoCollector(Map<String, String> envVars) {
+    BuildInfoCollector(Map<String, String> envVars) {
         this.envVars = envVars;
     }
 
