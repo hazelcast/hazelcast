@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -37,44 +36,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMALS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_LONGS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEANS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BYTES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_DOUBLES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOATS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_LONGS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_SHORTS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRINGS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMES;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMPS;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONES;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRING;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.INT8;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.INT;
-import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.INT32;
+import static com.hazelcast.nio.serialization.FieldKind.INT64;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BYTE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_DOUBLE;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_LONG;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_SHORT;
-import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.INT16;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
@@ -162,7 +162,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     @Nonnull
     private Object createObject(Class associatedClass) {
         try {
-            return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
+            return createNewInstance(associatedClass);
         } catch (Exception e) {
             throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
@@ -196,9 +196,6 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     }
 
     private void createFastReadWriteCaches(Class clazz) {
-        //Create object to test if it is empty constructable to fail-fast on the write path
-        createObject(clazz);
-
         //get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
         Writer[] writers = new Writer[allFields.size()];
@@ -211,46 +208,46 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             String name = field.getName();
             if (Byte.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, BYTE, NULLABLE_BYTE)) {
-                        field.setByte(o, reader.readByte(name));
+                    if (fieldExists(schema, name, INT8, NULLABLE_INT8)) {
+                        field.setByte(o, reader.readInt8(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeByte(name, field.getByte(o));
+                writers[index] = (w, o) -> w.writeInt8(name, field.getByte(o));
             } else if (Short.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, SHORT, NULLABLE_SHORT)) {
-                        field.setShort(o, reader.readShort(name));
+                    if (fieldExists(schema, name, INT16, NULLABLE_INT16)) {
+                        field.setShort(o, reader.readInt16(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeShort(name, field.getShort(o));
+                writers[index] = (w, o) -> w.writeInt16(name, field.getShort(o));
             } else if (Integer.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, INT, NULLABLE_INT)) {
-                        field.setInt(o, reader.readInt(name));
+                    if (fieldExists(schema, name, INT32, NULLABLE_INT32)) {
+                        field.setInt(o, reader.readInt32(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeInt(name, field.getInt(o));
+                writers[index] = (w, o) -> w.writeInt32(name, field.getInt(o));
             } else if (Long.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, LONG, NULLABLE_LONG)) {
-                        field.setLong(o, reader.readLong(name));
+                    if (fieldExists(schema, name, INT64, NULLABLE_INT64)) {
+                        field.setLong(o, reader.readInt64(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeLong(name, field.getLong(o));
+                writers[index] = (w, o) -> w.writeInt64(name, field.getLong(o));
             } else if (Float.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, FLOAT, NULLABLE_FLOAT)) {
-                        field.setFloat(o, reader.readFloat(name));
+                    if (fieldExists(schema, name, FLOAT32, NULLABLE_FLOAT32)) {
+                        field.setFloat(o, reader.readFloat32(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeFloat(name, field.getFloat(o));
+                writers[index] = (w, o) -> w.writeFloat32(name, field.getFloat(o));
             } else if (Double.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, DOUBLE, NULLABLE_DOUBLE)) {
-                        field.setDouble(o, reader.readDouble(name));
+                    if (fieldExists(schema, name, FLOAT64, NULLABLE_FLOAT64)) {
+                        field.setDouble(o, reader.readFloat64(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeDouble(name, field.getDouble(o));
+                writers[index] = (w, o) -> w.writeFloat64(name, field.getDouble(o));
             } else if (Boolean.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, BOOLEAN, NULLABLE_BOOLEAN)) {
@@ -302,11 +299,11 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 writers[index] = (w, o) -> w.writeTimestampWithTimezone(name, (OffsetDateTime) field.get(o));
             } else if (Byte.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, BYTE, NULLABLE_BYTE)) {
-                        field.set(o, reader.readNullableByte(name));
+                    if (fieldExists(schema, name, INT8, NULLABLE_INT8)) {
+                        field.set(o, reader.readNullableInt8(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableByte(name, (Byte) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableInt8(name, (Byte) field.get(o));
             } else if (Boolean.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, BOOLEAN, NULLABLE_BOOLEAN)) {
@@ -316,39 +313,39 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 writers[index] = (w, o) -> w.writeNullableBoolean(name, (Boolean) field.get(o));
             } else if (Short.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, SHORT, NULLABLE_SHORT)) {
-                        field.set(o, reader.readNullableShort(name));
+                    if (fieldExists(schema, name, INT16, NULLABLE_INT16)) {
+                        field.set(o, reader.readNullableInt16(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableShort(name, (Short) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableInt16(name, (Short) field.get(o));
             } else if (Integer.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, INT, NULLABLE_INT)) {
-                        field.set(o, reader.readNullableInt(name));
+                    if (fieldExists(schema, name, INT32, NULLABLE_INT32)) {
+                        field.set(o, reader.readNullableInt32(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableInt(name, (Integer) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableInt32(name, (Integer) field.get(o));
             } else if (Long.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, LONG, NULLABLE_LONG)) {
-                        field.set(o, reader.readNullableLong(name));
+                    if (fieldExists(schema, name, INT64, NULLABLE_INT64)) {
+                        field.set(o, reader.readNullableInt64(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableLong(name, (Long) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableInt64(name, (Long) field.get(o));
             } else if (Float.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, FLOAT, NULLABLE_FLOAT)) {
-                        field.set(o, reader.readNullableFloat(name));
+                    if (fieldExists(schema, name, FLOAT32, NULLABLE_FLOAT32)) {
+                        field.set(o, reader.readNullableFloat32(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableFloat(name, (Float) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableFloat32(name, (Float) field.get(o));
             } else if (Double.class.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
-                    if (fieldExists(schema, name, DOUBLE, NULLABLE_DOUBLE)) {
-                        field.set(o, reader.readNullableDouble(name));
+                    if (fieldExists(schema, name, FLOAT64, NULLABLE_FLOAT64)) {
+                        field.set(o, reader.readNullableFloat64(name));
                     }
                 };
-                writers[index] = (w, o) -> w.writeNullableDouble(name, (Double) field.get(o));
+                writers[index] = (w, o) -> w.writeNullableFloat64(name, (Double) field.get(o));
             } else if (type.isEnum()) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, STRING)) {
@@ -365,148 +362,148 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 Class<?> componentType = type.getComponentType();
                 if (Boolean.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS)) {
-                            field.set(o, reader.readArrayOfBooleans(name));
+                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN)) {
+                            field.set(o, reader.readArrayOfBoolean(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfBooleans(name, (boolean[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfBoolean(name, (boolean[]) field.get(o));
                 } else if (Byte.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES)) {
-                            field.set(o, reader.readArrayOfBytes(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8)) {
+                            field.set(o, reader.readArrayOInt(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfBytes(name, (byte[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfInt8(name, (byte[]) field.get(o));
                 } else if (Short.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_SHORTS, ARRAY_OF_NULLABLE_SHORTS)) {
-                            field.set(o, reader.readArrayOfShorts(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16)) {
+                            field.set(o, reader.readArrayOfInt16(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfShorts(name, (short[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfInt16(name, (short[]) field.get(o));
                 } else if (Integer.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS)) {
-                            field.set(o, reader.readArrayOfInts(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32)) {
+                            field.set(o, reader.readArrayOfInt32(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfInts(name, (int[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfInt32(name, (int[]) field.get(o));
                 } else if (Long.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS)) {
-                            field.set(o, reader.readArrayOfLongs(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64)) {
+                            field.set(o, reader.readArrayOfInt64(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfLongs(name, (long[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfInt64(name, (long[]) field.get(o));
                 } else if (Float.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_FLOATS, ARRAY_OF_NULLABLE_FLOATS)) {
-                            field.set(o, reader.readArrayOfFloats(name));
+                        if (fieldExists(schema, name, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32)) {
+                            field.set(o, reader.readArrayOfFloat32(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfFloats(name, (float[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfFloat32(name, (float[]) field.get(o));
                 } else if (Double.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_DOUBLES, ARRAY_OF_NULLABLE_DOUBLES)) {
-                            field.set(o, reader.readArrayOfDoubles(name));
+                        if (fieldExists(schema, name, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64)) {
+                            field.set(o, reader.readArrayOfFloat64(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfDoubles(name, (double[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfFloat64(name, (double[]) field.get(o));
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEANS)) {
-                            field.set(o, reader.readArrayOfNullableBooleans(name));
+                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN)) {
+                            field.set(o, reader.readArrayOfNullableBoolean(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableBooleans(name, (Boolean[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableBoolean(name, (Boolean[]) field.get(o));
                 } else if (Byte.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BYTES, ARRAY_OF_NULLABLE_BYTES)) {
-                            field.set(o, reader.readArrayOfNullableBytes(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8)) {
+                            field.set(o, reader.readArrayOfNullableInt8(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableBytes(name, (Byte[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableInt8(name, (Byte[]) field.get(o));
                 } else if (Short.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_SHORTS, ARRAY_OF_NULLABLE_SHORTS)) {
-                            field.set(o, reader.readArrayOfNullableShorts(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16)) {
+                            field.set(o, reader.readArrayOfNullableInt16(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableShorts(name, (Short[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableInt16(name, (Short[]) field.get(o));
                 } else if (Integer.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_INTS, ARRAY_OF_NULLABLE_INTS)) {
-                            field.set(o, reader.readArrayOfNullableInts(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32)) {
+                            field.set(o, reader.readArrayOfNullableInt32(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableInts(name, (Integer[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableInt32(name, (Integer[]) field.get(o));
                 } else if (Long.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_LONGS, ARRAY_OF_NULLABLE_LONGS)) {
-                            field.set(o, reader.readArrayOfNullableLongs(name));
+                        if (fieldExists(schema, name, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64)) {
+                            field.set(o, reader.readArrayOfNullableInt64(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableLongs(name, (Long[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableInt64(name, (Long[]) field.get(o));
                 } else if (Float.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_FLOATS, ARRAY_OF_NULLABLE_FLOATS)) {
-                            field.set(o, reader.readArrayOfNullableFloats(name));
+                        if (fieldExists(schema, name, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32)) {
+                            field.set(o, reader.readArrayOfNullableFloat32(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableFloats(name, (Float[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableFloat32(name, (Float[]) field.get(o));
                 } else if (Double.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_DOUBLES, ARRAY_OF_NULLABLE_DOUBLES)) {
-                            field.set(o, reader.readArrayOfNullableDoubles(name));
+                        if (fieldExists(schema, name, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64)) {
+                            field.set(o, reader.readArrayOfNullableFloat64(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfNullableDoubles(name, (Double[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfNullableFloat64(name, (Double[]) field.get(o));
                 } else if (String.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_STRINGS)) {
-                            field.set(o, reader.readArrayOfStrings(name));
+                        if (fieldExists(schema, name, ARRAY_OF_STRING)) {
+                            field.set(o, reader.readArrayOfString(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfStrings(name, (String[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfString(name, (String[]) field.get(o));
                 } else if (BigDecimal.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_DECIMALS)) {
-                            field.set(o, reader.readArrayOfDecimals(name));
+                        if (fieldExists(schema, name, ARRAY_OF_DECIMAL)) {
+                            field.set(o, reader.readArrayOfDecimal(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfDecimals(name, (BigDecimal[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfDecimal(name, (BigDecimal[]) field.get(o));
                 } else if (LocalTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_TIMES)) {
-                            field.set(o, reader.readArrayOfTimes(name));
+                        if (fieldExists(schema, name, ARRAY_OF_TIME)) {
+                            field.set(o, reader.readArrayOfTime(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfTimes(name, (LocalTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTime(name, (LocalTime[]) field.get(o));
                 } else if (LocalDate.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_DATES)) {
-                            field.set(o, reader.readArrayOfDates(name));
+                        if (fieldExists(schema, name, ARRAY_OF_DATE)) {
+                            field.set(o, reader.readArrayOfDate(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfDates(name, (LocalDate[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfDate(name, (LocalDate[]) field.get(o));
                 } else if (LocalDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_TIMESTAMPS)) {
-                            field.set(o, reader.readArrayOfTimestamps(name));
+                        if (fieldExists(schema, name, ARRAY_OF_TIMESTAMP)) {
+                            field.set(o, reader.readArrayOfTimetamp(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfTimestamps(name, (LocalDateTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTimestamp(name, (LocalDateTime[]) field.get(o));
                 } else if (OffsetDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_TIMESTAMP_WITH_TIMEZONES)) {
-                            field.set(o, reader.readArrayOfTimestampWithTimezones(name));
+                        if (fieldExists(schema, name, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)) {
+                            field.set(o, reader.readArrayOfTimetampWithTimezone(name));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfTimestampWithTimezones(name, (OffsetDateTime[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfTimestampWithTimezone(name, (OffsetDateTime[]) field.get(o));
                 } else if (componentType.isEnum()) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_STRINGS)) {
-                            String[] stringArray = reader.readArrayOfStrings(name);
+                        if (fieldExists(schema, name, ARRAY_OF_STRING)) {
+                            String[] stringArray = reader.readArrayOfString(name);
                             Enum[] enumArray = enumsFromString((Class<? extends Enum>) componentType, stringArray);
                             field.set(o, enumArray);
                         }
@@ -514,15 +511,15 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     writers[index] = (w, o) -> {
                         Enum[] values = (Enum[]) field.get(o);
                         String[] stringArray = enumsAsStrings(values);
-                        w.writeArrayOfStrings(name, stringArray);
+                        w.writeArrayOfString(name, stringArray);
                     };
                 } else {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_COMPACTS)) {
-                            field.set(o, reader.readArrayOfCompacts(name, componentType));
+                        if (fieldExists(schema, name, ARRAY_OF_COMPACT)) {
+                            field.set(o, reader.readArrayOfCompact(name, componentType));
                         }
                     };
-                    writers[index] = (w, o) -> w.writeArrayOfCompacts(name, (Object[]) field.get(o));
+                    writers[index] = (w, o) -> w.writeArrayOfCompact(name, (Object[]) field.get(o));
                 }
             } else {
                 readers[index] = (reader, schema, o) -> {

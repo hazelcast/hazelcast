@@ -16,13 +16,19 @@
 
 package com.hazelcast.spring.config;
 
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -118,6 +124,26 @@ public class ConfigFactoryTest {
     @Test(expected = InvalidConfigurationException.class)
     public void should_perform_checks_for_map_eviction_config() {
         invalidEvictionConfig(false, true);
+    }
+
+    @Test
+    public void should_create_compact_serialization_config() {
+        Map<String, TriTuple<String, String, String>> registrations = new HashMap<>();
+        TriTuple<String, String, String> registration = TriTuple.of("a", "b", "c");
+        registrations.put("b", registration);
+        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
+        assertThat(config.isEnabled()).isTrue();
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
+    }
+
+    @Test
+    public void should_create_compact_serialization_config_with_reflective_serializer() {
+        Map<String, TriTuple<String, String, String>> registrations = new HashMap<>();
+        TriTuple<String, String, String> registration = TriTuple.of("a", "a", null);
+        registrations.put("a", registration);
+        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
+        assertThat(config.isEnabled()).isTrue();
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
     }
 
     private static void invalidEvictionConfig(boolean isNearCache, boolean isIMap) {

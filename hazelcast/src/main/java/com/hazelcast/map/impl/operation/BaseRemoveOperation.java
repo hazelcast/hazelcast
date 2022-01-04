@@ -42,6 +42,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation
         invalidateNearCache(dataKey);
         publishWanRemove(dataKey);
         evict(dataKey);
+        super.afterRunInternal();
     }
 
     @Override
