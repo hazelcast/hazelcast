@@ -28,10 +28,10 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.commandline.AbstractCommandLine.CLASSPATH_SEPARATOR;
-import static com.hazelcast.commandline.AbstractCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
-import static com.hazelcast.commandline.AbstractCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
-import static com.hazelcast.commandline.AbstractCommandLine.WORKING_DIRECTORY;
+import static com.hazelcast.commandline.HazelcastCommandLine.CLASSPATH_SEPARATOR;
+import static com.hazelcast.commandline.HazelcastCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
+import static com.hazelcast.commandline.HazelcastCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
+import static com.hazelcast.commandline.HazelcastCommandLine.WORKING_DIRECTORY;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;

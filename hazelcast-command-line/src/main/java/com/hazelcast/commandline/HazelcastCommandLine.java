@@ -27,8 +27,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
@@ -41,15 +43,26 @@ import static picocli.CommandLine.Option;
  */
 @Command(name = "hz", description = "Utility for the Hazelcast operations." + "%n%n"
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
-class HazelcastCommandLine
-        extends AbstractCommandLine {
+class HazelcastCommandLine implements Runnable {
+
+    static final String WORKING_DIRECTORY = System.getProperty("hazelcast.commandline.workingdirectory", ".");
+    static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
+    static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
+    static final String CLASSPATH_SEPARATOR = ":";
+    static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
+    final PrintStream out;
+    final PrintStream err;
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+    ProcessExecutor processExecutor;
 
     HazelcastCommandLine(PrintStream out, PrintStream err, ProcessExecutor processExecutor) {
-        super(out, err, processExecutor);
+        this.out = out;
+        this.err = err;
+        this.processExecutor = processExecutor;
     }
 
-    public static void main(String[] args)
-            throws IOException {
+    public static void main(String[] args) throws IOException {
         runCommandLine(args);
     }
 
@@ -192,4 +205,34 @@ class HazelcastCommandLine
         }
     }
 
+    void addLogging(List<String> args, boolean verbose, boolean finestVerbose) {
+        if (verbose) {
+            args.add("-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINE_LEVEL);
+        }
+        if (finestVerbose) {
+            args.add("-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINEST_LEVEL);
+        }
+    }
+
+    /**
+     * {@code picocli.CommandLine.IParameterConsumer} implementation to handle Java options.
+     * Please see the details <a href=https://github.com/remkop/picocli/issues/1125>here</a>.
+     */
+    static class JavaOptionsConsumer implements CommandLine.IParameterConsumer {
+        public void consumeParameters(Stack<String> args, CommandLine.Model.ArgSpec argSpec,
+                                      CommandLine.Model.CommandSpec commandSpec) {
+            if (args.isEmpty()) {
+                throw new CommandLine.ParameterException(commandSpec.commandLine(),
+                        "Missing required parameter for option '--JAVA_OPTS' (<option>)");
+            }
+            List<String> list = argSpec.getValue();
+            if (list == null) {
+                list = new ArrayList<>();
+                argSpec.setValue(list);
+            }
+            String arg = args.pop();
+            String[] splitArgs = arg.split(argSpec.splitRegex());
+            Collections.addAll(list, splitArgs);
+        }
+    }
 }
