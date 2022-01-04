@@ -473,8 +473,23 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         TcpServerConnection existingConnection = planes[planeIndex].getConnection(remoteUuid);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
-                // If there are duplicate connections, close the connection of which the member with
-                // the smaller uuid is on the acceptor side
+                // We cannot define a proper ordering between the duplicate connections in this case, so
+                // both sides of the connection may close different connections. We're trying to close the
+                // latest local connection on both side (it may differ in side by side but eventually can
+                // become same) by hoping that eventually close the same connection on both sides.
+                if (connection.isAcceptorSide() == existingConnection.isAcceptorSide()) {
+                    connection.close(
+                            "Duplicate connection to the member[uuid=" + remoteUuid + "]"
+                                    + " on planeIndex=" + planeIndex,
+                            null
+                    );
+                    return false;
+                }
+
+                // If there are duplicate connections that are initiated from both sides, we can
+                // define some order between these connections, we close the same connection in the
+                // both sides. We always close the connection of which the member with the smaller
+                // uuid is on the acceptor side
                 boolean isLocalMemberUuidSmallerThanRemote = serverContext.getThisUuid().compareTo(remoteUuid) < 0;
                 if (isLocalMemberUuidSmallerThanRemote == connection.isAcceptorSide()) {
                     connection.close(
