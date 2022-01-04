@@ -22,14 +22,14 @@ import com.hazelcast.internal.json.JsonObject;
 public class ReloadProgressEvent extends AbstractEventBase {
 
     // total number of dynamic changes to be applied to this cluster during this reload
-    private final int numChanges;
+    private final int totalChangeCount;
 
     // rank of the dynamic change of this event (for example 2 for second change)
-    private final int currentChange;
+    private final int appliedChangeCount;
 
-    public ReloadProgressEvent(int numChanges, int currentChange) {
-        this.numChanges = numChanges;
-        this.currentChange = currentChange;
+    public ReloadProgressEvent(int totalChangeCount, int appliedChangeCount) {
+        this.totalChangeCount = totalChangeCount;
+        this.appliedChangeCount = appliedChangeCount;
     }
 
     @Override
@@ -40,16 +40,16 @@ public class ReloadProgressEvent extends AbstractEventBase {
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.add("numChanges", numChanges);
-        json.add("currentChange", currentChange);
+        json.add("totalChangeCount", totalChangeCount);
+        json.add("appliedChangeCount", appliedChangeCount);
         return json;
     }
 
-    public int getNumChanges() {
-        return numChanges;
+    public int getTotalChangeCount() {
+        return totalChangeCount;
     }
 
-    public int getCurrentChange() {
-        return currentChange;
+    public int getAppliedChangeCount() {
+        return appliedChangeCount;
     }
 }
