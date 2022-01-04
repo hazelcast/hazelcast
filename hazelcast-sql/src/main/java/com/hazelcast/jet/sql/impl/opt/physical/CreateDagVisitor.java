@@ -315,10 +315,11 @@ public class CreateDagVisitor {
         // this vertex is used only if there's no aggregation by a window bound
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",
+                // todo [viliam] add tests for HOP
                 flatMapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
-                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy); // TODO: single row belongs to multiple windows...
+                            return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),
                         (BiFunctionEx<Function<Object[], Traverser<Object[]>>, Object[], Traverser<Object[]>>) Function::apply
                 )

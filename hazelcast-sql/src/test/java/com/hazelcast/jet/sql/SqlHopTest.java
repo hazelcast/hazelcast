@@ -194,21 +194,22 @@ public class SqlHopTest extends SqlTestSupport {
     public void test_windowBounds() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
-                row(timestampTz(5), "Alice", 1)
+                row(timestampTz(2), "Bob", 1)
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start, window_end FROM " +
+                "SELECT window_start, window_end, name FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
                         "))",
                 asList(
-                        new Row(timestampTz(-2L), timestampTz(2L)),
-                        //new Row(timestampTz(0L), timestampTz(4L)),
-                        new Row(timestampTz(4L), timestampTz(8L))
+                        new Row(timestampTz(-2L), timestampTz(2L), "Alice"),
+                        new Row(timestampTz(0L), timestampTz(4L), "Alice"),
+                        new Row(timestampTz(0L), timestampTz(4L), "Bob"),
+                        new Row(timestampTz(2L), timestampTz(6L), "Bob")
                 )
         );
     }

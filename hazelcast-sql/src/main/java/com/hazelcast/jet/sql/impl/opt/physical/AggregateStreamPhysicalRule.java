@@ -220,6 +220,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             AggregateLogicalRel logicalAggregate,
             RelNode input
     ) {
+        // todo [viliam] besides watermark order, we can also use normal collation
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null) {
