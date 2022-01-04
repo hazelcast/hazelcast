@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -50,21 +51,31 @@ public class PhoneHome {
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final String basePhoneHomeUrl;
+    private final HashMap<String, String> envVars;
     private final List<MetricsCollector> metricsCollectorList;
 
     public PhoneHome(Node node) {
         this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
     }
 
-    @SuppressWarnings("checkstyle:magicnumber")
+    PhoneHome(Node node, String basePhoneHomeUrl, Map<String, String> envVars) {
+        this(node, basePhoneHomeUrl, envVars, CLOUD_INFO_COLLECTOR);
+    }
+
     PhoneHome(Node node, String baseUrl, MetricsCollector... additionalCollectors) {
+        this(node, baseUrl, System.getenv(), additionalCollectors);
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    PhoneHome(Node node, String baseUrl, Map<String, String> envVars, MetricsCollector... additionalCollectors) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
+        this.envVars = new HashMap<>(envVars);
         metricsCollectorList = new ArrayList<>(additionalCollectors.length + 8);
         Collections.addAll(metricsCollectorList,
                 new RestApiMetricsCollector(),
-                new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
+                new BuildInfoCollector(envVars), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
                 new SqlInfoCollector());
