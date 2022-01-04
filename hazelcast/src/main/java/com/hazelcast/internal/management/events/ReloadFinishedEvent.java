@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
-public class ReloadFinishedEvent extends AbstractEventBase implements ReloadEvent {
+public class ReloadFinishedEvent extends AbstractEventBase {
     private final String reloadResponseMessage;
 
     public ReloadFinishedEvent(String reloadResponseMessage) {

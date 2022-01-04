@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.events;
 import com.hazelcast.internal.json.JsonObject;
 
 
-public class ReloadProgressEvent extends AbstractEventBase implements ReloadEvent {
+public class ReloadProgressEvent extends AbstractEventBase {
 
     // total number of dynamic changes to be applied to this cluster during this reload
     private final int numChanges;
