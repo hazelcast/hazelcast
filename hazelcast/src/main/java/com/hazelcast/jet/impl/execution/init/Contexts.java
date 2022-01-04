@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.deployment.IMapInputStream;
+import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -60,6 +61,8 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static java.util.Objects.requireNonNull;
 
 public final class Contexts {
+
+    private static final ThreadLocal<Container> CONTEXT = ThreadLocal.withInitial(Container::new);
 
     private Contexts() {
     }
@@ -342,6 +345,7 @@ public final class Contexts {
 
         private final int localProcessorIndex;
         private final int globalProcessorIndex;
+        private final MetricsContext metricsContext = new MetricsContext();
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         public ProcCtx(NodeEngineImpl nodeEngine,
@@ -377,6 +381,52 @@ public final class Contexts {
         @Override
         public int globalProcessorIndex() {
             return globalProcessorIndex;
+        }
+
+        public MetricsContext metricsContext() {
+            return metricsContext;
+        }
+    }
+
+    public static Container container() {
+        return CONTEXT.get();
+    }
+
+    @Nonnull
+    public static Processor.Context getThreadContext() {
+        Container container = CONTEXT.get();
+        Processor.Context context = container.getContext();
+        if (context == null) {
+            throw new RuntimeException("Thread %s has no context set, this method can " +
+                    "be called only on threads executing the job's processors");
+        }
+        return context;
+    }
+
+    @Nonnull
+    public static ProcCtx getCastedThreadContext() {
+        Processor.Context c = getThreadContext();
+        if (!(c instanceof ProcCtx)) {
+            throw new RuntimeException("No real processor context - metrics not available");
+        }
+        return (ProcCtx) c;
+    }
+
+    public static class Container {
+
+        @Nullable
+        private Processor.Context context;
+
+        Container() {
+        }
+
+        @Nullable
+        public Processor.Context getContext() {
+            return context;
+        }
+
+        public void setContext(@Nullable Processor.Context context) {
+            this.context = context;
         }
     }
 }
