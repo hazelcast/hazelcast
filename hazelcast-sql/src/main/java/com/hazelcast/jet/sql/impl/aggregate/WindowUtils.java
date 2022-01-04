@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -49,7 +50,27 @@ public final class WindowUtils {
 
     private WindowUtils() {
     }
-    
+
+    // todo [viliam] rename this method
+    public static Object[] insert(
+            Object[] row,
+            long windowStart,
+            long windowEnd,
+            int[] mapping
+    ) {
+        Object[] result = new Object[mapping.length];
+        for (int i = 0; i < mapping.length; i++) {
+            if (mapping[i] == -1) {
+                result[i] = windowStart;
+            } else if (mapping[i] == -2) {
+                result[i] = windowEnd;
+            } else {
+                result[i] = row[mapping[i]];
+            }
+        }
+        return result;
+    }
+
     /**
      * Returns a traverser of rows with two added fields: the
      * window_start and window_end. For tumbling windows, the returned
@@ -171,7 +192,7 @@ public final class WindowUtils {
      * Return the datatype of the target column referenced by the
      * DESCRIPTOR argument.
      */
-    public static SqlTypeName getOrderingColumnType(SqlCallBinding binding, int orderingColumnParameterIndex) {
+    public static RelDataType getOrderingColumnType(SqlCallBinding binding, int orderingColumnParameterIndex) {
         SqlNode input = binding.operand(0);
 
         SqlCall descriptor = (SqlCall) unwrapFunctionOperand(binding.operand(orderingColumnParameterIndex));
@@ -193,6 +214,6 @@ public final class WindowUtils {
             throw SqlUtil.newContextException(descriptor.getParserPosition(),
                     RESOURCE.unknownIdentifier(orderingColumnName));
         }
-        return columnField.getType().getSqlTypeName();
+        return columnField.getType();
     }
 }

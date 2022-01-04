@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -53,8 +54,8 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
     private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode operand) {
         HazelcastSqlValidator validator = binding.getValidator();
-        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
-        return checkColumnType(validator, orderingColumnType, operand);
+        RelDataType orderingColumnType = getOrderingColumnType(binding, 1);
+        return checkColumnType(validator, orderingColumnType.getSqlTypeName(), operand);
     }
 
     private static boolean checkColumnType(SqlValidator validator, SqlTypeName orderingColumnType, SqlNode lag) {

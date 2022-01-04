@@ -21,13 +21,13 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
-import com.hazelcast.query.impl.TypeConverters;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
+import com.hazelcast.query.impl.TypeConverters;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -1383,6 +1383,7 @@ public final class IndexResolver {
     /**
      * Specialized field type provider that do not expect any fields.
      */
+    // todo [viliam] replace with com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER
     private static final class FieldTypeProvider implements PlanNodeFieldTypeProvider {
 
         private static final FieldTypeProvider INSTANCE = new FieldTypeProvider();

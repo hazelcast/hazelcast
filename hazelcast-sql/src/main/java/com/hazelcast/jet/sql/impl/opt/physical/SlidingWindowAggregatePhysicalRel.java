@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -35,12 +34,11 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 
 public class SlidingWindowAggregatePhysicalRel extends Aggregate implements PhysicalRel {
 
@@ -48,6 +46,8 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     private final RexNode timestampExpression;
     private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
     private final int numStages;
+    private final List<Integer> windowStartIndexes;
+    private final List<Integer> windowEndIndexes;
 
     SlidingWindowAggregatePhysicalRel(
             RelOptCluster cluster,
@@ -59,7 +59,9 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
             AggregateOperation<?, Object[]> aggrOp,
             RexNode timestampExpression,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider,
-            int numStages
+            int numStages,
+            List<Integer> windowStartIndexes,
+            List<Integer> windowEndIndexes
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
@@ -67,6 +69,8 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         this.timestampExpression = timestampExpression;
         this.windowPolicyProvider = windowPolicyProvider;
         this.numStages = numStages;
+        this.windowStartIndexes = windowStartIndexes;
+        this.windowEndIndexes = windowEndIndexes;
     }
 
     public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
@@ -77,13 +81,10 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         return aggrOp;
     }
 
-    public Expression<Long> timestampExpression() {
+    public Expression<?> timestampExpression() {
         QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
-        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
-
-        @SuppressWarnings("unchecked")
-        Expression<Long> result = (Expression<Long>) timestampExpression.accept(visitor);
-        return result;
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema(parameterMetadata), parameterMetadata);
+        return timestampExpression.accept(visitor);
     }
 
     public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider() {
@@ -92,6 +93,14 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
 
     public int numStages() {
         return numStages;
+    }
+
+    public List<Integer> windowStartIndexes() {
+        return windowStartIndexes;
+    }
+
+    public List<Integer> windowEndIndexes() {
+        return windowEndIndexes;
     }
 
     @Override
@@ -128,7 +137,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
                 aggrOp(),
                 timestampExpression,
                 windowPolicyProvider,
-                numStages
-        );
+                numStages,
+                windowStartIndexes, windowEndIndexes);
     }
 }

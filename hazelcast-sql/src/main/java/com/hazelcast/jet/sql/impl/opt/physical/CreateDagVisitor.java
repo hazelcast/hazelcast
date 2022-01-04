@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -331,8 +332,14 @@ public class CreateDagVisitor {
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
         // todo [viliam] real ExpressionEvalContext
-        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
+        Expression<?> timestampExpression = rel.timestampExpression();
+        ToLongFunctionEx<Object[]> timestampFn = row -> WindowUtils.extractMillis(timestampExpression.eval(new HeapRow(row), MOCK_EEC));
         SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
+
+        int[] mapping = new int[]{-1, 0}; // todo [viliam] real mapping
+
+        KeyedWindowResultFunction<? super Object, ? super Object[], ?> resultMapping =
+                (start, end, ignoredKey, result, isEarly) -> WindowUtils.insert(result, start, end, mapping);
 
         if (rel.numStages() == 1) {
             Vertex vertex = dag.newUniqueVertex(
@@ -344,11 +351,7 @@ public class CreateDagVisitor {
                             windowPolicy,
                             0,
                             aggregateOperation,
-                            // TODO [viliam] small optimization possible: remove the win_start/end props ValueAggregations, add them from the result.
-                            //  Same in #onSlidingWindowCombineByKey()
-                            (start, end, ignoredKey, result, isEarly) -> result
-                    )
-            );
+                            resultMapping));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
@@ -368,79 +371,13 @@ public class CreateDagVisitor {
                     Processors.combineToSlidingWindowP(
                             windowPolicy,
                             aggregateOperation,
-                            (start, end, ignoredKey, result, isEarly) -> result));
+                            resultMapping));
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
             return vertex2;
         }
     }
-
-//    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
-//        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
-//
-//        // todo [viliam] real ExpressionEvalContext
-//        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
-//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
-//
-//        Vertex vertex = dag.newUniqueVertex(
-//                "Sliding-Window-AggregateByKey",
-//                Processors.aggregateToSlidingWindowP(
-//                        singletonList(groupKeyFn),
-//                        singletonList(timestampFn),
-//                        TimestampKind.EVENT,
-//                        windowPolicy,
-//                        0,
-//                        aggregateOperation,
-//                        // TODO [viliam] small optimization possible: remove the win_start/end props ValueAggregations, add them from the result.
-//                        //  Same in #onSlidingWindowCombineByKey()
-//                        (start, end, ignoredKey, result, isEarly) -> result
-//                )
-//        );
-//        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
-//        return vertex;
-//    }
-//
-//    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
-//        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
-//
-//        // todo [viliam] real ExpressionEvalContext
-//        ToLongFunctionEx<Object[]> timestampFn = row -> rel.timestampExpression().eval(new HeapRow(row), MOCK_EEC);
-//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
-//
-//        Vertex vertex = dag.newUniqueVertex(
-//                "Sliding-Window-AccumulateByKey",
-//                Processors.accumulateByFrameP(
-//                        singletonList(groupKeyFn),
-//                        singletonList(timestampFn),
-//                        TimestampKind.EVENT,
-//                        windowPolicy,
-//                        aggregateOperation
-//                )
-//        );
-//        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
-//        return vertex;
-//    }
-//
-//    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
-//        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
-//
-//        // todo [viliam] real ExpressionEvalContext
-//        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
-//
-//        Vertex vertex = dag.newUniqueVertex(
-//                "Sliding-Window-CombineByKey",
-//                Processors.combineToSlidingWindowP(
-//                        windowPolicy,
-//                        aggregateOperation,
-//                        (start, end, ignoredKey, result, isEarly) -> result
-//                )
-//        );
-//        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
-//        return vertex;
-//    }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
