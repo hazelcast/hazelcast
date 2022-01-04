@@ -25,10 +25,11 @@ import java.util.List;
  */
 class ProcessExecutor {
 
-    void buildAndStart(List<String> commandList, Redirect redirect, boolean daemon) throws IOException, InterruptedException {
+    void buildAndStart(List<String> commandList, Redirect redirectOutput, Redirect redirectError, boolean daemon)
+            throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(commandList);
-        processBuilder.redirectErrorStream(true);
-        processBuilder.redirectOutput(redirect);
+        processBuilder.redirectError(redirectError);
+        processBuilder.redirectOutput(redirectOutput);
         Process process = processBuilder.start();
         if (!daemon) {
             process.waitFor();

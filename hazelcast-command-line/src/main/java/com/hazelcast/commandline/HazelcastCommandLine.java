@@ -16,6 +16,7 @@
 
 package com.hazelcast.commandline;
 
+import com.hazelcast.internal.util.OsHelper;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.format.DateTimeFormatter;
@@ -50,6 +52,7 @@ class HazelcastCommandLine implements Runnable {
     static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
     static final String CLASSPATH_SEPARATOR = ":";
     static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
+    private static final File NULL_FILE = new File(OsHelper.isWindows() ? "NUL" : "/dev/null");
     final PrintStream out;
     final PrintStream err;
     @CommandLine.Spec
@@ -171,18 +174,25 @@ class HazelcastCommandLine implements Runnable {
         commandList.addAll(parameters);
         fixModularJavaOptions(commandList);
         commandList.add(HazelcastMember.class.getName());
-        processExecutor.buildAndStart(commandList, getRedirect(daemon), daemon);
+        processExecutor.buildAndStart(commandList, getRedirectOutput(daemon), getRedirectError(daemon), daemon);
     }
 
-    private ProcessBuilder.Redirect getRedirect(boolean daemon) {
+    private Redirect getRedirectOutput(boolean daemon) {
+        if (daemon) {
+            err.println("Starting Hazelcast in daemon mode. Standard out is disabled, use logger configuration instead");
+        }
+        return daemon ? Redirect.to(NULL_FILE) : Redirect.INHERIT;
+    }
+
+    private Redirect getRedirectError(boolean daemon) {
         Clock clock = Clock.systemDefaultZone();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd.HH.mm.ss").withZone(clock.getZone());
         String formattedDate = formatter.format(clock.instant());
-        String logFile = WORKING_DIRECTORY + "/logs/hazelcast." + formattedDate + ".out";
+        String logFile = WORKING_DIRECTORY + "/logs/hazelcast." + formattedDate + ".err";
         if (daemon) {
-            err.println("Starting Hazelcast in daemon mode. Standard out and error will be written to " + logFile);
+            err.println("Error output will be written to " + logFile);
         }
-        return daemon ? ProcessBuilder.Redirect.to(new File(logFile)) : ProcessBuilder.Redirect.INHERIT;
+        return daemon ? Redirect.to(new File(logFile)) : Redirect.INHERIT;
     }
 
     private void fixModularJavaOptions(List<String> commandList) {

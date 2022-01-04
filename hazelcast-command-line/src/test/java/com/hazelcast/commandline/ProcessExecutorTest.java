@@ -22,6 +22,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -39,9 +40,10 @@ public class ProcessExecutorTest {
     public void test_buildAndStart() throws IOException, InterruptedException {
         // given
         File outputFile = temporaryFolder.newFile();
+        File errFile = temporaryFolder.newFile();
         ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile), false);
+        processExecutor.buildAndStart(singletonList("whoami"), Redirect.to(outputFile), Redirect.to(errFile), false);
         // then
         assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
     }
@@ -50,9 +52,10 @@ public class ProcessExecutorTest {
     public void test_buildAndStart_daemon() throws IOException, InterruptedException {
         // given
         File outputFile = temporaryFolder.newFile();
+        File errFile = temporaryFolder.newFile();
         ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        processExecutor.buildAndStart(singletonList("whoami"), ProcessBuilder.Redirect.to(outputFile), true);
+        processExecutor.buildAndStart(singletonList("whoami"), Redirect.to(outputFile), Redirect.to(errFile), true);
         // then
         await().atMost(5, SECONDS).untilAsserted(() -> {
             assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
