@@ -41,37 +41,37 @@ public class GenericRecordTest {
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(namedPortableClassDefinition)
                 .setString("name", "foo")
-                .setInt("myint", 123);
+                .setInt32("myint", 123);
         GenericRecord record = builder.build();
 
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableBoolean("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableByte("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableShort("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableLong("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableFloat("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableDouble("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableBooleans("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableBytes("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableShorts("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableInts("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableLongs("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableFloats("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableDoubles("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt8("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableint16("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt32("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt64("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableFloat32("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableFloat64("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableBoolean("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableInt8("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableInt16("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableInt32("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableInt64("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableFloat32("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setArrayOfNullableFloat64("name", null));
 
         assertThrows(UnsupportedOperationException.class, () -> record.getNullableBoolean("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableByte("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableShort("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableLong("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableFloat("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getNullableDouble("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableBooleans("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableBytes("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableShorts("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInts("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableLongs("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloats("name"));
-        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableDoubles("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt8("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt16("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableInt64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableFloat32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getNullableFloat64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableBoolean("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt8("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt16("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt64("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat32("name"));
+        assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat64("name"));
     }
 }
