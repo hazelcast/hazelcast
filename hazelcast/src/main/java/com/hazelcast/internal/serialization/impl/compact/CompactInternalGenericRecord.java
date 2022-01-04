@@ -122,15 +122,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                     offsetReader = INT_OFFSET_READER;
                     finalPosition = variableOffsetsPosition + (numberOfVariableLengthFields * INT_SIZE_IN_BYTES);
                 }
-                //set the position to final so that the next one to read something from `in` can start from
-                //correct position
-                in.position(finalPosition);
             } else {
                 offsetReader = INT_OFFSET_READER;
                 variableOffsetsPosition = 0;
                 dataStartPosition = in.position();
                 finalPosition = dataStartPosition + schema.getFixedSizeFieldsLength();
             }
+            //set the position to final so that the next one to read something from `in` can start from
+            //correct position
+            in.position(finalPosition);
         } catch (IOException e) {
             throw illegalStateException(e);
         }

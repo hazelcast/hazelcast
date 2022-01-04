@@ -312,12 +312,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type SMALLINT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type SMALLINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BOOLEAN type, but SMALLINT was found"),
-                TestParams.passingCase(1403, SMALLINT, TINYINT, "cast(42 as smallint)", (short) 42, (byte) 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but SMALLINT was found"),
+                TestParams.passingCase(1403, SMALLINT, TINYINT, "cast(42 as smallint)", (short) 42, (byte) 42),
                 TestParams.failingCase(1404, SMALLINT, TINYINT, "420", (short) 420)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting SMALLINT to TINYINT")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting SMALLINT to TINYINT")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but SMALLINT was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting SMALLINT to TINYINT"),
                 TestParams.passingCase(1405, SMALLINT, SMALLINT, "cast(42 as smallint)", (short) 42, (short) 42),
                 TestParams.passingCase(1406, SMALLINT, INTEGER, "cast(42 as smallint)", (short) 42, 42),
                 TestParams.passingCase(1407, SMALLINT, BIGINT, "cast(42 as smallint)", (short) 42, 42L),
@@ -355,18 +352,12 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type INTEGER")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type INTEGER")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BOOLEAN type, but INTEGER was found"),
-                TestParams.passingCase(1503, INTEGER, TINYINT, "cast(42 as integer)", 42, (byte) 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but INTEGER was found"),
+                TestParams.passingCase(1503, INTEGER, TINYINT, "cast(42 as integer)", 42, (byte) 42),
                 TestParams.failingCase(1504, INTEGER, TINYINT, "42000", 42000)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting INTEGER to TINYINT")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting INTEGER to TINYINT")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but INTEGER was found"),
-                TestParams.passingCase(1505, INTEGER, SMALLINT, "cast(42 as integer)", 42, (short) 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of SMALLINT type, but INTEGER was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting INTEGER to TINYINT"),
+                TestParams.passingCase(1505, INTEGER, SMALLINT, "cast(42 as integer)", 42, (short) 42),
                 TestParams.failingCase(1506, INTEGER, SMALLINT, "42000", 42000)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting INTEGER to SMALLINT")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting INTEGER to SMALLINT")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of SMALLINT type, but INTEGER was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting INTEGER to SMALLINT"),
                 TestParams.passingCase(1507, INTEGER, INTEGER, "cast(42 as integer)", 42, 42),
                 TestParams.passingCase(1508, INTEGER, BIGINT, "cast(42 as integer)", 42, 42L),
                 TestParams.passingCase(1509, INTEGER, DECIMAL, "cast(42 as integer)", 42, BigDecimal.valueOf(42)),
@@ -403,24 +394,15 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type BIGINT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type BIGINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BOOLEAN type, but BIGINT was found"),
-                TestParams.passingCase(1603, BIGINT, TINYINT, "cast(42 as bigint)", 42L, (byte) 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but BIGINT was found"),
+                TestParams.passingCase(1603, BIGINT, TINYINT, "cast(42 as bigint)", 42L, (byte) 42),
                 TestParams.failingCase(1604, BIGINT, TINYINT, "4200000000", 4200000000L)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting BIGINT to TINYINT")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting BIGINT to TINYINT")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but BIGINT was found"),
-                TestParams.passingCase(1605, BIGINT, SMALLINT, "cast(42 as bigint)", 42L, (short) 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of SMALLINT type, but BIGINT was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting BIGINT to TINYINT"),
+                TestParams.passingCase(1605, BIGINT, SMALLINT, "cast(42 as bigint)", 42L, (short) 42),
                 TestParams.failingCase(1606, BIGINT, SMALLINT, "4200000000", 4200000000L)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting BIGINT to SMALLINT")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting BIGINT to SMALLINT")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of SMALLINT type, but BIGINT was found"),
-                TestParams.passingCase(1607, BIGINT, INTEGER, "cast(42 as bigint)", 42L, 42)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of INTEGER type, but BIGINT was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting BIGINT to SMALLINT"),
+                TestParams.passingCase(1607, BIGINT, INTEGER, "cast(42 as bigint)", 42L, 42),
                 TestParams.failingCase(1608, BIGINT, INTEGER, "4200000000", 4200000000L)
-                        .withExpectedLiteralFailureRegex("Numeric overflow while converting BIGINT to INTEGER")
-                        .withExpectedColumnFailureRegex("Numeric overflow while converting BIGINT to INTEGER")
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of INTEGER type, but BIGINT was found"),
+                        .withExpectedFailureRegex("Numeric overflow while converting BIGINT to INTEGER"),
                 TestParams.passingCase(1609, BIGINT, BIGINT, "cast(42 as bigint)", 42L, 42L),
                 TestParams.passingCase(1610, BIGINT, DECIMAL, "cast(42 as bigint)", 42L, BigDecimal.valueOf(42)),
                 TestParams.passingCase(1611, BIGINT, REAL, "cast(42 as bigint)", 42L, 42F),
@@ -1216,6 +1198,16 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
          */
         private TestParams withExpectedDynamicParameterFailureRegex(String failureRegex) {
             this.expectedDynamicParameterFailureRegex = Pattern.compile(failureRegex);
+            return this;
+        }
+
+        /**
+         * This test case is expected to fail if the source is any of literal, column
+         * or dynamic parameter.
+         */
+        private TestParams withExpectedFailureRegex(String failureRegex) {
+            this.expectedLiteralFailureRegex = this.expectedColumnFailureRegex = this.expectedDynamicParameterFailureRegex =
+                    Pattern.compile(failureRegex);
             return this;
         }
 

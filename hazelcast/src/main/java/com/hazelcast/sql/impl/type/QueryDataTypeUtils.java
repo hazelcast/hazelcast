@@ -253,6 +253,7 @@ public final class QueryDataTypeUtils {
                 }
 
             case OBJECT:
+            case MAP:
                 return OBJECT;
 
             case NULL:

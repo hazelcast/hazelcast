@@ -30,6 +30,25 @@ public class NumericPrecedenceParameterConverter extends AbstractParameterConver
     protected boolean isValid(Object value, Converter valueConverter) {
         QueryDataTypeFamily valueTypeFamily = valueConverter.getTypeFamily();
 
-        return valueTypeFamily.isNumeric() && valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence();
+        if (!valueTypeFamily.isNumeric()) {
+            // conversion from non-numeric value where a numeric parameter is expected isn't allowed
+            return false;
+        }
+
+        if (valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence()) {
+            // Conversion from value with lower precedence to target with higher precedence is allowed.
+            // For examplce, conversion from INTEGER to BIGINT is allowed or from BIGINT to REAL
+            return true;
+        }
+
+        if (targetType.getTypeFamily().isNumericInteger() && valueConverter.getTypeFamily().isNumericInteger()) {
+            // we allow conversion among any integer types. If the value is out of range, it will fail later.
+            return true;
+        }
+
+        // we don't allow conversion from numeric types with higher precedence to lower precedence types.
+        // For example conversion from DOUBLE to DECIMAL isn't allowed, or from DECIMAL to integer types.
+        // The reason is that precision loss is possible.
+        return false;
     }
 }

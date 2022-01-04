@@ -19,6 +19,9 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
@@ -34,8 +37,8 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
@@ -79,7 +82,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
-import static org.apache.calcite.sql.SqlKind.VALUES;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -114,7 +116,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      */
     private final List<Object> arguments;
 
-    private final MappingResolver mappingResolver;
+    private final IMapResolver iMapResolver;
 
     private boolean isCreateJob;
     private boolean isInfiniteRows;
@@ -122,13 +124,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             List<Object> arguments,
-            MappingResolver mappingResolver
+            IMapResolver iMapResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
-        this.mappingResolver = mappingResolver;
+        this.iMapResolver = iMapResolver;
     }
 
     @Override
@@ -180,7 +182,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
         super.validateQuery(node, scope, targetRowType);
-
         if (node instanceof SqlSelect) {
             validateSelect((SqlSelect) node, scope);
         }
@@ -278,10 +279,20 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return false;
     }
 
-    private static boolean containsOrderedWindow(SqlNode node) {
+    private boolean containsOrderedWindow(SqlNode node) {
         class OrderedWindowFinder extends SqlBasicVisitor<Void> {
+            final HazelcastSqlValidator validator;
             boolean windowingFunctionFound;
             boolean orderedInputToWindowingFunctionFound;
+
+            OrderedWindowFinder(HazelcastSqlValidator validator) {
+                this.validator = validator;
+            }
+
+            OrderedWindowFinder(HazelcastSqlValidator validator, boolean windowingFunctionFound) {
+                this.validator = validator;
+                this.windowingFunctionFound = windowingFunctionFound;
+            }
 
             @Override
             public Void visit(SqlCall call) {
@@ -295,9 +306,35 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 }
                 return super.visit(call);
             }
+
+            @Override
+            public Void visit(SqlIdentifier id) {
+                SqlValidatorTable table = getCatalogReader().getTable(id.names);
+                // not every identifier is a table
+                if (table != null) {
+                    HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
+                    if (hazelcastTable.getTarget() instanceof ViewTable) {
+                        String viewQuery = ((ViewTable) hazelcastTable.getTarget()).getViewQuery();
+                        QueryParser parser = new QueryParser(validator);
+                        try {
+                            QueryParseResult parseResult = parser.parse(viewQuery);
+                            OrderedWindowFinder finder = new OrderedWindowFinder(validator, windowingFunctionFound);
+                            SqlNode sqlNode = parseResult.getNode();
+                            sqlNode.accept(finder);
+                            // TODO: [sasha] did it as quick idea impl late night, need more thinking about correctness
+                            orderedInputToWindowingFunctionFound |= finder.orderedInputToWindowingFunctionFound;
+                            windowingFunctionFound |= finder.windowingFunctionFound;
+                            return null;
+                        } catch (Exception e) {
+                            throw QueryException.error(e.getMessage());
+                        }
+                    }
+                }
+                return super.visit(id);
+            }
         }
 
-        OrderedWindowFinder finder = new OrderedWindowFinder();
+        OrderedWindowFinder finder = new OrderedWindowFinder(this);
         node.accept(finder);
         return finder.orderedInputToWindowingFunctionFound;
     }
@@ -315,33 +352,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        SqlBasicVisitor<Void> joinChecker = new SqlBasicVisitor<Void>() {
-            @Override
-            public Void visit(SqlCall call) {
-                if (call.getKind() == SqlKind.SELECT) {
-                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
-                } else if (call.getKind() == VALUES) {
-                    throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
-                }
-
-                return call.getOperator().acceptCall(this, call);
-            }
-        };
-
         switch (join.getJoinType()) {
             case INNER:
             case COMMA:
             case CROSS:
-                join.getRight().accept(joinChecker);
-                break;
             case LEFT:
-                join.getRight().accept(joinChecker);
                 if (containsStreamingSource(join.getRight())) {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
                 break;
             case RIGHT:
-                join.getLeft().accept(joinChecker);
                 if (containsStreamingSource(join.getLeft())) {
                     throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
                 }
@@ -367,6 +387,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
         Table table = extractTable((SqlIdentifier) update.getTargetTable());
         if (table != null) {
+            if (table instanceof ViewTable) {
+                throw QueryException.error("DML operations not supported for views");
+            }
             SqlConnector connector = getJetSqlConnector(table);
 
             // only tables with primary keys can be updated
@@ -427,6 +450,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
         Table table = extractTable((SqlIdentifier) delete.getTargetTable());
         if (table != null) {
+            if (table instanceof ViewTable) {
+                throw QueryException.error("DML operations not supported for views");
+            }
             SqlConnector connector = getJetSqlConnector(table);
 
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
@@ -459,7 +485,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      * Goes over all the referenced tables in the given {@link SqlNode}
      * and returns true if any of them uses a streaming connector.
      */
-    private boolean containsStreamingSource(SqlNode node) {
+    public boolean containsStreamingSource(SqlNode node) {
         class FindStreamingTablesVisitor extends SqlBasicVisitor<Void> {
             boolean found;
 
@@ -469,6 +495,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 // not every identifier is a table
                 if (table != null) {
                     HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
+                    if (hazelcastTable.getTarget() instanceof ViewTable) {
+                        found = ((ViewTable) hazelcastTable.getTarget()).isStream();
+                        return null;
+                    }
                     SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
                     if (connector.isStream()) {
                         found = true;
@@ -648,7 +678,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
-            Mapping mapping = identifier != null ? mappingResolver.resolve(identifier) : null;
+            Mapping mapping = identifier != null ? iMapResolver.resolve(identifier) : null;
             String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
             String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);

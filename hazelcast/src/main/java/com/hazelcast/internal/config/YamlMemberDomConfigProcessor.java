@@ -23,6 +23,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -297,6 +298,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             String name = mapNode.getNodeName();
             MapConfig mapConfig = ConfigUtils.getByNameOrNew(config.getMapConfigs(), name, MapConfig.class);
             handleMapNode(mapNode, mapConfig);
+        }
+    }
+
+    @Override
+    protected void handleLocalDevice(Node parentNode) {
+        for (Node deviceNode : childElements(parentNode)) {
+            String name = deviceNode.getNodeName();
+            LocalDeviceConfig localDeviceConfig =
+                    (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
+            handleLocalDeviceNode(deviceNode, localDeviceConfig);
         }
     }
 

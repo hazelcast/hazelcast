@@ -96,7 +96,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     protected void onConfigCreated(Config config) {
     }
 
-    final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
+    protected final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
                               Consumer<HazelcastInstance[]> beforeSplit,
                               BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
                               Consumer<HazelcastInstance[]> afterMerge) {

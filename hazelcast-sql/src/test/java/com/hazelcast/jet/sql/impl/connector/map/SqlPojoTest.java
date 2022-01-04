@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.connector.map.model.InsuredPerson;
@@ -35,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -232,6 +234,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime"
+                        + ", map"
                         + ", object"
                         + ") SELECT "
                         + "CAST(1 AS DECIMAL)"
@@ -254,6 +257,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
+                        + ", map"
                         + ", object"
                         + " FROM " + from,
                 createMap(BigInteger.valueOf(1), AllTypesValue.testValue()));
@@ -280,6 +284,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime "
+                        + ", map"
                         + ", object "
                         + "FROM " + to,
                 singletonList(new Row(
@@ -303,6 +308,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         OffsetDateTime.ofInstant(ofEpochMilli(1586953414200L), systemDefault()),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        ImmutableMap.of(42, 43),
                         null
                 )));
     }
@@ -444,6 +450,19 @@ public class SqlPojoTest extends SqlTestSupport {
         );
     }
 
+    @Test
+    public void test_classWithMapField() {
+        final String name = randomName();
+        final ClassWithMapField obj = new ClassWithMapField(100L, "k", "v");
+
+        createMapping(name, Long.class, ClassWithMapField.class);
+
+        instance().getSql().execute("SINK INTO " + name + " VALUES (?, ?, ?)", 1L, obj.id, obj.props);
+        assertRowsAnyOrder("SELECT * FROM " + name, singletonList(
+                new Row(1L, obj.id, obj.props)
+        ));
+    }
+
     public static class ClassInitialValue implements Serializable {
 
         public Integer field = 42;
@@ -468,6 +487,38 @@ public class SqlPojoTest extends SqlTestSupport {
         @Override
         public int hashCode() {
             return Objects.hash(__key);
+        }
+    }
+
+    public static class ClassWithMapField implements Serializable {
+        private Long id;
+        private Map<String, String> props;
+
+        public ClassWithMapField() {
+        }
+
+        public ClassWithMapField(final Long id, String ...values) {
+            this.id = id;
+            this.props = new HashMap<>();
+            for (int i = 0; i < values.length; i += 2) {
+                props.put(values[i], values[i + 1]);
+            }
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public Map<String, String> getProps() {
+            return props;
+        }
+
+        public void setProps(final Map<String, String> props) {
+            this.props = props;
         }
     }
 }

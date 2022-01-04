@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -51,7 +52,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
-    protected final ExpirySystem expirySystem;
+    protected final ExpirySystemIf expirySystem;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -63,12 +64,12 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public ExpirySystem getExpirySystem() {
+    public ExpirySystemIf getExpirySystem() {
         return expirySystem;
     }
 
     @Nonnull
-    protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
+    protected ExpirySystemIf createExpirySystem(MapContainer mapContainer) {
         return new ExpirySystem(this, mapContainer, mapServiceContext);
     }
 
