@@ -137,17 +137,17 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             case BOOLEAN:
                 return FieldKind.NULLABLE_BOOLEAN;
             case TINYINT:
-                return FieldKind.NULLABLE_BYTE;
+                return FieldKind.NULLABLE_INT8;
             case SMALLINT:
-                return FieldKind.NULLABLE_SHORT;
+                return FieldKind.NULLABLE_INT16;
             case INTEGER:
-                return FieldKind.NULLABLE_INT;
+                return FieldKind.NULLABLE_INT32;
             case BIGINT:
-                return FieldKind.NULLABLE_LONG;
+                return FieldKind.NULLABLE_INT64;
             case REAL:
-                return FieldKind.NULLABLE_FLOAT;
+                return FieldKind.NULLABLE_FLOAT32;
             case DOUBLE:
-                return FieldKind.NULLABLE_DOUBLE;
+                return FieldKind.NULLABLE_FLOAT64;
             case DECIMAL:
                 return FieldKind.DECIMAL;
             case VARCHAR:

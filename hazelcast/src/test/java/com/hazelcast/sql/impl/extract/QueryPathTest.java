@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryPathTest extends SqlTestSupport {
+public class QueryPathTest extends CoreSqlTestSupport {
     @Test
     public void testPathResolution() {
         // Top fields.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -78,6 +79,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             new MappingField("date", QueryDataType.DATE),
             new MappingField("timestamp", QueryDataType.TIMESTAMP),
             new MappingField("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME),
+            new MappingField("map", QueryDataType.OBJECT),
             new MappingField("object", QueryDataType.OBJECT)
     );
 
@@ -97,6 +99,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             LocalDate.of(2020, 4, 15),
             LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
             OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+            ImmutableMap.of(42, 43),
             null
     });
 

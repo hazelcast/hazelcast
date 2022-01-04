@@ -22,7 +22,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
  * Marker interface for exceptions.
  *
  * When an exception is marked with this interface then
- * it won't be logged by {@link Operation#logError(Throwable)}
+ * it won't be logged by {@link Operation#logError(Throwable)} on the
+ * callee side.
  *
  * It's intended to be used for exceptions which are part of a flow,
  * for example {@link com.hazelcast.durableexecutor.StaleTaskIdException}

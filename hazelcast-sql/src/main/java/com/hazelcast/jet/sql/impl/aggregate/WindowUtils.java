@@ -120,7 +120,7 @@ public final class WindowUtils {
                     ValidatorResource.RESOURCE.mustUseSingleOrderingColumn());
         }
 
-        // paramValue is the DESCRIPTOR call, it's operand is an SqlIdentifier having the column name
+        // `descriptor` is the DESCRIPTOR call, its operand is an SqlIdentifier having the column name
         SqlIdentifier orderingColumnIdentifier = (SqlIdentifier) descriptor.getOperandList().get(0);
         String orderingColumnName = orderingColumnIdentifier.getSimple();
 

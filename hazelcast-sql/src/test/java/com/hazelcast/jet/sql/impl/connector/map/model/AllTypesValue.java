@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.model;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -27,6 +29,7 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Objects;
 
 import static java.time.Instant.ofEpochMilli;
@@ -57,6 +60,7 @@ public final class AllTypesValue implements Serializable {
     private Instant instant;
     private ZonedDateTime zonedDateTime;
     private OffsetDateTime offsetDateTime;
+    private Map<Integer, Integer> map;
     private Object object;
 
     public AllTypesValue() {
@@ -67,7 +71,7 @@ public final class AllTypesValue implements Serializable {
                          long long0, float float0, double double0, BigDecimal bigDecimal, BigInteger bigInteger,
                          LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime, Date date,
                          GregorianCalendar calendar, Instant instant, ZonedDateTime zonedDateTime,
-                         OffsetDateTime offsetDateTime, Object object
+                         OffsetDateTime offsetDateTime, Map<Integer, Integer> map, Object object
     ) {
         this.string = string;
         this.character0 = character0;
@@ -88,6 +92,7 @@ public final class AllTypesValue implements Serializable {
         this.instant = instant;
         this.zonedDateTime = zonedDateTime;
         this.offsetDateTime = offsetDateTime;
+        this.map = map;
         this.object = object;
     }
 
@@ -112,6 +117,7 @@ public final class AllTypesValue implements Serializable {
                 ofEpochMilli(1586953414200L),
                 ZonedDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
                 OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                ImmutableMap.of(42, 43),
                 null
         );
     }
@@ -268,6 +274,14 @@ public final class AllTypesValue implements Serializable {
         this.offsetDateTime = offsetDateTime;
     }
 
+    public Map<Integer, Integer> getMap() {
+        return map;
+    }
+
+    public void setMap(Map<Integer, Integer> map) {
+        this.map = map;
+    }
+
     public Object getObject() {
         return object;
     }
@@ -298,6 +312,7 @@ public final class AllTypesValue implements Serializable {
                 ", instant=" + instant +
                 ", zonedDateTime=" + zonedDateTime +
                 ", offsetDateTime=" + offsetDateTime +
+                ", map=" + map +
                 ", object=" + object +
                 '}';
     }
@@ -330,6 +345,7 @@ public final class AllTypesValue implements Serializable {
                 Objects.equals(instant, that.instant) &&
                 Objects.equals(zonedDateTime, that.zonedDateTime) &&
                 Objects.equals(offsetDateTime, that.offsetDateTime) &&
+                Objects.equals(map, that.map) &&
                 Objects.equals(object, that.object);
     }
 
@@ -354,6 +370,7 @@ public final class AllTypesValue implements Serializable {
                 instant,
                 zonedDateTime,
                 offsetDateTime,
+                map,
                 object
         );
     }

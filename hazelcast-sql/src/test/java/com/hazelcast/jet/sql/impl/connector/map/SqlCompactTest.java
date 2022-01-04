@@ -230,13 +230,13 @@ public class SqlCompactTest extends SqlTestSupport {
         InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
         assertThat(valueRecord.getNullableBoolean("b")).isNull();
         assertThat(valueRecord.getString("st")).isNull();
-        assertThat(valueRecord.getNullableByte("bt")).isNull();
-        assertThat(valueRecord.getNullableShort("s")).isNull();
-        assertThat(valueRecord.getNullableInt("i")).isNull();
-        assertThat(valueRecord.getNullableLong("l")).isNull();
+        assertThat(valueRecord.getNullableInt8("bt")).isNull();
+        assertThat(valueRecord.getNullableInt16("s")).isNull();
+        assertThat(valueRecord.getNullableInt32("i")).isNull();
+        assertThat(valueRecord.getNullableInt64("l")).isNull();
         assertThat(valueRecord.getDecimal("bd")).isNull();
-        assertThat(valueRecord.getNullableFloat("f")).isNull();
-        assertThat(valueRecord.getNullableDouble("d")).isNull();
+        assertThat(valueRecord.getNullableFloat32("f")).isNull();
+        assertThat(valueRecord.getNullableFloat64("d")).isNull();
         assertThat(valueRecord.getTime("t")).isNull();
         assertThat(valueRecord.getDate("dt")).isNull();
         assertThat(valueRecord.getTimestamp("tmstmp")).isNull();
@@ -291,13 +291,13 @@ public class SqlCompactTest extends SqlTestSupport {
         GenericRecord record = GenericRecordBuilder.compact(PERSON_TYPE_NAME)
                 .setBoolean("b", b)
                 .setString("st", st)
-                .setByte("bt", bt)
-                .setShort("s", s)
-                .setInt("i", i)
-                .setLong("l", l)
+                .setInt8("bt", bt)
+                .setInt16("s", s)
+                .setInt32("i", i)
+                .setInt64("l", l)
                 .setDecimal("bd", bd)
-                .setFloat("f", f)
-                .setDouble("d", d)
+                .setFloat32("f", f)
+                .setFloat64("d", d)
                 .setTime("t", t)
                 .setDate("dt", dt)
                 .setTimestamp("tmstmp", tmstmp)
@@ -346,10 +346,10 @@ public class SqlCompactTest extends SqlTestSupport {
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getNullableInt("id")).isEqualTo(1);
+        assertThat(keyRecord.getNullableInt32("id")).isEqualTo(1);
 
         InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueRecord.getNullableInt("id")).isEqualTo(2);
+        assertThat(valueRecord.getNullableInt32("id")).isEqualTo(2);
 
         assertRowsAnyOrder(
                 "SELECT key_id, value_id FROM " + name,
@@ -489,12 +489,12 @@ public class SqlCompactTest extends SqlTestSupport {
         assertThat(valueRecord.getString("string")).isEqualTo("string");
         assertThat(valueRecord.getString("character")).isEqualTo("a");
         assertThat(valueRecord.getNullableBoolean("boolean")).isTrue();
-        assertThat(valueRecord.getNullableByte("byte")).isEqualTo((byte) 127);
-        assertThat(valueRecord.getNullableShort("short")).isEqualTo((short) 32767);
-        assertThat(valueRecord.getNullableInt("int")).isEqualTo(2147483647);
-        assertThat(valueRecord.getNullableLong("long")).isEqualTo(9223372036854775807L);
-        assertThat(valueRecord.getNullableFloat("float")).isEqualTo(1234567890.1F);
-        assertThat(valueRecord.getNullableDouble("double")).isEqualTo(123451234567890.1D);
+        assertThat(valueRecord.getNullableInt8("byte")).isEqualTo((byte) 127);
+        assertThat(valueRecord.getNullableInt16("short")).isEqualTo((short) 32767);
+        assertThat(valueRecord.getNullableInt32("int")).isEqualTo(2147483647);
+        assertThat(valueRecord.getNullableInt64("long")).isEqualTo(9223372036854775807L);
+        assertThat(valueRecord.getNullableFloat32("float")).isEqualTo(1234567890.1F);
+        assertThat(valueRecord.getNullableFloat64("double")).isEqualTo(123451234567890.1D);
         assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
         assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
         assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
@@ -576,7 +576,7 @@ public class SqlCompactTest extends SqlTestSupport {
         assertFalse(rowIterator.hasNext());
 
         assertEquals(
-                GenericRecordBuilder.compact(PERSON_ID_TYPE_NAME).setNullableInt("id", 1).build(),
+                GenericRecordBuilder.compact(PERSON_ID_TYPE_NAME).setNullableInt32("id", 1).build(),
                 row.getObject(0)
         );
         assertEquals(

@@ -78,6 +78,7 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -255,6 +256,10 @@ public class PlanExecutor {
         }
 
         View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
+
+        if (plan.isReplace()) {
+            checkViewNewRowType(catalog.getView(plan.viewName()), view);
+        }
 
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
@@ -459,6 +464,38 @@ public class PlanExecutor {
         }
 
         return arguments;
+    }
+
+    /**
+     * When a view is replaced, the new view must contain all the
+     * original columns with the same types. Adding new columns or
+     * reordering them is allowed.
+     * <p>
+     * This is an interim mitigation for
+     * https://github.com/hazelcast/hazelcast/issues/20032. It disallows
+     * incompatible changes when doing CREATE OR REPLACE VIEW, however
+     * incompatible changes are still possible with DROP VIEW followed
+     * by a CREATE VIEW.
+     */
+    private static void checkViewNewRowType(View original, View replacement) {
+        Map<String, QueryDataType> newTypes = new HashMap<>();
+        for (int i = 0; i < replacement.viewColumnNames().size(); i++) {
+            newTypes.put(replacement.viewColumnNames().get(i), replacement.viewColumnTypes().get(i));
+        }
+
+        // each original name must be present and have the same type
+        for (int i = 0; i < original.viewColumnNames().size(); i++) {
+            QueryDataType origType = original.viewColumnTypes().get(i);
+            String origName = original.viewColumnNames().get(i);
+            QueryDataType newType = newTypes.get(origName);
+            if (newType == null) {
+                throw QueryException.error("Can't replace view, the new view doesn't contain column '" + origName + "'");
+            }
+            if (newType.getTypeFamily() != origType.getTypeFamily()) {
+                throw QueryException.error("Can't replace view, the type for column '" + origName + "' changed from "
+                        + origType.getTypeFamily() + " to " + newType.getTypeFamily());
+            }
+        }
     }
 
     private static int findQueryExceptionCode(Throwable t) {

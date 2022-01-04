@@ -165,7 +165,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     split.peek();
                 } catch (MissingPartitionException e) {
                     splits.addAll(splitOnMigration(split));
-                    splits.remove(i);
+                    splits.remove(i--);
                     continue;
                 }
                 if (split.currentRow == null) {
