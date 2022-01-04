@@ -129,8 +129,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleLogLevelSet(command);
             } else if (uri.startsWith(URI_CONFIG_RELOAD)) {
                 handleConfigReload(command);
-            } else if (uri.startsWith(URI_INTERNAL_CONFIG_RELOAD)) {
-                handleInternalConfigReload(command);
+            } else if (uri.startsWith(URI_CONFIG_UPDATE)) {
+                handleConfigUpdate(command);
             } else {
                 command.send404();
             }
@@ -635,7 +635,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         );
     }
 
-    protected void handleInternalConfigReload(HttpPostCommand command) throws UnsupportedEncodingException {
+    protected void handleConfigUpdate(HttpPostCommand command) throws UnsupportedEncodingException {
         prepareResponse(
                 command,
                 response(FAIL, "message", "Configuration Reload requires Hazelcast Enterprise Edition")

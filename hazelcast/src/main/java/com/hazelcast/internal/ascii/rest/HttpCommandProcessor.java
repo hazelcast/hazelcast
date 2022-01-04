@@ -105,11 +105,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     // Config
     public static final String URI_CONFIG = "/hazelcast/rest/config";
     public static final String URI_CONFIG_RELOAD = URI_CONFIG + "/reload";
-
-    // Internal APIs
-    public static final String URI_INTERNAL = "/hazelcast/rest/internal";
-    public static final String URI_INTERNAL_CONFIG = URI_INTERNAL + "/config";
-    public static final String URI_INTERNAL_CONFIG_RELOAD = URI_INTERNAL_CONFIG + "/reload";
+    public static final String URI_CONFIG_UPDATE = URI_CONFIG + "/update";
 
 
     protected final ILogger logger;

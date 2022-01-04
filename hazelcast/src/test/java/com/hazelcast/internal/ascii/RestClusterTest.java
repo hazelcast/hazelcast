@@ -378,11 +378,11 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testInternalConfigReload() throws Exception {
+    public void testConfigUpdate() throws Exception {
         Config config = createConfigWithRestEnabled();
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        ConnectionResponse response = communicator.internalConfigReload(
+        ConnectionResponse response = communicator.configUpdate(
                 config.getClusterName(), getPassword(), "hazelcast:\n"
         );
 
