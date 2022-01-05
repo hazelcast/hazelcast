@@ -322,12 +322,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v1 AS SELECT JSON_VALUE(this, '$[1]' "
                 + "RETURNING BIGINT NULL ON EMPTY NULL ON ERROR) FROM test");
         instance().getSql().execute("CREATE VIEW v2 AS SELECT JSON_QUERY(this, '$[1]' "
-                + "WITH CONDITIONAL WRAPPER EMPTY OBJECT ON ERROR EMPTY OBJECT ON ERROR) FROM test");
+                + "WITH CONDITIONAL WRAPPER EMPTY OBJECT ON EMPTY EMPTY OBJECT ON ERROR) FROM test");
 
         assertRowsAnyOrder("SELECT * FROM v1", asList(new Row(2L), new Row(5L)));
         assertRowsAnyOrder("SELECT * FROM v2", asList(
-                new Row(new HazelcastJsonValue("[2]")),
-                new Row(new HazelcastJsonValue("[5]"))
+                new Row(new HazelcastJsonValue("2")),
+                new Row(new HazelcastJsonValue("5"))
         ));
     }
 
