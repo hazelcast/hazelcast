@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -85,7 +86,7 @@ public class KvRowProjectorTest {
                         MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
                         DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
                 ),
-                mock(ExpressionEvalContext.class)
+                SqlTestSupport.createExpressionEvalContext()
         );
 
         JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
