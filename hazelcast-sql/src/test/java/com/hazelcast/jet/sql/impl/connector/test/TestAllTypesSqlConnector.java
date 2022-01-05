@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
@@ -55,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.SqlTestSupport.TEST_SS;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 
@@ -85,7 +85,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
 
     private static final List<TableField> FIELD_LIST2 = toList(FIELD_LIST, f -> new TableField(f.name(), f.type(), false));
 
-    private static final JetSqlRow VALUES = new JetSqlRow(null, new Object[]{
+    private static final JetSqlRow VALUES = new JetSqlRow(TEST_SS, new Object[]{
             "string",
             true,
             (byte) 127,
@@ -160,7 +160,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         }
 
         BatchSource<JetSqlRow> source = SourceBuilder
-                .batch("batch", SimpleExpressionEvalContext::from)
+                .batch("batch", ExpressionEvalContext::from)
                 .<JetSqlRow>fillBufferFn((ctx, buf) -> {
                     JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
                     if (row != null) {

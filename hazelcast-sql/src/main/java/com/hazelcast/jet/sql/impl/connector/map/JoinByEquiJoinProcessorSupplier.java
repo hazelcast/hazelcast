@@ -27,7 +27,6 @@ import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -105,7 +104,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     @Override
     public void init(@Nonnull Context context) {
         map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

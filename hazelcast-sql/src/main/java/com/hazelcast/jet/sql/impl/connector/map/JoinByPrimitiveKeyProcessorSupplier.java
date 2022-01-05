@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
@@ -85,7 +84,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

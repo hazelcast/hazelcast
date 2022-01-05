@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
@@ -57,7 +56,7 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, D
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
