@@ -288,11 +288,11 @@ public class TaskletExecutionService {
             final Tasklet t = tracker.tasklet;
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
-            Contexts.Container userMetricsContextContainer = Contexts.container();
+            Contexts.Container contextContainer = Contexts.container();
 
             try {
                 blockingWorkerCount.inc();
-                userMetricsContextContainer.setContext(t.getProcessorContext());
+                contextContainer.setContext(t.getProcessorContext());
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -312,7 +312,7 @@ public class TaskletExecutionService {
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 blockingWorkerCount.inc(-1L);
-                userMetricsContextContainer.setContext(null);
+                contextContainer.setContext(null);
                 currentThread().setContextClassLoader(clBackup);
                 tracker.executionTracker.taskletDone();
             }
@@ -335,7 +335,7 @@ public class TaskletExecutionService {
 
         private boolean finestLogEnabled;
         private Thread myThread;
-        private Contexts.Container userMetricsContextContainer;
+        private Contexts.Container contextContainer;
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -344,7 +344,7 @@ public class TaskletExecutionService {
         @Override
         public void run() {
             myThread = currentThread();
-            userMetricsContextContainer = Contexts.container();
+            contextContainer = Contexts.container();
 
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
@@ -384,7 +384,7 @@ public class TaskletExecutionService {
             }
             try {
                 myThread.setContextClassLoader(t.jobClassLoader);
-                userMetricsContextContainer.setContext(t.tasklet.getProcessorContext());
+                contextContainer.setContext(t.tasklet.getProcessorContext());
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
                     dismissTasklet(t);
@@ -400,7 +400,7 @@ public class TaskletExecutionService {
                     t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
                 }
             } finally {
-                userMetricsContextContainer.setContext(null);
+                contextContainer.setContext(null);
             }
             if (t.executionTracker.executionCompletedExceptionally()) {
                 dismissTasklet(t);
