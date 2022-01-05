@@ -84,6 +84,14 @@ public class TablesStorage {
         return (Mapping) storage().remove(name);
     }
 
+    View getView(String name) {
+        Object obj = storage().get(name);
+        if (obj instanceof View) {
+            return (View) obj;
+        }
+        return null;
+    }
+
     View removeView(String name) {
         return (View) storage().remove(name);
     }
