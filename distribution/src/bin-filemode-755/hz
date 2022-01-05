@@ -105,7 +105,7 @@ do
   fi
 done
 
-HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} -Dhazelcast.commandline.workingdirectory=${HAZELCAST_HOME} com.hazelcast.commandline.HazelcastCommandLine"
+HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} -Dhazelcast.commandline.workingdirectory=${HAZELCAST_HOME} com.hazelcast.commandline.HazelcastServerCommandLine"
 
 if [ "$1" = "start" ] ; then
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.commandline;
 
+import com.hazelcast.core.server.HazelcastMemberStarter;
 import com.hazelcast.internal.util.OsHelper;
 import picocli.CommandLine;
 
@@ -174,7 +175,7 @@ class HazelcastServerCommandLine implements Runnable {
         commandList.add(classpath.toString());
         commandList.addAll(parameters);
         fixModularJavaOptions(commandList);
-        commandList.add(HazelcastMember.class.getName());
+        commandList.add(HazelcastMemberStarter.class.getName());
         processExecutor.buildAndStart(commandList, getRedirectOutput(daemon), getRedirectError(daemon), daemon);
     }
 
