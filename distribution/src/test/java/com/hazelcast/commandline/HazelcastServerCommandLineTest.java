@@ -83,7 +83,7 @@ public class HazelcastServerCommandLineTest {
         // when
         hazelcastServerCommandLine.start(null, port, null, null, null, false, false, false);
         // then
-        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dnetwork.port=" + port)),
+        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhz.network.port.port=" + port)),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
@@ -95,7 +95,7 @@ public class HazelcastServerCommandLineTest {
         // when
         hazelcastServerCommandLine.start(null, null, hzInterface, null, null, false, false, false);
         // then
-        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dnetwork.interface=" + hzInterface)),
+        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhz.network.interfaces.interfaces.interface1=" + hzInterface)),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
