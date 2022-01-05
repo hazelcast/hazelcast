@@ -73,7 +73,7 @@ public class DiscoveryJoiner
                 "Discovered nodes cannot be null!");
 
         MemberImpl localMember = node.nodeEngine.getLocalMember();
-        Set<Address> localAddresses = node.getLocalAddressRegistry().getLocalAddresses().getAllAddresses();
+        Set<Address> localAddresses = node.getLocalAddressRegistry().getLocalAddresses();
 
         Collection<Address> possibleMembers = new ArrayList<>();
         for (DiscoveryNode discoveryNode : discoveredNodes) {

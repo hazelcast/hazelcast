@@ -30,6 +30,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -228,8 +229,8 @@ public class LocalAddressRegistry {
     }
 
     @Nonnull
-    public LinkedAddresses getLocalAddresses() {
-        return localAddresses;
+    public Set<Address> getLocalAddresses() {
+        return localAddresses.getAllAddresses();
     }
 
     private void registerLocalAddresses(UUID thisUuid, AddressPicker addressPicker) {

@@ -27,6 +27,7 @@ import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMerge
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LinkedAddresses;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
@@ -460,7 +461,21 @@ public class TcpIpJoiner extends AbstractJoiner {
             logger.severe(e);
             return;
         }
-        possibleAddresses.removeAll(node.getLocalAddressRegistry().getLocalAddresses().getAllAddresses());
+        LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+        possibleAddresses.removeAll(addressRegistry.getLocalAddresses());
+        node.getClusterService().getMembers().forEach(
+                member -> {
+                    LinkedAddresses addresses = addressRegistry.linkedAddressesOf(member.getUuid());
+                    if (addresses != null) {
+                        Set<Address> knownMemberAddresses = addresses.getAllAddresses();
+                        possibleAddresses.removeAll(knownMemberAddresses);
+                    } else {
+                        // do not expect this case in the normal conditions, except for disconnections happens
+                        // at the same time
+                        possibleAddresses.remove(member.getAddress());
+                    }
+                }
+        );
 
         if (possibleAddresses.isEmpty()) {
             return;
