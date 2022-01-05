@@ -130,13 +130,14 @@ class HazelcastCommandLine implements Runnable {
             args.add("-Dhazelcast.config=" + configFilePath);
         }
         if (!isNullOrEmpty(port)) {
-            args.add("-Dnetwork.port=" + port);
+            args.add("-Dhz.network.port.port=" + port);
         }
         if (!isNullOrEmpty(hzInterface)) {
-            args.add("-Dnetwork.interface=" + hzInterface);
+            args.add("-Dhz.network.interfaces.enabled=true");
+            args.add("-Dhz.socket.bind.any=false");
+            args.add("-Dhz.network.interfaces.interfaces.interface1=" + hzInterface);
         }
 
-        args.add("-Djava.net.preferIPv4Stack=true");
         addLogging(args, verbose, finestVerbose);
 
         if (javaOptions != null && !javaOptions.isEmpty()) {
