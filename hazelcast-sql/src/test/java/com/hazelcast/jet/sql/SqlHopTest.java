@@ -215,6 +215,55 @@ public class SqlHopTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_windowBoundsWithNullDescriptorEvent() {
+        String name = createTable(
+                row(null, "Alice", 1),
+                row(timestampTz(2), "Bob", 1)
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start, window_end, name FROM " +
+                        "TABLE(HOP(" +
+                        "  TABLE(" + name + ")" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.004' SECOND" +
+                        "))",
+                asList(
+                        new Row(timestampTz(0L), timestampTz(4L), "Bob"),
+                        new Row(timestampTz(2L), timestampTz(6L), "Bob")
+                )
+        );
+    }
+
+    @Test
+    public void test_projectWindowBounds() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(1), null, null),
+                row(timestampTz(2), "Alice", 1),
+                row(timestampTz(3), "Bob", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT SIN(EXTRACT(DAY FROM window_start)), SUM(distance) FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.004' SECOND" +
+                        ")) " +
+                        "GROUP BY window_start",
+                asList(
+                        new Row(1L, 1L),
+                        new Row(1L, 3L),
+                        new Row(1L, 2L)
+                )
+        );
+    }
+
+    @Test
     public void test_groupBy() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),

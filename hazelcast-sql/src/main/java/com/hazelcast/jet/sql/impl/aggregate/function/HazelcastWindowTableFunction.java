@@ -22,7 +22,6 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
 
@@ -41,15 +40,18 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
             SqlCallBinding callBinding = ((SqlCallBinding) binding);
             // We'll use the original row type and append two columns: window start and end. These
             // columns have the same type as the time column referenced by the descriptor.
-            SqlTypeName orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex).getSqlTypeName();
+            RelDataType orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex);
 
             RelDataType inputRowType = callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
             return binding.getTypeFactory().builder()
                     .kind(inputRowType.getStructKind())
                     .addAll(inputRowType.getFieldList())
-                    // todo [viliam] test null timestamp
                     .add("window_start", orderingColumnType)
                     .add("window_end", orderingColumnType)
+//                    .add("window_start", SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
+//                    .nullable(true)
+//                    .add("window_end", SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
+//                    .nullable(true)
                     .build();
         };
     }

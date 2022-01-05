@@ -48,6 +48,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     private final List<Integer> windowStartIndexes;
     private final List<Integer> windowEndIndexes;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     SlidingWindowAggregatePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,

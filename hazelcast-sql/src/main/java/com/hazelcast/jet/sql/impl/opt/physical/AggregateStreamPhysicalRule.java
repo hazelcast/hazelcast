@@ -56,7 +56,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded) // TODO [viliam] really has to be unbounded?
+                    .predicate(OptUtils::isUnbounded)
                     .inputs(b1 -> b1
                             .operand(ProjectLogicalRel.class)
                             .inputs(b2 -> b2

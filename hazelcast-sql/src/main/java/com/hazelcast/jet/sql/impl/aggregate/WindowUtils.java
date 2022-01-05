@@ -52,7 +52,7 @@ public final class WindowUtils {
     }
 
     // todo [viliam] rename this method
-    public static Object[] insert(
+    public static Object[] detectAndInsertWindowBound(
             Object[] row,
             long windowStart,
             long windowEnd,
@@ -190,6 +190,7 @@ public final class WindowUtils {
 
     /**
      * Return the datatype of the target column referenced by the DESCRIPTOR argument.
+     *
      * @return
      */
     public static RelDataType getOrderingColumnType(SqlCallBinding binding, int orderingColumnParameterIndex) {
