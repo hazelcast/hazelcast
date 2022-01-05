@@ -221,6 +221,8 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertNull(querySingleValue("SELECT JSON_VALUE(null, '$.foo')"));
         assertNull(querySingleValue("SELECT JSON_VALUE('bad json', '$' default null on error)"));
+        // this query extracts a null JSON value, which is returned as a null SQL value
+        assertNull(querySingleValue("SELECT JSON_VALUE('{\"a\":null}', '$.a')"));
     }
 
     @Test

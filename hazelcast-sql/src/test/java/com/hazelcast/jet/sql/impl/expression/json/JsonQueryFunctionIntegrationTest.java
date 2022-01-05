@@ -206,6 +206,8 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertNull(querySingleValue("SELECT JSON_QUERY(null, '$.a')"));
+        // this query returns null JSON value, not a null SQL value
+        assertEquals(json("null"), querySingleValue("SELECT JSON_QUERY('{\"a\":null}', '$.a')"));
     }
 
     @Test

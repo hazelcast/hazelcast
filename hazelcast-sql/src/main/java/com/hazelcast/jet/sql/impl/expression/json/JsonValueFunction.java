@@ -167,6 +167,9 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     @SuppressWarnings("checkstyle:ReturnCount")
     private Object convertResultType(final Object result) {
+        if (result == null) {
+            return null;
+        }
         if (resultType.getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)) {
             return result.toString();
         }
