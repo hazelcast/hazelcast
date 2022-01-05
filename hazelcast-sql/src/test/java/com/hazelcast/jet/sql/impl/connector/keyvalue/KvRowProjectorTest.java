@@ -88,7 +88,6 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        use single SS for tests
         JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
 
         assertThat(row).isEqualTo(jetRow(2, 4));
