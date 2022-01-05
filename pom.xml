@@ -130,7 +130,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.10.21</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.8.0</commons-io.version>
+        <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
