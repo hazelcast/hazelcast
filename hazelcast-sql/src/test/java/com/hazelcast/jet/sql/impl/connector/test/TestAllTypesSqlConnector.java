@@ -103,7 +103,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             null
     });
 
-    public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES);
+    public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES.getValues());
 
     public static void create(SqlService sqlService, String tableName) {
         sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + TestAllTypesSqlConnector.TYPE_NAME);
