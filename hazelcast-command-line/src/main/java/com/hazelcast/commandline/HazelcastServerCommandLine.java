@@ -45,7 +45,7 @@ import static picocli.CommandLine.Option;
  */
 @Command(name = "hz", description = "Utility for the Hazelcast operations." + "%n%n"
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
-class HazelcastCommandLine implements Runnable {
+class HazelcastServerCommandLine implements Runnable {
 
     static final String WORKING_DIRECTORY = System.getProperty("hazelcast.commandline.workingdirectory", ".");
     static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
@@ -59,7 +59,7 @@ class HazelcastCommandLine implements Runnable {
     CommandLine.Model.CommandSpec spec;
     ProcessExecutor processExecutor;
 
-    HazelcastCommandLine(PrintStream out, PrintStream err, ProcessExecutor processExecutor) {
+    HazelcastServerCommandLine(PrintStream out, PrintStream err, ProcessExecutor processExecutor) {
         this.out = out;
         this.err = err;
         this.processExecutor = processExecutor;
@@ -74,7 +74,7 @@ class HazelcastCommandLine implements Runnable {
         PrintStream out = System.out;
         PrintStream err = System.err;
         ProcessExecutor processExecutor = new ProcessExecutor();
-        CommandLine cmd = new CommandLine(new HazelcastCommandLine(out, err, processExecutor))
+        CommandLine cmd = new CommandLine(new HazelcastServerCommandLine(out, err, processExecutor))
                 .setOut(createPrintWriter(out))
                 .setErr(createPrintWriter(err))
                 .setTrimQuotes(true)

@@ -27,10 +27,10 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.commandline.HazelcastCommandLine.CLASSPATH_SEPARATOR;
-import static com.hazelcast.commandline.HazelcastCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
-import static com.hazelcast.commandline.HazelcastCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
-import static com.hazelcast.commandline.HazelcastCommandLine.WORKING_DIRECTORY;
+import static com.hazelcast.commandline.HazelcastServerCommandLine.CLASSPATH_SEPARATOR;
+import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
+import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
+import static com.hazelcast.commandline.HazelcastServerCommandLine.WORKING_DIRECTORY;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,9 +40,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
-public class HazelcastCommandLineTest {
+public class HazelcastServerCommandLineTest {
     private ProcessExecutor processExecutor;
-    private HazelcastCommandLine hazelcastCommandLine;
+    private HazelcastServerCommandLine hazelcastServerCommandLine;
 
     @Before
     public void setUp() {
@@ -51,14 +51,14 @@ public class HazelcastCommandLineTest {
 
         when(process.getInputStream()).thenReturn(mock(InputStream.class));
 
-        hazelcastCommandLine = new HazelcastCommandLine(mock(PrintStream.class), mock(PrintStream.class), processExecutor);
+        hazelcastServerCommandLine = new HazelcastServerCommandLine(mock(PrintStream.class), mock(PrintStream.class), processExecutor);
     }
 
     @Test
     public void test_start()
             throws IOException, InterruptedException {
         //when
-        hazelcastCommandLine.start(null, null, null, null, null, false, false, false);
+        hazelcastServerCommandLine.start(null, null, null, null, null, false, false, false);
         //then
         verify(processExecutor, times(1)).buildAndStart(anyList(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
@@ -69,7 +69,7 @@ public class HazelcastCommandLineTest {
         // given
         String configFile = "path/to/test-hazelcast.xml";
         // when
-        hazelcastCommandLine.start(configFile, null, null, null, null, false, false, false);
+        hazelcastServerCommandLine.start(configFile, null, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhazelcast.config=" + configFile)),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
@@ -81,7 +81,7 @@ public class HazelcastCommandLineTest {
         // given
         String port = "9999";
         // when
-        hazelcastCommandLine.start(null, port, null, null, null, false, false, false);
+        hazelcastServerCommandLine.start(null, port, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dnetwork.port=" + port)),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
@@ -93,7 +93,7 @@ public class HazelcastCommandLineTest {
         // given
         String hzInterface = "1.1.1.1";
         // when
-        hazelcastCommandLine.start(null, null, hzInterface, null, null, false, false, false);
+        hazelcastServerCommandLine.start(null, null, hzInterface, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dnetwork.interface=" + hzInterface)),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
@@ -105,7 +105,7 @@ public class HazelcastCommandLineTest {
         // given
         String[] additonalClasspath = {"class1", "class2"};
         // when
-        hazelcastCommandLine.start(null, null, null, additonalClasspath, null, false, false, false);
+        hazelcastServerCommandLine.start(null, null, null, additonalClasspath, null, false, false, false);
         // then
         StringBuilder out = new StringBuilder();
         for (String classpath : additonalClasspath) {
@@ -123,7 +123,7 @@ public class HazelcastCommandLineTest {
         javaOpts.add("opt1");
         javaOpts.add("opt2");
         // when
-        hazelcastCommandLine.start(null, null, null, null, javaOpts, false, false, false);
+        hazelcastServerCommandLine.start(null, null, null, null, javaOpts, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(javaOpts.toArray(new String[0]))),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
@@ -135,7 +135,7 @@ public class HazelcastCommandLineTest {
         // given
         boolean verbose = true;
         // when
-        hazelcastCommandLine.start(null, null, null, null, null, false, verbose, false);
+        hazelcastServerCommandLine.start(null, null, null, null, null, false, verbose, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(
                         "-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINE_LEVEL)),
@@ -148,7 +148,7 @@ public class HazelcastCommandLineTest {
         // given
         boolean finestVerbose = true;
         // when
-        hazelcastCommandLine.start(null, null, null, null, null, false, false, finestVerbose);
+        hazelcastServerCommandLine.start(null, null, null, null, null, false, false, finestVerbose);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(
                         "-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINEST_LEVEL)),
@@ -161,7 +161,7 @@ public class HazelcastCommandLineTest {
         // given
         System.setProperty("java.specification.version", "9");
         // when
-        hazelcastCommandLine.start(null, null, null, null, null, false, false, false);
+        hazelcastServerCommandLine.start(null, null, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(
                 Matchers.hasItems("--add-modules", "java.se", "--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
@@ -175,7 +175,7 @@ public class HazelcastCommandLineTest {
     public void test_start_withDaemon()
             throws Exception {
         // when
-        hazelcastCommandLine.start(null, null, null, null, null, true, false, false);
+        hazelcastServerCommandLine.start(null, null, null, null, null, true, false, false);
         // then
         verify(processExecutor).buildAndStart(
                 anyList(),

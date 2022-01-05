@@ -49,7 +49,7 @@ public class JavaOptionsConsumerTest {
         Stack<String> args = new Stack<>();
         args.push(options[0] + split + options[1]);
         // when
-        HazelcastCommandLine.JavaOptionsConsumer javaOptionsConsumer = new HazelcastCommandLine.JavaOptionsConsumer();
+        HazelcastServerCommandLine.JavaOptionsConsumer javaOptionsConsumer = new HazelcastServerCommandLine.JavaOptionsConsumer();
         javaOptionsConsumer.consumeParameters(args, argSpec, commandSpec);
         // then
         List<String> list = argSpec.getValue();
@@ -63,7 +63,7 @@ public class JavaOptionsConsumerTest {
         // given
         Stack<String> args = new Stack<>();
         // when
-        HazelcastCommandLine.JavaOptionsConsumer javaOptionsConsumer = new HazelcastCommandLine.JavaOptionsConsumer();
+        HazelcastServerCommandLine.JavaOptionsConsumer javaOptionsConsumer = new HazelcastServerCommandLine.JavaOptionsConsumer();
         javaOptionsConsumer.consumeParameters(args, argSpec, commandSpec);
         // then
         // Exception expected
