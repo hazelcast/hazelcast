@@ -22,7 +22,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,7 +59,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         // Check missing value.
         map.put(0, new Value(0));
@@ -96,7 +95,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         // Check missing value.
         map.put(0, new Value(10));
@@ -132,7 +131,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         // Check missing value.
         map.put(0, new Value(0));
@@ -228,7 +227,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         map.put(0, new Value(0, 0));
         map.put(1, new Value(0, 1));
