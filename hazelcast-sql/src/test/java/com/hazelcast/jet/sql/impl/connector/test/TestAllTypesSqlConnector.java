@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -155,7 +154,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         }
 
         BatchSource<Object[]> source = SourceBuilder
-                .batch("batch", SimpleExpressionEvalContext::from)
+                .batch("batch", ExpressionEvalContext::from)
                 .<Object[]>fillBufferFn((ctx, buf) -> {
                     Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
                     if (row != null) {

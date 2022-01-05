@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
@@ -82,6 +84,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
@@ -100,6 +103,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -470,6 +474,18 @@ public final class RexToExpression {
                             onEmpty,
                             onError
                     );
+                } else if (function == HazelcastSqlOperatorTable.JSON_OBJECT) {
+                    final SqlJsonConstructorNullClause nullClause = ((SymbolExpression) operands[0])
+                            .getSymbol();
+                    final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
+
+                    return JsonObjectFunction.create(fields, nullClause);
+                } else if (function == HazelcastSqlOperatorTable.JSON_ARRAY) {
+                    final SqlJsonConstructorNullClause nullClause = ((SymbolExpression) operands[0])
+                            .getSymbol();
+                    final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
+
+                    return JsonArrayFunction.create(fields, nullClause);
                 }
 
                 break;

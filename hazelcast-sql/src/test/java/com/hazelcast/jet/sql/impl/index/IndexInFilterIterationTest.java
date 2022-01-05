@@ -24,7 +24,6 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -71,7 +70,7 @@ public class IndexInFilterIterationTest extends IndexFilterIteratorTestSupport {
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         map.put(1, new Value(null));
         map.put(2, new Value(0));

@@ -34,6 +34,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlJsonEmptyOrError;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
@@ -221,6 +222,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // JSON
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_QUERY);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_VALUE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAY);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -273,6 +276,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         SUPPORTED_SYMBOLS.add(SqlJsonEmptyOrError.EMPTY);
         SUPPORTED_SYMBOLS.add(SqlJsonEmptyOrError.ERROR);
+
+        SUPPORTED_SYMBOLS.add(SqlJsonConstructorNullClause.NULL_ON_NULL);
+        SUPPORTED_SYMBOLS.add(SqlJsonConstructorNullClause.ABSENT_ON_NULL);
     }
 
     // The top level select is used to filter out nested selects with FETCH/OFFSET

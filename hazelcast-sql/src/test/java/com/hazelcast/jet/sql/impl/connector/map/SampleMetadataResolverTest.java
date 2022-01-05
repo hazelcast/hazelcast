@@ -192,7 +192,7 @@ public class SampleMetadataResolverTest {
                 .setConfig(serializationConfig)
                 .build();
 
-        Metadata metadata = SampleMetadataResolver.resolve(ss, GenericRecordBuilder.compact("class-name").setInt("field", 1).build(), key);
+        Metadata metadata = SampleMetadataResolver.resolve(ss, GenericRecordBuilder.compact("class-name").setInt32("field", 1).build(), key);
         assertThat(metadata.fields()).containsExactly(
                 new MappingField("field", QueryDataType.INT, (key ? KEY : VALUE) + ".field")
         );
@@ -201,7 +201,7 @@ public class SampleMetadataResolverTest {
                 entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "class-name")
         );
 
-        metadata = SampleMetadataResolver.resolve(ss, ss.toData(GenericRecordBuilder.compact("class-name").setInt("field", 1).build()), key);
+        metadata = SampleMetadataResolver.resolve(ss, ss.toData(GenericRecordBuilder.compact("class-name").setInt32("field", 1).build()), key);
         assertThat(metadata.fields()).containsExactly(
                 new MappingField("field", QueryDataType.INT, (key ? KEY : VALUE) + ".field")
         );
@@ -299,12 +299,12 @@ public class SampleMetadataResolverTest {
             @Nonnull
             @Override
             public CompactClass read(@Nonnull CompactReader in) {
-                return new CompactClass(in.readInt("field"));
+                return new CompactClass(in.readInt32("field"));
             }
 
             @Override
             public void write(@Nonnull CompactWriter out, @Nonnull CompactClass object) {
-                out.writeInt("field", object.field);
+                out.writeInt32("field", object.field);
             }
         }
     }

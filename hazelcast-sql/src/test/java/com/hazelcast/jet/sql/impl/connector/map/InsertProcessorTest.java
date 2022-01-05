@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

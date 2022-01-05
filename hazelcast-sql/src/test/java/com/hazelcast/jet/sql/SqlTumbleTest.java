@@ -33,6 +33,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
@@ -113,81 +114,81 @@ public class SqlTumbleTest extends SqlTestSupport {
 
     @Test
     public void test_invalidArguments_tinyInt() {
-        checkInvalidArguments(TINYINT, "INTERVAL '0.001' SECOND");
+        checkInvalidArguments(TINYINT, "INTERVAL '0.001' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_smallInt() {
-        checkInvalidArguments(SMALLINT, "INTERVAL '0.002' SECOND");
+        checkInvalidArguments(SMALLINT, "INTERVAL '0.002' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_int() {
-        checkInvalidArguments(INTEGER, "INTERVAL '0.003' SECOND");
+        checkInvalidArguments(INTEGER, "INTERVAL '0.003' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_bigInt() {
-        checkInvalidArguments(BIGINT, "INTERVAL '0.004' SECOND");
+        checkInvalidArguments(BIGINT, "INTERVAL '0.004' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_decimal_interval() {
-        checkInvalidArguments(DECIMAL, "INTERVAL '0.005' SECOND");
+        checkInvalidArguments(DECIMAL, "INTERVAL '0.005' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_decimal_number() {
-        checkInvalidArguments(DECIMAL, "6");
+        checkInvalidArguments(DECIMAL, "6", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_real_interval() {
-        checkInvalidArguments(REAL, "INTERVAL '0.007' SECOND");
+        checkInvalidArguments(REAL, "INTERVAL '0.007' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_real_number() {
-        checkInvalidArguments(REAL, "8");
+        checkInvalidArguments(REAL, "8", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_double_interval() {
-        checkInvalidArguments(DOUBLE, "INTERVAL '0.009' SECOND");
+        checkInvalidArguments(DOUBLE, "INTERVAL '0.009' SECOND", INTERVAL_DAY_SECOND);
     }
 
     @Test
     public void test_invalidArguments_double_number() {
-        checkInvalidArguments(DOUBLE, "10");
+        checkInvalidArguments(DOUBLE, "10", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_time() {
-        checkInvalidArguments(TIME, "11");
+        checkInvalidArguments(TIME, "11", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_date() {
-        checkInvalidArguments(DATE, "12");
+        checkInvalidArguments(DATE, "12", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_timestamp() {
-        checkInvalidArguments(TIMESTAMP, "13");
+        checkInvalidArguments(TIMESTAMP, "13", TINYINT);
     }
 
     @Test
     public void test_invalidArguments_timestampTz() {
-        checkInvalidArguments(TIMESTAMP_WITH_TIME_ZONE, "14");
+        checkInvalidArguments(TIMESTAMP_WITH_TIME_ZONE, "14", TINYINT);
     }
 
-    private static void checkInvalidArguments(QueryDataTypeFamily orderingColumnType, String windowSize) {
+    private static void checkInvalidArguments(QueryDataTypeFamily orderingColumnType, String windowSize, QueryDataTypeFamily windowSizeType) {
         String name = randomName();
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), " + windowSize + "))")
-        ).hasMessageContaining("Cannot apply 'TUMBLE' function to [ROW, COLUMN_LIST");
+        ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + windowSizeType + ") do not match");
     }
 
     @Test

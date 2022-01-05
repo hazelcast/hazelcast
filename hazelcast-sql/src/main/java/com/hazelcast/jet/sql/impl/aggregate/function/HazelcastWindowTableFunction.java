@@ -22,6 +22,7 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
 
@@ -33,14 +34,15 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
 
     /**
      * @param orderingColumnParameterIndex The index of the DESCRIPTOR
-     *     parameter pointing to the ordering column.
+     *                                     parameter pointing to the ordering column.
      */
     private static SqlReturnTypeInference returnTypeInference(int orderingColumnParameterIndex) {
         return binding -> {
             SqlCallBinding callBinding = ((SqlCallBinding) binding);
             // We'll use the original row type and append two columns: window start and end. These
             // columns have the same type as the time column referenced by the descriptor.
-            RelDataType orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex);
+            SqlTypeName orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex).getSqlTypeName();
+
             RelDataType inputRowType = callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
             return binding.getTypeFactory().builder()
                     .kind(inputRowType.getStructKind())

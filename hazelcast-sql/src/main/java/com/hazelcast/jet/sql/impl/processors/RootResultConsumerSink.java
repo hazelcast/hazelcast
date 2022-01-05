@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -58,7 +57,7 @@ public final class RootResultConsumerSink implements Processor {
                 .remove(context.jobId());
         assert rootResultConsumer != null;
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
+        ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
 
         Number limit = evaluate(limitExpression, evalContext);
         if (limit == null) {

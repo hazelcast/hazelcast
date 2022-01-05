@@ -189,8 +189,8 @@ public final class WindowUtils {
     }
 
     /**
-     * Return the datatype of the target column referenced by the
-     * DESCRIPTOR argument.
+     * Return the datatype of the target column referenced by the DESCRIPTOR argument.
+     * @return
      */
     public static RelDataType getOrderingColumnType(SqlCallBinding binding, int orderingColumnParameterIndex) {
         SqlNode input = binding.operand(0);
@@ -202,7 +202,7 @@ public final class WindowUtils {
                     ValidatorResource.RESOURCE.mustUseSingleOrderingColumn());
         }
 
-        // paramValue is the DESCRIPTOR call, it's operand is an SqlIdentifier having the column name
+        // `descriptor` is the DESCRIPTOR call, its operand is an SqlIdentifier having the column name
         SqlIdentifier orderingColumnIdentifier = (SqlIdentifier) descriptor.getOperandList().get(0);
         String orderingColumnName = orderingColumnIdentifier.getSimple();
 
