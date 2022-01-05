@@ -108,7 +108,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
-            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
         }
 
         return wrap(execute(json, jsonPath));

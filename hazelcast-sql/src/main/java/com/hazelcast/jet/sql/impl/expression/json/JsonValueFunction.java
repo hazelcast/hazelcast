@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.expression.json;
 import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -41,6 +43,7 @@ import java.util.Collection;
 import java.util.Objects;
 
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
+    private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
@@ -112,7 +115,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
-            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage(), e);
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
         }
 
         Collection<Object> resultColl;
@@ -156,7 +160,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T onErrorResponse(Exception exception, Object defaultValue) {
         switch (onError) {
             case ERROR:
-                throw QueryException.error("JSON_VALUE failed: " + exception, exception);
+                LOGGER.fine("JSON_VALUE failed", exception);
+                throw QueryException.error("JSON_VALUE failed: " + exception);
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
