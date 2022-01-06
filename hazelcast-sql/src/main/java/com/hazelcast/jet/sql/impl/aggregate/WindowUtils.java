@@ -34,10 +34,12 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
@@ -51,7 +53,7 @@ public final class WindowUtils {
     private WindowUtils() {
     }
 
-    // todo [viliam] rename this method
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static Object[] detectAndInsertWindowBound(
             Object[] row,
             long windowStart,
@@ -61,9 +63,9 @@ public final class WindowUtils {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
-                result[i] = windowStart;
+                result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowStart), ZoneId.systemDefault());
             } else if (mapping[i] == -2) {
-                result[i] = windowEnd;
+                result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
             } else {
                 result[i] = row[mapping[i]];
             }

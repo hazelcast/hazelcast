@@ -239,15 +239,12 @@ public class SqlHopTest extends SqlTestSupport {
     @Test
     public void test_projectWindowBounds() {
         String name = createTable(
-                row(timestampTz(0), "Alice", 1),
-                row(timestampTz(1), null, null),
-                row(timestampTz(2), "Alice", 1),
-                row(timestampTz(3), "Bob", 1),
-                row(timestampTz(10), null, null)
+                row(timestampTz(1000L), "Alice", 1),
+                row(timestampTz(2000L), null, null)
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT SIN(EXTRACT(DAY FROM window_start)), SUM(distance) FROM " +
+                "SELECT SIN( CAST( EXTRACT(SECOND FROM window_start) AS DOUBLE)), SUM(distance) FROM " +
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
@@ -255,12 +252,18 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.004' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
-                asList(
-                        new Row(1L, 1L),
-                        new Row(1L, 3L),
-                        new Row(1L, 2L)
-                )
-        );
+                singletonList(new Row(0.0d, 1L)));
+
+//        assertThatThrownBy(() -> instance().getSql().execute(
+//                "SELECT SIN( CAST( EXTRACT(SECOND FROM window_start) AS DOUBLE)), SUM(distance) FROM " +
+//                        "TABLE(HOP(" +
+//                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+//                        "  , DESCRIPTOR(ts)" +
+//                        "  , INTERVAL '0.002' SECOND" +
+//                        "  , INTERVAL '0.004' SECOND" +
+//                        ")) " +
+//                        "GROUP BY window_start"))
+//                .hasMessageContaining("the window_start and window_end fields must be used directly");
     }
 
     @Test

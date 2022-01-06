@@ -170,6 +170,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     private static boolean hasInputRef(RexNode projection, int i1, int i2) {
         // TODO [viliam] test this
         return projection.accept(new RexVisitorImpl<Boolean>(true) {
+            // TODO [sasha] During rex tree traversing RexVisitorImpl#visitLiteral returns null. /shrug.
             @Override
             public Boolean visitInputRef(RexInputRef inputRef) {
                 return inputRef.getIndex() == i1 || inputRef.getIndex() == i2;
@@ -220,7 +221,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             AggregateLogicalRel logicalAggregate,
             RelNode input
     ) {
-        // todo [viliam] besides watermark order, we can also use normal collation
+        // TODO: [viliam, sasha] besides watermark order, we can also use normal collation
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null) {

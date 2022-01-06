@@ -84,7 +84,8 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     // TODO [viliam] use real EEC
-    private static final ExpressionEvalContext MOCK_EEC = new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
+    private static final ExpressionEvalContext MOCK_EEC =
+            new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
@@ -331,9 +332,10 @@ public class CreateDagVisitor {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        // todo [viliam] real ExpressionEvalContext
+        // TODO: [viliam, sasha] real ExpressionEvalContext. Waiting for #20311 merge.
         Expression<?> timestampExpression = rel.timestampExpression();
-        ToLongFunctionEx<Object[]> timestampFn = row -> WindowUtils.extractMillis(timestampExpression.eval(new HeapRow(row), MOCK_EEC));
+        ToLongFunctionEx<Object[]> timestampFn = row ->
+                WindowUtils.extractMillis(timestampExpression.eval(new HeapRow(row), MOCK_EEC));
         SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
         int[] windowBoundsIndexMask = new int[]{-1, 0}; // todo [viliam] real mapping
