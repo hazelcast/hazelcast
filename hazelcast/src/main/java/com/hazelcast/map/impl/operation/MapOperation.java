@@ -105,7 +105,9 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected void innerBeforeRun() throws Exception {
-        // Intentionally empty method body.
+        if (recordStore != null) {
+            recordStore.beforeOperation();
+        }
         // Concrete classes can override this method.
     }
 
@@ -142,6 +144,12 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected void afterRunInternal() {
         // Intentionally empty method body.
         // Concrete classes can override this method.
+    }
+
+    public void afterRunFinal() {
+        if (recordStore != null) {
+            recordStore.afterOperation();
+        }
     }
 
     protected void assertNativeMapOnPartitionThread() {

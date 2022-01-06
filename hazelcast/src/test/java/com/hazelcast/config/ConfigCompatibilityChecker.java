@@ -273,7 +273,7 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map-config", expectedConfig, actualConfig, new MapConfigChecker());
     }
 
-    public static void checkDeviceConfig(DeviceConfig expectedConfig, DeviceConfig actualConfig) {
+    public static void checkDeviceConfig(LocalDeviceConfig expectedConfig, LocalDeviceConfig actualConfig) {
         checkCompatibleConfigs("device-config", expectedConfig, actualConfig, new DeviceConfigChecker());
     }
 
@@ -1027,9 +1027,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DeviceConfigChecker extends ConfigChecker<DeviceConfig> {
+    private static class DeviceConfigChecker extends ConfigChecker<LocalDeviceConfig> {
         @Override
-        boolean check(DeviceConfig t1, DeviceConfig t2) {
+        boolean check(LocalDeviceConfig t1, LocalDeviceConfig t2) {
             return Objects.equals(t1, t2);
         }
     }

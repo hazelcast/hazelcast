@@ -621,6 +621,16 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
+                <hz:compact-serialization enabled="true">
+                    <hz:registered-classes>
+                        <hz:class>
+                            com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                        </hz:class>
+                        <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                            com.hazelcast.spring.serialization.DummyCompactSerializable
+                        </hz:class>
+                    </hz:registered-classes>
+                </hz:compact-serialization>
             </hz:serialization>
 
             <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
@@ -1058,18 +1068,18 @@
                     <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
                 </hz:edge-defaults>
             </hz:jet>
-            <hz:device name="device0">
+            <hz:local-device name="device0">
                 <hz:base-dir>/dev/devices/tiered_store_device0</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>8</hz:write-io-thread-count>
-            </hz:device>
-            <hz:device name="device1">
+            </hz:local-device>
+            <hz:local-device name="device1">
                 <hz:base-dir>/dev/devices/tiered_store_device1</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>16</hz:write-io-thread-count>
-            </hz:device>
+            </hz:local-device>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>

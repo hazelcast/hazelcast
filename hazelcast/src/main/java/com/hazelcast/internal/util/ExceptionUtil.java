@@ -39,15 +39,6 @@ import java.util.function.BiFunction;
 public final class ExceptionUtil {
 
     private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
-    // new Throwable(String message, Throwable cause)
-    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
-    // new Throwable(Throwable cause)
-    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
-    // new Throwable(String message)
-    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
-    // new Throwable()
-    private static final MethodType MT_INIT = MethodType.methodType(void.class);
 
     private static final BiFunction<Throwable, String, HazelcastException> HAZELCAST_EXCEPTION_WRAPPER = (throwable, message) -> {
         if (message != null) {
@@ -222,71 +213,143 @@ public final class ExceptionUtil {
      * @param exceptionClass class of the exception
      * @param message        message to be pass to constructor of the exception
      * @param cause          cause to be set to the exception
-     * @return {@code null} if can not find a constructor as described above, otherwise returns newly constructed exception
+     * @return {@code null} if can not find a constructor as
+     * described above, otherwise returns newly constructed exception
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
     public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<? extends Throwable> exceptionClass,
                                                                                 String message, @Nullable Throwable cause) {
-        MethodHandle constructor;
+        T cloned;
+        int i = 0;
+        do {
+            cloned = cloneException(exceptionClass, message, cause, ConstructorMethod.METHODS[i]);
+        } while (cloned == null && ++i < ConstructorMethod.METHODS.length);
+
+        return cloned;
+    }
+
+    /**
+     * @param exceptionClass    class of the exception
+     * @param message           message to be passed to constructor of the exception
+     * @param cause             cause to be set to the exception
+     * @param constructorMethod signature of the constructor to be used while cloning
+     * @return {@code null} if can not find a
+     * constructor from predefined list of constructors,
+     * otherwise returns newly constructed exception
+     */
+    private static <T extends Throwable> T cloneException(Class<? extends Throwable> exceptionClass,
+                                                          String message, @Nullable Throwable cause,
+                                                          ConstructorMethod constructorMethod) {
         try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
-            T clone = (T) constructor.invokeWithArguments(message, cause);
-            return clone;
+            MethodHandle constructor = MethodHandles.publicLookup()
+                    .findConstructor(exceptionClass, constructorMethod.signature());
+            return constructorMethod.cloneWith(constructor, message, cause);
         } catch (ClassCastException | WrongMethodTypeException
                 | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
         } catch (Throwable t) {
             throw new RuntimeException("Exception creation failed ", t);
         }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
-            T clone = (T) constructor.invokeWithArguments(cause);
-            return clone;
-        } catch (ClassCastException | WrongMethodTypeException
-                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
-        } catch (Throwable t) {
-            throw new RuntimeException("Exception creation failed ", t);
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
-            T clone = (T) constructor.invokeWithArguments(message);
-            clone.initCause(cause);
-            return clone;
-        } catch (ClassCastException | WrongMethodTypeException
-                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
-        } catch (Throwable t) {
-            throw new RuntimeException("Exception creation failed ", t);
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT);
-            T clone = (T) constructor.invokeWithArguments();
-            clone.initCause(cause);
-            return clone;
-        } catch (ClassCastException | WrongMethodTypeException
-                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
-        } catch (Throwable t) {
-            throw new RuntimeException("Exception creation failed ", t);
-        }
+
         return null;
+    }
+
+    /**
+     * Supplies constructor method types to {@link #tryCreateExceptionWithMessageAndCause}.
+     * <p>
+     * Keep order of enums as is.
+     */
+    private enum ConstructorMethod {
+        // new Throwable(String message, Throwable cause)
+        MT_INIT_STRING_THROWABLE() {
+            @Override
+            MethodType signature() {
+                return MethodType.methodType(void.class, String.class, Throwable.class);
+            }
+
+            @Override
+            <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
+                                              @Nullable Throwable cause) throws Throwable {
+                return (T) constructor.invokeWithArguments(message, cause);
+            }
+        },
+        // new Throwable(Throwable cause)
+        MT_INIT_THROWABLE() {
+            @Override
+            MethodType signature() {
+                return MethodType.methodType(void.class, Throwable.class);
+            }
+
+            @Override
+            <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
+                                              @Nullable Throwable cause) throws Throwable {
+                return (T) constructor.invokeWithArguments(cause);
+            }
+        },
+        // new Throwable(String message)
+        MT_INIT_STRING() {
+            @Override
+            MethodType signature() {
+                return MethodType.methodType(void.class, String.class);
+            }
+
+            @Override
+            <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
+                                              @Nullable Throwable cause) throws Throwable {
+                T cloned = (T) constructor.invokeWithArguments(message);
+                cloned.initCause(cause);
+                return cloned;
+            }
+        },
+        // new Throwable()
+        MT_INIT() {
+            @Override
+            MethodType signature() {
+                return MethodType.methodType(void.class);
+            }
+
+            @Override
+            <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
+                                              @Nullable Throwable cause) throws Throwable {
+                T cloned = (T) constructor.invokeWithArguments();
+                cloned.initCause(cause);
+                return cloned;
+            }
+        };
+
+        private static final ConstructorMethod[] METHODS = ConstructorMethod.values();
+
+        abstract MethodType signature();
+
+        abstract <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
+                                                   @Nullable Throwable cause) throws Throwable;
     }
 
     /**
      * @param original exception to be cloned with fixed stack trace
      * @param <T>      type of the original exception
-     * @return a cloned exception with the current stacktrace is added on top of the original exceptions stack-trace
-     * the cloned exception has the same cause and the message as the original exception
+     * @return a cloned exception with the current
+     * stacktrace is added on top of the original exceptions
+     * stack-trace the cloned exception has the same
+     * cause and the message as the original exception
      */
     public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(T original) {
         StackTraceElement[] fixedStackTrace = getFixedStackTrace(original, Thread.currentThread().getStackTrace());
+
         Class<? extends Throwable> exceptionClass = original.getClass();
-        Throwable clone = tryCreateExceptionWithMessageAndCause(exceptionClass, original.getMessage(), original.getCause());
+
+        Throwable clone = tryCreateExceptionWithMessageAndCause(exceptionClass,
+                original.getMessage(), original.getCause());
+
         if (clone != null) {
             clone.setStackTrace(fixedStackTrace);
             return (T) clone;
         }
+
         return null;
     }
 
-    private static StackTraceElement[] getFixedStackTrace(Throwable throwable, StackTraceElement[] localSideStackTrace) {
+    private static StackTraceElement[] getFixedStackTrace(Throwable throwable,
+                                                          StackTraceElement[] localSideStackTrace) {
         StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
         StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length];
         System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);

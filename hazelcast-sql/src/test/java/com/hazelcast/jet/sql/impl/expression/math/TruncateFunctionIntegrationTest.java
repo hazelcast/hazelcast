@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.ByteIntegerVal;
@@ -31,6 +29,8 @@ import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.IntegerVal;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.ShortVal;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,7 +41,13 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.BigDecimalIntegerVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.BigIntegerIntegerVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.DoubleIntegerVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.FloatIntegerVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.BigDecimalVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.DoubleVal;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.FloatVal;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
@@ -53,13 +59,6 @@ import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.BigDecimalIntegerVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.BigIntegerIntegerVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.DoubleIntegerVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.FloatIntegerVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.BigDecimalVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.DoubleVal;
-import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.FloatVal;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -241,7 +240,7 @@ public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (byte) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (short) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, -1);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), -1L);
+        check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, -1L);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE.negate());
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE.negate());
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), "-1");

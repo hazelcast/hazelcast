@@ -16,12 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import org.junit.ClassRule;
@@ -33,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Helper test classes.
  */
-public class SqlTestSupport extends HazelcastTestSupport {
+public class CoreSqlTestSupport extends HazelcastTestSupport {
 
     @ClassRule
     public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
@@ -54,12 +51,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static <T> T serialize(Object original) {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-        return ss.toObject(ss.toData(original));
-    }
-
     public static <T> T serializeAndCheck(Object original, int expectedClassId) {
         assertTrue(original instanceof IdentifiedDataSerializable);
 
@@ -68,10 +59,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
-        return serialize(original);
-    }
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
-    public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance);
+        return ss.toObject(ss.toData(original));
     }
 }

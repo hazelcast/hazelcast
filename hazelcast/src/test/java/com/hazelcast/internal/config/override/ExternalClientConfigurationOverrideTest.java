@@ -17,29 +17,34 @@
 package com.hazelcast.internal.config.override;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExternalClientConfigurationOverrideTest extends HazelcastTestSupport {
 
     @Test
     public void shouldExtractConfigFromEnv() throws Exception {
         ClientConfig config = new ClientConfig();
-        withEnvironmentVariable("HZCLIENT_INSTANCENAME", "test")
-          .and("HZCLIENT_NETWORK_AUTODETECTION_ENABLED", "false")
-          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
 
+        Map<String, String> systemEnvs = new HashMap<>();
+        systemEnvs.put("HZCLIENT_INSTANCENAME", "test");
+        systemEnvs.put("HZCLIENT_NETWORK_AUTODETECTION_ENABLED", "false");
+
+        new ExternalConfigurationOverride(systemEnvs, System::getProperties).overwriteClientConfig(config);
         assertEquals("test", config.getInstanceName());
         assertFalse(config.getNetworkConfig().isAutoDetectionEnabled());
     }
@@ -48,11 +53,13 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
     public void shouldHandleConnectionStrategy() throws Exception {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig()
-          .setReconnectMode(ASYNC)
-          .setAsyncStart(true);
+                .setReconnectMode(ASYNC)
+                .setAsyncStart(true);
 
-        withEnvironmentVariable("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "false")
-          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+        Map<String, String> systemEnvs = new HashMap<>();
+        systemEnvs.put("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "false");
+
+        new ExternalConfigurationOverride(systemEnvs, System::getProperties).overwriteClientConfig(config);
 
         assertFalse(config.getConnectionStrategyConfig().isAsyncStart());
         assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
@@ -61,8 +68,10 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
     public void shouldHandleCustomPropertiesConfig() throws Exception {
         ClientConfig config = new ClientConfig();
 
-        withEnvironmentVariable("HZCLIENT_PROPERTIES_foo", "bar")
-          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+        Map<String, String> systemEnvs = new HashMap<>();
+        systemEnvs.put("HZCLIENT_PROPERTIES_foo", "bar");
+
+        new ExternalConfigurationOverride(systemEnvs, System::getProperties).overwriteClientConfig(config);
 
         assertEquals("bar", config.getProperty("foo"));
     }

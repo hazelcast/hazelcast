@@ -281,7 +281,7 @@ public class LongHashSetTest {
     }
 
     @Test
-    public void toArrayReturnsArrayOfAllElements() {
+    public void toArrayReturnsArrayOfAllElement() {
         final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);
@@ -291,7 +291,7 @@ public class LongHashSetTest {
     }
 
     @Test
-    public void intoArrayReturnsArrayOfAllElements() {
+    public void intoArrayReturnsArrayOfAllElement() {
         final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);

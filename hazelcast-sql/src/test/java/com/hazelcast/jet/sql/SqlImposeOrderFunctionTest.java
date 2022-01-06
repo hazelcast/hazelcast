@@ -33,6 +33,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
@@ -118,32 +119,32 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     @SuppressWarnings("unused")
     private Object[] invalidArguments() {
         return new Object[]{
-                new Object[]{TINYINT, "INTERVAL '0.001' SECOND"},
-                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND"},
-                new Object[]{INTEGER, "INTERVAL '0.003' SECOND"},
-                new Object[]{BIGINT, "INTERVAL '0.004' SECOND"},
-                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND"},
-                new Object[]{DECIMAL, "6"},
-                new Object[]{REAL, "INTERVAL '0.007' SECOND"},
-                new Object[]{REAL, "8"},
-                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND"},
-                new Object[]{DOUBLE, "10"},
-                new Object[]{TIME, "11"},
-                new Object[]{DATE, "12"},
-                new Object[]{TIMESTAMP, "13"},
-                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14"},
+                new Object[]{TINYINT, "INTERVAL '0.001' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{INTEGER, "INTERVAL '0.003' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{BIGINT, "INTERVAL '0.004' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DECIMAL, "6", TINYINT},
+                new Object[]{REAL, "INTERVAL '0.007' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{REAL, "8", TINYINT},
+                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DOUBLE, "10", TINYINT},
+                new Object[]{TIME, "11", TINYINT},
+                new Object[]{DATE, "12", TINYINT},
+                new Object[]{TIMESTAMP, "13", TINYINT},
+                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14", TINYINT},
         };
     }
 
     @Test
     @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag) {
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag, QueryDataTypeFamily lagType) {
         String name = randomName();
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
-        ).hasMessageContaining("Cannot apply 'IMPOSE_ORDER' function to [ROW, COLUMN_LIST");
+        ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + lagType + ") do not match");
     }
 
     @Test

@@ -36,7 +36,6 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
@@ -97,7 +96,7 @@ public class CreateDagVisitor {
         List<ExpressionValues> values = rel.values();
 
         return dag.newUniqueVertex("Values", convenientSourceP(
-                SimpleExpressionEvalContext::from,
+                ExpressionEvalContext::from,
                 (context, buffer) -> {
                     values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
@@ -183,7 +182,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
                 ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.filterFn(filter, SimpleExpressionEvalContext.from(ctx))),
+                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
                 (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
         connectInputPreserveCollation(rel, vertex);
         return vertex;
@@ -194,7 +193,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
                 ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
+                        ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
         connectInputPreserveCollation(rel, vertex);
@@ -307,7 +306,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",
                 mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
-                            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                            ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
                             return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),

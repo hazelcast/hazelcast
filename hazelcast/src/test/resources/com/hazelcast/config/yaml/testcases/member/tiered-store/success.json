@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "device": {
+      "local-device": {
         "tiered-store-device-name": {
           "base-dir": "tiered_store_base_dir",
           "block-size": 8192,

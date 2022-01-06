@@ -20,7 +20,6 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
@@ -56,7 +55,7 @@ class SeriesTable extends JetTable {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
-                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                    ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
 
                     Integer start = evaluate(argumentExpressions.get(0), null, evalContext);
                     Integer stop = evaluate(argumentExpressions.get(1), null, evalContext);

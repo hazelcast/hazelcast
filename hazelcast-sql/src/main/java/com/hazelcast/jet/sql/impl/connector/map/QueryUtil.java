@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -129,8 +128,7 @@ final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext =
-                    new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+            this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 

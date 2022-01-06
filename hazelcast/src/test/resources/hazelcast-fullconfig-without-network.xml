@@ -619,6 +619,16 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
@@ -985,12 +995,12 @@
         <rebalance-delay-seconds>240</rebalance-delay-seconds>
     </persistence>
 
-    <device name="my-local-device">
+    <local-device name="my-local-device">
         <base-dir>base-dir</base-dir>
         <block-size>4096</block-size>
         <read-io-thread-count>4</read-io-thread-count>
         <write-io-thread-count>1</write-io-thread-count>
-    </device>
+    </local-device>
 
     <lite-member enabled="true"/>
 
