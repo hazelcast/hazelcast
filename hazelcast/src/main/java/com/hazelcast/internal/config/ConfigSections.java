@@ -16,6 +16,24 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.collection.impl.set.SetService;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
+import com.hazelcast.wan.impl.WanReplicationService;
+
 /**
  * Configuration sections for the members shared by XML and YAML based
  * configurations
@@ -88,5 +106,95 @@ public enum ConfigSections {
 
     public String getName() {
         return name;
+    }
+
+    public static class Translate {
+        public static String toServiceName(String sectionName) {
+            String serviceName;
+
+            if (sectionName.equals(MAP.name)) {
+                serviceName = MapService.SERVICE_NAME;
+            } else if (sectionName.equals(CACHE.name)) {
+                serviceName = CacheService.SERVICE_NAME;
+            } else if (sectionName.equals(QUEUE.name)) {
+                serviceName = QueueService.SERVICE_NAME;
+            } else if (sectionName.equals(LIST.name)) {
+                serviceName = ListService.SERVICE_NAME;
+            } else if (sectionName.equals(SET.name)) {
+                serviceName = SetService.SERVICE_NAME;
+            } else if (sectionName.equals(MULTIMAP.name)) {
+                serviceName = MultiMapService.SERVICE_NAME;
+            } else if (sectionName.equals(REPLICATED_MAP.name)) {
+                serviceName = ReplicatedMapService.SERVICE_NAME;
+            } else if (sectionName.equals(RINGBUFFER.name)) {
+                serviceName = RingbufferService.SERVICE_NAME;
+            } else if (sectionName.equals(TOPIC.name)) {
+                serviceName = TopicService.SERVICE_NAME;
+            } else if (sectionName.equals(RELIABLE_TOPIC.name)) {
+                serviceName = ReliableTopicService.SERVICE_NAME;
+            } else if (sectionName.equals(EXECUTOR_SERVICE.name)) {
+                serviceName = DistributedExecutorService.SERVICE_NAME;
+            } else if (sectionName.equals(DURABLE_EXECUTOR_SERVICE.name)) {
+                serviceName = DistributedDurableExecutorService.SERVICE_NAME;
+            } else if (sectionName.equals(SCHEDULED_EXECUTOR_SERVICE.name)) {
+                serviceName = DistributedScheduledExecutorService.SERVICE_NAME;
+            } else if (sectionName.equals(CARDINALITY_ESTIMATOR.name)) {
+                serviceName = CardinalityEstimatorService.SERVICE_NAME;
+            } else if (sectionName.equals(PN_COUNTER.name)) {
+                serviceName = PNCounterService.SERVICE_NAME;
+            } else if (sectionName.equals(FLAKE_ID_GENERATOR.name)) {
+                serviceName = FlakeIdGeneratorService.SERVICE_NAME;
+            } else if (sectionName.equals(WAN_REPLICATION.name)) {
+                serviceName = WanReplicationService.SERVICE_NAME;
+            } else {
+                serviceName = "Section doesn't have translation.";
+            }
+
+            return serviceName;
+        }
+
+        public static String toSectionName(String serviceName) {
+            String sectionName;
+
+            if (serviceName.equals(MapService.SERVICE_NAME)) {
+                sectionName = MAP.name;
+            } else if (serviceName.equals(CacheService.SERVICE_NAME)) {
+                sectionName = CACHE.name;
+            } else if (serviceName.equals(QueueService.SERVICE_NAME)) {
+                sectionName = QUEUE.name;
+            } else if (serviceName.equals(ListService.SERVICE_NAME)) {
+                sectionName = LIST.name;
+            } else if (serviceName.equals(SetService.SERVICE_NAME)) {
+                sectionName = SET.name;
+            } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
+                sectionName = MULTIMAP.name;
+            } else if (serviceName.equals(ReplicatedMapService.SERVICE_NAME)) {
+                sectionName = REPLICATED_MAP.name;
+            } else if (serviceName.equals(RingbufferService.SERVICE_NAME)) {
+                sectionName = RINGBUFFER.name;
+            } else if (serviceName.equals(TopicService.SERVICE_NAME)) {
+                sectionName = TOPIC.name;
+            } else if (serviceName.equals(ReliableTopicService.SERVICE_NAME)) {
+                sectionName = RELIABLE_TOPIC.name;
+            } else if (serviceName.equals(DistributedExecutorService.SERVICE_NAME)) {
+                sectionName = EXECUTOR_SERVICE.name;
+            } else if (serviceName.equals(DistributedDurableExecutorService.SERVICE_NAME)) {
+                sectionName = DURABLE_EXECUTOR_SERVICE.name;
+            } else if (serviceName.equals(DistributedScheduledExecutorService.SERVICE_NAME)) {
+                sectionName = SCHEDULED_EXECUTOR_SERVICE.name;
+            } else if (serviceName.equals(CardinalityEstimatorService.SERVICE_NAME)) {
+                sectionName = CARDINALITY_ESTIMATOR.name;
+            } else if (serviceName.equals(PNCounterService.SERVICE_NAME)) {
+                sectionName = PN_COUNTER.name;
+            } else if (serviceName.equals(FlakeIdGeneratorService.SERVICE_NAME)) {
+                sectionName = FLAKE_ID_GENERATOR.name;
+            } else if (serviceName.equals(WanReplicationService.SERVICE_NAME)) {
+                sectionName = WAN_REPLICATION.name;
+            } else {
+                sectionName = "Service doesn't have translation.";
+            }
+
+            return sectionName;
+        }
     }
 }

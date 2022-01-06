@@ -16,16 +16,20 @@
 
 package com.hazelcast.internal.management.events;
 
+import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.services.ObjectNamespace;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
-    private final String reloadResponseMessage;
 
-    public ConfigReloadFinishedEvent(UUID uuid, String reloadResponseMessage) {
+    private final Set<ObjectNamespace> reloadResult;
+
+    public ConfigReloadFinishedEvent(UUID uuid, Set<ObjectNamespace> reloadResult) {
         super(uuid);
-        this.reloadResponseMessage = reloadResponseMessage;
+        this.reloadResult = reloadResult;
     }
 
     @Override
@@ -36,7 +40,14 @@ public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("reloadResponseMessage", reloadResponseMessage);
+        for (ObjectNamespace ns : reloadResult) {
+            json.add(ConfigSections.Translate.toSectionName(ns.getServiceName()), ns.getObjectName());
+        }
         return json;
     }
+
+    public Set<ObjectNamespace> getReloadResult() {
+        return reloadResult;
+    }
 }
+
