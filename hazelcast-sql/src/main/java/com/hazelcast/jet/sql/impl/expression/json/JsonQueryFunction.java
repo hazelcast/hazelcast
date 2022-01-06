@@ -108,6 +108,9 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
             LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
             throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
         }

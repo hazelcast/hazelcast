@@ -115,6 +115,9 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
             LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
             throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
         }
@@ -160,6 +163,9 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T onErrorResponse(Exception exception, Object defaultValue) {
         switch (onError) {
             case ERROR:
+                // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+                // serializable, they can contain references to parser context and other objects, which are not.
+                // That's why we also log the exception here.
                 LOGGER.fine("JSON_VALUE failed", exception);
                 throw QueryException.error("JSON_VALUE failed: " + exception);
             case DEFAULT:
