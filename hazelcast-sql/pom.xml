@@ -178,8 +178,6 @@
                                     <include>org.checkerframework:checker-qual</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-core</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
-                                    <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
