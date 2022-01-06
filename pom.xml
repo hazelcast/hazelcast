@@ -1595,7 +1595,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client</artifactId>
-                <version>1.36.0</version>
+                <version>1.41.0</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
