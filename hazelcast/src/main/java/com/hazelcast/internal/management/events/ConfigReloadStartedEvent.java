@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.json.JsonObject;
-
 import java.util.UUID;
 
 public class ConfigReloadStartedEvent extends AbstractIdentifiedEvent {
