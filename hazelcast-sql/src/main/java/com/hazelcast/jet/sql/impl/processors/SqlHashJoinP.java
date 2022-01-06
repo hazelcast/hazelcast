@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -61,7 +60,7 @@ public class SqlHashJoinP extends AbstractProcessor {
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        this.evalContext = SimpleExpressionEvalContext.from(context);
+        this.evalContext = ExpressionEvalContext.from(context);
         this.hashMap = LinkedListMultimap.create();
         this.flatMapper = flatMapper(this::join);
         this.maxItemsInHashTable = context.maxProcessorAccumulatedRecords();

@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,7 +50,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryUtilsTest extends SqlTestSupport {
+public class QueryUtilsTest extends CoreSqlTestSupport {
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
 
@@ -62,7 +63,7 @@ public class QueryUtilsTest extends SqlTestSupport {
     public void testVersionMismatch() {
         HazelcastInstance member = factory.newHazelcastInstance();
 
-        NodeEngine nodeEngine = nodeEngine(member);
+        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(member);
         String memberId = nodeEngine.getLocalMember().getUuid().toString();
         String memberVersion = nodeEngine.getLocalMember().getVersion().toString();
 
@@ -84,7 +85,7 @@ public class QueryUtilsTest extends SqlTestSupport {
 
         member.getCluster().changeClusterState(ClusterState.FROZEN);
 
-        Map<UUID, PartitionIdSet> map = QueryUtils.createPartitionMap(nodeEngine(member), null, false);
+        Map<UUID, PartitionIdSet> map = QueryUtils.createPartitionMap(Accessors.getNodeEngineImpl(member), null, false);
 
         assertTrue(map.isEmpty());
     }
@@ -96,7 +97,7 @@ public class QueryUtilsTest extends SqlTestSupport {
         member.getCluster().changeClusterState(ClusterState.FROZEN);
 
         try {
-            QueryUtils.createPartitionMap(nodeEngine(member), null, true);
+            QueryUtils.createPartitionMap(Accessors.getNodeEngineImpl(member), null, true);
 
             fail("Must fail");
         } catch (QueryException e) {

@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -120,7 +119,7 @@ final class InfoSchemaConnector implements SqlConnector {
 
         @Override
         protected void init(@Nonnull Context context) {
-            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
+            ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
             List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }

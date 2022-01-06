@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapTableIndexTest extends SqlTestSupport {
+public class MapTableIndexTest extends CoreSqlTestSupport {
     @Test
     public void testContent() {
         MapTableIndex index = new MapTableIndex("index", SORTED, 1, singletonList(1), singletonList(INT));

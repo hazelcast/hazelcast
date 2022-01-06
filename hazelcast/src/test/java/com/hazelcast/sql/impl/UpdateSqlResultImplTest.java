@@ -21,7 +21,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-public class UpdateSqlResultImplTest extends SqlTestSupport {
+public class UpdateSqlResultImplTest extends CoreSqlTestSupport {
 
     @Test
     public void test_updateCountResult() {

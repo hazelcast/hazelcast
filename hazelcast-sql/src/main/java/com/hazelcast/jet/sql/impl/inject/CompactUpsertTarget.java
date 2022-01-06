@@ -65,20 +65,20 @@ class CompactUpsertTarget implements UpsertTarget {
                 return value -> builder.setString(path, (String) value);
             case NULLABLE_BOOLEAN:
                 return value -> builder.setNullableBoolean(path, (Boolean) value);
-            case NULLABLE_BYTE:
-                return value -> builder.setNullableByte(path, (Byte) value);
-            case NULLABLE_SHORT:
-                return value -> builder.setNullableShort(path, (Short) value);
-            case NULLABLE_INT:
-                return value -> builder.setNullableInt(path, (Integer) value);
-            case NULLABLE_LONG:
-                return value -> builder.setNullableLong(path, (Long) value);
+            case NULLABLE_INT8:
+                return value -> builder.setNullableInt8(path, (Byte) value);
+            case NULLABLE_INT16:
+                return value -> builder.setNullableint16(path, (Short) value);
+            case NULLABLE_INT32:
+                return value -> builder.setNullableInt32(path, (Integer) value);
+            case NULLABLE_INT64:
+                return value -> builder.setNullableInt64(path, (Long) value);
             case DECIMAL:
                 return value -> builder.setDecimal(path, (BigDecimal) value);
-            case NULLABLE_FLOAT:
-                return value -> builder.setNullableFloat(path, (Float) value);
-            case NULLABLE_DOUBLE:
-                return value -> builder.setNullableDouble(path, (Double) value);
+            case NULLABLE_FLOAT32:
+                return value -> builder.setNullableFloat32(path, (Float) value);
+            case NULLABLE_FLOAT64:
+                return value -> builder.setNullableFloat64(path, (Double) value);
             case TIME:
                 return value -> builder.setTime(path, (LocalTime) value);
             case DATE:

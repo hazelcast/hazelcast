@@ -34,15 +34,15 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
                 @Override
                 public EmployeeWithSerializerDTO read(@Nonnull CompactReader in) {
                     EmployeeWithSerializerDTO employee = new EmployeeWithSerializerDTO();
-                    employee.age = in.readInt("a");
-                    employee.id = in.readLong("i");
+                    employee.age = in.readInt32("a");
+                    employee.id = in.readInt64("i");
                     return employee;
                 }
 
                 @Override
                 public void write(@Nonnull CompactWriter out, @Nonnull EmployeeWithSerializerDTO object) {
-                    out.writeInt("a", object.age);
-                    out.writeLong("i", object.id);
+                    out.writeInt32("a", object.age);
+                    out.writeInt64("i", object.id);
                 }
             };
 

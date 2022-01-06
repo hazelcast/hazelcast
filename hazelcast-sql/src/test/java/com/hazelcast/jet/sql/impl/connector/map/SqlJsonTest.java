@@ -165,6 +165,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", \"timestamp\" TIMESTAMP"
                 + ", timestampTz TIMESTAMP WITH TIME ZONE"
                 + ", object OBJECT"
+                + ", map OBJECT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
@@ -191,6 +192,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         LocalDate.of(2020, 4, 15),
                         LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        "{42=43}", // map converted to a string in JSON format
                         null
                 ))
         );

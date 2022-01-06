@@ -151,6 +151,19 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    // remove after https://github.com/hazelcast/hazelcast/issues/20032 is properly fixed
+    public void when_incompatibleViewChange_then_notAllowed() {
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME))
+                .hasMessage("Can't replace view, the type for column '__key' changed from INTEGER to VARCHAR");
+
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT __key AS a FROM " + MAP_NAME))
+                .hasMessage("Can't replace view, the new view doesn't contain column '__key'");
+    }
+
+    @Test
     public void test_fullyQualifiedViewName() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 

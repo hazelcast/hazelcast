@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.TransformBatchedP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier;
 import com.hazelcast.map.IMap;
@@ -80,7 +79,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     @Override
     public void init(@Nonnull Context context) {
         map = context.hazelcastInstance().getMap(mapName);
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
