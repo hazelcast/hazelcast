@@ -34,6 +34,10 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.impl.WanReplicationService;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * Configuration sections for the members shared by XML and YAML based
  * configurations
@@ -109,44 +113,41 @@ public enum ConfigSections {
     }
 
     public static class Translate {
-        public static String toServiceName(String sectionName) {
-            String serviceName;
 
-            if (sectionName.equals(MAP.name)) {
-                serviceName = MapService.SERVICE_NAME;
-            } else if (sectionName.equals(CACHE.name)) {
-                serviceName = CacheService.SERVICE_NAME;
-            } else if (sectionName.equals(QUEUE.name)) {
-                serviceName = QueueService.SERVICE_NAME;
-            } else if (sectionName.equals(LIST.name)) {
-                serviceName = ListService.SERVICE_NAME;
-            } else if (sectionName.equals(SET.name)) {
-                serviceName = SetService.SERVICE_NAME;
-            } else if (sectionName.equals(MULTIMAP.name)) {
-                serviceName = MultiMapService.SERVICE_NAME;
-            } else if (sectionName.equals(REPLICATED_MAP.name)) {
-                serviceName = ReplicatedMapService.SERVICE_NAME;
-            } else if (sectionName.equals(RINGBUFFER.name)) {
-                serviceName = RingbufferService.SERVICE_NAME;
-            } else if (sectionName.equals(TOPIC.name)) {
-                serviceName = TopicService.SERVICE_NAME;
-            } else if (sectionName.equals(RELIABLE_TOPIC.name)) {
-                serviceName = ReliableTopicService.SERVICE_NAME;
-            } else if (sectionName.equals(EXECUTOR_SERVICE.name)) {
-                serviceName = DistributedExecutorService.SERVICE_NAME;
-            } else if (sectionName.equals(DURABLE_EXECUTOR_SERVICE.name)) {
-                serviceName = DistributedDurableExecutorService.SERVICE_NAME;
-            } else if (sectionName.equals(SCHEDULED_EXECUTOR_SERVICE.name)) {
-                serviceName = DistributedScheduledExecutorService.SERVICE_NAME;
-            } else if (sectionName.equals(CARDINALITY_ESTIMATOR.name)) {
-                serviceName = CardinalityEstimatorService.SERVICE_NAME;
-            } else if (sectionName.equals(PN_COUNTER.name)) {
-                serviceName = PNCounterService.SERVICE_NAME;
-            } else if (sectionName.equals(FLAKE_ID_GENERATOR.name)) {
-                serviceName = FlakeIdGeneratorService.SERVICE_NAME;
-            } else if (sectionName.equals(WAN_REPLICATION.name)) {
-                serviceName = WanReplicationService.SERVICE_NAME;
-            } else {
+        private static final Map<String, String> sectionToService;
+        private static final Map<String, String> serviceToSection;
+
+        static {
+            sectionToService = new HashMap<>();
+
+            sectionToService.put(MAP.name, MapService.SERVICE_NAME);
+            sectionToService.put(CACHE.name, CacheService.SERVICE_NAME);
+            sectionToService.put(QUEUE.name, QueueService.SERVICE_NAME);
+            sectionToService.put(LIST.name, ListService.SERVICE_NAME);
+            sectionToService.put(SET.name, SetService.SERVICE_NAME);
+            sectionToService.put(MULTIMAP.name, MultiMapService.SERVICE_NAME);
+            sectionToService.put(REPLICATED_MAP.name, ReplicatedMapService.SERVICE_NAME);
+            sectionToService.put(RINGBUFFER.name, RingbufferService.SERVICE_NAME);
+            sectionToService.put(TOPIC.name, TopicService.SERVICE_NAME);
+            sectionToService.put(RELIABLE_TOPIC.name, ReliableTopicService.SERVICE_NAME);
+            sectionToService.put(EXECUTOR_SERVICE.name, DistributedExecutorService.SERVICE_NAME);
+            sectionToService.put(DURABLE_EXECUTOR_SERVICE.name, DistributedDurableExecutorService.SERVICE_NAME);
+            sectionToService.put(SCHEDULED_EXECUTOR_SERVICE.name, DistributedScheduledExecutorService.SERVICE_NAME);
+            sectionToService.put(CARDINALITY_ESTIMATOR.name, CardinalityEstimatorService.SERVICE_NAME);
+            sectionToService.put(PN_COUNTER.name, PNCounterService.SERVICE_NAME);
+            sectionToService.put(FLAKE_ID_GENERATOR.name, FlakeIdGeneratorService.SERVICE_NAME);
+            sectionToService.put(WAN_REPLICATION.name, WanReplicationService.SERVICE_NAME);
+
+            serviceToSection = sectionToService
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+        }
+
+        public static String toServiceName(String sectionName) {
+            String serviceName = sectionToService.get(sectionName);
+
+            if (serviceName == null) {
                 serviceName = "Section doesn't have translation.";
             }
 
@@ -154,43 +155,9 @@ public enum ConfigSections {
         }
 
         public static String toSectionName(String serviceName) {
-            String sectionName;
+            String sectionName = serviceToSection.get(serviceName);
 
-            if (serviceName.equals(MapService.SERVICE_NAME)) {
-                sectionName = MAP.name;
-            } else if (serviceName.equals(CacheService.SERVICE_NAME)) {
-                sectionName = CACHE.name;
-            } else if (serviceName.equals(QueueService.SERVICE_NAME)) {
-                sectionName = QUEUE.name;
-            } else if (serviceName.equals(ListService.SERVICE_NAME)) {
-                sectionName = LIST.name;
-            } else if (serviceName.equals(SetService.SERVICE_NAME)) {
-                sectionName = SET.name;
-            } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
-                sectionName = MULTIMAP.name;
-            } else if (serviceName.equals(ReplicatedMapService.SERVICE_NAME)) {
-                sectionName = REPLICATED_MAP.name;
-            } else if (serviceName.equals(RingbufferService.SERVICE_NAME)) {
-                sectionName = RINGBUFFER.name;
-            } else if (serviceName.equals(TopicService.SERVICE_NAME)) {
-                sectionName = TOPIC.name;
-            } else if (serviceName.equals(ReliableTopicService.SERVICE_NAME)) {
-                sectionName = RELIABLE_TOPIC.name;
-            } else if (serviceName.equals(DistributedExecutorService.SERVICE_NAME)) {
-                sectionName = EXECUTOR_SERVICE.name;
-            } else if (serviceName.equals(DistributedDurableExecutorService.SERVICE_NAME)) {
-                sectionName = DURABLE_EXECUTOR_SERVICE.name;
-            } else if (serviceName.equals(DistributedScheduledExecutorService.SERVICE_NAME)) {
-                sectionName = SCHEDULED_EXECUTOR_SERVICE.name;
-            } else if (serviceName.equals(CardinalityEstimatorService.SERVICE_NAME)) {
-                sectionName = CARDINALITY_ESTIMATOR.name;
-            } else if (serviceName.equals(PNCounterService.SERVICE_NAME)) {
-                sectionName = PN_COUNTER.name;
-            } else if (serviceName.equals(FlakeIdGeneratorService.SERVICE_NAME)) {
-                sectionName = FLAKE_ID_GENERATOR.name;
-            } else if (serviceName.equals(WanReplicationService.SERVICE_NAME)) {
-                sectionName = WAN_REPLICATION.name;
-            } else {
+            if (serviceName == null) {
                 sectionName = "Service doesn't have translation.";
             }
 
