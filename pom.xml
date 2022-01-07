@@ -64,7 +64,7 @@
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
-        <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
+        <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
