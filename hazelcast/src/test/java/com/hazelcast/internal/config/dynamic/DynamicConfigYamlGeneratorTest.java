@@ -18,6 +18,8 @@ package com.hazelcast.internal.config.dynamic;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryYamlConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,10 +30,13 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
+    private static final ILogger LOGGER = Logger.getLogger(DynamicConfigYamlGeneratorTest.class);
+
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
         DynamicConfigYamlGenerator dynamicConfigYamlGenerator = new DynamicConfigYamlGenerator();
         String yaml = dynamicConfigYamlGenerator.generate(config);
+        LOGGER.fine("\n" + yaml);
         return new InMemoryYamlConfig(yaml);
     }
 }

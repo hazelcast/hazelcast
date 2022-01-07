@@ -38,6 +38,8 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.dynamic.AbstractDynamicConfigGeneratorTest;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
@@ -87,6 +89,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
+
+    private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGeneratorTest.class);
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -1463,6 +1467,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
     private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
+        LOGGER.fine("\n" + xml);
         return new InMemoryXmlConfig(xml);
     }
 
