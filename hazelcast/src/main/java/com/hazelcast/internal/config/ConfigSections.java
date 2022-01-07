@@ -16,28 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
-import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
-import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.topic.impl.reliable.ReliableTopicService;
-import com.hazelcast.wan.impl.WanReplicationService;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 /**
  * Configuration sections for the members shared by XML and YAML based
  * configurations
