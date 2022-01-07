@@ -121,7 +121,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
-    protected final ILogger logger;
+    private final ILogger logger;
 
     @SuppressWarnings("unchecked")
     private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{

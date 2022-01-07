@@ -114,38 +114,38 @@ public enum ConfigSections {
 
     public static class Translate {
 
-        private static final Map<String, String> sectionToService;
-        private static final Map<String, String> serviceToSection;
+        private static final Map<String, String> SECTION_TO_SERVICE;
+        private static final Map<String, String> SERVICE_TO_SECTION;
 
         static {
-            sectionToService = new HashMap<>();
+            SECTION_TO_SERVICE = new HashMap<>();
 
-            sectionToService.put(MAP.name, MapService.SERVICE_NAME);
-            sectionToService.put(CACHE.name, CacheService.SERVICE_NAME);
-            sectionToService.put(QUEUE.name, QueueService.SERVICE_NAME);
-            sectionToService.put(LIST.name, ListService.SERVICE_NAME);
-            sectionToService.put(SET.name, SetService.SERVICE_NAME);
-            sectionToService.put(MULTIMAP.name, MultiMapService.SERVICE_NAME);
-            sectionToService.put(REPLICATED_MAP.name, ReplicatedMapService.SERVICE_NAME);
-            sectionToService.put(RINGBUFFER.name, RingbufferService.SERVICE_NAME);
-            sectionToService.put(TOPIC.name, TopicService.SERVICE_NAME);
-            sectionToService.put(RELIABLE_TOPIC.name, ReliableTopicService.SERVICE_NAME);
-            sectionToService.put(EXECUTOR_SERVICE.name, DistributedExecutorService.SERVICE_NAME);
-            sectionToService.put(DURABLE_EXECUTOR_SERVICE.name, DistributedDurableExecutorService.SERVICE_NAME);
-            sectionToService.put(SCHEDULED_EXECUTOR_SERVICE.name, DistributedScheduledExecutorService.SERVICE_NAME);
-            sectionToService.put(CARDINALITY_ESTIMATOR.name, CardinalityEstimatorService.SERVICE_NAME);
-            sectionToService.put(PN_COUNTER.name, PNCounterService.SERVICE_NAME);
-            sectionToService.put(FLAKE_ID_GENERATOR.name, FlakeIdGeneratorService.SERVICE_NAME);
-            sectionToService.put(WAN_REPLICATION.name, WanReplicationService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(MAP.name, MapService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(CACHE.name, CacheService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(QUEUE.name, QueueService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(LIST.name, ListService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(SET.name, SetService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(MULTIMAP.name, MultiMapService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(REPLICATED_MAP.name, ReplicatedMapService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(RINGBUFFER.name, RingbufferService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(TOPIC.name, TopicService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(RELIABLE_TOPIC.name, ReliableTopicService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(EXECUTOR_SERVICE.name, DistributedExecutorService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(DURABLE_EXECUTOR_SERVICE.name, DistributedDurableExecutorService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(SCHEDULED_EXECUTOR_SERVICE.name, DistributedScheduledExecutorService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(CARDINALITY_ESTIMATOR.name, CardinalityEstimatorService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(PN_COUNTER.name, PNCounterService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(FLAKE_ID_GENERATOR.name, FlakeIdGeneratorService.SERVICE_NAME);
+            SECTION_TO_SERVICE.put(WAN_REPLICATION.name, WanReplicationService.SERVICE_NAME);
 
-            serviceToSection = sectionToService
+            SERVICE_TO_SECTION = SECTION_TO_SERVICE
                     .entrySet()
                     .stream()
                     .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
         }
 
         public static String toServiceName(String sectionName) {
-            String serviceName = sectionToService.get(sectionName);
+            String serviceName = SECTION_TO_SERVICE.get(sectionName);
 
             if (serviceName == null) {
                 serviceName = "Section doesn't have translation.";
@@ -155,7 +155,7 @@ public enum ConfigSections {
         }
 
         public static String toSectionName(String serviceName) {
-            String sectionName = serviceToSection.get(serviceName);
+            String sectionName = SERVICE_TO_SECTION.get(serviceName);
 
             if (serviceName == null) {
                 sectionName = "Service doesn't have translation.";
