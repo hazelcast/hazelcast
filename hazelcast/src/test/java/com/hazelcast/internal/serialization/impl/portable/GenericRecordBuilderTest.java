@@ -53,7 +53,7 @@ public class GenericRecordBuilderTest {
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(namedPortableClassDefinition);
         builder.setString("name", "foo");
-        builder.setInt("myint", 123);
+        builder.setInt32("myint", 123);
         assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo2"));
     }
 
@@ -66,7 +66,7 @@ public class GenericRecordBuilderTest {
 
         GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
                                                    .setString("name", "foo")
-                                                   .setInt("myint", 123).build();
+                                                   .setInt32("myint", 123).build();
 
         GenericRecordBuilder builder = record.cloneWithBuilder().setString("name", "foo2");
         assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo3"));
@@ -89,7 +89,7 @@ public class GenericRecordBuilderTest {
                         .addStringField("name").addIntField("myint").build();
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
-        assertThrows(HazelcastSerializationException.class, () -> builder.setInt("name", 1));
+        assertThrows(HazelcastSerializationException.class, () -> builder.setInt32("name", 1));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class GenericRecordBuilderTest {
                         .addStringField("name").addIntField("myint").build();
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
-        builder.setInt("myint", 1);
+        builder.setInt32("myint", 1);
         assertThrows(HazelcastSerializationException.class, builder::build);
     }
 
@@ -116,7 +116,7 @@ public class GenericRecordBuilderTest {
         List<GenericRecord> list = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             GenericRecord record = GenericRecordBuilder.portable(classDefinition)
-                                                       .setInt("age", i)
+                                                       .setInt32("age", i)
                                                        .setString("name", " " + i).build();
             objectDataOutput.writeObject(record);
             list.add(record);

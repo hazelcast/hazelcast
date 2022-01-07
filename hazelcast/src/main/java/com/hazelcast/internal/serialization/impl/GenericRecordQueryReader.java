@@ -147,7 +147,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord[] genericRecords = record.getArrayOfGenericRecords(fieldName);
+                    GenericRecord[] genericRecords = record.getArrayOfGenericRecord(fieldName);
                     if (genericRecords == null || genericRecords.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;

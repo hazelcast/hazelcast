@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PlanNodeSchemaTest extends SqlTestSupport {
+public class PlanNodeSchemaTest extends CoreSqlTestSupport {
     @Test
     public void testSingleSchema() {
         QueryDataType type0 = QueryDataType.VARCHAR;

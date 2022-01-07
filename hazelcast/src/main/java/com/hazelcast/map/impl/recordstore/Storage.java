@@ -38,7 +38,16 @@ public interface Storage<K, R> {
 
     void put(K key, R record);
 
-    void updateRecordValue(K key, R record, Object value);
+    /**
+     * Updates record's value. Performs an update in-place if the record can accommodate the
+     * new value (applicable for the inlined records only). Otherwise, creates a new record
+     * with the new value.
+     * @param key the entry's key
+     * @param record the record
+     * @param value the new value
+     * @return the record that contains new value.
+     */
+    R updateRecordValue(K key, R record, Object value);
 
     R get(K key);
 
@@ -56,7 +65,7 @@ public interface Storage<K, R> {
     boolean containsKey(K key);
 
     /**
-     * Read-only amd not thread-safe iterator.
+     * Read-only and not thread-safe iterator.
      *
      * Returned iterator from this method doesn't throw {@link
      * java.util.ConcurrentModificationException} to fail fast. Because fail
@@ -133,4 +142,12 @@ public interface Storage<K, R> {
     Data extractDataKeyFromLazy(EntryView entryView);
 
     Data toBackingDataKeyFormat(Data key);
+
+    default void beforeOperation() {
+        // no-op
+    }
+
+    default void afterOperation() {
+        // no-op
+    }
 }

@@ -38,6 +38,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -504,6 +505,14 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static OffsetDateTime timestampTz(long epochMillis) {
         return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
+    }
+
+    public static ExpressionEvalContext createExpressionEvalContext(Object... args) {
+        if (args == null) {
+            args = new Object[0];
+        }
+
+        return new ExpressionEvalContext(Arrays.asList(args), new DefaultSerializationServiceBuilder().build());
     }
 
     /**

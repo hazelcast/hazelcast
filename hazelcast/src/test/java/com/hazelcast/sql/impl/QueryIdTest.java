@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryIdTest extends SqlTestSupport {
+public class QueryIdTest extends CoreSqlTestSupport {
     @Test
     public void testIds() {
         UUID memberId = UUID.randomUUID();
