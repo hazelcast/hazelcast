@@ -194,8 +194,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
             }
 
-            registerAddresses(remoteUuid, primaryAddress,
-                    targetAddress != null ? plane.getConnectedAddresses(targetAddress) : null, remoteAddressAliases);
+            registerAddresses(remoteUuid, primaryAddress, targetAddress, remoteAddressAliases);
 
             // handle error cases after registering the addresses to avoid the later failing connections
             // occur because target addresses are not registered.

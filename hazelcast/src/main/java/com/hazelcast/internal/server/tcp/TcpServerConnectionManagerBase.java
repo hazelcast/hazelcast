@@ -56,7 +56,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.server.tcp.LinkedAddresses.getResolvedAddresses;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -133,7 +132,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
-        private final Map<LinkedAddresses, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
+        private final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<UUID, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
@@ -192,57 +191,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            return connectionsInProgress.keySet()
-                    .stream()
-                    .anyMatch(linkedAddresses -> linkedAddresses.contains(address));
-        }
-
-        public LinkedAddresses getConnectedAddresses(Address address) {
-            for (LinkedAddresses addresses : connectionsInProgress.keySet()) {
-                if (addresses.contains(address)) {
-                    return addresses;
-                }
-            }
-            // not found in in-progress connections
-            return LinkedAddresses.getResolvedAddresses(address);
+            return connectionsInProgress.containsKey(address);
         }
 
         public Future<Void> getConnectionInProgress(Address address) {
-            for (Map.Entry<LinkedAddresses, Future<Void>> entry : connectionsInProgress.entrySet()) {
-                if (entry.getKey().contains(address)) {
-                    return entry.getValue();
-                }
-            }
-            return null;
+            return connectionsInProgress.get(address);
         }
 
         public void addConnectionInProgressIfAbsent(
                 Address address,
-                Function<? super LinkedAddresses, ? extends Future<Void>> mappingFn
+                Function<? super Address, ? extends Future<Void>> mappingFn
         ) {
-            if (hasConnectionInProgress(address)) {
-                return;
-            }
-            synchronized (connectionsInProgress) {
-                if (!hasConnectionInProgress(address)) {
-                    connectionsInProgress.computeIfAbsent(getResolvedAddresses(address), mappingFn);
-                }
-            }
+            connectionsInProgress.computeIfAbsent(address, mappingFn);
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            boolean found = false;
-            synchronized (connectionsInProgress) {
-                Iterator<LinkedAddresses> linkedAddressesIterator = connectionsInProgress.keySet().iterator();
-                while (linkedAddressesIterator.hasNext()) {
-                    LinkedAddresses addresses = linkedAddressesIterator.next();
-                    if (addresses.contains(address)) {
-                        linkedAddressesIterator.remove();
-                        found = true;
-                    }
-                }
-            }
-            return found;
+            return connectionsInProgress.remove(address) != null;
         }
 
         public void clearConnectionsInProgress() {
@@ -448,11 +412,11 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     /**
      * Registers the given addresses to the address registry
      */
-    protected void registerAddresses(UUID remoteUuid, Address primaryAddress, LinkedAddresses targetAddresses,
+    protected void registerAddresses(UUID remoteUuid, Address primaryAddress, Address targetAddress,
                                      Collection<Address> remoteAddressAliases) {
         LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
-        if (targetAddresses != null) {
-            addressesToRegister.addLinkedAddresses(targetAddresses);
+        if (targetAddress != null) {
+            addressesToRegister.addAllResolvedAddresses(targetAddress);
         }
         if (remoteAddressAliases != null) {
             for (Address remoteAddressAlias : remoteAddressAliases) {
