@@ -48,10 +48,6 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
                     .addAll(inputRowType.getFieldList())
                     .add("window_start", orderingColumnType)
                     .add("window_end", orderingColumnType)
-//                    .add("window_start", SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
-//                    .nullable(true)
-//                    .add("window_end", SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
-//                    .nullable(true)
                     .build();
         };
     }

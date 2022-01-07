@@ -63,6 +63,7 @@ public final class WindowUtils {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
+                // todo [viliam] could we use Instant here (QueryDataType.TIMESTAMP_WITH_TZ_INSTANT). That conversion is much cheaper.
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowStart), ZoneId.systemDefault());
             } else if (mapping[i] == -2) {
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
@@ -192,8 +193,6 @@ public final class WindowUtils {
 
     /**
      * Return the datatype of the target column referenced by the DESCRIPTOR argument.
-     *
-     * @return
      */
     public static RelDataType getOrderingColumnType(SqlCallBinding binding, int orderingColumnParameterIndex) {
         SqlNode input = binding.operand(0);
