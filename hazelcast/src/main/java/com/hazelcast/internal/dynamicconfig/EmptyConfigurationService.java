@@ -210,7 +210,7 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public void rewrite(IdentifiedDataSerializable subConfig) {
+    public void persist(IdentifiedDataSerializable subConfig) {
         // Code shouldn't come here. broadcastConfig() will throw an exception
         // before here.
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");

@@ -114,7 +114,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
-    private final ILogger logger;
+    protected final ILogger logger;
 
     @SuppressWarnings("unchecked")
     private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{
@@ -149,7 +149,7 @@ public class ClusterWideConfigurationService implements
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
-        this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -311,7 +311,7 @@ public class ClusterWideConfigurationService implements
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
-        rewrite(newConfig);
+        persist(newConfig);
     }
 
     private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
@@ -340,7 +340,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void rewrite(IdentifiedDataSerializable subConfig) {
+    public void persist(IdentifiedDataSerializable subConfig) {
         if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
             // Code should never come here. We should fast fail in
             // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()

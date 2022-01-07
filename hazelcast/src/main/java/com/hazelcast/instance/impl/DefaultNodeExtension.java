@@ -206,7 +206,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         }
     }
 
-    private void checkDynamicConfigurationPersistenceAllowed() {
+    protected void checkDynamicConfigurationPersistenceAllowed() {
         Config config = node.getConfig();
         if (config.getDynamicConfigurationConfig().isPersistenceEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
@@ -218,7 +218,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                         "Dynamic Configuration Persistence is enabled but config file couldn't be found."
                                 + " This is probably because declarative configuration isn't used."
                 );
-
             }
         }
     }
