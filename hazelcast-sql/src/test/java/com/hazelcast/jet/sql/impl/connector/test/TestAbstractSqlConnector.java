@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -211,7 +210,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         boolean streaming = table.streaming;
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
-            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+            ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 

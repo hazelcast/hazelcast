@@ -52,8 +52,8 @@ public class CompactUpsertTargetDescriptorTest {
     @Test
     public void test_serialization() {
         SchemaWriter schemaWriter = new SchemaWriter("test");
-        schemaWriter.addField(new FieldDescriptor("int", FieldKind.INT));
-        schemaWriter.addField(new FieldDescriptor("long", FieldKind.LONG));
+        schemaWriter.addField(new FieldDescriptor("int", FieldKind.INT32));
+        schemaWriter.addField(new FieldDescriptor("long", FieldKind.INT64));
         CompactUpsertTargetDescriptor original = new CompactUpsertTargetDescriptor(schemaWriter.build());
 
         // when

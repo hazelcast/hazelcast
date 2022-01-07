@@ -81,12 +81,14 @@ public class CreateViewStatementTest extends SqlTestSupport {
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
                 + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
-        sql = "CREATE OR REPLACE VIEW v AS SELECT this FROM map";
+        createMapping("map2", Integer.class, Integer.class);
+
+        sql = "CREATE OR REPLACE VIEW v AS SELECT * FROM map2";
         instance().getSql().execute(sql);
 
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
-        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"this\"" + LE
-                + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map2\".\"__key\", \"map2\".\"this\"" + LE
+                + "FROM \"hazelcast\".\"public\".\"map2\" AS \"map2\"");
     }
 
     @Test

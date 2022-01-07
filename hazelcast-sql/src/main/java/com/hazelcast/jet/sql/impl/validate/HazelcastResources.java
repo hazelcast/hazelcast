@@ -44,4 +44,7 @@ public interface HazelcastResources {
 
     @Resources.BaseMessage("Cannot infer return type for {1} among {0}")
     Resources.ExInst<SqlValidatorException> cannotInferCaseResult(String types, String operator);
+
+    @Resources.BaseMessage("The descriptor column type ({0}) and the interval type ({1}) do not match")
+    Resources.ExInst<SqlValidatorException> windowFunctionTypeMismatch(String descriptorType, String intervalType);
 }

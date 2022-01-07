@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -106,7 +105,7 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
 
     @Test
     public void testValueSimple() {
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         IndexFilterValue value = new IndexFilterValue(
                 singletonList(constant(1, QueryDataType.BIGINT)),
@@ -129,7 +128,7 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
 
     @Test
     public void testValueComposite() {
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         IndexFilterValue value = new IndexFilterValue(
                 asList(constant(1, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
@@ -158,7 +157,7 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
 
     @Test
     public void testNonComparable() {
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         IndexFilterValue value = new IndexFilterValue(
                 singletonList(constant(new Object(), QueryDataType.OBJECT)),
