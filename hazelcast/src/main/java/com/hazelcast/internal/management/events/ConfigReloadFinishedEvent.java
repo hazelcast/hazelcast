@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.services.ObjectNamespace;
 
@@ -40,9 +41,16 @@ public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
+
+        JsonArray results = new JsonArray();
         for (ObjectNamespace ns : reloadResult) {
-            json.add(ConfigSections.Translate.toSectionName(ns.getServiceName()), ns.getObjectName());
+            JsonObject namespaceAsJson = new JsonObject();
+            namespaceAsJson.add("sectionName", ConfigSections.Translate.toSectionName(ns.getServiceName()));
+            namespaceAsJson.add("objectName", ns.getObjectName());
+            results.add(namespaceAsJson);
         }
+
+        json.add("reloadResult", results);
         return json;
     }
 
