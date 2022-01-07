@@ -36,6 +36,4 @@ public final class MetricsImpl {
     private static MetricsContext getMetricsContext() {
         return Contexts.getCastedThreadContext().metricsContext();
     }
-
-
 }

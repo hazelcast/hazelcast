@@ -162,6 +162,13 @@ public class QueryResultProducerImpl implements QueryResultProducer {
                     return DONE;
                 }
                 idler.idle(++idleCount);
+                if (Thread.currentThread().isInterrupted()) {
+                    // We want to allow interruption of a thread that is blocked in `hasNext()`. However, the
+                    // `hasNext()` method doesn't declare the InterruptedException. Therefore, we throw
+                    // the interrupted exception wrapped in a RuntimeException. The interrupted status
+                    // if the current thread remains set.
+                    throw new RuntimeException(new InterruptedException("thread interrupted"));
+                }
             } while (System.nanoTime() < endTimeNanos);
             return TIMEOUT;
         }
