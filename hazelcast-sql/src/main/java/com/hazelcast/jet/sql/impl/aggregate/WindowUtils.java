@@ -54,7 +54,7 @@ public final class WindowUtils {
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static Object[] detectAndInsertWindowBound(
+    public static Object[] insertWindowBound(
             Object[] row,
             long windowStart,
             long windowEnd,

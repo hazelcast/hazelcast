@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
@@ -38,14 +37,12 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitorImpl;
-import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -85,6 +82,9 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     public void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel logicalAggregate = call.rel(0);
         assert logicalAggregate.getGroupType() == Group.SIMPLE;
+        assert logicalAggregate.getGroupSets().size() == 1 &&
+                (logicalAggregate.getGroupSet() == null
+                        || logicalAggregate.getGroupSet().equals(logicalAggregate.getGroupSets().get(0)));
 
         List<RexNode> projections;
         RelDataType projectRowType;
@@ -152,8 +152,10 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         Collection<RelNode> transformedInputs = OptUtils.extractPhysicalRelsFromSubset(convertedInput);
 
         for (RelNode transformedInput : transformedInputs) {
+            // todo [viliam] change the name for window bound replaced with timestamps
+            RelDataType newRowType = projectRowType;
             RelNode newProject = new ProjectPhysicalRel(transformedInput.getCluster(), transformedInput.getTraitSet(),
-                    transformedInput, projections, projectRowType);
+                    transformedInput, projections, newRowType);
 
             RelNode transformedRel = optimize(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
@@ -185,21 +187,15 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             List<Integer> windowEndIndexes,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
     ) {
-        Entry<Integer, RexNode> watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
+        Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
         if (watermarkedField == null) {
             // there's no field that we group by, that also has watermarks
             // TODO [viliam] throw error such as "cannot group by window without IMPOSE_ORDER"?
             return null;
         }
 
-        ImmutableBitSet[] reducedGroupSet = {logicalAggregate.getGroupSet()};
-        Stream.concat(windowStartIndexes.stream(), windowEndIndexes.stream())
-                .forEach(i -> reducedGroupSet[0] = reducedGroupSet[0].clear(i));
-
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
-                physicalInput.getRowType(),
-                reducedGroupSet[0],
-                logicalAggregate.getAggCallList());
+        RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
+                physicalInput, watermarkedField);
 
         return new SlidingWindowAggregatePhysicalRel(
                 physicalInput.getCluster(),
@@ -208,8 +204,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getGroupSets(),
                 logicalAggregate.getAggCallList(),
-                aggrOp,
-                watermarkedField.getValue(),
+                timestampExpression,
                 windowPolicyProvider,
                 logicalAggregate.containsDistinctCall() ? 1 : 2,
                 windowStartIndexes,
@@ -217,7 +212,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     }
 
     @Nullable
-    private static Entry<Integer, RexNode> findWatermarkedField(
+    private static Integer findWatermarkedField(
             AggregateLogicalRel logicalAggregate,
             RelNode input
     ) {
@@ -227,6 +222,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         if (watermarkedFields == null) {
             return null;
         }
-        return watermarkedFields.findFirst(logicalAggregate.getGroupSet());
+        Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst(logicalAggregate.getGroupSet());
+        return watermarkedField != null ? watermarkedField.getKey() : null;
     }
 }

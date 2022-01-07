@@ -1130,7 +1130,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "GROUP BY name, window_start HAVING a > 1",
+                        "GROUP BY name, window_start " +
+                        "HAVING a > 1",
                 asList(
                         new Row(timestampTz(2L), "Bob", new BigDecimal(2)),
                         new Row(timestampTz(4L), "Joey", new BigDecimal(2))
@@ -1551,6 +1552,20 @@ public class SqlTumbleTest extends SqlTestSupport {
                         new Row(timestampTz(3L))
                 )
         );
+    }
+
+    @Test
+    public void test_emptyGroup() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(name) FROM " +
+                "TABLE(TUMBLE(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  , DESCRIPTOR(ts)" +
+                "  , INTERVAL '0.002' SECOND" +
+                "))"))
+                .hasMessageContaining("cannot group by window without IMPOSE_ORDER");
     }
 
     private static Object[] row(Object... values) {

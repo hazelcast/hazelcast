@@ -20,6 +20,8 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -38,10 +40,12 @@ import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.insertWindowBound;
 
 public class SlidingWindowAggregatePhysicalRel extends Aggregate implements PhysicalRel {
 
-    private final AggregateOperation<?, Object[]> aggrOp;
     private final RexNode timestampExpression;
     private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
     private final int numStages;
@@ -56,7 +60,6 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
             ImmutableBitSet groupSet,
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls,
-            AggregateOperation<?, Object[]> aggrOp,
             RexNode timestampExpression,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider,
             int numStages,
@@ -65,7 +68,6 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
-        this.aggrOp = aggrOp;
         this.timestampExpression = timestampExpression;
         this.windowPolicyProvider = windowPolicyProvider;
         this.numStages = numStages;
@@ -73,12 +75,28 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         this.windowEndIndexes = windowEndIndexes;
     }
 
-    public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
-        return ObjectArrayKey.projectFn(getGroupSet().toArray());
+    public FunctionEx<Object[], ?> groupKeyFn() {
+        ImmutableBitSet groupSet = getGroupSetReduced();
+        if (groupSet.isEmpty()) {
+            // if there's no grouping, group by a random constant value
+            return new ConstantFunctionEx<>(ThreadLocalRandom.current().nextInt());
+        }
+        return ObjectArrayKey.projectFn(groupSet.toArray());
     }
 
     public AggregateOperation<?, Object[]> aggrOp() {
-        return aggrOp;
+        return AggregateAbstractPhysicalRule.aggregateOperation(getInput().getRowType(), getGroupSetReduced(), getAggCallList());
+    }
+
+    private ImmutableBitSet getGroupSetReduced() {
+        ImmutableBitSet reducedGroupSet = getGroupSet();
+        for (Integer index : windowStartIndexes) {
+            reducedGroupSet = reducedGroupSet.clear(index);
+        }
+        for (Integer index : windowEndIndexes) {
+            reducedGroupSet = reducedGroupSet.clear(index);
+        }
+        return reducedGroupSet;
     }
 
     public Expression<?> timestampExpression() {
@@ -95,12 +113,24 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         return numStages;
     }
 
-    public List<Integer> windowStartIndexes() {
-        return windowStartIndexes;
-    }
+    public KeyedWindowResultFunction<? super Object, ? super Object[], ?> outputValueMapping() {
+        int[] windowBoundsIndexMask = new int[getRowType().getFieldCount()];
 
-    public List<Integer> windowEndIndexes() {
-        return windowEndIndexes;
+        for (Integer index : windowStartIndexes) {
+            windowBoundsIndexMask[index] = -1;
+        }
+        for (Integer index : windowEndIndexes) {
+            windowBoundsIndexMask[index] = -2;
+        }
+
+        for (int i = 0, j = 0; i < windowBoundsIndexMask.length; i++) {
+            if (windowBoundsIndexMask[i] >= 0) {
+                windowBoundsIndexMask[i] = j++;
+            }
+        }
+
+        return (start, end, ignoredKey, result, isEarly) ->
+                insertWindowBound(result, start, end, windowBoundsIndexMask);
     }
 
     @Override
@@ -128,7 +158,6 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
                 groupSet,
                 groupSets,
                 aggCalls,
-                aggrOp(),
                 timestampExpression,
                 windowPolicyProvider,
                 numStages,

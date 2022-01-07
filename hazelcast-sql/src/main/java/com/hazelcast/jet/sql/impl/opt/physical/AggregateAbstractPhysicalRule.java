@@ -45,7 +45,7 @@ abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         super(config);
     }
 
-    protected static AggregateOperation<?, Object[]> aggregateOperation(
+    public static AggregateOperation<?, Object[]> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls

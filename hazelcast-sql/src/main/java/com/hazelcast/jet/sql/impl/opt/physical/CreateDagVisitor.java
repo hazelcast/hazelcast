@@ -75,7 +75,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.detectAndInsertWindowBound;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
@@ -338,11 +337,8 @@ public class CreateDagVisitor {
                 WindowUtils.extractMillis(timestampExpression.eval(new HeapRow(row), MOCK_EEC));
         SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
-        int[] windowBoundsIndexMask = new int[]{-1, 0}; // todo [viliam] real mapping
-
         KeyedWindowResultFunction<? super Object, ? super Object[], ?> resultMapping =
-                (start, end, ignoredKey, result, isEarly) ->
-                        detectAndInsertWindowBound(result, start, end, windowBoundsIndexMask);
+                rel.outputValueMapping();
 
         if (rel.numStages() == 1) {
             Vertex vertex = dag.newUniqueVertex(
