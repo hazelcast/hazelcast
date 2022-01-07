@@ -308,7 +308,7 @@ public class TaskletExecutionService {
                         && !tracker.executionTracker.executionCompletedExceptionally()
                         && !isShutdown);
             } catch (Throwable e) {
-                logger.warning("Exception in " + t, e);
+                logger.fine("Exception in " + t, e);
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 blockingWorkerCount.inc(-1L);
@@ -396,7 +396,7 @@ public class TaskletExecutionService {
                     CancellationException ex = (CancellationException) e;
                     t.executionTracker.exception(ex);
                 } else {
-                    logger.warning("Exception in " + t.tasklet, e);
+                    logger.fine("Exception in " + t.tasklet, e);
                     t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
                 }
             } finally {
