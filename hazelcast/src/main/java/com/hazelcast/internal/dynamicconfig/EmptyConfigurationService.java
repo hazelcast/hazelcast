@@ -33,11 +33,10 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
-import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -213,12 +212,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public Set<ObjectNamespace> reload() {
+    public ReloadResult reload() {
         return reload(null);
     }
 
     @Override
-    public Set<ObjectNamespace> reload(Config newConfig) {
+    public ReloadResult reload(Config newConfig) {
         throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
     }
 }

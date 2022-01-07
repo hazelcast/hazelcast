@@ -16,17 +16,16 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.config.ConfigNamespace;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.UUID;
 
 public class ConfigReloadFailedEvent extends AbstractIdentifiedEvent {
     private final Exception exception;
-    private final ObjectNamespace namespace;
+    private final ConfigNamespace namespace;
 
-    public ConfigReloadFailedEvent(UUID uuid, Exception exception, ObjectNamespace namespace) {
+    public ConfigReloadFailedEvent(UUID uuid, Exception exception, ConfigNamespace namespace) {
         super(uuid);
         this.exception = exception;
         this.namespace = namespace;
@@ -43,8 +42,8 @@ public class ConfigReloadFailedEvent extends AbstractIdentifiedEvent {
         json.add("exception", exception.getClass().getSimpleName());
         json.add("exceptionMessage", exception.getMessage());
         if (namespace != null) {
-            json.add("configName", namespace.getObjectName());
-            json.add("sectionName", ConfigSections.Translate.toSectionName(namespace.getServiceName()));
+            json.add("configName", namespace.getConfigName());
+            json.add("sectionName", namespace.getSectionName());
         }
         return json;
     }
@@ -53,7 +52,7 @@ public class ConfigReloadFailedEvent extends AbstractIdentifiedEvent {
         return exception;
     }
 
-    public ObjectNamespace getNamespace() {
+    public ConfigNamespace getNamespace() {
         return namespace;
     }
 

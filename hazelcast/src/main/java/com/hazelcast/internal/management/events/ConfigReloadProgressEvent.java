@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.config.ConfigNamespace;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.UUID;
 
@@ -31,9 +30,9 @@ public class ConfigReloadProgressEvent extends AbstractIdentifiedEvent {
     // rank of the dynamic change of this event (for example 2 for second change)
     private final int appliedChangeCount;
 
-    private final ObjectNamespace namespace;
+    private final ConfigNamespace namespace;
 
-    public ConfigReloadProgressEvent(UUID uuid, int totalChangeCount, int appliedChangeCount, ObjectNamespace namespace) {
+    public ConfigReloadProgressEvent(UUID uuid, int totalChangeCount, int appliedChangeCount, ConfigNamespace namespace) {
         super(uuid);
         this.totalChangeCount = totalChangeCount;
         this.appliedChangeCount = appliedChangeCount;
@@ -50,8 +49,8 @@ public class ConfigReloadProgressEvent extends AbstractIdentifiedEvent {
         JsonObject json = super.toJson();
         json.add("totalChangeCount", totalChangeCount);
         json.add("appliedChangeCount", appliedChangeCount);
-        json.add("configName", namespace.getObjectName());
-        json.add("sectionName", ConfigSections.Translate.toSectionName(namespace.getServiceName()));
+        json.add("configName", namespace.getConfigName());
+        json.add("sectionName", namespace.getSectionName());
         return json;
     }
 
@@ -63,7 +62,7 @@ public class ConfigReloadProgressEvent extends AbstractIdentifiedEvent {
         return appliedChangeCount;
     }
 
-    public ObjectNamespace getNamespace() {
+    public ConfigNamespace getNamespace() {
         return namespace;
     }
 }

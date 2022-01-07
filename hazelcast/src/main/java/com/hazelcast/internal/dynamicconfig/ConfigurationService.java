@@ -34,11 +34,10 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Dynamic configurations.
@@ -65,17 +64,17 @@ public interface ConfigurationService {
      * dynamically changing all the differences dynamically changeable.
      *
      * @param newConfig config to find any new dynamically changeable sub configs
-     * @return name of the added configurations
+     * @return reload result which includes added and ignored configurations
      */
-    Set<ObjectNamespace> reload(Config newConfig);
+    ReloadResult reload(Config newConfig);
 
     /**
      * Reloads the configuration with the declarative configuration. Reloading
      * means dynamically changing all the differences dynamically changeable.
      *
-     * @return name of the added configurations
+     * @return reload result which includes added and ignored configurations
      */
-    Set<ObjectNamespace> reload();
+    ReloadResult reload();
 
     /**
      * Finds existing Multimap config.

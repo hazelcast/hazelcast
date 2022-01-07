@@ -16,19 +16,16 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.config.ConfigSections;
-import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.services.ObjectNamespace;
 
-import java.util.Set;
 import java.util.UUID;
 
 public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
 
-    private final Set<ObjectNamespace> reloadResult;
+    private final ReloadResult reloadResult;
 
-    public ConfigReloadFinishedEvent(UUID uuid, Set<ObjectNamespace> reloadResult) {
+    public ConfigReloadFinishedEvent(UUID uuid, ReloadResult reloadResult) {
         super(uuid);
         this.reloadResult = reloadResult;
     }
@@ -41,20 +38,11 @@ public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-
-        JsonArray results = new JsonArray();
-        for (ObjectNamespace ns : reloadResult) {
-            JsonObject namespaceAsJson = new JsonObject();
-            namespaceAsJson.add("sectionName", ConfigSections.Translate.toSectionName(ns.getServiceName()));
-            namespaceAsJson.add("objectName", ns.getObjectName());
-            results.add(namespaceAsJson);
-        }
-
-        json.add("reloadResult", results);
+        json.add("reloadResult", reloadResult.toJson());
         return json;
     }
 
-    public Set<ObjectNamespace> getReloadResult() {
+    public ReloadResult getReloadResult() {
         return reloadResult;
     }
 }

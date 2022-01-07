@@ -40,11 +40,11 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.FutureUtil;
@@ -64,7 +64,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -211,12 +210,12 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public Set<ObjectNamespace> reload() {
+    public ReloadResult reload() {
         return reload(null);
     }
 
     @Override
-    public Set<ObjectNamespace> reload(@Nullable Config newConfig) {
+    public ReloadResult reload(@Nullable Config newConfig) {
         throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
