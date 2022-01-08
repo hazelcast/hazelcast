@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 
-# find the current directory
-SCRIPT="$0"
+function findScriptDir() {
+  CURRENT=$PWD
 
-# if SCRIPT is a series of symbolic links; loop to get the concrete path
-while [ -h "$SCRIPT" ] ; do
-  ls=`ls -ld "$SCRIPT"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '/.*' > /dev/null; then
-    SCRIPT="$link"
-  else
-    SCRIPT=`dirname "$SCRIPT"`/"$link"
-  fi
-done
-PRGDIR=`dirname "$SCRIPT"`
-# make PRGDIR absolute
-PRGDIR=`cd "$PRGDIR"; pwd`
+  DIR=$(dirname "$0")
+  cd "$DIR" || exit
+  TARGET_FILE=$(basename "$0")
 
-# set the parent directory as HAZELCAST_HOME.
-export HAZELCAST_HOME=${HAZELCAST_HOME:-$(cd "$PRGDIR/.." >/dev/null; pwd -P)}
+  # Iterate down a (possible) chain of symlinks
+  while [ -L "$TARGET_FILE" ]
+  do
+      TARGET_FILE=$(readlink "$TARGET_FILE")
+      DIR=$(dirname "$TARGET_FILE")
+      cd "$DIR" || exit
+      TARGET_FILE=$(basename "$TARGET_FILE")
+  done
 
-# common.sh needs it
-SCRIPT_DIR="$PRGDIR"
+  SCRIPT_DIR=$(pwd -P)
+  # Restore current directory
+  cd "$CURRENT" || exit
+}
 
-. "$PRGDIR"/common.sh
+findScriptDir
+
+. "$SCRIPT_DIR"/common.sh
 
 # HAZELCAST_CONFIG holds the configuration path.
 # If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
