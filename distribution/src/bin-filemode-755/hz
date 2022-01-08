@@ -95,22 +95,13 @@ done
 
 HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} -Dhazelcast.commandline.workingdirectory=${HAZELCAST_HOME} com.hazelcast.commandline.HazelcastServerCommandLine"
 
+echo "########################################"
+echo "# JAVA=$JAVA"
+echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+echo "# CLASSPATH=$CLASSPATH"
+echo "########################################"
+
 if [ "$1" = "start" ] ; then
-
-  for arg in "$@"
-  do
-   if [ "$arg" = "--help" ]; then
-     HELP=true
-   fi
-  done
-
-  if [ "$HELP" != "true" ] ; then
-    echo "########################################"
-    echo "# JAVA=$JAVA"
-    echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
-    echo "# CLASSPATH=$CLASSPATH"
-    echo "########################################"
-  fi
 
   ${HZ_CMD} "$@" "--JAVA_OPTS=$J_OPTS"
 else
