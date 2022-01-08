@@ -25,12 +25,13 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.commandline.HazelcastServerCommandLine.CLASSPATH_SEPARATOR;
 import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
 import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
-import static com.hazelcast.commandline.HazelcastServerCommandLine.WORKING_DIRECTORY;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 public class HazelcastServerCommandLineTest {
+    private static final String WORKING_DIRECTORY = "/hazelcast";
     private ProcessExecutor processExecutor;
     private HazelcastServerCommandLine hazelcastServerCommandLine;
 
@@ -49,9 +51,13 @@ public class HazelcastServerCommandLineTest {
         processExecutor = mock(ProcessExecutor.class);
         Process process = mock(Process.class);
 
+        Map<String, String> envVariables = new HashMap<>();
+        envVariables.put("HAZELCAST_HOME", WORKING_DIRECTORY);
+
         when(process.getInputStream()).thenReturn(mock(InputStream.class));
 
-        hazelcastServerCommandLine = new HazelcastServerCommandLine(mock(PrintStream.class), mock(PrintStream.class), processExecutor);
+        hazelcastServerCommandLine = new HazelcastServerCommandLine(mock(PrintStream.class),
+                processExecutor, envVariables::get);
     }
 
     @Test

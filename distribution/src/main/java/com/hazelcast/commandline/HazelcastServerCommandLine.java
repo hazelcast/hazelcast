@@ -48,34 +48,37 @@ import static picocli.CommandLine.Option;
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
 class HazelcastServerCommandLine implements Runnable {
 
-    static final String WORKING_DIRECTORY = System.getProperty("hazelcast.commandline.workingdirectory", ".");
     static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
     static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
     static final String CLASSPATH_SEPARATOR = ":";
     static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
     private static final File NULL_FILE = new File(OsHelper.isWindows() ? "NUL" : "/dev/null");
-    final PrintStream out;
-    final PrintStream err;
-    @CommandLine.Spec
-    CommandLine.Model.CommandSpec spec;
-    ProcessExecutor processExecutor;
+    private final String workingDirectory;
+    private final PrintStream err;
+    private final ProcessExecutor processExecutor;
 
-    HazelcastServerCommandLine(PrintStream out, PrintStream err, ProcessExecutor processExecutor) {
-        this.out = out;
-        this.err = err;
-        this.processExecutor = processExecutor;
+    HazelcastServerCommandLine(PrintStream err, ProcessExecutor processExecutor) {
+        this(err, processExecutor, System::getenv);
     }
 
-    public static void main(String[] args) throws IOException {
+    /**
+     * Just for testing
+     */
+    HazelcastServerCommandLine(PrintStream err, ProcessExecutor processExecutor, EnvVariableProvider envVariableProvider) {
+        this.err = err;
+        this.processExecutor = processExecutor;
+        this.workingDirectory = envVariableProvider.getVariable("HAZELCAST_HOME");
+    }
+
+    public static void main(String[] args) {
         runCommandLine(args);
     }
 
-    private static void runCommandLine(String[] args)
-            throws IOException {
+    private static void runCommandLine(String[] args) {
         PrintStream out = System.out;
         PrintStream err = System.err;
         ProcessExecutor processExecutor = new ProcessExecutor();
-        CommandLine cmd = new CommandLine(new HazelcastServerCommandLine(out, err, processExecutor))
+        CommandLine cmd = new CommandLine(new HazelcastServerCommandLine(err, processExecutor))
                 .setOut(createPrintWriter(out))
                 .setErr(createPrintWriter(err))
                 .setTrimQuotes(true)
@@ -190,7 +193,7 @@ class HazelcastServerCommandLine implements Runnable {
         Clock clock = Clock.systemDefaultZone();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd.HH.mm.ss").withZone(clock.getZone());
         String formattedDate = formatter.format(clock.instant());
-        String logFile = WORKING_DIRECTORY + "/logs/hazelcast." + formattedDate + ".err";
+        String logFile = workingDirectory + "/logs/hazelcast." + formattedDate + ".err";
         if (daemon) {
             err.println("Error output will be written to " + logFile);
         }
@@ -219,10 +222,10 @@ class HazelcastServerCommandLine implements Runnable {
 
     void addLogging(List<String> args, boolean verbose, boolean finestVerbose) {
         if (verbose) {
-            args.add("-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINE_LEVEL);
+            args.add("-Djava.util.logging.config.file=" + workingDirectory + LOGGING_PROPERTIES_FINE_LEVEL);
         }
         if (finestVerbose) {
-            args.add("-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINEST_LEVEL);
+            args.add("-Djava.util.logging.config.file=" + workingDirectory + LOGGING_PROPERTIES_FINEST_LEVEL);
         }
     }
 
@@ -246,5 +249,10 @@ class HazelcastServerCommandLine implements Runnable {
             String[] splitArgs = arg.split(argSpec.splitRegex());
             Collections.addAll(list, splitArgs);
         }
+    }
+
+    @FunctionalInterface
+    interface EnvVariableProvider {
+        String getVariable(String name);
     }
 }
