@@ -83,18 +83,6 @@ else
   export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n"
 fi
 
-
-CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
-for filename in "$HAZELCAST_HOME"/lib/*; do
-  case "$filename" in
-    picocli*)
-      ;;
-    *)
-      CLASSPATH="$CLASSPATH:$filename"
-      ;;
-  esac
-done
-
 J_OPTS=""
 for arg in "${JAVA_OPTS_ARRAY[@]}"
 do
