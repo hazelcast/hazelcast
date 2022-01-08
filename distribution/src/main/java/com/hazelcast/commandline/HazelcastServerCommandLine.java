@@ -46,7 +46,7 @@ import static picocli.CommandLine.Option;
  */
 @Command(name = "hz", description = "Utility for the Hazelcast operations." + "%n%n"
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
-class HazelcastServerCommandLine implements Runnable {
+class HazelcastServerCommandLine {
 
     static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
     static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
@@ -94,10 +94,6 @@ class HazelcastServerCommandLine implements Runnable {
 
     private static PrintWriter createPrintWriter(PrintStream printStream) {
         return new PrintWriter(new OutputStreamWriter(printStream, StandardCharsets.UTF_8));
-    }
-
-    @Override
-    public void run() {
     }
 
     @Command(description = "Starts a new Hazelcast member", mixinStandardHelpOptions = true, sortOptions = false)
