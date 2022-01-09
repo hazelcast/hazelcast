@@ -42,7 +42,7 @@ public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
         json.add("exception", exception.getClass().getSimpleName());
         json.add("exceptionMessage", exception.getMessage());
         if (namespace != null) {
-            json.add("configName", namespace.getConfigName());
+            json.add("configName", namespace.getConfigName() != null ? namespace.getConfigName() : "null");
             json.add("sectionName", namespace.getSectionName());
         }
         return json;

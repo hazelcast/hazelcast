@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -25,14 +26,16 @@ public class ConfigNamespace {
     private final ConfigSections configSection;
     private final String configName;
 
-    public ConfigNamespace(ConfigSections configSection, String configName) {
+    public ConfigNamespace(@Nonnull ConfigSections configSection, @Nonnull String configName) {
         this.configSection = configSection;
         this.configName = configName;
-        assert configName == null || configSection.multipleOccurrence;
+        assert configSection.multipleOccurrence;
+
     }
 
-    public ConfigNamespace(ConfigSections configSection) {
-        this(configSection, null);
+    public ConfigNamespace(@Nonnull ConfigSections configSection) {
+        this.configSection = configSection;
+        this.configName = null;
     }
 
     public ConfigSections getConfigSection() {
