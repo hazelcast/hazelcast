@@ -34,7 +34,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
@@ -60,21 +59,21 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
-     * Reloads the configuration with the given configuration. Reloading means
+     * Updates the configuration with the given configuration. Updating means
      * dynamically changing all the differences dynamically changeable.
      *
      * @param newConfig config to find any new dynamically changeable sub configs
      * @return reload result which includes added and ignored configurations
      */
-    ReloadResult reload(Config newConfig);
+    ConfigUpdateResult update(Config newConfig);
 
     /**
-     * Reloads the configuration with the declarative configuration. Reloading
+     * Updates the configuration with the declarative configuration. Updating
      * means dynamically changing all the differences dynamically changeable.
      *
      * @return reload result which includes added and ignored configurations
      */
-    ReloadResult reload();
+    ConfigUpdateResult update();
 
     /**
      * Finds existing Multimap config.

@@ -50,6 +50,6 @@ public class ReloadWithoutEnterpriseTest extends HazelcastTestSupport {
         System.setProperty(SYSPROP_MEMBER_CONFIG, configFile.getAbsolutePath());
 
         ConfigurationService configurationService = getService(createHazelcastInstance(), ClusterWideConfigurationService.SERVICE_NAME);
-        configurationService.reload();
+        configurationService.update();
     }
 }

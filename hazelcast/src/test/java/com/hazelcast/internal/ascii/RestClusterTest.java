@@ -388,7 +388,7 @@ public class RestClusterTest {
 
         // Reload is enterprise feature. Should fail here.
         assertJsonContains(response.response, "status", "fail",
-                "message", "Configuration Reload requires Hazelcast Enterprise Edition");
+                "message", "Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {

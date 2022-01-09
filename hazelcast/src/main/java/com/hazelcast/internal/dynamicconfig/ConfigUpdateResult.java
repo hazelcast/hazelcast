@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.dynamic.reload;
+package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.internal.config.ConfigNamespace;
 import com.hazelcast.internal.json.JsonArray;
@@ -23,9 +23,9 @@ import com.hazelcast.internal.json.JsonObject;
 import java.util.Set;
 
 /**
- * Result of the reload operation.
+ * Result of the config update operation.
  */
-public class ReloadResult {
+public class ConfigUpdateResult {
     /**
      * Newly added configs.
      */
@@ -35,7 +35,7 @@ public class ReloadResult {
      */
     private final Set<ConfigNamespace> ignoredConfigs;
 
-    public ReloadResult(Set<ConfigNamespace> addedConfigs, Set<ConfigNamespace> ignoredConfigs) {
+    public ConfigUpdateResult(Set<ConfigNamespace> addedConfigs, Set<ConfigNamespace> ignoredConfigs) {
         this.addedConfigs = addedConfigs;
         this.ignoredConfigs = ignoredConfigs;
     }

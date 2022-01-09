@@ -16,44 +16,34 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.config.ConfigNamespace;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigReloadFailedEvent extends AbstractIdentifiedEvent {
-    private final Exception exception;
-    private final ConfigNamespace namespace;
+public class ConfigUpdateFinishedEvent extends AbstractIdentifiedEvent {
 
-    public ConfigReloadFailedEvent(UUID uuid, Exception exception, ConfigNamespace namespace) {
+    private final ConfigUpdateResult configUpdateResult;
+
+    public ConfigUpdateFinishedEvent(UUID uuid, ConfigUpdateResult configUpdateResult) {
         super(uuid);
-        this.exception = exception;
-        this.namespace = namespace;
+        this.configUpdateResult = configUpdateResult;
     }
 
     @Override
     public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.CONFIG_RELOAD_FAILED;
+        return EventMetadata.EventType.CONFIG_UPDATE_FINISHED;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("exception", exception.getClass().getSimpleName());
-        json.add("exceptionMessage", exception.getMessage());
-        if (namespace != null) {
-            json.add("configName", namespace.getConfigName());
-            json.add("sectionName", namespace.getSectionName());
-        }
+        json.add("configUpdateResult", configUpdateResult.toJson());
         return json;
     }
 
-    public Exception getException() {
-        return exception;
+    public ConfigUpdateResult getConfigUpdateResult() {
+        return configUpdateResult;
     }
-
-    public ConfigNamespace getNamespace() {
-        return namespace;
-    }
-
 }
+

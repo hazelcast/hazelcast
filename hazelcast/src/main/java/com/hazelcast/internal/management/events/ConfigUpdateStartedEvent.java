@@ -16,34 +16,15 @@
 
 package com.hazelcast.internal.management.events;
 
-import com.hazelcast.internal.config.dynamic.reload.ReloadResult;
-import com.hazelcast.internal.json.JsonObject;
-
 import java.util.UUID;
 
-public class ConfigReloadFinishedEvent extends AbstractIdentifiedEvent {
-
-    private final ReloadResult reloadResult;
-
-    public ConfigReloadFinishedEvent(UUID uuid, ReloadResult reloadResult) {
+public class ConfigUpdateStartedEvent extends AbstractIdentifiedEvent {
+    public ConfigUpdateStartedEvent(UUID uuid) {
         super(uuid);
-        this.reloadResult = reloadResult;
     }
 
     @Override
     public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.CONFIG_RELOAD_FINISHED;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject json = super.toJson();
-        json.add("reloadResult", reloadResult.toJson());
-        return json;
-    }
-
-    public ReloadResult getReloadResult() {
-        return reloadResult;
+        return EventMetadata.EventType.CONFIG_UPDATE_STARTED;
     }
 }
-
