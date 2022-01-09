@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -66,7 +66,7 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryDataTypeTest extends SqlTestSupport {
+public class QueryDataTypeTest extends CoreSqlTestSupport {
     @Test
     public void testDefaultTypes() {
         checkType(QueryDataType.VARCHAR, StringConverter.INSTANCE);

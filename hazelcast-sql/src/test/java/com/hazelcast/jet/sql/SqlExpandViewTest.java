@@ -151,6 +151,19 @@ public class SqlExpandViewTest extends SqlTestSupport {
     }
 
     @Test
+    // remove after https://github.com/hazelcast/hazelcast/issues/20032 is properly fixed
+    public void when_incompatibleViewChange_then_notAllowed() {
+        instance().getSql().execute("CREATE VIEW v1 AS SELECT __key FROM " + MAP_NAME);
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT 'key=' || __key __key FROM " + MAP_NAME))
+                .hasMessage("Can't replace view, the type for column '__key' changed from INTEGER to VARCHAR");
+
+        assertThatThrownBy(() -> instance().getSql().execute(
+                "CREATE or REPLACE VIEW v1 AS SELECT __key AS a FROM " + MAP_NAME))
+                .hasMessage("Can't replace view, the new view doesn't contain column '__key'");
+    }
+
+    @Test
     public void test_fullyQualifiedViewName() {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + MAP_NAME);
 
@@ -322,12 +335,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v1 AS SELECT JSON_VALUE(this, '$[1]' "
                 + "RETURNING BIGINT NULL ON EMPTY NULL ON ERROR) FROM test");
         instance().getSql().execute("CREATE VIEW v2 AS SELECT JSON_QUERY(this, '$[1]' "
-                + "WITH CONDITIONAL WRAPPER EMPTY OBJECT ON ERROR EMPTY OBJECT ON ERROR) FROM test");
+                + "WITH CONDITIONAL WRAPPER EMPTY OBJECT ON EMPTY EMPTY OBJECT ON ERROR) FROM test");
 
         assertRowsAnyOrder("SELECT * FROM v1", asList(new Row(2L), new Row(5L)));
         assertRowsAnyOrder("SELECT * FROM v2", asList(
-                new Row(new HazelcastJsonValue("[2]")),
-                new Row(new HazelcastJsonValue("[5]"))
+                new Row(new HazelcastJsonValue("2")),
+                new Row(new HazelcastJsonValue("5"))
         ));
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapTableFieldTest extends SqlTestSupport {
+public class MapTableFieldTest extends CoreSqlTestSupport {
     @Test
     public void testContent() {
         MapTableField field = new MapTableField("name", QueryDataType.INT, false, QueryPath.KEY_PATH);

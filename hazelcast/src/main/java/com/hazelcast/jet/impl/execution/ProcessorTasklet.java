@@ -34,7 +34,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.metrics.MetricsContext;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
@@ -148,7 +148,6 @@ public class ProcessorTasklet implements Tasklet {
     private final Counter queuesCapacity = SwCounter.newSwCounter();
 
     private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
-    private final MetricsContext metricsContext = new MetricsContext();
     private Future<?> closeFuture;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -199,6 +198,7 @@ public class ProcessorTasklet implements Tasklet {
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
             justification = "hazelcastInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
+        //noinspection ConstantConditions
         return context.hazelcastInstance() != null
                 ? context.hazelcastInstance().getLoggingService().getLogger(getClass())
                 : Logger.getLogger(getClass());
@@ -266,8 +266,8 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public MetricsContext getMetricsContext() {
-        return metricsContext;
+    public Processor.Context getProcessorContext() {
+        return context;
     }
 
     @SuppressWarnings("checkstyle:returncount")
@@ -639,7 +639,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
                        .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
                        .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
@@ -653,30 +653,31 @@ public class ProcessorTasklet implements Tasklet {
 
         for (int i = 0; i < instreams.size(); i++) {
             MetricDescriptor descWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, String.valueOf(i));
-            context.collect(descWithOrdinal, RECEIVED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, receivedCounts.get(i));
-            context.collect(descWithOrdinal, RECEIVED_BATCHES, ProbeLevel.INFO, ProbeUnit.COUNT, receivedBatches.get(i));
+            mContext.collect(descWithOrdinal, RECEIVED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, receivedCounts.get(i));
+            mContext.collect(descWithOrdinal, RECEIVED_BATCHES, ProbeLevel.INFO, ProbeUnit.COUNT, receivedBatches.get(i));
         }
 
         for (int i = 0; i < emittedCounts.length() - (this.context.snapshottingEnabled() ? 0 : 1); i++) {
             String ordinal = i == emittedCounts.length() - 1 ? "snapshot" : String.valueOf(i);
             MetricDescriptor descriptorWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, ordinal);
-            context.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
+            mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        context.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
-        context.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
-        context.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
-        context.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
+        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
+        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
+        mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
+        mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 
-        context.collect(descriptor, this);
+        mContext.collect(descriptor, this);
 
         //collect static metrics from processor
-        context.collect(descriptor, this.processor);
+        mContext.collect(descriptor, this.processor);
         //collect dynamic metrics from processor
         if (processor instanceof DynamicMetricsProvider) {
-            ((DynamicMetricsProvider) processor).provideDynamicMetrics(descriptor.copy(), context);
+            ((DynamicMetricsProvider) processor).provideDynamicMetrics(descriptor.copy(), mContext);
         }
-
-        metricsContext.provideDynamicMetrics(descriptor, context);
+        if (context instanceof ProcCtx) {
+            ((ProcCtx) context).metricsContext().provideDynamicMetrics(descriptor, mContext);
+        }
     }
 }

@@ -152,6 +152,10 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
+    public View getView(String name) {
+        return tableStorage.getView(name);
+    }
+
     public void removeView(String name, boolean ifExists) {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);

@@ -16,31 +16,40 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.hazelcast.query.QueryException;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.ParseContext;
-import com.jayway.jsonpath.spi.cache.CacheProvider;
-import com.jayway.jsonpath.spi.cache.NOOPCache;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import org.jsfr.json.Collector;
+import org.jsfr.json.DefaultErrorHandlingStrategy;
+import org.jsfr.json.ErrorHandlingStrategy;
+import org.jsfr.json.JacksonJrParser;
+import org.jsfr.json.JsonSurfer;
+import org.jsfr.json.ValueBox;
+import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.exception.JsonSurfingException;
+import org.jsfr.json.path.JsonPath;
+import org.jsfr.json.provider.JacksonJrProvider;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 
 public final class JsonPathUtil {
     private static final long CACHE_SIZE = 50L;
-    private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
-            .jsonProvider(new GsonJsonProvider())
-            .build());
-
-    static {
-        // default Cache is LRU, but we don't want it, because cache is implemented per JSONPath-based function
-        CacheProvider.setCache(new NOOPCache());
-    }
+    private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
+        @Override
+        public void handleParsingException(Exception e) {
+            // We deliberately do not add `e.getMessage` to the message of the exception thrown here.
+            // The reason is that it might contain user data, and the error messages should not contain
+            // user data. However, we add it to the cause so that it might still appear in member logs, but
+            // we need this to investigate issues. We're only preventing it from being sent to the client and
+            // to the application logs. This is a compromise.
+            throw new JsonSurfingException("Failed to parse JSON document", e);
+        }
+    };
+    private static final JsonSurfer SURFER =
+            new JsonSurfer(new JacksonJrParser(), JacksonJrProvider.INSTANCE, ERROR_HANDLING_STRATEGY);
 
     private JsonPathUtil() { }
 
@@ -51,54 +60,50 @@ public final class JsonPathUtil {
     }
 
     public static JsonPath compile(String path) {
-        try {
-            return JsonPath.compile(path);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPathException("Illegal argument provided to JSONPath compile function", e);
-        }
+        return JsonPathCompiler.compile(path);
     }
 
-    public static Object read(String json, String pathString) {
-        return read(json, compile(pathString));
-    }
-
-    public static Object read(String json, JsonPath path) {
-        final JsonElement result = CONTEXT.parse(json).read(path);
-        if (result.isJsonArray() || result.isJsonObject()) {
-            return result;
-        }
-
-        if (result.isJsonNull()) {
-            return null;
-        }
-
-        final JsonPrimitive primitive = result.getAsJsonPrimitive();
-        if (primitive.isNumber()) {
-            // GSON's getAsNumber returns LazilyParsedNumber, which produces undesirable serialization results
-            // e.g. {"value":3"} instead of plain "3", therefore we need to convert it to plain Number.
-            if (primitive.toString().matches(".*[.eE].*")) {
-                return primitive.getAsBigDecimal();
-            } else {
-                return primitive.getAsLong();
-            }
-        } else if (primitive.isBoolean()) {
-            return primitive.getAsBoolean();
-        } else if (primitive.isString()) {
-            return primitive.getAsString();
-        } else {
-            throw new QueryException("Unsupported JSONPath result type: " + primitive.getClass().getName());
-        }
+    public static Collection<Object> read(String json, JsonPath path) {
+        Collector collector = SURFER.collector(json);
+        ValueBox<Collection<Object>> box = collector.collectAll(path, Object.class);
+        collector.exec();
+        return box.get();
     }
 
     public static boolean isArray(Object value) {
-        return value instanceof JsonArray;
+        return value instanceof ArrayList;
     }
 
     public static boolean isObject(Object value) {
-        return value instanceof JsonObject;
+        return value instanceof Map;
     }
 
     public static boolean isArrayOrObject(Object value) {
         return isArray(value) || isObject(value);
+    }
+
+    public static String wrapToArray(Collection<Object> resultColl, boolean unconditionally) {
+        if (resultColl.size() > 1) {
+            return serialize(resultColl);
+        }
+        if (resultColl.isEmpty()) {
+            return "[]";
+        }
+        Object result = resultColl.iterator().next();
+        final String serializedResult = serialize(result);
+        if (unconditionally) {
+            return "[" + serializedResult + "]";
+        } else {
+            return serializedResult;
+        }
+    }
+
+    public static String serialize(Object object) {
+        try {
+            return JSON.std.asString(object);
+        } catch (IOException e) {
+            // should not happen
+            throw new RuntimeException(e);
+        }
     }
 }

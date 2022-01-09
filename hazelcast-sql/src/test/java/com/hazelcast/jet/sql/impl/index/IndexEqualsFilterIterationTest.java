@@ -23,7 +23,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -69,7 +68,7 @@ public class IndexEqualsFilterIterationTest extends IndexFilterIteratorTestSuppo
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         // Check missing value.
         checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext));
@@ -113,7 +112,7 @@ public class IndexEqualsFilterIterationTest extends IndexFilterIteratorTestSuppo
 
         InternalIndex index = getIndex(instance);
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+        ExpressionEvalContext evalContext = createExpressionEvalContext();
 
         // Check missing value.
         checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
