@@ -92,7 +92,8 @@ public class ClusterWideConfigurationService implements
     //this is meant to be used as a workaround for buggy equals/hashcode implementations
     private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND = getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
-    protected NodeEngine nodeEngine;
+    protected final NodeEngine nodeEngine;
+    protected final ILogger logger;
 
     private final DynamicConfigListener listener;
 
@@ -114,7 +115,6 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
-    protected final ILogger logger;
 
     @SuppressWarnings("unchecked")
     private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{
