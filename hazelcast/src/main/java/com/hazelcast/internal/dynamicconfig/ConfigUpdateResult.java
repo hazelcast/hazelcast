@@ -62,7 +62,7 @@ public class ConfigUpdateResult {
 
     private JsonArray toJsonArray(Set<ConfigNamespace> configs) {
         JsonArray configsAsJson = new JsonArray();
-        for (ConfigNamespace ns : addedConfigs) {
+        for (ConfigNamespace ns : configs) {
             JsonObject namespaceAsJson = new JsonObject();
             namespaceAsJson.add("sectionName", ns.getSectionName());
             namespaceAsJson.add("configName", ns.getConfigName());
