@@ -23,6 +23,8 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.Collections;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -33,6 +35,7 @@ import static org.awaitility.Awaitility.await;
 
 public class ProcessExecutorTest {
 
+    private static final Map<String, String> NO_ENV_VARIABLES = Collections.emptyMap();
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -43,7 +46,7 @@ public class ProcessExecutorTest {
         File errFile = temporaryFolder.newFile();
         ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        processExecutor.buildAndStart(singletonList("whoami"), Redirect.to(outputFile), Redirect.to(errFile), false);
+        processExecutor.buildAndStart(singletonList("whoami"), NO_ENV_VARIABLES, Redirect.to(outputFile), Redirect.to(errFile), false);
         // then
         assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));
     }
@@ -55,7 +58,7 @@ public class ProcessExecutorTest {
         File errFile = temporaryFolder.newFile();
         ProcessExecutor processExecutor = new ProcessExecutor();
         // when
-        processExecutor.buildAndStart(singletonList("whoami"), Redirect.to(outputFile), Redirect.to(errFile), true);
+        processExecutor.buildAndStart(singletonList("whoami"), NO_ENV_VARIABLES, Redirect.to(outputFile), Redirect.to(errFile), true);
         // then
         await().atMost(5, SECONDS).untilAsserted(() -> {
             assertThat(contentOf(outputFile)).contains(System.getProperty("user.name"));

@@ -18,6 +18,7 @@ package com.hazelcast.commandline;
 
 import com.hazelcast.core.server.HazelcastMemberStarter;
 import com.hazelcast.internal.util.OsHelper;
+import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -31,7 +32,9 @@ import java.time.Clock;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -48,8 +51,6 @@ import static picocli.CommandLine.Option;
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
 class HazelcastServerCommandLine {
 
-    static final String LOGGING_PROPERTIES_FINE_LEVEL = "/config/hazelcast-fine-level-logging.properties";
-    static final String LOGGING_PROPERTIES_FINEST_LEVEL = "/config/hazelcast-finest-level-logging.properties";
     static final String CLASSPATH_SEPARATOR = ":";
     static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
     private static final File NULL_FILE = new File(OsHelper.isWindows() ? "NUL" : "/dev/null");
@@ -138,13 +139,14 @@ class HazelcastServerCommandLine {
             args.add("-Dhz.network.interfaces.interfaces.interface1=" + hzInterface);
         }
 
-        addLogging(args, verbose, finestVerbose);
+        Map<String, String> environment = new HashMap<>();
+        environment.putAll(setupLoggingLevel(verbose, finestVerbose));
 
         if (javaOptions != null && !javaOptions.isEmpty()) {
             addJavaOptionsToArgs(javaOptions, args);
         }
 
-        buildAndStartJavaProcess(args, additionalClassPath, daemon);
+        buildAndStartJavaProcess(args, environment, additionalClassPath, daemon);
     }
 
     private void addJavaOptionsToArgs(List<String> javaOptions, List<String> args) {
@@ -159,7 +161,8 @@ class HazelcastServerCommandLine {
         }
     }
 
-    private void buildAndStartJavaProcess(List<String> parameters, String[] additionalClassPath, boolean daemon)
+    private void buildAndStartJavaProcess(List<String> parameters, Map<String, String> environment,
+                                          String[] additionalClassPath, boolean daemon)
             throws IOException, InterruptedException {
         List<String> commandList = new ArrayList<>();
         StringBuilder classpath = new StringBuilder(System.getProperty("java.class.path"));
@@ -175,7 +178,7 @@ class HazelcastServerCommandLine {
         commandList.addAll(parameters);
         fixModularJavaOptions(commandList);
         commandList.add(HazelcastMemberStarter.class.getName());
-        processExecutor.buildAndStart(commandList, getRedirectOutput(daemon), getRedirectError(daemon), daemon);
+        processExecutor.buildAndStart(commandList, environment, getRedirectOutput(daemon), getRedirectError(daemon), daemon);
     }
 
     private Redirect getRedirectOutput(boolean daemon) {
@@ -216,13 +219,15 @@ class HazelcastServerCommandLine {
         }
     }
 
-    void addLogging(List<String> args, boolean verbose, boolean finestVerbose) {
+    private static Map<String, String> setupLoggingLevel(boolean verbose, boolean finestVerbose) {
+        Map<String, String> envs = new HashMap<>();
         if (verbose) {
-            args.add("-Djava.util.logging.config.file=" + workingDirectory + LOGGING_PROPERTIES_FINE_LEVEL);
+            envs.put("LOGGING_LEVEL", Level.DEBUG.name());
         }
         if (finestVerbose) {
-            args.add("-Djava.util.logging.config.file=" + workingDirectory + LOGGING_PROPERTIES_FINEST_LEVEL);
+            envs.put("LOGGING_LEVEL", Level.TRACE.name());
         }
+        return envs;
     }
 
     /**

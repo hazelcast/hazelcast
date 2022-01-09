@@ -20,14 +20,15 @@ import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Handler for process operations.
  */
 class ProcessExecutor {
 
-    void buildAndStart(List<String> commandList, Redirect redirectOutput, Redirect redirectError, boolean daemon)
-            throws IOException, InterruptedException {
+    void buildAndStart(List<String> commandList, Map<String, String> environment, Redirect redirectOutput,
+                       Redirect redirectError, boolean daemon) throws IOException, InterruptedException {
         List<String> effectiveCommandList = new ArrayList<>(commandList);
         if (daemon) {
             effectiveCommandList.add(0, "nohup");
@@ -35,6 +36,7 @@ class ProcessExecutor {
         ProcessBuilder processBuilder = new ProcessBuilder(effectiveCommandList);
         processBuilder.redirectError(redirectError);
         processBuilder.redirectOutput(redirectOutput);
+        processBuilder.environment().putAll(environment);
         Process process = processBuilder.start();
         if (!daemon) {
             process.waitFor();

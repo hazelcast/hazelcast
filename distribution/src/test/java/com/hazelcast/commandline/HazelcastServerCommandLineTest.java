@@ -30,9 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.commandline.HazelcastServerCommandLine.CLASSPATH_SEPARATOR;
-import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINEST_LEVEL;
-import static com.hazelcast.commandline.HazelcastServerCommandLine.LOGGING_PROPERTIES_FINE_LEVEL;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -66,7 +65,7 @@ public class HazelcastServerCommandLineTest {
         //when
         hazelcastServerCommandLine.start(null, null, null, null, null, false, false, false);
         //then
-        verify(processExecutor, times(1)).buildAndStart(anyList(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+        verify(processExecutor, times(1)).buildAndStart(anyList(), anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -78,7 +77,7 @@ public class HazelcastServerCommandLineTest {
         hazelcastServerCommandLine.start(configFile, null, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhazelcast.config=" + configFile)),
-                eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -90,7 +89,7 @@ public class HazelcastServerCommandLineTest {
         hazelcastServerCommandLine.start(null, port, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhz.network.port.port=" + port)),
-                eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -102,7 +101,7 @@ public class HazelcastServerCommandLineTest {
         hazelcastServerCommandLine.start(null, null, hzInterface, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems("-Dhz.network.interfaces.interfaces.interface1=" + hzInterface)),
-                eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -118,7 +117,7 @@ public class HazelcastServerCommandLineTest {
             out.append(CLASSPATH_SEPARATOR).append(classpath);
         }
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(Matchers.containsString(out.toString()))),
-                eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -132,7 +131,7 @@ public class HazelcastServerCommandLineTest {
         hazelcastServerCommandLine.start(null, null, null, null, javaOpts, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(javaOpts.toArray(new String[0]))),
-                eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -143,8 +142,7 @@ public class HazelcastServerCommandLineTest {
         // when
         hazelcastServerCommandLine.start(null, null, null, null, null, false, verbose, false);
         // then
-        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(
-                        "-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINE_LEVEL)),
+        verify(processExecutor).buildAndStart(anyList(), (Map<String, String>) argThat(Matchers.hasEntry("LOGGING_LEVEL", "DEBUG")),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
@@ -156,8 +154,7 @@ public class HazelcastServerCommandLineTest {
         // when
         hazelcastServerCommandLine.start(null, null, null, null, null, false, false, finestVerbose);
         // then
-        verify(processExecutor).buildAndStart((List<String>) argThat(Matchers.hasItems(
-                        "-Djava.util.logging.config.file=" + WORKING_DIRECTORY + LOGGING_PROPERTIES_FINEST_LEVEL)),
+        verify(processExecutor).buildAndStart(anyList(), (Map<String, String>) argThat(Matchers.hasEntry("LOGGING_LEVEL", "TRACE")),
                 eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
@@ -174,7 +171,7 @@ public class HazelcastServerCommandLineTest {
                         "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.nio=ALL-UNNAMED",
                         "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens",
                         "java.management/sun.management=ALL-UNNAMED", "--add-opens",
-                        "jdk.management/com.sun.management.internal=ALL-UNNAMED")), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
+                        "jdk.management/com.sun.management.internal=ALL-UNNAMED")), anyMap(), eq(Redirect.INHERIT), eq(Redirect.INHERIT), eq(false));
     }
 
     @Test
@@ -185,7 +182,7 @@ public class HazelcastServerCommandLineTest {
         // then
         verify(processExecutor).buildAndStart(
                 anyList(),
-                argThat(redirect -> redirect.file().getName().toLowerCase().contains("nul")),
+                anyMap(), argThat(redirect -> redirect.file().getName().toLowerCase().contains("nul")),
                 argThat(redirect -> redirect.type() == Redirect.Type.WRITE),
                 eq(true)
         );
