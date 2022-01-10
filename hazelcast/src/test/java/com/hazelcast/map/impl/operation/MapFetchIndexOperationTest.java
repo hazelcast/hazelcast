@@ -644,9 +644,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public <T> T createService(Class<T> clazz) {
+        public <T> T createService(Class<T> clazz, Object... params) {
             return clazz.isAssignableFrom(MapService.class)
-                    ? (T) new MockMapService((MapService) super.createService(clazz)) : super.createService(clazz);
+                    ? (T) new MockMapService((MapService) super.createService(clazz, params)) : super.createService(clazz, params);
         }
     }
 

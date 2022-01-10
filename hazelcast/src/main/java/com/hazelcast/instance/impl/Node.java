@@ -250,7 +250,7 @@ public class Node {
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
             warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
             nodeEngine = new NodeEngineImpl(this);
-            config.setConfigurationService(nodeEngine.getConfigurationService());
+            config.setServices(nodeEngine);
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
