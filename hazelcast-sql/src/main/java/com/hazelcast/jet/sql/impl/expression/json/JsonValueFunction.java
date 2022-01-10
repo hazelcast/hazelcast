@@ -185,7 +185,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             return result.toString();
         }
 
-        Converter converter = Converters.getConverter(result.getClass());
+        final Converter converter = Converters.getConverter(result.getClass());
         switch (this.resultType.getTypeFamily().getPublicType()) {
             case TINYINT:
                 return converter.asTinyint(result);
@@ -201,6 +201,14 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 return converter.asDouble(result);
             case DECIMAL:
                 return converter.asDecimal(result);
+            case TIMESTAMP:
+                return converter.asTimestamp(result);
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return converter.asTimestampWithTimezone(result);
+            case DATE:
+                return converter.asDate(result);
+            case TIME:
+                return converter.asTime(result);
             default:
                 return result;
         }
