@@ -103,7 +103,7 @@
         <jackson.version>2.12.1</jackson.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>1.7.0-SNAPSHOT</json-surfer.version>
+        <json-surfer.version>0.9</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
