@@ -62,4 +62,7 @@ public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
         return namespace;
     }
 
+    public ConfigUpdateResult getConfigUpdateResult() {
+        return configUpdateResult;
+    }
 }
