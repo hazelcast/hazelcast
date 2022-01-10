@@ -56,7 +56,7 @@ public class DynamicConfigurationConfig {
     }
 
     /**
-     * Sets whether Dynamic Configuration Persistence enabled on this member.
+     * Sets whether Dynamic Configuration Persistence is enabled on this member.
      *
      * @param persistenceEnabled true if enabled
      * @return DynamicConfigurationConfig
