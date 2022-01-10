@@ -44,159 +44,187 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.config.ConfigSections.CACHE;
+import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
+import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
+import static com.hazelcast.internal.config.ConfigSections.LIST;
+import static com.hazelcast.internal.config.ConfigSections.MAP;
+import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
+import static com.hazelcast.internal.config.ConfigSections.PN_COUNTER;
+import static com.hazelcast.internal.config.ConfigSections.QUEUE;
+import static com.hazelcast.internal.config.ConfigSections.RELIABLE_TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
+import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
+import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.SET;
+import static com.hazelcast.internal.config.ConfigSections.TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
+
 public final class DynamicConfigGeneratorUtil {
 
     private DynamicConfigGeneratorUtil() {
         // not called
     }
 
-    static String wanReplicationConfigGenerator(WanReplicationConfig subConfig, boolean configIsXml, int indent) {
+    public static String wanReplicationConfigGenerator(
+            WanReplicationConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
-                "wan-replication",
+                WAN_REPLICATION.getName(),
                 Config::addWanReplicationConfig,
                 DynamicConfigXmlGenerator::wanReplicationXmlGenerator,
                 DynamicConfigYamlGenerator::wanReplicationYamlGenerator
         );
     }
 
-    static String mapConfigGenerator(MapConfig subConfig, boolean configIsXml, int indent) {
+    public static String mapConfigGenerator(MapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "map",
+                MAP.getName(),
                 Config::addMapConfig,
                 DynamicConfigXmlGenerator::mapXmlGenerator,
                 DynamicConfigYamlGenerator::mapYamlGenerator
         );
     }
 
-    static String cacheConfigGenerator(CacheSimpleConfig subConfig, boolean configIsXml, int indent) {
+    public static String cacheConfigGenerator(CacheSimpleConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "cache",
+                CACHE.getName(),
                 Config::addCacheConfig,
                 DynamicConfigXmlGenerator::cacheXmlGenerator,
                 DynamicConfigYamlGenerator::cacheYamlGenerator
         );
     }
 
-    static String queueConfigGenerator(QueueConfig subConfig, boolean configIsXml, int indent) {
+    public static String queueConfigGenerator(QueueConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "queue",
+                QUEUE.getName(),
                 Config::addQueueConfig,
                 DynamicConfigXmlGenerator::queueXmlGenerator,
                 DynamicConfigYamlGenerator::queueYamlGenerator
         );
     }
 
-    static String listConfigGenerator(ListConfig subConfig, boolean configIsXml, int indent) {
+    public static String listConfigGenerator(ListConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "list",
+                LIST.getName(),
                 Config::addListConfig,
                 DynamicConfigXmlGenerator::listXmlGenerator,
                 DynamicConfigYamlGenerator::listYamlGenerator
         );
     }
 
-    static String setConfigGenerator(SetConfig subConfig, boolean configIsXml, int indent) {
+    public static String setConfigGenerator(SetConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "set",
+                SET.getName(),
                 Config::addSetConfig,
                 DynamicConfigXmlGenerator::setXmlGenerator,
                 DynamicConfigYamlGenerator::setYamlGenerator
         );
     }
 
-    static String multiMapConfigGenerator(MultiMapConfig subConfig, boolean configIsXml, int indent) {
+    public static String multiMapConfigGenerator(MultiMapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "multimap",
+                MULTIMAP.getName(),
                 Config::addMultiMapConfig,
                 DynamicConfigXmlGenerator::multiMapXmlGenerator,
                 DynamicConfigYamlGenerator::multiMapYamlGenerator
         );
     }
 
-    static String replicatedMapConfigGenerator(ReplicatedMapConfig subConfig, boolean configIsXml, int indent) {
+    public static String replicatedMapConfigGenerator(ReplicatedMapConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "replicatedmap",
+                REPLICATED_MAP.getName(),
                 Config::addReplicatedMapConfig,
                 DynamicConfigXmlGenerator::replicatedMapXmlGenerator,
                 DynamicConfigYamlGenerator::replicatedMapYamlGenerator
         );
     }
 
-    static String ringbufferConfigGenerator(RingbufferConfig subConfig, boolean configIsXml, int indent) {
+    public static String ringbufferConfigGenerator(RingbufferConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "ringbuffer",
+                RINGBUFFER.getName(),
                 Config::addRingBufferConfig,
                 DynamicConfigXmlGenerator::ringbufferXmlGenerator,
                 DynamicConfigYamlGenerator::ringbufferYamlGenerator
         );
     }
 
-    static String topicConfigGenerator(TopicConfig subConfig, boolean configIsXml, int indent) {
+    public static String topicConfigGenerator(TopicConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "topic",
+                TOPIC.getName(),
                 Config::addTopicConfig,
                 DynamicConfigXmlGenerator::topicXmlGenerator,
                 DynamicConfigYamlGenerator::topicYamlGenerator
         );
     }
 
-    static String reliableTopicConfigGenerator(ReliableTopicConfig subConfig, boolean configIsXml, int indent) {
+    public static String reliableTopicConfigGenerator(ReliableTopicConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "reliable-topic",
+                RELIABLE_TOPIC.getName(),
                 Config::addReliableTopicConfig,
                 DynamicConfigXmlGenerator::reliableTopicXmlGenerator,
                 DynamicConfigYamlGenerator::reliableTopicYamlGenerator
         );
     }
 
-    static String executorConfigGenerator(ExecutorConfig subConfig, boolean configIsXml, int indent) {
+    public static String executorConfigGenerator(ExecutorConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "executor-service",
+                EXECUTOR_SERVICE.getName(),
                 Config::addExecutorConfig,
                 DynamicConfigXmlGenerator::executorXmlGenerator,
                 DynamicConfigYamlGenerator::executorYamlGenerator
         );
     }
 
-    static String durableExecutorConfigGenerator(DurableExecutorConfig subConfig, boolean configIsXml, int indent) {
+    public static String durableExecutorConfigGenerator(
+            DurableExecutorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
-                "durable-executor-service",
+                DURABLE_EXECUTOR_SERVICE.getName(),
                 Config::addDurableExecutorConfig,
                 DynamicConfigXmlGenerator::durableExecutorXmlGenerator,
                 DynamicConfigYamlGenerator::durableExecutorYamlGenerator
         );
     }
 
-    static String scheduledExecutorConfigGenerator(ScheduledExecutorConfig subConfig, boolean configIsXml, int indent) {
+    public static String scheduledExecutorConfigGenerator(
+            ScheduledExecutorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
-                "scheduled-executor-service",
+                SCHEDULED_EXECUTOR_SERVICE.getName(),
                 Config::addScheduledExecutorConfig,
                 DynamicConfigXmlGenerator::scheduledExecutorXmlGenerator,
                 DynamicConfigYamlGenerator::scheduledExecutorYamlGenerator
         );
     }
 
-    static String cardinalityEstimatorConfigGenerator(CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent) {
+    public static String cardinalityEstimatorConfigGenerator(
+            CardinalityEstimatorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
-                "cardinality-estimator",
+                CARDINALITY_ESTIMATOR.getName(),
                 Config::addCardinalityEstimatorConfig,
                 DynamicConfigXmlGenerator::cardinalityEstimatorXmlGenerator,
                 DynamicConfigYamlGenerator::cardinalityEstimatorYamlGenerator
         );
     }
 
-    static String flakeIdGeneratorConfigGenerator(FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent) {
+    public static String flakeIdGeneratorConfigGenerator(
+            FlakeIdGeneratorConfig subConfig, boolean configIsXml, int indent
+    ) {
         return configGenerator(subConfig, configIsXml, indent,
-                "flake-id-generator",
+                FLAKE_ID_GENERATOR.getName(),
                 Config::addFlakeIdGeneratorConfig,
                 DynamicConfigXmlGenerator::flakeIdGeneratorXmlGenerator,
                 DynamicConfigYamlGenerator::flakeIdGeneratorYamlGenerator
         );
     }
 
-    static String pnCounterConfigGenerator(PNCounterConfig subConfig, boolean configIsXml, int indent) {
+    public static String pnCounterConfigGenerator(PNCounterConfig subConfig, boolean configIsXml, int indent) {
         return configGenerator(subConfig, configIsXml, indent,
-                "pn-counter",
+                PN_COUNTER.getName(),
                 Config::addPNCounterConfig,
                 DynamicConfigXmlGenerator::pnCounterXmlGenerator,
                 DynamicConfigYamlGenerator::pnCounterYamlGenerator

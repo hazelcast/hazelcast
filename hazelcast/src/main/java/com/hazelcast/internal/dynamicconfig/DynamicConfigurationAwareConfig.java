@@ -26,6 +26,7 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -975,6 +976,16 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setPersistenceConfig(PersistenceConfig prConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public DynamicConfigurationConfig getDynamicConfigurationConfig() {
+        return staticConfig.getDynamicConfigurationConfig();
+    }
+
+    @Override
+    public Config setDynamicConfigurationConfig(DynamicConfigurationConfig dynamicConfigurationConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

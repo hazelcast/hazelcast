@@ -51,6 +51,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -850,6 +851,16 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public DynamicConfigurationConfig getDynamicConfigurationConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setDynamicConfigurationConfig(DynamicConfigurationConfig dynamicConfigurationConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

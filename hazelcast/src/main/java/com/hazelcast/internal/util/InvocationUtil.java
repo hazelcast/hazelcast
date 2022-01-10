@@ -55,9 +55,11 @@ public final class InvocationUtil {
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
      */
-    public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         Supplier<? extends Operation> operationSupplier,
-                                                                         int maxRetries) {
+    public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(
+            NodeEngine nodeEngine,
+            Supplier<? extends Operation> operationSupplier,
+            int maxRetries
+    ) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
@@ -67,8 +69,11 @@ public final class InvocationUtil {
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
         // we are going to iterate over all members and invoke an operation on each of them
-        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine,
-                memberIterator);
+        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(
+                operationSupplier,
+                nodeEngine,
+                memberIterator
+        );
         Iterator<InternalCompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
         // ChainingFuture uses the iterator to start invocations

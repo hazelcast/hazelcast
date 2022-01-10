@@ -934,6 +934,12 @@ hazelcast:
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
 
+  dynamic-configuration:
+    persistence-enabled: true
+    persistence-file: /mnt/persistence-file
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
+
   local-device:
     my-local-device:
       base-dir: base-dir
