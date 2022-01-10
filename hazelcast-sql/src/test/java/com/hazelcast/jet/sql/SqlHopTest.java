@@ -187,7 +187,9 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), " + size + ", " + size + "))")
-        ).hasMessageContaining("Cannot apply 'HOP' function to [ROW, COLUMN_LIST");
+        ).hasMessageContaining("The descriptor column type")
+                .hasMessageContaining("and the interval type")
+                .hasMessageContaining("do not match");
     }
 
     @Test
