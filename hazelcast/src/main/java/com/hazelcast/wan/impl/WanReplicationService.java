@@ -38,7 +38,8 @@ import java.util.UUID;
  * values to other clusters over the wide area network, so it has to deal
  * with long delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats> {
+public interface WanReplicationService extends CoreService,
+        StatisticsAwareService<LocalWanStats> {
 
     /**
      * Service name.

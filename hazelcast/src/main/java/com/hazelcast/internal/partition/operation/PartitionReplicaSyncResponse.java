@@ -16,8 +16,11 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.ChunkSerDeHelper;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -26,14 +29,14 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
@@ -47,14 +50,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.ChunkSerDeHelper.readChunkedOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
- * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation
- * list if the replica index hasn't changed. If the current replica index is not the one sent by the partition owner, it will :
+ * The replica synchronization response sent from the partition
+ * owner to a replica. It will execute the received operation list
+ * if the replica index hasn't changed. If the current replica
+ * index is not the one sent by the partition owner, it will :
  * <ul>
  * <li>fail all received operations</li>
  * <li>cancel the current replica sync request</li>
@@ -65,19 +71,29 @@ import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFa
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
-        AllowedDuringPassiveState, TargetAware {
+        AllowedDuringPassiveState, TargetAware, Versioned {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
     private long[] versions;
 
+    private transient ChunkSerDeHelper chunkSerDeHelper;
+
     public PartitionReplicaSyncResponse() {
     }
 
-    public PartitionReplicaSyncResponse(Collection<Operation> operations, ServiceNamespace namespace, long[] versions) {
+    public PartitionReplicaSyncResponse(Collection<Operation> operations,
+                                        Collection<ChunkSupplier> chunkSuppliers,
+                                        ServiceNamespace namespace,
+                                        long[] versions,
+                                        int maxTotalChunkedDataInBytes,
+                                        ILogger logger,
+                                        int partitionId) {
         this.operations = operations;
         this.namespace = namespace;
         this.versions = versions;
+        this.chunkSerDeHelper = new ChunkSerDeHelper(logger, partitionId,
+                chunkSuppliers, maxTotalChunkedDataInBytes);
     }
 
     @Override
@@ -119,7 +135,9 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         }
     }
 
-    /** Fail all replication operations with the exception that this node is no longer the replica with the sent index */
+    /**
+     * Fail all replication operations with the exception that this node is no longer the replica with the sent index
+     */
     private void nodeNotOwnsBackup(InternalPartitionImpl partition) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
@@ -207,7 +225,6 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         }
     }
 
-
     @Override
     public boolean returnsResponse() {
         return false;
@@ -262,6 +279,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         out.writeObject(namespace);
         out.writeLongArray(versions);
         writeNullableCollection(operations, out);
+        chunkSerDeHelper.writeChunkedOperations(out);
     }
 
     @Override
@@ -269,6 +287,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         namespace = in.readObject();
         versions = in.readLongArray();
         operations = readNullableCollection(in);
+        operations = readChunkedOperations(in, operations);
     }
 
     @Override

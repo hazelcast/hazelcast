@@ -23,7 +23,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
@@ -49,6 +49,7 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -92,12 +93,16 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  * @see MapServiceContext
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
-public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-                                   DynamicMetricsProvider, TenantContextAwareService, OffloadedReplicationPreparation {
+public class MapService implements ManagedService, ChunkedMigrationAwareService,
+        TransactionalService, RemoteService,
+        EventPublishingService<Object, ListenerAdapter>,
+        PostJoinAwareService, SplitBrainHandlerService,
+        WanSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService,
+        SplitBrainProtectionAwareService, NotifiableEventListener,
+        ClusterStateListener, LockInterceptorService<Data>,
+        DynamicMetricsProvider, TenantContextAwareService,
+        OffloadedReplicationPreparation {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -340,5 +345,10 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public boolean shouldOffload() {
         return migrationAwareService.shouldOffload();
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
+        return migrationAwareService.newChunkSupplier(event, namespace);
     }
 }
