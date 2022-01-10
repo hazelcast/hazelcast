@@ -98,9 +98,10 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
         TcpServerConnectionManager connectionManager = (TcpServerConnectionManager) serverNode.getServer()
                 .getConnectionManager(EndpointQualifier.MEMBER);
         assertTrueEventually(() ->
-                assertEquals(
-                        tcpChannelsPerConnection,
-                        connectionManager.getConnections().size()
+                assertGreaterOrEquals(
+                        "The number of connections must be greater than the number of channels.",
+                        connectionManager.getConnections().size(),
+                        tcpChannelsPerConnection
                 ), timeoutSecs);
 
         LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
@@ -108,10 +109,11 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
                 .linkedAddressesOf(initiatorMemberUuid);
         assertNotNull(registeredAddressesOfInitiatorMember);
         assertContains(registeredAddressesOfInitiatorMember.getAllAddresses(), INITIATOR_MEMBER_ADDRESS);
+        int previousNoConnections = connectionManager.getConnections().size();
         closeRandomConnection(new ArrayList<>(connectionManager.getConnections()));
         assertTrueEventually(() ->
                 assertEquals(
-                        tcpChannelsPerConnection - 1,
+                        previousNoConnections - 1,
                         connectionManager.getConnections().size()
                 ), timeoutSecs);
 
@@ -141,9 +143,10 @@ public class LocalAddressRegistryIntegrationTest extends HazelcastTestSupport {
         TcpServerConnectionManager connectionManager = (TcpServerConnectionManager) serverNode.getServer()
                 .getConnectionManager(EndpointQualifier.MEMBER);
         assertTrueEventually(() ->
-                assertEquals(
-                        tcpChannelsPerConnection,
-                        connectionManager.getConnections().size()
+                assertGreaterOrEquals(
+                        "The number of connections must be greater than the number of channels.",
+                        connectionManager.getConnections().size(),
+                        tcpChannelsPerConnection
                 ), timeoutSecs);
 
         LinkedAddresses registeredAddressesOfInitiatorMember = serverNode
