@@ -102,6 +102,12 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     public static final String URI_LOG_LEVEL = "/hazelcast/rest/log-level";
     public static final String URI_LOG_LEVEL_RESET = "/hazelcast/rest/log-level/reset";
 
+    // Config
+    public static final String URI_CONFIG = "/hazelcast/rest/config";
+    public static final String URI_CONFIG_RELOAD = URI_CONFIG + "/reload";
+    public static final String URI_CONFIG_UPDATE = URI_CONFIG + "/update";
+
+
     protected final ILogger logger;
     protected final RestCallCollector restCallCollector;
 

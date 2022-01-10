@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
@@ -214,5 +215,15 @@ class EmptyConfigurationService implements ConfigurationService {
         // Code shouldn't come here. broadcastConfig() will throw an exception
         // before here.
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
+    }
+
+    @Override
+    public ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    @Override
+    public ConfigUpdateResult update(Config newConfig) {
+        throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
     }
 }

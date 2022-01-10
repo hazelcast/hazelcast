@@ -18,19 +18,24 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
+import java.util.Objects;
 import java.util.UUID;
 
-public abstract class AbstractWanConfigurationEventBase extends AbstractIdentifiedEvent {
-    private final String wanConfigName;
+abstract class AbstractIdentifiedEvent extends AbstractEventBase {
+    private final UUID uuid;
 
-    protected AbstractWanConfigurationEventBase(UUID uuid, String wanConfigName) {
-        super(uuid);
-        this.wanConfigName = wanConfigName;
+    protected AbstractIdentifiedEvent(UUID uuid) {
+        this.uuid = Objects.requireNonNull(uuid, "UUID must not be null");
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    @Override
     public JsonObject toJson() {
-        JsonObject json = super.toJson();
-        json.add("wanConfigName", wanConfigName);
+        JsonObject json = new JsonObject();
+        json.add("uuid", uuid.toString());
         return json;
     }
 }

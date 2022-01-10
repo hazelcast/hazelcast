@@ -365,6 +365,32 @@ public class RestClusterTest {
         assertSuccessJson(response);
     }
 
+    @Test
+    public void testConfigReload() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        ConnectionResponse response = communicator.configReload(config.getClusterName(), getPassword());
+
+        // Reload is enterprise feature. Should fail here.
+        assertJsonContains(response.response, "status", "fail",
+                "message", "Configuration Reload requires Hazelcast Enterprise Edition");
+    }
+
+    @Test
+    public void testConfigUpdate() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        ConnectionResponse response = communicator.configUpdate(
+                config.getClusterName(), getPassword(), "hazelcast:\n"
+        );
+
+        // Reload is enterprise feature. Should fail here.
+        assertJsonContains(response.response, "status", "fail",
+                "message", "Configuration Update requires Hazelcast Enterprise Edition");
+    }
+
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {
         JsonObject object = Json.parse(json).asObject();
         for (int i = 0; i < attributesAndValues.length; ) {

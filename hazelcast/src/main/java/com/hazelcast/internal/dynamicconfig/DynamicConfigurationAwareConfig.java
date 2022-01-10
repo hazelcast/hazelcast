@@ -77,6 +77,7 @@ import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -1103,8 +1104,8 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.toString();
     }
 
-    public void setConfigurationService(ConfigurationService configurationService) {
-        this.configurationService = configurationService;
+    public void setServices(NodeEngineImpl nodeEngine) {
+        this.configurationService = nodeEngine.getConfigurationService();
         this.configSearcher = initConfigSearcher();
     }
 

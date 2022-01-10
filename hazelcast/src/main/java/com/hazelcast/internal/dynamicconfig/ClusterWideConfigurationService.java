@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -54,6 +55,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,6 +96,8 @@ public class ClusterWideConfigurationService implements
 
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
+
+    protected NodeEngine nodeEngine;
 
     private final DynamicConfigListener listener;
 
@@ -201,6 +205,16 @@ public class ClusterWideConfigurationService implements
     public void broadcastConfig(IdentifiedDataSerializable config) {
         InternalCompletableFuture<Object> future = broadcastConfigAsync(config);
         future.joinInternal();
+    }
+
+    @Override
+    public ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    @Override
+    public ConfigUpdateResult update(@Nullable Config newConfig) {
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
