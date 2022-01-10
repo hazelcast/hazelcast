@@ -37,6 +37,9 @@ public interface ValidatorResource {
     @BaseMessage("Grouping/aggregations over non-windowed, non-ordered streaming source not supported")
     ExInst<SqlValidatorException> streamingAggregationsOverNonOrderedSourceNotSupported();
 
+    @BaseMessage("Streaming aggregation must be grouped by window_start/window_end")
+    ExInst<SqlValidatorException> streamingAggregationsMustBeGrouped();
+
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
 

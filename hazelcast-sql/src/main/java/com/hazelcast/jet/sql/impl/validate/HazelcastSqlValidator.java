@@ -254,18 +254,26 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateGroupClause(SqlSelect select) {
         super.validateGroupClause(select);
 
-        if (isInfiniteRows(select)
-                && containsGroupingOrAggregation(select)
-                && !containsOrderedWindow(requireNonNull(select.getFrom()))) {
+        boolean containsGrouping = containsGrouping(select);
+        boolean containsAggregation = containsAggregation(select);
+        boolean containsOrderedWindow = containsOrderedWindow(requireNonNull(select.getFrom()));
+        boolean infiniteRows = isInfiniteRows(select);
+
+        if (containsOrderedWindow && containsAggregation && !containsGrouping) {
+            throw newValidationError(select, RESOURCE.streamingAggregationsMustBeGrouped());
+
+        }
+
+        if (infiniteRows && (containsAggregation || containsGrouping) && !containsOrderedWindow) {
             throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
         }
     }
 
-    private boolean containsGroupingOrAggregation(SqlSelect select) {
-        if (select.getGroup() != null && select.getGroup().size() > 0) {
-            return true;
-        }
+    private boolean containsGrouping(SqlSelect select) {
+        return select.getGroup() != null && select.getGroup().size() > 0;
+    }
 
+    private boolean containsAggregation(SqlSelect select) {
         if (select.isDistinct()) {
             return true;
         }

@@ -373,6 +373,25 @@ public class SqlHopTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_groupByWindowBoundWithExpression() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(20), null, null)
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start + INTERVAL '0.001' SECOND, SUM(distance) FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.004' SECOND" +
+                        ")) " +
+                        "GROUP BY window_start + INTERVAL '0.001' SECOND",
+                singletonList(new Row(timestampTz(0L), 1)));
+    }
+
+    @Test
     public void test_groupByHaving() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
@@ -1633,7 +1652,7 @@ public class SqlHopTest extends SqlTestSupport {
     public void test_groupByNonWindowBound() {
         String name = createTable();
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
+        assertThatThrownBy(() -> sqlService.execute("SELECT window_start, SUM(distance) FROM " +
                 "TABLE(HOP(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
@@ -1641,7 +1660,7 @@ public class SqlHopTest extends SqlTestSupport {
                 "  , INTERVAL '0.004' SECOND" +
                 ")) " +
                 "GROUP BY window_start + INTERVAL '0.001' SECOND")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasMessageContaining("Expression 'window_start' is not being grouped");
     }
 
     @Test
