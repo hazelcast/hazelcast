@@ -97,8 +97,6 @@ public class ClusterWideConfigurationService implements
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
 
-    protected NodeEngine nodeEngine;
-
     private final DynamicConfigListener listener;
 
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
