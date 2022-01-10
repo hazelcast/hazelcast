@@ -32,8 +32,6 @@
     <properties>
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <maven.failsafe.plugin.version>3.0.0-M5</maven.failsafe.plugin.version>
-        <rest-assured.version>4.4.0</rest-assured.version>
     </properties>
 
     <build>
@@ -157,15 +155,6 @@
                     <rules>
                         <dependencyConvergence/>
                     </rules>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven.failsafe.plugin.version}</version>
-                <configuration>
-                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
-                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                 </configuration>
             </plugin>
         </plugins>
@@ -383,19 +372,6 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <version>${rest-assured.version}</version>
-            <exclusions>
-                <exclusion>
-                    <!-- Excluded to avoid dependency conflict with hazelcast-jet-files-azure -->
-                    <groupId>jakarta.activation</groupId>
-                    <artifactId>jakarta.activation-api</artifactId>
-                </exclusion>
-            </exclusions>
             <scope>test</scope>
         </dependency>
     </dependencies>
