@@ -47,7 +47,7 @@ public class DynamicConfigurationConfig {
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
     /**
-     * Returns whether Dynamic Configuration Persistence enabled on this member.
+     * Returns whether Dynamic Configuration Persistence is enabled on this member.
      *
      * @return true if Dynamic Configuration Persistence is enabled
      */
