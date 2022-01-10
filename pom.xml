@@ -114,7 +114,7 @@
         <netty.version>4.1.63.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.0</parquet.version>
+        <parquet.version>1.12.2</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.13.0</protobuf.version>
