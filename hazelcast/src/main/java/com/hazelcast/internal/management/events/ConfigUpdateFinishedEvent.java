@@ -16,21 +16,34 @@
 
 package com.hazelcast.internal.management.events;
 
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public abstract class AbstractWanConfigurationEventBase extends AbstractIdentifiedEvent {
-    private final String wanConfigName;
+public class ConfigUpdateFinishedEvent extends AbstractIdentifiedEvent {
 
-    protected AbstractWanConfigurationEventBase(UUID uuid, String wanConfigName) {
+    private final ConfigUpdateResult configUpdateResult;
+
+    public ConfigUpdateFinishedEvent(UUID uuid, ConfigUpdateResult configUpdateResult) {
         super(uuid);
-        this.wanConfigName = wanConfigName;
+        this.configUpdateResult = configUpdateResult;
     }
 
+    @Override
+    public EventMetadata.EventType getType() {
+        return EventMetadata.EventType.CONFIG_UPDATE_FINISHED;
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("wanConfigName", wanConfigName);
+        json.add("configUpdateResult", configUpdateResult.toJson());
         return json;
     }
+
+    public ConfigUpdateResult getConfigUpdateResult() {
+        return configUpdateResult;
+    }
 }
+

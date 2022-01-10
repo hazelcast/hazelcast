@@ -65,7 +65,7 @@ import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
@@ -362,7 +362,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public <T> T createService(Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+    public <T> T createService(Class<T> clazz, Object... params) {
         if (WanReplicationService.class.isAssignableFrom(clazz)) {
             return (T) new WanReplicationServiceImpl(node);
         } else if (ICacheService.class.isAssignableFrom(clazz)) {
@@ -371,15 +372,29 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             return createMapService();
         } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
             return (T) new JetServiceBackend(node);
+        } else if (ClusterWideConfigurationService.class.isAssignableFrom(clazz)) {
+            return createConfigurationService(params[0]);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T createMapService() {
         ConstructorFunction<NodeEngine, MapService> constructor = getDefaultMapServiceConstructor();
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         return (T) constructor.createNew(nodeEngine);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T createConfigurationService(Object nodeEngine) {
+        if (!(nodeEngine instanceof NodeEngine)) {
+            throw new IllegalArgumentException(
+                    "While creating ConfigurationService expected NodeEngine as a parameter, but found: "
+                            + nodeEngine.getClass().getName()
+            );
+        }
+        return (T) new ClusterWideConfigurationService((NodeEngine) nodeEngine, new EmptyDynamicConfigListener());
     }
 
     @Override
@@ -558,11 +573,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance) {
         return new TimedMemberStateFactory(instance);
-    }
-
-    @Override
-    public DynamicConfigListener createDynamicConfigListener() {
-        return new EmptyDynamicConfigListener();
     }
 
     @Override

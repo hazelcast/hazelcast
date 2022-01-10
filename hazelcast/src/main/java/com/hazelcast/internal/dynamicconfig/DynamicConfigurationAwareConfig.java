@@ -50,13 +50,12 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SqlConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
@@ -69,6 +68,7 @@ import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
@@ -76,6 +76,7 @@ import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -1092,8 +1093,8 @@ public class DynamicConfigurationAwareConfig extends Config {
         return staticConfig.toString();
     }
 
-    public void setConfigurationService(ConfigurationService configurationService) {
-        this.configurationService = configurationService;
+    public void setServices(NodeEngineImpl nodeEngine) {
+        this.configurationService = nodeEngine.getConfigurationService();
         this.configSearcher = initConfigSearcher();
     }
 

@@ -120,7 +120,9 @@ public class RestApiFilter implements TextProtocolFilter {
                 || requestUri.startsWith(HttpCommandProcessor.URI_CHANGE_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)
-                || requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CONFIG_RELOAD)
+                || requestUri.startsWith(HttpCommandProcessor.URI_CONFIG_UPDATE)) {
             return RestEndpointGroup.CLUSTER_WRITE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CP_SUBSYSTEM_BASE_URL)) {

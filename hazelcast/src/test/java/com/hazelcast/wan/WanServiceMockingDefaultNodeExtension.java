@@ -30,8 +30,8 @@ public class WanServiceMockingDefaultNodeExtension extends DefaultNodeExtension 
     }
 
     @Override
-    public <T> T createService(Class<T> clazz) {
+    public <T> T createService(Class<T> clazz, Object... params) {
         return clazz.isAssignableFrom(WanReplicationService.class)
-                ? (T) wanReplicationService : super.createService(clazz);
+                ? (T) wanReplicationService : super.createService(clazz, params);
     }
 }
