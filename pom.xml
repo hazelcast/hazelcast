@@ -770,6 +770,16 @@
         </profile>
 
         <profile>
+            <id>pr-builder</id>
+            <properties>
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
+        </profile>
+
+        <profile>
             <id>LOCAL</id>
             <properties>
                 <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
