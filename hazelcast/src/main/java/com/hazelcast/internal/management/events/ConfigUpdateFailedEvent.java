@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.config.ConfigNamespace;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
@@ -24,11 +25,15 @@ import java.util.UUID;
 public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
     private final Exception exception;
     private final ConfigNamespace namespace;
+    private final ConfigUpdateResult configUpdateResult;
 
-    public ConfigUpdateFailedEvent(UUID uuid, Exception exception, ConfigNamespace namespace) {
+    public ConfigUpdateFailedEvent(UUID uuid, Exception exception,
+                                   ConfigNamespace namespace,
+                                   ConfigUpdateResult configUpdateResult) {
         super(uuid);
         this.exception = exception;
         this.namespace = namespace;
+        this.configUpdateResult = configUpdateResult;
     }
 
     @Override
@@ -41,6 +46,7 @@ public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
         JsonObject json = super.toJson();
         json.add("exception", exception.getClass().getSimpleName());
         json.add("exceptionMessage", exception.getMessage());
+        json.add("configUpdateResult", configUpdateResult.toJson());
         if (namespace != null) {
             json.add("configName", namespace.getConfigName() != null ? namespace.getConfigName() : "null");
             json.add("sectionName", namespace.getSectionName());
