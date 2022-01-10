@@ -198,9 +198,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
             // handle error cases after registering the addresses to avoid the later failing connections
             // occur because target addresses are not registered.
-            if (!handleDuplicateConnections(connection, remoteUuid, planeIndex)) {
-                return false;
-            }
+
             // handle self connection
             if (remoteUuid.equals(serverContext.getThisUuid())) {
                 connection.close("Connecting to self!", null);

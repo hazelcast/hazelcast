@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,6 +53,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+@Ignore("https://github.com/hazelcast/hazelcast/issues/18877")
 public class TcpMetricValuesTest {
 
     @Before
@@ -132,5 +134,4 @@ public class TcpMetricValuesTest {
         }
         return config;
     }
-
 }
