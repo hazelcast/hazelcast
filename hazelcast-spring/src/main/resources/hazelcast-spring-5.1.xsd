@@ -4720,7 +4720,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="persistence-enabled" type="xs:boolean">
+            <xs:element name="persistence-enabled" type="parameterized-boolean">
                 <xs:annotation>
                     <xs:documentation>
                         True if dynamic configuration persistence is enabled.
