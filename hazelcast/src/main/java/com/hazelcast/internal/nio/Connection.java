@@ -97,7 +97,8 @@ public interface Connection {
 
     /**
      * Gets the {@link UUID} of the other side of this connection.
-     * It can be null if the other side of connection is not member
+     * It can be null if the other side of connection is not hz
+     * member or client (e.g. REST client)
      * @return the uuid of the remote endpoint of the connection.
      */
     @Nullable

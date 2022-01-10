@@ -453,6 +453,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
         ServerConnection connection = packet.getConn();
         Address caller = connection.getRemoteAddress();
+        UUID callerUuid = connection.getRemoteUuid();
         Operation op = null;
         try {
             Object object = nodeEngine.toObject(packet);
@@ -460,7 +461,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);
             setConnection(op, connection);
-            setCallerUuidIfNotSet(caller, op);
+            setCallerUuidIfNotSet(op, callerUuid);
             setOperationResponseHandler(op);
 
             if (!ensureValidMember(op)) {
@@ -525,11 +526,10 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         return false;
     }
 
-    private void setCallerUuidIfNotSet(Address callerAddress, Operation op) {
+    private void setCallerUuidIfNotSet(Operation op, UUID callerUuid) {
         if (op.getCallerUuid() != null) {
             return;
         }
-        UUID callerUuid = node.getLocalAddressRegistry().uuidOf(callerAddress);
         if (callerUuid != null) {
             op.setCallerUuid(callerUuid);
         }
