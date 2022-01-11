@@ -143,9 +143,10 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                     }
                 }
             } else if (hasInputRef(projection, windowStartIndex, windowEndIndex)) {
-                // todo [viliam] test this
-                throw QueryException.error(SqlErrorCode.PARSING, "In window aggregation, the window_start and window_end fields must be used" +
-                        " directly, without any transformation");
+                throw QueryException.error(SqlErrorCode.PARSING,
+                        "In window aggregation, the window_start and window_end fields must be used" +
+                                " directly, without any transformation"
+                );
             }
         }
 

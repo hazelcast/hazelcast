@@ -1455,8 +1455,7 @@ public class SqlHopTest extends SqlTestSupport {
     public void test_nested_filter() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
-                row(timestampTz(1), "Alice", 1),
-                row(timestampTz(2), "Alice", 1),
+                row(timestampTz(2), "Alice", 3),
                 row(timestampTz(3), "Bob", 1),
                 row(timestampTz(10), null, null)
         );
@@ -1464,7 +1463,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start_inner, name, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "   (SELECT ts, name, window_start window_start_inner FROM" +
+                        "   (SELECT ts, name, window_start AS window_start_inner FROM" +
                         "      TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
@@ -1473,14 +1472,18 @@ public class SqlHopTest extends SqlTestSupport {
                         "       )) WHERE ts > '" + timestampTz(0) + "' " +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.003' SECOND" +
-                        "   , INTERVAL '0.006' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
+                        "   , INTERVAL '0.004' SECOND" +
                         ")) " +
                         "GROUP BY window_start_inner, name",
                 asList(
-                        new Row(timestampTz(-2L), "Alice", 1L),
-                        new Row(timestampTz(0L), "Alice", 2L),
+                        new Row(timestampTz(0L), "Alice", 1L),
+                        new Row(timestampTz(0L), "Alice", 1L),
                         new Row(timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(2L), "Bob", 1L),
                         new Row(timestampTz(2L), "Bob", 1L)
                 )
         );
@@ -1497,26 +1500,26 @@ public class SqlHopTest extends SqlTestSupport {
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start_inner_2, window_start_inner_1, name, COUNT(name) FROM " +
+                "SELECT window_end_inner, window_end, name, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "   (SELECT ts, name, window_start window_start_inner_1, window_start window_start_inner_2 FROM" +
+                        "   (SELECT ts, name, window_end AS window_end_inner FROM " +
                         "      TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
-                        "           , INTERVAL '0.004' SECOND" +
                         "       ))" +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.003' SECOND" +
-                        "   , INTERVAL '0.006' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
+                        "   , INTERVAL '0.004' SECOND" +
                         ")) " +
-                        "GROUP BY window_start_inner_2, window_start_inner_1, name",
+                        "GROUP BY window_end, window_end_inner, name",
                 asList(
-                        new Row(timestampTz(-2L), timestampTz(0L), "Alice", 2L),
-                        new Row(timestampTz(0L), timestampTz(0L), "Alice", 2L),
-                        new Row(timestampTz(2L), timestampTz(2L), "Alice", 1L),
-                        new Row(timestampTz(2L), timestampTz(2L), "Bob", 1L)
+                        new Row(timestampTz(1L), timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(2L), timestampTz(2L), "Alice", 2L),
+                        new Row(timestampTz(3L), timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(4L), timestampTz(4L), "Bob", 1L)
                 )
         );
     }
