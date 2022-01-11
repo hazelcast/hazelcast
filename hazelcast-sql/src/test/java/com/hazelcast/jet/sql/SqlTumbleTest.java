@@ -1565,7 +1565,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))"))
-                .hasMessageContaining("cannot group by window without IMPOSE_ORDER");
+                .hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     private static Object[] row(Object... values) {

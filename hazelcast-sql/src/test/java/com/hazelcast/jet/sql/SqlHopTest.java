@@ -244,7 +244,6 @@ public class SqlHopTest extends SqlTestSupport {
                 row(timestampTz(1000L), "Alice", 1),
                 row(timestampTz(2000L), null, null)
         );
-
         assertRowsEventuallyInAnyOrder(
                 "SELECT SIN( CAST( EXTRACT(SECOND FROM window_start) AS DOUBLE)), SUM(distance) FROM " +
                         "TABLE(HOP(" +
@@ -255,17 +254,6 @@ public class SqlHopTest extends SqlTestSupport {
                         ")) " +
                         "GROUP BY window_start",
                 singletonList(new Row(0.0d, 1L)));
-
-//        assertThatThrownBy(() -> instance().getSql().execute(
-//                "SELECT SIN( CAST( EXTRACT(SECOND FROM window_start) AS DOUBLE)), SUM(distance) FROM " +
-//                        "TABLE(HOP(" +
-//                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
-//                        "  , DESCRIPTOR(ts)" +
-//                        "  , INTERVAL '0.002' SECOND" +
-//                        "  , INTERVAL '0.004' SECOND" +
-//                        ")) " +
-//                        "GROUP BY window_start"))
-//                .hasMessageContaining("the window_start and window_end fields must be used directly");
     }
 
     @Test
@@ -361,7 +349,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
                         ")) " +
-                        "GROUP BY window_start, n",
+                        "GROUP BY window_start, name",
                 asList(
                         new Row(timestampTz(-2L), "Alice-s"),
                         new Row(timestampTz(0L), "Alice-s"),
@@ -373,13 +361,37 @@ public class SqlHopTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_groupByAliasedExpression() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(3), "Bob", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        assertRowsEventuallyInAnyOrder("SELECT window_start, name || '-s' AS nani FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.004' SECOND" +
+                        ")) " +
+                        "GROUP BY window_start, nani",
+                asList(
+                        new Row(timestampTz(-2L), "Alice-s"),
+                        new Row(timestampTz(0L), "Alice-s"),
+                        new Row(timestampTz(0L), "Bob-s"),
+                        new Row(timestampTz(2L), "Bob-s")
+                ));
+    }
+
+    @Test
     public void test_groupByWindowBoundWithExpression() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
                 row(timestampTz(20), null, null)
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertThatThrownBy(() -> sqlService.execute(
                 "SELECT window_start + INTERVAL '0.001' SECOND, SUM(distance) FROM " +
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
@@ -387,8 +399,9 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
                         ")) " +
-                        "GROUP BY window_start + INTERVAL '0.001' SECOND",
-                singletonList(new Row(timestampTz(0L), 1)));
+                        "GROUP BY window_start + INTERVAL '0.001' SECOND"))
+                .hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used" +
+                        " directly, without any transformation");
     }
 
     @Test
@@ -1700,23 +1713,22 @@ public class SqlHopTest extends SqlTestSupport {
         TestBatchSqlConnector.create(
                 sqlService,
                 name,
-                asList("ts", "name"),
-                asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
-                row(timestampTz(0), "Alice"),
-                row(timestampTz(1), null),
-                row(timestampTz(2), "Alice"),
-                row(timestampTz(3), "Bob")
+                asList("ts", "id"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, INTEGER),
+                row(timestampTz(2), 1),
+                row(timestampTz(4), 2),
+                row(timestampTz(6), 3)
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT COUNT(name) FROM " +
+                "SELECT SUM(id) FROM " +
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
-                        "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.1' SECOND" +
+                        "  , INTERVAL '0.2' SECOND" +
                         "))",
-                singletonList(new Row(3L))
+                singletonList(new Row(12L))
         );
     }
 

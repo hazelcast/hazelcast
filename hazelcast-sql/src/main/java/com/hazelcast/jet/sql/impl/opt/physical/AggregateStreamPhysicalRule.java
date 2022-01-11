@@ -34,7 +34,9 @@ import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitorImpl;
 
@@ -166,16 +168,33 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     }
 
     /**
-     * Returns if there's any reference to input field with index i1 or
-     * i2 in the given projection.
+     * Returns if there's any reference to input field
+     * with index i1 or i2 in the given projection.
      */
     private static boolean hasInputRef(RexNode projection, int i1, int i2) {
-        // TODO [viliam] test this
         return projection.accept(new RexVisitorImpl<Boolean>(true) {
-            // TODO [sasha] During rex tree traversing RexVisitorImpl#visitLiteral returns null. /shrug.
             @Override
             public Boolean visitInputRef(RexInputRef inputRef) {
                 return inputRef.getIndex() == i1 || inputRef.getIndex() == i2;
+            }
+
+            @Override
+            public Boolean visitCall(RexCall call) {
+                if (!deep) {
+                    return null;
+                }
+
+                for (RexNode operand : call.operands) {
+                    if (operand.accept(this)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean visitLiteral(RexLiteral literal) {
+                return false;
             }
         });
     }
