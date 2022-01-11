@@ -59,11 +59,21 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
+     * Persists any dynamically changeable sub configuration to this member's
+     * declarative configuration. Preserves file format of the existing dynamic
+     * configuration persistence file. Also note that this method is
+     * idempotent.
+     *
+     * @param subConfig configuration to persist
+     */
+    void persist(IdentifiedDataSerializable subConfig);
+
+    /**
      * Updates the configuration with the given configuration. Updating means
      * dynamically changing all the differences dynamically changeable.
      *
      * @param newConfig config to find any new dynamically changeable sub configs
-     * @return reload result which includes added and ignored configurations
+     * @return update result which includes added and ignored configurations
      */
     ConfigUpdateResult update(Config newConfig);
 
@@ -71,7 +81,7 @@ public interface ConfigurationService {
      * Updates the configuration with the declarative configuration. Updating
      * means dynamically changing all the differences dynamically changeable.
      *
-     * @return reload result which includes added and ignored configurations
+     * @return update result which includes added and ignored configurations
      */
     ConfigUpdateResult update();
 

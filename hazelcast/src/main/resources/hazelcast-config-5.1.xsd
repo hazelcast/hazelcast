@@ -74,8 +74,9 @@
                 <xs:element name="metrics" type="metrics" minOccurs="0"/>
                 <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                 <xs:element name="sql" type="sql" minOccurs="0"/>
-                <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="jet" type="jet" minOccurs="0"/>
                 <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -2776,7 +2777,7 @@
     <xs:complexType name="management-permission">
         <xs:complexContent>
             <xs:extension base="base-permission">
-                <xs:attribute name="name" type="xs:string" use="optional">
+                <xs:attribute name="name" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
                             Optional name of the permission. Simple wildcard (*) or prefixes (prefix.*) can be used.
@@ -4166,6 +4167,54 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="dynamic-configuration">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration settings related to dynamic configuration feature.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="persistence-enabled" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if dynamic configuration persistence is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persistence-file" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Path for dynamic configuration persistence file. Dynamic changes will be
+                        persisted into this file. If not set, configuration file that was used to
+                        start Hazelcast (root configuration) will be used. If set, this file (the
+                        file specified in the persistence-file path) will be used for persisting
+                        dynamic changes instead of root configuration file. User should also do
+                        the following two: Create an XML or YAML file specified in this path and
+                        import this XML or YAML file to the root configuration. Path can be an
+                        absolute or relative path to the node startup directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Directory for dynamic configuration persistence file backups.
+                        Each new backup will be created inside this directory.
+                        Can be an absolute or relative path to the node startup directory.
+                        If not set, new folder will be created at the node startup directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="local-device">
