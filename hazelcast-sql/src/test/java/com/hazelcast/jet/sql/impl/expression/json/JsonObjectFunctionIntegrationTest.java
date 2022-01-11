@@ -32,7 +32,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -109,14 +108,9 @@ public class JsonObjectFunctionIntegrationTest extends SqlJsonTestSupport {
                 .of(2020, 1, 1, 13, 0, 0);
         final OffsetDateTime dateTimeTz = OffsetDateTime.of(dateTime, ZoneOffset.UTC);
 
-        final String timeStr = time.format(DateTimeFormatter.ISO_TIME);
-        final String dateStr = date.format(DateTimeFormatter.ISO_DATE);
-        final String dateTimeStr = dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
-        final String dateTimeTzStr = dateTimeTz.format(DateTimeFormatter.ISO_DATE_TIME);
-
         assertRowsAnyOrder("SELECT JSON_OBJECT('a':?, 'b':?, 'c':?, 'd':?)",
                 Arrays.asList(time, date, dateTime, dateTimeTz),
-                jsonObjRow(objectMap("a", timeStr, "b", dateStr, "c", dateTimeStr, "d", dateTimeTzStr)));
+                jsonObjRow(objectMap("a", "13:00", "b", "2020-01-01", "c", "2020-01-01T13:00", "d", "2020-01-01T13:00Z")));
     }
 
     private List<Row> jsonObjRow(final Map<Object, Object> values) {

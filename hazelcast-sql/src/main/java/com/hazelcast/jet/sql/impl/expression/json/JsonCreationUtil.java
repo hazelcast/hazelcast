@@ -19,18 +19,14 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonPrimitive;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-
 public final class JsonCreationUtil {
     private static final Gson SERIALIZER = new GsonBuilder()
+            .disableHtmlEscaping()
             .serializeNulls()
             .create();
 
@@ -49,20 +45,23 @@ public final class JsonCreationUtil {
         final Object result;
         switch (converter.getTypeFamily()) {
             case TIME:
-                result = ((LocalTime) value).format(DateTimeFormatter.ISO_TIME);
-                break;
             case DATE:
-                result = ((LocalDate) value).format(DateTimeFormatter.ISO_DATE);
-                break;
             case TIMESTAMP:
-                result = ((LocalDateTime) value).format(DateTimeFormatter.ISO_DATE_TIME);
-                break;
             case TIMESTAMP_WITH_TIME_ZONE:
-                result = ((OffsetDateTime) value).format(DateTimeFormatter.ISO_DATE_TIME);
+                result = converter.asVarchar(value);
                 break;
             default:
                 result = value;
         }
+
         return SERIALIZER.toJson(result);
+    }
+
+    public static String serializeString(String string) {
+        if (string == null) {
+            return "null";
+        }
+
+        return SERIALIZER.toJson(new JsonPrimitive(string));
     }
 }

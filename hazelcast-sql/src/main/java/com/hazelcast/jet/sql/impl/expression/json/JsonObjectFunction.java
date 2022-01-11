@@ -74,7 +74,7 @@ public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> imple
                 sb.append(',');
             }
             assert key instanceof String;
-            sb.append(JsonCreationUtil.serializeValue(key));
+            sb.append(JsonCreationUtil.serializeString((String) key));
             sb.append(':');
             sb.append(JsonCreationUtil.serializeValue(value));
         }
