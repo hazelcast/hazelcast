@@ -1468,7 +1468,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , INTERVAL '0.002' SECOND" +
                 ")) " +
                 "GROUP BY window_start + INTERVAL '0.001' SECOND")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used directly, without any transformation");
     }
 
     @Test
