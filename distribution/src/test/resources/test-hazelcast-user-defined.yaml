@@ -1,0 +1,2 @@
+hazelcast:
+  cluster-name: hz-yaml-configured-cluster

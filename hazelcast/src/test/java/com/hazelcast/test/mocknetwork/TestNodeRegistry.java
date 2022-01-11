@@ -32,7 +32,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -103,6 +105,20 @@ public final class TestNodeRegistry {
             }
         }
         return all;
+    }
+
+    public UUID uuidOf(Address address) {
+        Node node = nodes.get(address);
+        return node != null ? node.getThisUuid() : null;
+    }
+
+    public Address addressOf(UUID memberUuid) {
+        Optional<Address> memberAddress = nodes.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().getThisUuid() == memberUuid)
+                .map(Map.Entry::getKey)
+                .findAny();
+        return memberAddress.orElse(null);
     }
 
     public void shutdown() {

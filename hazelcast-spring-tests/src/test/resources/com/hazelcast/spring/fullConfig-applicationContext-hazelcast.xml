@@ -1081,6 +1081,13 @@
                 <hz:write-io-thread-count>16</hz:write-io-thread-count>
             </hz:local-device>
 
+            <hz:dynamic-configuration>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
+                <hz:persistence-file>/mnt/persistence-file</hz:persistence-file>
+                <hz:backup-dir>/mnt/backup-dir</hz:backup-dir>
+                <hz:backup-count>7</hz:backup-count>
+            </hz:dynamic-configuration>
+
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>
                     <hz:property name="host">syslogserver.acme.com</hz:property>

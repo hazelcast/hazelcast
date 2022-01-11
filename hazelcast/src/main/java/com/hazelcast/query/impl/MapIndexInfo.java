@@ -39,8 +39,9 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
     public MapIndexInfo() {
     }
 
-    public void addIndexCofigs(Collection<IndexConfig> indexConfigs) {
+    public MapIndexInfo addIndexCofigs(Collection<IndexConfig> indexConfigs) {
         this.indexConfigs.addAll(indexConfigs);
+        return this;
     }
 
     public String getMapName() {
