@@ -64,6 +64,21 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_tables() {
+        assertRowsAnyOrder(
+                "SELECT * FROM information_schema.tables",
+                asList(
+                        new Row("hazelcast", "public", mappingName,
+                                "BASE TABLE",
+                                null, null, null, null, null,
+                                "YES", "NO", null),
+                        new Row("hazelcast", "public", viewName,
+                                "VIEW",
+                                null, null, null, null, null,
+                                "NO", "NO", null)));
+    }
+
+    @Test
     public void test_mappings() {
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.mappings",
