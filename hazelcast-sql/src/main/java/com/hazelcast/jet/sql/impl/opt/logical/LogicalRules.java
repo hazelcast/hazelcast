@@ -59,7 +59,7 @@ public final class LogicalRules {
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
                 FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
                 FunctionLogicalRules.TUMBLE_HOP_FUNCTION_INSTANCE,
-                PushProjectOverSlidingWindowRule.INSTANCE,
+//                PushProjectOverSlidingWindowRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,

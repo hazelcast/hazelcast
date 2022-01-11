@@ -37,11 +37,13 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                     .predicate(OptUtils::isBounded)
                     .inputs(b1 -> b1.operand(RelNode.class).anyInputs()));
 
-    static final RelOptRule INSTANCE = new AggregateBatchPhysicalRule();
 
     private AggregateBatchPhysicalRule() {
         super(RULE_CONFIG);
     }
+
+    @SuppressWarnings("checkstyle:DeclarationOrder")
+    static final RelOptRule INSTANCE = new AggregateBatchPhysicalRule();
 
     @Override
     public void onMatch(RelOptRuleCall call) {

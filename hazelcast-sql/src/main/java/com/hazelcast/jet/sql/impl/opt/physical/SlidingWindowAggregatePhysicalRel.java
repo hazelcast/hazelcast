@@ -113,6 +113,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         return numStages;
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     public KeyedWindowResultFunction<? super Object, ? super Object[], ?> outputValueMapping() {
         int[] windowBoundsIndexMask = new int[getRowType().getFieldCount()];
 

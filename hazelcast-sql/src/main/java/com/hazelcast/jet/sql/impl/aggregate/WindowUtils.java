@@ -63,7 +63,8 @@ public final class WindowUtils {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
-                // todo [viliam] could we use Instant here (QueryDataType.TIMESTAMP_WITH_TZ_INSTANT). That conversion is much cheaper.
+                // TODO: [viliam] could we use Instant here (QueryDataType.TIMESTAMP_WITH_TZ_INSTANT).
+                // That conversion is much cheaper.
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowStart), ZoneId.systemDefault());
             } else if (mapping[i] == -2) {
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
@@ -104,69 +105,61 @@ public final class WindowUtils {
         };
     }
 
-    private static Object[] addWindowBoundsSingleRow(Object[] row, Object timeStamp, long windowStartMillis, long windowEndMillis) {
+    private static Object[] addWindowBoundsSingleRow(Object[] row, Object timeStamp, long windowStart, long windowEnd) {
         Object[] result = Arrays.copyOf(row, row.length + 2);
         if (timeStamp instanceof Byte) {
-            result[result.length - 2] = (byte) windowStartMillis;
-            result[result.length - 1] = (byte) windowEndMillis;
+            result[result.length - 2] = (byte) windowStart;
+            result[result.length - 1] = (byte) windowEnd;
             return result;
         } else if (timeStamp instanceof Short) {
-            result[result.length - 2] = (short) windowStartMillis;
-            result[result.length - 1] = (short) windowEndMillis;
+            result[result.length - 2] = (short) windowStart;
+            result[result.length - 1] = (short) windowEnd;
             return result;
         } else if (timeStamp instanceof Integer) {
-            result[result.length - 2] = (int) windowStartMillis;
-            result[result.length - 1] = (int) windowEndMillis;
+            result[result.length - 2] = (int) windowStart;
+            result[result.length - 1] = (int) windowEnd;
             return result;
         } else if (timeStamp instanceof Long) {
-            result[result.length - 2] = windowStartMillis;
-            result[result.length - 1] = windowEndMillis;
+            result[result.length - 2] = windowStart;
+            result[result.length - 1] = windowEnd;
             return result;
         } else if (timeStamp instanceof LocalTime) {
-            result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalTime();
-            result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalTime();
+            result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalTime();
+            result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalTime();
             return result;
         } else if (timeStamp instanceof LocalDate) {
-            result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDate();
-            result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDate();
+            result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalDate();
+            result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalDate();
             return result;
         } else if (timeStamp instanceof LocalDateTime) {
-            result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDateTime();
-            result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDateTime();
+            result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalDateTime();
+            result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalDateTime();
             return result;
         } else {
-            result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE);
-            result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE);
+            result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE);
+            result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE);
             return result;
         }
     }
 
     public static Object convert(long millis, SqlTypeName typeName) {
         switch (typeName) {
-            case TINYINT: {
+            case TINYINT:
                 return (byte) millis;
-            }
-            case SMALLINT: {
+            case SMALLINT:
                 return (short) millis;
-            }
-            case INTEGER: {
+            case INTEGER:
                 return (int) millis;
-            }
-            case BIGINT: {
+            case BIGINT:
                 return millis;
-            }
-            case TIME: {
+            case TIME:
                 return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalTime();
-            }
-            case DATE: {
+            case DATE:
                 return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDate();
-            }
-            case TIMESTAMP: {
+            case TIMESTAMP:
                 return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDateTime();
-            }
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE: {
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return asTimestampWithTimezone(millis, DEFAULT_ZONE);
-            }
             default:
                 throw new IllegalArgumentException();
         }
