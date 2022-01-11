@@ -29,8 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,13 +65,11 @@ public class CreateViewStatementTest extends SqlTestSupport {
                 + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
 
-        List<Row> expected = new ArrayList<>();
-        expected.add(new Row(1, 10));
-        assertRowsAnyOrder(((View) viewStorage.get("v")).query(), expected);
+        assertRowsAnyOrder(((View) viewStorage.get("v")).query(), Collections.singletonList(new Row(1, 10)));
     }
 
     @Test
-    public void when_createOrReplaceView_then_succeeds() {
+    public void test_unnecessaryOrReplaceOption() {
         String sql = "CREATE OR REPLACE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
@@ -83,9 +80,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
                 + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
 
 
-        List<Row> expected = new ArrayList<>();
-        expected.add(new Row(1, 10));
-        assertRowsAnyOrder(((View) viewStorage.get("v")).query(), expected);
+        assertRowsAnyOrder(((View) viewStorage.get("v")).query(), Collections.singletonList(new Row(1, 10)));
     }
 
     @Test
