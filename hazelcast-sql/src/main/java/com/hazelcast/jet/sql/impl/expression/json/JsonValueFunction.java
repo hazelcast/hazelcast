@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.expression.json;
 import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,18 +31,19 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.JsonPath;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.jsfr.json.exception.JsonPathCompilerException;
+import org.jsfr.json.path.JsonPath;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
+    private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
     private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
@@ -93,7 +96,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         // first evaluate the required parameter
         final String path = (String) operands[1].eval(row, context);
         if (path == null) {
-            throw QueryException.error("JSONPath expression can not be null");
+            throw QueryException.error("SQL/JSON path expression cannot be null");
         }
 
         // needed for further checks, can be a dynamic expression, therefore can not be inlined as part of function args
@@ -101,31 +104,53 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         final Object defaultOnError = operands[3].eval(row, context);
 
         final Object operand0 = operands[0].eval(row, context);
-        final String json = operand0 instanceof HazelcastJsonValue
+        String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        if (isNullOrEmpty(json)) {
-            return onEmptyResponse(onEmpty, defaultOnEmpty);
+        if (json == null) {
+            json = "";
         }
 
         final JsonPath jsonPath;
         try {
             jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
-        } catch (InvalidPathException | IllegalArgumentException exception) {
-            throw QueryException.error("Invalid JSONPath expression: " + exception, exception);
+        } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
         }
 
+        Collection<Object> resultColl;
         try {
-            return execute(json, jsonPath);
-        } catch (Exception exception) {
-            return onErrorResponse(onError, exception, defaultOnError);
+            resultColl = JsonPathUtil.read(json, jsonPath);
+        } catch (Exception e) {
+            return onErrorResponse(e, defaultOnError);
         }
+
+        if (resultColl.isEmpty()) {
+            return onEmptyResponse(defaultOnEmpty);
+        }
+
+        if (resultColl.size() > 1) {
+            throw QueryException.error("JSON_VALUE evaluated to multiple values");
+        }
+
+        Object onlyResult = resultColl.iterator().next();
+        if (JsonPathUtil.isArrayOrObject(onlyResult)) {
+            return onErrorResponse(QueryException.error("Result of JSON_VALUE cannot be array or object"), defaultOnError);
+        }
+        @SuppressWarnings("unchecked")
+        T result = (T) convertResultType(onlyResult);
+        return result;
     }
 
-    private T onEmptyResponse(SqlJsonValueEmptyOrErrorBehavior onEmpty, Object defaultValue) {
+    @SuppressWarnings("unchecked")
+    private T onEmptyResponse(Object defaultValue) {
         switch (onEmpty) {
             case ERROR:
-                throw QueryException.error("JSON argument is empty");
+                throw QueryException.error("JSON_VALUE evaluated to no value");
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
@@ -134,50 +159,48 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
     }
 
-    private T onErrorResponse(SqlJsonValueEmptyOrErrorBehavior onError, Exception exception, Object defaultValue) {
+    @SuppressWarnings("unchecked")
+    private T onErrorResponse(Exception exception, Object defaultValue) {
         switch (onError) {
             case ERROR:
-                throw QueryException.error("JSON_VALUE failed: " + exception, exception);
+                // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+                // serializable, they can contain references to parser context and other objects, which are not.
+                // That's why we also log the exception here.
+                LOGGER.fine("JSON_VALUE failed", exception);
+                throw QueryException.error("JSON_VALUE failed: " + exception);
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
             default:
                 return null;
         }
-    }
-
-    private T execute(final String json, final JsonPath path) {
-        final Object result = JsonPathUtil.read(json, path);
-        if (JsonPathUtil.isArrayOrObject(result)) {
-            throw QueryException.error("Result of JSON_VALUE can not be array or object");
-        }
-        return (T) convertResultType(result);
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
     private Object convertResultType(final Object result) {
+        if (result == null) {
+            return null;
+        }
         if (resultType.getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)) {
             return result.toString();
         }
 
+        Converter converter = Converters.getConverter(result.getClass());
         switch (this.resultType.getTypeFamily().getPublicType()) {
             case TINYINT:
-                return ((Number) result).byteValue();
+                return converter.asTinyint(result);
             case SMALLINT:
-                return ((Number) result).shortValue();
+                return converter.asSmallint(result);
             case INTEGER:
-                return ((Number) result).intValue();
+                return converter.asInt(result);
             case BIGINT:
-                return ((Number) result).longValue();
+                return converter.asBigint(result);
             case REAL:
-                return ((Number) result).floatValue();
+                return converter.asReal(result);
             case DOUBLE:
-                return ((Number) result).doubleValue();
+                return converter.asDouble(result);
             case DECIMAL:
-                Number number = ((Number) result);
-                return number instanceof BigDecimal
-                        ? (BigDecimal) number
-                        : BigDecimal.valueOf(number.doubleValue());
+                return converter.asDecimal(result);
             default:
                 return result;
         }

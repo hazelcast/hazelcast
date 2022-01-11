@@ -49,7 +49,8 @@ public class MapReplicationOperation extends Operation
     public MapReplicationOperation(PartitionContainer container,
                                    Collection<ServiceNamespace> namespaces, int partitionId, int replicaIndex) {
 
-        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex);
 
         this.mapReplicationStateHolder = new MapReplicationStateHolder();
         this.mapReplicationStateHolder.setOperation(this);

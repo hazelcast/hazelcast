@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.jet.impl.metrics.MetricsContext;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,7 @@ public interface Tasklet extends DynamicMetricsProvider {
     }
 
     @Nullable
-    default MetricsContext getMetricsContext() {
+    default Processor.Context getProcessorContext() {
         return null;
     }
 
