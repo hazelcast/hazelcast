@@ -72,6 +72,23 @@ public class CreateViewStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_createOrReplaceView_then_succeeds() {
+        String sql = "CREATE OR REPLACE VIEW v AS SELECT * FROM map";
+        instance().getSql().execute(sql);
+
+        ReplicatedMap<String, Object> viewStorage = instance().getReplicatedMap("__sql.catalog");
+        assertThat(viewStorage.containsKey("v")).isTrue();
+        assertThat(viewStorage.get("v")).isInstanceOf(View.class);
+        assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
+                + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
+
+
+        List<Row> expected = new ArrayList<>();
+        expected.add(new Row(1, 10));
+        assertRowsAnyOrder(((View) viewStorage.get("v")).query(), expected);
+    }
+
+    @Test
     public void when_createsViewWithReplace_then_succeeds() {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
