@@ -122,4 +122,12 @@ public interface MigrationAwareService {
      * @param event migration event
      */
     void rollbackMigration(PartitionMigrationEvent event);
+
+    default void onBeforeRun(PartitionMigrationEvent event) {
+        // no-op
+    }
+
+    default void onAfterRunFinal(PartitionMigrationEvent event) {
+        // no-op
+    }
 }

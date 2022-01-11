@@ -146,6 +146,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         // Concrete classes can override this method.
     }
 
+    @Override
     public void afterRunFinal() {
         if (recordStore != null) {
             recordStore.afterOperation();

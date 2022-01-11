@@ -171,7 +171,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                final boolean isDifferentialReplication = merkleTreeDiffByMapName.containsKey(mapName);
                 List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 initializeRecordStore(mapName, recordStore);

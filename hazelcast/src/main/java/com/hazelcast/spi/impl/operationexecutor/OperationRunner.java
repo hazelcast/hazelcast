@@ -171,9 +171,7 @@ public abstract class OperationRunner {
             operation.afterRun();
         } finally {
             operation.popThreadContext();
-            if (operation instanceof MapOperation) {
-                ((MapOperation) operation).afterRunFinal();
-            }
+            operation.afterRunFinal();
         }
     }
 }
