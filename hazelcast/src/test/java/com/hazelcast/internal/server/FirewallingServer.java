@@ -54,11 +54,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class FirewallingServer
         implements Server, Consumer<Packet> {
 
+    public final Server delegate;
     private final ScheduledExecutorService scheduledExecutor
             = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
     private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<>());
 
-    private final Server delegate;
     private final Consumer<Packet> packetConsumer;
     private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
 
