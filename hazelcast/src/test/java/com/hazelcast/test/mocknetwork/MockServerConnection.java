@@ -27,7 +27,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.mockito.Mock;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
