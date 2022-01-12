@@ -33,7 +33,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -55,7 +54,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)  // TODO [viliam] really has to be unbounded?
+                    .predicate(OptUtils::isUnbounded)  // Claims input as streaming source.
                     .inputs(b1 -> b1
                             .operand(ProjectLogicalRel.class)
                             .inputs(b2 -> b2
@@ -70,14 +69,10 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                     .inputs(b1 -> b1
                             .operand(SlidingWindowLogicalRel.class).anyInputs()));
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_NO_PROJECT, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_PROJECT, true);
+    static final RelOptRule PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_PROJECT);
 
-    private final boolean hasProject;
-
-    private AggregateStreamPhysicalRule(Config config, boolean hasProject) {
+    private AggregateStreamPhysicalRule(Config config) {
         super(config);
-        this.hasProject = hasProject;
     }
 
     @Override
@@ -91,22 +86,11 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         List<RexNode> projections;
         RelDataType projectRowType;
         SlidingWindowLogicalRel windowRel;
-        if (hasProject) {
-            Project projectRel = call.rel(1);
-            projections = new ArrayList<>(projectRel.getProjects());
-            projectRowType = projectRel.getRowType();
-            windowRel = call.rel(2);
-        } else {
-            windowRel = call.rel(1);
-            // create an identity projection
-            List<RelDataTypeField> fields = windowRel.getRowType().getFieldList();
-            projections = new ArrayList<>(fields.size());
-            for (int i = 0; i < fields.size(); i++) {
-                RelDataTypeField field = fields.get(i);
-                projections.add(call.builder().getRexBuilder().makeInputRef(field.getType(), i));
-            }
-            projectRowType = windowRel.getRowType();
-        }
+
+        Project projectRel = call.rel(1);
+        projections = new ArrayList<>(projectRel.getProjects());
+        projectRowType = projectRel.getRowType();
+        windowRel = call.rel(2);
 
         // Our input hierarchy is, for example:
         // -Aggregate(group=[$0], EXPR$1=[AVG($1)])
@@ -162,9 +146,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
 
             RelNode transformedRel = optimize(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
-            if (transformedRel != null) {
-                call.transformTo(transformedRel);
-            }
+            call.transformTo(transformedRel);
         }
     }
 
@@ -208,11 +190,9 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
     ) {
         Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
-        if (watermarkedField == null) {
-            // there's no field that we group by, that also has watermarks
-            // TODO [viliam] throw error such as "cannot group by window without IMPOSE_ORDER"?
-            return null;
-        }
+
+        // Note: order absence should be cut down during validation stage. mvn clean verify -DskipTests
+        assert watermarkedField != null : "Can't find watermarked field for window function!";
 
         RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
                 physicalInput, watermarkedField);

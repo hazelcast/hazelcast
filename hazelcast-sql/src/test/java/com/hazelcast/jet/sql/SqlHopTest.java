@@ -1366,6 +1366,48 @@ public class SqlHopTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_noOrdering() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(1), null, null),
+                row(timestampTz(2), "Alice", 1),
+                row(timestampTz(3), "Bob", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT window_start, SUM(distance) FROM " +
+                        "TABLE(HOP(TABLE(" + name + ")" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.004' SECOND" +
+                        ")) GROUP BY window_start"))
+                .hasMessageContaining("/aggregations over non-windowed, non-ordered streaming source not supported");
+    }
+
+    @Test
+    public void test_withFullProjection() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(10), null, null)
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.001' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        ")) " +
+                        "GROUP BY window_start, window_end, ts, name, distance",
+                singletonList(
+                        new Row(timestampTz(0L), "Alice", 1, timestampTz(-1L), timestampTz(1L))
+                )
+        );
+    }
+
+    @Test
     public void test_multipleAggregations() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),

@@ -45,7 +45,6 @@ public final class PhysicalRules {
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
                 AggregateStreamPhysicalRule.PROJECT_INSTANCE,
-                AggregateStreamPhysicalRule.NO_PROJECT_INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
