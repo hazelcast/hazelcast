@@ -60,10 +60,10 @@ import static java.util.Collections.singletonMap;
 
 class MockServer implements Server {
 
+    final ConcurrentMap<UUID, MockServerConnection> connectionMap = new ConcurrentHashMap<>(10);
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    private final ConcurrentMap<UUID, MockServerConnection> connectionMap = new ConcurrentHashMap<>(10);
     private final TestNodeRegistry nodeRegistry;
     private final LocalAddressRegistry addressRegistry;
     private final Node node;
@@ -124,6 +124,9 @@ class MockServer implements Server {
 
         @Override
         public MockServerConnection getOrConnect(@Nonnull Address address, int stream) {
+            if (server.nodeRegistry.uuidOf(address) == null) {
+                return null;
+            }
             MockServerConnection conn = server.connectionMap.get(server.nodeRegistry.uuidOf(address));
             if (conn != null && conn.isAlive()) {
                 return conn;
