@@ -25,7 +25,6 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -35,12 +34,10 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
@@ -59,7 +56,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
-import static java.lang.Math.abs;
 import static java.util.Collections.newSetFromMap;
 
 /**
@@ -82,7 +78,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     protected final NetworkStatsImpl networkStats;
     protected final EndpointConfig endpointConfig;
     protected final EndpointQualifier endpointQualifier;
-    protected final LocalAddressRegistry addressRegistry;
 
     final Plane[] planes;
     final int planeCount;
@@ -99,16 +94,12 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor;
 
-    TcpServerConnectionManagerBase(TcpServer tcpServer, EndpointConfig endpointConfig, LocalAddressRegistry addressRegistry) {
+    TcpServerConnectionManagerBase(TcpServer tcpServer, EndpointConfig endpointConfig) {
         this.server = tcpServer;
-        this.errorHandlerConstructor = endpoint -> new TcpServerConnectionErrorHandler(
-                tcpServer.getContext(),
-                endpoint
-        );
+        this.errorHandlerConstructor = endpoint -> new TcpServerConnectionErrorHandler(tcpServer.getContext(), endpoint);
         this.serverContext = tcpServer.getContext();
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
-        this.addressRegistry = addressRegistry;
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
         this.planeCount = serverContext.properties().getInteger(CHANNEL_COUNT);
@@ -133,18 +124,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final int index;
 
         private final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<UUID, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
+        private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
             this.index = index;
         }
 
-        TcpServerConnection getConnection(UUID uuid) {
-            return connectionMap.get(uuid);
+        TcpServerConnection getConnection(Address address) {
+            return connectionMap.get(address);
         }
 
-        void putConnection(UUID uuid, TcpServerConnection connection) {
-            connectionMap.put(uuid, connection);
+        void putConnection(Address address, TcpServerConnection connection) {
+            connectionMap.put(address, connection);
+        }
+
+        void putConnectionIfAbsent(Address address, TcpServerConnection connection) {
+            connectionMap.putIfAbsent(address, connection);
         }
 
         void removeConnection(TcpServerConnection connection) {
@@ -182,7 +177,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             connectionMap.clear();
         }
 
-        public Set<Map.Entry<UUID, TcpServerConnection>> connections() {
+        public Set<Map.Entry<Address, TcpServerConnection>> connections() {
             return Collections.unmodifiableSet(connectionMap.entrySet());
         }
 
@@ -194,7 +189,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             return connectionsInProgress.containsKey(address);
         }
 
-        public Future<Void> getConnectionInProgress(Address address) {
+        public Future<Void> getconnectionInProgress(Address address) {
             return connectionsInProgress.get(address);
         }
 
@@ -220,13 +215,13 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     private final class SendTask implements Runnable {
         private final Packet packet;
-        private final Address targetAddress;
+        private final Address target;
         private final int streamId;
         private volatile int retries;
 
-        private SendTask(Packet packet, Address targetAddress, int streamId) {
+        private SendTask(Packet packet, Address target, int streamId) {
             this.packet = packet;
-            this.targetAddress = targetAddress;
+            this.target = target;
             this.streamId = streamId;
         }
 
@@ -235,9 +230,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + targetAddress);
+                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
             }
-            send(packet, targetAddress, this, streamId);
+            send(packet, target, this, streamId);
         }
     }
 
@@ -279,10 +274,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             if (planeIndex > -1) {
                 plane = planes[connection.getPlaneIndex()];
                 plane.removeConnection(connection);
-                UUID remoteUuid = connection.getRemoteUuid();
-                if (remoteUuid != null) {
-                    addressRegistry.tryRemoveRegistration(remoteUuid, connection.getRemoteAddress());
-                }
                 fireConnectionRemovedEvent(connection, remoteAddress);
             } else {
                 // it might be the case that the connection was closed quickly enough
@@ -314,18 +305,8 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
     }
 
-    protected ServerConnection get(UUID uuid, int streamId) {
-        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
-    }
-
     protected boolean send(Packet packet, Address target, SendTask sendTask, int streamId) {
-        UUID targetUuid = addressRegistry.uuidOf(target);
-        if (targetUuid == serverContext.getThisUuid()) {
-            logger.warning("Packet send task is rejected. Target is this node! Target[uuid=" + targetUuid
-                    + ", address=" + target + "]");
-            return false;
-        }
-        Connection connection = get(targetUuid, streamId);
+        Connection connection = get(target, streamId);
         if (connection != null) {
             return connection.write(packet);
         }
@@ -355,17 +336,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     protected TcpServerConnectionErrorHandler getErrorHandler(Address endpoint, int planeIndex) {
         ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = planes[planeIndex].errorHandlers;
         return getErrorHandler(endpoint, errorHandlers);
-    }
-
-    protected Plane getPlane(int streamId) {
-        int planeIndex;
-        if (streamId == -1 || streamId == Integer.MIN_VALUE) {
-            planeIndex = 0;
-        } else {
-            planeIndex = abs(streamId) % planeCount;
-        }
-
-        return planes[planeIndex];
     }
 
     private TcpServerConnectionErrorHandler getErrorHandler(
@@ -407,22 +377,5 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             bytesReceivedOnClosed.inc(connection.getChannel().bytesRead());
             bytesSentOnClosed.inc(connection.getChannel().bytesWritten());
         }
-    }
-
-    /**
-     * Registers the given addresses to the address registry
-     */
-    protected void registerAddresses(UUID remoteUuid, Address primaryAddress, Address targetAddress,
-                                     Collection<Address> remoteAddressAliases) {
-        LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(primaryAddress);
-        if (targetAddress != null) {
-            addressesToRegister.addAllResolvedAddresses(targetAddress);
-        }
-        if (remoteAddressAliases != null) {
-            for (Address remoteAddressAlias : remoteAddressAliases) {
-                addressesToRegister.addAllResolvedAddresses(remoteAddressAlias);
-            }
-        }
-        addressRegistry.register(remoteUuid, addressesToRegister);
     }
 }

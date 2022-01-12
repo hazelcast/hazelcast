@@ -32,7 +32,6 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
@@ -633,8 +632,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
-            return delegate.createServer(node, registry, addressRegistry);
+        public Server createServer(Node node, ServerSocketRegistry registry) {
+            return delegate.createServer(node, registry);
         }
     }
 

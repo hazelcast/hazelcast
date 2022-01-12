@@ -439,13 +439,6 @@ class DefaultAddressPicker
         return publicAddressMap;
     }
 
-    @Override
-    public Map<EndpointQualifier, Address> getBindAddressMap() {
-        HashMap<EndpointQualifier, Address> bindAddressMap = new HashMap<>();
-        bindAddressMap.put(MEMBER, bindAddress);
-        return bindAddressMap;
-    }
-
     void setHostnameResolver(HostnameResolver hostnameResolver) {
         this.hostnameResolver = checkNotNull(hostnameResolver);
     }

@@ -111,10 +111,8 @@ public abstract class AbstractJoiner
 
     @Override
     public void blacklist(Address address, boolean permanent) {
-        Boolean prev = blacklistedAddresses.putIfAbsent(address, permanent);
-        if (prev == null) {
-            logger.info(address + " is " + (permanent ? "permanently " : "") + "added to the blacklist.");
-        }
+        logger.info(address + " is added to the blacklist.");
+        blacklistedAddresses.putIfAbsent(address, permanent);
     }
 
     @Override

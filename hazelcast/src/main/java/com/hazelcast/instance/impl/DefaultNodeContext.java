@@ -24,14 +24,13 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
-import com.hazelcast.internal.server.tcp.TcpServer;
-import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -144,7 +143,7 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+    public Server createServer(Node node, ServerSocketRegistry registry) {
         TcpServerContext context = new TcpServerContext(node, node.nodeEngine);
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
@@ -153,7 +152,6 @@ public class DefaultNodeContext implements NodeContext {
         return new TcpServer(config,
                 context,
                 registry,
-                addressRegistry,
                 metricsRegistry,
                 networking,
                 node.getNodeExtension().createChannelInitializerFn(context));

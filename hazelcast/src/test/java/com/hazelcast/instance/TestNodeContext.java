@@ -26,12 +26,11 @@ import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -105,7 +104,7 @@ public class TestNodeContext implements NodeContext {
     }
 
     @Override
-    public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+    public Server createServer(Node node, ServerSocketRegistry registry) {
         return server;
     }
 
@@ -118,7 +117,7 @@ public class TestNodeContext implements NodeContext {
         }
 
         @Override
-        public void pickAddress() {
+        public void pickAddress() throws Exception {
         }
 
         @Override
@@ -133,11 +132,6 @@ public class TestNodeContext implements NodeContext {
 
         @Override
         public Map<EndpointQualifier, Address> getPublicAddressMap() {
-            return Collections.singletonMap(EndpointQualifier.MEMBER, address);
-        }
-
-        @Override
-        public Map<EndpointQualifier, Address> getBindAddressMap() {
             return Collections.singletonMap(EndpointQualifier.MEMBER, address);
         }
 
