@@ -183,11 +183,6 @@ public class MockServerConnection implements ServerConnection {
         if (!alive.compareAndSet(true, false)) {
             return;
         }
-        if (localNodeEngine != null) {
-            localNodeEngine.getNode()
-                    .getLocalAddressRegistry()
-                    .tryRemoveRegistration(remoteUuid, remoteAddress);
-        }
 
         if (localConnection != null) {
             localConnection.close(msg, cause);
@@ -198,6 +193,9 @@ public class MockServerConnection implements ServerConnection {
         }
 
         if (localNodeEngine != null) {
+            localNodeEngine.getNode()
+                    .getLocalAddressRegistry()
+                    .tryRemoveRegistration(remoteUuid, remoteAddress);
             Server server = localNodeEngine.getNode().getServer();
             // this is a member-to-member connection
             if (server instanceof FirewallingServer) {
