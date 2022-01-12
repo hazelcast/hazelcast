@@ -197,13 +197,14 @@ public class MockServerConnection implements ServerConnection {
             lifecycleListener.onConnectionClose(this, cause, false);
         }
 
-        assert localNodeEngine != null;
-        Server server = localNodeEngine.getNode().getServer();
-        // this is a member-to-member connection
-        if (server instanceof FirewallingServer) {
-            (((MockServer) ((FirewallingServer) server).delegate)).connectionMap.remove(remoteUuid);
-        } else if (server instanceof MockServer) {
-            ((MockServer) server).connectionMap.remove(remoteUuid);
+        if (localNodeEngine != null) {
+            Server server = localNodeEngine.getNode().getServer();
+            // this is a member-to-member connection
+            if (server instanceof FirewallingServer) {
+                (((MockServer) ((FirewallingServer) server).delegate)).connectionMap.remove(remoteUuid);
+            } else if (server instanceof MockServer) {
+                ((MockServer) server).connectionMap.remove(remoteUuid);
+            }
         }
     }
 
