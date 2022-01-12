@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.server.FirewallingServer;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
@@ -181,18 +183,26 @@ public class MockServerConnection implements ServerConnection {
         if (!alive.compareAndSet(true, false)) {
             return;
         }
-        if (localNodeEngine != null) {
-            localNodeEngine.getNode()
-                    .getLocalAddressRegistry()
-                    .tryRemoveRegistration(remoteUuid, remoteAddress);
-        }
+
         if (localConnection != null) {
-            //this is a member-to-member connection
             localConnection.close(msg, cause);
         }
 
         if (lifecycleListener != null) {
             lifecycleListener.onConnectionClose(this, cause, false);
+        }
+
+        if (localNodeEngine != null) {
+            localNodeEngine.getNode()
+                    .getLocalAddressRegistry()
+                    .tryRemoveRegistration(remoteUuid, remoteAddress);
+            Server server = localNodeEngine.getNode().getServer();
+            // this is a member-to-member connection
+            if (server instanceof FirewallingServer) {
+                (((MockServer) ((FirewallingServer) server).delegate)).connectionMap.remove(remoteUuid);
+            } else if (server instanceof MockServer) {
+                ((MockServer) server).connectionMap.remove(remoteUuid);
+            }
         }
     }
 
