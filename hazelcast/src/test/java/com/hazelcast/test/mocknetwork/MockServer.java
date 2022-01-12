@@ -124,10 +124,11 @@ class MockServer implements Server {
 
         @Override
         public MockServerConnection getOrConnect(@Nonnull Address address, int stream) {
-            if (server.nodeRegistry.uuidOf(address) == null) {
-                return null;
+            UUID uuid = server.nodeRegistry.uuidOf(address);
+            MockServerConnection conn = null;
+            if (uuid != null) {
+                conn = server.connectionMap.get(uuid);
             }
-            MockServerConnection conn = server.connectionMap.get(server.nodeRegistry.uuidOf(address));
             if (conn != null && conn.isAlive()) {
                 return conn;
             }
@@ -301,29 +302,26 @@ class MockServer implements Server {
          */
         @Override
         public boolean transmit(Packet packet, Address targetAddress, int streamId) {
-            return transmit(packet, server.nodeRegistry.uuidOf(targetAddress), streamId);
+            return send(packet, targetAddress, null);
         }
 
-        /**
-         * Retries sending packet maximum 5 times until connection to target becomes available.
-         */
-        public boolean transmit(Packet packet, UUID targetUuid, int streamId) {
-            return send(packet, targetUuid, null);
-        }
-
-        private boolean send(Packet packet, UUID targetUuid, SendTask sendTask) {
-            MockServerConnection connection = get(targetUuid, 0);
+        private boolean send(Packet packet, Address targetAddress, SendTask sendTask) {
+            UUID targetUuid = server.nodeRegistry.uuidOf(targetAddress);
+            MockServerConnection connection = null;
+            if (targetUuid != null) {
+                connection = get(targetUuid, 0);
+            }
             if (connection != null) {
                 return connection.write(packet);
             }
 
             if (sendTask == null) {
-                sendTask = new SendTask(packet, targetUuid);
+                sendTask = new SendTask(packet, targetAddress);
             }
 
             int retries = sendTask.retries.get();
             if (retries < RETRY_NUMBER && server.serverContext.isNodeActive()) {
-                getOrConnect(server.nodeRegistry.addressOf(targetUuid), true);
+                getOrConnect(targetAddress, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 try {
                     server.scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
@@ -377,20 +375,20 @@ class MockServer implements Server {
             private final AtomicInteger retries = new AtomicInteger();
 
             private final Packet packet;
-            private final UUID targetUuid;
+            private final Address target;
 
-            private SendTask(Packet packet, UUID targetUuid) {
+            private SendTask(Packet packet, Address target) {
                 this.packet = packet;
-                this.targetUuid = targetUuid;
+                this.target = target;
             }
 
             @Override
             public void run() {
                 int actualRetries = retries.incrementAndGet();
                 if (server.logger.isFinestEnabled()) {
-                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + targetUuid);
+                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
                 }
-                send(packet, targetUuid, this);
+                send(packet, target, this);
             }
         }
 
