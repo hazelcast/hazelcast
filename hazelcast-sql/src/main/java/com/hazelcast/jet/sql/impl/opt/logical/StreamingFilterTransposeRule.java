@@ -15,7 +15,7 @@
  */
 
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import org.apache.calcite.plan.RelOptRule;

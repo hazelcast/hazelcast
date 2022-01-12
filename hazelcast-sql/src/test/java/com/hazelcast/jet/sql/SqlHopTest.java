@@ -1529,36 +1529,37 @@ public class SqlHopTest extends SqlTestSupport {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
                 row(timestampTz(1), "Bob", 1),
+                row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Alice", 1),
-                row(timestampTz(3), "Alice", 1),
-                row(timestampTz(5), "Bob", 1),
+                row(timestampTz(3), "Bob", 1),
                 row(timestampTz(10), null, null)
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start_inner, name, COUNT(*) FROM " +
+                "SELECT window_start, window_start_inner, name, COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "   (SELECT name, window_start window_start_inner FROM " +
+                        "   (SELECT name, window_start AS window_start_inner FROM " +
                         "       TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
-                        "           , INTERVAL '0.004' SECOND" +
                         "       )) GROUP BY name, window_start_inner" +
                         "   )" +
                         "   , DESCRIPTOR(window_start_inner)" +
-                        "   , INTERVAL '0.003' SECOND" +
-                        "   , INTERVAL '0.006' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
+                        "   , INTERVAL '0.004' SECOND" +
                         ")) " +
-                        "GROUP BY window_start_inner, name",
+                        "GROUP BY window_start, window_start_inner, name",
                 asList(
-                        new Row(timestampTz(-2L), "Alice", 1L),
-                        new Row(timestampTz(-2L), "Bob", 1L),
-                        new Row(timestampTz(0L), "Alice", 3L),
-                        new Row(timestampTz(0L), "Bob", 1L),
-                        new Row(timestampTz(2L), "Alice", 2L),
-                        //new Row(timestampTz(2L), "Bob", 1L),
-                        new Row(timestampTz(4L), "Bob", 1L)
+                        new Row(timestampTz(-2L), timestampTz(0L), "Alice", 1L),
+                        new Row(timestampTz(-2L), timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(0L), timestampTz(0L), "Alice", 1L),
+                        new Row(timestampTz(0L), timestampTz(0L), "Bob", 1L),
+                        new Row(timestampTz(0L), timestampTz(2L), "Bob", 1L),
+                        new Row(timestampTz(0L), timestampTz(2L), "Alice", 1L),
+                        new Row(timestampTz(0L), timestampTz(3L), "Bob", 1L),
+                        new Row(timestampTz(2L), timestampTz(3L), "Bob", 1L)
                 )
         );
     }
@@ -1584,23 +1585,24 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "   (SELECT ts, window_start window_start_inner, this FROM " +
                         "       TABLE(HOP(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
-                        "           , INTERVAL '0.004' SECOND" +
                         "       )) JOIN map ON ts = __key" +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.003' SECOND" +
-                        "   , INTERVAL '0.006' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
+                        "   , INTERVAL '0.004' SECOND" +
                         ")) " +
                         "GROUP BY window_start_inner, this",
                 asList(
-                        new Row(timestampTz(-2L), "value-0", 1L),
-                        new Row(timestampTz(-2L), "value-1", 1L),
+                        new Row(timestampTz(-1L), "value-0", 1L),
+                        new Row(timestampTz(-1L), "value-0", 1L),
+                        new Row(timestampTz(0L), "value-1", 1L),
                         new Row(timestampTz(0L), "value-0", 1L),
-                        new Row(timestampTz(0L), "value-1", 3L),
-                        new Row(timestampTz(2L), "value-1", 2L)
+                        new Row(timestampTz(1L), "value-1", 2L),
+                        new Row(timestampTz(3L), "value-1", 1L)
                 )
         );
     }

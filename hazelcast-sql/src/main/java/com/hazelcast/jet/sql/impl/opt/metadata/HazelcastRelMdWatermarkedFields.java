@@ -20,10 +20,12 @@ import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.Metadata;
 import org.apache.calcite.rel.metadata.MetadataDef;
@@ -132,34 +134,29 @@ public final class HazelcastRelMdWatermarkedFields
     }
 
 
-//    @SuppressWarnings("unused")
-//    public WatermarkedFields extractWatermarkedFields(Aggregate rel, RelMetadataQuery mq) {
-//        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-//        WatermarkedFields inputWatermarkedFields = query.extractWatermarkedFields(rel.getInput());
-//
-//        return inputWatermarkedFields == null ? null : inputWatermarkedFields.retain(rel.getGroupSet().asSet());
-//    }
-//
-//    @SuppressWarnings("unused")
-//    public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
-//        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-//        WatermarkedFields leftInputWatermarkedFields = query.extractWatermarkedFields(rel.getLeft());
-//        WatermarkedFields rightInputWatermarkedFields = query.extractWatermarkedFields(rel.getRight());
-//
-//        if (rightInputWatermarkedFields == null) {
-//            return leftInputWatermarkedFields;
-//        }
-//
-//        int leftCount = rel.getLeft().getRowType().getFieldCount();
-//        WindowProperty[] windowProperties = rightInputWatermarkedFields.getProperties()
-//                .map(property -> property.withIndex(leftCount + property.index()))
-//                .toArray(WindowProperty[]::new);
-//        WatermarkedFields rightWatermarkedFields = new WatermarkedFields(windowProperties);
-//
-//        return leftInputWatermarkedFields == null
-//                ? rightWatermarkedFields
-//                : leftInputWatermarkedFields.merge(rightWatermarkedFields);
-//    }
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(SlidingWindowAggregatePhysicalRel rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        WatermarkedFields inputWatermarkedFields = query.extractWatermarkedFields(rel.getInput());
+
+        return inputWatermarkedFields == null ? null : inputWatermarkedFields.retain(rel.getGroupSet().asSet());
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        WatermarkedFields leftInputWatermarkedFields = query.extractWatermarkedFields(rel.getLeft());
+        WatermarkedFields rightInputWatermarkedFields = query.extractWatermarkedFields(rel.getRight());
+
+        if (rightInputWatermarkedFields == null) {
+            return leftInputWatermarkedFields;
+        }
+        WatermarkedFields rightWatermarkedFields = new WatermarkedFields(rightInputWatermarkedFields.getPropertiesByIndex());
+
+        return leftInputWatermarkedFields == null
+                ? rightWatermarkedFields
+                : leftInputWatermarkedFields.merge(rightWatermarkedFields);
+    }
 //
 //    // i.e. Filter, AggregateAccumulateByKeyPhysicalRel, AggregateAccumulatePhysicalRel
 //    @SuppressWarnings("unused")

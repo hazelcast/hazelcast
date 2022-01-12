@@ -21,7 +21,7 @@ import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
-import static com.hazelcast.jet.sql.impl.opt.physical.StreamingFilterTransposeRule.STREAMING_FILTER_TRANSPOSE;
+import static com.hazelcast.jet.sql.impl.opt.logical.StreamingFilterTransposeRule.STREAMING_FILTER_TRANSPOSE;
 
 public final class LogicalRules {
 
@@ -47,6 +47,7 @@ public final class LogicalRules {
                 CoreRules.PROJECT_MERGE,
                 CoreRules.PROJECT_REMOVE,
                 CoreRules.PROJECT_FILTER_TRANSPOSE,
+                CoreRules.PROJECT_WINDOW_TRANSPOSE,
                 ProjectIntoScanLogicalRule.INSTANCE,
 
                 // Scan rules
@@ -71,6 +72,7 @@ public final class LogicalRules {
                 JoinLogicalRule.INSTANCE,
                 CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
+//                STREAMING_JOIN_TRANSPOSE,
 
                 // Union rules
                 PruneEmptyRules.UNION_INSTANCE,
