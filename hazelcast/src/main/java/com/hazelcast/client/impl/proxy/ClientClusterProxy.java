@@ -45,7 +45,6 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    @Nonnull
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         return clusterService.addMembershipListener(listener);
     }
@@ -56,14 +55,12 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    @Nonnull
     public Set<Member> getMembers() {
         final Collection<Member> members = clusterService.getMemberList();
         return new LinkedHashSet<>(members);
     }
 
     @Override
-    @Nonnull
     public Member getLocalMember() {
         throw new UnsupportedOperationException("Client has no local member!");
     }
@@ -85,7 +82,6 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    @Nonnull
     public Version getClusterVersion() {
         throw new UnsupportedOperationException();
     }
@@ -96,7 +92,6 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    @Nonnull
     public PersistenceService getPersistenceService() {
         throw new UnsupportedOperationException();
     }

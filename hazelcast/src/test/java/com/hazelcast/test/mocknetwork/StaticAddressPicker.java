@@ -55,13 +55,6 @@ class StaticAddressPicker implements AddressPicker {
     }
 
     @Override
-    public Map<EndpointQualifier, Address> getBindAddressMap() {
-        HashMap<EndpointQualifier, Address> bindAddressMap = new HashMap<>();
-        bindAddressMap.put(MEMBER, thisAddress);
-        return bindAddressMap;
-    }
-
-    @Override
     public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
         return null;
     }

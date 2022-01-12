@@ -35,16 +35,11 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -70,6 +64,7 @@ import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableSet;
 
@@ -82,17 +77,15 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServerConnector connector;
     private final TcpServerControl serverControl;
+
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    TcpServerConnectionManager(
-            TcpServer server,
-            EndpointConfig endpointConfig,
-            LocalAddressRegistry addressRegistry,
-            Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
-            ServerContext serverContext,
-            Set<ProtocolType> supportedProtocolTypes
-    ) {
-        super(server, endpointConfig, addressRegistry);
+    TcpServerConnectionManager(TcpServer server,
+                               EndpointConfig endpointConfig,
+                               Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
+                               ServerContext serverContext,
+                               Set<ProtocolType> supportedProtocolTypes) {
+        super(server, endpointConfig);
         this.channelInitializerFn = channelInitializerFn;
         this.connector = new TcpServerConnector(this);
         this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
@@ -104,7 +97,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    @Nonnull
     public Collection<ServerConnection> getConnections() {
         return unmodifiableSet(connections);
     }
@@ -121,43 +113,28 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public ServerConnection get(@Nonnull Address address, int streamId) {
-        UUID uuid = addressRegistry.uuidOf(address);
-        return uuid != null ? getPlane(streamId).getConnection(uuid) : null;
+    public ServerConnection get(Address address, int streamId) {
+        return getPlane(streamId).getConnection(address);
     }
 
     @Override
-    @Nonnull
-    public List<ServerConnection> getAllConnections(@Nonnull Address address) {
-        UUID uuid = addressRegistry.uuidOf(address);
-        return uuid != null
-                ? Arrays.stream(planes).map(plane -> plane.getConnection(uuid)).filter(x -> x != null)
-                .collect(Collectors.toList())
-                : Collections.emptyList();
-    }
-
-    @Override
-    public ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
+    public ServerConnection getOrConnect(Address address, int streamId) {
         return getOrConnect(address, false, streamId);
     }
 
     @Override
-    public ServerConnection getOrConnect(@Nonnull final Address address, final boolean silent, int streamId) {
+    public ServerConnection getOrConnect(final Address address, final boolean silent, int streamId) {
         Plane plane = getPlane(streamId);
-        TcpServerConnection connection = null;
-        UUID uuid = addressRegistry.uuidOf(address);
-        if (uuid != null) {
-            connection = plane.getConnection(uuid);
-        }
+        TcpServerConnection connection = plane.getConnection(address);
         if (connection == null && server.isLive()) {
             final AtomicBoolean isNotYetInProgress = new AtomicBoolean();
-            plane.addConnectionInProgressIfAbsent(address, ignored -> {
+            plane.addConnectionInProgressIfAbsent(address, key -> {
                 isNotYetInProgress.set(true);
                 return connector.asyncConnect(address, silent, plane.index);
             });
             if (isNotYetInProgress.get()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet in progress");
+                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
             } else {
                 if (logger.isFineEnabled()) {
@@ -169,43 +146,31 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public synchronized boolean register(
-            Address primaryAddress,
-            Address targetAddress,
-            Collection<Address> remoteAddressAliases,
-            UUID remoteUuid,
-            final ServerConnection c,
-            int planeIndex
-    ) {
+    public synchronized boolean register(final Address remoteAddress, final ServerConnection c, int planeIndex) {
         Plane plane = planes[planeIndex];
         TcpServerConnection connection = (TcpServerConnection) c;
         try {
+            if (remoteAddress.equals(serverContext.getThisAddress())) {
+                return false;
+            }
+
             if (!connection.isAlive()) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(connection + " to " + remoteUuid + " is not registered since connection is not active.");
+                    logger.finest(connection + " to " + remoteAddress + " is not registered since connection is not active.");
                 }
                 return false;
             }
 
-            connection.setRemoteAddress(primaryAddress);
-            connection.setRemoteUuid(remoteUuid);
+            Address currentRemoteAddress = connection.getRemoteAddress();
+            if (currentRemoteAddress != null && !currentRemoteAddress.equals(remoteAddress)) {
+                throw new IllegalArgumentException(connection + " has already a different remoteAddress than: " + remoteAddress);
+            }
+            connection.setRemoteAddress(remoteAddress);
 
             if (!connection.isClient()) {
-                connection.setErrorHandler(getErrorHandler(primaryAddress, plane.index).reset());
+                connection.setErrorHandler(getErrorHandler(remoteAddress, plane.index).reset());
             }
-
-            registerAddresses(remoteUuid, primaryAddress, targetAddress, remoteAddressAliases);
-
-            // handle error cases after registering the addresses to avoid the later failing connections
-            // occur because target addresses are not registered.
-
-            // handle self connection
-            if (remoteUuid.equals(serverContext.getThisUuid())) {
-                connection.close("Connecting to self!", null);
-                return false;
-            }
-
-            plane.putConnection(remoteUuid, connection);
+            plane.putConnection(remoteAddress, connection);
 
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
@@ -215,16 +180,24 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
                 @Override
                 public int getKey() {
-                    return primaryAddress.hashCode();
+                    return remoteAddress.hashCode();
                 }
             });
-
             return true;
         } finally {
-            if (targetAddress != null) {
-                plane.removeConnectionInProgress(targetAddress);
-            }
+            plane.removeConnectionInProgress(remoteAddress);
         }
+    }
+
+    public Plane getPlane(int streamId) {
+        int planeIndex;
+        if (streamId == -1 || streamId == Integer.MIN_VALUE) {
+            planeIndex = 0;
+        } else {
+            planeIndex = abs(streamId) % planeCount;
+        }
+
+        return planes[planeIndex];
     }
 
     public synchronized void reset(boolean cleanListeners) {
@@ -240,7 +213,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
-        addressRegistry.reset();
 
         if (cleanListeners) {
             connectionListeners.clear();
@@ -248,10 +220,10 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public boolean transmit(Packet packet, Address targetAddress, int streamId) {
+    public boolean transmit(Packet packet, Address target, int streamId) {
         checkNotNull(packet, "packet can't be null");
-        checkNotNull(targetAddress, "targetAddress can't be null");
-        return send(packet, targetAddress, null, streamId);
+        checkNotNull(target, "target can't be null");
+        return send(packet, target, null, streamId);
     }
 
     @Override
@@ -284,14 +256,14 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
-    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress, boolean acceptorSide) {
+    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress) {
         try {
             if (!server.isLive()) {
                 throw new IllegalStateException("connection manager is not live!");
             }
 
             TcpServerConnection connection = new TcpServerConnection(this, connectionLifecycleListener,
-                    connectionIdGen.incrementAndGet(), channel, acceptorSide);
+                    connectionIdGen.incrementAndGet(), channel);
 
             connection.setRemoteAddress(remoteAddress);
             connections.add(connection);
@@ -357,8 +329,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         int clientCount = 0;
         int textCount = 0;
         for (Plane plane : planes) {
-            for (Map.Entry<UUID, TcpServerConnection> entry : plane.connections()) {
-                UUID uuid = entry.getKey();
+            for (Map.Entry<Address, TcpServerConnection> entry : plane.connections()) {
+                Address bindAddress = entry.getKey();
                 TcpServerConnection connection = entry.getValue();
                 if (connection.isClient()) {
                     clientCount++;
@@ -371,7 +343,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
                 if (connection.getRemoteAddress() != null) {
                     context.collect(rootDescriptor
                             .copy()
-                            .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, uuid.toString())
+                            .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, bindAddress.toString())
                             .withTag(TCP_TAG_ENDPOINT, connection.getRemoteAddress().toString()), connection);
                 }
             }
@@ -384,12 +356,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     @Override
-    public boolean blockOnConnect(Address address, long timeoutMillis, int streamId) throws InterruptedException {
+    public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         try {
-            Future<Void> future = plane.getConnectionInProgress(address);
+            Future<Void> future = plane.getconnectionInProgress(address);
             if (future != null) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                future.get(millis, TimeUnit.MILLISECONDS);
                 return future.isDone();
             } else {
                 // connection-in-progress has come and gone,

@@ -18,7 +18,6 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.server.Server;
 
@@ -37,5 +36,6 @@ public interface NodeContext {
 
     Joiner createJoiner(Node node);
 
-    Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry);
+    // TODO Consider the changes here (JET?)
+    Server createServer(Node node, ServerSocketRegistry registry);
 }

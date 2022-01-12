@@ -93,16 +93,6 @@ class AdvancedNetworkAddressPicker
     }
 
     @Override
-    public Map<EndpointQualifier, Address> getBindAddressMap() {
-        Map<EndpointQualifier, Address> bindAddressMap = new HashMap<>(pickers.size());
-        for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
-            bindAddressMap.put(entry.getKey(), entry.getValue().getBindAddress(entry.getKey()));
-        }
-
-        return bindAddressMap;
-    }
-
-    @Override
     public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
         return pickers.get(qualifier).getServerSocketChannel(qualifier);
     }

@@ -26,14 +26,14 @@ class TcpServerConnectionErrorHandler {
 
     private final ILogger logger;
     private final ServerContext serverContext;
-    private final Address endpointAddress;
+    private final Address endPoint;
     private final long minInterval;
     private final int maxFaults;
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endpointAddress) {
-        this.endpointAddress = endpointAddress;
+    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endPoint) {
+        this.endPoint = endPoint;
         this.serverContext = serverContext;
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
@@ -41,22 +41,22 @@ class TcpServerConnectionErrorHandler {
     }
 
     synchronized void onError(Throwable cause) {
-        String errorMessage = "An error occurred on connection to " + endpointAddress + getCauseDescription(cause);
+        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(cause);
         logger.finest(errorMessage);
         final long now = currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
-                String removeEndpointMessage = "Removing connection to endpoint " + endpointAddress + getCauseDescription(cause);
+                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(cause);
                 logger.warning(removeEndpointMessage);
-                serverContext.removeEndpoint(endpointAddress);
+                serverContext.removeEndpoint(endPoint);
             }
             lastFaultTime = now;
         }
     }
 
     synchronized TcpServerConnectionErrorHandler reset() {
-        String resetMessage = "Resetting connection monitor for endpoint " + endpointAddress;
+        String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;
