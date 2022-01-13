@@ -4369,4 +4369,17 @@ public class YamlConfigBuilderTest
 
         return new InMemoryYamlConfig(yaml);
     }
+
+    @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  integrity-checker:\n"
+                + "    enabled: false\n";
+
+        Config config = buildConfig(yaml);
+
+        assertFalse(config.isIntegrityCheckerEnabled());
+    }
 }

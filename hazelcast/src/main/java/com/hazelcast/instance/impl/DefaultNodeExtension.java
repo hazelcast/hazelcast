@@ -150,6 +150,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
     protected JetExtension jetExtension;
+    protected IntegrityChecker integrityChecker;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
@@ -165,6 +166,10 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
+        }
+
+        if (node.getConfig().isIntegrityCheckerEnabled()) {
+            integrityChecker = new IntegrityChecker(this.systemLogger);
         }
     }
 
@@ -224,7 +229,10 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public void beforeStart() {
-        ModuleIntegrityChecker.checkIntegrity();
+        if (integrityChecker != null) {
+            integrityChecker.checkIntegrity();
+        }
+
         if (jetExtension != null) {
             // Add configurations for the internal jet distributed objects,
             // compatible with V4.2

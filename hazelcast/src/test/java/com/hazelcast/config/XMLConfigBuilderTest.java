@@ -4316,6 +4316,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <integrity-checker enabled=\"false\"/>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertFalse(config.isIntegrityCheckerEnabled());
+    }
+
+    @Override
     protected Config buildMapWildcardConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"map*\">\n"

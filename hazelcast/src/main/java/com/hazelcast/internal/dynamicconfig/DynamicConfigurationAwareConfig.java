@@ -1186,4 +1186,14 @@ public class DynamicConfigurationAwareConfig extends Config {
     public Config setJetConfig(JetConfig jetConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
+
+    @Override
+    public boolean isIntegrityCheckerEnabled() {
+        return staticConfig.isIntegrityCheckerEnabled();
+    }
+
+    @Override
+    public Config setIntegrityCheckerEnabled(final boolean integrityCheckerEnabled) {
+        return staticConfig.setIntegrityCheckerEnabled(integrityCheckerEnabled);
+    }
 }
