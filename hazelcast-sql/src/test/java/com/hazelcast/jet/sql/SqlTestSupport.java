@@ -36,6 +36,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -58,7 +59,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -80,6 +80,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -161,8 +162,13 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             arguments.forEach(statement::addParameter);
 
             try (SqlResult result = sqlService.execute(statement)) {
-                Iterator<SqlRow> iterator = result.iterator();
-                for (int i = 0; i < expectedRows.size() && iterator.hasNext(); i++) {
+                ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+                for (
+                        int i = 0;
+                        i < expectedRows.size() && iterator.hasNext()
+                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i++
+                ) {
                     rows.add(new Row(iterator.next()));
                 }
                 future.complete(null);
