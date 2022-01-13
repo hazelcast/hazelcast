@@ -476,7 +476,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return Accessors.getNodeEngineImpl(instance);
     }
 
-    public List<Row> rows(final int rowLength, final Object ...values) {
+    public List<Row> rows(final int rowLength, final Object... values) {
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }
