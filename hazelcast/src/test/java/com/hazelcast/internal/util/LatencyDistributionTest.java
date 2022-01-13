@@ -52,44 +52,50 @@ public class LatencyDistributionTest {
         }
 
         double accuracyFactor = (actual * 1.0d / expected);
-        assertTrue("accuracyFactor = " + accuracyFactor, accuracyFactor < 1.01);
+        assertTrue("accuracyFactor = " + accuracyFactor, accuracyFactor < 1.37);
     }
 
     @Test
     public void bucketMaxUs() {
-        assertEquals(0, LatencyDistribution.bucketMaxUs(0));
-        assertEquals(1, LatencyDistribution.bucketMaxUs(1));
-        assertEquals(3, LatencyDistribution.bucketMaxUs(2));
-        assertEquals(7, LatencyDistribution.bucketMaxUs(3));
-        assertEquals(15, LatencyDistribution.bucketMaxUs(4));
-        assertEquals(31, LatencyDistribution.bucketMaxUs(5));
+        assertEquals(1, LatencyDistribution.bucketMaxUs(0));
+        assertEquals(3, LatencyDistribution.bucketMaxUs(1));
+        assertEquals(7, LatencyDistribution.bucketMaxUs(2));
+        assertEquals(15, LatencyDistribution.bucketMaxUs(3));
+        assertEquals(31, LatencyDistribution.bucketMaxUs(4));
+        assertEquals(63, LatencyDistribution.bucketMaxUs(5));
     }
 
     @Test
     public void bucketMinUs() {
         assertEquals(0, LatencyDistribution.bucketMinUs(0));
-        assertEquals(1, LatencyDistribution.bucketMinUs(1));
-        assertEquals(2, LatencyDistribution.bucketMinUs(2));
-        assertEquals(4, LatencyDistribution.bucketMinUs(3));
-        assertEquals(8, LatencyDistribution.bucketMinUs(4));
-        assertEquals(16, LatencyDistribution.bucketMinUs(5));
+        assertEquals(2, LatencyDistribution.bucketMinUs(1));
+        assertEquals(4, LatencyDistribution.bucketMinUs(2));
+        assertEquals(8, LatencyDistribution.bucketMinUs(3));
+        assertEquals(16, LatencyDistribution.bucketMinUs(4));
+        assertEquals(32, LatencyDistribution.bucketMinUs(5));
     }
 
     @Test
     public void recordNanos() {
         recordNanos(0, 0);
         recordNanos(200, 0);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(1), 0);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(2), 1);
-        recordNanos(TimeUnit.MICROSECONDS.toNanos(3), 2);
+        recordNanos(TimeUnit.MICROSECONDS.toNanos(3), 1);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(4), 2);
         recordNanos(TimeUnit.MICROSECONDS.toNanos(5), 2);
-        recordNanos(TimeUnit.MICROSECONDS.toNanos(6), 3);
+        recordNanos(TimeUnit.MICROSECONDS.toNanos(6), 2);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(8), 3);
         recordNanos(TimeUnit.MICROSECONDS.toNanos(11), 3);
-        recordNanos(TimeUnit.MICROSECONDS.toNanos(12), 4);
+        recordNanos(TimeUnit.MICROSECONDS.toNanos(12), 3);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(23), 4);
-        recordNanos(TimeUnit.MICROSECONDS.toNanos(24), 5);
+        recordNanos(TimeUnit.MICROSECONDS.toNanos(24), 4);
+
         recordNanos(TimeUnit.MICROSECONDS.toNanos(33), 5);
     }
 
@@ -129,20 +135,21 @@ public class LatencyDistributionTest {
     public void usToBucketIndex() {
         assertEquals(0, LatencyDistribution.usToBucketIndex(0));
         assertEquals(0, LatencyDistribution.usToBucketIndex(1));
+
         assertEquals(1, LatencyDistribution.usToBucketIndex(2));
-        assertEquals(2, LatencyDistribution.usToBucketIndex(3));
+        assertEquals(1, LatencyDistribution.usToBucketIndex(3));
+
         assertEquals(2, LatencyDistribution.usToBucketIndex(4));
-
         assertEquals(2, LatencyDistribution.usToBucketIndex(5));
-        assertEquals(3, LatencyDistribution.usToBucketIndex(6));
-        assertEquals(3, LatencyDistribution.usToBucketIndex(7));
+        assertEquals(2, LatencyDistribution.usToBucketIndex(6));
+        assertEquals(2, LatencyDistribution.usToBucketIndex(7));
         assertEquals(3, LatencyDistribution.usToBucketIndex(8));
-
         assertEquals(3, LatencyDistribution.usToBucketIndex(11));
-        assertEquals(4, LatencyDistribution.usToBucketIndex(12));
+        assertEquals(3, LatencyDistribution.usToBucketIndex(12));
+
         assertEquals(4, LatencyDistribution.usToBucketIndex(16));
         assertEquals(4, LatencyDistribution.usToBucketIndex(17));
         assertEquals(4, LatencyDistribution.usToBucketIndex(23));
-        assertEquals(5, LatencyDistribution.usToBucketIndex(24));
+        assertEquals(4, LatencyDistribution.usToBucketIndex(24));
     }
 }
