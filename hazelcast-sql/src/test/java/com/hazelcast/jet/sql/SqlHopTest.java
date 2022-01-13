@@ -232,6 +232,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.004' SECOND" +
                         "))",
                 asList(
+                        new Row(null, null, "Alice"),
                         new Row(timestampTz(0L), timestampTz(4L), "Bob"),
                         new Row(timestampTz(2L), timestampTz(6L), "Bob")
                 )
@@ -253,7 +254,9 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.004' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
-                singletonList(new Row(0.0d, 1L)));
+                rows(2,
+                        Math.sin(0), 1L,
+                        Math.sin(1), 1L));
     }
 
     @Test
@@ -326,6 +329,8 @@ public class SqlHopTest extends SqlTestSupport {
                 asList(
                         new Row(timestampTz(-2L)),
                         new Row(timestampTz(0L)),
+                        new Row(timestampTz(0L)),
+                        new Row(timestampTz(2L)),
                         new Row(timestampTz(2L))
                 )
         );
@@ -1401,8 +1406,9 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, window_end, ts, name, distance",
-                singletonList(
-                        new Row(timestampTz(0L), "Alice", 1, timestampTz(-1L), timestampTz(1L))
+                asList(
+                        new Row(timestampTz(0L), "Alice", 1, timestampTz(-1L), timestampTz(1L)),
+                        new Row(timestampTz(0L), "Alice", 1, timestampTz(0L), timestampTz(2L))
                 )
         );
     }

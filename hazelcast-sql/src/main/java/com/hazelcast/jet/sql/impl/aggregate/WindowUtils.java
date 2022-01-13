@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -83,6 +84,9 @@ public final class WindowUtils {
      */
     public static Traverser<Object[]> addWindowBounds(Object[] row, int timeStampIndex, SlidingWindowPolicy windowPolicy) {
         Object value = row[timeStampIndex];
+        if (value == null) {
+            return Traversers.singleton(Arrays.copyOf(row, row.length + 2));
+        }
         long millis = extractMillis(value);
 
         long slideStep = windowPolicy.frameSize();
