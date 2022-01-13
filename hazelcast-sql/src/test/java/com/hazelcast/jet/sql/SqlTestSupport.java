@@ -145,8 +145,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Execute a query and wait for the results to contain all the {@code
-     * expectedRows}. If there are more rows in the result, they are ignored.
-     * Suitable for streaming queries that don't terminate.
+     * expectedRows}. Suitable for streaming queries that don't terminate.
      *
      * @param sql          The query
      * @param arguments    The query arguments
