@@ -79,8 +79,8 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                         ")) " +
                         "GROUP BY window_start, window_end",
                 asList(
-                        new Row(0, 2, 2L),
-                        new Row(2, 4, 1L)
+                        new Row(timestampTz(0L), timestampTz(2L), 2L),
+                        new Row(timestampTz(2L), timestampTz(4L), 1L)
                 )
         );
     }
@@ -99,26 +99,21 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
         );
         sqlService.execute("INSERT INTO " + name + " VALUES" +
                 "(0, 'value-0')" +
+                ", (2, 'value-2')" +
                 ", (3, 'value-3')" +
-                ", (4, 'value-4')" +
-                ", (5, 'value-7')" +
                 ", (10, 'value-10')"
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start, /*window_end,*/ COUNT(__key) FROM " +
+                "SELECT window_start, window_end, SUM(__key) FROM " +
                         "TABLE(HOP(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2)))" +
-                        "  , DESCRIPTOR(__key)" +
-                        "  , 2" +
-                        "  , 4" +
-                        ")) " +
-                        "GROUP BY window_start/*, window_end*/",
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2))), " +
+                        "DESCRIPTOR(__key), 2, 4)) " +
+                        "GROUP BY window_start, window_end",
                 asList(
-                        new Row(-2, /* 2,*/ 1L),
-                        new Row(0, /* 4,*/ 2L),
-                        new Row(2, /* 6,*/ 3L),
-                        new Row(4, /* 8,*/ 2L)
+                        new Row(timestampTz(-2L), timestampTz(2L), 0L),
+                        new Row(timestampTz(0L), timestampTz(4L), 5L),
+                        new Row(timestampTz(2L), timestampTz(6L), 5L)
                 )
         );
     }

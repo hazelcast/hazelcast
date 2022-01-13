@@ -73,6 +73,8 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -256,16 +258,18 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         boolean containsGrouping = containsGrouping(select);
         boolean containsAggregation = containsAggregation(select);
-        boolean containsOrderedWindow = containsOrderedWindow(requireNonNull(select.getFrom()));
         boolean infiniteRows = isInfiniteRows(select);
 
-        if (containsOrderedWindow && containsAggregation && !containsGrouping) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsMustBeGrouped());
-
+        if (containsAggregation && !containsGrouping) {
+            if (containsOrderedWindow(requireNonNull(select.getFrom()))) {
+                throw newValidationError(select, RESOURCE.streamingAggregationsMustBeGrouped());
+            }
         }
 
-        if (infiniteRows && (containsAggregation || containsGrouping) && !containsOrderedWindow) {
-            throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
+        if (infiniteRows && (containsAggregation || containsGrouping)) {
+            if (!containsOrderedWindow(requireNonNull(select.getFrom()))) {
+                throw newValidationError(select, RESOURCE.streamingAggregationsOverNonOrderedSourceNotSupported());
+            }
         }
     }
 
@@ -292,6 +296,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             final HazelcastSqlValidator validator;
             boolean windowingFunctionFound;
             boolean orderedInputToWindowingFunctionFound;
+            private final Deque<List<String>> expansionStack = new ArrayDeque<>();
 
             OrderedWindowFinder(HazelcastSqlValidator validator) {
                 this.validator = validator;
@@ -329,7 +334,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                             OrderedWindowFinder finder = new OrderedWindowFinder(validator, windowingFunctionFound);
                             SqlNode sqlNode = parseResult.getNode();
                             sqlNode.accept(finder);
-                            // TODO: [sasha] did it as quick idea impl late night, need more thinking about correctness
                             orderedInputToWindowingFunctionFound |= finder.orderedInputToWindowingFunctionFound;
                             windowingFunctionFound |= finder.windowingFunctionFound;
                             return null;

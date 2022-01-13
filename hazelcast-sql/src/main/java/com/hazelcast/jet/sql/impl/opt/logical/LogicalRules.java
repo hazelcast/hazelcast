@@ -47,7 +47,6 @@ public final class LogicalRules {
                 CoreRules.PROJECT_MERGE,
                 CoreRules.PROJECT_REMOVE,
                 CoreRules.PROJECT_FILTER_TRANSPOSE,
-                CoreRules.PROJECT_WINDOW_TRANSPOSE,
                 ProjectIntoScanLogicalRule.INSTANCE,
 
                 // Scan rules
@@ -60,7 +59,6 @@ public final class LogicalRules {
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
                 FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
                 FunctionLogicalRules.TUMBLE_HOP_FUNCTION_INSTANCE,
-//                PushProjectOverSlidingWindowRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
