@@ -166,6 +166,9 @@ class MockServer implements Server {
             UUID localMemberUuid = node.getThisUuid();
             UUID remoteMemberUuid = targetNode.getThisUuid();
 
+            // These two connections below are actually only used for sending packets from
+            // the local member to the remote member.
+            // this connection only send packets
             MockServerConnection connectionFromLocalToRemote = new MockServerConnection(
                     lifecycleListener,
                     localAddress,
@@ -177,6 +180,8 @@ class MockServer implements Server {
                     node.getServer().getConnectionManager(EndpointQualifier.MEMBER)
             );
 
+            // this connection only receive packets (This connection is not registered in the
+            // remote member's connection manager)
             MockServerConnection connectionFromRemoteToLocal = new MockServerConnection(
                     lifecycleListener,
                     remoteAddress,
@@ -188,8 +193,8 @@ class MockServer implements Server {
                     targetNode.getServer().getConnectionManager(EndpointQualifier.MEMBER)
             );
 
-            connectionFromRemoteToLocal.localConnection = connectionFromLocalToRemote;
-            connectionFromLocalToRemote.localConnection = connectionFromRemoteToLocal;
+            connectionFromRemoteToLocal.otherConnection = connectionFromLocalToRemote;
+            connectionFromLocalToRemote.otherConnection = connectionFromRemoteToLocal;
 
             if (!connectionFromRemoteToLocal.isAlive()) {
                 // targetNode is not alive anymore.
@@ -198,9 +203,6 @@ class MockServer implements Server {
             }
 
             addressRegistry.register(remoteMemberUuid, LinkedAddresses.getResolvedAddresses(remoteAddress));
-            LocalAddressRegistry remoteAddressRegistry = targetNode.getLocalAddressRegistry();
-            remoteAddressRegistry.register(localMemberUuid, LinkedAddresses.getResolvedAddresses(localAddress));
-
             server.connectionMap.put(remoteMemberUuid, connectionFromLocalToRemote);
             server.logger.info("Created connection to endpoint: " + remoteAddress + "-" + remoteMemberUuid + ", connection: "
                     + connectionFromLocalToRemote);
@@ -236,8 +238,6 @@ class MockServer implements Server {
             }
 
             connection.setLifecycleListener(lifecycleListener);
-            connection.setRemoteAddress(remoteAddress);
-            connection.setRemoteUuid(remoteUuid);
             server.connectionMap.put(remoteUuid, connection);
             LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(remoteAddress);
             if (targetAddress != null) {
@@ -348,23 +348,26 @@ class MockServer implements Server {
 
             @Override
             public void onConnectionClose(MockServerConnection connection, Throwable t, boolean silent) {
+                Address endpointAddress = connection.getRemoteAddress();
                 UUID endpointUuid = connection.getRemoteUuid();
+                assert endpointUuid != null;
                 if (!server.connectionMap.remove(endpointUuid, connection)) {
                     return;
                 }
+                addressRegistry.tryRemoveRegistration(endpointUuid, endpointAddress);
 
                 Server server = connection.remoteNodeEngine.getNode().getServer();
                 // all mock implementations of networking service ignore the provided endpoint qualifier
                 // so we pass in null. Once they are changed to use the parameter, we should be notified
                 // and this parameter can be changed
                 Connection remoteConnection = server.getConnectionManager(null)
-                        .get(connection.getRemoteAddress(), 0);
+                        .get(connection.localAddress, 0);
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
                 }
 
-                MockServerConnectionManager.this.server.logger.info("Removed connection to endpoint: " + endpointUuid
-                        + ", connection: " + connection);
+                MockServerConnectionManager.this.server.logger.info("Removed connection to endpoint: [address="
+                        + endpointAddress + ", uuid=" + endpointUuid + "], connection: " + connection);
                 fireConnectionRemovedEvent(connection, endpointUuid);
             }
 
