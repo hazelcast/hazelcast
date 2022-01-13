@@ -43,6 +43,8 @@ import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.LONG;
  * rendered.
  */
 public class JmxPublisher implements MetricsPublisher {
+    private static final Map<Character, String> CHARACTERS_TO_ESCAPE_MAPPING;
+    private static final int INITIAL_ESCAPE_BUFFER_CAPACITY = 32;
 
     private final MBeanServer platformMBeanServer;
     private final String instanceNameEscaped;
@@ -75,6 +77,22 @@ public class JmxPublisher implements MetricsPublisher {
             }
             return bean;
         };
+    }
+
+    static {
+        CHARACTERS_TO_ESCAPE_MAPPING = createCharactersToEscapeMapping();
+    }
+
+    private static Map<Character, String> createCharactersToEscapeMapping() {
+        final Map<Character, String> charactersToEscapeMapping = new HashMap<>(6);
+        charactersToEscapeMapping.put('\\', "\\\\");
+        charactersToEscapeMapping.put('\"', "\\\"");
+        charactersToEscapeMapping.put('\n', "\\n");
+        charactersToEscapeMapping.put('*', "\\*");
+        charactersToEscapeMapping.put('?', "\\?");
+        charactersToEscapeMapping.put('=', "=");
+        charactersToEscapeMapping.put(':', ":");
+        return charactersToEscapeMapping;
     }
 
     @Override
@@ -171,25 +189,29 @@ public class JmxPublisher implements MetricsPublisher {
     // package-visible for test
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     static String escapeObjectNameValue(String name) {
-        if (name.indexOf(',') < 0
-                && name.indexOf('=') < 0
-                && name.indexOf(':') < 0
-                && name.indexOf('*') < 0
-                && name.indexOf('?') < 0
-                && name.indexOf('\"') < 0
-                && name.indexOf('\n') < 0) {
-            return name;
+        boolean foundAny = false;
+        StringBuilder builder = new StringBuilder(name.length() + INITIAL_ESCAPE_BUFFER_CAPACITY);
+        builder.append('"');
+        for (int i = 0; i < name.length(); i++) {
+            char currentChar = name.charAt(i);
+            if (CHARACTERS_TO_ESCAPE_MAPPING.containsKey(currentChar)) {
+                foundAny = true;
+                builder.append(CHARACTERS_TO_ESCAPE_MAPPING.get(currentChar));
+            } else {
+                builder.append(currentChar);
+            }
         }
-        return "\"" + name
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("*", "\\*")
-                .replace("?", "\\?")
-                + '"';
+
+        if (foundAny) {
+            return builder.append('"').toString();
+        }
+
+        return name;
     }
 
     private static class MetricData {
+        public static final int INITIAL_MBEAN_BUILDER_CAPACITY = 250;
+        public static final int INITIAL_MODULE_BUILDER_CAPACITY = 350;
         ObjectName objectName;
         String metric;
         String unit;
@@ -201,8 +223,8 @@ public class JmxPublisher implements MetricsPublisher {
         @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity",
                            "checkstyle:CyclomaticComplexity"})
         MetricData(MetricDescriptor descriptor, String instanceNameEscaped, String domainPrefix) {
-            StringBuilder mBeanTags = new StringBuilder();
-            StringBuilder moduleBuilder = new StringBuilder();
+            StringBuilder mBeanTags = new StringBuilder(INITIAL_MBEAN_BUILDER_CAPACITY);
+            StringBuilder moduleBuilder = new StringBuilder(INITIAL_MODULE_BUILDER_CAPACITY);
             String module = null;
             metric = descriptor.metric();
             ProbeUnit descriptorUnit = descriptor.unit();
