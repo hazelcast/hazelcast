@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -34,12 +35,15 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.insertWindowBound;
@@ -132,6 +136,16 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
 
         return (start, end, ignoredKey, result, isEarly) ->
                 insertWindowBound(result, start, end, windowBoundsIndexMask);
+    }
+
+    public WatermarkedFields watermarkedFields() {
+        Map<Integer, RexNode> propertiesByIndex = new HashMap<>();
+        RexBuilder rexBuilder = getCluster().getRexBuilder();
+        for (Integer index : windowEndIndexes) {
+            propertiesByIndex.put(index, rexBuilder.makeInputRef(getInput(), index));
+        }
+        // Backlog: also support windowStartIndexes by adding windowSize to windowStart
+        return new WatermarkedFields(propertiesByIndex);
     }
 
     @Override

@@ -136,10 +136,7 @@ public final class HazelcastRelMdWatermarkedFields
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(SlidingWindowAggregatePhysicalRel rel, RelMetadataQuery mq) {
-        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        WatermarkedFields inputWatermarkedFields = query.extractWatermarkedFields(rel.getInput());
-
-        return inputWatermarkedFields == null ? null : inputWatermarkedFields.retain(rel.getGroupSet().asSet());
+        return rel.watermarkedFields();
     }
 
     @SuppressWarnings("unused")

@@ -73,8 +73,6 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -296,7 +294,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             final HazelcastSqlValidator validator;
             boolean windowingFunctionFound;
             boolean orderedInputToWindowingFunctionFound;
-            private final Deque<List<String>> expansionStack = new ArrayDeque<>();
 
             OrderedWindowFinder(HazelcastSqlValidator validator) {
                 this.validator = validator;

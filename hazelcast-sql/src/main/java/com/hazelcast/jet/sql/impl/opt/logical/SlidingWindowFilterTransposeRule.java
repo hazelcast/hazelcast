@@ -22,60 +22,35 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.plan.volcano.RelSubset;
-import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.rules.TransformationRule;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
-public class StreamingJoinTransposeRule extends RelRule<Config> implements TransformationRule {
+public class SlidingWindowFilterTransposeRule extends RelRule<Config> implements TransformationRule {
 
     private static final Config CONFIG = Config.EMPTY
-            .withDescription(StreamingJoinTransposeRule.class.getSimpleName())
+            .withDescription(SlidingWindowFilterTransposeRule.class.getSimpleName())
             .withOperandSupplier(b0 -> b0
-                    .operand(Join.class)
+                    .operand(Filter.class)
                     .trait(LOGICAL)
                     .inputs(b1 -> b1
                             .operand(SlidingWindow.class).anyInputs()));
 
-    public static final RelOptRule STREAMING_JOIN_TRANSPOSE = new StreamingJoinTransposeRule(CONFIG);
+    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeRule(CONFIG);
 
-    protected StreamingJoinTransposeRule(Config config) {
+    protected SlidingWindowFilterTransposeRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        // TODO [sasha]: finish in follow-up PR
-        final Join join = call.rel(0);
+        final Filter filter = call.rel(0);
         final SlidingWindow sw = call.rel(1);
 
-        boolean windowIsLeftInput = ((RelSubset) join.getLeft()).getBest() instanceof SlidingWindow;
-
-        Join newJoin;
-        if (windowIsLeftInput) {
-            newJoin = join.copy(
-                    join.getTraitSet(),
-                    join.getCondition(),
-                    sw.getInput(),
-                    join.getRight(),
-                    join.getJoinType(),
-                    join.isSemiJoinDone()
-            );
-        } else {
-            newJoin = join.copy(
-                    join.getTraitSet(),
-                    join.getCondition(),
-                    join.getLeft(),
-                    sw.getInput(),
-                    join.getJoinType(),
-                    join.isSemiJoinDone()
-            );
-        }
-
-
-        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newJoin));
+        final Filter newFilter = filter.copy(filter.getTraitSet(), sw.getInput(), filter.getCondition());
+        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newFilter));
         call.transformTo(topSW);
     }
 }

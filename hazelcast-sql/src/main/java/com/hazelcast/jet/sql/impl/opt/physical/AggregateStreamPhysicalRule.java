@@ -144,7 +144,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
             RelNode newProject = new ProjectPhysicalRel(transformedInput.getCluster(), transformedInput.getTraitSet(),
                     transformedInput, projections, newRowType);
 
-            RelNode transformedRel = optimize(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
+            RelNode transformedRel = transform(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
             call.transformTo(transformedRel);
         }
@@ -182,7 +182,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         });
     }
 
-    private RelNode optimize(
+    private RelNode transform(
             RelNode physicalInput,
             AggregateLogicalRel logicalAggregate,
             List<Integer> windowStartIndexes,
@@ -191,8 +191,10 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     ) {
         Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
 
-        // Note: order absence should be cut down during validation stage. mvn clean verify -DskipTests
-        assert watermarkedField != null : "Can't find watermarked field for window function!";
+        if (watermarkedField == null) {
+            // Note: this check should be moved to validation and here should only be an assert, but I'm not sure that's possible
+            throw QueryException.error(SqlErrorCode.GENERIC, "Can't find watermarked field for window function");
+        }
 
         RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
                 physicalInput, watermarkedField);
