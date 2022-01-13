@@ -49,7 +49,7 @@ import static picocli.CommandLine.Option;
  */
 @Command(name = "hz", description = "Utility for the Hazelcast operations." + "%n%n"
         + "Global options are:%n", versionProvider = VersionProvider.class, mixinStandardHelpOptions = true, sortOptions = false)
-class HazelcastServerCommandLine {
+public class HazelcastServerCommandLine {
 
     static final String CLASSPATH_SEPARATOR = ":";
     static final int MIN_JAVA_VERSION_FOR_MODULAR_OPTIONS = 9;
