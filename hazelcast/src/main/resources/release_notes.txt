@@ -7,7 +7,7 @@ brackets refer to the issues in Hazelcast's GitHub repository.
 ## New Features
 
 * **Tiered Storage (BETA)**: Introduced the Tiered Storage feature which is an extension to Hazelcast Map
-allowing you to store map data both in the memory and on the disk. It is an Hazelcast Enterprise feature
+assigning data to various types of storage media based on access patterns. It is a Hazelcast Enterprise feature
 and in BETA state. See the Tiered Storage section.
 * **Persistence for Dynamic Configuration:** You can now reload the updates made in the dynamic configuration
 after a cluster restart. See the Persisting Changes in Dynamic Configuration section.
