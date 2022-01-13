@@ -236,7 +236,7 @@ class MockServer implements Server {
             if (!connection.isAlive()) {
                 return false;
             }
-
+            connection.setRemoteUuid(remoteUuid);
             connection.setLifecycleListener(lifecycleListener);
             server.connectionMap.put(remoteUuid, connection);
             LinkedAddresses addressesToRegister = LinkedAddresses.getResolvedAddresses(remoteAddress);

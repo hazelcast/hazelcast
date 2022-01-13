@@ -54,7 +54,7 @@ public class MockServerConnection implements ServerConnection {
     private final Address remoteAddress;
 
     private final UUID localUuid;
-    private final UUID remoteUuid;
+    private volatile UUID remoteUuid;
 
     private final ServerConnectionManager connectionManager;
 
@@ -222,6 +222,7 @@ public class MockServerConnection implements ServerConnection {
 
     @Override
     public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
     }
 
     @Override
