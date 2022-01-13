@@ -1619,21 +1619,19 @@ public class SqlHopTest extends SqlTestSupport {
         createMapping("map", OffsetDateTime.class, String.class);
         instance().getMap("map").put(timestampTz(0), "value-0");
         instance().getMap("map").put(timestampTz(1), "value-1");
-        instance().getMap("map").put(timestampTz(2), "value-1");
-        instance().getMap("map").put(timestampTz(3), "value-1");
+        instance().getMap("map").put(timestampTz(2), "value-2");
 
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),
                 row(timestampTz(1), "Bob", 1),
                 row(timestampTz(2), "Joey", 1),
-                row(timestampTz(3), "Alice", 1),
                 row(timestampTz(10), null, null)
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start_inner, this, COUNT(*) FROM " +
+                "SELECT window_start, window_start_inner, this, COUNT(*) FROM " +
                         "TABLE(HOP(" +
-                        "   (SELECT ts, window_start window_start_inner, this FROM " +
+                        "   (SELECT ts, window_start window_start_inner, name, this FROM " +
                         "       TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
@@ -1645,14 +1643,20 @@ public class SqlHopTest extends SqlTestSupport {
                         "   , INTERVAL '0.002' SECOND" +
                         "   , INTERVAL '0.004' SECOND" +
                         ")) " +
-                        "GROUP BY window_start_inner, this",
+                        "GROUP BY window_start, window_start_inner, this",
                 asList(
-                        new Row(timestampTz(-1L), "value-0", 1L),
-                        new Row(timestampTz(-1L), "value-0", 1L),
-                        new Row(timestampTz(0L), "value-1", 1L),
-                        new Row(timestampTz(0L), "value-0", 1L),
-                        new Row(timestampTz(1L), "value-1", 2L),
-                        new Row(timestampTz(3L), "value-1", 1L)
+                        new Row(timestampTz(-2L), timestampTz(-1L), "value-0", 1L),
+                        new Row(timestampTz(-2L), timestampTz(0L), "value-0", 1L),
+                        new Row(timestampTz(-2L), timestampTz(0L), "value-1", 1L),
+                        new Row(timestampTz(-2L), timestampTz(1L), "value-1", 1L),
+                        new Row(timestampTz(0L), timestampTz(-1L), "value-0", 1L),
+                        new Row(timestampTz(0L), timestampTz(0L), "value-0", 1L),
+                        new Row(timestampTz(0L), timestampTz(0L), "value-1", 1L),
+                        new Row(timestampTz(0L), timestampTz(1L), "value-1", 1L),
+                        new Row(timestampTz(0L), timestampTz(1L), "value-2", 1L),
+                        new Row(timestampTz(0L), timestampTz(2L), "value-2", 1L),
+                        new Row(timestampTz(2L), timestampTz(1L), "value-2", 1L),
+                        new Row(timestampTz(2L), timestampTz(2L), "value-2", 1L)
                 )
         );
     }
