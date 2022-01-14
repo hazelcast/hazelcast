@@ -37,41 +37,38 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStream() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(10))",
+        assertStreamContainsInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(100))",
                 asList(
-                        new Row(0L), new Row(1L), new Row(2L), new Row(3L), new Row(4L),
-                        new Row(5L), new Row(6L), new Row(7L), new Row(8L), new Row(9L)
+                        new Row(0L),
+                        new Row(1L),
+                        new Row(2L)
                 )
         );
     }
 
     @Test
     public void test_generateStreamArgumentExpression() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('3' AS INTEGER) + 3 AS INT)))",
+        assertStreamContainsInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('100' AS INTEGER) + 100 AS INT)))",
                 asList(
                         new Row(0L),
                         new Row(1L),
                         new Row(2L),
-                        new Row(3L),
-                        new Row(4L),
-                        new Row(5L)
+                        new Row(3L)
                 )
         );
     }
 
     @Test
     public void test_generateStreamNamedArguments() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(rate => 3 + 3))",
+        assertStreamContainsInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(rate => 50 + 50))",
                 asList(
                         new Row(0L),
                         new Row(1L),
                         new Row(2L),
-                        new Row(3L),
-                        new Row(4L),
-                        new Row(5L)
+                        new Row(3L)
                 )
         );
     }
@@ -84,7 +81,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateStreamFilterAndProject() {
-        assertRowsEventuallyInAnyOrder(
+        assertStreamContainsInAnyOrder(
                 "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",
                 asList(
                         new Row(2L),
@@ -174,8 +171,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_planCache() {
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(2))",
+        assertStreamContainsInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(20))",
                 asList(
                         new Row(0L),
                         new Row(1L)
@@ -183,8 +180,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
         );
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(3))",
+        assertStreamContainsInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(30))",
                 asList(
                         new Row(0L),
                         new Row(1L),
