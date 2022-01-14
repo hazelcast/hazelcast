@@ -104,10 +104,10 @@ class MockServer implements Server {
         @Override
         public ServerConnection get(@Nonnull Address address, int streamId) {
             UUID memberUuid = server.nodeRegistry.uuidOf(address);
-            return memberUuid != null ? get(memberUuid, 0) : null;
+            return memberUuid != null ? get(memberUuid) : null;
         }
 
-        public MockServerConnection get(UUID memberUuid, int streamId) {
+        public MockServerConnection get(UUID memberUuid) {
             return server.connectionMap.get(memberUuid);
         }
 
@@ -118,7 +118,7 @@ class MockServer implements Server {
             if (memberUuid == null) {
                 return Collections.emptyList();
             }
-            ServerConnection conn = get(memberUuid, 0);
+            ServerConnection conn = get(memberUuid);
             return conn != null ? Collections.singletonList(conn) : Collections.emptyList();
         }
 
@@ -166,9 +166,13 @@ class MockServer implements Server {
             UUID localMemberUuid = node.getThisUuid();
             UUID remoteMemberUuid = targetNode.getThisUuid();
 
-            // These two connections below are actually only used for sending packets from
-            // the local member to the remote member.
-            // this connection only send packets
+
+            // Create a unidirectional connection pair that is split into
+            // two distinct connection.
+            // These two connections below are only used for sending
+            // packets from the local member to the remote member.
+
+            // this connection is only used to send packets to remote member
             MockServerConnection connectionFromLocalToRemote = new MockServerConnection(
                     lifecycleListener,
                     localAddress,
@@ -180,8 +184,13 @@ class MockServer implements Server {
                     node.getServer().getConnectionManager(EndpointQualifier.MEMBER)
             );
 
-            // this connection only receive packets (This connection is not registered in the
-            // remote member's connection manager)
+            // This connection is only used to receive packets from the connection
+            // created above.
+            // Since this connection is not registered in the connection map of remote
+            // member's connection server, when the remote member intends to send a
+            // packet to this local member, it won't have access to this connection,
+            // and then it will create a new pair of connections. This means that a
+            // bidirectional connection consists of 4 MockServerConnections.
             MockServerConnection connectionFromRemoteToLocal = new MockServerConnection(
                     lifecycleListener,
                     remoteAddress,
@@ -309,7 +318,7 @@ class MockServer implements Server {
             UUID targetUuid = server.nodeRegistry.uuidOf(targetAddress);
             MockServerConnection connection = null;
             if (targetUuid != null) {
-                connection = get(targetUuid, 0);
+                connection = get(targetUuid);
             }
             if (connection != null) {
                 return connection.write(packet);
@@ -356,11 +365,11 @@ class MockServer implements Server {
                 }
                 addressRegistry.tryRemoveRegistration(endpointUuid, endpointAddress);
 
-                Server server = connection.remoteNodeEngine.getNode().getServer();
+                Server remoteServer = connection.remoteNodeEngine.getNode().getServer();
                 // all mock implementations of networking service ignore the provided endpoint qualifier
                 // so we pass in null. Once they are changed to use the parameter, we should be notified
                 // and this parameter can be changed
-                Connection remoteConnection = server.getConnectionManager(null)
+                Connection remoteConnection = remoteServer.getConnectionManager(null)
                         .get(connection.localAddress, 0);
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
