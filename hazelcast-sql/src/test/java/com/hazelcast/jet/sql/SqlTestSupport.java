@@ -59,6 +59,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -168,6 +169,42 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                                 || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
                         i++
                 ) {
+                    rows.add(new Row(iterator.next()));
+                }
+                future.complete(null);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+
+        thread.start();
+
+        try {
+            try {
+                future.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                thread.interrupt();
+                thread.join();
+            }
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+
+        List<Row> actualRows = new ArrayList<>(rows);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    public static void assertStreamContainsInAnyOrder(String sql, Collection<Row> expectedRows) {
+        SqlService sqlService = instance().getSql();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Deque<Row> rows = new ArrayDeque<>();
+
+        Thread thread = new Thread(() -> {
+            SqlStatement statement = new SqlStatement(sql);
+            try (SqlResult result = sqlService.execute(statement)) {
+                Iterator<SqlRow> iterator = result.iterator();
+                for (int i = 0; i < expectedRows.size() && iterator.hasNext(); i++) {
                     rows.add(new Row(iterator.next()));
                 }
                 future.complete(null);
