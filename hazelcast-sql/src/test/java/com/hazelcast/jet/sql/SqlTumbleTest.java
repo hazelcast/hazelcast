@@ -213,6 +213,31 @@ public class SqlTumbleTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_filterWindowBounds() {
+        String name = createTable(
+                row(timestampTz(1000L), "Alice", 1),
+                row(timestampTz(2000L), null, null)
+        );
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT 1 " +
+                        "FROM TABLE(TUMBLE(" +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
+                        "WHERE window_start != window_end " +
+                        "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't apply rule to filter window bounds ");
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT 1 " +
+                        "FROM TABLE(TUMBLE(" +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
+                        "WHERE EXTRACT(DAY FROM window_start) != EXTRACT(DAY FROM window_end) " +
+                        "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't apply rule to filter window bounds");
+    }
+
+    @Test
     public void test_groupBy() {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1),

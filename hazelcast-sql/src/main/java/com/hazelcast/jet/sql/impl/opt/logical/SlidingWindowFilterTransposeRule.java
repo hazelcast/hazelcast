@@ -18,12 +18,16 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.rules.TransformationRule;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexVisitorImpl;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
@@ -48,6 +52,23 @@ public class SlidingWindowFilterTransposeRule extends RelRule<Config> implements
     public void onMatch(RelOptRuleCall call) {
         final Filter filter = call.rel(0);
         final SlidingWindow sw = call.rel(1);
+
+        int windowStartIndex = sw.getRowType().getFieldList().size() - 2;
+        int windowEndIndex = sw.getRowType().getFieldList().size() - 1;
+
+        RexNode rexNodeCondition = filter.getCondition();
+
+        RexVisitorImpl<Void> visitor = new RexVisitorImpl<Void>(true) {
+            @Override
+            public Void visitInputRef(RexInputRef ref) {
+                int index = ref.getIndex();
+                if (index == windowStartIndex || index == windowEndIndex) {
+                    throw QueryException.error("Can't apply rule to filter window bounds");
+                }
+                return super.visitInputRef(ref);
+            }
+        };
+        rexNodeCondition.accept(visitor);
 
         final Filter newFilter = filter.copy(filter.getTraitSet(), sw.getInput(), filter.getCondition());
         final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newFilter));
