@@ -258,6 +258,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         boolean containsAggregation = containsAggregation(select);
         boolean infiniteRows = isInfiniteRows(select);
 
+        // These checks are basic-effort validations. They pass through many unsupported cases,
+        // but we have them here to provide better error messages. The more specific cases are checked
+        // in rules in the optimization step.
         if (containsAggregation && !containsGrouping) {
             if (containsOrderedWindow(requireNonNull(select.getFrom()))) {
                 throw newValidationError(select, RESOURCE.streamingAggregationsMustBeGrouped());

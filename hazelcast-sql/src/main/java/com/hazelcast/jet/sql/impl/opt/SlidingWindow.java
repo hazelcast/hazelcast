@@ -91,6 +91,20 @@ public abstract class SlidingWindow extends TableFunctionScan {
         }
     }
 
+    /**
+     * Return the index of `window_start` field on the output of this rel.
+     */
+    public int windowStartIndex() {
+        return getRowType().getFieldCount() - 2;
+    }
+
+    /**
+     * Return the index of `window_end` field on the output of this rel.
+     */
+    public int windowEndIndex() {
+        return getRowType().getFieldCount() - 1;
+    }
+
     private SqlOperator operator() {
         return ((RexCall) getCall()).getOperator();
     }

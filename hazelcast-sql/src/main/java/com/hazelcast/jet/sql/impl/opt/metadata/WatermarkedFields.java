@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 public final class WatermarkedFields implements Serializable {
 
@@ -44,12 +43,6 @@ public final class WatermarkedFields implements Serializable {
         newPropertiesByIndex.putAll(other.propertiesByIndex);
         assert this.propertiesByIndex.size() + other.propertiesByIndex.size() == newPropertiesByIndex.size();
         return new WatermarkedFields(newPropertiesByIndex);
-    }
-
-    public WatermarkedFields retain(Set<Integer> indices) {
-        Map<Integer, RexNode> propertiesByIndex = new HashMap<>(this.propertiesByIndex);
-        propertiesByIndex.keySet().retainAll(indices);
-        return new WatermarkedFields(propertiesByIndex);
     }
 
     @Nullable

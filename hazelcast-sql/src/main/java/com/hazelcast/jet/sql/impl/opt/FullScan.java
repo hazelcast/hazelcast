@@ -61,6 +61,6 @@ public abstract class FullScan extends TableScan {
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
                 .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null)
-                .item("watermarkedColumnIndex", watermarkedColumnIndex);
+                .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }

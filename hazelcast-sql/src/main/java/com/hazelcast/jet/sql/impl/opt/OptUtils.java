@@ -55,9 +55,11 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -71,6 +73,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
@@ -446,5 +449,37 @@ public final class OptUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Return true if there's any reference to input field with index in
+     * `indexes` in the `expression`.
+     */
+    public static boolean hasInputRef(RexNode expression, int... indexes) {
+        return expression.accept(new RexVisitorImpl<Boolean>(true) {
+            @Override
+            public Boolean visitInputRef(RexInputRef inputRef) {
+                return arrayIndexOf(inputRef.getIndex(), indexes) >= 0;
+            }
+
+            @Override
+            public Boolean visitCall(RexCall call) {
+                if (!deep) {
+                    return null;
+                }
+
+                for (RexNode operand : call.operands) {
+                    if (operand.accept(this)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean visitLiteral(RexLiteral literal) {
+                return false;
+            }
+        });
     }
 }

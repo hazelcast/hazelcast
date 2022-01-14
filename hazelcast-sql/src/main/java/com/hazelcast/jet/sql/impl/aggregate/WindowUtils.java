@@ -32,7 +32,6 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 import java.time.Instant;
@@ -54,18 +53,23 @@ public final class WindowUtils {
     private WindowUtils() {
     }
 
+    /**
+     * Inject window bounds into the row, according to the mapping.
+     * <p>
+     * The result row will always have `mapping.length` fields. Where the
+     * mapping has value of -1, windowStart will be used. Where it has a value
+     * of -2, windowEnd will be used. Otherwise, the field from input row
+     * referenced by the (non-negative) mapping value will be used.
+     *
+     *  @return row with inserted bounds
+     */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static Object[] insertWindowBound(
-            Object[] row,
-            long windowStart,
-            long windowEnd,
-            int[] mapping
-    ) {
+    public static Object[] insertWindowBound(Object[] row, long windowStart, long windowEnd, int[] mapping) {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
                 // TODO: [viliam] could we use Instant here (QueryDataType.TIMESTAMP_WITH_TZ_INSTANT).
-                // That conversion is much cheaper.
+                //  That conversion is much cheaper.
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowStart), ZoneId.systemDefault());
             } else if (mapping[i] == -2) {
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
@@ -143,29 +147,6 @@ public final class WindowUtils {
             result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE);
             result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE);
             return result;
-        }
-    }
-
-    public static Object convert(long millis, SqlTypeName typeName) {
-        switch (typeName) {
-            case TINYINT:
-                return (byte) millis;
-            case SMALLINT:
-                return (short) millis;
-            case INTEGER:
-                return (int) millis;
-            case BIGINT:
-                return millis;
-            case TIME:
-                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalTime();
-            case DATE:
-                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDate();
-            case TIMESTAMP:
-                return asTimestampWithTimezone(millis, DEFAULT_ZONE).toLocalDateTime();
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                return asTimestampWithTimezone(millis, DEFAULT_ZONE);
-            default:
-                throw new IllegalArgumentException();
         }
     }
 

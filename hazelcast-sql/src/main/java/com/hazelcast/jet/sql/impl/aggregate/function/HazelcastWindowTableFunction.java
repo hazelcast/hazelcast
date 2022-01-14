@@ -41,7 +41,6 @@ public abstract class HazelcastWindowTableFunction extends HazelcastTableFunctio
             // We'll use the original row type and append two columns: window start and end. These
             // columns have the same type as the time column referenced by the descriptor.
             RelDataType orderingColumnType = getOrderingColumnType(callBinding, orderingColumnParameterIndex);
-
             RelDataType inputRowType = callBinding.getValidator().getValidatedNodeType(callBinding.operand(0));
             return binding.getTypeFactory().builder()
                     .kind(inputRowType.getStructKind())

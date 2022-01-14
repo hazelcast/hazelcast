@@ -36,6 +36,10 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
     private final int[] operandIndexes;
 
+    /**
+     * @param operandIndexes Indexes of operands that contain INTERVAL values that need to match
+     *                       the timestamp column type.
+     */
     WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] operandIndexes) {
         super(parameters);
         this.operandIndexes = operandIndexes;
@@ -47,9 +51,7 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
         for (int columnIndex : operandIndexes) {
             result &= checkOperandTypes(binding, throwOnFailure, columnIndex);
         }
-        if (!result && throwOnFailure) {
-            throw binding.newValidationSignatureError();
-        }
+        assert result || !throwOnFailure;
         return result;
     }
 

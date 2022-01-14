@@ -33,11 +33,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitorImpl;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -46,6 +43,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
 
 final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
 
@@ -102,11 +100,13 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         // -SlidingWindowAggregatePhysicalRel(group=[$0], EXPR$1=[AVG($1)])
         // --Project(rowType=[timestamp, field1])
         //
-        // The group=[$0] isn't entirely correct, but I hope it will work... TODO [viliam] finish doc.
+        // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
+        // but it works for us for now - the superclass uses it only to calculate the output type. And the
+        // timestamp and the window bound have the same type.
 
         int timestampIndex = windowRel.orderingFieldIndex();
-        int windowStartIndex = windowRel.getRowType().getFieldCount() - 2;
-        int windowEndIndex = windowStartIndex + 1;
+        int windowStartIndex = windowRel.windowStartIndex();
+        int windowEndIndex = windowRel.windowEndIndex();
 
         // Replace references to either window bound to timestamp in projection
         List<Integer> windowStartIndexes = new ArrayList<>();
@@ -148,38 +148,6 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                     windowRel.windowPolicyProvider());
             call.transformTo(transformedRel);
         }
-    }
-
-    /**
-     * Returns if there's any reference to input field
-     * with index i1 or i2 in the given projection.
-     */
-    private static boolean hasInputRef(RexNode projection, int i1, int i2) {
-        return projection.accept(new RexVisitorImpl<Boolean>(true) {
-            @Override
-            public Boolean visitInputRef(RexInputRef inputRef) {
-                return inputRef.getIndex() == i1 || inputRef.getIndex() == i2;
-            }
-
-            @Override
-            public Boolean visitCall(RexCall call) {
-                if (!deep) {
-                    return null;
-                }
-
-                for (RexNode operand : call.operands) {
-                    if (operand.accept(this)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean visitLiteral(RexLiteral literal) {
-                return false;
-            }
-        });
     }
 
     private RelNode transform(

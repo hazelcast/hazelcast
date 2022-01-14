@@ -82,7 +82,7 @@ import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
 
-    // TODO [viliam] use real EEC
+    // TODO https://github.com/hazelcast/hazelcast/issues/20383
     private static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
@@ -331,7 +331,6 @@ public class CreateDagVisitor {
         FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
 
-        // TODO: [viliam, sasha] real ExpressionEvalContext. Waiting for #20311 merge.
         Expression<?> timestampExpression = rel.timestampExpression();
         ToLongFunctionEx<Object[]> timestampFn = row ->
                 WindowUtils.extractMillis(timestampExpression.eval(new HeapRow(row), MOCK_EEC));

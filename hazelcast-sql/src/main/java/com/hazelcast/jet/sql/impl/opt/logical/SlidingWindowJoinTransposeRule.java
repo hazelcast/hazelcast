@@ -74,7 +74,6 @@ public class SlidingWindowJoinTransposeRule extends RelRule<Config> implements T
             );
         }
 
-
         final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newJoin));
         call.transformTo(topSW);
     }

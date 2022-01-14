@@ -52,12 +52,12 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
-                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])")
+                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
 
         sql = "EXPLAIN PLAN FOR SELECT * FROM map";
         assertRowsOrdered(sql, singletonList(
-                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])")
+                new Row("FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
     }
 
@@ -126,8 +126,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, asList(
                 new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC], requiresSort=[true])"),
                 new Row("  UnionPhysicalRel(all=[true])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])")
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
     }
 
@@ -141,8 +141,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, asList(
                 new Row("UnionPhysicalRel(all=[true])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], watermarkedColumnIndex=[-1])")
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])"),
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]])")
         ));
     }
 
@@ -161,8 +161,8 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, asList(
                 new Row("ProjectPhysicalRel(__key=[$0], name=[$2])"),
                 new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $1)], joinType=[inner])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[0]]]], watermarkedColumnIndex=[-1])"),
-                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[1, 2]]]], watermarkedColumnIndex=[-1])")
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[0]]]])"),
+                new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[1, 2]]]])")
         ));
     }
 
@@ -257,7 +257,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         assertRowsOrdered(sql, asList(
                 new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[0, 1]]]], " +
                         "operation=[DELETE], flattened=[false])"),
-                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0]]]], watermarkedColumnIndex=[-1])")
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[0]]]])")
 
         ));
     }

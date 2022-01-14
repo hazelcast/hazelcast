@@ -195,7 +195,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
-    public static void assertStreamContainsInAnyOrder(String sql, Collection<Row> expectedRows) {
+    /**
+     * Execute the given `sql` and assert that the first rows it returns are those in
+     * `expectedRows`. Ignores the rest of rows.
+     * <p>
+     * This is useful for asserting initial output of streaming queries where
+     * the output arrives in a stable order.
+     */
+    public static void assertTipOfStream(String sql, Collection<Row> expectedRows) {
+        assert !expectedRows.isEmpty() : "no point in asserting a zero-length tip of a stream";
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -228,7 +236,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         List<Row> actualRows = new ArrayList<>(rows);
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 
     /**

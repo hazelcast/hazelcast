@@ -33,7 +33,6 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -75,10 +74,8 @@ public final class HazelcastRelMdWatermarkedFields
         if (watermarkedFieldIndex < 0) {
             return null;
         }
-
-        RelDataType type = rel.getRowType().getFieldList().get(watermarkedFieldIndex).getType();
-        RexNode expr = rel.getCluster().getRexBuilder().makeInputRef(type, watermarkedFieldIndex);
-        return new WatermarkedFields(ImmutableMap.of(watermarkedFieldIndex, expr));
+        return new WatermarkedFields(ImmutableMap.of(watermarkedFieldIndex,
+                rel.getCluster().getRexBuilder().makeInputRef(rel, watermarkedFieldIndex)));
     }
 
     @SuppressWarnings("unused")
@@ -93,13 +90,10 @@ public final class HazelcastRelMdWatermarkedFields
             return inputWatermarkedFields;
         }
 
-        RelDataType rowType = rel.getRowType();
-        int fieldCount = rowType.getFieldCount();
         RexBuilder rexBuilder = rel.getCluster().getRexBuilder();
-
         return inputWatermarkedFields.merge(new WatermarkedFields(ImmutableMap.of(
-                fieldCount - 2, rexBuilder.makeInputRef(rowType.getFieldList().get(fieldCount - 2).getType(), fieldCount - 2),
-                fieldCount - 1, rexBuilder.makeInputRef(rowType.getFieldList().get(fieldCount - 1).getType(), fieldCount - 1))));
+                rel.windowStartIndex(), rexBuilder.makeInputRef(rel, rel.windowStartIndex()),
+                rel.windowEndIndex(), rexBuilder.makeInputRef(rel, rel.windowEndIndex()))));
     }
 
     @SuppressWarnings("unused")
@@ -142,25 +136,11 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        WatermarkedFields leftInputWatermarkedFields = query.extractWatermarkedFields(rel.getLeft());
-        WatermarkedFields rightInputWatermarkedFields = query.extractWatermarkedFields(rel.getRight());
-
-        if (rightInputWatermarkedFields == null) {
-            return leftInputWatermarkedFields;
-        }
-        WatermarkedFields rightWatermarkedFields = new WatermarkedFields(rightInputWatermarkedFields.getPropertiesByIndex());
-
-        return leftInputWatermarkedFields == null
-                ? rightWatermarkedFields
-                : leftInputWatermarkedFields.merge(rightWatermarkedFields);
+        // We currently support only nested-loop join and hash join that iterate the left side and forward
+        // WM in it. WM on the right side isn't forwarded.
+        // When we implement stream-to-stream join, we need to revisit this.
+        return query.extractWatermarkedFields(rel.getLeft());
     }
-//
-//    // i.e. Filter, AggregateAccumulateByKeyPhysicalRel, AggregateAccumulatePhysicalRel
-//    @SuppressWarnings("unused")
-//    public WatermarkedFields extractWatermarkedFields(SingleRel rel, RelMetadataQuery mq) {
-//        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-//        return query.extractWatermarkedFields(rel.getInput());
-//    }
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelSubset subset, RelMetadataQuery mq) {

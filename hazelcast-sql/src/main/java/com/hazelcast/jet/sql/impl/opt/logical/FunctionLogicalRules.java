@@ -17,8 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastHopTableFunction;
-import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSpecificTableFunction;
@@ -88,31 +87,10 @@ final class FunctionLogicalRules {
         }
     };
 
-    static final RelOptRule TUMBLE_WINDOW_FUNCTION_INSTANCE = new ConverterRule(
-            LogicalTableFunctionScan.class, scan -> extractTumbleWindowFunction(scan) != null,
-            Convention.NONE, Convention.NONE,
-            FunctionLogicalRules.class.getSimpleName() + "(Tumble-Window)"
-    ) {
-        @Override
-        public RelNode convert(RelNode rel) {
-            LogicalTableFunctionScan scan = (LogicalTableFunctionScan) rel;
-
-            return new SlidingWindowLogicalRel(
-                    scan.getCluster(),
-                    OptUtils.toLogicalConvention(scan.getTraitSet()),
-                    Util.toList(scan.getInputs(), OptUtils::toLogicalInput),
-                    scan.getCall(),
-                    scan.getElementType(),
-                    scan.getRowType(),
-                    scan.getColumnMappings()
-            );
-        }
-    };
-
     static final RelOptRule TUMBLE_HOP_FUNCTION_INSTANCE = new ConverterRule(
-            LogicalTableFunctionScan.class, scan -> extractHopWindowFunction(scan) != null,
+            LogicalTableFunctionScan.class, scan -> extractWindowFunction(scan) != null,
             Convention.NONE, Convention.NONE,
-            FunctionLogicalRules.class.getSimpleName() + "(Hop-Window)"
+            FunctionLogicalRules.class.getSimpleName() + "(Window)"
     ) {
         @Override
         public RelNode convert(RelNode rel) {
@@ -157,27 +135,15 @@ final class FunctionLogicalRules {
         return (HazelcastDynamicTableFunction) call.getOperator();
     }
 
-    private static HazelcastTumbleTableFunction extractTumbleWindowFunction(LogicalTableFunctionScan scan) {
+    private static HazelcastWindowTableFunction extractWindowFunction(LogicalTableFunctionScan scan) {
         if (scan == null || !(scan.getCall() instanceof RexCall)) {
             return null;
         }
         RexCall call = (RexCall) scan.getCall();
 
-        if (!(call.getOperator() instanceof HazelcastTumbleTableFunction)) {
+        if (!(call.getOperator() instanceof HazelcastWindowTableFunction)) {
             return null;
         }
-        return (HazelcastTumbleTableFunction) call.getOperator();
-    }
-
-    private static HazelcastHopTableFunction extractHopWindowFunction(LogicalTableFunctionScan scan) {
-        if (scan == null || !(scan.getCall() instanceof RexCall)) {
-            return null;
-        }
-        RexCall call = (RexCall) scan.getCall();
-
-        if (!(call.getOperator() instanceof HazelcastHopTableFunction)) {
-            return null;
-        }
-        return (HazelcastHopTableFunction) call.getOperator();
+        return (HazelcastWindowTableFunction) call.getOperator();
     }
 }
