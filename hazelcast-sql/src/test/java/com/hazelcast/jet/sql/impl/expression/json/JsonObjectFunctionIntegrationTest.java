@@ -27,6 +27,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -92,6 +98,19 @@ public class JsonObjectFunctionIntegrationTest extends SqlJsonTestSupport {
         assertThatThrownBy(() -> query("select json_object(key \"foo\")"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \")\" at line 1, column 29.");
+    }
+
+    @Test
+    public void test_dateTimeFormats() {
+        final LocalTime time = LocalTime.of(13, 0, 0);
+        final LocalDate date = LocalDate.of(2020, 1, 1);
+        final LocalDateTime dateTime = LocalDateTime
+                .of(2020, 1, 1, 13, 0, 0);
+        final OffsetDateTime dateTimeTz = OffsetDateTime.of(dateTime, ZoneOffset.UTC);
+
+        assertRowsAnyOrder("SELECT JSON_OBJECT('a':?, 'b':?, 'c':?, 'd':?)",
+                Arrays.asList(time, date, dateTime, dateTimeTz),
+                jsonObjRow(objectMap("a", "13:00", "b", "2020-01-01", "c", "2020-01-01T13:00", "d", "2020-01-01T13:00Z")));
     }
 
     private List<Row> jsonObjRow(final Map<Object, Object> values) {
