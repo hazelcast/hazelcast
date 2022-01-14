@@ -138,4 +138,11 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
 
     @Nullable
     PartitionTableView getLeftMemberSnapshot(UUID uuid);
+
+    /**
+     * @param uuid a member UUID
+     * @return {@code true} if partitions are uninitialized or a partition assignments
+     *         snapshot exists for the given member UUID, otherwise {@code false}.
+     */
+    boolean hasLeftMemberSnapshotOrPartitionsUninitialized(UUID uuid);
 }

@@ -714,7 +714,7 @@ public class ClusterJoinManager {
                 || previousMembersMap.contains(memberUuid)
                 // or it is a known missing member
                 || clusterService.getMembershipManager().isMissingMember(address, memberUuid))
-                && (node.getPartitionService().getLeftMemberSnapshot(memberUuid) != null);
+                && node.getPartitionService().hasLeftMemberSnapshotOrPartitionsUninitialized(memberUuid);
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {

@@ -1240,6 +1240,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return partitionStateManager.getSnapshot(uuid);
     }
 
+    @Override
+    public boolean hasLeftMemberSnapshotOrPartitionsUninitialized(UUID uuid) {
+        // - if first arrangement isn't done yet, always allow rejoin
+        // - otherwise, check if a partition assignments snapshot is
+        // available for the given uuid
+        return !partitionStateManager.isInitialized() || partitionStateManager.getSnapshot(uuid) != null;
+    }
+
     /**
      * Returns true only if local member is the last known master by
      * {@code InternalPartitionServiceImpl}.
