@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
@@ -94,8 +95,17 @@ public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
 
         assertRowsAnyOrder("SELECT JSON_ARRAY(\"localTime\", \"localDate\", \"localDateTime\", \"date\", " +
                         "\"calendar\", \"instant\", \"zonedDateTime\", \"offsetDateTime\") from m",
-                jsonArrayRow("12:23:34", "2020-04-15", "2020-04-15T12:23:34.001", "2020-04-15T14:23:34.200+02:00",
-                        "2020-04-15T12:23:34.200Z", "2020-04-15T14:23:34.200+02:00", "2020-04-15T12:23:34.200Z", "2020-04-15T12:23:34.200Z"));
+                jsonArrayRow(
+                        "12:23:34",
+                        "2020-04-15",
+                        "2020-04-15T12:23:34.001",
+                        OffsetDateTime.ofInstant(AllTypesValue.testValue().getDate().toInstant(), ZoneId.systemDefault())
+                                .toString(),
+                        "2020-04-15T12:23:34.200Z",
+                        OffsetDateTime.ofInstant(AllTypesValue.testValue().getInstant(), ZoneId.systemDefault())
+                                .toString(),
+                        "2020-04-15T12:23:34.200Z",
+                        "2020-04-15T12:23:34.200Z"));
     }
 
     @Test
