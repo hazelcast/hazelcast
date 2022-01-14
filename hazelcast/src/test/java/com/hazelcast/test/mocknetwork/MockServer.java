@@ -167,8 +167,9 @@ class MockServer implements Server {
             UUID remoteMemberUuid = targetNode.getThisUuid();
 
 
-            // Create a unidirectional connection pair that is split into
-            // two distinct connection.
+            // Create a unidirectional connection that is split into
+            // two distinct connection objects (one for the local member
+            // side and the other for the remote member side)
             // These two connections below are only used for sending
             // packets from the local member to the remote member.
 
@@ -184,8 +185,8 @@ class MockServer implements Server {
                     node.getServer().getConnectionManager(EndpointQualifier.MEMBER)
             );
 
-            // This connection is only used to receive packets from the connection
-            // created above.
+            // This connection is only used to receive packets on the remote member
+            // which are sent from the local member's connection created above.
             // Since this connection is not registered in the connection map of remote
             // member's connection server, when the remote member intends to send a
             // packet to this local member, it won't have access to this connection,
