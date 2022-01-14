@@ -20,8 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.server.FirewallingServer;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
@@ -47,7 +45,7 @@ public class MockServerConnection implements ServerConnection {
     protected final NodeEngineImpl localNodeEngine;
     protected final NodeEngineImpl remoteNodeEngine;
 
-    volatile MockServerConnection localConnection;
+    volatile MockServerConnection otherConnection;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
 
@@ -56,7 +54,7 @@ public class MockServerConnection implements ServerConnection {
     private final Address remoteAddress;
 
     private final UUID localUuid;
-    private UUID remoteUuid;
+    private volatile UUID remoteUuid;
 
     private final ServerConnectionManager connectionManager;
 
@@ -167,7 +165,7 @@ public class MockServerConnection implements ServerConnection {
         } while (!writeDone);
 
         assertNotNull(newPacket);
-        newPacket.setConn(localConnection);
+        newPacket.setConn(otherConnection);
         return newPacket;
     }
 
@@ -184,25 +182,12 @@ public class MockServerConnection implements ServerConnection {
             return;
         }
 
-        if (localConnection != null) {
-            localConnection.close(msg, cause);
+        if (otherConnection != null) {
+            otherConnection.close(msg, cause);
         }
 
         if (lifecycleListener != null) {
             lifecycleListener.onConnectionClose(this, cause, false);
-        }
-
-        if (localNodeEngine != null) {
-            localNodeEngine.getNode()
-                    .getLocalAddressRegistry()
-                    .tryRemoveRegistration(remoteUuid, remoteAddress);
-            Server server = localNodeEngine.getNode().getServer();
-            // this is a member-to-member connection
-            if (server instanceof FirewallingServer) {
-                (((MockServer) ((FirewallingServer) server).delegate)).connectionMap.remove(remoteUuid);
-            } else if (server instanceof MockServer) {
-                ((MockServer) server).connectionMap.remove(remoteUuid);
-            }
         }
     }
 
