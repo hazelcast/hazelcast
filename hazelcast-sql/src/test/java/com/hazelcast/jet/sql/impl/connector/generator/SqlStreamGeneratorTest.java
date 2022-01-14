@@ -38,11 +38,10 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     @Test
     public void test_generateStream() {
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(100))",
+                "SELECT * FROM TABLE(GENERATE_STREAM(10))",
                 asList(
-                        new Row(0L),
-                        new Row(1L),
-                        new Row(2L)
+                        new Row(0L), new Row(1L), new Row(2L), new Row(3L), new Row(4L),
+                        new Row(5L), new Row(6L), new Row(7L), new Row(8L), new Row(9L)
                 )
         );
     }
@@ -50,11 +49,14 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     @Test
     public void test_generateStreamArgumentExpression() {
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('50' AS INTEGER) + 50 AS INT)))",
+                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('3' AS INTEGER) + 3 AS INT)))",
                 asList(
                         new Row(0L),
                         new Row(1L),
-                        new Row(2L)
+                        new Row(2L),
+                        new Row(3L),
+                        new Row(4L),
+                        new Row(5L)
                 )
         );
     }
@@ -62,11 +64,14 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     @Test
     public void test_generateStreamNamedArguments() {
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(rate => 50 + 50))",
+                "SELECT * FROM TABLE(GENERATE_STREAM(rate => 3 + 3))",
                 asList(
                         new Row(0L),
                         new Row(1L),
-                        new Row(2L)
+                        new Row(2L),
+                        new Row(3L),
+                        new Row(4L),
+                        new Row(5L)
                 )
         );
     }
@@ -170,7 +175,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     @Test
     public void test_planCache() {
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(100))",
+                "SELECT * FROM TABLE(GENERATE_STREAM(2))",
                 asList(
                         new Row(0L),
                         new Row(1L)
@@ -179,10 +184,11 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(GENERATE_STREAM(200))",
+                "SELECT * FROM TABLE(GENERATE_STREAM(3))",
                 asList(
                         new Row(0L),
-                        new Row(1L)
+                        new Row(1L),
+                        new Row(2L)
                 )
         );
         assertThat(planCache(instance()).size()).isEqualTo(2);
