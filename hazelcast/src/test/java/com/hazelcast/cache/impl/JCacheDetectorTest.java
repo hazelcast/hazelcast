@@ -18,38 +18,25 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ClassLoaderUtil.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JCacheDetectorTest extends HazelcastTestSupport {
 
-    private ILogger logger = Logger.getLogger(JCacheDetectorTest.class);
-    private ClassLoader classLoader = mock(ClassLoader.class);
-
-    @Before
-    public void setUp() {
-        PowerMockito.mockStatic(ClassLoaderUtil.class);
-    }
+    private final ILogger logger = Logger.getLogger(JCacheDetectorTest.class);
+    private final ClassLoader classLoader = mock(ClassLoader.class);
 
     @Test
     public void testConstructor() {
@@ -57,53 +44,44 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withCorrectVersion() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(true);
+    public void testIsJCacheAvailable_withCorrectVersion() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> true;
 
-        assertTrue(isJCacheAvailable(classLoader));
+        assertTrue(isJCacheAvailable(classLoader, classAvailabilityChecker));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withCorrectVersion_withLogger() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(true);
+    public void testIsJCacheAvailable_withCorrectVersion_withLogger() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> true;
 
-        assertTrue(isJCacheAvailable(classLoader, logger));
+        assertTrue(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
     }
 
     @Test
-    public void testIsJCacheAvailable_notFound() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(false);
-        assertFalse(isJCacheAvailable(classLoader));
+    public void testIsJCacheAvailable_notFound() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> false;
+
+        assertFalse(isJCacheAvailable(classLoader, classAvailabilityChecker));
     }
 
     @Test
-    public void testIsJCacheAvailable_notFound_withLogger() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(false);
-        assertFalse(isJCacheAvailable(classLoader, logger));
+    public void testIsJCacheAvailable_notFound_withLogger() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> false;
+
+        assertFalse(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withWrongJCacheVersion() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(true)
-                .thenReturn(false);
+    public void testIsJCacheAvailable_withWrongJCacheVersion() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> className.equals("javax.cache.Caching");
 
-        assertFalse(isJCacheAvailable(classLoader));
+        assertFalse(isJCacheAvailable(classLoader, classAvailabilityChecker));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() throws Exception {
-        when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
-                .thenReturn(true)
-                .thenReturn(false);
-        assertFalse(isJCacheAvailable(classLoader, logger));
+    public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() {
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> className.equals("javax.cache.Caching");
+
+        assertFalse(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
     }
 }
