@@ -42,7 +42,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,7 +113,6 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testMember() {
         try (SqlResult res = instance().getSql().execute(SQL)) {
             for (SqlRow row : res) {
@@ -130,7 +128,6 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testClient() {
         int pageSize = KEY_COUNT / 2;
 
@@ -203,6 +200,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         instance().getMap(MAP_NAME).putAll(localMap);
+        createMapping(MAP_NAME, PORTABLE_FACTORY_ID, PORTABLE_KEY_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_ID, 0);
     }
 
     public static class PersonKey implements Portable {

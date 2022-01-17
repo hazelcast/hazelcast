@@ -31,6 +31,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
@@ -38,6 +41,7 @@ import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -86,23 +90,22 @@ public class SqlCompactTest extends SqlTestSupport {
         CompactSerializationConfig compactSerializationConfig =
                 config.getSerializationConfig().getCompactSerializationConfig();
         compactSerializationConfig.setEnabled(true);
-//        Left commented deliberately. See https://github.com/hazelcast/hazelcast/issues/19427
-//        // registering this class to the member to see it does not affect any of the tests.
-//        // It has a different schema than all the tests
-//        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
-//            @Nonnull
-//            @Override
-//            public Person read(@Nonnull CompactReader in) {
-//                Person person = new Person();
-//                person.surname = in.readString("surname", "NotAssigned");
-//                return person;
-//            }
-//
-//            @Override
-//            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
-//                out.writeString("surname", person.surname);
-//            }
-//        });
+        // registering this class to the member to see it does not affect any of the tests.
+        // It has a different schema than all the tests
+        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
+            @Nonnull
+            @Override
+            public Person read(@Nonnull CompactReader in) {
+                Person person = new Person();
+                person.surname = in.readString("surname", "NotAssigned");
+                return person;
+            }
+
+            @Override
+            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
+                out.writeString("surname", person.surname);
+            }
+        });
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
