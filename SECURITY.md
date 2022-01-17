@@ -27,16 +27,6 @@ Our standard process is:
 
 We greatly appreciate your partnership in helping us provide the strongest security posture for all users. Thank you.
 
-<!--
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
--->
+To find out which Hazelcast versions are currently being supported please visit our [Version Support Windows](https://support.hazelcast.com/s/article/Version-Support-Windows) page.
