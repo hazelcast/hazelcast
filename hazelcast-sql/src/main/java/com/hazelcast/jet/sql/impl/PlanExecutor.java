@@ -100,6 +100,8 @@ import static java.util.Collections.singletonList;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
+    private static final String DEFAULT_UNIQUE_KEY = "__key";
+    private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -143,8 +145,16 @@ public class PlanExecutor {
 
         if (plan.indexType().equals(IndexType.BITMAP)) {
             Map<String, String> options = plan.options();
+
             String uniqueKey = options.get(UNIQUE_KEY);
+            if (uniqueKey == null) {
+                uniqueKey = DEFAULT_UNIQUE_KEY;
+            }
+
             String uniqueKeyTransform = options.get(UNIQUE_KEY_TRANSFORMATION);
+            if (uniqueKeyTransform == null) {
+                uniqueKeyTransform = DEFAULT_UNIQUE_KEY_TRANSFORMATION;
+            }
 
             BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
             bitmapIndexOptions.setUniqueKey(uniqueKey);
@@ -153,8 +163,8 @@ public class PlanExecutor {
             indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
         }
 
-        // The `addIndex()` call does nothing, if an index with the same name already exists. Even if its config
-        // is different.
+        // The `addIndex()` call does nothing, if an index with the same name already exists.
+        // Even if its config is different.
         hazelcastInstance.getMap(plan.mapName()).addIndex(indexConfig);
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
