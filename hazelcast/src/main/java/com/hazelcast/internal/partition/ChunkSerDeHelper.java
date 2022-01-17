@@ -50,10 +50,8 @@ public final class ChunkSerDeHelper {
                             int maxTotalChunkedDataInBytes) {
         assert chunkSuppliers != null;
         assert logger != null;
-
-        if (chunkedMigrationEnabled) {
-            assert maxTotalChunkedDataInBytes > 0 : maxTotalChunkedDataInBytes;
-        }
+        assert !chunkedMigrationEnabled || (maxTotalChunkedDataInBytes > 0)
+                : "Found maxTotalChunkedDataInBytes=" + maxTotalChunkedDataInBytes;
 
         this.logger = logger;
         this.partitionId = partitionId;
