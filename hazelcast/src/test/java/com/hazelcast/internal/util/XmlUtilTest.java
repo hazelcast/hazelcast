@@ -18,19 +18,24 @@ package com.hazelcast.internal.util;
 
 import static com.hazelcast.internal.util.XmlUtil.SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES;
 import static com.hazelcast.internal.util.XmlUtil.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
+import org.fusesource.hawtbuf.ByteArrayInputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.xml.sax.HandlerBase;
 import org.xml.sax.SAXException;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -40,6 +45,9 @@ import com.hazelcast.test.annotation.QuickTest;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class })
 public class XmlUtilTest {
+
+    private static final String XXE_TEST_STR = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + "  <!DOCTYPE test [\n"
+            + "    <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n" + "  ]>" + "<a><b>&xxe;</b></a>";
 
     @Rule
     public OverridePropertyRule ignoreXxeFailureProp = OverridePropertyRule
@@ -54,9 +62,7 @@ public class XmlUtilTest {
         assertThrows(IllegalArgumentException.class, () -> format("<a><b>c</b></a>", 0));
 
         // check if the XXE protection is enabled
-        String xxeAttack = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + "  <!DOCTYPE test [\n"
-                + "    <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n" + "  ]>" + "<a><b>&xxe;</b></a>";
-        assertEquals(xxeAttack, format(xxeAttack, 1));
+        assertEquals(XXE_TEST_STR, format(XXE_TEST_STR, 1));
 
         // wrongly formatted XML
         assertEquals("<a><b>c</b><a>", format("<a><b>c</b><a>", 1));
@@ -93,5 +99,23 @@ public class XmlUtilTest {
         assertThrows(ParserConfigurationException.class, () -> XmlUtil.setFeature(dbf, "test://no-such-feature"));
         ignoreXxeFailureProp.setOrClearProperty("true");
         XmlUtil.setFeature(dbf, "test://no-such-feature");
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testGetSAXParserFactory() throws Exception {
+        SAXParserFactory saxParserFactory = XmlUtil.getSAXParserFactory();
+        assertNotNull(saxParserFactory);
+        // check if the XXE protection is enabled
+        SAXParser saxParser = saxParserFactory.newSAXParser();
+        assertThrows(SAXException.class,
+                () -> saxParser.parse(new ByteArrayInputStream(XXE_TEST_STR.getBytes(UTF_8)), new HandlerBase()));
+
+        assertThrows(SAXException.class, () -> XmlUtil.setFeature(saxParserFactory, "test://no-such-feature"));
+        ignoreXxeFailureProp.setOrClearProperty("false");
+        assertThrows(SAXException.class, () -> XmlUtil.setFeature(saxParserFactory, "test://no-such-feature"));
+        ignoreXxeFailureProp.setOrClearProperty("true");
+        XmlUtil.setFeature(saxParserFactory, "test://no-such-feature");
+
     }
 }
