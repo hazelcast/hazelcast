@@ -25,7 +25,8 @@ import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,7 +35,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -44,12 +47,24 @@ import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getOperationService;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MasterSplitTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean chunkedMigrationEnabled;
+
+    @Parameterized.Parameters(name = "chunkedMigrationEnabled:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true}, {false}
+        });
+    }
 
     private TestHazelcastInstanceFactory factory;
 
@@ -68,7 +83,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
         Operation op = new MigrationRequestOperation(migration, Collections.emptyList(),
-                0, true, true, Integer.MAX_VALUE);
+                0, true, chunkedMigrationEnabled, Integer.MAX_VALUE);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
@@ -87,7 +102,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
         MigrationInfo migration
                 = new MigrationInfo(getPartitionId(nonMaster), new PartitionReplica(
                 getAddress(nonMaster), getNode(nonMaster).getThisUuid()),
-                new PartitionReplica(getAddress(master), getNode(master).getThisUuid()), 0, 1, -1, 0);
+                new PartitionReplica(getAddress(master), getNode(master).getThisUuid()),
+                0, 1, -1, 0);
         migration.setMaster(getAddress(nonMaster));
         return migration;
     }
@@ -103,7 +119,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         ReplicaFragmentMigrationState migrationState
                 = new ReplicaFragmentMigrationState(Collections.emptyMap(),
-                Collections.emptySet(), Collections.emptySet(), (int) MemoryUnit.MEGABYTES.toBytes(50),
+                Collections.emptySet(), Collections.emptySet(), chunkedMigrationEnabled,
+                (int) MemoryUnit.MEGABYTES.toBytes(50),
                 Logger.getLogger(getClass()), 1);
         Operation op = new MigrationOperation(migration, Collections.emptyList(),
                 0, migrationState, true, true);

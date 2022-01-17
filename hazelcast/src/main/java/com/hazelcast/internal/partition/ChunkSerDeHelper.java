@@ -46,10 +46,12 @@ public final class ChunkSerDeHelper {
 
     public ChunkSerDeHelper(ILogger logger, int partitionId,
                             Collection<ChunkSupplier> chunkSuppliers,
+                            boolean chunkedMigrationEnabled,
                             int maxTotalChunkedDataInBytes) {
         assert chunkSuppliers != null;
         assert logger != null;
-        assert maxTotalChunkedDataInBytes > 0 : maxTotalChunkedDataInBytes;
+        assert !chunkedMigrationEnabled || (maxTotalChunkedDataInBytes > 0)
+                : "Found maxTotalChunkedDataInBytes=" + maxTotalChunkedDataInBytes;
 
         this.logger = logger;
         this.partitionId = partitionId;

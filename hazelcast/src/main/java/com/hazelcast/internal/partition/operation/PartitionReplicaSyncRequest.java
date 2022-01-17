@@ -279,6 +279,7 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
         PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations,
                 chunkSuppliers, ns, versions,
+                isChunkedMigrationEnabled(),
                 getMaxTotalChunkedDataInBytes(),
                 getLogger(), partitionId);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);

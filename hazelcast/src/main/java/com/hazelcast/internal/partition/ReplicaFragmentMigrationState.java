@@ -55,12 +55,13 @@ public class ReplicaFragmentMigrationState
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
                                          Collection<Operation> migrationOperations,
                                          Collection<ChunkSupplier> chunkSuppliers,
+                                         boolean chunkedMigrationEnabled,
                                          int maxTotalChunkedDataInBytes, ILogger logger,
                                          int partitionId) {
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
         this.chunkSerDeHelper = new ChunkSerDeHelper(logger, partitionId,
-                chunkSuppliers, maxTotalChunkedDataInBytes);
+                chunkSuppliers, chunkedMigrationEnabled, maxTotalChunkedDataInBytes);
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
