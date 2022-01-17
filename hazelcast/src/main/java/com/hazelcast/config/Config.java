@@ -210,7 +210,7 @@ public class Config {
 
     private DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig();
 
-    private boolean integrityCheckerEnabled = true;
+    private boolean integrityCheckerEnabled;
 
     public Config() {
     }
