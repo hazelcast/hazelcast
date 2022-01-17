@@ -168,6 +168,7 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     // package-visible for test
+    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:CyclomaticComplexity"})
     static String escapeObjectNameValue(String name) {
         if (!shouldEscapeObjectNameValue(name)) {
             return name;
