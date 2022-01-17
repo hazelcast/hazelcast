@@ -155,10 +155,6 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
 
-        if (eventTimePolicyProvider != null) {
-            throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
-        }
-
         BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", ExpressionEvalContext::from)
                 .<JetSqlRow>fillBufferFn((ctx, buf) -> {

@@ -45,7 +45,7 @@ public class KvProjectorTest {
     @Test
     public void test_project() {
         KvProjector projector = new KvProjector(
-                null, new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new MultiplyingTarget(),
                 new MultiplyingTarget(),
@@ -61,7 +61,6 @@ public class KvProjectorTest {
     @Test
     public void test_projectAllowNulls() {
         KvProjector projector = new KvProjector(
-                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new NullTarget(),
@@ -78,7 +77,6 @@ public class KvProjectorTest {
     @Test
     public void test_projectKeyNullNotAllowed() {
         KvProjector projector = new KvProjector(
-                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new NullTarget(),
@@ -94,7 +92,6 @@ public class KvProjectorTest {
     @Test
     public void test_projectValueNullNotAllowed() {
         KvProjector projector = new KvProjector(
-                null,
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new MultiplyingTarget(),

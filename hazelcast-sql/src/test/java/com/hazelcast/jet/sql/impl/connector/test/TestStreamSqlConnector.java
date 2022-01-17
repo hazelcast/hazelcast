@@ -61,9 +61,7 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
     }
 
     @Override
-    protected ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn
-    ) {
+    protected ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn) {
         StreamSource<Object> source = SourceBuilder
                 .stream("stream", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)

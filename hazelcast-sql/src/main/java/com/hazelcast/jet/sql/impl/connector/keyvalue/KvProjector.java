@@ -43,7 +43,6 @@ import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConver
  */
 public class KvProjector {
 
-    private final InternalSerializationService serializationService;
     private final QueryDataType[] types;
 
     private final UpsertTarget keyTarget;
@@ -54,7 +53,6 @@ public class KvProjector {
     private final boolean failOnNulls;
 
     KvProjector(
-            InternalSerializationService serializationService,
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTarget keyTarget,
@@ -62,7 +60,6 @@ public class KvProjector {
             boolean failOnNulls
     ) {
         checkTrue(paths.length == types.length, "paths.length != types.length");
-        this.serializationService = serializationService;
         this.types = types;
 
         this.keyTarget = keyTarget;
@@ -150,7 +147,6 @@ public class KvProjector {
 
         public KvProjector get(InternalSerializationService serializationService) {
             return new KvProjector(
-                    serializationService,
                     paths,
                     types,
                     keyDescriptor.create(serializationService),

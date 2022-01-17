@@ -62,10 +62,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
         constructors[JSON_PARSE] = arg -> new JsonParseFunction();
-        constructors[JSON_VALUE] = arg -> new JsonValueFunction();
+        constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
         constructors[JSON_OBJECT] = arg -> new JsonObjectFunction();
         constructors[JSON_ARRAY] = arg -> new JsonArrayFunction();
-        constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
         constructors[JET_SQL_ROW] = arg -> new JetSqlRow();
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 

@@ -259,7 +259,7 @@ public interface SqlConnector {
      * the join as {@link JetSqlRow}. For each record it must read the matching
      * records from the {@code table}, according to the {@code joinInfo} and
      * emit joined records, again as {@link JetSqlRow}. The number of fields in
-     * the the output row is {@code inputRecordLength + projection.size()}. See
+     * the output row is {@code inputRecordLength + projection.size()}. See
      * {@link ExpressionUtil#join} for a utility to create output rows.
      * <p>
      * The given {@code predicate} and {@code projection} apply only to the

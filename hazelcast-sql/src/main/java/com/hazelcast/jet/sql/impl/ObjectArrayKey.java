@@ -18,8 +18,6 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -61,13 +59,6 @@ public final class ObjectArrayKey implements DataSerializable {
     }
 
     @Override
-    public String toString() {
-        return "ObjectArrayKey{" +
-                "array=" + Arrays.toString(keyFields) +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -100,25 +91,6 @@ public final class ObjectArrayKey implements DataSerializable {
      * @return the projection function
      */
     public static FunctionEx<JetSqlRow, ObjectArrayKey> projectFn(int[] indices) {
-        return new ProjectFn(indices);
-    }
-
-    private static class ProjectFn implements FunctionEx<JetSqlRow, ObjectArrayKey>, SerializationServiceAware {
-        private final int[] indices;
-        private SerializationService ss;
-
-        ProjectFn(int[] indices) {
-            this.indices = indices;
-        }
-
-        @Override
-        public ObjectArrayKey applyEx(JetSqlRow row) {
-            return project(row, indices);
-        }
-
-        @Override
-        public void setSerializationService(SerializationService serializationService) {
-            this.ss = serializationService;
-        }
+        return row -> project(row, indices);
     }
 }

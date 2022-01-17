@@ -20,7 +20,6 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -434,10 +433,6 @@ public class PlanExecutor {
                 .toCompletableFuture();
         await(future, timeout);
         return UpdateSqlResultImpl.createUpdateCountResult(0);
-    }
-
-    private InternalSerializationService getSerializationService() {
-        return ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService();
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

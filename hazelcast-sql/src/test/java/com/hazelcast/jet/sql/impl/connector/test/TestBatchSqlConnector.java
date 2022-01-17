@@ -70,9 +70,7 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
     }
 
     @Override
-    protected ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn
-    ) {
+    protected ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn) {
         BatchSource<Object> source = SourceBuilder
                 .batch("batch", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)

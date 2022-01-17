@@ -155,7 +155,6 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     for (int i = 0; i < aggregations.size(); i++) {
                         row[i] = aggregations.get(i).collect();
                     }
-                    // TODO [viliam] can we do better?
                     return new JetSqlRow(Contexts.getCastedThreadContext().serializationService(), row);
                 });
     }
