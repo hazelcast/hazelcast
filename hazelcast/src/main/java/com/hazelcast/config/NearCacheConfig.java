@@ -196,7 +196,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets if the Near Cache key is stored in serialized format or by-reference.
-     *
+     * <p>
      * <b>NOTE:</b> It's not supported to disable the key serialization when the in-memory-format is {@code NATIVE}.
      * You can still set this value to {@code false}, but it will have no effect.
      *

@@ -1431,6 +1431,10 @@
             Batch size used to determine the number of events sent in a batch to your query cache. Its default value is 1.
         * <buffer-size>:
             Maximum number of events which can be stored in a partition buffer. Its default value is 16.
+        * <serialize-keys>:
+           Defines if the Query Cache keys should be serialized or not.
+           Keys are better to be serialized if they are mutable and
+           need to be cloned via serialization. Default value is false.
         * <eviction>:
             Configuration for the eviction of your query cache. See <eviction> in the map configuration above.
         * <indexes>:
@@ -1450,6 +1454,7 @@
                 <delay-seconds>3</delay-seconds>
                 <batch-size>2</batch-size>
                 <buffer-size>32</buffer-size>
+                <serialize-keys>false</serialize-keys>
                 <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                 <indexes>
                     <index>

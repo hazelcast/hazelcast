@@ -1334,6 +1334,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(12, queryCacheConfig.getDelaySeconds());
         assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
         assertTrue(queryCacheConfig.isCoalesce());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertFalse(queryCacheConfig.isPopulate());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());

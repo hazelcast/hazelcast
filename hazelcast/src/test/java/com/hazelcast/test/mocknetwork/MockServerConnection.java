@@ -45,7 +45,7 @@ public class MockServerConnection implements ServerConnection {
     protected final NodeEngineImpl localNodeEngine;
     protected final NodeEngineImpl remoteNodeEngine;
 
-    volatile MockServerConnection localConnection;
+    volatile MockServerConnection otherConnection;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
 
@@ -54,7 +54,7 @@ public class MockServerConnection implements ServerConnection {
     private final Address remoteAddress;
 
     private final UUID localUuid;
-    private UUID remoteUuid;
+    private volatile UUID remoteUuid;
 
     private final ServerConnectionManager connectionManager;
 
@@ -165,7 +165,7 @@ public class MockServerConnection implements ServerConnection {
         } while (!writeDone);
 
         assertNotNull(newPacket);
-        newPacket.setConn(localConnection);
+        newPacket.setConn(otherConnection);
         return newPacket;
     }
 
@@ -181,14 +181,9 @@ public class MockServerConnection implements ServerConnection {
         if (!alive.compareAndSet(true, false)) {
             return;
         }
-        if (localNodeEngine != null) {
-            localNodeEngine.getNode()
-                    .getLocalAddressRegistry()
-                    .tryRemoveRegistration(remoteUuid, remoteAddress);
-        }
-        if (localConnection != null) {
-            //this is a member-to-member connection
-            localConnection.close(msg, cause);
+
+        if (otherConnection != null) {
+            otherConnection.close(msg, cause);
         }
 
         if (lifecycleListener != null) {
