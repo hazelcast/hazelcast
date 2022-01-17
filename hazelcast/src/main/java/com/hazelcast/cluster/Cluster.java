@@ -54,6 +54,7 @@ public interface Cluster {
      * @throws java.lang.NullPointerException if listener is null
      * @see #removeMembershipListener(UUID)
      */
+    @Nonnull
     UUID addMembershipListener(@Nonnull MembershipListener listener);
 
     /**
@@ -79,6 +80,7 @@ public interface Cluster {
      *
      * @return current members in the cluster
      */
+    @Nonnull
     Set<Member> getMembers();
 
     /**
@@ -93,6 +95,7 @@ public interface Cluster {
      *
      * @return this Hazelcast instance member
      */
+    @Nonnull
     Member getLocalMember();
 
     /**
@@ -225,6 +228,7 @@ public interface Cluster {
      * @return the version at which this cluster operates.
      * @since 3.8
      */
+    @Nonnull
     Version getClusterVersion();
 
     /**
@@ -246,6 +250,7 @@ public interface Cluster {
      * supported on this instance (e.g. on client)
      * @since 5.0
      */
+    @Nonnull
     PersistenceService getPersistenceService();
 
     /**

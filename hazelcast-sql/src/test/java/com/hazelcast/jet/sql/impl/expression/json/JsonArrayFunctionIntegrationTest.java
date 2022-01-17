@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +27,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -65,6 +73,39 @@ public class JsonArrayFunctionIntegrationTest extends SqlJsonTestSupport {
                 jsonArrayRow(2L, null, 1L, 2L, null));
         assertRowsAnyOrder("SELECT JSON_ARRAY(id, name, a, b, c ABSENT ON NULL) FROM test WHERE __key = 2",
                 jsonArrayRow(2L, 1L, 2L));
+    }
+
+    @Test
+    public void test_dateTimeFormats_parameter() {
+        final LocalTime time = LocalTime.of(13, 0, 0);
+        final LocalDate date = LocalDate.of(2020, 1, 1);
+        final LocalDateTime dateTime = LocalDateTime
+                .of(2020, 1, 1, 13, 0, 0);
+        final OffsetDateTime dateTimeTz = OffsetDateTime.of(dateTime, ZoneOffset.UTC);
+
+        assertRowsAnyOrder("SELECT JSON_ARRAY(?, ?, ?, ?)",
+                Arrays.asList(time, date, dateTime, dateTimeTz),
+                jsonArrayRow("13:00", "2020-01-01", "2020-01-01T13:00", "2020-01-01T13:00Z"));
+    }
+
+    @Test
+    public void test_dateTimeFormats_column() {
+        createMapping("m", Integer.class, AllTypesValue.class);
+        instance().getMap("m").put(42, AllTypesValue.testValue());
+
+        assertRowsAnyOrder("SELECT JSON_ARRAY(\"localTime\", \"localDate\", \"localDateTime\", \"date\", " +
+                        "\"calendar\", \"instant\", \"zonedDateTime\", \"offsetDateTime\") from m",
+                jsonArrayRow(
+                        "12:23:34",
+                        "2020-04-15",
+                        "2020-04-15T12:23:34.001",
+                        OffsetDateTime.ofInstant(AllTypesValue.testValue().getDate().toInstant(), ZoneId.systemDefault())
+                                .toString(),
+                        "2020-04-15T12:23:34.200Z",
+                        OffsetDateTime.ofInstant(AllTypesValue.testValue().getInstant(), ZoneId.systemDefault())
+                                .toString(),
+                        "2020-04-15T12:23:34.200Z",
+                        "2020-04-15T12:23:34.200Z"));
     }
 
     @Test

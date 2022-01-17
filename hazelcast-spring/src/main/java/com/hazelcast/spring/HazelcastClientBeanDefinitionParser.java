@@ -369,7 +369,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 Node implNode = attributes.getNamedItem("implementation");
                 String implementation = implNode != null ? getTextContent(implNode) : null;
                 isTrue(className != null ^ implementation != null, "Exactly one of 'class-name' or 'implementation'"
-                    + " attributes is required to create LoadBalancer!");
+                        + " attributes is required to create LoadBalancer!");
                 if (className != null) {
                     BeanDefinitionBuilder loadBalancerBeanDefinition = createBeanBuilder(className);
                     configBuilder.addPropertyValue("loadBalancer", loadBalancerBeanDefinition.getBeanDefinition());
@@ -449,6 +449,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configMap.put(cacheName, builder.getBeanDefinition());
         }
 
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
         private void parseQueryCacheInternal(BeanDefinitionBuilder builder, Node node, String nodeName, String textContent) {
             if ("predicate".equals(nodeName)) {
                 BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);
@@ -471,6 +472,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 builder.addPropertyValue("coalesce", textContent);
             } else if ("populate".equals(nodeName)) {
                 builder.addPropertyValue("populate", textContent);
+            } else if ("serialize-keys".equals(nodeName)) {
+                builder.addPropertyValue("serializeKeys", textContent);
             } else if ("indexes".equals(nodeName)) {
                 ManagedList indexes = getIndexes(node);
                 builder.addPropertyValue("indexConfigs", indexes);

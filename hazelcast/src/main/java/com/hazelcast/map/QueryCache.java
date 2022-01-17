@@ -142,9 +142,9 @@ public interface QueryCache<K, V> {
     Set<K> keySet();
 
     /**
-     * @see IMap#keySet(Predicate)
+     * @see IMap#values()
      */
-    Set<K> keySet(Predicate<K, V> predicate);
+    Collection<V> values();
 
     /**
      * @see IMap#entrySet()
@@ -152,19 +152,19 @@ public interface QueryCache<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * @see IMap#entrySet(Predicate)
+     * @see IMap#keySet(Predicate)
      */
-    Set<Map.Entry<K, V>> entrySet(Predicate<K, V> predicate);
-
-    /**
-     * @see IMap#values()
-     */
-    Collection<V> values();
+    Set<K> keySet(Predicate<K, V> predicate);
 
     /**
      * @see IMap#values(Predicate)
      */
     Collection<V> values(Predicate<K, V> predicate);
+
+    /**
+     * @see IMap#entrySet(Predicate)
+     */
+    Set<Map.Entry<K, V>> entrySet(Predicate<K, V> predicate);
 
     /**
      * @see IMap#addEntryListener(MapListener, boolean)

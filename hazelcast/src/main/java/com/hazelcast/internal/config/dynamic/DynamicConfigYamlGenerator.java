@@ -904,6 +904,8 @@ public class DynamicConfigYamlGenerator {
                     getPredicateConfigAsMap(queryCacheConfig.getPredicateConfig()));
             addNonNullToMap(queryCacheConfigAsMap, "entry-listeners",
                     getEntryListenerConfigsAsList(queryCacheConfig.getEntryListenerConfigs()));
+            addNonNullToMap(queryCacheConfigAsMap, "serialize-keys",
+                    queryCacheConfig.isSerializeKeys());
 
             queryCacheConfigsAsMap.put(queryCacheConfig.getName(), queryCacheConfigAsMap);
         }

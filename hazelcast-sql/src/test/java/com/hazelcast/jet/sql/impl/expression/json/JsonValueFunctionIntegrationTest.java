@@ -32,6 +32,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -250,6 +255,28 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 "SELECT JSON_VALUE(this, '$.nonExistingProperty' ERROR ON EMPTY DEFAULT 2 ON ERROR) "
                         + "AS c1 FROM test WHERE __key = 1"
         )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("JSON_VALUE evaluated to no value");
+    }
+
+    @Test
+    public void test_returningDateTypes() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        final String jsonStr = "["
+                + "\"2020-01-01\","
+                + "\"2020-01-01 13:00:00\","
+                + "\"13:00:00\","
+                + "\"2020-01-01T13:00:00Z\""
+                + "]";
+        test.put(1L, json(jsonStr));
+        createMapping("test", "bigint", "json");
+
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[0]' RETURNING DATE) FROM test",
+                rows(1, LocalDate.of(2020, 1, 1)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[1]' RETURNING TIMESTAMP) FROM test",
+                rows(1, LocalDateTime.of(2020, 1, 1, 13, 0, 0)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[2]' RETURNING TIME) FROM test",
+                rows(1, LocalTime.of(13, 0, 0)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[3]' RETURNING TIMESTAMP WITH TIME ZONE) FROM test",
+                rows(1, OffsetDateTime.of(2020, 1, 1, 13, 0, 0, 0, ZoneOffset.UTC)));
     }
 
     private void initMultiTypeObject() {

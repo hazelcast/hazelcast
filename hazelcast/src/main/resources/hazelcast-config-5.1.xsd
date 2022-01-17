@@ -2060,6 +2060,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines if the Query Cache keys should be serialized or not.
+                        Keys should be serialized if they are mutable and need to be cloned via serialization.
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>

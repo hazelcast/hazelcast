@@ -1448,6 +1448,11 @@
                   "type": "boolean",
                   "default": false
                 },
+                "serialize-keys": {
+                  "description": "Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable and need to be cloned via serialization. Default value is false.",
+                  "type": "boolean",
+                  "default": false
+                },
                 "delay-seconds": {
                   "type": "integer",
                   "minimum": 0,

@@ -2699,6 +2699,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<in-memory-format>BINARY</in-memory-format>"
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
+                + "<serialize-keys>true</serialize-keys>"
                 + "<indexes>"
                 + "<index type=\"HASH\"><attributes><attribute>name</attribute></attributes></index>"
                 + "</indexes>"
@@ -2726,6 +2727,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());

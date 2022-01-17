@@ -58,7 +58,7 @@ public class AddCacheConfigMessageTask
         config.setCacheWriter(parameters.cacheWriter);
         config.setCacheWriterFactory(parameters.cacheWriterFactory);
         config.setDisablePerEntryInvalidationEvents(parameters.disablePerEntryInvalidationEvents);
-        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfg(serializationService));
+        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfig(serializationService));
         if (parameters.expiryPolicyFactoryClassName != null) {
             config.setExpiryPolicyFactory(parameters.expiryPolicyFactoryClassName);
         } else if (parameters.timedExpiryPolicyFactoryConfig != null) {

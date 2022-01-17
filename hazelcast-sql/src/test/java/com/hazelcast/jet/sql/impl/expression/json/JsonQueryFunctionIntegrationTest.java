@@ -295,6 +295,37 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[4]' EMPTY ARRAY ON ERROR) from test", rows(1, json("[]")));
     }
 
+    @Test
+    public void test_jsonPathLikeRegex() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        createMapping("test", "bigint", "json");
+        test.put(1L, json("["
+            + "\"alpha\","
+            + "\"alpha1\","
+            + "\"beta\","
+            + "\"BETA\","
+            + "1,"
+            + "22,"
+            + "\"foo\","
+            + "\"\\\"quoted \\\"\""
+            + "]"));
+
+        assertEquals(json("[\"alpha\",\"alpha1\"]"),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"alpha\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("\"alpha\""),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"(alpha)$\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("[\"beta\",\"BETA\"]"),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"(?i)beta\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("[\"alpha1\",1,22]"),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\\d\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("22"),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\\d{2}\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("[\"alpha\",\"alpha1\",\"beta\",\"BETA\",1,22,\"foo\",\"\\\"quoted \\\"\"]"),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+        assertEquals(json("\"\\\"quoted \\\"\""),
+            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\"quoted\\\\s\\\"\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+    }
+
     protected void initComplexObject() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         createMapping("test", "bigint", "json");
