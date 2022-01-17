@@ -242,10 +242,15 @@ public class Config {
         return cfg;
     }
 
+    // configurationFile must be set correctly because dynamic
+    // configuration persistence depends on this field. If this is
+    // absent, hazelcast instance may fail to find a file to persist.
     private static void setConfigurationFileFromUrl(Config cfg) {
         if (cfg.getConfigurationFile() == null && cfg.getConfigurationUrl() != null) {
             File configFile = new File(cfg.getConfigurationUrl().getPath());
-            if (configFile.exists() && !configFile.getName().equals(DEFAULT_CONFIG_NAME)) {
+
+            // Only set configurationFile if the config actually exist on the filesystem.
+            if (configFile.exists()) {
                 cfg.setConfigurationFile(configFile);
             }
         }
