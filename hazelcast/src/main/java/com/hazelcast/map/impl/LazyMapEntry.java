@@ -70,16 +70,16 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
     public LazyMapEntry() {
     }
 
-    public LazyMapEntry(Data key, Object value, InternalSerializationService serializationService) {
+    public LazyMapEntry(Object key, Object value, InternalSerializationService serializationService) {
         this(key, value, serializationService, null);
     }
 
-    public LazyMapEntry(Data key, Object value, InternalSerializationService serializationService, Extractors extractors) {
+    public LazyMapEntry(Object key, Object value, InternalSerializationService serializationService, Extractors extractors) {
         init(serializationService, key, value, extractors);
     }
 
     public LazyMapEntry init(InternalSerializationService serializationService,
-                             Data key, Object value, Extractors extractors, long ttl) {
+                             Object key, Object value, Extractors extractors, long ttl) {
         super.init(serializationService, key, value, extractors);
         modified = false;
         newTtl = ttl;

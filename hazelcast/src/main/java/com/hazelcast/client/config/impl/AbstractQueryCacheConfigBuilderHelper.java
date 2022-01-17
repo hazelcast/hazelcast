@@ -17,14 +17,14 @@
 package com.hazelcast.client.config.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DomConfigHelper;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -59,9 +59,9 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         return DomConfigHelper.getTextContent(node, domLevel3);
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
     protected void populateQueryCacheConfig(QueryCacheConfig queryCacheConfig,
                                             Node childNode, String nodeName) {
-
         if (matches("entry-listeners", nodeName)) {
             handleEntryListeners(queryCacheConfig, childNode);
         } else if (matches("include-value", nodeName)) {
@@ -84,6 +84,9 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         } else if (matches("populate", nodeName)) {
             boolean populate = getBooleanValue(getTextContent(childNode));
             queryCacheConfig.setPopulate(populate);
+        } else if (matches("serialize-keys", nodeName)) {
+            boolean serializeKeys = getBooleanValue(getTextContent(childNode));
+            queryCacheConfig.setSerializeKeys(serializeKeys);
         } else if (matches("indexes", nodeName)) {
             queryCacheIndexesHandle(childNode, queryCacheConfig);
         } else if (matches("predicate", nodeName)) {
@@ -155,8 +158,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
 
     protected boolean matches(String config1, String config2) {
         return strict
-          ? config1 != null && config1.equals(config2)
-          : ConfigUtils.matches(config1, config2);
+                ? config1 != null && config1.equals(config2)
+                : ConfigUtils.matches(config1, config2);
     }
 
     protected Node getNamedItemNode(final Node node, String attrName) {
@@ -169,8 +172,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         } else {
             Node attrNode = attrs.getNamedItem(attrName);
             return attrNode != null
-              ? attrNode
-              : attrs.getNamedItem(attrName.replace("-", ""));
+                    ? attrNode
+                    : attrs.getNamedItem(attrName.replace("-", ""));
         }
     }
 }

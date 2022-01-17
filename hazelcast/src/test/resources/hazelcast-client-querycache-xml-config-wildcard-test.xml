@@ -29,6 +29,7 @@
             <coalesce>true</coalesce>
             <include-value>true</include-value>
             <populate>true</populate>
+            <serialize-keys>true</serialize-keys>
             <predicate type="class-name">com.hazelcast.query.impl.predicates.TruePredicate</predicate>
         </query-cache>
     </query-caches>

@@ -31,7 +31,6 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
@@ -53,6 +52,7 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
@@ -1356,7 +1356,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             BeanDefinitionBuilder tieredStoreConfigBuilder = createBeanBuilder(TieredStoreConfig.class);
             fillAttributeValues(node, tieredStoreConfigBuilder);
-            for (Node child: childElements(node)) {
+            for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("memory-tier".equals(name)) {
                     handleMemoryTierConfig(tieredStoreConfigBuilder, child);
@@ -1453,6 +1453,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     builder.addPropertyValue("coalesce", textContent);
                 } else if ("populate".equals(nodeName)) {
                     builder.addPropertyValue("populate", textContent);
+                } else if ("serialize-keys".equals(nodeName)) {
+                    builder.addPropertyValue("serializeKeys", textContent);
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList<BeanDefinition> indexes = new ManagedList<>();
                     for (Node indexNode : childElements(node)) {

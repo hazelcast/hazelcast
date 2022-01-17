@@ -1404,6 +1404,9 @@ hazelcast:
       #     Set to true if you want to enable the initial population of your query cache. Its default value is true.
       # * "coalesce":
       #     Set to true if you want to enable the coalescing of your query cache. Its default value is false.
+      # * "serialize-keys":
+      #     Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable
+      #     and need to be cloned via serialization. Default value is false.
       # * "delay-seconds":
       #     Minimum time in seconds that an event waits in the member's buffer. Its default value is 0.
       # * "batch-size":
@@ -1426,6 +1429,7 @@ hazelcast:
           in-memory-format: BINARY
           populate: true
           coalesce: false
+          serialize-keys: false
           delay-seconds: 3
           batch-size: 2
           buffer-size: 32

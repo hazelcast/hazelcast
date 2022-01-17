@@ -3418,6 +3418,7 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
             <xs:element name="populate" type="parameterized-boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" default="false"/>
+            <xs:element name="serialize-keys" type="parameterized-boolean" default="false"/>
             <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" default="0"/>
             <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" default="1"/>
             <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" default="16"/>
@@ -3456,6 +3457,7 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
             <xs:element name="populate" type="parameterized-boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" default="false"/>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false"/>
             <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" default="0"/>
             <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" default="1"/>
             <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" default="16"/>
