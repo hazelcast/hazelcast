@@ -20,7 +20,7 @@ Using either method, your report will be received promptly by Hazelcast staff.
 
 Our standard process is:
 
-1. Upon receipt of your private report, Hazelcast will route it to the appropriate team for investigation.
+1. Upon receiving your private report, Hazelcast will route it to the appropriate team for investigation.
 2. If we need additional information, we will directly and privately reach out to the person who sent the vulnerability report.
 3. We will verify the vulnerability and its fix.
 4. The security fix will be included in a new release.
