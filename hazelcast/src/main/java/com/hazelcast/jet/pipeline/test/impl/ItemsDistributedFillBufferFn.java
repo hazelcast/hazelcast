@@ -20,6 +20,7 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,6 +28,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Iterator;
 
+/**
+ * Helper class for {@link TestSources}.
+ */
 public class ItemsDistributedFillBufferFn<T>
         implements BiConsumerEx<Context, SourceBuffer<T>>, IdentifiedDataSerializable {
 

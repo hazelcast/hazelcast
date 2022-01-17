@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.row.Row;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A row object that's sent between processors in the Jet SQL engine. It
@@ -111,23 +112,35 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return extendBy == 0 ? this : new JetSqlRow(ss, Arrays.copyOf(values, values.length + extendBy));
     }
 
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) {
-//            return true;
-//        }
-//        if (o == null || getClass() != o.getClass()) {
-//            return false;
-//        }
-//        JetSqlRow jetSqlRow = (JetSqlRow) o;
-//        for (int i = 0; i < values.length; i++) {
-//            // we compare the serialized form
-//            if (!Objects.equals(getSerialized(i), jetSqlRow.getSerialized(i))) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JetSqlRow jetSqlRow = (JetSqlRow) o;
+        for (int i = 0; i < values.length; i++) {
+            // we compare the serialized form
+            if (!Objects.equals(getSerialized(i), jetSqlRow.getSerialized(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        // This is a dummy value that will not break the contract, but the object is not supposed
+        // to be used as a hash map key.
+        return 0;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(values);
+    }
 
     @Override
     public int getFactoryId() {

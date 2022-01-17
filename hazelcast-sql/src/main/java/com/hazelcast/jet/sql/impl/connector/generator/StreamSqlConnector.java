@@ -100,7 +100,6 @@ class StreamSqlConnector implements SqlConnector {
         }
 
         StreamTable table = (StreamTable) table0;
-
         StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) table.items(predicate, projections);
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return dag.newUniqueVertex(table.toString(), pms);
