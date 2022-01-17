@@ -176,7 +176,9 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         "JOIN information_schema.columns USING (table_catalog, table_schema, table_name)",
                 rows(2,
                         mappingName, "__key",
-                        mappingName, "__value")
+                        mappingName, "__value",
+                        viewName, "__key",
+                        viewName, "__value")
         );
     }
 

@@ -200,9 +200,9 @@ public final class OptUtils {
     }
 
     /**
-     * Finds a set for the given RelNode, and return subsets that have
-     * the physical trait. Every returned input is guaranteed to have a
-     * unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have the
+     * physical trait. Every returned input is guaranteed to have a unique trait
+     * set.
      *
      * @return Physical rels.
      */
@@ -215,9 +215,9 @@ public final class OptUtils {
     }
 
     /**
-     * Finds a set for the given RelNode, and return subsets that have
-     * the logical trait. Every returned input is guaranteed to have a
-     * unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have the
+     * logical trait. Every returned input is guaranteed to have a unique trait
+     * set.
      *
      * @return Logical rels.
      */

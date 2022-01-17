@@ -38,9 +38,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
                     .trait(LOGICAL)
                     .inputs(
                             b1 -> b1.operand(RelNode.class).anyInputs(),
-                            b2 -> b2.operand(RelNode.class)
-                                    .trait(LOGICAL)
-                                    .noInputs()));
+                            b2 -> b2.operand(RelNode.class).anyInputs()));
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new JoinPhysicalRule();
