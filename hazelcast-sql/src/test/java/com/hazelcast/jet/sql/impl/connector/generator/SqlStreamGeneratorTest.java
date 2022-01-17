@@ -80,7 +80,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     @Test
     public void test_generateStreamFilterAndProject() {
         assertTipOfStream(
-                "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",
+                "SELECT v * 2 FROM TABLE(GENERATE_STREAM(10)) WHERE v > 0 AND v < 5",
                 asList(
                         new Row(2L),
                         new Row(4L),
