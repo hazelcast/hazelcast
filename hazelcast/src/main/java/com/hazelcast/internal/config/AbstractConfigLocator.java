@@ -158,10 +158,6 @@ public abstract class AbstractConfigLocator {
             LOGGER.info(String.format("Loading '%s' from the classpath.", configFileName));
 
             configurationUrl = url;
-
-            // configurationFile must be set correctly because dynamic
-            // configuration persistence depends on this field. If this is
-            // absent, hazelcast instance may fail to find a file to persist.
             File file = new File(url.getPath());
             if (file.exists()) {
                 configurationFile = file;
@@ -316,14 +312,14 @@ public abstract class AbstractConfigLocator {
     private URL resolveResourceUrl(String configFileName) {
         URL resource = Config.class.getClassLoader().getResource(configFileName);
         return resource != null
-                ? resource
-                : Thread.currentThread().getContextClassLoader().getResource(configFileName);
+          ? resource
+          : Thread.currentThread().getContextClassLoader().getResource(configFileName);
     }
 
     private InputStream resolveResourceAsStream(String configFileName) {
         InputStream resource = Config.class.getClassLoader().getResourceAsStream(configFileName);
         return resource != null
-                ? resource
-                : Thread.currentThread().getContextClassLoader().getResourceAsStream(configFileName);
+          ? resource
+          : Thread.currentThread().getContextClassLoader().getResourceAsStream(configFileName);
     }
 }
