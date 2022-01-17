@@ -168,7 +168,7 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     // package-visible for test
-    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     static String escapeObjectNameValue(String name) {
         if (!shouldEscapeObjectNameValue(name)) {
             return name;
@@ -192,6 +192,7 @@ public class JmxPublisher implements MetricsPublisher {
         return builder.toString();
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static boolean shouldEscapeObjectNameValue(String name) {
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
