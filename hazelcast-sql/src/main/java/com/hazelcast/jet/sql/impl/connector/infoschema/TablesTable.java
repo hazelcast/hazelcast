@@ -87,7 +87,7 @@ public class TablesTable extends InfoSchemaTable {
                     null,
                     null,
                     "YES", // is_insertable_into
-                    "NO",
+                    "NO",  // is_typed
                     null // not a temporary table
             });
         }
@@ -103,7 +103,7 @@ public class TablesTable extends InfoSchemaTable {
                     null,
                     null,
                     "NO", // is_insertable_into
-                    "NO",
+                    "NO",  // is_typed
                     null // not a temporary table
             });
         }
