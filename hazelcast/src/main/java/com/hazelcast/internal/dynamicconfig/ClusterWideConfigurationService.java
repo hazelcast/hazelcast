@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -54,6 +55,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,8 +76,13 @@ import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class ClusterWideConfigurationService implements PreJoinAwareService,
-        CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
+public class ClusterWideConfigurationService implements
+        PreJoinAwareService,
+        CoreService,
+        ClusterVersionListener,
+        ManagedService,
+        ConfigurationService,
+        SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
@@ -85,38 +92,31 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     static final Map<Class<? extends IdentifiedDataSerializable>, Version> CONFIG_TO_VERSION;
 
     //this is meant to be used as a workaround for buggy equals/hashcode implementations
-    private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND =
-            getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
+    private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND = getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
+
+    protected final NodeEngine nodeEngine;
+    protected final ILogger logger;
 
     private final DynamicConfigListener listener;
 
-    private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, TopicConfig> topicConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, DurableExecutorConfig> durableExecutorConfigs =
-            new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DurableExecutorConfig> durableExecutorConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs =
-            new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs =
-            new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
-    private final ILogger logger;
 
     @SuppressWarnings("unchecked")
     private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{
@@ -144,11 +144,14 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         CONFIG_TO_VERSION = initializeConfigToVersionMap();
     }
 
-    public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
+    public ClusterWideConfigurationService(
+            NodeEngine nodeEngine,
+            DynamicConfigListener dynamicConfigListener
+    ) {
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
-        this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -202,6 +205,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         future.joinInternal();
     }
 
+    @Override
+    public ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    @Override
+    public ConfigUpdateResult update(@Nullable Config newConfig) {
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+    }
+
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         checkConfigVersion(config);
         // we create a defensive copy as local operation execution might use a fast-path
@@ -209,8 +222,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
         ClusterService clusterService = nodeEngine.getClusterService();
-        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationSupplier(clusterService, clonedConfig),
-                CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+        return invokeOnStableClusterSerial(
+                nodeEngine,
+                new AddDynamicConfigOperationSupplier(clusterService, clonedConfig),
+                CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
+        );
     }
 
     private void checkConfigVersion(IdentifiedDataSerializable config) {
@@ -222,7 +238,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                             + "Current cluster version '%s' does not allow dynamically adding '%1$s'.",
                     configClass.getSimpleName(),
                     introducedIn.toString(),
-                    currentClusterVersion.toString()
+                    currentClusterVersion
             ));
         }
     }
@@ -244,9 +260,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * @throws InvalidConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
-    public void registerConfigLocally(IdentifiedDataSerializable newConfig,
-                                      ConfigCheckMode configCheckMode) {
-        IdentifiedDataSerializable currentConfig = null;
+    public void registerConfigLocally(IdentifiedDataSerializable newConfig, ConfigCheckMode configCheckMode) {
+        IdentifiedDataSerializable currentConfig;
         if (newConfig instanceof MultiMapConfig) {
             MultiMapConfig multiMapConfig = (MultiMapConfig) newConfig;
             currentConfig = multiMapConfigs.putIfAbsent(multiMapConfig.getName(), multiMapConfig);
@@ -258,8 +273,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             }
         } else if (newConfig instanceof CardinalityEstimatorConfig) {
             CardinalityEstimatorConfig cardinalityEstimatorConfig = (CardinalityEstimatorConfig) newConfig;
-            currentConfig = cardinalityEstimatorConfigs.putIfAbsent(cardinalityEstimatorConfig.getName(),
-                    cardinalityEstimatorConfig);
+            currentConfig = cardinalityEstimatorConfigs.putIfAbsent(
+                    cardinalityEstimatorConfig.getName(),
+                    cardinalityEstimatorConfig
+            );
         } else if (newConfig instanceof RingbufferConfig) {
             RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
             currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
@@ -306,10 +323,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
         checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
+        persist(newConfig);
     }
 
-    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig,
-                                               Object newConfig) {
+    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
         if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
             return;
         }
@@ -331,6 +348,15 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                 default:
                     throw new UnsupportedOperationException("Unknown consistency check mode: " + checkMode);
             }
+        }
+    }
+
+    @Override
+    public void persist(IdentifiedDataSerializable subConfig) {
+        if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
+            // Code should never come here. We should fast fail in
+            // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()
+            throw new UnsupportedOperationException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
         }
     }
 
@@ -516,9 +542,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         @Override
         public void run() {
             try {
-                Future<Object> future = invokeOnStableClusterSerial(nodeEngine,
+                Future<Object> future = invokeOnStableClusterSerial(
+                        nodeEngine,
                         () -> new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT),
-                        CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                        CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
+                );
                 waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);

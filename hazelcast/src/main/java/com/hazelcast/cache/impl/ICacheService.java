@@ -23,11 +23,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -38,9 +38,9 @@ import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
-        extends ManagedService, RemoteService, FragmentedMigrationAwareService,
-                EventPublishingService<Object, CacheEventListener>,
-                StatisticsAwareService<LocalCacheStats>, DynamicMetricsProvider {
+        extends ManagedService, RemoteService, ChunkedMigrationAwareService,
+        EventPublishingService<Object, CacheEventListener>,
+        StatisticsAwareService<LocalCacheStats>, DynamicMetricsProvider {
 
     String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =
             "There is no valid JCache API library at classpath. "

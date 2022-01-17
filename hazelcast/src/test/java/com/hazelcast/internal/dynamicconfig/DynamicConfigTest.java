@@ -900,6 +900,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setPopulate(true)
                 .setIncludeValue(true)
                 .setCoalesce(true)
+                .setSerializeKeys(true)
                 .setPredicateConfig(new PredicateConfig("com.hazelcast.Predicate"))
                 .setEvictionConfig(new EvictionConfig().setSize(32)
                         .setMaxSizePolicy(ENTRY_COUNT)

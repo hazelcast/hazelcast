@@ -50,7 +50,8 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     public PartitionBackupReplicaAntiEntropyOperation() {
     }
 
-    public PartitionBackupReplicaAntiEntropyOperation(Map<ServiceNamespace, Long> versions, boolean returnResponse) {
+    public PartitionBackupReplicaAntiEntropyOperation(Map<ServiceNamespace, Long> versions,
+                                                      boolean returnResponse) {
         this.versions = versions;
         this.returnResponse = returnResponse;
     }

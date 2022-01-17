@@ -98,7 +98,7 @@ public class NearCacheConfigHolder {
         config.setInvalidateOnChange(invalidateOnChange);
         config.setTimeToLiveSeconds(timeToLiveSeconds);
         config.setMaxIdleSeconds(maxIdleSeconds);
-        config.setEvictionConfig(evictionConfigHolder.asEvictionConfg(serializationService));
+        config.setEvictionConfig(evictionConfigHolder.asEvictionConfig(serializationService));
         config.setCacheLocalEntries(cacheLocalEntries);
         config.setLocalUpdatePolicy(LocalUpdatePolicy.valueOf(localUpdatePolicy));
         config.setPreloaderConfig(preloaderConfig);

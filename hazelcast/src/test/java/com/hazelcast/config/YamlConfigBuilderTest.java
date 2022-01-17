@@ -60,6 +60,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
@@ -2701,6 +2703,7 @@ public class YamlConfigBuilderTest
                 + "          in-memory-format: BINARY\n"
                 + "          coalesce: false\n"
                 + "          populate: true\n"
+                + "          serialize-keys: true\n"
                 + "          indexes:\n"
                 + "            - type: HASH\n"
                 + "              attributes:\n"
@@ -2727,6 +2730,7 @@ public class YamlConfigBuilderTest
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -3139,6 +3143,44 @@ public class YamlConfigBuilderTest
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertEquals(rebalanceDelaySeconds, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Override
+    @Test
+    public void testDynamicConfig() {
+        boolean persistenceEnabled = true;
+        String persistenceFile = "/mnt/dynamic-configuration/persistence-file";
+        String backupDir = "/mnt/dynamic-configuration/backup-dir";
+        int backupCount = 7;
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  dynamic-configuration:\n"
+                + "    persistence-enabled: " +  persistenceEnabled + "\n"
+                + "    persistence-file: " + persistenceFile + "\n"
+                + "    backup-dir: " + backupDir + "\n"
+                + "    backup-count: " + backupCount + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(new File(persistenceFile).getAbsolutePath(), dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
+        assertEquals(new File(backupDir).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
+
+        yaml = ""
+                + "hazelcast:\n"
+                + "  dynamic-configuration:\n"
+                + "    persistence-enabled: " +  persistenceEnabled + "\n";
+
+        config = new InMemoryYamlConfig(yaml);
+        dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertNull(dynamicConfigurationConfig.getPersistenceFile());
+        assertEquals(new File(DEFAULT_BACKUP_DIR).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(DEFAULT_BACKUP_COUNT, dynamicConfigurationConfig.getBackupCount());
     }
 
     @Override

@@ -259,7 +259,10 @@ public class PlanExecutor {
         View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
 
         if (plan.isReplace()) {
-            checkViewNewRowType(catalog.getView(plan.viewName()), view);
+            View existingView = catalog.getView(plan.viewName());
+            if (existingView != null) {
+                checkViewNewRowType(existingView, view);
+            }
         }
 
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());

@@ -294,6 +294,7 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
             <xs:element name="populate" type="xs:boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false"/>
             <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" default="0"/>
             <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" default="1"/>
             <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" default="16"/>

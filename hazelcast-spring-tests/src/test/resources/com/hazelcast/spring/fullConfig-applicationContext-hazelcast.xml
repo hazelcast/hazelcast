@@ -450,6 +450,7 @@
                         <hz:buffer-size>33</hz:buffer-size>
                         <hz:coalesce>true</hz:coalesce>
                         <hz:populate>false</hz:populate>
+                        <hz:serialize-keys>true</hz:serialize-keys>
                         <hz:delay-seconds>12</hz:delay-seconds>
                         <hz:entry-listeners>
                             <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
@@ -1080,6 +1081,13 @@
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>16</hz:write-io-thread-count>
             </hz:local-device>
+
+            <hz:dynamic-configuration>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
+                <hz:persistence-file>/mnt/persistence-file</hz:persistence-file>
+                <hz:backup-dir>/mnt/backup-dir</hz:backup-dir>
+                <hz:backup-count>7</hz:backup-count>
+            </hz:dynamic-configuration>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>

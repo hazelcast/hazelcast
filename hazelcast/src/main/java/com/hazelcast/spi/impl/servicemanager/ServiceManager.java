@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.servicemanager;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Responsible for managing services.
@@ -59,4 +60,10 @@ public interface ServiceManager {
      * @return the found services.
      */
     <S> List<S> getServices(Class<S> serviceClass);
+
+    /**
+     * @param serviceClass the class/interface the service should implement.
+     * @param consumer     to consume {@link ServiceInfo}
+     */
+    void forEachMatchingService(Class serviceClass, Consumer<ServiceInfo> consumer);
 }

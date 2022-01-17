@@ -27,6 +27,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -65,7 +66,7 @@ import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
@@ -160,6 +161,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
+        checkDynamicConfigurationPersistenceAllowed();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
@@ -200,6 +202,22 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         if (auditlogConfig != null && auditlogConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Auditlog requires Hazelcast Enterprise Edition");
+            }
+        }
+    }
+
+    protected void checkDynamicConfigurationPersistenceAllowed() {
+        Config config = node.getConfig();
+        if (config.getDynamicConfigurationConfig().isPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Dynamic Configuration Persistence requires Hazelcast Enterprise Edition");
+            }
+
+            if (config.getConfigurationFile() == null || !config.getConfigurationFile().exists()) {
+                throw new InvalidConfigurationException(
+                        "Dynamic Configuration Persistence is enabled but config file couldn't be found."
+                                + " This is probably because declarative configuration isn't used."
+                );
             }
         }
     }
@@ -362,7 +380,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public <T> T createService(Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+    public <T> T createService(Class<T> clazz, Object... params) {
         if (WanReplicationService.class.isAssignableFrom(clazz)) {
             return (T) new WanReplicationServiceImpl(node);
         } else if (ICacheService.class.isAssignableFrom(clazz)) {
@@ -371,15 +390,29 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             return createMapService();
         } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
             return (T) new JetServiceBackend(node);
+        } else if (ClusterWideConfigurationService.class.isAssignableFrom(clazz)) {
+            return createConfigurationService(params[0]);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T createMapService() {
         ConstructorFunction<NodeEngine, MapService> constructor = getDefaultMapServiceConstructor();
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         return (T) constructor.createNew(nodeEngine);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T createConfigurationService(Object nodeEngine) {
+        if (!(nodeEngine instanceof NodeEngine)) {
+            throw new IllegalArgumentException(
+                    "While creating ConfigurationService expected NodeEngine as a parameter, but found: "
+                            + nodeEngine.getClass().getName()
+            );
+        }
+        return (T) new ClusterWideConfigurationService((NodeEngine) nodeEngine, new EmptyDynamicConfigListener());
     }
 
     @Override
@@ -558,11 +591,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance) {
         return new TimedMemberStateFactory(instance);
-    }
-
-    @Override
-    public DynamicConfigListener createDynamicConfigListener() {
-        return new EmptyDynamicConfigListener();
     }
 
     @Override

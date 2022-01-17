@@ -195,7 +195,15 @@ final class DelegatingAddressPicker
         for (Map.Entry<EndpointQualifier, InetSocketAddress> entry : publicAddresses.entrySet()) {
             mappings.put(entry.getKey(), new Address(entry.getValue()));
         }
+        return mappings;
+    }
 
+    @Override
+    public Map<EndpointQualifier, Address> getBindAddressMap() {
+        Map<EndpointQualifier, Address> mappings = new HashMap<>(bindAddresses.size());
+        for (Map.Entry<EndpointQualifier, InetSocketAddress> entry : bindAddresses.entrySet()) {
+            mappings.put(entry.getKey(), new Address(entry.getValue()));
+        }
         return mappings;
     }
 }
