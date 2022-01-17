@@ -68,7 +68,8 @@ public abstract class ExpressionValues implements Serializable {
         @Override
         public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> new JetSqlRow(context.getSerializationService(), es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
+                    .map(es -> new JetSqlRow(context.getSerializationService(),
+                            es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
         }
 
         @Override

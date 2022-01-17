@@ -118,8 +118,8 @@ class StreamTable extends JetTable {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                JetSqlRow row =
-                        ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
+                JetSqlRow row = ExpressionUtil.evaluate(predicate, projections,
+                                new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

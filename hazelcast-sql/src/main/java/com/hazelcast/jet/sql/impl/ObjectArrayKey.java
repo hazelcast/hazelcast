@@ -107,7 +107,7 @@ public final class ObjectArrayKey implements DataSerializable {
         private final int[] indices;
         private SerializationService ss;
 
-        public ProjectFn(int[] indices) {
+        ProjectFn(int[] indices) {
             this.indices = indices;
         }
 
