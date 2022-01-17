@@ -43,9 +43,6 @@ import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.LONG;
  * rendered.
  */
 public class JmxPublisher implements MetricsPublisher {
-    private static final Map<Character, String> CHARACTERS_TO_ESCAPE_MAPPING;
-    private static final int INITIAL_ESCAPE_BUFFER_CAPACITY = 32;
-
     private final MBeanServer platformMBeanServer;
     private final String instanceNameEscaped;
     private final String domainPrefix;
@@ -77,22 +74,6 @@ public class JmxPublisher implements MetricsPublisher {
             }
             return bean;
         };
-    }
-
-    static {
-        CHARACTERS_TO_ESCAPE_MAPPING = createCharactersToEscapeMapping();
-    }
-
-    private static Map<Character, String> createCharactersToEscapeMapping() {
-        final Map<Character, String> charactersToEscapeMapping = new HashMap<>(6);
-        charactersToEscapeMapping.put('\\', "\\\\");
-        charactersToEscapeMapping.put('\"', "\\\"");
-        charactersToEscapeMapping.put('\n', "\\n");
-        charactersToEscapeMapping.put('*', "\\*");
-        charactersToEscapeMapping.put('?', "\\?");
-        charactersToEscapeMapping.put('=', "=");
-        charactersToEscapeMapping.put(':', ":");
-        return charactersToEscapeMapping;
     }
 
     @Override
@@ -187,26 +168,37 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     // package-visible for test
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     static String escapeObjectNameValue(String name) {
-        boolean foundAny = false;
-        StringBuilder builder = new StringBuilder(name.length() + INITIAL_ESCAPE_BUFFER_CAPACITY);
+        if (!shouldEscapeObjectNameValue(name)) {
+            return name;
+        }
+
+        int length = name.length();
+        StringBuilder builder = new StringBuilder(length + (1 << 3));
         builder.append('"');
-        for (int i = 0; i < name.length(); i++) {
-            char currentChar = name.charAt(i);
-            if (CHARACTERS_TO_ESCAPE_MAPPING.containsKey(currentChar)) {
-                foundAny = true;
-                builder.append(CHARACTERS_TO_ESCAPE_MAPPING.get(currentChar));
+        for (int i = 0; i < length; i++) {
+            char ch = name.charAt(i);
+            if (ch == '\\' || ch == '"' || ch == '*' || ch == '?') {
+                builder.append('\\');
+            }
+            if (ch == '\n') {
+                builder.append("\\n");
             } else {
-                builder.append(currentChar);
+                builder.append(ch);
             }
         }
+        builder.append('"');
+        return builder.toString();
+    }
 
-        if (foundAny) {
-            return builder.append('"').toString();
+    private static boolean shouldEscapeObjectNameValue(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == '=' || ch == ':' || ch == '*' || ch == '?' || ch == '"' || ch == '\n') {
+                return true;
+            }
         }
-
-        return name;
+        return false;
     }
 
     private static class MetricData {
