@@ -158,6 +158,10 @@ public abstract class AbstractConfigLocator {
             LOGGER.info(String.format("Loading '%s' from the classpath.", configFileName));
 
             configurationUrl = url;
+            File file = new File(url.getPath());
+            if (file.exists()) {
+                configurationFile = file;
+            }
             in = resolveResourceAsStream(configFileName);
             if (in == null) {
                 throw new HazelcastException(String.format("Could not load '%s' from the classpath", configFileName));
