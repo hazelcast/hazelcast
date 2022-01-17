@@ -48,7 +48,9 @@ related to Raft nodes include;
 
 `raft.group.` is used as metric name prefix. Discriminator of these metrics will be ID of the CP group (`groupId`) 
 and group name (`name`) will be added as a tag. Additionally Raft role of the local node will be added as another tag (`role`), 
-since we cannot publish non-numeric values as a metric yet.   
+since we cannot publish non-numeric values as a metric yet. 
+
+xxx You should submit all 3 tags to query metrics above. (so it's NOT A SINGLE DISCRIMINATOR; we have 3 discriminators here. text above is misleading) xxx 
 
 ```
 Metric[[groupId=0,unit=count,metric=raft.group.memberCount,name=METADATA,role=FOLLOWER]=3]
