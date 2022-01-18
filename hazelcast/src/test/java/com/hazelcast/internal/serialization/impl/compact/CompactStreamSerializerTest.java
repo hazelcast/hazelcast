@@ -393,7 +393,7 @@ public class CompactStreamSerializerTest {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
 
-        SchemaWriter writer = new SchemaWriter("className");
+        SchemaWriter writer = new SchemaWriter("typeName");
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
         EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
@@ -424,7 +424,7 @@ public class CompactStreamSerializerTest {
     public void testFieldOrderFixedSize() throws IOException {
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
 
-        SchemaWriter writer = new SchemaWriter("className");
+        SchemaWriter writer = new SchemaWriter("typeName");
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
         reflectiveCompactSerializer.write(writer, employeeDTO);
@@ -453,7 +453,7 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_GenericRecord() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         builder.setInt64("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
@@ -462,7 +462,7 @@ public class CompactStreamSerializerTest {
 
         SerializationService serializationService2 = createSerializationService();
 
-        GenericRecordBuilder builder2 = compact("fooBarClassName");
+        GenericRecordBuilder builder2 = compact("fooBarTypeName");
         builder2.setInt32("foo", 1);
         builder2.setInt64("bar", 1231L);
         builder2.setString("foobar", "new field");
