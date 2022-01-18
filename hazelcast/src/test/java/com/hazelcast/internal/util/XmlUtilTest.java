@@ -23,10 +23,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import java.io.StringReader;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
@@ -116,6 +121,30 @@ public class XmlUtilTest {
         assertThrows(SAXException.class, () -> XmlUtil.setFeature(saxParserFactory, "test://no-such-feature"));
         ignoreXxeFailureProp.setOrClearProperty("true");
         XmlUtil.setFeature(saxParserFactory, "test://no-such-feature");
+    }
 
+    @Test
+    public void testGetXmlInputFactory() throws Exception {
+        XMLInputFactory xmlInputFactory = XmlUtil.getXMLInputFactory();
+        assertNotNull(xmlInputFactory);
+        // check if the XXE protection is enabled
+        assertThrows(XMLStreamException.class,
+                () -> staxReadEvents(xmlInputFactory.createXMLEventReader(new StringReader(XXE_TEST_STR))));
+
+        assertThrows(IllegalArgumentException.class, () -> XmlUtil.setProperty(xmlInputFactory, "test://no-such-property", false));
+        ignoreXxeFailureProp.setOrClearProperty("false");
+        assertThrows(IllegalArgumentException.class, () -> XmlUtil.setProperty(xmlInputFactory, "test://no-such-property", false));
+        ignoreXxeFailureProp.setOrClearProperty("true");
+        XmlUtil.setProperty(xmlInputFactory, "test://no-such-feature", false);
+    }
+
+    private void staxReadEvents(XMLEventReader reader) throws XMLStreamException {
+        try {
+            while (reader.hasNext()) {
+                reader.nextEvent();
+            }
+        } finally {
+            reader.close();
+        }
     }
 }

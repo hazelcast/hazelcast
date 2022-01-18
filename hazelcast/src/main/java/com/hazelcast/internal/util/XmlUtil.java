@@ -26,6 +26,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -42,7 +43,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 /**
- * Utility class for XML processing.
+ * Utility class for XML processing. It contains several methods to retrieve XML processing factories with XXE protection
+ * enabled (based on recommendation in the
+ * <a href="https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html">OWASP XXE prevention
+ * cheat-sheet</a>).
  */
 public final class XmlUtil {
 
@@ -101,6 +105,15 @@ public final class XmlUtil {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         setFeature(factory, FEATURES_DISALLOW_DOCTYPE);
         return factory;
+    }
+
+    /**
+     * Returns {@link XMLInputFactory} with XXE protection enabled.
+     */
+    public static XMLInputFactory getXMLInputFactory() {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        setProperty(xmlInputFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        return xmlInputFactory;
     }
 
     /**
@@ -205,6 +218,14 @@ public final class XmlUtil {
             schemaFactory.setProperty(propertyName, "");
         } catch (SAXException e) {
             printWarningAndRethrowEventually(e, SchemaFactory.class, "property " + propertyName);
+        }
+    }
+
+    static void setProperty(XMLInputFactory xmlInputFactory, String propertyName, Object value) {
+        try {
+            xmlInputFactory.setProperty(propertyName, value);
+        } catch (IllegalArgumentException e) {
+            printWarningAndRethrowEventually(e, XMLInputFactory.class, "property " + propertyName);
         }
     }
 
