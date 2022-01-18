@@ -36,9 +36,9 @@ usage of hostnames in the Hazelcast configurations by fixing related
 hostname usage issues. In the source of the problems, the members have
 multiple addresses if the hostname used in the related configs, and we
 don't manage them properly because significant part of the code base is
-written assuming a member will only have one public address. There is
-indeed one public address, but it is not easy to understand that
-different representations of this address are the same address. For
+written assuming a member will only have one network address. There is
+indeed one public address of the member, but it is not easy to understand
+that different representations of this address are the same address. For
 example, if multiple hostname/domain names refer to the same member, we
 cannot understand that these two addresses refer to the same place
 without doing hostname resolution and the parts of the code that use the
@@ -47,20 +47,27 @@ is a bit complicated process if it's not managed in a single place).
 
 What we propose as a solution to these issues is that we identify/refer
 to other members and their belongings such as connections and other
-stuffs based on member UUIDs instead of the network addresses. We will
-try to manage these network addresses at Hazelcast networking level and
-try not to use this `Address`es in the higher level as much as possible.
+stuffs based on member UUIDs instead of the network addresses in the
+connection manager. We will  try to manage these multiple network addresses
+at Hazelcast networking level, and we will avoid dealing with multiple
+addresses in the high level places by only exposing single representation
+of these addresses to the higher levels. We'll call this single exposed
+address the primary address of member. We will select this primary address
+as follows:
+- For the member protocol connections and for other connections using unified
+connection manager, we select the public address of the member protocol which 
+corresponds to `com.hazelcast.instance.ProtocolType#MEMBER` as the primary 
+address.  
+- For the other protocol connections (this is possible when advanced networking
+is enabled.), we select the public address of corresponding protocol as the
+primary address. e.g. we select the public address corresponds to 
+`com.hazelcast.instance.ProtocolType#WAN` for the incoming connections to the
+connection manager which manages only the wan connections.
 
-After replacing the Address usage with UUID in those high level places,
-we need to implement a mechanism so that we can retrieve the addresses
-of that member from the uuid, since we may need the address of the
-member whose uuid we know in some places because we need these addresses
-in the network layer operations (we can only use addresses in socket
-bind/connect ops).
-
-In order to resolve this address management, I plan to implement the
-UUID-Set<Address> mapping and its inverse. Then, will try to replace all
-high level Address usages with UUID.
+After exposing only the primary address to the those high level places and
+after making sure its singularity, we only need to manage multiple addresses
+in the connection manager layer. In this connection manager, we will manage
+these multiple addresses with member uuid based mechanism.
 
 #### Motivation
 We want to provide seamless hostname usage experience to our users.
@@ -141,10 +148,6 @@ address and continue to print it in the member logs. Even if we do the
 member identification with a UUID-based logic, we should keep the member
 address in related places in order to show it in the logs.
 
-- Which new concepts have been introduced to end-users? Can you provide examples for each?
-  *TODO*: Need to provide examples
-
-
 ### Technical Design
 
 To manage the address aliases, we will create `UUID -> Set<Address>` and
@@ -172,6 +175,45 @@ operations, we depend on `connect` semantics. But even the fact that few
 of the operations mentioned above dependent on connect semantics
 prevents us from easily removing the Address usage from our operation
 invocation services.
+
+In some places, lexicographic comparison is performed between member addresses
+in order to determine the order among the members (when deciding on a member
+to perform some task such as claiming mastership). We do not have a chance to
+remove addresses from these places without breaking backward compatibility.
+
+```java
+// When deciding on a member that will claim mastership after the first join
+private boolean isThisNodeMasterCandidate(Collection<Address> addresses) {
+    int thisHashCode = node.getThisAddress().hashCode();
+    for (Address address : addresses) {
+        if (isBlacklisted(address)) {
+            continue;
+        }
+        if (node.getServer().getConnectionManager(MEMBER).get(address) != null) {
+            if (thisHashCode > address.hashCode()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+```
+```java
+// When deciding on a member that will merge to target member after the split brain
+private boolean shouldMergeTo(Address thisAddress, Address targetAddress) {
+    String thisAddressStr = "[" + thisAddress.getHost() + "]:" + thisAddress.getPort();
+    String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
+
+    if (thisAddressStr.equals(targetAddressStr)) {
+        throw new IllegalArgumentException("Addresses must be different! This: "
+                + thisAddress + ", Target: " + targetAddress);
+    }
+
+    // Since strings are guaranteed to be different, result will always be non-zero.
+    int result = thisAddressStr.compareTo(targetAddressStr);
+    return result > 0;
+}
+```
 
 #### Notes/Questions/Issues
 1) Which address should take precedence while getting from
@@ -202,7 +244,7 @@ invocation services.
 <!--
 TODO: Answer the questions
 - Questions about the change:
-    - How does this work in a on-prem deployment? How about on AWS and Kubernetes?
+    - How does this work in an on-prem deployment? How about on AWS and Kubernetes?
     - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
     - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
     - Is there other ongoing or recent work that is related? (Cross-reference the relevant design documents.)
