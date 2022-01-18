@@ -36,7 +36,6 @@ import static org.mockito.Mockito.mock;
 public class JCacheDetectorTest extends HazelcastTestSupport {
 
     private final ILogger logger = Logger.getLogger(JCacheDetectorTest.class);
-    private final ClassLoader classLoader = mock(ClassLoader.class);
 
     @Test
     public void testConstructor() {
@@ -45,43 +44,43 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
 
     @Test
     public void testIsJCacheAvailable_withCorrectVersion() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> true;
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> true;
 
-        assertTrue(isJCacheAvailable(classLoader, classAvailabilityChecker));
+        assertTrue(isJCacheAvailable(classAvailabilityChecker));
     }
 
     @Test
     public void testIsJCacheAvailable_withCorrectVersion_withLogger() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> true;
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> true;
 
-        assertTrue(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
+        assertTrue(isJCacheAvailable(logger, classAvailabilityChecker));
     }
 
     @Test
     public void testIsJCacheAvailable_notFound() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> false;
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> false;
 
-        assertFalse(isJCacheAvailable(classLoader, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(classAvailabilityChecker));
     }
 
     @Test
     public void testIsJCacheAvailable_notFound_withLogger() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> false;
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> false;
 
-        assertFalse(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(logger, classAvailabilityChecker));
     }
 
     @Test
     public void testIsJCacheAvailable_withWrongJCacheVersion() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> className.equals("javax.cache.Caching");
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> className.equals("javax.cache.Caching");
 
-        assertFalse(isJCacheAvailable(classLoader, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(classAvailabilityChecker));
     }
 
     @Test
     public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() {
-        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (classLoader, className) -> className.equals("javax.cache.Caching");
+        JCacheDetector.ClassAvailabilityChecker classAvailabilityChecker = (className) -> className.equals("javax.cache.Caching");
 
-        assertFalse(isJCacheAvailable(classLoader, logger, classAvailabilityChecker));
+        assertFalse(isJCacheAvailable(logger, classAvailabilityChecker));
     }
 }

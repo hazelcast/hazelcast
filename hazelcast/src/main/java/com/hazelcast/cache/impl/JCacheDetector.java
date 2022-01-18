@@ -48,14 +48,14 @@ public final class JCacheDetector {
     }
 
     public static boolean isJCacheAvailable(ClassLoader classLoader) {
-        return isJCacheAvailable(classLoader, ClassLoaderUtil::isClassAvailable);
+        return isJCacheAvailable((className) -> ClassLoaderUtil.isClassAvailable(classLoader, className));
     }
 
     /**
      * Only for testing
      */
-    static boolean isJCacheAvailable(ClassLoader classLoader, ClassAvailabilityChecker classAvailabilityChecker) {
-        return isJCacheAvailable(classLoader, null, classAvailabilityChecker);
+    static boolean isJCacheAvailable(ClassAvailabilityChecker classAvailabilityChecker) {
+        return isJCacheAvailable(null, classAvailabilityChecker);
     }
 
     /**
@@ -65,28 +65,28 @@ public final class JCacheDetector {
      * @return {@code true} if JCache 1.0.0 is located in the classpath, otherwise {@code false}.
      */
     public static boolean isJCacheAvailable(ClassLoader classLoader, ILogger logger) {
-        return isJCacheAvailable(classLoader, logger, ClassLoaderUtil::isClassAvailable);
+        return isJCacheAvailable(logger, (className) -> ClassLoaderUtil.isClassAvailable(classLoader, className));
     }
 
     /**
      * Only for testing
      */
-    static boolean isJCacheAvailable(ClassLoader classLoader, ILogger logger, ClassAvailabilityChecker classAvailabilityChecker) {
+    static boolean isJCacheAvailable(ILogger logger, ClassAvailabilityChecker classAvailabilityChecker) {
         ClassLoader backupClassLoader = doPrivileged((PrivilegedAction<ClassLoader>) JCacheDetector.class::getClassLoader);
         // try the class loader that loaded Hazelcast/JCacheDetector class
         // if the thread-context class loader is too narrowly defined and doesn't contain JCache
-        return isJCacheAvailableInternal(classLoader, logger, classAvailabilityChecker)
-                || isJCacheAvailableInternal(backupClassLoader, logger, classAvailabilityChecker);
+        return isJCacheAvailableInternal(logger, classAvailabilityChecker)
+                || isJCacheAvailableInternal(logger, classAvailabilityChecker);
     }
 
-    private static boolean isJCacheAvailableInternal(ClassLoader classLoader, ILogger logger,
+    private static boolean isJCacheAvailableInternal(ILogger logger,
                                                      ClassAvailabilityChecker classAvailabilityChecker) {
-        if (!classAvailabilityChecker.isClassAvailable(classLoader, JCACHE_CACHING_CLASSNAME)) {
+        if (!classAvailabilityChecker.isClassAvailable(JCACHE_CACHING_CLASSNAME)) {
             // no cache-api jar in the classpath
             return false;
         }
         for (String className : JCACHE_ADDITIONAL_REQUIRED_CLASSES) {
-            if (!classAvailabilityChecker.isClassAvailable(classLoader, className)) {
+            if (!classAvailabilityChecker.isClassAvailable(className)) {
                 if (logger != null) {
                     logger.warning("An outdated version of JCache API was located in the classpath, please use newer versions of "
                             + "JCache API rather than 1.0.0-PFD or 0.x versions.");
@@ -99,7 +99,7 @@ public final class JCacheDetector {
 
     @FunctionalInterface
     interface ClassAvailabilityChecker {
-        boolean isClassAvailable(ClassLoader classLoader, String className);
+        boolean isClassAvailable(String className);
     }
 
 }
