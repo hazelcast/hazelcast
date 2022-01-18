@@ -86,6 +86,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
                                         Collection<ChunkSupplier> chunkSuppliers,
                                         ServiceNamespace namespace,
                                         long[] versions,
+                                        boolean chunkedMigrationEnabled,
                                         int maxTotalChunkedDataInBytes,
                                         ILogger logger,
                                         int partitionId) {
@@ -93,7 +94,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         this.namespace = namespace;
         this.versions = versions;
         this.chunkSerDeHelper = new ChunkSerDeHelper(logger, partitionId,
-                chunkSuppliers, maxTotalChunkedDataInBytes);
+                chunkSuppliers, chunkedMigrationEnabled, maxTotalChunkedDataInBytes);
     }
 
     @Override

@@ -339,7 +339,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
     @Override
     @Nonnull
     public GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value) {
-        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_BOOLEANS);
+        checkTypeWithSchema(schema, fieldName, FieldKind.ARRAY_OF_BOOLEAN);
         if (fields.putIfAbsent(fieldName, () -> cw.writeArrayOfBoolean(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

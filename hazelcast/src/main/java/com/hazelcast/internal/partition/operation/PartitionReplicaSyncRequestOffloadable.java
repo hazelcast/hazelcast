@@ -187,7 +187,8 @@ public final class PartitionReplicaSyncRequestOffloadable
 
         PartitionReplicaSyncResponse syncResponse
                 = new PartitionReplicaSyncResponse(operations, chunkSuppliers, ns,
-                versions, getMaxTotalChunkedDataInBytes(), getLogger(), partitionId);
+                versions, isChunkedMigrationEnabled(), getMaxTotalChunkedDataInBytes(),
+                getLogger(), partitionId);
 
         syncResponse.setPartitionId(partitionId)
                 .setReplicaIndex(replicaIndex);

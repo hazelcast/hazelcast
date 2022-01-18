@@ -237,7 +237,22 @@ public class Config {
         cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
         PersistenceAndHotRestartPersistenceMerger
                 .merge(cfg.getHotRestartPersistenceConfig(), cfg.getPersistenceConfig());
+        setConfigurationFileFromUrl(cfg);
         return cfg;
+    }
+
+    // configurationFile must be set correctly because dynamic
+    // configuration persistence depends on this field. If this is
+    // absent, hazelcast instance may fail to find a file to persist.
+    private static void setConfigurationFileFromUrl(Config cfg) {
+        if (cfg.getConfigurationFile() == null && cfg.getConfigurationUrl() != null) {
+            File configFile = new File(cfg.getConfigurationUrl().getPath());
+
+            // Only set configurationFile if the config actually exist on the filesystem.
+            if (configFile.exists()) {
+                cfg.setConfigurationFile(configFile);
+            }
+        }
     }
 
     private static Config loadFromFile(Properties properties) {
