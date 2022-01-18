@@ -362,7 +362,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         return new ReplicaFragmentMigrationState(versions, operations,
-                suppliers, maxTotalChunkedDataInBytes, getLogger(), getPartitionId());
+                suppliers, chunkedMigrationEnabled, maxTotalChunkedDataInBytes,
+                getLogger(), getPartitionId());
     }
 
     @Override
