@@ -1254,6 +1254,7 @@
                     --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
                     --add-opens java.base/sun.nio.ch=ALL-UNNAMED
                     --add-opens java.base/java.lang=ALL-UNNAMED
+                    --add-opens java.base/java.nio=ALL-UNNAMED
                     --add-opens java.management/sun.management=ALL-UNNAMED
                     --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
                     --illegal-access=warn
