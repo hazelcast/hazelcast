@@ -22,8 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 @FunctionalInterface
-public
-interface NetworkInterfacesEnumerator {
+public interface NetworkInterfacesEnumerator {
     List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException;
 
     static NetworkInterfacesEnumerator defaultEnumerator() {
