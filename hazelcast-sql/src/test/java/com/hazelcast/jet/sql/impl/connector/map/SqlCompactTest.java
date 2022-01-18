@@ -76,6 +76,7 @@ import static org.junit.Assert.assertFalse;
 public class SqlCompactTest extends SqlTestSupport {
 
     private static SqlService sqlService;
+    private static SqlService clientSqlService;
 
     private static final String PERSON_ID_TYPE_NAME = "personId";
     private static final String PERSON_TYPE_NAME = "person";
@@ -111,6 +112,7 @@ public class SqlCompactTest extends SqlTestSupport {
         clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         initializeWithClient(1, config, clientConfig);
         sqlService = instance().getSql();
+        clientSqlService = client().getSql();
 
         serializationService = Util.getSerializationService(instance());
     }
@@ -544,9 +546,9 @@ public class SqlCompactTest extends SqlTestSupport {
                 sqlService.execute("SINK INTO " + mapName + "(__key, this) VALUES(1, null)").iterator().next())
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
 
-        sqlService.execute("SINK INTO " + mapName + " VALUES (1, 'foo')");
+        clientSqlService.execute("SINK INTO " + mapName + " VALUES (1, 'foo')");
 
-        Iterator<SqlRow> resultIter = sqlService.execute("SELECT __key, this, name FROM " + mapName).iterator();
+        Iterator<SqlRow> resultIter = clientSqlService.execute("SELECT __key, this, name FROM " + mapName).iterator();
         SqlRow row = resultIter.next();
         assertEquals(1, (int) row.getObject(0));
         assertInstanceOf(GenericRecord.class, row.getObject(1));
@@ -569,9 +571,9 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
                 + ")"
         );
-        sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
+        clientSqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
 
-        Iterator<SqlRow> rowIterator = sqlService.execute("SELECT __key, this FROM " + name).iterator();
+        Iterator<SqlRow> rowIterator = clientSqlService.execute("SELECT __key, this FROM " + name).iterator();
         SqlRow row = rowIterator.next();
         assertFalse(rowIterator.hasNext());
 
