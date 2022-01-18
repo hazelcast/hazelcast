@@ -112,7 +112,7 @@ public final class XmlUtil {
      */
     public static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-        setProperty(xmlInputFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        setProperty(xmlInputFactory, XMLInputFactory.SUPPORT_DTD, false);
         return xmlInputFactory;
     }
 
