@@ -39,6 +39,7 @@ import java.util.Set;
 
 import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getThreads;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -50,19 +51,24 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     private static final HazelcastException HAZELCAST_EXCEPTION
             = new HazelcastException("Test exception - Emulates service failure.");
+    private static final String RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG = "%s should be created before throwing exception to check resource cleanup";
+    private static final int TEST_TIMEOUT_IN_MILLIS = 30_000;
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
     public void testLeakWhenCreatingConnectionManager() throws Exception {
         testFailingHazelcastCreation(new DefaultNodeContext() {
             @Override
             public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+                assertThat(node.getNodeEngine())
+                        .withFailMessage(RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG, "Node.nodeEngine")
+                        .isNotNull();
                 super.createServer(node, registry, addressRegistry);
                 throw HAZELCAST_EXCEPTION;
             }
         });
     }
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_IN_MILLIS)
     public void testFailingInNodeEngineImplConstructor() throws Exception {
         testFailingHazelcastCreation(new DefaultNodeContext() {
             @Override
@@ -70,6 +76,8 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
                 return new DefaultNodeExtension(node) {
                     @Override
                     public <T> T createService(Class<T> clazz, Object... params) {
+                        NodeEngineImpl nodeEngine = (NodeEngineImpl) params[0];
+                        assertNodeEnginePartiallyCreated(nodeEngine);
                         throw HAZELCAST_EXCEPTION;
                     }
                 };
@@ -77,7 +85,22 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
         });
     }
 
-    private void testFailingHazelcastCreation(DefaultNodeContext nodeContext) throws Exception {
+    private static void assertNodeEnginePartiallyCreated(NodeEngineImpl nodeEngine) {
+        assertThat(nodeEngine.getExecutionService())
+                .withFailMessage(RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG, "NodeEngineImpl.executionService")
+                .isNotNull();
+        assertThat(nodeEngine.getEventService())
+                .withFailMessage(RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG, "NodeEngineImpl.eventService")
+                .isNotNull();
+        assertThat(nodeEngine.getOperationParker())
+                .withFailMessage(RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG, "NodeEngineImpl.operationParker")
+                .isNotNull();
+        assertThat(nodeEngine.getOperationService())
+                .withFailMessage(RESOURCE_SHOULD_BE_CREATED_BEFORE_TEST_MSG, "NodeEngineImpl.operationService")
+                .isNotNull();
+    }
+
+    private void testFailingHazelcastCreation(DefaultNodeContext nodeContext) {
 
         Set<Thread> threads = getThreads();
         try {
