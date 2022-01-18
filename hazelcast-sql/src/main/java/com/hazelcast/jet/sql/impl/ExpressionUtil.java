@@ -208,6 +208,6 @@ public final class ExpressionUtil {
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
-        return expression.evalTop(row, context);
+        return expression.eval(row, context);
     }
 }
