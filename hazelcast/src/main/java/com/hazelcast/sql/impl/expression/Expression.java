@@ -37,7 +37,7 @@ public interface Expression<T> extends DataSerializable, Serializable {
      *      * @param context the expression evaluation context
      *      * @return the result produced by the evaluation
      */
-    default T evalTop(Row row, ExpressionEvalContext context) {
+    default Object evalTop(Row row, ExpressionEvalContext context) {
         return eval(row, context);
     }
 

@@ -203,8 +203,8 @@ public final class ExpressionUtil {
         return new JetSqlRow(context.getSerializationService(), result);
     }
 
-    public static <T> T evaluate(
-            @Nonnull Expression<T> expression,
+    public static Object evaluate(
+            @Nonnull Expression<?> expression,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
