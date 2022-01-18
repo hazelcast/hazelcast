@@ -38,7 +38,7 @@ public class RabinFingerprintTest {
 
     @Test
     public void testRabinFingerprintIsConsistentWithWrittenData() throws IOException {
-        SchemaWriter writer = new SchemaWriter("className");
+        SchemaWriter writer = new SchemaWriter("typeName");
         writer.addField(new FieldDescriptor("a", FieldKind.BOOLEAN));
         writer.addField(new FieldDescriptor("b", FieldKind.ARRAY_OF_BOOLEAN));
         writer.addField(new FieldDescriptor("c", FieldKind.TIMESTAMP_WITH_TIMEZONE));
