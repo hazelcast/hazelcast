@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -308,7 +309,7 @@ public class TaskletExecutionService {
                         && !tracker.executionTracker.executionCompletedExceptionally()
                         && !isShutdown);
             } catch (Throwable e) {
-                logger.fine("Exception in " + t, e);
+                logger.warning("Exception in " + t, e);
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 blockingWorkerCount.inc(-1L);
@@ -392,11 +393,15 @@ public class TaskletExecutionService {
                 progressTracker.mergeWith(result);
             } catch (Throwable e) {
                 if (e instanceof CancellationException) {
-                    logger.info("Job was cancelled by the user.");
+                    logger.fine("Job was cancelled by the user.");
                     CancellationException ex = (CancellationException) e;
                     t.executionTracker.exception(ex);
+                } else if (e instanceof ResultLimitReachedException) {
+                    logger.fine("SQL LIMIT is reached. ");
+                    ResultLimitReachedException ex = (ResultLimitReachedException) e;
+                    t.executionTracker.exception(ex);
                 } else {
-                    logger.fine("Exception in " + t.tasklet, e);
+                    logger.info("Exception in " + t.tasklet, e);
                     t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
                 }
             } finally {
