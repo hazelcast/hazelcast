@@ -129,6 +129,9 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Nonnull
     public List<ServerConnection> getAllConnections(@Nonnull Address address) {
         UUID uuid = addressRegistry.uuidOf(address);
+        // Because duplicate connections can be established on the planes and
+        // we don't keep all duplicates on the planes, we need to iterate over
+        // connections set which stores all active connections.
         return uuid != null
                 ? connections.stream().filter(connection -> connection.getRemoteUuid().equals(uuid))
                                       .collect(Collectors.toList())
