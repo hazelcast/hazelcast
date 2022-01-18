@@ -34,7 +34,7 @@ import java.util.TreeMap;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -206,7 +206,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     @Nullable
     public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN);
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
         if (fieldKind == ARRAY_OF_NULLABLE_BOOLEAN) {
             Boolean[] array = (Boolean[]) objects.get(fieldName);
             boolean[] result = new boolean[array.length];
@@ -422,8 +422,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName) {
-        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN);
-        if (fieldKind == ARRAY_OF_BOOLEANS) {
+        FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
+        if (fieldKind == ARRAY_OF_BOOLEAN) {
             boolean[] array = (boolean[]) objects.get(fieldName);
             Boolean[] result = new Boolean[array.length];
             Arrays.setAll(result, i -> array[i]);

@@ -133,7 +133,7 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public void writeArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] values) {
-        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_BOOLEANS));
+        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_BOOLEAN));
     }
 
     @Override
