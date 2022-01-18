@@ -131,8 +131,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     public List<ServerConnection> getAllConnections(@Nonnull Address address) {
         UUID uuid = addressRegistry.uuidOf(address);
         return uuid != null
-                ? Arrays.stream(planes).map(plane -> plane.getConnection(uuid)).filter(x -> x != null)
-                .collect(Collectors.toList())
+                ? connections.stream().filter(connection -> connection.getRemoteUuid().equals(uuid))
+                                      .collect(Collectors.toList())
                 : Collections.emptyList();
     }
 
