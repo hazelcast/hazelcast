@@ -1465,7 +1465,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Can't find watermarked field for window function");
     }
 
     @Test
@@ -1473,8 +1473,18 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
+                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
+                "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't find watermarked field for window function");
+    }
+
+    @Test
+    public void test_aggregationWithoutOrderingAndGrouping() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test
@@ -1487,7 +1497,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test
@@ -1598,7 +1608,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))"))
-                .hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+                .hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     private static Object[] row(Object... values) {

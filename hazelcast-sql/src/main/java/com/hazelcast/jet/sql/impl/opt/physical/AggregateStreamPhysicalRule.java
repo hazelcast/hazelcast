@@ -81,6 +81,9 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     @Override
     public void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel logicalAggregate = call.rel(0);
+        if (logicalAggregate.getGroupSet().isEmpty()) {
+            throw QueryException.error("Streaming aggregation must be grouped by window_start/window_end");
+        }
         assert logicalAggregate.getGroupType() == Group.SIMPLE;
         assert logicalAggregate.getGroupSets().size() == 1 &&
                 (logicalAggregate.getGroupSet() == null
@@ -176,7 +179,8 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
 
         if (watermarkedField == null) {
-            // Note: this check should be moved to validation and here should only be an assert, but I'm not sure that's possible
+            // Note: this check should be moved to validation and here should only be an assert,
+            // but I'm not sure if that's possible
             throw QueryException.error(SqlErrorCode.GENERIC, "Can't find watermarked field for window function");
         }
 

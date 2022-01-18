@@ -1394,7 +1394,7 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
                         ")) GROUP BY window_start"))
-                .hasMessageContaining("/aggregations over non-windowed, non-ordered streaming source not supported");
+                .hasRootCauseMessage("Can't find watermarked field for window function");
     }
 
     @Test
@@ -1716,16 +1716,26 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Can't find watermarked field for window function");
     }
 
     @Test
-    public void test_aggregationWithoutOrdering() {
+    public void test_aggregationWithoutGrouping() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
+                "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
+                "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't find watermarked field for window function");
+    }
+
+    @Test
+    public void test_aggregationWithoutOrderingAndGrouping() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test
@@ -1739,7 +1749,7 @@ public class SqlHopTest extends SqlTestSupport {
                 "  , INTERVAL '0.002' SECOND" +
                 "  , INTERVAL '0.004' SECOND" +
                 "))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test
