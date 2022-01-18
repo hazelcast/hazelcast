@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
@@ -49,7 +50,6 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -245,25 +245,23 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     }
 
     @Override
-    public void onRegister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onRegister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.increaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().incCounter(mapName);
     }
 
     @Override
-    public void onDeregister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onDeregister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.decreaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().decCounter(mapName);
     }
 
     public int getMigrationStamp() {
