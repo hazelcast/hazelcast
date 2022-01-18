@@ -136,7 +136,7 @@ public class EnumCompatibilityTest {
         // Used in FieldDescriptorCodec
         Map<FieldKind, Integer> mappings = new HashMap<>();
         mappings.put(FieldKind.BOOLEAN, 0);
-        mappings.put(FieldKind.ARRAY_OF_BOOLEANS, 1);
+        mappings.put(FieldKind.ARRAY_OF_BOOLEAN, 1);
         mappings.put(FieldKind.INT8, 2);
         mappings.put(FieldKind.ARRAY_OF_INT8, 3);
         mappings.put(FieldKind.CHAR, 4);
