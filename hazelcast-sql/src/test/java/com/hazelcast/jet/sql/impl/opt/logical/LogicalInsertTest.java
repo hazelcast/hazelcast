@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.InsertMapRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import junitparams.JUnitParamsRunner;
 import org.junit.BeforeClass;
@@ -53,9 +54,9 @@ public class LogicalInsertTest extends OptimizerTestSupport {
     public void test_insertValues() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
         assertPlan(
-                optimizeLogical("INSERT INTO m VALUES (1, '1')", table),
+                optimizeNoJobShortcuts("INSERT INTO m VALUES (1, '1')", table),
                 plan(
-                        planRow(0, InsertMapLogicalRel.class)
+                        planRow(0, InsertMapRel.class)
                 )
         );
     }

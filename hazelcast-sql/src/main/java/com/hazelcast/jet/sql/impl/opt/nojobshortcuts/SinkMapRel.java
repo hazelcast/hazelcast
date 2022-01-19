@@ -14,44 +14,50 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
-public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
+public class SinkMapRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
-    private final ExpressionValues values;
+    private final List<ExpressionValues> values;
 
-    InsertMapPhysicalRel(
+    SinkMapRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            ExpressionValues values
+            List<ExpressionValues> values
     ) {
         super(cluster, traitSet);
 
@@ -69,9 +75,9 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
         return table().getObjectKey();
     }
 
-    public Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
+    public Function<ExpressionEvalContext, Map<Object, Object>> entriesFn() {
         PartitionedMapTable table = table();
-        ExpressionValues values = this.values;
+        List<ExpressionValues> values = this.values;
         return evalContext -> {
             KvProjector projector = KvProjector.supplier(
                     table.paths(),
@@ -81,9 +87,10 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
                     true
             ).get(evalContext.getSerializationService());
 
-            return values.toValues(evalContext)
+            return values.stream()
+                    .flatMap(vs -> vs.toValues(evalContext))
                     .map(projector::project)
-                    .collect(toList());
+                    .collect(toMap(Entry::getKey, Entry::getValue));
         };
     }
 
@@ -102,6 +109,12 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
     }
 
     @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // zero as not starting any job
+        return planner.getCostFactory().makeZeroCost();
+    }
+
+    @Override
     public RelDataType deriveRowType() {
         return RelOptUtil.createDmlRowType(SqlKind.INSERT, getCluster().getTypeFactory());
     }
@@ -115,6 +128,6 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertMapPhysicalRel(getCluster(), traitSet, table, values);
+        return new SinkMapRel(getCluster(), traitSet, table, values);
     }
 }

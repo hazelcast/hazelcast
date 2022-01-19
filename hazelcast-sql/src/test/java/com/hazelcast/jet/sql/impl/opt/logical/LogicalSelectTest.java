@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.SelectByKeyMapRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -30,6 +31,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 @RunWith(JUnitParamsRunner.class)
 public class LogicalSelectTest extends OptimizerTestSupport {
@@ -149,15 +151,15 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithLiteral(QueryDataType type, String literalValue) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT * FROM m WHERE __key = " + literalValue, table),
+                optimizePhysical("SELECT * FROM m WHERE __key = " + literalValue, emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
         assertPlan(
-                optimizeLogical("SELECT * FROM m WHERE " + literalValue + " = __key", table),
+                optimizePhysical("SELECT * FROM m WHERE " + literalValue + " = __key", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }
@@ -166,9 +168,9 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithLiteralExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT * FROM m WHERE __key = 1 + 1", table),
+                optimizePhysical("SELECT * FROM m WHERE __key = 1 + 1", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }
@@ -198,9 +200,9 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithDynamicParam(QueryDataType type) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT * FROM m WHERE __key = ?", table),
+                optimizePhysical("SELECT * FROM m WHERE __key = ?", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }
@@ -220,9 +222,9 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithDynamicParamExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT * FROM m WHERE __key = CAST(? + 1 AS INT)", table),
+                optimizePhysical("SELECT * FROM m WHERE __key = CAST(? + 1 AS INT)", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }
@@ -231,9 +233,9 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithProject() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT this FROM m WHERE __key = 1", table),
+                optimizePhysical("SELECT this FROM m WHERE __key = 1", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }
@@ -242,9 +244,9 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     public void test_selectByKeyWithProjectExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("SELECT this || '-s' FROM m WHERE __key = 1", table),
+                optimizePhysical("SELECT this || '-s' FROM m WHERE __key = 1", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapRel.class)
                 )
         );
     }

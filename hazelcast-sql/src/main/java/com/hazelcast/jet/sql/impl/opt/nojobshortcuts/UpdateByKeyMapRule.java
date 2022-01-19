@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -27,7 +27,7 @@ import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexNode;
 
 /**
- * Planner rule that matches single key, constant expression,
+ * Planner rule that matches single-key, constant expression,
  * {@link PartitionedMapTable} UPDATE.
  * <p>For example,</p>
  * <blockquote><code>UPDATE map SET this = 2 WHERE __key = 1</code></blockquote>
@@ -35,11 +35,11 @@ import org.apache.calcite.rex.RexNode;
  * Such UPDATE is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-final class UpdateByKeyMapLogicalRule extends RelOptRule {
+final class UpdateByKeyMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new UpdateByKeyMapLogicalRule();
+    static final RelOptRule INSTANCE = new UpdateByKeyMapRule();
 
-    private UpdateByKeyMapLogicalRule() {
+    private UpdateByKeyMapRule() {
         super(
                 operandJ(
                         LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
@@ -53,7 +53,7 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
                                 )
                         )
                 ),
-                UpdateByKeyMapLogicalRule.class.getSimpleName()
+                UpdateByKeyMapRule.class.getSimpleName()
         );
     }
 
@@ -65,9 +65,9 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
         RelOptTable table = scan.getTable();
         RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
         if (keyCondition != null) {
-            UpdateByKeyMapLogicalRel rel = new UpdateByKeyMapLogicalRel(
+            UpdateByKeyMapRel rel = new UpdateByKeyMapRel(
                     update.getCluster(),
-                    OptUtils.toLogicalConvention(update.getTraitSet()),
+                    OptUtils.toPhysicalConvention(update.getTraitSet()),
                     table,
                     keyCondition,
                     update.getUpdateColumnList(),

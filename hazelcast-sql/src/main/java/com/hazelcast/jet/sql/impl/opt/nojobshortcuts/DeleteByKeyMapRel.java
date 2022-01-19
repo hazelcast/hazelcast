@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
@@ -30,44 +38,56 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class SelectByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
+import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
+
+public class DeleteByKeyMapRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
     private final RexNode keyCondition;
-    private final List<? extends RexNode> projections;
 
-    SelectByKeyMapLogicalRel(
+    DeleteByKeyMapRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            RelDataType rowType,
             RelOptTable table,
-            RexNode keyCondition,
-            List<? extends RexNode> projections
+            RexNode keyCondition
     ) {
         super(cluster, traitSet);
-        this.rowType = rowType;
 
         assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.keyCondition = keyCondition;
-        this.projections = projections;
     }
 
-    public RelOptTable table() {
-        return table;
+    public String mapName() {
+        return table().getMapName();
     }
 
-    public RexNode keyCondition() {
-        return keyCondition;
+    public PlanObjectKey objectKey() {
+        return table().getObjectKey();
     }
 
-    public List<? extends RexNode> projections() {
-        return projections;
+    public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
+        return keyCondition.accept(visitor);
+    }
+
+    private PartitionedMapTable table() {
+        return table.unwrap(HazelcastTable.class).getTarget();
+    }
+
+    @Override
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -77,20 +97,19 @@ public class SelectByKeyMapLogicalRel extends AbstractRelNode implements Logical
     }
 
     @Override
+    public RelDataType deriveRowType() {
+        return RelOptUtil.createDmlRowType(SqlKind.DELETE, getCluster().getTypeFactory());
+    }
+
+    @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
                 .item("table", table.getQualifiedName())
-                .item("keyCondition", keyCondition)
-                .item("projections", Ord.zip(rowType.getFieldList()).stream()
-                        .map(field -> {
-                            String fieldName = field.e.getName() == null ? "field#" + field.i : field.e.getName();
-                            return fieldName + "=[" + projections.get(field.i) + "]";
-                        }).collect(Collectors.joining(", "))
-                );
+                .item("keyCondition", keyCondition);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SelectByKeyMapLogicalRel(getCluster(), traitSet, rowType, table, keyCondition, projections);
+        return new DeleteByKeyMapRel(getCluster(), traitSet, table, keyCondition);
     }
 }

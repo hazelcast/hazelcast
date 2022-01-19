@@ -39,7 +39,11 @@ import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
+import org.apache.calcite.plan.RelOptCostImpl;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
@@ -51,6 +55,7 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -155,8 +160,25 @@ public final class OptimizerContext {
      * @param traitSet Required trait set.
      * @return Optimized node.
      */
-    public RelNode optimize(RelNode node, RuleSet rules, RelTraitSet traitSet) {
+    public RelNode optimizeVolcano(RelNode node, RuleSet rules, RelTraitSet traitSet) {
         return planner.optimize(node, rules, traitSet);
+    }
+
+    public RelNode optimizeHep(RelNode node, Collection<RelOptRule> rules) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+        hepProgramBuilder.addRuleCollection(rules);
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(node);
+
+        return planner.findBestExp();
     }
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {

@@ -85,14 +85,7 @@ public final class LogicalRules {
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRules.INSTANCE,
                 UpdateLogicalRules.NOOP_INSTANCE,
-                DeleteLogicalRule.INSTANCE,
-
-                SelectByKeyMapLogicalRules.INSTANCE,
-                SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
-                InsertMapLogicalRule.INSTANCE,
-                SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                DeleteLogicalRule.INSTANCE
         );
     }
 }

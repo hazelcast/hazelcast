@@ -41,11 +41,11 @@ import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.some;
 
-final class ValuesLogicalRules {
+public final class ValuesLogicalRules {
 
     static final RelOptRuleOperand VALUES_CHILD_OPERAND = operand(ValuesLogicalRel.class, none());
 
-    static final RelOptRule CONVERT_INSTANCE =
+    public static final RelOptRule CONVERT_INSTANCE =
             new ConverterRule(
                     LogicalValues.class, Convention.NONE, LOGICAL,
                     ValuesLogicalRules.class.getSimpleName() + "(Convert)"
@@ -63,7 +63,7 @@ final class ValuesLogicalRules {
                 }
             };
 
-    static final RelOptRule FILTER_INSTANCE =
+    public static final RelOptRule FILTER_INSTANCE =
             new RelOptRule(
                     operand(FilterLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
                     ValuesLogicalRules.class.getSimpleName() + "(Filter)"
@@ -89,7 +89,7 @@ final class ValuesLogicalRules {
                 }
             };
 
-    static final RelOptRule PROJECT_INSTANCE =
+    public static final RelOptRule PROJECT_INSTANCE =
             new RelOptRule(
                     operand(ProjectLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
                     ValuesLogicalRules.class.getSimpleName() + "(Project)"
@@ -115,7 +115,7 @@ final class ValuesLogicalRules {
                 }
             };
 
-    static final RelOptRule PROJECT_FILTER_INSTANCE =
+    public static final RelOptRule PROJECT_FILTER_INSTANCE =
             new RelOptRule(
                     operand(ProjectLogicalRel.class,
                             some(operand(FilterLogicalRel.class, operand(ValuesLogicalRel.class, none())))),
@@ -143,7 +143,7 @@ final class ValuesLogicalRules {
                 }
             };
 
-    static final RelOptRule UNION_INSTANCE =
+    public static final RelOptRule UNION_INSTANCE =
             new RelOptRule(
                     operand(UnionLogicalRel.class, RelOptRule.unordered(VALUES_CHILD_OPERAND)),
                     ValuesLogicalRules.class.getSimpleName() + "(Union)"

@@ -14,25 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
@@ -44,14 +49,14 @@ import java.util.stream.IntStream;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 import static java.util.stream.Collectors.toMap;
 
-public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
+public class UpdateByKeyMapRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
     private final RexNode keyCondition;
     private final List<String> updatedColumns;
     private final List<RexNode> sourceExpressions;
 
-    UpdateByKeyMapPhysicalRel(
+    UpdateByKeyMapRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -105,6 +110,12 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     }
 
     @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // zero as not starting any job
+        return planner.getCostFactory().makeZeroCost();
+    }
+
+    @Override
     public RelDataType deriveRowType() {
         return RelOptUtil.createDmlRowType(SqlKind.UPDATE, getCluster().getTypeFactory());
     }
@@ -120,6 +131,6 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new UpdateByKeyMapPhysicalRel(getCluster(), traitSet, table, keyCondition, updatedColumns, sourceExpressions);
+        return new UpdateByKeyMapRel(getCluster(), traitSet, table, keyCondition, updatedColumns, sourceExpressions);
     }
 }

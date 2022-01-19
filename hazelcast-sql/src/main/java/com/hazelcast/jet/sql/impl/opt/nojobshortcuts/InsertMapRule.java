@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
+import com.hazelcast.jet.sql.impl.opt.logical.ValuesLogicalRel;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
  * Planner rule that matches single row, VALUES-based {@link PartitionedMapTable}
@@ -32,30 +32,30 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * Such INSERT is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-public final class InsertMapLogicalRule extends RelOptRule {
+public final class InsertMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new InsertMapLogicalRule();
+    static final RelOptRule INSTANCE = new InsertMapRule();
 
-    private InsertMapLogicalRule() {
+    private InsertMapRule() {
         super(
                 operandJ(
-                        InsertLogicalRel.class, LOGICAL, insert -> !OptUtils.requiresJob(insert)
+                        LogicalTableInsert.class, null, insert -> !OptUtils.requiresJob(insert)
                                 && OptUtils.hasTableType(insert, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
-                InsertMapLogicalRule.class.getSimpleName()
+                InsertMapRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        InsertLogicalRel logicalInsert = call.rel(0);
+        LogicalTableInsert logicalInsert = call.rel(0);
         ValuesLogicalRel logicalValues = call.rel(1);
 
         if (logicalValues.size() == 1) {
-            InsertMapLogicalRel rel = new InsertMapLogicalRel(
+            InsertMapRel rel = new InsertMapRel(
                     logicalInsert.getCluster(),
-                    OptUtils.toLogicalConvention(logicalInsert.getTraitSet()),
+                    OptUtils.toPhysicalConvention(logicalInsert.getTraitSet()),
                     logicalInsert.getTable(),
                     logicalValues.values().get(0)
             );

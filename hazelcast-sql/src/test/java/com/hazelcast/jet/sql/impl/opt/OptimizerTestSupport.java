@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.NoJobShortcutRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -77,18 +78,29 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return optimizePhysicalInternal(sql, context);
     }
 
+    protected PhysicalRel optimizeNoJobShortcuts(String sql, HazelcastTable... tables) {
+        HazelcastSchema schema = schema(tables);
+        OptimizerContext context = context(schema);
+        QueryParseResult parseResult = context.parse(sql);
+        RelNode rel = context.convert(parseResult.getNode()).getRel();
+        System.out.println(RelOptUtil.toString(rel));
+
+        return (PhysicalRel) context
+                .optimizeHep(rel, NoJobShortcutRules.getRules());
+    }
+
     private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
         QueryParseResult parseResult = context.parse(sql);
         RelNode rel = context.convert(parseResult.getNode()).getRel();
 
         return (LogicalRel) context
-                .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+                .optimizeVolcano(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
     }
 
     private static Result optimizePhysicalInternal(String sql, OptimizerContext context) {
         LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
         PhysicalRel physicalRel = (PhysicalRel) context
-                .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
+                .optimizeVolcano(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
         return new Result(logicalRel, physicalRel);
     }
 

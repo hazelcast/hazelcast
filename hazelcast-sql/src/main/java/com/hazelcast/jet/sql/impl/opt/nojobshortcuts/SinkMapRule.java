@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.SinkLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.ValuesLogicalRel;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -31,18 +33,18 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * Such SINK is translated to optimized, direct key(s) {@code IMap} operation
  * which does not involve starting any job.
  */
-public final class SinkMapLogicalRule extends RelOptRule {
+public final class SinkMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new SinkMapLogicalRule();
+    static final RelOptRule INSTANCE = new SinkMapRule();
 
-    private SinkMapLogicalRule() {
+    private SinkMapRule() {
         super(
                 operandJ(
                         SinkLogicalRel.class, LOGICAL, sink -> !OptUtils.requiresJob(sink)
                                 && OptUtils.hasTableType(sink, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
-                SinkMapLogicalRule.class.getSimpleName()
+                SinkMapRule.class.getSimpleName()
         );
     }
 
@@ -51,9 +53,9 @@ public final class SinkMapLogicalRule extends RelOptRule {
         SinkLogicalRel logicalSink = call.rel(0);
         ValuesLogicalRel logicalValues = call.rel(1);
 
-        SinkMapLogicalRel rel = new SinkMapLogicalRel(
+        SinkMapRel rel = new SinkMapRel(
                 logicalSink.getCluster(),
-                OptUtils.toLogicalConvention(logicalSink.getTraitSet()),
+                OptUtils.toPhysicalConvention(logicalSink.getTraitSet()),
                 logicalSink.getTable(),
                 logicalValues.values()
         );

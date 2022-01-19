@@ -41,15 +41,16 @@ import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.DeleteByKeyMapRel;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.InsertMapRel;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.NoJobShortcutRules;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.SelectByKeyMapRel;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.SinkMapRel;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.UpdateByKeyMapRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
-import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
-import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
@@ -88,10 +89,14 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
@@ -433,9 +438,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
+        if (physicalRel instanceof SelectByKeyMapRel) {
             assert !isCreateJob;
-            SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
+            SelectByKeyMapRel select = (SelectByKeyMapRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -451,9 +456,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof InsertMapPhysicalRel) {
+        } else if (physicalRel instanceof InsertMapRel) {
             assert !isCreateJob;
-            InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
+            InsertMapRel insert = (InsertMapRel) physicalRel;
             return new IMapInsertPlan(
                     planKey,
                     insert.objectKey(),
@@ -463,9 +468,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof SinkMapPhysicalRel) {
+        } else if (physicalRel instanceof SinkMapRel) {
             assert !isCreateJob;
-            SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
+            SinkMapRel sink = (SinkMapRel) physicalRel;
             return new IMapSinkPlan(
                     planKey,
                     sink.objectKey(),
@@ -475,9 +480,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+        } else if (physicalRel instanceof UpdateByKeyMapRel) {
             assert !isCreateJob;
-            UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
+            UpdateByKeyMapRel update = (UpdateByKeyMapRel) physicalRel;
             return new IMapUpdatePlan(
                     planKey,
                     update.objectKey(),
@@ -488,9 +493,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions
             );
-        } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
+        } else if (physicalRel instanceof DeleteByKeyMapRel) {
             assert !isCreateJob;
-            DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
+            DeleteByKeyMapRel delete = (DeleteByKeyMapRel) physicalRel;
             return new IMapDeletePlan(
                     planKey,
                     delete.objectKey(),
@@ -577,6 +582,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         }
+
+        if (!isCreateJob) {
+            PhysicalRel noJobOperation = tryNoJobShortcuts(context, rel);
+            if (noJobOperation != null) {
+                if (fineLogOn) {
+                    logger.fine("After physical opt:\n" + RelOptUtil.toString(noJobOperation));
+                }
+                return noJobOperation;
+            }
+        }
+
         LogicalRel logicalRel = optimizeLogical(context, rel);
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
@@ -588,6 +604,30 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return physicalRel;
     }
 
+    private PhysicalRel tryNoJobShortcuts(OptimizerContext context, RelNode rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+        hepProgramBuilder.addRuleCollection(NoJobShortcutRules.getRules());
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+
+        try {
+            return (PhysicalRel) planner.findBestExp();
+        } catch (Exception e) {
+            if (e.getMessage().contains("no rule to transform empty set")) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
     /**
      * Perform logical optimization.
      *
@@ -595,7 +635,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Optimized logical tree.
      */
     private LogicalRel optimizeLogical(OptimizerContext context, RelNode rel) {
-        return (LogicalRel) context.optimize(
+        return (LogicalRel) context.optimizeVolcano(
                 rel,
                 LogicalRules.getRuleSet(),
                 OptUtils.toLogicalConvention(rel.getTraitSet())
@@ -610,7 +650,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Optimized physical tree.
      */
     private PhysicalRel optimizePhysical(OptimizerContext context, RelNode rel) {
-        return (PhysicalRel) context.optimize(
+        return (PhysicalRel) context.optimizeVolcano(
                 rel,
                 PhysicalRules.getRuleSet(),
                 OptUtils.toPhysicalConvention(rel.getTraitSet())

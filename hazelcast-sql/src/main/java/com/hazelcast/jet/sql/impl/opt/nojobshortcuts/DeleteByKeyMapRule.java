@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -34,11 +34,11 @@ import org.apache.calcite.rex.RexNode;
  * Such DELETE is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-public final class DeleteByKeyMapLogicalRule extends RelOptRule {
+public final class DeleteByKeyMapRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new DeleteByKeyMapLogicalRule();
+    static final RelOptRule INSTANCE = new DeleteByKeyMapRule();
 
-    private DeleteByKeyMapLogicalRule() {
+    private DeleteByKeyMapRule() {
         super(
                 operandJ(
                         LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isDelete(),
@@ -49,7 +49,7 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
                                 none()
                         )
                 ),
-                DeleteByKeyMapLogicalRule.class.getSimpleName()
+                DeleteByKeyMapRule.class.getSimpleName()
         );
     }
 
@@ -59,11 +59,11 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
         LogicalTableScan scan = call.rel(1);
 
         RelOptTable table = scan.getTable();
-        RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, delete.getCluster().getRexBuilder());
+        RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, call.builder().getRexBuilder());
         if (keyCondition != null) {
-            DeleteByKeyMapLogicalRel rel = new DeleteByKeyMapLogicalRel(
+            DeleteByKeyMapRel rel = new DeleteByKeyMapRel(
                     delete.getCluster(),
-                    OptUtils.toLogicalConvention(delete.getTraitSet()),
+                    OptUtils.toPhysicalConvention(delete.getTraitSet()),
                     table,
                     keyCondition
             );

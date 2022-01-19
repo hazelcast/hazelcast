@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.DeleteByKeyMapRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -149,15 +150,15 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     public void test_deleteByKeyWithLiteral(QueryDataType type, String literalValue) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = " + literalValue, table),
+                optimizeNoJobShortcuts("DELETE FROM m WHERE __key = " + literalValue, table),
                 plan(
-                        planRow(0, DeleteByKeyMapLogicalRel.class)
+                        planRow(0, DeleteByKeyMapRel.class)
                 )
         );
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE " + literalValue + " = __key", table),
+                optimizeNoJobShortcuts("DELETE FROM m WHERE " + literalValue + " = __key", table),
                 plan(
-                        planRow(0, DeleteByKeyMapLogicalRel.class)
+                        planRow(0, DeleteByKeyMapRel.class)
                 )
         );
     }
@@ -166,9 +167,9 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     public void test_deleteByKeyWithLiteralExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = 1 + 1", table),
+                optimizeNoJobShortcuts("DELETE FROM m WHERE __key = 1 + 1", table),
                 plan(
-                        planRow(0, DeleteByKeyMapLogicalRel.class)
+                        planRow(0, DeleteByKeyMapRel.class)
                 )
         );
     }
@@ -198,9 +199,9 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     public void test_deleteByKeyWithDynamicParam(QueryDataType type) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = ?", table),
+                optimizeNoJobShortcuts("DELETE FROM m WHERE __key = ?", table),
                 plan(
-                        planRow(0, DeleteByKeyMapLogicalRel.class)
+                        planRow(0, DeleteByKeyMapRel.class)
                 )
         );
     }
@@ -221,9 +222,9 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     public void test_deleteByKeyWithDynamicParamExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = CAST(? + 1 AS INT)", table),
+                optimizeNoJobShortcuts("DELETE FROM m WHERE __key = CAST(? + 1 AS INT)", table),
                 plan(
-                        planRow(0, DeleteByKeyMapLogicalRel.class)
+                        planRow(0, DeleteByKeyMapRel.class)
                 )
         );
     }

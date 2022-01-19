@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.SinkMapRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import junitparams.JUnitParamsRunner;
 import org.junit.BeforeClass;
@@ -28,6 +29,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 @RunWith(JUnitParamsRunner.class)
 public class LogicalSinkTest extends OptimizerTestSupport {
@@ -53,9 +55,9 @@ public class LogicalSinkTest extends OptimizerTestSupport {
     public void test_sinkValues() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
         assertPlan(
-                optimizeLogical("SINK INTO m VALUES (1, '1'), (2, '2')", table),
+                optimizePhysical("SINK INTO m VALUES (1, '1'), (2, '2')", emptyList(), table).getPhysical(),
                 plan(
-                        planRow(0, SinkMapLogicalRel.class)
+                        planRow(0, SinkMapRel.class)
                 )
         );
     }

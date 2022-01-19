@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -29,11 +31,14 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 
@@ -43,13 +48,13 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 
-public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
+public class SelectByKeyMapRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
     private final RexNode keyCondition;
     private final List<? extends RexNode> projections;
 
-    SelectByKeyMapPhysicalRel(
+    SelectByKeyMapRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType rowType,
@@ -78,6 +83,12 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         return keyCondition.accept(visitor);
+    }
+
+    @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // zero as not starting any job
+        return planner.getCostFactory().makeZeroCost();
     }
 
     public KvRowProjector.Supplier rowProjectorSupplier(QueryParameterMetadata parameterMetadata) {
@@ -127,6 +138,6 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SelectByKeyMapPhysicalRel(getCluster(), traitSet, rowType, table, keyCondition, projections);
+        return new SelectByKeyMapRel(getCluster(), traitSet, rowType, table, keyCondition, projections);
     }
 }

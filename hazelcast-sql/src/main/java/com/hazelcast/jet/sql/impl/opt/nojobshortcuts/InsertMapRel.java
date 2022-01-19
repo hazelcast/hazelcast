@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
+import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -33,13 +42,17 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.function.Function;
 
-public class InsertMapLogicalRel extends AbstractRelNode implements LogicalRel {
+import static java.util.stream.Collectors.toList;
+
+public class InsertMapRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
     private final ExpressionValues values;
 
-    InsertMapLogicalRel(
+    InsertMapRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -53,23 +66,55 @@ public class InsertMapLogicalRel extends AbstractRelNode implements LogicalRel {
         this.values = values;
     }
 
-    public RelOptTable table() {
-        return table;
+    public String mapName() {
+        return table().getMapName();
     }
 
-    public ExpressionValues values() {
-        return values;
+    public PlanObjectKey objectKey() {
+        return table().getObjectKey();
+    }
+
+    public Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
+        PartitionedMapTable table = table();
+        ExpressionValues values = this.values;
+        return evalContext -> {
+            KvProjector projector = KvProjector.supplier(
+                    table.paths(),
+                    table.types(),
+                    (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                    (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                    true
+            ).get(evalContext.getSerializationService());
+
+            return values.toValues(evalContext)
+                    .map(projector::project)
+                    .collect(toList());
+        };
+    }
+
+    private PartitionedMapTable table() {
+        return table.unwrap(HazelcastTable.class).getTarget();
     }
 
     @Override
-    public RelDataType deriveRowType() {
-        return RelOptUtil.createDmlRowType(SqlKind.INSERT, getCluster().getTypeFactory());
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         // zero as not starting any job
         return planner.getCostFactory().makeZeroCost();
+    }
+
+    @Override
+    public RelDataType deriveRowType() {
+        return RelOptUtil.createDmlRowType(SqlKind.INSERT, getCluster().getTypeFactory());
     }
 
     @Override
@@ -81,6 +126,6 @@ public class InsertMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertMapLogicalRel(getCluster(), traitSet, table, values);
+        return new InsertMapRel(getCluster(), traitSet, table, values);
     }
 }

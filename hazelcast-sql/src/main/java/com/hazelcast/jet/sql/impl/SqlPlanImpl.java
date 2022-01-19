@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
-import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.security.permission.MapPermission;
@@ -40,6 +39,7 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
@@ -729,12 +729,12 @@ abstract class SqlPlanImpl extends SqlPlan {
     }
 
     static class ExplainStatementPlan extends SqlPlanImpl {
-        private final PhysicalRel rel;
+        private final RelNode rel;
         private final PlanExecutor planExecutor;
 
         ExplainStatementPlan(
                 PlanKey planKey,
-                PhysicalRel rel,
+                RelNode rel,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
@@ -742,7 +742,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
         }
 
-        public PhysicalRel getRel() {
+        public RelNode getRel() {
             return rel;
         }
 

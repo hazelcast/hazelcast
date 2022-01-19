@@ -14,56 +14,58 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
-import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
 
-public class SinkMapLogicalRel extends AbstractRelNode implements LogicalRel {
+public class MapSizeRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
-    private final List<ExpressionValues> values;
 
-    SinkMapLogicalRel(
+    MapSizeRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            RelOptTable table,
-            List<ExpressionValues> values
+            RelDataType rowType,
+            RelOptTable table
     ) {
         super(cluster, traitSet);
+        super.rowType = rowType;
 
         assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
-
         this.table = table;
-        this.values = values;
     }
 
     public RelOptTable table() {
         return table;
     }
 
-    public List<ExpressionValues> values() {
-        return values;
+    @Override
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        throw new UnsupportedOperationException();
     }
 
+    // TODO [viliam] use LogicalRel?
     @Override
-    public RelDataType deriveRowType() {
-        return RelOptUtil.createDmlRowType(SqlKind.INSERT, getCluster().getTypeFactory());
+    public Vertex accept(CreateDagVisitor visitor) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -74,13 +76,11 @@ public class SinkMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        return pw
-                .item("table", table.getQualifiedName())
-                .item("values", values);
+        return pw.item("table", table.getQualifiedName());
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SinkMapLogicalRel(getCluster(), traitSet, table, values);
+        return new MapSizeRel(getCluster(), traitSet, rowType, table);
     }
 }

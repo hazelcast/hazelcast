@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -44,10 +44,10 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
  * or
  * <blockquote><code>SELECT this + 1 FROM map WHERE __key = 1</code></blockquote>
  * <p>
- * Such SELECT is translated to optimized, direct key {@code IMap} operation
+ * Such SELECT is translated to optimized, key-based {@code IMap} operation
  * which does not involve starting any job.
  */
-final class SelectByKeyMapLogicalRules {
+final class SelectByKeyMapRules {
 
     static final RelOptRule INSTANCE = new RelOptRule(
             operandJ(
@@ -56,7 +56,7 @@ final class SelectByKeyMapLogicalRules {
                     scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                     none()
             ),
-            SelectByKeyMapLogicalRules.class.getSimpleName()
+            SelectByKeyMapRules.class.getSimpleName()
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
@@ -66,9 +66,9 @@ final class SelectByKeyMapLogicalRules {
             RexBuilder rexBuilder = scan.getCluster().getRexBuilder();
             RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, rexBuilder);
             if (keyCondition != null) {
-                SelectByKeyMapLogicalRel rel = new SelectByKeyMapLogicalRel(
+                SelectByKeyMapRel rel = new SelectByKeyMapRel(
                         scan.getCluster(),
-                        OptUtils.toLogicalConvention(scan.getTraitSet()),
+                        OptUtils.toPhysicalConvention(scan.getTraitSet()),
                         scan.getRowType(),
                         table,
                         keyCondition,
@@ -89,7 +89,7 @@ final class SelectByKeyMapLogicalRules {
                             none()
                     )
             ),
-            SelectByKeyMapLogicalRules.class.getSimpleName() + "(Project)"
+            SelectByKeyMapRules.class.getSimpleName() + "(Project)"
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
@@ -99,9 +99,9 @@ final class SelectByKeyMapLogicalRules {
             RelOptTable table = scan.getTable();
             RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, project.getCluster().getRexBuilder());
             if (keyCondition != null) {
-                SelectByKeyMapLogicalRel rel = new SelectByKeyMapLogicalRel(
+                SelectByKeyMapRel rel = new SelectByKeyMapRel(
                         scan.getCluster(),
-                        OptUtils.toLogicalConvention(scan.getTraitSet()),
+                        OptUtils.toPhysicalConvention(scan.getTraitSet()),
                         project.getRowType(),
                         table,
                         keyCondition,
@@ -112,7 +112,7 @@ final class SelectByKeyMapLogicalRules {
         }
     };
 
-    private SelectByKeyMapLogicalRules() {
+    private SelectByKeyMapRules() {
     }
 
     /**
