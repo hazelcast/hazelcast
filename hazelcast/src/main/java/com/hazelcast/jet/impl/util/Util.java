@@ -107,6 +107,15 @@ public final class Util {
             "  - Add system property: -Dhz.jet.enabled=true\n" +
             "  - Add environment variable: HZ_JET_ENABLED=true";
 
+    public static final String INTEGRITY_CHECKER_IS_DISABLED = "Integrity Checker is disabled. " +
+            "Fail-fast on corrupted executables will not be performed.\n" +
+            "It is recommended to enable integrity checker for development use only.\n" +
+            "To enable integrity checker do one of the following: \n" +
+            "  - Change member config using Java API: config.setIntegrityCheckerEnabled(true);\n" +
+            "  - Change XML/YAML configuration property: hazelcast.integrity-checker.enabled to true\n" +
+            "  - Add system property: -Dhz.integritychecker.enabled=true\n" +
+            "  - Add environment variable: HZ_INTEGRITYCHECKER_ENABLED=true";
+
     public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "A job is trying to upload resources to the " +
             "cluster, but this feature is disabled. Either remove the resources from the JobConfig object or enable " +
             "resource upload on the members, using one of the following:\n" +

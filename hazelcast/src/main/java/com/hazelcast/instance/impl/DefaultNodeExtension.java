@@ -128,6 +128,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
+import static com.hazelcast.jet.impl.util.Util.INTEGRITY_CHECKER_IS_DISABLED;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
@@ -231,6 +232,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public void beforeStart() {
         if (integrityChecker != null) {
             integrityChecker.checkIntegrity();
+        } else {
+            systemLogger.info(INTEGRITY_CHECKER_IS_DISABLED);
         }
 
         if (jetExtension != null) {

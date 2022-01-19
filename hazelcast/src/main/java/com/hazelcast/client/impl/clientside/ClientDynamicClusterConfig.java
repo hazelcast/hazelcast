@@ -1095,6 +1095,16 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public boolean isIntegrityCheckerEnabled() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setIntegrityCheckerEnabled(boolean liteMember) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public String toString() {
         return "DynamicClusterConfig{instance=" + instance + "}";
     }

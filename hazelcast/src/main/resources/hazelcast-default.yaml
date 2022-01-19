@@ -858,4 +858,4 @@ hazelcast:
 #    property.name: value
   ##
   integrity-checker:
-    enabled: true
+    enabled: false
