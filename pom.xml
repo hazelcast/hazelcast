@@ -164,6 +164,7 @@
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
+        <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
         <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
@@ -1250,12 +1251,12 @@
                    export java.xml/jdk.xml.internal
                 -->
                 <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
-                    --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens java.base/java.lang=ALL-UNNAMED
-                    --add-opens java.management/sun.management=ALL-UNNAMED
-                    --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
+                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+                    --add-opens java.base/java.lang=${hazelcast.module.name}
+                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
                     --illegal-access=warn
                 </javaModuleArgs>
             </properties>
