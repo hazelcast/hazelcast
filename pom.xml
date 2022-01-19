@@ -1247,6 +1247,8 @@
                 TimedMemberStateFactoryHelper:
                    open java.management/sun.management
 
+                Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+                   export java.xml/jdk.xml.internal
                 -->
                 <javaModuleArgs>
                     --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
@@ -1254,6 +1256,7 @@
                     --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
                     --add-opens java.base/java.lang=${hazelcast.module.name}
                     --add-opens java.management/sun.management=${hazelcast.module.name}
+                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
                     --illegal-access=warn
                 </javaModuleArgs>
             </properties>
