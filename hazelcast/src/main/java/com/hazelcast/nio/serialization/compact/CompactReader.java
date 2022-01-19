@@ -654,7 +654,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName);
+    LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName);
 
     /**
      * Reads an array of timestamps consisting of date and time or returns the default value.
@@ -666,7 +666,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
+    LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue);
 
     /**
      * Reads an array of timestamps with timezone consisting of date, time and timezone offset.
@@ -678,7 +678,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName);
+    OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName);
 
     /**
      * Reads an array of timestamps with timezone consisting of date, time and timezone offset or returns the default value.
@@ -690,7 +690,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
+    OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
 
     /**
      * Reads an array of compact objects.
