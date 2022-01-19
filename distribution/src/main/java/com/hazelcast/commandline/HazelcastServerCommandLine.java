@@ -209,8 +209,6 @@ public class HazelcastServerCommandLine {
             commandList.add("--add-opens");
             commandList.add("java.base/java.lang=ALL-UNNAMED");
             commandList.add("--add-opens");
-            commandList.add("java.base/java.nio=ALL-UNNAMED");
-            commandList.add("--add-opens");
             commandList.add("java.base/sun.nio.ch=ALL-UNNAMED");
             commandList.add("--add-opens");
             commandList.add("java.management/sun.management=ALL-UNNAMED");

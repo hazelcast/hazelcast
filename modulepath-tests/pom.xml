@@ -38,7 +38,6 @@
 
         <javaModuleArgs>
             --add-exports java.base/jdk.internal.ref=com.hazelcast.core
-            --add-opens java.base/java.nio=com.hazelcast.core
             --add-opens java.base/sun.nio.ch=com.hazelcast.core
             --add-opens java.base/java.lang=com.hazelcast.core
             --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core

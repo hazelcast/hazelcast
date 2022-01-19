@@ -73,7 +73,6 @@ public final class ModularJavaUtils {
                 packages(
                         export("jdk.internal.ref"),
                         open("java.lang"),
-                        open("java.nio"),
                         open("sun.nio.ch")
                 )
         );
