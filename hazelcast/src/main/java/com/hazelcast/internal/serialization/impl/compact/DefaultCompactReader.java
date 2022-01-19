@@ -351,24 +351,24 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName) {
+    public LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName) {
         return getArrayOfTimestamp(fieldName);
     }
 
     @Nullable
     @Override
-    public LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue) {
+    public LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_TIMESTAMP) ? getArrayOfTimestamp(fieldName) : defaultValue;
     }
 
     @Override
-    public OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName) {
+    public OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return getArrayOfTimestampWithTimezone(fieldName);
     }
 
     @Nullable
     @Override
-    public OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName,
+    public OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName,
                                                              @Nullable OffsetDateTime[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)
                 ? getArrayOfTimestampWithTimezone(fieldName) : defaultValue;
