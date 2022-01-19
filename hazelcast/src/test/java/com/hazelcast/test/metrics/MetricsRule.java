@@ -62,7 +62,7 @@ public class MetricsRule implements TestRule {
                 try {
                     base.evaluate();
                 } catch (AssumptionViolatedException e) {
-                    // represents expected exceptions, no need to tale an action.
+                    // represents expected exceptions, no need to take an action.
                 } catch (Throwable t) {
                     StringBuilder sb = new StringBuilder();
                     publishers.forEach((instanceName, publisher) -> publisher.dumpRecordings(instanceName, sb));
