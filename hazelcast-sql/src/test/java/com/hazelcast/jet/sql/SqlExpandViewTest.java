@@ -121,9 +121,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> instance().getSql().execute("SELECT * FROM v ORDER BY 1"))
                 .hasMessageContaining("Sorting is not supported for a streaming query");
-
-        assertThatThrownBy(() -> instance().getSql().execute("SELECT MAX(*) FROM v"))
-                .hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
     }
 
     @Test

@@ -1735,7 +1735,7 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test
@@ -1749,7 +1749,7 @@ public class SqlHopTest extends SqlTestSupport {
                 "  , INTERVAL '0.002' SECOND" +
                 "  , INTERVAL '0.004' SECOND" +
                 "))")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
     }
 
     @Test

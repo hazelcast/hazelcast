@@ -46,10 +46,10 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
 
-final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
+public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractPhysicalRule {
 
     private static final Config CONFIG_PROJECT = Config.EMPTY
-            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName() + "-project")
+            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
@@ -60,7 +60,7 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                                     .operand(SlidingWindowLogicalRel.class).anyInputs())));
 
     private static final Config CONFIG_NO_PROJECT = Config.EMPTY
-            .withDescription(AggregateStreamPhysicalRule.class.getSimpleName() + "-no-project")
+            .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
@@ -68,12 +68,12 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                     .inputs(b1 -> b1
                             .operand(SlidingWindowLogicalRel.class).anyInputs()));
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_NO_PROJECT, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateStreamPhysicalRule(CONFIG_PROJECT, true);
+    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_PROJECT, false);
+    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_PROJECT, true);
 
     private final boolean hasProject;
 
-    private AggregateStreamPhysicalRule(Config config, boolean hasProject) {
+    private AggregateSlidingWindowPhysicalRule(Config config, boolean hasProject) {
         super(config);
         this.hasProject = hasProject;
     }
@@ -81,9 +81,6 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
     @Override
     public void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel logicalAggregate = call.rel(0);
-        if (logicalAggregate.getGroupSet().isEmpty()) {
-            throw QueryException.error("Streaming aggregation must be grouped by window_start/window_end");
-        }
         assert logicalAggregate.getGroupType() == Group.SIMPLE;
         assert logicalAggregate.getGroupSets().size() == 1 &&
                 (logicalAggregate.getGroupSet() == null
@@ -120,8 +117,8 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
         // --Project(rowType=[timestamp, field1])
         //
         // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
-        // but it works for us for now - the superclass uses it only to calculate the output type. And the
-        // timestamp and the window bound have the same type.
+        // but it works for us for now - the superclass uses it only to calculate the output type.
+        // And the timestamp and the window bound have the same type.
 
         int timestampIndex = windowRel.orderingFieldIndex();
         int windowStartIndex = windowRel.windowStartIndex();
@@ -201,6 +198,12 @@ final class AggregateStreamPhysicalRule extends AggregateAbstractPhysicalRule {
                 windowEndIndexes);
     }
 
+    /**
+     * Extract watermarked column index
+     * (possibly) enforced by IMPOSE_ORDER.
+     *
+     * @return watermarked column index.
+     */
     @Nullable
     private static Integer findWatermarkedField(
             AggregateLogicalRel logicalAggregate,

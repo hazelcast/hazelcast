@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
+import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
@@ -142,10 +143,19 @@ public final class HazelcastRelMdWatermarkedFields
         return query.extractWatermarkedFields(rel.getLeft());
     }
 
+    // Volcano planner specific case
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelSubset subset, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
+        return query.extractWatermarkedFields(rel);
+    }
+
+    // HEP planner specific case
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(HepRelVertex vertex, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        RelNode rel = vertex.getCurrentRel();
         return query.extractWatermarkedFields(rel);
     }
 

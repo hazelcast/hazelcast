@@ -39,8 +39,10 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.AggregateStreamLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.NoExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -88,13 +90,18 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -577,15 +584,48 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         }
+
         LogicalRel logicalRel = optimizeLogical(context, rel);
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
-        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+
+        LogicalRel validatedRel = logicalValidationPhase(context, logicalRel);
+
+        if (fineLogOn) {
+            logger.fine("After validation opt:\n" + RelOptUtil.toString(validatedRel));
+        }
+
+        PhysicalRel physicalRel = optimizePhysical(context, validatedRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
+
         return physicalRel;
+    }
+
+    private LogicalRel logicalValidationPhase(OptimizerContext context, RelNode rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+        hepProgramBuilder.addRuleInstance(AggregateStreamLogicalRule.INSTANCE);
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+        LogicalRel root = (LogicalRel) planner.findBestExp();
+
+        RelTreeValidator validator = new RelTreeValidator();
+        validator.go(root);
+        if (validator.getErrorRel() == null) {
+            return root;
+        } else {
+            throw QueryException.error(validator.getErrorRel().message());
+        }
     }
 
     /**
@@ -650,6 +690,24 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
         if (table.getTarget() instanceof ViewTable) {
             throw QueryException.error("DML operations not supported for views");
+        }
+    }
+
+    static class RelTreeValidator extends RelVisitor {
+        @SuppressWarnings("checkstyle:visibilitymodifier")
+        private NoExecuteRel errorRel;
+
+        @Override
+        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+            if (node instanceof NoExecuteRel) {
+                errorRel = (NoExecuteRel) node;
+                return;
+            }
+            super.visit(node, ordinal, parent);
+        }
+
+        public NoExecuteRel getErrorRel() {
+            return this.errorRel;
         }
     }
 }
