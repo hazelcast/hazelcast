@@ -3721,7 +3721,7 @@ hazelcast:
   #  ===== HAZELCAST INTEGRITY CHECKER CONFIGURATION =====
   #
   # Configuration element's name is "integrity-checker". When you want to enable Integrity Checker,
-  # set this element's "enabled" attribute to true in that member's XML configuration. Integrity Checker is a
+  # set this element's "enabled" attribute to true in that member's configuration. Integrity Checker is a
   # component that verifies that the executable contains all the required META-INF/services files, it is a costly
   # operation, it is advised to disable this component for production clusters.
   # Integrity Checker is disabled by default.
