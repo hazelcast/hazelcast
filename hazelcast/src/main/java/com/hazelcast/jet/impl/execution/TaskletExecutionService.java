@@ -397,7 +397,7 @@ public class TaskletExecutionService {
                     CancellationException ex = (CancellationException) e;
                     t.executionTracker.exception(ex);
                 } else if (e instanceof ResultLimitReachedException) {
-                    logger.fine("SQL LIMIT is reached. ");
+                    logger.fine("SQL LIMIT reached.");
                     ResultLimitReachedException ex = (ResultLimitReachedException) e;
                     t.executionTracker.exception(ex);
                 } else {
