@@ -1257,7 +1257,7 @@
                     --add-opens java.base/java.lang=${hazelcast.module.name}
                     --add-opens java.management/sun.management=${hazelcast.module.name}
                     --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
-                    --illegal-access=warn
+                    --illegal-access=deny
                 </javaModuleArgs>
             </properties>
             <modules>
