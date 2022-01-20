@@ -41,6 +41,7 @@ import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.some;
 
+@SuppressWarnings("checkstyle:DeclarationOrder")
 public final class ValuesLogicalRules {
 
     static final RelOptRuleOperand VALUES_CHILD_OPERAND = operand(ValuesLogicalRel.class, none());

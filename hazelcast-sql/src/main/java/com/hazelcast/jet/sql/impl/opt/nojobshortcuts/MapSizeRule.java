@@ -38,7 +38,7 @@ import static org.apache.calcite.plan.Convention.NONE;
  * Such aggregation is translated to direct `map.size()` call which does not
  * involve starting of any job.
  */
-public class MapSizeRule extends RelRule<RelRule.Config> {
+public final class MapSizeRule extends RelRule<RelRule.Config> {
 
     private static final Config RULE_CONFIG = Config.EMPTY
             .withDescription(MapSizeRule.class.getSimpleName())
