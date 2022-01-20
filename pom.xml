@@ -84,7 +84,7 @@
         <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>6.5.2</owasp.dependency-check.version>
+        <owasp.dependency-check.version>6.5.3</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -1841,7 +1841,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>9.0.41</version>
+            <version>10.0.14</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -99,7 +99,7 @@ public class GenericRecordTest {
     public void testCloneObjectConvertedFromData() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);
@@ -133,7 +133,7 @@ public class GenericRecordTest {
 
     @Test
     public void testCloneObjectCreatedViaAPI() {
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);
@@ -155,7 +155,7 @@ public class GenericRecordTest {
     public void testBuildFromObjectConvertedFromData() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);
@@ -182,7 +182,7 @@ public class GenericRecordTest {
 
     @Test
     public void testBuildFromObjectCreatedViaAPI() {
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);

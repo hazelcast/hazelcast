@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.TablesTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -137,7 +138,6 @@ public class TableResolverImpl implements TableResolver {
     public Collection<String> getMappingNames() {
         return tableStorage.mappingNames();
     }
-
     // endregion
 
     // region view
@@ -160,6 +160,11 @@ public class TableResolverImpl implements TableResolver {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
         }
+    }
+
+    @Nonnull
+    public Collection<String> getViewNames() {
+        return tableStorage.viewNames();
     }
 
     // endregion
@@ -193,6 +198,7 @@ public class TableResolverImpl implements TableResolver {
                 .filter(o -> o instanceof View)
                 .map(v -> (View) v)
                 .collect(Collectors.toList());
+        tables.add(new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
         tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
         tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
         tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));

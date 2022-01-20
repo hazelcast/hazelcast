@@ -623,13 +623,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.nanohttpd</groupId>
-            <artifactId>nanohttpd</artifactId>
-            <version>2.3.1</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${http.components.version}</version>
@@ -753,7 +746,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>1.14.0</version>
+            <version>2.4.0</version>
             <scope>test</scope>
         </dependency>
 
