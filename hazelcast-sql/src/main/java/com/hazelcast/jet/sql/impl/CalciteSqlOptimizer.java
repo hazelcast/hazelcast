@@ -39,6 +39,7 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.DeleteByKeyMapRel;
@@ -91,7 +92,6 @@ import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
-import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
@@ -100,6 +100,7 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -613,18 +614,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 Contexts.empty(),
                 true,
                 null,
-                RelOptCostImpl.FACTORY
+                CostFactory.INSTANCE
         );
 
         planner.setRoot(rel);
 
-        try {
-            return (PhysicalRel) planner.findBestExp();
-        } catch (Exception e) {
-            if (e.getMessage().contains("no rule to transform empty set")) {
-                return null;
+        RelNode newRel = planner.findBestExp();
+        boolean[] allPhysical = {true};
+        RelVisitor visitor = new RelVisitor() {
+            @Override
+            public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+                super.visit(node, ordinal, parent);
+                if (!(node instanceof PhysicalRel)) {
+                    allPhysical[0] = false;
+                }
             }
-            throw e;
+        };
+        visitor.visit(newRel, 0, null);
+        if (allPhysical[0]) {
+            return (PhysicalRel) newRel;
+        } else {
+            return null;
         }
     }
 

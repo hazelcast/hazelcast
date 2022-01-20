@@ -59,6 +59,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     protected ClientMessage encodeException(Throwable throwable) {
+        logger.fine("Sending exception to client", throwable);
         // exception can be thrown before parameters are decoded
         if (parameters == null) {
             return super.encodeException(throwable);
