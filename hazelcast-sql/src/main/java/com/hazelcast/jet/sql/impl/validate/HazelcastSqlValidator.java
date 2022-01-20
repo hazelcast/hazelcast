@@ -154,7 +154,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode instanceof SqlExplainStatement) {
             /*
-             * Just FYI, why do we do set validated explicandum back.
              *
              * There was a corner case with queries where ORDER BY is present.
              * SqlOrderBy is present as AST node (or SqlNode),
@@ -352,22 +351,39 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
+        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
+        boolean rightInputIsStream = containsStreamingSource(join.getRight());
+
+        if (leftInputIsStream && rightInputIsStream) {
+            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
+        }
+
         switch (join.getJoinType()) {
-            case INNER:
-            case COMMA:
-            case CROSS:
             case LEFT:
-                if (containsStreamingSource(join.getRight())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                if (rightInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "LEFT"));
                 }
                 break;
             case RIGHT:
-                if (containsStreamingSource(join.getLeft())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                if (leftInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("left", "RIGHT"));
                 }
                 break;
             case FULL:
                 throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
+            case INNER:
+                // Batch-to-stream INNER join, swap sides to convert it to stream-to-batch join, which is supported.
+                break;
+            case COMMA:
+                if (rightInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "COMMA"));
+                }
+                break;
+            case CROSS:
+                if (rightInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "CROSS"));
+                }
+                break;
             default:
                 throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
         }
