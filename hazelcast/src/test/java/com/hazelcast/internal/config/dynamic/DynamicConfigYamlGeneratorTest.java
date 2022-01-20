@@ -23,14 +23,30 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
     private static final ILogger LOGGER = Logger.getLogger(DynamicConfigYamlGeneratorTest.class);
+
+    // LICENSE KEY
+
+    @Test
+    public void testLicenseKey() {
+        String licenseKey = randomString();
+        Config config = new Config().setLicenseKey(licenseKey);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        String actualLicenseKey = decConfig.getLicenseKey();
+        assertEquals(config.getLicenseKey(), actualLicenseKey);
+    }
 
     @Override
     protected Config getNewConfigViaGenerator(Config config) {

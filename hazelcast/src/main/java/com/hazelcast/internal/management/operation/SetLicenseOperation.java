@@ -17,6 +17,9 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.internal.config.LicenseKey;
+import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,6 +46,11 @@ public class SetLicenseOperation extends AbstractManagementOperation {
         DefaultNodeExtension nodeExtension
                 = (DefaultNodeExtension) ((NodeEngineImpl) getNodeEngine()).getNode().getNodeExtension();
         nodeExtension.setLicenseKey(licenseKey);
+
+        LicenseKey licenseKeyObject = new LicenseKey(licenseKey);
+        ConfigurationService configurationService
+                = getNodeEngine().getService(ClusterWideConfigurationService.SERVICE_NAME);
+        configurationService.persist(licenseKeyObject);
     }
 
     @Override

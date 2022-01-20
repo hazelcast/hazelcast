@@ -68,6 +68,17 @@ public final class DynamicConfigGeneratorUtil {
         // not called
     }
 
+    public static String licenseKeyConfigGenerator(
+            String subConfig, boolean configIsXml, int indent
+    ) {
+        return configGenerator(subConfig, configIsXml, indent,
+                null,
+                Config::setLicenseKey,
+                DynamicConfigXmlGenerator::licenseKeyXmlGenerator,
+                DynamicConfigYamlGenerator::licenseKeyYamlGenerator
+        );
+    }
+
     public static String wanReplicationConfigGenerator(
             WanReplicationConfig subConfig, boolean configIsXml, int indent
     ) {
@@ -265,7 +276,7 @@ public final class DynamicConfigGeneratorUtil {
                     .setIndent(indent)
                     .build();
             Dump dump = new Dump(dumpSettings);
-            subConfigAsString = dump.dumpToString(yaml.get(subConfigTypeName));
+            subConfigAsString = dump.dumpToString(subConfigTypeName == null ? yaml : yaml.get(subConfigTypeName));
         }
 
         return subConfigAsString;

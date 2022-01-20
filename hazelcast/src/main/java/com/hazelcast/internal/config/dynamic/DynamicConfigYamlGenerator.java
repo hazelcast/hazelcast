@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.classNameOrImplClass;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.TRUE;
@@ -96,6 +97,7 @@ public class DynamicConfigYamlGenerator {
 
         root.put("cluster-name", config.getClusterName());
 
+        licenseKeyYamlGenerator(root, config);
         mapYamlGenerator(root, config);
         cacheYamlGenerator(root, config);
         queueYamlGenerator(root, config);
@@ -121,6 +123,10 @@ public class DynamicConfigYamlGenerator {
                 .build();
         Dump dump = new Dump(dumpSettings);
         return dump.dumpToString(document);
+    }
+
+    public static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config) {
+        parent.put(LICENSE_KEY.getName(), config.getLicenseKey());
     }
 
     @SuppressWarnings("checkstyle:MethodLength")

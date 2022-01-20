@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
@@ -203,6 +204,14 @@ public class ClusterWideConfigurationService implements
     public void broadcastConfig(IdentifiedDataSerializable config) {
         InternalCompletableFuture<Object> future = broadcastConfigAsync(config);
         future.joinInternal();
+    }
+
+    @Override
+    public void updateLicense(String licenseKey) throws ExecutionException, InterruptedException {
+        // NOP
+
+        // Maybe we can throw exception here in the future. For now, I'm
+        // inheriting existing behaviour from DefaultNodeExtension#setLicense()
     }
 
     @Override
@@ -352,7 +361,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void persist(IdentifiedDataSerializable subConfig) {
+    public void persist(Object subConfig) {
         if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
             // Code should never come here. We should fast fail in
             // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()
