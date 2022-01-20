@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,13 +34,11 @@ import java.util.StringJoiner;
 public class SqlRowImpl implements SqlRow {
 
     private final SqlRowMetadata rowMetadata;
-    private final Row row;
-    private final LazyDeserializer lazyDeserializer;
+    private final JetSqlRow row;
 
-    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row, LazyDeserializer lazyDeserializer) {
+    public SqlRowImpl(SqlRowMetadata rowMetadata, JetSqlRow row) {
         this.rowMetadata = rowMetadata;
         this.row = row;
-        this.lazyDeserializer = lazyDeserializer;
     }
 
     @Nullable
@@ -70,25 +68,11 @@ public class SqlRowImpl implements SqlRow {
 
     @SuppressWarnings("unchecked")
     private <T> T getObject0(int columnIndex, boolean deserialize) {
-        Object res = row.get(columnIndex);
-
-        if (res instanceof LazyTarget) {
-            LazyTarget res0 = (LazyTarget) res;
-
-            if (deserialize) {
-                res = lazyDeserializer.deserialize(res0);
-            } else {
-                res = res0.getSerialized();
-
-                if (res == null) {
-                    res = res0.getDeserialized();
-                }
-            }
-        } else if (deserialize) {
-            res = lazyDeserializer.deserialize(res);
+        if (deserialize) {
+            return (T) row.get(columnIndex);
+        } else {
+            return (T) row.getMaybeSerialized(columnIndex);
         }
-
-        return (T) res;
     }
 
     private int resolveIndex(String columnName) {

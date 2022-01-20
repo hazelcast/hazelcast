@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.test.HazelcastParallelClassRunner;

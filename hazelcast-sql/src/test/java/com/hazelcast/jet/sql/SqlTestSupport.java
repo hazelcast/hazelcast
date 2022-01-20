@@ -19,14 +19,12 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -42,6 +40,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -94,7 +93,6 @@ import static org.junit.Assert.assertTrue;
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
-    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     @After
     public void tearDown() {

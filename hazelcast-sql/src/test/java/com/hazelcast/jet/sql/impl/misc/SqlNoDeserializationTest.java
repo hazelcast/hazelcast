@@ -25,16 +25,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -186,8 +185,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             row.getObject(index);
 
             fail();
-        } catch (HazelcastSqlException e) {
-            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        } catch (HazelcastSerializationException e) {
             assertTrue(e.getMessage().contains(expectedMessage));
         }
     }
