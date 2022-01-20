@@ -33,6 +33,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class JoinHashPhysicalRel extends JoinPhysicalRel {
 
+    private static final double COST_FACTOR = 1.1;
+
     JoinHashPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -80,6 +82,6 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return super.computeSelfCost(planner, mq)
-                .multiplyBy(1.1);
+                .multiplyBy(COST_FACTOR);
     }
 }
