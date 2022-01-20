@@ -35,8 +35,8 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
     private final TreeMap<String, Object> objects = new TreeMap<>();
     private final SchemaWriter schemaWriter;
 
-    public DeserializedGenericRecordBuilder(String className) {
-        schemaWriter = new SchemaWriter(className);
+    public DeserializedGenericRecordBuilder(String typeName) {
+        schemaWriter = new SchemaWriter(typeName);
     }
 
     /**

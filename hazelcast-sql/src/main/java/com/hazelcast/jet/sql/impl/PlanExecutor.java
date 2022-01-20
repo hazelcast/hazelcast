@@ -285,15 +285,24 @@ public class PlanExecutor {
 
     SqlResult execute(ShowStatementPlan plan) {
         Stream<String> rows;
-        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
-            rows = catalog.getMappingNames().stream();
-        } else {
-            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
-            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
-                    .map(record -> record.getConfig().getName())
-                    .filter(Objects::nonNull);
+
+        switch (plan.getShowTarget()) {
+            case MAPPINGS:
+                rows = catalog.getMappingNames().stream();
+                break;
+            case VIEWS:
+                rows = catalog.getViewNames().stream();
+                break;
+            case JOBS:
+                assert plan.getShowTarget() == ShowStatementTarget.JOBS;
+                NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
+                JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+                rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
+                        .map(record -> record.getConfig().getName())
+                        .filter(Objects::nonNull);
+                break;
+            default:
+                throw new AssertionError("Unsupported SHOW statement target.");
         }
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);

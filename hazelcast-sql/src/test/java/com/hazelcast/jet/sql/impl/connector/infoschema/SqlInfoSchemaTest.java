@@ -36,6 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class SqlInfoSchemaTest extends SqlTestSupport {
 
+    private static final String LE = System.lineSeparator();
+
     private static SqlService sqlService;
 
     private final String mappingName = randomName();
@@ -106,7 +108,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         "hazelcast",
                         "public",
                         viewName,
-                        "SELECT \"" + mappingName + "\".\"__key\", \"" + mappingName + "\".\"__value\"\n" +
+                        "SELECT \"" + mappingName + "\".\"__key\", \"" + mappingName + "\".\"__value\"" + LE +
                                 "FROM \"hazelcast\".\"public\".\"" + mappingName + "\" AS \"" + mappingName + '"',
                         "NONE",
                         "NO",

@@ -138,7 +138,6 @@ public class TableResolverImpl implements TableResolver {
     public Collection<String> getMappingNames() {
         return tableStorage.mappingNames();
     }
-
     // endregion
 
     // region view
@@ -161,6 +160,11 @@ public class TableResolverImpl implements TableResolver {
         if (tableStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
         }
+    }
+
+    @Nonnull
+    public Collection<String> getViewNames() {
+        return tableStorage.viewNames();
     }
 
     // endregion

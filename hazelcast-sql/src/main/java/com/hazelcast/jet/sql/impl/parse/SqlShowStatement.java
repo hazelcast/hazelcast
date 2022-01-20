@@ -31,6 +31,7 @@ import java.util.List;
 public class SqlShowStatement extends SqlCall {
 
     public static final SqlSpecialOperator SHOW_MAPPINGS = new SqlSpecialOperator("SHOW EXTERNAL MAPPINGS", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
@@ -62,10 +63,11 @@ public class SqlShowStatement extends SqlCall {
     }
 
     /**
-     * The argument of the SHOW command (e.g. SHOW MAPPINGS, SHOW JOBS).
+     * The argument of the SHOW command (e.g. SHOW MAPPINGS, SHOW VIEWS, SHOW JOBS).
      */
     public enum ShowStatementTarget {
         MAPPINGS(SHOW_MAPPINGS),
+        VIEWS(SHOW_VIEWS),
         JOBS(SHOW_JOBS);
 
         private final SqlSpecialOperator operator;
