@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
@@ -71,10 +70,7 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
     }
 
     @Override
-    protected ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn,
-            EventTimePolicy<Object[]> eventTimePolicy
-    ) {
+    protected ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn) {
         BatchSource<Object> source = SourceBuilder
                 .batch("batch", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)

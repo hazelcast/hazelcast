@@ -21,6 +21,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -51,7 +52,7 @@ class StreamTable extends JetTable {
         this.argumentExpressions = argumentExpressions;
     }
 
-    StreamSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+    StreamSource<JetSqlRow> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .stream("stream", ctx -> {
@@ -113,11 +114,12 @@ class StreamTable extends JetTable {
             this.evalContext = evalContext;
         }
 
-        private void fillBuffer(SourceBuffer<Object[]> buffer) {
+        private void fillBuffer(SourceBuffer<JetSqlRow> buffer) {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence}, evalContext);
+                JetSqlRow row = ExpressionUtil.evaluate(predicate, projections,
+                                new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

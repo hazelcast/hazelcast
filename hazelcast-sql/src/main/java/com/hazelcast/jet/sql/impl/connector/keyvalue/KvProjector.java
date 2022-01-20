@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -35,7 +36,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
 /**
- * A utility to convert a row represented as {@code Object[]} to a
+ * A utility to convert a row represented as {@link JetSqlRow} to a
  * key-value entry represented as {@code Entry<Object, Object>}.
  * <p>
  * {@link KvRowProjector} does the reverse.
@@ -83,11 +84,11 @@ public class KvProjector {
         return injectors;
     }
 
-    public Entry<Object, Object> project(Object[] row) {
+    public Entry<Object, Object> project(JetSqlRow row) {
         keyTarget.init();
         valueTarget.init();
-        for (int i = 0; i < injectors.length; i++) {
-            Object value = getToConverter(types[i]).convert(row[i]);
+        for (int i = 0; i < row.getFieldCount(); i++) {
+            Object value = getToConverter(types[i]).convert(row.get(i));
             injectors[i].set(value);
         }
 

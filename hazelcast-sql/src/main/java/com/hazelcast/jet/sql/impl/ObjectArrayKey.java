@@ -16,6 +16,9 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,35 +27,35 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * A wrapper for Object[] supporting equals/hashCode and hz-serialization.
+ * A wrapper for {@code Data[]} supporting equals/hashCode and hz-serialization.
  */
 public final class ObjectArrayKey implements DataSerializable {
 
-    private Object[] array;
+    private Data[] keyFields;
 
     @SuppressWarnings("unused")
     private ObjectArrayKey() {
     }
 
-    private ObjectArrayKey(Object[] array) {
-        this.array = array;
+    private ObjectArrayKey(Data[] keyFields) {
+        this.keyFields = keyFields;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(array);
+        out.writeInt(keyFields.length);
+        for (Data field : keyFields) {
+            IOUtil.writeData(out, field);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        array = in.readObject();
-    }
-
-    @Override
-    public String toString() {
-        return "ObjectArray{" +
-                "array=" + Arrays.toString(array) +
-                '}';
+        int size = in.readInt();
+        keyFields = new Data[size];
+        for (int i = 0; i < size; i++) {
+            keyFields[i] = IOUtil.readData(in);
+        }
     }
 
     @Override
@@ -64,30 +67,30 @@ public final class ObjectArrayKey implements DataSerializable {
             return false;
         }
         ObjectArrayKey that = (ObjectArrayKey) o;
-        return Arrays.equals(array, that.array);
+        return Arrays.equals(keyFields, that.keyFields);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(array);
+        return Arrays.hashCode(keyFields);
     }
 
-    public static ObjectArrayKey project(Object[] row, int[] indices) {
-        Object[] key = new Object[indices.length];
+    public static ObjectArrayKey project(JetSqlRow row, int[] indices) {
+        Data[] key = new Data[indices.length];
         for (int i = 0; i < indices.length; i++) {
-            key[i] = row[indices[i]];
+            key[i] = row.getSerialized(indices[i]);
         }
         return new ObjectArrayKey(key);
     }
 
     /**
-     * Return a function that maps an input `Object[]` to an {@link
+     * Return a function that maps an input {@link JetSqlRow} to an {@link
      * ObjectArrayKey}, extracting the fields given in {@code indices}.
      *
      * @param indices the indices of keys
      * @return the projection function
      */
-    public static FunctionEx<Object[], ObjectArrayKey> projectFn(int[] indices) {
+    public static FunctionEx<JetSqlRow, ObjectArrayKey> projectFn(int[] indices) {
         return row -> project(row, indices);
     }
 }
