@@ -60,6 +60,9 @@ public enum ResourceType {
         this.id = id;
     }
 
+    /**
+     * Returns the integer identifier of the ResourceType
+     */
     public int getId() {
         return id;
     }

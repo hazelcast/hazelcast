@@ -34,6 +34,11 @@ import java.util.Set;
 import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
+/**
+ * Agent that removes final modifier on configured classes and methods
+ * so that they can be proxied, mocked or subclassed.
+ * For compatibility testing.
+ */
 public final class FinalRemovalAgent {
 
     // Class name -> List<final method names> to be processed for

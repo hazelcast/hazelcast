@@ -59,6 +59,9 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.trim;
 
+/**
+ * SqlConsole based on jline library to execute SQL queries from command line
+ */
 @SuppressWarnings({
         "checkstyle:CyclomaticComplexity",
         "checkstyle:MethodLength",

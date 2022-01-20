@@ -32,7 +32,7 @@ import static com.hazelcast.kubernetes.KubernetesApiProvider.convertToString;
 import static com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import static com.hazelcast.kubernetes.KubernetesClient.EndpointAddress;
 
-public class KubernetesApiEndpointSlicesProvider
+class KubernetesApiEndpointSlicesProvider
         implements KubernetesApiProvider {
 
     public String getEndpointsByServiceLabelUrlString() {

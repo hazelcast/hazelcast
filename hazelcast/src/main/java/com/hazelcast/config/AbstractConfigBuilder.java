@@ -21,6 +21,9 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 
+/**
+ * Abstract class for all config builders containing common functionality
+ */
 public class AbstractConfigBuilder {
 
     /**

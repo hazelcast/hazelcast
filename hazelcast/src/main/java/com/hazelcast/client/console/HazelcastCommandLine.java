@@ -84,6 +84,9 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * Picocli implementation of the {@code hz-cli} command
+ */
 @SuppressWarnings({
         "unused",
         "MismatchedQueryAndUpdateOfCollection",
@@ -619,7 +622,7 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    public static class HazelcastVersionProvider implements IVersionProvider {
+    static class HazelcastVersionProvider implements IVersionProvider {
 
         @Override
         public String[] getVersion() {
@@ -632,7 +635,7 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    public static class Verbosity {
+    static class Verbosity {
 
         @Option(names = {"-v", "--verbosity"},
                 description = {"Show verbose logs and full stack trace of errors"},
@@ -645,7 +648,7 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    public static class TargetsMixin {
+    static class TargetsMixin {
 
         @Option(names = {"-t", "--targets"},
                 description = "The cluster name and addresses to use if you want to connect to a "

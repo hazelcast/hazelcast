@@ -219,6 +219,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return maxProcessorAccumulatedRecords;
     }
 
+    /**
+     * Sets the maximum number of accumulated records in a processor
+     */
     public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
     }
@@ -256,6 +259,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return classLoader;
     }
 
+    /**
+     * Sets the processor classloader
+     */
     @Nonnull
     public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;

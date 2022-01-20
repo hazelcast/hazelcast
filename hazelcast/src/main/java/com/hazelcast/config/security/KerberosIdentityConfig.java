@@ -147,7 +147,7 @@ public class KerberosIdentityConfig implements IdentityConfig {
     @Override
     public IdentityConfig copy() {
         return new KerberosIdentityConfig().setRealm(getRealm()).setSecurityRealm(getSecurityRealm())
-                .setServiceNamePrefix(getServiceNamePrefix()).setSpn(getSpn());
+                                           .setServiceNamePrefix(getServiceNamePrefix()).setSpn(getSpn());
     }
 
     @Override

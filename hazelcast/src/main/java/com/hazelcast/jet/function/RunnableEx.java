@@ -21,8 +21,17 @@ import java.io.Serializable;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 
+/**
+ * {@code Serializable} variant of {@link Runnable java.lang.Runnable}
+ * which declares checked exception.
+ */
 @FunctionalInterface
 public interface RunnableEx extends Runnable, Serializable {
+
+    /**
+     * Exception-declaring version of {@link Runnable#run()}.
+     * @throws Exception in case of any exceptional case
+     */
     void runEx() throws Exception;
 
     @Override
@@ -34,6 +43,9 @@ public interface RunnableEx extends Runnable, Serializable {
         }
     }
 
+    /**
+     * No-op Runnable
+     */
     static RunnableEx noop() {
         return () -> {
         };

@@ -421,6 +421,13 @@
     <suppress checks="MethodLength" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
 
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
-
     <suppress checks="" files="target[\\/]generated-sources"/>
+
+    <!-- Exclude JavadocMethod everywhere but Jet package - means Jet package will be checked -->
+    <suppress checks="JavadocMethod|MissingJavadocMethod" files="^(?!.*([\\/]src[\\/](main|test)[\\/]java[\\/]com[\\/]hazelcast[\\/]jet).*)"/>
+
+    <suppress checks="JavadocMethod" files="JetException\.java"/>
+    <suppress checks="JavadocMethod" files="RestartableException\.java"/>
+    <suppress checks="JavadocMethod" files="JobNotFoundException\.java"/>
+
 </suppressions>

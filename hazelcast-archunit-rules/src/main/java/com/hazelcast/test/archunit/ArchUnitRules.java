@@ -33,7 +33,9 @@ import static com.tngtech.archunit.lang.conditions.ArchConditions.beStatic;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.haveRawType;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
-
+/**
+ * Common {@link ArchRule} for Hazelcast tests
+ */
 public final class ArchUnitRules {
     /**
      * ArchUnit rule checking that Serializable classes have a valid serialVersionUID

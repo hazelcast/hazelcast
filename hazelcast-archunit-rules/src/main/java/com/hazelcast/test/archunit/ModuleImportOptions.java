@@ -21,6 +21,9 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
+/**
+ * Predefined {@link ImportOption}s
+ */
 public final class ModuleImportOptions {
 
     private ModuleImportOptions() {

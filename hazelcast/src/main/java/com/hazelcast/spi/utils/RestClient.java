@@ -44,6 +44,9 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Simple RestClient for communication with the cloud APIs
+ */
 public final class RestClient {
 
     /**
@@ -247,6 +250,9 @@ public final class RestClient {
         return scanner.next();
     }
 
+    /**
+     * Response to a HTTP call
+     */
     public static class Response {
 
         private final int code;
