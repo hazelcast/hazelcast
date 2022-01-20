@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -89,7 +90,7 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
@@ -109,7 +110,7 @@ final class InfoSchemaConnector implements SqlConnector {
         private final List<Expression<?>> projection;
         private final List<Object[]> rows;
 
-        private Traverser<Object[]> traverser;
+        private Traverser<JetSqlRow> traverser;
 
         private StaticSourceP(Expression<Boolean> predicate, List<Expression<?>> projection, List<Object[]> rows) {
             this.predicate = predicate;
@@ -120,7 +121,8 @@ final class InfoSchemaConnector implements SqlConnector {
         @Override
         protected void init(@Nonnull Context context) {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
-            List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
+            List<JetSqlRow> processedRows = ExpressionUtil.evaluate(predicate, projection,
+                    rows.stream().map(row -> new JetSqlRow(evalContext.getSerializationService(), row)), evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }
 

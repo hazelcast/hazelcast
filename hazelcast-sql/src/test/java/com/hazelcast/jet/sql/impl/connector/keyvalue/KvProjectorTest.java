@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -51,7 +52,7 @@ public class KvProjectorTest {
                 false
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, 2});
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(null, new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isEqualTo(2);
         assertThat(entry.getValue()).isEqualTo(4);
@@ -67,7 +68,7 @@ public class KvProjectorTest {
                 false
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, 2});
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(null, new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isNull();
         assertThat(entry.getValue()).isNull();
@@ -83,7 +84,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new Object[]{1, 2}))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(null, new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to '__key' field");
     }
@@ -98,7 +99,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new Object[]{1, 2}))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(null, new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to 'this' field");
     }

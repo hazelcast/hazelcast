@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptRule;
@@ -66,7 +68,7 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
 
     protected abstract RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput);
 
-    protected static AggregateOperation<?, Object[]> aggregateOperation(
+    protected static AggregateOperation<?, JetSqlRow> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls
@@ -74,11 +76,12 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
         List<QueryDataType> operandTypes = OptUtils.schema(inputType).getTypes();
 
         List<SupplierEx<SqlAggregation>> aggregationProviders = new ArrayList<>();
-        List<FunctionEx<Object[], Object>> valueProviders = new ArrayList<>();
+        List<FunctionEx<JetSqlRow, Object>> valueProviders = new ArrayList<>();
 
         for (Integer groupIndex : groupSet.toList()) {
             aggregationProviders.add(ValueSqlAggregation::new);
-            valueProviders.add(row -> row[groupIndex]);
+            // getMaybeSerialized is safe for ValueAggr because it only passes the value on
+            valueProviders.add(row -> row.getMaybeSerialized(groupIndex));
         }
         for (AggregateCall aggregateCall : aggregateCalls) {
             boolean distinct = aggregateCall.isDistinct();
@@ -89,11 +92,12 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(() -> CountSqlAggregations.from(true, true));
-                        valueProviders.add(row -> row[countIndex]);
+                        // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
+                        valueProviders.add(row -> row.getMaybeSerialized(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(() -> CountSqlAggregations.from(true, false));
-                        valueProviders.add(row -> row[countIndex]);
+                        valueProviders.add(row -> row.getMaybeSerialized(countIndex));
                     } else {
                         aggregationProviders.add(() -> CountSqlAggregations.from(false, false));
                         valueProviders.add(row -> null);
@@ -102,24 +106,24 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(row -> row[minIndex]);
+                    valueProviders.add(row -> row.get(minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(row -> row[maxIndex]);
+                    valueProviders.add(row -> row.get(maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
-                    valueProviders.add(row -> row[sumIndex]);
+                    valueProviders.add(row -> row.get(sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
-                    valueProviders.add(row -> row[avgIndex]);
+                    valueProviders.add(row -> row.get(avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -134,7 +138,7 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     }
                     return aggregations;
                 })
-                .andAccumulate((List<SqlAggregation> aggregations, Object[] row) -> {
+                .andAccumulate((List<SqlAggregation> aggregations, JetSqlRow row) -> {
                     for (int i = 0; i < aggregations.size(); i++) {
                         aggregations.get(i).accumulate(valueProviders.get(i).apply(row));
                     }
@@ -147,11 +151,11 @@ abstract class AggregateAbstractPhysicalRule extends RelOptRule {
                     }
                 })
                 .andExportFinish(aggregations -> {
-                    Object[] values = new Object[aggregations.size()];
+                    Object[] row = new Object[aggregations.size()];
                     for (int i = 0; i < aggregations.size(); i++) {
-                        values[i] = aggregations.get(i).collect();
+                        row[i] = aggregations.get(i).collect();
                     }
-                    return values;
+                    return new JetSqlRow(Contexts.getCastedThreadContext().serializationService(), row);
                 });
     }
 }
