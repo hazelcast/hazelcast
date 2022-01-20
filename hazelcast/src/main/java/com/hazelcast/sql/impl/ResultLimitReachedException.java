@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl;
 
+/**
+ * An exception used to cancel a job once the number of rows reaches the number
+ * specified by the SQL LIMIT clause.
+ */
 public class ResultLimitReachedException extends Exception {
     public ResultLimitReachedException() {
         // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
