@@ -1173,6 +1173,7 @@ public class JobCoordinationService {
 
     // runs periodically to restart jobs on coordinator failure and perform GC
     private void scanJobs() {
+        long scanStart = System.currentTimeMillis();
         long nextScanDelay = maxJobScanPeriodInMillis;
         try {
             // explicit check for master because we don't want to use shorter delay on non-master nodes
@@ -1190,6 +1191,11 @@ public class JobCoordinationService {
         } catch (Throwable e) {
             logger.severe("Scanning jobs failed", e);
         }
+
+        // Adjust the delay by the time taken by the scan to avoid accumulating more and more job results with each scan
+        long scanTime = System.currentTimeMillis() - scanStart;
+        nextScanDelay = Math.max(0, nextScanDelay - scanTime);
+
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.schedule(this::scanJobs, nextScanDelay, MILLISECONDS);
     }

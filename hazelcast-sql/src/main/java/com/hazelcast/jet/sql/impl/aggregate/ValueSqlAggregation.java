@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
@@ -34,20 +36,13 @@ public class ValueSqlAggregation implements SqlAggregation {
 
     @Override
     public void accumulate(Object value) {
-        assert this.value == null || this.value.equals(value);
-
         this.value = value;
     }
 
     @Override
     public void combine(SqlAggregation other0) {
         ValueSqlAggregation other = (ValueSqlAggregation) other0;
-
-        Object value = other.value;
-
-        assert this.value == null || this.value.equals(value);
-
-        this.value = value;
+        this.value = other.value;
     }
 
     @Override
@@ -57,11 +52,11 @@ public class ValueSqlAggregation implements SqlAggregation {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(value);
+        IOUtil.writeData(out, ((SerializationServiceSupport) out).getSerializationService().toData(value));
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        value = in.readObject();
+        value = IOUtil.readData(in);
     }
 }

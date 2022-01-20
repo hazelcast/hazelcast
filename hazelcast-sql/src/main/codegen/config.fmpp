@@ -61,6 +61,7 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -398,6 +399,7 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of non-reserved keywords to add;

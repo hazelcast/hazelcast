@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -199,26 +200,25 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull Table table_,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        EventTimePolicy<Object[]> eventTimePolicy = eventTimePolicyProvider == null
-                ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(null);
-
         TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
 
         FunctionEx<Context, TestDataGenerator> createContextFn = ctx -> {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
+            EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
+                    ? EventTimePolicy.noEventTime()
+                    : eventTimePolicyProvider.apply(evalContext);
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 
-        ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn, eventTimePolicy);
+        ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn);
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn, EventTimePolicy<Object[]> eventTimePolicy);
+    protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
     private static final class TestTable extends JetTable {
 
@@ -289,14 +289,14 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
                 ExpressionEvalContext evalContext,
-                EventTimePolicy<Object[]> eventTimePolicy,
+                EventTimePolicy<JetSqlRow> eventTimePolicy,
                 boolean streaming
         ) {
-            EventTimeMapper<Object[]> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+            EventTimeMapper<JetSqlRow> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
             eventTimeMapper.addPartitions(1);
             this.traverser = Traversers.traverseIterable(rows)
                     .flatMap(row -> {
-                        Object[] evaluated = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
+                        JetSqlRow evaluated = ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(evalContext.getSerializationService(), row), evalContext);
                         return evaluated == null ? Traversers.empty() : eventTimeMapper.flatMapEvent(evaluated, 0, -1);
                     });
 

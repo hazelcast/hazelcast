@@ -47,6 +47,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -284,15 +285,24 @@ public class PlanExecutor {
 
     SqlResult execute(ShowStatementPlan plan) {
         Stream<String> rows;
-        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
-            rows = catalog.getMappingNames().stream();
-        } else {
-            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
-            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
-                    .map(record -> record.getConfig().getName())
-                    .filter(Objects::nonNull);
+
+        switch (plan.getShowTarget()) {
+            case MAPPINGS:
+                rows = catalog.getMappingNames().stream();
+                break;
+            case VIEWS:
+                rows = catalog.getViewNames().stream();
+                break;
+            case JOBS:
+                assert plan.getShowTarget() == ShowStatementTarget.JOBS;
+                NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
+                JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+                rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
+                        .map(record -> record.getConfig().getName())
+                        .filter(Objects::nonNull);
+                break;
+            default:
+                throw new AssertionError("Unsupported SHOW statement target.");
         }
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
@@ -377,13 +387,13 @@ public class PlanExecutor {
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContext(args, serializationService);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
-        CompletableFuture<Object[]> future = hazelcastInstance.getMap(plan.mapName())
+        CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
                 .toCompletableFuture()
                 .thenApply(value -> plan.rowProjectorSupplier()
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
-        Object[] row = await(future, timeout);
+        JetSqlRow row = await(future, timeout);
         return new SqlResultImpl(
                 queryId,
                 new StaticQueryResultProducerImpl(row),
