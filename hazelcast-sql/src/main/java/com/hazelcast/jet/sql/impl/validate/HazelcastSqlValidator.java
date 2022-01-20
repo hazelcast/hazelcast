@@ -154,6 +154,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         if (topNode instanceof SqlExplainStatement) {
             /*
+             * Just FYI, why do we do set validated explicandum back.
              *
              * There was a corner case with queries where ORDER BY is present.
              * SqlOrderBy is present as AST node (or SqlNode),
