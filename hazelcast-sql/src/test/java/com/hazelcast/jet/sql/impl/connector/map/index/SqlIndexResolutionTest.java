@@ -96,8 +96,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        // TODO: https://github.com/hazelcast/hazelcast/issues/19285
-        initialize(1, null);
+        initialize(2, null);
     }
 
     @Test
