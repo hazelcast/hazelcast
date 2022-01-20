@@ -117,7 +117,6 @@ public class SqlHopTest extends SqlTestSupport {
         }
     }
 
-
     @Test
     public void test_invalidArguments_tinyInt() {
         checkInvalidArguments(TINYINT, "INTERVAL '0.001' SECOND");
@@ -211,8 +210,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         "))",
                 asList(
                         new Row(timestampTz(-2L), timestampTz(2L), "Alice"),
@@ -235,8 +234,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         "))",
                 asList(
                         new Row(null, null, "Alice"),
@@ -257,8 +256,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 rows(2,
@@ -282,8 +281,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY 1/*, 2*/", // field ordinals
                 asList(
@@ -298,8 +297,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.003' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.003' SECOND" +
                         "  , INTERVAL '0.006' SECOND" +
+                        "  , INTERVAL '0.003' SECOND" +
                         ")) " +
                         "GROUP BY /*window_end,*/ window_start, name",
                 asList(
@@ -329,8 +328,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, name",
                 asList(
@@ -358,8 +357,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, name",
                 asList(
@@ -384,8 +383,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, nani",
                 asList(
@@ -408,8 +407,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start + INTERVAL '0.001' SECOND"))
                 .hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used" +
@@ -431,8 +430,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, name " +
                         "HAVING LENGTH(n) > 5",
@@ -452,8 +451,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "TABLE(HOP(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
-                "  , INTERVAL '0.002' SECOND" +
                 "  , INTERVAL '0.004' SECOND" +
+                "  , INTERVAL '0.002' SECOND" +
                 ")) " +
                 "GROUP BY window_start"
         );
@@ -474,8 +473,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -489,8 +488,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -516,8 +515,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -545,8 +544,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -575,8 +574,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -606,8 +605,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start HAVING c <> 2",
                 asList(
@@ -635,8 +634,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
@@ -660,8 +659,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start"
         );
@@ -683,8 +682,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -710,8 +709,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -739,8 +738,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -770,8 +769,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start HAVING m > 1",
                 asList(
@@ -798,8 +797,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY window_start, name",
@@ -821,8 +820,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start"
         );
@@ -844,8 +843,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -871,8 +870,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -900,8 +899,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -931,8 +930,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start HAVING m < 3",
                 asList(
@@ -959,8 +958,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY window_start, name",
@@ -982,8 +981,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start"
         );
@@ -1004,8 +1003,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -1031,8 +1030,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -1060,8 +1059,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -1091,8 +1090,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -1122,8 +1121,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start HAVING s > 1",
                 asList(
@@ -1151,8 +1150,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
@@ -1176,8 +1175,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start"
         );
@@ -1198,8 +1197,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -1225,8 +1224,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -1253,8 +1252,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -1284,8 +1283,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start",
                 asList(
@@ -1316,8 +1315,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY name, window_start HAVING a > 1",
                 asList(
@@ -1345,8 +1344,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "WHERE ts > '" + timestampTz(0) + "' " +
                         "GROUP BY name, window_start",
@@ -1370,8 +1369,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start"
         );
@@ -1391,8 +1390,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(HOP(TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) GROUP BY window_start"))
                 .hasRootCauseMessage("Can't find watermarked field for window function");
     }
@@ -1409,8 +1408,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.001' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
+                        "  , INTERVAL '0.001' SECOND" +
                         ")) " +
                         "GROUP BY window_start, window_end, ts, name, distance",
                 asList(
@@ -1436,8 +1435,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start",
                 asList(
@@ -1522,13 +1521,13 @@ public class SqlHopTest extends SqlTestSupport {
                         "      TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
-                        "           , INTERVAL '0.002' SECOND" +
                         "           , INTERVAL '0.004' SECOND" +
+                        "           , INTERVAL '0.002' SECOND" +
                         "       )) WHERE ts > '" + timestampTz(0) + "' " +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.002' SECOND" +
                         "   , INTERVAL '0.004' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start_inner, name",
                 asList(
@@ -1561,13 +1560,13 @@ public class SqlHopTest extends SqlTestSupport {
                         "      TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
-                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "       ))" +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.002' SECOND" +
                         "   , INTERVAL '0.004' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, window_end, wsi, wei, name",
                 asList(
@@ -1606,13 +1605,13 @@ public class SqlHopTest extends SqlTestSupport {
                         "       TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
-                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "       )) GROUP BY name, window_end_inner" +
                         "   )" +
                         "   , DESCRIPTOR(window_end_inner)" +
-                        "   , INTERVAL '0.002' SECOND" +
                         "   , INTERVAL '0.004' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_end, window_end_inner, name",
                 asList(
@@ -1657,13 +1656,13 @@ public class SqlHopTest extends SqlTestSupport {
                         "       TABLE(HOP(" +
                         "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
-                        "           , INTERVAL '0.001' SECOND" +
                         "           , INTERVAL '0.002' SECOND" +
+                        "           , INTERVAL '0.001' SECOND" +
                         "       )) JOIN map ON ts = __key" +
                         "   )" +
                         "   , DESCRIPTOR(ts)" +
-                        "   , INTERVAL '0.002' SECOND" +
                         "   , INTERVAL '0.004' SECOND" +
+                        "   , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, window_start_inner, this",
                 asList(
@@ -1695,9 +1694,9 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, /*window_end,*/ COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "   window_size => INTERVAL '0.004' SECOND" +
-                        "   , timeCol => DESCRIPTOR(ts)" +
-                        "   , slide_size => INTERVAL '0.002' SECOND" +
+                        "   timeCol => DESCRIPTOR(ts)" +
+                        "   , window_size => INTERVAL '0.004' SECOND" +
+                        "   , slide_size =>  INTERVAL '0.002' SECOND" +
                         "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start/*, window_end*/",
@@ -1746,8 +1745,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "TABLE(HOP(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
-                "  , INTERVAL '0.002' SECOND" +
                 "  , INTERVAL '0.004' SECOND" +
+                "  , INTERVAL '0.002' SECOND" +
                 "))")
         ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
     }
@@ -1760,8 +1759,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "TABLE(HOP(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
-                "  , INTERVAL '0.002' SECOND" +
                 "  , INTERVAL '0.004' SECOND" +
+                "  , INTERVAL '0.002' SECOND" +
                 ")) " +
                 "GROUP BY window_start + INTERVAL '0.001' SECOND")
         ).hasMessageContaining("Expression 'window_start' is not being grouped");
@@ -1786,8 +1785,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start, window_end",
                 asList(
@@ -1816,8 +1815,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.1' SECOND" +
                         "  , INTERVAL '0.2' SECOND" +
+                        "  , INTERVAL '0.1' SECOND" +
                         "))",
                 singletonList(new Row(12L))
         );
@@ -1842,8 +1841,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "TABLE(HOP(" +
                         "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.002' SECOND" +
                         "  , INTERVAL '0.004' SECOND" +
+                        "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start + INTERVAL '0.001' SECOND",
                 asList(

@@ -70,20 +70,6 @@ public final class AggregateStreamLogicalRule extends RelRule<Config> {
                             aggregate.getRowType(),
                             "Streaming aggregation must be grouped by window_start/window_end"));
         }
-//        TODO: to implement
-//        RelNode input = aggregate.getInput();
-//        if (input instanceof HepRelVertex) {
-//            input = ((HepRelVertex) input).getCurrentRel();
-//        }
-//        Integer watermarkedField = findWatermarkedField(aggregate, input);
-//        if (watermarkedField == null) {
-//            call.transformTo(
-//                    new NoExecuteRel(
-//                            aggregate.getCluster(),
-//                            aggregate.getTraitSet(),
-//                            aggregate.getRowType(),
-//                            "Can't find watermarked field for window function"));
-//        }
     }
 
     static class SlidingWindowDetectorVisitor extends RelVisitor {

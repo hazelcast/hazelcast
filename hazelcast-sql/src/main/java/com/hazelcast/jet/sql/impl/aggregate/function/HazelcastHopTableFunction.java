@@ -31,8 +31,8 @@ public class HazelcastHopTableFunction extends HazelcastWindowTableFunction {
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
             new HazelcastTableFunctionParameter(1, "timeCol", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
-            new HazelcastTableFunctionParameter(2, "slide_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE),
-            new HazelcastTableFunctionParameter(3, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
+            new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE),
+            new HazelcastTableFunctionParameter(3, "slide_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
     public HazelcastHopTableFunction() {

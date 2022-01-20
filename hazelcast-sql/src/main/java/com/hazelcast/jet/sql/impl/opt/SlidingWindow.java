@@ -80,8 +80,8 @@ public abstract class SlidingWindow extends TableFunctionScan {
             Expression<?> windowSizeExpression = operand(2).accept(visitor);
             return context -> tumblingWinPolicy(WindowUtils.extractMillis(windowSizeExpression, context));
         } else if (operator() == HazelcastSqlOperatorTable.HOP) {
-            Expression<?> slideSizeExpression = operand(2).accept(visitor);
-            Expression<?> windowSizeExpression = operand(3).accept(visitor);
+            Expression<?> windowSizeExpression = operand(2).accept(visitor);
+            Expression<?> slideSizeExpression = operand(3).accept(visitor);
             return context -> slidingWinPolicy(
                     WindowUtils.extractMillis(windowSizeExpression, context),
                     WindowUtils.extractMillis(slideSizeExpression, context)
