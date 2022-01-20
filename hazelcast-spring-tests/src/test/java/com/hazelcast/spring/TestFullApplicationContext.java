@@ -41,6 +41,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EurekaConfig;
@@ -1333,6 +1334,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(12, queryCacheConfig.getDelaySeconds());
         assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
         assertTrue(queryCacheConfig.isCoalesce());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertFalse(queryCacheConfig.isPopulate());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
@@ -1386,6 +1388,21 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
         assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
+    }
+
+    @Test
+    public void testDynamicConfiguration() {
+        boolean persistenceEnabled = false;
+        File persistenceFile = new File("/mnt/persistence-file");
+        File backupDir = new File("/mnt/backup-dir");
+        int backupCount = 7;
+
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(persistenceFile, dynamicConfigurationConfig.getPersistenceFile());
+        assertEquals(backupDir, dynamicConfigurationConfig.getBackupDir());
+        assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -91,10 +92,11 @@ public class WindowUtilsTest {
     private void check_addWindowBounds(Object timestamp, long windowSize, long slideBy, Object ... outputWindows) {
         //noinspection SimplifiableAssertion
         assertTrue(outputWindows.length % 2 == 0);
-        Traverser<Object[]> traverser = WindowUtils.addWindowBounds(new Object[]{timestamp}, 0, slidingWinPolicy(windowSize, slideBy));
+        Traverser<JetSqlRow> traverser = WindowUtils.addWindowBounds(
+                new JetSqlRow(null, new Object[] {timestamp}), 0, slidingWinPolicy(windowSize, slideBy));
         for (int i = 0; i < outputWindows.length; i += 2) {
             Object[] expected = new Object[]{timestamp, outputWindows[i], outputWindows[i + 1]};
-            assertArrayEquals(expected, traverser.next());
+            assertArrayEquals(expected, traverser.next().getValues());
         }
         assertNull(traverser.next());
     }

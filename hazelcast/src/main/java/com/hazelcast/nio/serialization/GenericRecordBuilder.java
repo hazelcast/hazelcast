@@ -62,8 +62,8 @@ interface GenericRecordBuilder {
      */
     @Beta
     @Nonnull
-    static GenericRecordBuilder compact(String className) {
-        return new DeserializedGenericRecordBuilder(className);
+    static GenericRecordBuilder compact(String typeName) {
+        return new DeserializedGenericRecordBuilder(typeName);
     }
 
     /**

@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -69,7 +70,7 @@ final class WatermarkRules {
                     orderingColumnFieldIndex(function));
         }
 
-        private FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> toEventTimePolicyProvider(
+        private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
                 LogicalTableFunctionScan function
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
@@ -78,7 +79,7 @@ final class WatermarkRules {
                 // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
-                        row -> WindowUtils.extractMillis(row[orderingColumnFieldIndex]),
+                        row -> WindowUtils.extractMillis(row.get(orderingColumnFieldIndex)),
                         (row, timestamp) -> row,
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,

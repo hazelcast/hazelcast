@@ -21,6 +21,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
@@ -368,8 +369,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 .flatMap(List::stream)
                 .map(EdgeDef::partitioner)
                 .filter(Objects::nonNull)
-                .forEach(partitioner ->
-                        partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)))
+                .forEach(partitioner -> {
+                            if (partitioner instanceof SerializationServiceAware) {
+                                ((SerializationServiceAware) partitioner).setSerializationService(jobSerializationService);
+                            }
+                            partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)));
+                        }
                 );
     }
 

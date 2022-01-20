@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -79,7 +80,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         this.windowEndIndexes = windowEndIndexes;
     }
 
-    public FunctionEx<Object[], ?> groupKeyFn() {
+    public FunctionEx<JetSqlRow, ?> groupKeyFn() {
         ImmutableBitSet groupSet = getGroupSetReduced();
         if (groupSet.isEmpty()) {
             // if there's no grouping, group by a random constant value
@@ -88,7 +89,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         return ObjectArrayKey.projectFn(groupSet.toArray());
     }
 
-    public AggregateOperation<?, Object[]> aggrOp() {
+    public AggregateOperation<?, JetSqlRow> aggrOp() {
         return AggregateAbstractPhysicalRule.aggregateOperation(getInput().getRowType(), getGroupSetReduced(), getAggCallList());
     }
 
@@ -118,7 +119,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
-    public KeyedWindowResultFunction<? super Object, ? super Object[], ?> outputValueMapping() {
+    public KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> outputValueMapping() {
         int[] windowBoundsIndexMask = new int[getRowType().getFieldCount()];
 
         for (Integer index : windowStartIndexes) {

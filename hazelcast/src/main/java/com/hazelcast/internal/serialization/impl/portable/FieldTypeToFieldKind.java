@@ -58,7 +58,7 @@ public final class FieldTypeToFieldKind {
             case BYTE_ARRAY:
                 return FieldKind.ARRAY_OF_INT8;
             case BOOLEAN_ARRAY:
-                return FieldKind.ARRAY_OF_BOOLEANS;
+                return FieldKind.ARRAY_OF_BOOLEAN;
             case CHAR_ARRAY:
                 return FieldKind.ARRAY_OF_CHAR;
             case SHORT_ARRAY:

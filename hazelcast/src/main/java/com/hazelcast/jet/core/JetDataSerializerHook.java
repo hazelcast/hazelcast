@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.connector.AbstractUpdateMapP.ApplyValuesEntryProcessor;
 import com.hazelcast.jet.impl.connector.UpdateMapP.ApplyFnEntryProcessor;
+import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -32,28 +33,15 @@ import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
  * mechanism. This is private API.
  */
 @PrivateApi
+@SuppressWarnings("checkstyle:JavadocVariable")
 public final class JetDataSerializerHook implements DataSerializerHook {
 
-    /**
-     * Serialization ID of the {@link DAG} class.
-     */
     public static final int DAG = 0;
-    /**
-     * Serialization ID of the {@link Vertex} class.
-     */
     public static final int VERTEX = 1;
-    /**
-     * Serialization ID of the {@link Edge} class.
-     */
     public static final int EDGE = 2;
-    /**
-     * Serialization ID of the {@link ApplyFnEntryProcessor} class.
-     */
     public static final int APPLY_FN_ENTRY_PROCESSOR = 3;
-    /**
-     * Serialization ID of the {@link ApplyValuesEntryProcessor} class.
-     */
     public static final int APPLY_VALUE_ENTRY_PROCESSOR = 4;
+    public static final int TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN = 5;
 
     /**
      * Factory ID
@@ -76,14 +64,16 @@ public final class JetDataSerializerHook implements DataSerializerHook {
             switch (typeId) {
                 case DAG:
                     return new DAG();
-                case EDGE:
-                    return new Edge();
                 case VERTEX:
                     return new Vertex();
+                case EDGE:
+                    return new Edge();
                 case APPLY_FN_ENTRY_PROCESSOR:
-                    return new ApplyFnEntryProcessor();
+                    return new ApplyFnEntryProcessor<>();
                 case APPLY_VALUE_ENTRY_PROCESSOR:
-                    return new ApplyValuesEntryProcessor();
+                    return new ApplyValuesEntryProcessor<>();
+                case TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN:
+                    return new ItemsDistributedFillBufferFn<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

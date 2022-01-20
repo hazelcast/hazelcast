@@ -46,11 +46,13 @@ import java.util.Map.Entry;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
- * Migration operation used by Hazelcast version 3.9
- *
- * It runs on the migration destination and applies the received fragments.
- * Sent by the partition owner to the migration destination to start the migration process on the destination.
- * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
+ * Migration operation used by Hazelcast version 3.9.
+ * <p>
+ * It runs on the migration destination and applies the received
+ * fragments. Sent by the partition owner to the migration
+ * destination to start the migration process on the destination.
+ * Contains the operations which will be executed on the destination
+ * node to migrate the data and the replica versions to be set.
  */
 public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
 
@@ -66,8 +68,9 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion,
-            ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
+    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations,
+                              int partitionStateVersion, ReplicaFragmentMigrationState fragmentMigrationState,
+                              boolean firstFragment, boolean lastFragment) {
         super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentMigrationState = fragmentMigrationState;
         this.firstFragment = firstFragment;
@@ -123,7 +126,8 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     private void checkActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
-        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration(migrationInfo.getPartitionId());
+        MigrationInfo activeMigration = partitionService.getMigrationManager()
+                .getActiveMigration(migrationInfo.getPartitionId());
         if (!migrationInfo.equals(activeMigration)) {
             throw new IllegalStateException("Unexpected active migration " + activeMigration
                     + "! First migration fragment should have set active migration to: " + migrationInfo);

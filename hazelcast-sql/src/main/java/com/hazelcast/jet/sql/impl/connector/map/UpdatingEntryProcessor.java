@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -72,7 +73,7 @@ public final class UpdatingEntryProcessor
         if (entry.getValue() == null) {
             return 0L;
         } else {
-            Object[] row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+            JetSqlRow row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
             Object value = valueProjectorSupplier.get(evalContext).project(row);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");

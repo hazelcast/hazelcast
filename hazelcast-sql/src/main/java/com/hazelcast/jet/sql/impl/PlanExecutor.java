@@ -47,6 +47,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -100,6 +101,8 @@ import static java.util.Collections.singletonList;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
+    private static final String DEFAULT_UNIQUE_KEY = "__key";
+    private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -143,8 +146,16 @@ public class PlanExecutor {
 
         if (plan.indexType().equals(IndexType.BITMAP)) {
             Map<String, String> options = plan.options();
+
             String uniqueKey = options.get(UNIQUE_KEY);
+            if (uniqueKey == null) {
+                uniqueKey = DEFAULT_UNIQUE_KEY;
+            }
+
             String uniqueKeyTransform = options.get(UNIQUE_KEY_TRANSFORMATION);
+            if (uniqueKeyTransform == null) {
+                uniqueKeyTransform = DEFAULT_UNIQUE_KEY_TRANSFORMATION;
+            }
 
             BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
             bitmapIndexOptions.setUniqueKey(uniqueKey);
@@ -153,8 +164,8 @@ public class PlanExecutor {
             indexConfig.setBitmapIndexOptions(bitmapIndexOptions);
         }
 
-        // The `addIndex()` call does nothing, if an index with the same name already exists. Even if its config
-        // is different.
+        // The `addIndex()` call does nothing, if an index with the same name already exists.
+        // Even if its config is different.
         hazelcastInstance.getMap(plan.mapName()).addIndex(indexConfig);
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
@@ -257,7 +268,10 @@ public class PlanExecutor {
         View view = new View(plan.viewName(), plan.viewQuery(), plan.isStream(), fieldNames, fieldTypes);
 
         if (plan.isReplace()) {
-            checkViewNewRowType(catalog.getView(plan.viewName()), view);
+            View existingView = catalog.getView(plan.viewName());
+            if (existingView != null) {
+                checkViewNewRowType(existingView, view);
+            }
         }
 
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
@@ -271,15 +285,24 @@ public class PlanExecutor {
 
     SqlResult execute(ShowStatementPlan plan) {
         Stream<String> rows;
-        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
-            rows = catalog.getMappingNames().stream();
-        } else {
-            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
-            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
-                    .map(record -> record.getConfig().getName())
-                    .filter(Objects::nonNull);
+
+        switch (plan.getShowTarget()) {
+            case MAPPINGS:
+                rows = catalog.getMappingNames().stream();
+                break;
+            case VIEWS:
+                rows = catalog.getViewNames().stream();
+                break;
+            case JOBS:
+                assert plan.getShowTarget() == ShowStatementTarget.JOBS;
+                NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
+                JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+                rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
+                        .map(record -> record.getConfig().getName())
+                        .filter(Objects::nonNull);
+                break;
+            default:
+                throw new AssertionError("Unsupported SHOW statement target.");
         }
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
@@ -364,13 +387,13 @@ public class PlanExecutor {
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         ExpressionEvalContext evalContext = new ExpressionEvalContext(args, serializationService);
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
-        CompletableFuture<Object[]> future = hazelcastInstance.getMap(plan.mapName())
+        CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
                 .toCompletableFuture()
                 .thenApply(value -> plan.rowProjectorSupplier()
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
-        Object[] row = await(future, timeout);
+        JetSqlRow row = await(future, timeout);
         return new SqlResultImpl(
                 queryId,
                 new StaticQueryResultProducerImpl(row),

@@ -141,7 +141,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] value) {
-        return write(fieldName, value, FieldKind.ARRAY_OF_BOOLEANS);
+        return write(fieldName, value, FieldKind.ARRAY_OF_BOOLEAN);
     }
 
     @Nonnull

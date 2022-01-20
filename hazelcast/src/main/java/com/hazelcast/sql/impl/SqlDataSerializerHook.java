@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
@@ -106,8 +105,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_FILTER_EQUALS = 6;
     public static final int INDEX_FILTER_RANGE = 7;
     public static final int INDEX_FILTER_IN = 8;
-
-    public static final int MAP_INDEX_SCAN_METADATA = 9;
 
     public static final int EXPRESSION_COLUMN = 10;
     public static final int EXPRESSION_IS_NULL = 11;
@@ -199,8 +196,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
         constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
-
-        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();

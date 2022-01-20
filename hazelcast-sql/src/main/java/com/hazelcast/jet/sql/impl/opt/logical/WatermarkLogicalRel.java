@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
@@ -29,14 +30,14 @@ import java.util.List;
 
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
 
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider;
+    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
@@ -45,7 +46,7 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
-    public FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider() {
+    public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
 

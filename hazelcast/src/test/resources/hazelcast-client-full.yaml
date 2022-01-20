@@ -280,6 +280,7 @@ hazelcast-client:
       in-memory-format: BINARY
       coalesce: false
       populate: true
+      serialize-keys: false
       eviction:
         eviction-policy: LRU
         max-size-policy: ENTRY_COUNT

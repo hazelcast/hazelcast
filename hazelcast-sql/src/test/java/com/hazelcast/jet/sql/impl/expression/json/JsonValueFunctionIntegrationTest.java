@@ -31,8 +31,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -55,48 +59,51 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
     public void when_calledWithBasicSyntax_then_varcharIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField') FROM test" ,
-                rows(1, "1"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField') FROM test" ,
-                rows(1, "2"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField') FROM test" ,
-                rows(1, "3"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField') FROM test" ,
-                rows(1, "4"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField') FROM test" ,
-                rows(1, "6"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField') FROM test" ,
-                rows(1, "7"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField') FROM test" ,
-                rows(1, "8.0"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField') FROM test" ,
-                rows(1, "9.0"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
-                rows(1, "1E+1000"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' error on error) FROM test",
+                rows(1, "127"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField') FROM test",
+                rows(1, "32767"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField') FROM test",
+                rows(1, "2147483647"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField') FROM test",
+                rows(1, "9223372036854775807"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField') FROM test",
+                rows(1, "foo"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField') FROM test",
+                rows(1, "c"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField') FROM test",
+                rows(1, "8.1"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField') FROM test",
+                rows(1, "9.123456789012345E50"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test",
+                rows(1, "Infinity"));
     }
 
     @Test
     public void when_calledWithReturning_then_correctTypeIsReturned() {
         initMultiTypeObject();
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT) FROM test" ,
-                rows(1, (byte) 1));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test" ,
-                rows(1, (short) 2));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField' RETURNING INTEGER) FROM test" ,
-                rows(1, 3));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test" ,
-                rows(1, 4L));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test" ,
-                rows(1, "6"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test" ,
-                rows(1, "7"));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField' RETURNING REAL) FROM test" ,
-                rows(1, 8.0f));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test" ,
-                rows(1, 9.0));
-        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL) FROM test" ,
-                rows(1, new BigDecimal("1e1000")));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT error on error) FROM test",
+                rows(1, Byte.MAX_VALUE));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test",
+                rows(1, Short.MAX_VALUE));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.intField' RETURNING INTEGER) FROM test",
+                rows(1, Integer.MAX_VALUE));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test",
+                rows(1, Long.MAX_VALUE));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test",
+                rows(1, "foo"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test",
+                rows(1, "c"));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.floatField' RETURNING REAL) FROM test",
+                rows(1, 8.1f));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test",
+                rows(1, 9.123456789012345e50));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL error on error) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot convert infinite DOUBLE to DECIMAL");
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DECIMAL) FROM test",
+                rows(1, new BigDecimal("912345678901234469174827437827584684254557974298624")));
     }
 
     @Test
@@ -110,7 +117,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSON argument is empty");
+                .hasMessageContaining("JSON_VALUE evaluated to no value");
 
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test WHERE __key = 2"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
@@ -147,7 +154,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
+                .hasMessageContaining("Result of JSON_VALUE cannot be array or object");
     }
 
     @Test
@@ -160,7 +167,7 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
+                .hasMessageContaining("Result of JSON_VALUE cannot be array or object");
     }
 
     @Test
@@ -197,31 +204,79 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
 
     @Test
     public void test_invalidJsonPath() {
-        createMapping("test", Long.class, ObjectWithJson.class);
+        createMapping("test", Long.class, String.class);
 
-        instance().getSql().execute("INSERT INTO test (__key, jsonValue) VALUES (1, '[1,2,3]')");
+        instance().getSql().execute("INSERT INTO test (__key, this) VALUES (1, '[1,2,3]')");
 
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '') FROM test"))
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, '$((@@$#229))') FROM test"))
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, column 0");
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$((@@$#229))') FROM test"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid JSONPath expression");
-        assertThatThrownBy(() -> query("SELECT JSON_VALUE(jsonValue, jsonPath) FROM test"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageEndingWith("Invalid SQL/JSON path expression: Unexpected token at line 1, columns 1 to 2");
     }
 
     @Test
     public void test_nullLiteral() {
         assertThatThrownBy(() -> query("SELECT JSON_VALUE(null, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
         assertThatThrownBy(() -> query("SELECT JSON_VALUE('foo', null)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("JSONPath expression can not be null");
-        assertNull(querySingleValue("SELECT JSON_VALUE(null, 'foo')"));
+                .hasMessageContaining("SQL/JSON path expression cannot be null");
+        assertNull(querySingleValue("SELECT JSON_VALUE(null, '$.foo')"));
         assertNull(querySingleValue("SELECT JSON_VALUE('bad json', '$' default null on error)"));
+        // this query extracts a null JSON value, which is returned as a null SQL value
+        assertNull(querySingleValue("SELECT JSON_VALUE('{\"a\":null}', '$.a')"));
+    }
+
+    @Test
+    public void test_quotedPropName() {
+        final IMap<Long, String> test = instance().getMap("test");
+        test.put(1L, "{\"first name\":\"value\"}");
+        createMapping("test", Long.class, String.class);
+        assertEquals("value",
+            querySingleValue("SELECT JSON_VALUE(this, '$.\"first name\"' DEFAULT 1 ON ERROR) FROM test"));
+    }
+
+    @Test
+    public void test_nonExistingProp() {
+        initMultiTypeObject();
+        createMapping("test", "bigint", "json");
+        assertNull(querySingleValue(
+                "SELECT JSON_VALUE(this, '$.nonExistingProperty' NULL ON EMPTY DEFAULT 2 ON ERROR) "
+                        + "AS c1 FROM test WHERE __key = 1"
+        ));
+        assertEquals((byte) 1, querySingleValue(
+                "SELECT JSON_VALUE(this, '$.nonExistingProperty' DEFAULT 1 ON EMPTY DEFAULT 2 ON ERROR) "
+                        + "AS c1 FROM test WHERE __key = 1"
+        ));
+        assertThatThrownBy(() -> query(
+                "SELECT JSON_VALUE(this, '$.nonExistingProperty' ERROR ON EMPTY DEFAULT 2 ON ERROR) "
+                        + "AS c1 FROM test WHERE __key = 1"
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("JSON_VALUE evaluated to no value");
+    }
+
+    @Test
+    public void test_returningDateTypes() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        final String jsonStr = "["
+                + "\"2020-01-01\","
+                + "\"2020-01-01 13:00:00\","
+                + "\"13:00:00\","
+                + "\"2020-01-01T13:00:00Z\""
+                + "]";
+        test.put(1L, json(jsonStr));
+        createMapping("test", "bigint", "json");
+
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[0]' RETURNING DATE) FROM test",
+                rows(1, LocalDate.of(2020, 1, 1)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[1]' RETURNING TIMESTAMP) FROM test",
+                rows(1, LocalDateTime.of(2020, 1, 1, 13, 0, 0)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[2]' RETURNING TIME) FROM test",
+                rows(1, LocalTime.of(13, 0, 0)));
+        assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[3]' RETURNING TIMESTAMP WITH TIME ZONE) FROM test",
+                rows(1, OffsetDateTime.of(2020, 1, 1, 13, 0, 0, 0, ZoneOffset.UTC)));
     }
 
     private void initMultiTypeObject() {
@@ -236,20 +291,16 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
         test.put(1L, new HazelcastJsonValue(serializedValue));
     }
 
+    @SuppressWarnings("unused")
     private static class MultiTypeObject {
-        public Byte byteField = 1;
-        public Short shortField = 2;
-        public Integer intField = 3;
-        public Long longField = 4L;
-        public String stringField = "6";
-        public Character charField = '7';
-        public Float floatField = 8.0f;
-        public Double doubleField = 9.0;
+        public Byte byteField = Byte.MAX_VALUE;
+        public Short shortField = Short.MAX_VALUE;
+        public Integer intField = Integer.MAX_VALUE;
+        public Long longField = Long.MAX_VALUE;
+        public String stringField = "foo";
+        public Character charField = 'c';
+        public Float floatField = 8.1f;
+        public Double doubleField = 9.123456789012345e50;
         public BigDecimal bigDecimalField = new BigDecimal("1e1000");
-    }
-
-    public static class ObjectWithJson implements Serializable {
-        public String jsonValue;
-        public String jsonPath;
     }
 }

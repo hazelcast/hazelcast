@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -69,11 +70,17 @@ public class TcpServerConnection implements ServerConnection {
 
     private final ILogger logger;
 
+    // Flag that indicates if the connection is accepted on this member (server-side)
+    // See also TcpServerAcceptor and TcpServerConnector
+    private final boolean acceptorSide;
+
     private final int connectionId;
 
     private final ServerContext serverContext;
 
     private Address remoteAddress;
+
+    private UUID remoteUuid;
 
     private TcpServerConnectionErrorHandler errorHandler;
 
@@ -89,13 +96,16 @@ public class TcpServerConnection implements ServerConnection {
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
                                int connectionId,
-                               Channel channel) {
+                               Channel channel,
+                               boolean acceptorSide
+    ) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.lifecycleListener = lifecycleListener;
         this.serverContext = connectionManager.getServer().getContext();
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnection.class);
         this.channel = channel;
+        this.acceptorSide = acceptorSide;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
     }
@@ -175,8 +185,23 @@ public class TcpServerConnection implements ServerConnection {
         return remoteAddress;
     }
 
+    @Override
     public void setRemoteAddress(Address remoteAddress) {
         this.remoteAddress = remoteAddress;
+    }
+
+    @Override
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
+    @Override
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
+    }
+
+    public boolean isAcceptorSide() {
+        return acceptorSide;
     }
 
     public void setErrorHandler(TcpServerConnectionErrorHandler errorHandler) {
@@ -237,6 +262,7 @@ public class TcpServerConnection implements ServerConnection {
             .addParameter("reason", reason)
             .addParameter("cause", cause)
             .addParameter("remoteAddress", remoteAddress)
+            .addParameter("remoteUuid", remoteUuid)
             .log();
 
         logClose();
@@ -328,6 +354,7 @@ public class TcpServerConnection implements ServerConnection {
                 + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", qualifier=" + connectionManager.getEndpointQualifier()
                 + ", endpoint=" + remoteAddress
+                + ", remoteUuid=" + remoteUuid
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
                 + ", planeIndex=" + planeIndex

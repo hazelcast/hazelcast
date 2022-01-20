@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -64,7 +65,7 @@ public final class WindowUtils {
      *  @return row with inserted bounds
      */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static Object[] insertWindowBound(Object[] row, long windowStart, long windowEnd, int[] mapping) {
+    public static JetSqlRow insertWindowBound(JetSqlRow row, long windowStart, long windowEnd, int[] mapping) {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
@@ -74,10 +75,10 @@ public final class WindowUtils {
             } else if (mapping[i] == -2) {
                 result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
             } else {
-                result[i] = row[mapping[i]];
+                result[i] = row.get(mapping[i]);
             }
         }
-        return result;
+        return new JetSqlRow(row.getSerializationService(), result);
     }
 
     /**
@@ -86,21 +87,21 @@ public final class WindowUtils {
      * traverser always contains a single row. For hopping windows, it
      * contains multiple rows.
      */
-    public static Traverser<Object[]> addWindowBounds(Object[] row, int timeStampIndex, SlidingWindowPolicy windowPolicy) {
-        Object value = row[timeStampIndex];
+    public static Traverser<JetSqlRow> addWindowBounds(JetSqlRow row, int timeStampIndex, SlidingWindowPolicy windowPolicy) {
+        Object value = row.get(timeStampIndex);
         if (value == null) {
-            return Traversers.singleton(Arrays.copyOf(row, row.length + 2));
+            return Traversers.singleton(row.extendedRow(2));
         }
         long millis = extractMillis(value);
 
         long slideStep = windowPolicy.frameSize();
         long firstWindowStart = windowPolicy.floorFrameTs(millis - windowPolicy.windowSize() + slideStep);
 
-        return new Traverser<Object[]>() {
+        return new Traverser<JetSqlRow>() {
             long currentStart = firstWindowStart;
 
             @Override
-            public Object[] next() {
+            public JetSqlRow next() {
                 if (currentStart >= firstWindowStart + windowPolicy.windowSize()) {
                     return null;
                 }
@@ -113,41 +114,34 @@ public final class WindowUtils {
         };
     }
 
-    private static Object[] addWindowBoundsSingleRow(Object[] row, Object timeStamp, long windowStart, long windowEnd) {
-        Object[] result = Arrays.copyOf(row, row.length + 2);
+    private static JetSqlRow addWindowBoundsSingleRow(JetSqlRow row, Object timeStamp, long windowStart, long windowEnd) {
+        Object[] result = Arrays.copyOf(row.getValues(), row.getFieldCount() + 2);
         if (timeStamp instanceof Byte) {
             result[result.length - 2] = (byte) windowStart;
             result[result.length - 1] = (byte) windowEnd;
-            return result;
         } else if (timeStamp instanceof Short) {
             result[result.length - 2] = (short) windowStart;
             result[result.length - 1] = (short) windowEnd;
-            return result;
         } else if (timeStamp instanceof Integer) {
             result[result.length - 2] = (int) windowStart;
             result[result.length - 1] = (int) windowEnd;
-            return result;
         } else if (timeStamp instanceof Long) {
             result[result.length - 2] = windowStart;
             result[result.length - 1] = windowEnd;
-            return result;
         } else if (timeStamp instanceof LocalTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalTime();
-            return result;
         } else if (timeStamp instanceof LocalDate) {
             result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalDate();
             result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalDate();
-            return result;
         } else if (timeStamp instanceof LocalDateTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE).toLocalDateTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE).toLocalDateTime();
-            return result;
         } else {
             result[result.length - 2] = asTimestampWithTimezone(windowStart, DEFAULT_ZONE);
             result[result.length - 1] = asTimestampWithTimezone(windowEnd, DEFAULT_ZONE);
-            return result;
         }
+        return new JetSqlRow(row.getSerializationService(), result);
     }
 
     public static long extractMillis(Object value) {
@@ -159,8 +153,10 @@ public final class WindowUtils {
             return QueryDataType.DATE.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
         } else if (value instanceof LocalDateTime) {
             return QueryDataType.TIMESTAMP.getConverter().asTimestampWithTimezone(value).toInstant().toEpochMilli();
-        } else {
+        } else if (value instanceof OffsetDateTime) {
             return ((OffsetDateTime) value).toInstant().toEpochMilli();
+        } else {
+            return value.hashCode();
         }
     }
 

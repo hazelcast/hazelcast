@@ -61,7 +61,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getBoolean(fieldName));
             }
         };
-        ALL[FieldKind.ARRAY_OF_BOOLEANS.getId()] = new FieldKindBasedOperations() {
+        ALL[FieldKind.ARRAY_OF_BOOLEAN.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getArrayOfBoolean(fieldName);

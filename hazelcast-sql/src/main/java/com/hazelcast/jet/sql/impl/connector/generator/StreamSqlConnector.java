@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -92,14 +93,14 @@ class StreamSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
         StreamTable table = (StreamTable) table0;
-        StreamSourceTransform<Object[]> source = (StreamSourceTransform<Object[]>) table.items(predicate, projections);
+        StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) table.items(predicate, projections);
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return dag.newUniqueVertex(table.toString(), pms);
     }

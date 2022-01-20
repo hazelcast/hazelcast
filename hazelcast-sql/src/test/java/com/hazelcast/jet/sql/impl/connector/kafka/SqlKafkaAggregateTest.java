@@ -108,7 +108,7 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                 "SELECT window_start, window_end, SUM(__key) FROM " +
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2))), " +
-                        "DESCRIPTOR(__key), 2, 4)) " +
+                        "DESCRIPTOR(__key), 4, 2)) " +
                         "GROUP BY window_start, window_end",
                 asList(
                         new Row(timestampTz(-2L), timestampTz(2L), 0L),

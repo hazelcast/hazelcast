@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
@@ -41,8 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,6 +50,9 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.Accessors.getAddress;
@@ -417,7 +419,7 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Fills the {@link #addressMap} with a list of addresses with the provided
-     * hosts and and starting with the provided {@code initialPort} port.
+     * hosts and starting with the provided {@code initialPort} port.
      *
      * @param initialPort the initial port for the returned addresses
      * @param hostArray   the array with the address hostnames
@@ -437,7 +439,13 @@ public class TestHazelcastInstanceFactory {
 
     public static Config initOrCreateConfig(Config config) {
         if (config == null) {
-            config = new XmlConfigBuilder().build();
+            if (System.getProperty(SYSPROP_MEMBER_CONFIG) != null
+                    && isAcceptedSuffixConfigured(System.getProperty(SYSPROP_MEMBER_CONFIG), YAML_ACCEPTED_SUFFIXES)
+            ) {
+                config = new YamlConfigBuilder().build();
+            } else {
+                config = new XmlConfigBuilder().build();
+            }
             config.getJetConfig().setEnabled(true);
         }
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
@@ -458,13 +466,7 @@ public class TestHazelcastInstanceFactory {
         }
         final TestNodeRegistry registry = getRegistry();
         synchronized (addressMap) {
-            final Iterator<Entry<Integer, Address>> addressIterator = addressMap.entrySet().iterator();
-            while (addressIterator.hasNext()) {
-                final Entry<Integer, Address> entry = addressIterator.next();
-                if (registry.getInstance(entry.getValue()) == null) {
-                    addressIterator.remove();
-                }
-            }
+            addressMap.entrySet().removeIf(entry -> registry.getInstance(entry.getValue()) == null);
         }
     }
 }

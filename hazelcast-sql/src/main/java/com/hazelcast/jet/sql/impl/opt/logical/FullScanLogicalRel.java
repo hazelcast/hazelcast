@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
@@ -34,7 +35,7 @@ public class FullScanLogicalRel extends FullScan implements LogicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);

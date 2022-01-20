@@ -32,7 +32,7 @@ import com.hazelcast.spi.annotation.Beta;
 public enum FieldKind {
 
     BOOLEAN(0),
-    ARRAY_OF_BOOLEANS(1),
+    ARRAY_OF_BOOLEAN(1),
     INT8(2),
     ARRAY_OF_INT8(3),
     CHAR(4),

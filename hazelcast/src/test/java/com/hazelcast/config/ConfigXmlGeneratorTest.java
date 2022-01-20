@@ -59,7 +59,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -384,6 +383,21 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testDynamicConfigurationConfig() {
+        DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig()
+                .setPersistenceEnabled(true)
+                .setPersistenceFile(new File("persistence-file").getAbsoluteFile())
+                .setBackupDir(new File("backup-dir").getAbsoluteFile())
+                .setBackupCount(7);
+
+        Config config = new Config().setDynamicConfigurationConfig(dynamicConfigurationConfig);
+
+        Config xmlConfig = getNewConfigViaGenerator(config);
+
+        ConfigCompatibilityChecker.checkDynamicConfigurationConfig(dynamicConfigurationConfig, xmlConfig.getDynamicConfigurationConfig());
     }
 
     @Test
@@ -1454,9 +1468,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
         LOGGER.fine("\n" + xml);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        return configBuilder.build();
+        return new InMemoryXmlConfig(xml);
     }
 
     private static TcpIpConfig tcpIpConfig() {

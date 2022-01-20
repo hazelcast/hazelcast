@@ -995,6 +995,13 @@
         <rebalance-delay-seconds>240</rebalance-delay-seconds>
     </persistence>
 
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <persistence-file>/mnt/persistence-file</persistence-file>
+        <backup-dir>/mnt/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
+
     <local-device name="my-local-device">
         <base-dir>base-dir</base-dir>
         <block-size>4096</block-size>

@@ -39,7 +39,7 @@ import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
@@ -300,7 +300,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] values) {
-        writeVariableSizeField(fieldName, ARRAY_OF_BOOLEANS, values, DefaultCompactWriter::writeBooleanBits);
+        writeVariableSizeField(fieldName, ARRAY_OF_BOOLEAN, values, DefaultCompactWriter::writeBooleanBits);
     }
 
     @Override

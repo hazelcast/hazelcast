@@ -158,7 +158,7 @@ public class SampleMetadataResolverTest {
     public void test_compact() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(CompactClass.class, "class-name", new CompactClass.CompactClassSerializer());
+                .register(CompactClass.class, "type-name", new CompactClass.CompactClassSerializer());
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig)
@@ -170,7 +170,7 @@ public class SampleMetadataResolverTest {
         );
         assertThat(metadata.options()).containsExactly(
                 entry(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, COMPACT_FORMAT),
-                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "class-name")
+                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "type-name")
         );
 
         metadata = SampleMetadataResolver.resolve(ss, ss.toData(new CompactClass(1)), key);
@@ -179,7 +179,7 @@ public class SampleMetadataResolverTest {
         );
         assertThat(metadata.options()).containsExactly(
                 entry(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, COMPACT_FORMAT),
-                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "class-name")
+                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "type-name")
         );
     }
 
@@ -192,22 +192,22 @@ public class SampleMetadataResolverTest {
                 .setConfig(serializationConfig)
                 .build();
 
-        Metadata metadata = SampleMetadataResolver.resolve(ss, GenericRecordBuilder.compact("class-name").setInt32("field", 1).build(), key);
+        Metadata metadata = SampleMetadataResolver.resolve(ss, GenericRecordBuilder.compact("type-name").setInt32("field", 1).build(), key);
         assertThat(metadata.fields()).containsExactly(
                 new MappingField("field", QueryDataType.INT, (key ? KEY : VALUE) + ".field")
         );
         assertThat(metadata.options()).containsExactly(
                 entry(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, COMPACT_FORMAT),
-                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "class-name")
+                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "type-name")
         );
 
-        metadata = SampleMetadataResolver.resolve(ss, ss.toData(GenericRecordBuilder.compact("class-name").setInt32("field", 1).build()), key);
+        metadata = SampleMetadataResolver.resolve(ss, ss.toData(GenericRecordBuilder.compact("type-name").setInt32("field", 1).build()), key);
         assertThat(metadata.fields()).containsExactly(
                 new MappingField("field", QueryDataType.INT, (key ? KEY : VALUE) + ".field")
         );
         assertThat(metadata.options()).containsExactly(
                 entry(key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT, COMPACT_FORMAT),
-                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "class-name")
+                entry(key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME, "type-name")
         );
     }
 

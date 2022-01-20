@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -70,7 +70,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.
  */
-public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
+public class RingbufferService implements ManagedService, RemoteService, ChunkedMigrationAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService {
 
     /**
@@ -271,7 +271,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
             return null;
         }
         return new ReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-
     }
 
     @Override

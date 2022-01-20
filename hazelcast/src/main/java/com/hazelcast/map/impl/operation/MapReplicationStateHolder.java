@@ -321,7 +321,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
         out.writeInt(storesByMapName.size());
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
@@ -375,7 +374,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 throw ExceptionUtil.rethrow(e);
             }
         }, operation.getReplicaIndex() != 0, true);
-        statsByMapName.get(recordStore.getName()).incrementFullPartitionReplicationRecordsCount(recordStore.size());
+        LocalReplicationStatsImpl replicationStats = statsByMapName.get(recordStore.getName());
+        replicationStats.incrementFullPartitionReplicationCount();
+        replicationStats.incrementFullPartitionReplicationRecordsCount(recordStore.size());
     }
 
     protected static SerializationService getSerializationService(MapContainer mapContainer) {

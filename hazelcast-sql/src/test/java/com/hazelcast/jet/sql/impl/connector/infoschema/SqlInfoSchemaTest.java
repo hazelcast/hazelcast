@@ -36,9 +36,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class SqlInfoSchemaTest extends SqlTestSupport {
 
+    private static final String LE = System.lineSeparator();
+
     private static SqlService sqlService;
 
     private final String mappingName = randomName();
+    private final String viewName = randomName();
     private final String mappingExternalName = "my_map";
 
     @BeforeClass
@@ -58,8 +61,23 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         + '\'' + OPTION_KEY_FORMAT + "'='int'\n"
                         + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                         + ", '" + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'\n"
-                        + ")"
-        );
+                        + ")");
+        sqlService.execute("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
+    }
+
+    @Test
+    public void test_tables() {
+        assertRowsAnyOrder(
+                "SELECT * FROM information_schema.tables",
+                asList(
+                        new Row("hazelcast", "public", mappingName,
+                                "BASE TABLE",
+                                null, null, null, null, null,
+                                "YES", "NO", null),
+                        new Row("hazelcast", "public", viewName,
+                                "VIEW",
+                                null, null, null, null, null,
+                                "NO", "NO", null)));
     }
 
     @Test
@@ -83,12 +101,29 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_views() {
+        assertRowsAnyOrder(
+                "SELECT * FROM information_schema.views",
+                singletonList(new Row(
+                        "hazelcast",
+                        "public",
+                        viewName,
+                        "SELECT \"" + mappingName + "\".\"__key\", \"" + mappingName + "\".\"__value\"" + LE +
+                                "FROM \"hazelcast\".\"public\".\"" + mappingName + "\" AS \"" + mappingName + '"',
+                        "NONE",
+                        "NO",
+                        "NO")));
+    }
+
+    @Test
     public void test_columns() {
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.columns",
                 asList(
                         new Row("hazelcast", "public", mappingName, "__key", "__key", 1, "true", "INTEGER"),
-                        new Row("hazelcast", "public", mappingName, "__value", "this.value", 2, "true", "VARCHAR")
+                        new Row("hazelcast", "public", mappingName, "__value", "this.value", 2, "true", "VARCHAR"),
+                        new Row("hazelcast", "public", viewName, "__key", null, 1, "true", "INTEGER"),
+                        new Row("hazelcast", "public", viewName, "__value", null, 2, "true", "VARCHAR")
                 )
         );
     }
@@ -100,7 +135,9 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         + "FROM information_schema.columns "
                         + "WHERE column_name = ?",
                 asList("-p", "__value"),
-                singletonList(new Row(mappingName, "HAZELCAST-P", "__value", "VARCHAR"))
+                asList(
+                        new Row(mappingName, "HAZELCAST-P", "__value", "VARCHAR"),
+                        new Row(viewName, "HAZELCAST-P", "__value", "VARCHAR"))
         );
     }
 
@@ -110,8 +147,9 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                 "SELECT table_name, UPPER(table_catalog), column_name, data_type "
                         + "FROM information_schema.columns "
                         + "WHERE column_name = '__value'",
-                singletonList(
-                        new Row(mappingName, "HAZELCAST", "__value", "VARCHAR")
+                asList(
+                        new Row(mappingName, "HAZELCAST", "__value", "VARCHAR"),
+                        new Row(viewName, "HAZELCAST", "__value", "VARCHAR")
                 )
         );
     }
@@ -127,10 +165,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
 
     @Test
     public void test_planCache_columns() {
-        assertRowsAnyOrder(
-                "SELECT column_name FROM information_schema.columns WHERE ordinal_position = 2",
-                singletonList(new Row("__value"))
-        );
+        sqlService.execute("SELECT column_name FROM information_schema.columns WHERE ordinal_position = 2");
         assertThat(planCache(instance()).size()).isZero();
     }
 

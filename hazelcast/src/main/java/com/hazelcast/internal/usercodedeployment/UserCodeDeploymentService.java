@@ -69,7 +69,13 @@ public final class UserCodeDeploymentService implements ManagedService {
 
     public void defineClasses(List<Map.Entry<String, byte[]>> classDefinitions) {
         if (!enabled) {
-            throw new IllegalStateException("User Code Deployment is not enabled.");
+            throw new IllegalStateException("User Code Deployment is not enabled. "
+                    + "To enable User Code Deployment, please do one of the following:\n"
+                    + "- Change member config using JAVA API: "
+                    + "config.getUserCodeDeploymentConfig().setEnabled(true);\n"
+                    + "- Change XML/YAML configuration property: Set hazelcast.user-code-deployment.enabled to true\n"
+                    + "- Add system property: -Dhz.user-code-deployment.enabled=true\n"
+                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true");
         }
         locator.defineClassesFromClient(classDefinitions);
     }

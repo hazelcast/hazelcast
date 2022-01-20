@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -54,8 +55,9 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
+
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }

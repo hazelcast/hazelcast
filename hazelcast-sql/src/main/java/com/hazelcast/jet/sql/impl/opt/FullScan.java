@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
@@ -31,14 +32,14 @@ import static java.util.Collections.emptyList;
 
 public abstract class FullScan extends TableScan {
 
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider;
+    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private final int watermarkedColumnIndex;
 
     protected FullScan(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, emptyList(), table);
@@ -49,7 +50,7 @@ public abstract class FullScan extends TableScan {
     }
 
     @Nullable
-    public FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider() {
+    public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
 

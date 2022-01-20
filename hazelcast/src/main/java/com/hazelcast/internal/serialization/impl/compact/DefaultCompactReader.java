@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -248,7 +248,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public boolean[] readArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] defaultValue) {
-        return isFieldExists(fieldName, ARRAY_OF_BOOLEANS) ? getArrayOfBoolean(fieldName) : defaultValue;
+        return isFieldExists(fieldName, ARRAY_OF_BOOLEAN) ? getArrayOfBoolean(fieldName) : defaultValue;
     }
 
     @Override
@@ -351,24 +351,24 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName) {
+    public LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName) {
         return getArrayOfTimestamp(fieldName);
     }
 
     @Nullable
     @Override
-    public LocalDateTime[] readArrayOfTimetamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue) {
+    public LocalDateTime[] readArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_TIMESTAMP) ? getArrayOfTimestamp(fieldName) : defaultValue;
     }
 
     @Override
-    public OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName) {
+    public OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return getArrayOfTimestampWithTimezone(fieldName);
     }
 
     @Nullable
     @Override
-    public OffsetDateTime[] readArrayOfTimetampWithTimezone(@Nonnull String fieldName,
+    public OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName,
                                                              @Nullable OffsetDateTime[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)
                 ? getArrayOfTimestampWithTimezone(fieldName) : defaultValue;

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -18,10 +18,11 @@ package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -46,7 +47,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected List<Expression<?>> projection;
     protected Expression<Boolean> remainingFilter;
     protected IndexFilter filter;
-    protected ComparatorEx<Object[]> comparator;
+    protected ComparatorEx<JetSqlRow> comparator;
     protected boolean descending;
 
     public MapIndexScanMetadata() {
@@ -64,7 +65,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
             IndexFilter filter,
             List<Expression<?>> projections,
             Expression<Boolean> remainingFilter,
-            ComparatorEx<Object[]> comparator,
+            ComparatorEx<JetSqlRow> comparator,
             boolean descending
     ) {
         this.mapName = mapName;
@@ -116,7 +117,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         return remainingFilter;
     }
 
-    public ComparatorEx<Object[]> getComparator() {
+    public ComparatorEx<JetSqlRow> getComparator() {
         return comparator;
     }
 
@@ -196,11 +197,11 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.MAP_INDEX_SCAN_METADATA;
+        return JetSqlSerializerHook.MAP_INDEX_SCAN_METADATA;
     }
 }
