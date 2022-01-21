@@ -42,7 +42,7 @@ public final class ObjectArrayKey implements DataSerializable {
     }
 
     public boolean containsNull() {
-        for (Object o : array) {
+        for (Object o : keyFields) {
             if (o == null) {
                 return true;
             }
