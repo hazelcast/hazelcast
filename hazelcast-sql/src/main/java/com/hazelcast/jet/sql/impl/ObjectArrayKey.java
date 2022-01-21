@@ -41,6 +41,15 @@ public final class ObjectArrayKey implements DataSerializable {
         this.keyFields = keyFields;
     }
 
+    public boolean containsNull() {
+        for (Object o : array) {
+            if (o == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(keyFields.length);
