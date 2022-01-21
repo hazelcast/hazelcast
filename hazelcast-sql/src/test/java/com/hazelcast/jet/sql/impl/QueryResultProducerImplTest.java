@@ -22,7 +22,6 @@ import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,7 +65,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(TIMEOUT);
                 semaphore.release();
                 assertThat(iterator.hasNext()).isTrue();
-                assertInstanceOf(Row.class, iterator.next());
+                assertInstanceOf(JetSqlRow.class, iterator.next());
                 semaphore.release();
                 assertThat(iterator.hasNext()).isFalse();
                 assertThatThrownBy(iterator::next)
