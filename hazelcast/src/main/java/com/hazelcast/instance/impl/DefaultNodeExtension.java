@@ -127,7 +127,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
-import static com.hazelcast.internal.config.XmlConfigLocator.DEFAULT_CONFIG_NAME;
+import static com.hazelcast.internal.config.AbstractConfigLocator.isDefaultConfigFile;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
@@ -221,7 +221,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                 );
             }
 
-            if (config.getConfigurationFile().getName().equals(DEFAULT_CONFIG_NAME)) {
+            if (isDefaultConfigFile(config.getConfigurationFile())) {
                 throw new InvalidConfigurationException(
                         "Please don't use default configuration with Dynamic Configuration Persistence."
                 );

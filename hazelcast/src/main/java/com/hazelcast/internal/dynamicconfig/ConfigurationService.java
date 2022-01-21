@@ -37,7 +37,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Dynamic configurations.
@@ -64,7 +63,7 @@ public interface ConfigurationService {
      *
      * @param licenseKey new license key to set
      */
-    void updateLicense(String licenseKey) throws ExecutionException, InterruptedException;
+    void updateLicense(String licenseKey);
 
     /**
      * Persists any dynamically changeable sub configuration to this member's

@@ -32,7 +32,7 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_S
  */
 public class XmlConfigLocator extends AbstractConfigLocator {
 
-    public static final String DEFAULT_CONFIG_NAME = "hazelcast-default.xml";
+    public static final String DEFAULT_CONFIG_FILE_NAME_XML = "hazelcast-default.xml";
 
     @Override
     public boolean locateFromSystemProperty() {
@@ -56,7 +56,7 @@ public class XmlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath(DEFAULT_CONFIG_NAME);
+        loadDefaultConfigurationFromClasspath(DEFAULT_CONFIG_FILE_NAME_XML);
         return true;
     }
 }

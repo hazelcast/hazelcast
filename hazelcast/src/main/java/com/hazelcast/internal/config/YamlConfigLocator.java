@@ -30,6 +30,8 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_
  */
 public class YamlConfigLocator extends AbstractConfigLocator {
 
+    static final String DEFAULT_CONFIG_FILE_NAME_YAML = "hazelcast-default.yaml";
+
     @Override
     public boolean locateFromSystemProperty() {
         return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, YAML_ACCEPTED_SUFFIXES);
@@ -52,7 +54,7 @@ public class YamlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath("hazelcast-default.yaml");
+        loadDefaultConfigurationFromClasspath(DEFAULT_CONFIG_FILE_NAME_YAML);
         return true;
     }
 }

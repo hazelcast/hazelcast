@@ -22,7 +22,7 @@ import com.hazelcast.config.InMemoryXmlConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -30,13 +30,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.licenseKeyXmlGenerator;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
-// Serial because there is one test, make parallel otherwise
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DynamicConfigXmlGeneratorTest {
+public class DynamicConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
     private static final ILogger LOGGER = Logger.getLogger(DynamicConfigXmlGeneratorTest.class);
 
@@ -70,5 +68,14 @@ public class DynamicConfigXmlGeneratorTest {
         // test
         String actualLicenseKey = decConfig.getLicenseKey();
         assertEquals(config.getLicenseKey(), actualLicenseKey);
+    }
+
+    @Override
+    protected Config getNewConfigViaGenerator(Config config) {
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, true);
+        String xml = configXmlGenerator.generate(config);
+        LOGGER.fine("\n" + xml);
+        return new InMemoryXmlConfig(xml);
+
     }
 }

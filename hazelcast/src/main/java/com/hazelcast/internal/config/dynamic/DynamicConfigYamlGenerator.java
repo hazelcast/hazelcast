@@ -126,7 +126,7 @@ public class DynamicConfigYamlGenerator {
     }
 
     public static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config) {
-        parent.put(LICENSE_KEY.getName(), config.getLicenseKey());
+        addNonNullToMap(parent, LICENSE_KEY.getName(), config.getLicenseKey());
     }
 
     @SuppressWarnings("checkstyle:MethodLength")
