@@ -22,6 +22,8 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +53,8 @@ public final class ClassLoaderUtil {
     private static final ClassLoaderWeakCache<Constructor> CONSTRUCTOR_CACHE = new ClassLoaderWeakCache<Constructor>();
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
+
+    private static final ClassLoader FAKE_CLASSLOADER = new URLClassLoader(new URL[0]);
 
     static {
         try {
@@ -253,7 +257,7 @@ public final class ClassLoaderUtil {
         if (contextClassLoader != null) {
             return tryLoadClass(className, contextClassLoader);
         }
-        return Class.forName(className);
+        return tryLoadClass(className, FAKE_CLASSLOADER);
     }
 
     private static boolean belongsToHazelcastPackage(String className) {
@@ -288,7 +292,9 @@ public final class ClassLoaderUtil {
             }
         }
 
-        if (className.startsWith("[")) {
+        if (classLoader == FAKE_CLASSLOADER) {
+            clazz = Class.forName(className);
+        } else if (className.startsWith("[")) {
             clazz = Class.forName(className, false, classLoader);
         } else {
             clazz = classLoader.loadClass(className);
