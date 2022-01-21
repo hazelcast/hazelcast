@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -26,7 +27,9 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -177,6 +180,27 @@ public final class XmlUtil {
                 closeResource(xmlOutput.getWriter());
             }
         }
+    }
+
+    /**
+     * Returns {@code true} if the event location of start and end element might be incorrect for the {@link XMLInputFactory}.
+     */
+    public static boolean hasBuggyXMLEventReaderLocation() {
+        try {
+            XMLEventReader reader = XMLInputFactory.newFactory().createXMLEventReader(new StringReader(" <a/>"));
+            XMLEvent xmlEvent = null;
+            while (reader.hasNext()) {
+                xmlEvent = reader.nextEvent();
+                if (xmlEvent.getEventType() == XMLEvent.START_ELEMENT) {
+                    int pos = xmlEvent.getLocation().getCharacterOffset();
+                    // if offset is supported (!=-1), then the start element offset should be equal to 1
+                    return pos > 1;
+                }
+            }
+        } catch (Exception e) {
+            ignore(e);
+        }
+        return false;
     }
 
     /**
