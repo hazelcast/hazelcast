@@ -36,7 +36,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.emptyMap;
 
