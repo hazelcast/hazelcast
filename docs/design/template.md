@@ -117,7 +117,7 @@ Some of these prompts may not be relevant to your design document; in which case
 
 - Stability questions:
   - Can this new functionality affect the stability of a node or the entire cluster? How does the behavior of a node or a cluster degrade if there is an error in the implementation?
-  - Can the new functionality be disabled? Can a user opt out? How?
+  - Can the new functionality be disabled? Can a user opt out? How? Can the user disable it from the Management Center?
   - Can the new functionality affect clusters which are not explicitly using it?
   - What testing and safe guards are being put in place to protect against unexpected problems?
 
@@ -143,6 +143,10 @@ Some of these prompts may not be relevant to your design document; in which case
     - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
     - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
   - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
+  - What might be the valuable metrics that could be shown for this feature in Management Center?
+  - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
+  - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
+  - Are usage statistics for this feature reported in Phone Home? If not, why?
 
 The section should return to the user stories in the motivations section, and explain more fully how the detailed proposal makes those stories work.
 
@@ -153,7 +157,7 @@ Describe testing approach to developed functionality
 - Security related tests?
 - Negative tests?
 - Stress tests?
-- Tests related to deployment on AWS or Kubernetes? See [Hazelcast Guides](https://guides.hazelcast.org/home/) for examples on deployments, [Connect To Hazelcast Running on Kubernetes from Outside](https://guides.hazelcast.org/kubernetes-external-client/) and [GH workflow](https://github.com/hazelcast-guides/kubernetes-external-client/blob/main/.github/workflows/integrational-tests.yml) for example of automated tests and [Create automated tests in Kubernetes/OpenShift for enterprise features](https://hazelcast.atlassian.net/browse/CN-150) for JIRA task on automated testing of EE features.
+- Tests related to deployment on AWS or Kubernetes? See [Hazelcast Guides](https://guides.hazelcast.org/home/) for examples on deployments, [Connect To Hazelcast Running on Kubernetes from Outside](https://guides.hazelcast.org/kubernetes-external-client/) and [GH workflow](https://github.com/hazelcast-guides/kubernetes-external-client/blob/main/.github/workflows/integrational-tests.yml) for example of automated tests and [Create automated tests in Kubernetes/OpenShift for enterprise features](https://hazelcast.atlassian.net/browse/CN-150) for JIRA task on automated testing of EE features. For more information about testing in kubernetes please see [here](https://guides.hazelcast.org/kubernetes/) and [here](https://docs.hazelcast.com/hazelcast/5.0/deploy/deploying-in-kubernetes), for testing in AWS, GCP and Azure please see [here](https://guides.hazelcast.org/terraform-quickstarts/).
 
 Provide references to Testlink or Testing artifacts.
 

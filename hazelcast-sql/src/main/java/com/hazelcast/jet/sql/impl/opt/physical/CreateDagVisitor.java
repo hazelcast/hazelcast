@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
@@ -36,13 +35,13 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -97,7 +96,7 @@ public class CreateDagVisitor {
         List<ExpressionValues> values = rel.values();
 
         return dag.newUniqueVertex("Values", convenientSourceP(
-                SimpleExpressionEvalContext::from,
+                ExpressionEvalContext::from,
                 (context, buffer) -> {
                     values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
@@ -183,8 +182,8 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
                 ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.filterFn(filter, SimpleExpressionEvalContext.from(ctx))),
-                (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
+                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
+                (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -194,8 +193,8 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
                 ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
-                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                        ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
+                (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
         ));
         connectInputPreserveCollation(rel, vertex);
         return vertex;
@@ -227,7 +226,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onAggregate(AggregatePhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "Aggregate",
@@ -241,7 +240,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onAccumulate(AggregateAccumulatePhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "Accumulate",
@@ -252,7 +251,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onCombine(AggregateCombinePhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "Combine",
@@ -266,8 +265,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onAggregateByKey(AggregateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "AggregateByKey",
@@ -278,8 +277,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onAccumulateByKey(AggregateAccumulateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "AccumulateByKey",
@@ -290,7 +289,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onCombineByKey(AggregateCombineByKeyPhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         Vertex vertex = dag.newUniqueVertex(
                 "CombineByKey",
@@ -307,11 +306,11 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",
                 mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
-                            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                            ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
                             return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),
-                        (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+                        (BiFunctionEx<Function<JetSqlRow, JetSqlRow>, JetSqlRow, JetSqlRow>) Function::apply
                 )
         );
         connectInput(rel.getInput(), vertex, null);
@@ -319,11 +318,11 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(
@@ -343,11 +342,11 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
-        FunctionEx<Object[], ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<Object[]> timestampFn = windowProperty.orderingFn(null);
+        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
 
         Vertex vertex = dag.newUniqueVertex(
@@ -365,7 +364,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
-        AggregateOperation<?, Object[]> aggregateOperation = rel.aggrOp();
+        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
         WindowProperties.WindowProperty windowProperty = rel.windowProperty();
         SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
@@ -522,10 +521,8 @@ public class CreateDagVisitor {
             right = right.broadcast().distributed();
         }
         if (joinInfo.isEquiJoin()) {
-            int[] leftIndices = joinInfo.leftEquiJoinIndices();
-            int[] rightIndices = joinInfo.rightEquiJoinIndices();
-            left = left.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, leftIndices));
-            right = right.distributed().partitioned(row -> ObjectArrayKey.project((Object[]) row, rightIndices));
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
         dag.edge(left);
         dag.edge(right);

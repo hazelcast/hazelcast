@@ -141,6 +141,9 @@
         },
         "local-device": {
           "$ref": "#/definitions/LocalDevice"
+        },
+        "dynamic-configuration": {
+          "$ref": "#/definitions/DynamicConfiguration"
         }
       }
     },
@@ -1442,6 +1445,11 @@
                   "type": "boolean",
                   "default": false
                 },
+                "serialize-keys": {
+                  "description": "Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable and need to be cloned via serialization. Default value is false.",
+                  "type": "boolean",
+                  "default": false
+                },
                 "delay-seconds": {
                   "type": "integer",
                   "minimum": 0,
@@ -1512,6 +1520,9 @@
               }
             },
             "required": ["enabled"]
+          },
+          "partition-strategy": {
+            "type": "string"
           }
         }
       }
@@ -3754,6 +3765,29 @@
         }
       }
     },
+    "DynamicConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "persistence-enabled": {
+          "type": "boolean",
+          "description": "True if dynamic configuration persistence is enabled."
+        },
+        "persistence-file": {
+          "type": "string",
+          "description": "Path for dynamic configuration persistence file. Dynamic changes will be persisted into this file. If not set, configuration file that was used to start Hazelcast (root configuration) will be used. If set, this file (the file specified in the persistence-file path) will be used for persisting dynamic changes instead of root configuration file. User should also do the following two: Create an XML or YAML file specified in this path and import this XML or YAML file to the root configuration. Path can be an absolute or relative path to the node startup directory."
+        },
+        "backup-dir": {
+          "type": "string",
+          "description": "Directory for dynamic configuration persistence file backups. Each new backup will be created inside this directory. Can be an absolute or relative path to the node startup directory. If not set, new folder will be created at the node startup directory."
+        },
+        "backup-count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many backups will be kept. Default is 5. You can set this to zero to disable backups."
+        }
+      }
+    },
     "SocketEndpointConfig": {
       "allOf": [
         {
@@ -4035,6 +4069,9 @@
                 "target-endpoints": {
                   "type": "string",
                   "description": "Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented."
+                },
+                "endpoint": {
+                  "type": "string"
                 },
                 "sync": {
                   "type": "object",

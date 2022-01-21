@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -26,8 +27,8 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.SqlTestSupport.TEST_SS;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 
@@ -77,12 +79,13 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             new MappingField("date", QueryDataType.DATE),
             new MappingField("timestamp", QueryDataType.TIMESTAMP),
             new MappingField("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME),
+            new MappingField("map", QueryDataType.OBJECT),
             new MappingField("object", QueryDataType.OBJECT)
     );
 
     private static final List<TableField> FIELD_LIST2 = toList(FIELD_LIST, f -> new TableField(f.name(), f.type(), false));
 
-    private static final Object[] VALUES = new Object[]{
+    private static final JetSqlRow VALUES = new JetSqlRow(TEST_SS, new Object[]{
             "string",
             true,
             (byte) 127,
@@ -96,10 +99,11 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             LocalDate.of(2020, 4, 15),
             LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
             OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+            ImmutableMap.of(42, 43),
             null
-    };
+    });
 
-    public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES);
+    public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES.getValues());
 
     public static void create(SqlService sqlService, String tableName) {
         sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + TestAllTypesSqlConnector.TYPE_NAME);
@@ -145,23 +149,23 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }
 
-        BatchSource<Object[]> source = SourceBuilder
-                .batch("batch", SimpleExpressionEvalContext::from)
-                .<Object[]>fillBufferFn((ctx, buf) -> {
-                    Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+        BatchSource<JetSqlRow> source = SourceBuilder
+                .batch("batch", ExpressionEvalContext::from)
+                .<JetSqlRow>fillBufferFn((ctx, buf) -> {
+                    JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
                     if (row != null) {
                         buf.add(row);
                     }
                     buf.close();
                 })
                 .build();
-        ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
+        ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
 

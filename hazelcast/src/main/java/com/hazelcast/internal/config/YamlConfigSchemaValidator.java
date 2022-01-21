@@ -47,12 +47,18 @@ public class YamlConfigSchemaValidator {
     private static final List<String> PERMITTED_ROOT_NODES = unmodifiableList(
             asList("hazelcast", "hazelcast-client", "hazelcast-client-failover"));
 
-    private static final Schema SCHEMA = SchemaLoader.builder().draftV6Support()
-            .schemaJson(readJSONObject("/hazelcast-config-" + Versions.CURRENT_CLUSTER_VERSION.getMajor() + "."
-                    + Versions.CURRENT_CLUSTER_VERSION.getMinor() + ".json"))
-            .build()
-            .load()
-            .build();
+    private static final Schema SCHEMA;
+
+    static {
+        String absPath = "/hazelcast-config-" + Versions.CURRENT_CLUSTER_VERSION.getMajor() + "."
+                + Versions.CURRENT_CLUSTER_VERSION.getMinor() + ".json";
+
+        SCHEMA = SchemaLoader.builder().draftV6Support()
+                .schemaJson(readJSONObject(absPath))
+                .build()
+                .load()
+                .build();
+    }
 
     /**
      * Converts the validation exception thrown by the everit-org/json-schema library to its HZ-specific representation.

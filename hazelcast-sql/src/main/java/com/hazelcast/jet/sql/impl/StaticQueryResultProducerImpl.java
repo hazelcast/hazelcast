@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.Iterator;
@@ -33,8 +33,8 @@ public class StaticQueryResultProducerImpl implements QueryResultProducer {
 
     private boolean iteratorRequested;
 
-    public StaticQueryResultProducerImpl(Object[] row) {
-        this(singletonList(new HeapRow(row)).iterator());
+    public StaticQueryResultProducerImpl(JetSqlRow row) {
+        this(singletonList(row.getRow()).iterator());
     }
 
     public StaticQueryResultProducerImpl(Iterator<? extends Row> iterator) {

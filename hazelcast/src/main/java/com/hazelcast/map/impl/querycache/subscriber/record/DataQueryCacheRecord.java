@@ -38,4 +38,8 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
         return serializationService.toObject(valueData);
     }
 
+    @Override
+    public Object getRawValue() {
+        return valueData;
+    }
 }

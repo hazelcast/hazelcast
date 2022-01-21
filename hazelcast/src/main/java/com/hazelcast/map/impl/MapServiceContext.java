@@ -67,6 +67,7 @@ import java.util.function.Predicate;
  *
  * @see MapManagedService
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 
@@ -210,9 +211,14 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     /**
      * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
-     *          otherwise {@code false}.
+     * otherwise {@code false}.
      */
     default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
         return false;
     }
+
+    /**
+     * @return {@link EventListenerCounter} object.
+     */
+    EventListenerCounter getEventListenerCounter();
 }

@@ -68,7 +68,7 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
     public void unparse(final SqlWriter writer, final SqlCall call, final int leftPrec, final int rightPrec) {
         final SqlWriter.Frame frame = writer.startFunCall(this.getName());
         call.operand(0).unparse(writer, leftPrec, rightPrec);
-        writer.sep(",");
+        writer.sep(",", true);
         call.operand(1).unparse(writer, leftPrec, rightPrec);
 
         final SqlJsonQueryWrapperBehavior wrapperBehavior = (SqlJsonQueryWrapperBehavior)

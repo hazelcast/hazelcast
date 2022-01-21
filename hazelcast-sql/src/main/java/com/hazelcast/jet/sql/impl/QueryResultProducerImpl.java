@@ -20,10 +20,10 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.NoSuchElementException;
@@ -98,7 +98,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
-        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
+        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow()); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
@@ -162,6 +162,13 @@ public class QueryResultProducerImpl implements QueryResultProducer {
                     return DONE;
                 }
                 idler.idle(++idleCount);
+                if (Thread.currentThread().isInterrupted()) {
+                    // We want to allow interruption of a thread that is blocked in `hasNext()`. However, the
+                    // `hasNext()` method doesn't declare the InterruptedException. Therefore, we throw
+                    // the interrupted exception wrapped in a RuntimeException. The interrupted status
+                    // if the current thread remains set.
+                    throw new RuntimeException(new InterruptedException("thread interrupted"));
+                }
             } while (System.nanoTime() < endTimeNanos);
             return TIMEOUT;
         }

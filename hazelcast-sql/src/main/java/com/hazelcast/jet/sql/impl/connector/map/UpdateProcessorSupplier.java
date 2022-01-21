@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,7 +69,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -83,18 +83,18 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
                     null,
                     MAX_CONCURRENT_OPS,
                     MAX_BATCH_SIZE,
-                    (IMap<Object, Object> map, List<Object[]> rows) -> update(rows, map)
+                    (IMap<Object, Object> map, List<JetSqlRow> rows) -> update(rows, map)
             );
             processors.add(processor);
         }
         return processors;
     }
 
-    private CompletableFuture<Traverser<Integer>> update(List<Object[]> rows, IMap<Object, Object> map) {
+    private CompletableFuture<Traverser<Integer>> update(List<JetSqlRow> rows, IMap<Object, Object> map) {
         Set<Object> keys = new HashSet<>();
-        for (Object[] row : rows) {
-            assert row.length == 1;
-            keys.add(row[0]);
+        for (JetSqlRow row : rows) {
+            assert row.getFieldCount() == 1;
+            keys.add(row.get(0));
         }
         return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
                 .toCompletableFuture()

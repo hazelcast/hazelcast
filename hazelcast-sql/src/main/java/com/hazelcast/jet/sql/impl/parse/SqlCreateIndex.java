@@ -189,10 +189,6 @@ public class SqlCreateIndex extends SqlCreate {
                     options().keySet().iterator().next()));
         }
 
-        if (indexType.equals(IndexType.BITMAP) && options.getList().isEmpty()) {
-            throw validator.newValidationError(type, RESOURCE.bitmapIndexConfigEmpty());
-        }
-
         Set<String> optionNames = new HashSet<>();
 
         for (SqlNode option : options.getList()) {
@@ -200,14 +196,6 @@ public class SqlCreateIndex extends SqlCreate {
             if (!optionNames.add(name)) {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
             }
-        }
-
-        if (indexType.equals(IndexType.BITMAP) && !optionNames.contains(UNIQUE_KEY)) {
-            throw validator.newValidationError(options, RESOURCE.missingOption(UNIQUE_KEY));
-        }
-
-        if (indexType.equals(IndexType.BITMAP) && !optionNames.contains(UNIQUE_KEY_TRANSFORMATION)) {
-            throw validator.newValidationError(options, RESOURCE.missingOption(UNIQUE_KEY_TRANSFORMATION));
         }
     }
 

@@ -582,6 +582,8 @@ SqlShowStatement SqlShowStatement() :
     (
         [ <EXTERNAL> ] <MAPPINGS> { target = ShowStatementTarget.MAPPINGS; }
     |
+        <VIEWS> { target = ShowStatementTarget.VIEWS; }
+    |
         <JOBS> { target = ShowStatementTarget.JOBS; }
     )
     {

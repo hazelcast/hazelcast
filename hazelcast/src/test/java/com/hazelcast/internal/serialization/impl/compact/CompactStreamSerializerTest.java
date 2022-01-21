@@ -200,13 +200,13 @@ public class CompactStreamSerializerTest {
                     @Nonnull
                     @Override
                     public EmployeeDTO read(@Nonnull CompactReader in) {
-                        return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
+                        return new EmployeeDTO(in.readInt32("a"), in.readInt64("i"));
                     }
 
                     @Override
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-                        out.writeInt("a", object.getAge());
-                        out.writeLong("i", object.getId());
+                        out.writeInt32("a", object.getAge());
+                        out.writeInt64("i", object.getId());
                     }
                 });
         compactSerializationConfig.register(EmployerDTO.class, "employer",
@@ -216,10 +216,10 @@ public class CompactStreamSerializerTest {
                     public EmployerDTO read(@Nonnull CompactReader in) {
                         String name = in.readString("n");
                         String status = in.readString("hs");
-                        int age = in.readInt("a");
-                        long[] ids = in.readArrayOfLongs("ids");
+                        int age = in.readInt32("a");
+                        long[] ids = in.readArrayOfInt64("ids");
                         EmployeeDTO s = in.readCompact("s");
-                        EmployeeDTO[] ss = in.readArrayOfCompacts("ss", EmployeeDTO.class);
+                        EmployeeDTO[] ss = in.readArrayOfCompact("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, status == null ? null : HiringStatus.valueOf(status), ids, s, ss);
                     }
 
@@ -227,10 +227,10 @@ public class CompactStreamSerializerTest {
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployerDTO object) {
                         out.writeString("n", object.getName());
                         out.writeString("hs", object.getHiringStatus() == null ? null : object.getHiringStatus().name());
-                        out.writeInt("a", object.getZcode());
-                        out.writeArrayOfLongs("ids", object.getIds());
+                        out.writeInt32("a", object.getZcode());
+                        out.writeArrayOfInt64("ids", object.getIds());
                         out.writeCompact("s", object.getSingleEmployee());
-                        out.writeArrayOfCompacts("ss", object.getOtherEmployees());
+                        out.writeArrayOfCompact("ss", object.getOtherEmployees());
                     }
                 });
 
@@ -311,8 +311,8 @@ public class CompactStreamSerializerTest {
                     .build();
             GenericRecord genericRecord = serializationService2.toObject(data);
             //testing the field names introduced by the Serializer in EmployeeWithSerializerDTO, not reflection
-            assertEquals(30, genericRecord.getInt("a"));
-            assertEquals(102310312, genericRecord.getLong("i"));
+            assertEquals(30, genericRecord.getInt32("a"));
+            assertEquals(102310312, genericRecord.getInt64("i"));
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
@@ -377,8 +377,8 @@ public class CompactStreamSerializerTest {
                 .build();
         GenericRecord genericRecord = readerService.toObject(data);
 
-        assertEquals(employeeDTO.getAge(), genericRecord.getInt("age"));
-        assertEquals(employeeDTO.getId(), genericRecord.getLong("id"));
+        assertEquals(employeeDTO.getAge(), genericRecord.getInt32("age"));
+        assertEquals(employeeDTO.getId(), genericRecord.getInt64("id"));
     }
 
     @Test
@@ -393,7 +393,7 @@ public class CompactStreamSerializerTest {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
 
-        SchemaWriter writer = new SchemaWriter("className");
+        SchemaWriter writer = new SchemaWriter("typeName");
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
         EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
@@ -424,7 +424,7 @@ public class CompactStreamSerializerTest {
     public void testFieldOrderFixedSize() throws IOException {
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
 
-        SchemaWriter writer = new SchemaWriter("className");
+        SchemaWriter writer = new SchemaWriter("typeName");
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
         reflectiveCompactSerializer.write(writer, employeeDTO);
@@ -453,18 +453,18 @@ public class CompactStreamSerializerTest {
     public void testSchemaEvolution_GenericRecord() {
         SerializationService serializationService = createSerializationService();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
-        builder.setInt("foo", 1);
-        builder.setLong("bar", 1231L);
+        GenericRecordBuilder builder = compact("fooBarTypeName");
+        builder.setInt32("foo", 1);
+        builder.setInt64("bar", 1231L);
         GenericRecord expectedGenericRecord = builder.build();
 
         Data data = serializationService.toData(expectedGenericRecord);
 
         SerializationService serializationService2 = createSerializationService();
 
-        GenericRecordBuilder builder2 = compact("fooBarClassName");
-        builder2.setInt("foo", 1);
-        builder2.setLong("bar", 1231L);
+        GenericRecordBuilder builder2 = compact("fooBarTypeName");
+        builder2.setInt32("foo", 1);
+        builder2.setInt64("bar", 1231L);
         builder2.setString("foobar", "new field");
         serializationService2.toData(builder2.build());
 
@@ -473,8 +473,8 @@ public class CompactStreamSerializerTest {
 
         assertFalse(genericRecord.hasField("foobar"));
 
-        assertEquals(1, genericRecord.getInt("foo"));
-        assertEquals(1231L, genericRecord.getLong("bar"));
+        assertEquals(1, genericRecord.getInt32("foo"));
+        assertEquals(1231L, genericRecord.getInt64("bar"));
     }
 
     @Test
@@ -491,8 +491,8 @@ public class CompactStreamSerializerTest {
 
                     @Override
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-                        out.writeInt("age", object.getAge());
-                        out.writeLong("id", object.getId());
+                        out.writeInt32("age", object.getAge());
+                        out.writeInt64("id", object.getId());
                         out.writeString("surname", "sir");
                     }
                 });
@@ -529,7 +529,7 @@ public class CompactStreamSerializerTest {
 
                     @Override
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-                        out.writeInt("age", object.getAge());
+                        out.writeInt32("age", object.getAge());
                     }
                 });
 

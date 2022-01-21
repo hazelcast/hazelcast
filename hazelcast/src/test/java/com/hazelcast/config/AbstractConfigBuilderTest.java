@@ -409,6 +409,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testPersistence();
 
     @Test
+    public abstract void testDynamicConfig();
+
+    @Test
     public abstract void testLocalDevice();
 
     @Test

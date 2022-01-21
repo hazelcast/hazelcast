@@ -96,6 +96,21 @@ public class ShowStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_showViews_empty() {
+        assertRowsOrdered("show views", emptyList());
+    }
+
+    @Test
+    public void test_showViews() {
+        List<String> viewNames = IntStream.range(0, 5).mapToObj(i -> "v" + i).collect(toList());
+        for (String viewName: viewNames) {
+            sqlService.execute("create view " + viewName + " AS SELECT 1");
+        }
+
+        assertRowsOrdered("show views", Util.toList(viewNames, Row::new));
+    }
+
+    @Test
     public void test_showJobsEmpty() {
         assertRowsOrdered("show jobs", emptyList());
     }

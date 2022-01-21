@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
@@ -83,7 +84,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         sleepMillis(50);
         assertThat(semaphore.availablePermits()).isZero();
 
-        inbox.queue().add(new Object[0]);
+        inbox.queue().add(jetRow());
         producer.consume(inbox);
 
         // 2nd permit - the row returned from the iterator
@@ -127,7 +128,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         sleepMillis(50);
         assertThat(semaphore.availablePermits()).isZero();
 
-        inbox.queue().add(new Object[0]);
+        inbox.queue().add(jetRow());
         producer.consume(inbox);
 
         // 2nd permit - the row returned from the iterator
@@ -149,8 +150,8 @@ public class QueryResultProducerImplTest extends JetTestSupport {
     @Test
     public void when_done_then_remainingItemsIterated() {
         initProducer(false);
-        inbox.queue().add(new Object[]{1});
-        inbox.queue().add(new Object[]{2});
+        inbox.queue().add(jetRow(1));
+        inbox.queue().add(jetRow(2));
         producer.consume(inbox);
         producer.done();
 
@@ -191,7 +192,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         });
         sleepMillis(50); // sleep so that the thread starts blocking in `hasNext`
 
-        inbox.queue().add(new Object[]{42});
+        inbox.queue().add(jetRow(42));
         producer.consume(inbox);
         assertThat(inbox).isEmpty();
         future.get();
@@ -247,7 +248,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
         initProducer(false);
         int numExcessItems = 2;
         for (int i = 0; i < QueryResultProducerImpl.QUEUE_CAPACITY + numExcessItems; i++) {
-            inbox.queue().add(new Object[0]);
+            inbox.queue().add(jetRow());
         }
         producer.consume(inbox);
         assertThat(inbox).hasSize(2);

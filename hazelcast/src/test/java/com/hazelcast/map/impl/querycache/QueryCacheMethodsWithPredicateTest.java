@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -145,6 +146,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     @Test
     public void testKeySetIsNotBackedByQueryCache_nonIndexedAttribute() {
+        Assume.assumeTrue(inMemoryFormat != OBJECT);
         int count = 111;
         IMap<Employee, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -206,6 +208,8 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     @Test
     public void testEntrySetIsNotBackedByQueryCache_nonIndexedAttribute() {
+        Assume.assumeTrue(inMemoryFormat != OBJECT);
+
         int count = 111;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
@@ -301,6 +305,8 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     @Test
     public void testValuesAreNotBackedByQueryCache_nonIndexedAttribute() {
+        Assume.assumeTrue(inMemoryFormat != OBJECT);
+
         int count = 111;
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 

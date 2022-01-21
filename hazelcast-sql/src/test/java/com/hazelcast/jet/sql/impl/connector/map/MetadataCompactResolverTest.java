@@ -211,12 +211,12 @@ public class MetadataCompactResolverTest {
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
         SchemaWriter schemaWriter = new SchemaWriter("test");
         schemaWriter.addField(new FieldDescriptor("boolean", FieldKind.NULLABLE_BOOLEAN));
-        schemaWriter.addField(new FieldDescriptor("byte", FieldKind.NULLABLE_BYTE));
-        schemaWriter.addField(new FieldDescriptor("short", FieldKind.NULLABLE_SHORT));
-        schemaWriter.addField(new FieldDescriptor("int", FieldKind.NULLABLE_INT));
-        schemaWriter.addField(new FieldDescriptor("long", FieldKind.NULLABLE_LONG));
-        schemaWriter.addField(new FieldDescriptor("float", FieldKind.NULLABLE_FLOAT));
-        schemaWriter.addField(new FieldDescriptor("double", FieldKind.NULLABLE_DOUBLE));
+        schemaWriter.addField(new FieldDescriptor("byte", FieldKind.NULLABLE_INT8));
+        schemaWriter.addField(new FieldDescriptor("short", FieldKind.NULLABLE_INT16));
+        schemaWriter.addField(new FieldDescriptor("int", FieldKind.NULLABLE_INT32));
+        schemaWriter.addField(new FieldDescriptor("long", FieldKind.NULLABLE_INT64));
+        schemaWriter.addField(new FieldDescriptor("float", FieldKind.NULLABLE_FLOAT32));
+        schemaWriter.addField(new FieldDescriptor("double", FieldKind.NULLABLE_FLOAT64));
         schemaWriter.addField(new FieldDescriptor("decimal", FieldKind.DECIMAL));
         schemaWriter.addField(new FieldDescriptor("string", FieldKind.STRING));
         schemaWriter.addField(new FieldDescriptor("time", FieldKind.TIME));

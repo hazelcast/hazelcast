@@ -219,7 +219,7 @@ public class CacheConfigHolder {
         config.setBackupCount(backupCount);
         config.setAsyncBackupCount(asyncBackupCount);
         config.setInMemoryFormat(InMemoryFormat.valueOf(inMemoryFormat));
-        config.setEvictionConfig(evictionConfigHolder.asEvictionConfg(serializationService));
+        config.setEvictionConfig(evictionConfigHolder.asEvictionConfig(serializationService));
         config.setWanReplicationRef(wanReplicationRef);
         config.setKeyClassName(keyClassName);
         config.setValueClassName(valueClassName);
