@@ -1246,7 +1246,12 @@ public class ConfigXmlGenerator {
     }
 
     private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
-        gen.node("integrity-checker", null, "enabled", config.isIntegrityCheckerEnabled());
+        gen.node(
+                "integrity-checker",
+                null,
+                "enabled",
+                config.getIntegrityCheckerConfig().isEnabled()
+        );
     }
 
     /**

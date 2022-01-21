@@ -129,7 +129,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.internal.config.XmlConfigLocator.DEFAULT_CONFIG_NAME;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
-import static com.hazelcast.jet.impl.util.Util.INTEGRITY_CHECKER_IS_DISABLED;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
@@ -170,9 +169,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
         }
 
-        if (node.getConfig().isIntegrityCheckerEnabled()) {
-            integrityChecker = new IntegrityChecker(this.systemLogger);
-        }
+        integrityChecker = new IntegrityChecker(node.getConfig().getIntegrityCheckerConfig(), this.systemLogger);
     }
 
     private void checkPersistenceAllowed() {
@@ -237,11 +234,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public void beforeStart() {
-        if (integrityChecker != null) {
-            integrityChecker.checkIntegrity();
-        } else {
-            systemLogger.info(INTEGRITY_CHECKER_IS_DISABLED);
-        }
+        integrityChecker.checkIntegrity();
 
         if (jetExtension != null) {
             // Add configurations for the internal jet distributed objects,

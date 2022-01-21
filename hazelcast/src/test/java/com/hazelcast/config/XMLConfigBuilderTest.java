@@ -4326,7 +4326,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
 
-        assertFalse(config.isIntegrityCheckerEnabled());
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 
     @Override

@@ -790,13 +790,5 @@
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Build-time dependencies -->
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-model</artifactId>
-            <version>3.8.3</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 </project>

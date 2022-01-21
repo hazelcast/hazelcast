@@ -4382,6 +4382,6 @@ public class YamlConfigBuilderTest
 
         Config config = buildConfig(yaml);
 
-        assertFalse(config.isIntegrityCheckerEnabled());
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 }

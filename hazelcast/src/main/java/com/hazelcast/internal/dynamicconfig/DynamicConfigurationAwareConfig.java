@@ -31,6 +31,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -1187,13 +1188,15 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Nonnull
     @Override
-    public boolean isIntegrityCheckerEnabled() {
-        return staticConfig.isIntegrityCheckerEnabled();
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        return staticConfig.getIntegrityCheckerConfig();
     }
 
+    @Nonnull
     @Override
-    public Config setIntegrityCheckerEnabled(final boolean integrityCheckerEnabled) {
-        return staticConfig.setIntegrityCheckerEnabled(integrityCheckerEnabled);
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 }

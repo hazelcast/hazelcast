@@ -210,7 +210,8 @@ public class Config {
 
     private DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig();
 
-    private boolean integrityCheckerEnabled;
+    // @since 5.1
+    private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
     public Config() {
     }
@@ -3045,32 +3046,21 @@ public class Config {
     }
 
     /**
-     *
-     * Returns {true} if the integrity checker is enabled.
-     * Integrity checker performs checks to verify that the executable from which HazelcastInstance is launched
-     * contains all the necessary resources/META-INF/services files to operate correctly.
-     *
-     * @return {true} if the integrity checker is enabled
+     * Returns the IntegrityChecker config
      * @since 5.1
      */
-    public boolean isIntegrityCheckerEnabled() {
-        return integrityCheckerEnabled;
+    @Nonnull
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        return integrityCheckerConfig;
     }
 
     /**
-     *
-     * Sets the flag to enable or disable integrity checker. Integrity checker performs checks to verify that
-     * Integrity checker performs checks to verify that the executable from which HazelcastInstance is launched
-     * contains all the necessary resources/META-INF/services files to operate correctly.
-     * This operation is compute-intensive and therefore recommended being disabled for production clusters where
-     * built executable integrity is already verified.
-     *
-     * @param integrityCheckerEnabled to enable or disable integrity checker
-     * @return this config instance
+     * Sets the Integrity Checker config
      * @since 5.1
      */
-    public Config setIntegrityCheckerEnabled(boolean integrityCheckerEnabled) {
-        this.integrityCheckerEnabled = integrityCheckerEnabled;
+    @Nonnull
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig integrityCheckerConfig) {
+        this.integrityCheckerConfig = integrityCheckerConfig;
         return this;
     }
 
@@ -3136,7 +3126,7 @@ public class Config {
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
-                + ", integrityCheckerEnabled=" + integrityCheckerEnabled
+                + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + '}';
     }
 }

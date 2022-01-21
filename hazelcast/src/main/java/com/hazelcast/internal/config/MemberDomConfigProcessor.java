@@ -3408,9 +3408,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleIntegrityChecker(final Node node) {
         Node attrEnabled = getNamedItemNode(node, "enabled");
-        // enabled by default
-        boolean enabled = attrEnabled == null || getBooleanValue(getTextContent(attrEnabled));
-        config.setIntegrityCheckerEnabled(enabled);
+        boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {

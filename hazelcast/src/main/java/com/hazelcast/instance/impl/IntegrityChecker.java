@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -25,23 +26,45 @@ import io.github.classgraph.ClassInfoList;
 
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
 
 public final class IntegrityChecker {
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
-    private final ILogger logger;
+    private static final String INTEGRITY_CHECKER_IS_DISABLED = "Integrity Checker is disabled. "
+            + "Fail-fast on corrupted executables will not be performed.\n"
+            + "To enable integrity checker do one of the following: \n"
+            + format(CONFIG_CHANGE_TEMPLATE,
+            "config.setIntegrityCheckerEnabled(true);",
+            "hazelcast.integrity-checker.enabled to true",
+            "-Dhz.integritychecker.enabled=true",
+            "HZ_INTEGRITYCHECKER_ENABLED=true"
+    );
+    private static final String INTEGRITY_CHECKER_IS_ENABLED = "Starting Integrity Check scan. "
+            + "This is a costly operation and it can be disabled if startup time is important. \n"
+            + "To disable Integrity Checker do one of the following: \n"
+            + format(CONFIG_CHANGE_TEMPLATE,
+            "config.setIntegrityCheckerEnabled(false);",
+            "hazelcast.integrity-checker.enabled to false",
+            "-Dhz.integritychecker.enabled=false",
+            "HZ_INTEGRITYCHECKER_ENABLED=false"
+    );
 
-    public IntegrityChecker(final ILogger logger) {
+    private final ILogger logger;
+    private final IntegrityCheckerConfig config;
+
+    public IntegrityChecker(final IntegrityCheckerConfig config, final ILogger logger) {
         this.logger = logger;
+        this.config = config;
     }
 
     public void checkIntegrity() {
-        logger.info("WARNING: Integrity checker is enabled, this is a costly operation and it is advised to disable "
-                + "Integrity Checker for non-development environments. "
-                + "To disable Integrity Checker set hazelcast.integrity-checker.enabled "
-                + "to false in the member configuration.");
+        if (!config.isEnabled()) {
+            logger.info(INTEGRITY_CHECKER_IS_DISABLED);
+            return;
+        }
 
-        logger.info("Starting Integrity Check Scan");
+        logger.info(INTEGRITY_CHECKER_IS_ENABLED);
         final long start = System.nanoTime();
         final ClassInfoList classes = new ClassGraph()
                 .enableClassInfo()

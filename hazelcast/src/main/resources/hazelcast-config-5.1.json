@@ -4890,7 +4890,7 @@
       "required": [
         "enabled"
       ],
-      "description": "Enables/disables Integrity Checker, it is recommended to disable Integrity Checker for production deployments as the integrity check is a costly startup operation."
+      "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     }
   }
 }
