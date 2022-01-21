@@ -1561,7 +1561,7 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.7.2</version>
+                <version>1.1.8.4</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
