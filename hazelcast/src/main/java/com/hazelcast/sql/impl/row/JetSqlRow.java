@@ -56,16 +56,12 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     }
 
     public Object get(int index) {
-        if (values[index] instanceof Data) {
-            values[index] = ss.toObject(values[index]);
-        }
+        values[index] = ss.toObject(values[index]);
         return values[index];
     }
 
     public Data getSerialized(int index) {
-        if (!(values[index] instanceof Data)) {
-            values[index] = ss.toData(values[index]);
-        }
+        values[index] = ss.toData(values[index]);
         return (Data) values[index];
     }
 

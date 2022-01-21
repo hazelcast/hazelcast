@@ -103,7 +103,8 @@ public class SqlRowImpl implements SqlRow {
 
         for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
-            Object columnValue = row.get(i);
+            // toString() is often called by the debugger, it must not mutate the state by serializing or deserializing.
+            Object columnValue = row.getMaybeSerialized(i);
 
             joiner.add(columnMetadata.getName() + ' ' + columnMetadata.getType() + '=' + columnValue);
         }
