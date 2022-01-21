@@ -52,7 +52,7 @@ public final class AddressUtil {
     private AddressUtil() {
     }
 
-    public static void setNetworkInterfacesEnumerator(NetworkInterfacesEnumerator networkInterfacesEnumerator) {
+    static void setNetworkInterfacesEnumerator(NetworkInterfacesEnumerator networkInterfacesEnumerator) {
         AddressUtil.networkInterfacesEnumerator = networkInterfacesEnumerator;
     }
 
