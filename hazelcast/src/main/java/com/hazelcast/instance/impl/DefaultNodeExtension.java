@@ -127,7 +127,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.internal.config.XmlConfigLocator.DEFAULT_CONFIG_NAME;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
@@ -167,7 +166,6 @@ public class DefaultNodeExtension implements NodeExtension {
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetServiceBackend = createService(JetServiceBackend.class);
-            registerListener(jetServiceBackend);
         }
     }
 
@@ -211,7 +209,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     private void checkLosslessRestartAllowed() {
         JetConfig jetConfig = node.getConfig().getJetConfig();
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+        if (jetConfig.isLosslessRestartEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
             }
@@ -243,8 +241,8 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void beforeStart() {
         if (jetServiceBackend != null) {
-            // Configure the internal jet distributed objects.,
-            // TODO [ufuk]: Improve the javadoc
+            systemLogger.info("Jet is enabled");
+            // Configure the internal distributed objects.,
             jetServiceBackend.configureJetInternalObjects(node);
         } else {
             systemLogger.info(JET_IS_DISABLED_MESSAGE);
@@ -315,7 +313,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void afterStart() {
         if (jetServiceBackend != null) {
-            jetServiceBackend.tryStartScanningForJobs(node.getClusterService().getClusterVersion());
+            jetServiceBackend.startScanningForJobs();
         }
     }
 
@@ -433,7 +431,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public Map<String, Object> createExtensionServices() {
         if (jetServiceBackend != null) {
-            return jetServiceBackend.jetServices();
+            return Collections.singletonMap(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
         }
         return Collections.emptyMap();
     }
@@ -472,7 +470,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeShutdown(boolean terminate) {
-        if (!terminate && jetServiceBackend != null) {
+        if (jetServiceBackend != null && !terminate) {
+            // shutdown jobs on graceful shutdown
             jetServiceBackend.shutDownJobs();
         }
     }
@@ -518,14 +517,6 @@ public class DefaultNodeExtension implements NodeExtension {
         List<ClusterStateListener> listeners = serviceManager.getServices(ClusterStateListener.class);
         for (ClusterStateListener listener : listeners) {
             listener.onClusterStateChange(newState);
-        }
-        if (jetServiceBackend != null) {
-            try {
-                jetServiceBackend.getJobCoordinationService().clusterChangeDone();
-                // TODO [ufuk]: introduce onClusterStateChange on jetService
-            } catch (IllegalStateException e) {
-                ignore(e);
-            }
         }
     }
 

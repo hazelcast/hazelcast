@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
@@ -48,15 +47,13 @@ public final class PacketDispatcher implements Consumer<Packet> {
                             Consumer<Packet> responseHandler,
                             Consumer<Packet> invocationMonitor,
                             Consumer<Packet> eventService,
-                            Consumer<Packet> jetServiceBackend,
-                            Consumer<Packet> sqlPacketConsumer) {
-                            Consumer<Packet> jetPacketConsumer) {
+                            Consumer<Packet> jetServiceBackend
+    ) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
         this.invocationMonitor = invocationMonitor;
         this.operationExecutor = operationExecutor;
-        // TODO [ufuk]: could it removed?
         this.jetServiceBackend = jetServiceBackend;
     }
 
