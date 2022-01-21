@@ -31,10 +31,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlClientResultAsyncTest extends SqlTestSupport {
+public class SqlClientResultTimeoutTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String SQL = "SELECT * FROM " + MAP_NAME;
@@ -54,7 +55,7 @@ public class SqlClientResultAsyncTest extends SqlTestSupport {
     }
 
     @Test
-    // TODO:
+    // TODO: don't like that test, is there any other example of such a waiting?
     public void testHasNextWithTimeoutFinish() {
         try (SqlResult result = execute(SQL)) {
             assertEquals(2, result.getRowMetadata().getColumnCount());
@@ -65,7 +66,7 @@ public class SqlClientResultAsyncTest extends SqlTestSupport {
             ResultIterator.HasNextResult hasNextResult;
             int timeoutCount = 0;
             while (true) {
-                while ((hasNextResult = iterator.hasNext(100, TimeUnit.NANOSECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
+                while ((hasNextResult = iterator.hasNext(10, TimeUnit.NANOSECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
                     timeoutCount++;
                 }
                 if (hasNextResult == ResultIterator.HasNextResult.DONE) {
@@ -73,7 +74,7 @@ public class SqlClientResultAsyncTest extends SqlTestSupport {
                 }
                 iterator.next();
             }
-
+            assertNotEquals(0, timeoutCount);
             checkIllegalStateException(result::iterator, "Iterator can be requested only once");
         }
     }
