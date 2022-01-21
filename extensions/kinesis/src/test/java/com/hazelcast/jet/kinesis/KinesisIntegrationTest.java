@@ -40,6 +40,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -63,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
@@ -79,6 +81,11 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public KinesisIntegrationTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
+    }
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
 
     @BeforeClass
@@ -127,6 +134,41 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .aggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
                         assertTrue(windowResults.size() > 1); //multiple windows, so watermark works
+                    }));
+
+            hz().getJet().newJob(pipeline).join();
+            fail("Expected exception not thrown");
+        } catch (CompletionException ce) {
+            Throwable cause = peel(ce);
+            assertTrue(cause instanceof JetException);
+            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+        }
+    }
+
+    @Test
+    @Category(SerialTest.class)
+    public void customProjection() {
+        HELPER.createStream(1);
+
+        sendMessages();
+        Long expectedPerSequenceNo = 1L;
+
+        try {
+            Pipeline pipeline = Pipeline.create();
+            StreamSource<String> source = kinesisSource()
+                    .withProjectionFn((r, s) -> {
+                        byte[] payload = new byte[r.getData().remaining()];
+                        r.getData().get(payload);
+                        return r.getSequenceNumber();
+                    })
+                    .build();
+            pipeline.readFrom(source)
+                    .withoutTimestamps()
+                    .groupingKey(r -> r)
+                    .rollingAggregate(counting())
+                    .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, results -> {
+                        assertEquals(MESSAGES, results.size());
+                        results.forEach(v -> assertEquals(expectedPerSequenceNo, v.getValue()));
                     }));
 
             hz().getJet().newJob(pipeline).join();

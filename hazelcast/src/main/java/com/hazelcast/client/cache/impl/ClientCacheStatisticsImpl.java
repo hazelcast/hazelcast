@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 
 /**
@@ -52,6 +53,11 @@ public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
 
         }
         return nearCacheStats;
+    }
+
+    @Override
+    public LocalReplicationStatsImpl getReplicationStats() {
+        throw new UnsupportedOperationException("This statistic is not supported for client.");
     }
 
     @Override

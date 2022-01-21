@@ -36,17 +36,13 @@ public class PartitionIndexOperationStats implements IndexOperationStats {
     }
 
     @Override
-    public void onEntryAdded(Object replacedValue, Object addedValue) {
-        if (replacedValue == null) {
-            ++entryCountDelta;
-        }
+    public void onEntryAdded(Object addedValue) {
+        ++entryCountDelta;
     }
 
     @Override
     public void onEntryRemoved(Object removedValue) {
-        if (removedValue != null) {
-            --entryCountDelta;
-        }
+        --entryCountDelta;
     }
 
     /**

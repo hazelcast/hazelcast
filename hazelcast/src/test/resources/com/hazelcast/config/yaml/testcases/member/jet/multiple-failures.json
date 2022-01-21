@@ -3,14 +3,11 @@
     "hazelcast": {
       "jet": {
         "unknown": true,
-        "instance": {
-          "unknown": true,
-          "cooperative-thread-count": "2",
-          "flow-control-period": "3",
-          "backup-count": "4",
-          "scale-up-delay-millis": "20",
-          "lossless-restart-enabled": "Yes"
-        },
+        "cooperative-thread-count": "2",
+        "flow-control-period": "3",
+        "backup-count": "4",
+        "scale-up-delay-millis": "20",
+        "lossless-restart-enabled": "Yes",
         "edge-defaults": {
           "unknown": true,
           "queue-size": "8",
@@ -30,6 +27,41 @@
         "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/lossless-restart-enabled",
+        "pointerToViolation": "#/hazelcast/jet/lossless-restart-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/cooperative-thread-count",
+        "pointerToViolation": "#/hazelcast/jet/cooperative-thread-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/flow-control-period",
+        "pointerToViolation": "#/hazelcast/jet/flow-control-period",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/backup-count",
+        "pointerToViolation": "#/hazelcast/jet/backup-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Jet/properties/scale-up-delay-millis",
+        "pointerToViolation": "#/hazelcast/jet/scale-up-delay-millis",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
       },
       {
         "schemaLocation": "#/definitions/Jet/properties/edge-defaults",
@@ -65,57 +97,8 @@
           }
         ],
         "message": "4 schema violations found"
-      },
-      {
-        "schemaLocation": "#/definitions/Jet/properties/instance",
-        "pointerToViolation": "#/hazelcast/jet/instance",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance",
-            "pointerToViolation": "#/hazelcast/jet/instance",
-            "causingExceptions": [],
-            "keyword": "additionalProperties",
-            "message": "extraneous key [unknown] is not permitted"
-          },
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance/properties/lossless-restart-enabled",
-            "pointerToViolation": "#/hazelcast/jet/instance/lossless-restart-enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance/properties/cooperative-thread-count",
-            "pointerToViolation": "#/hazelcast/jet/instance/cooperative-thread-count",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance/properties/flow-control-period",
-            "pointerToViolation": "#/hazelcast/jet/instance/flow-control-period",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance/properties/backup-count",
-            "pointerToViolation": "#/hazelcast/jet/instance/backup-count",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Jet/properties/instance/properties/scale-up-delay-millis",
-            "pointerToViolation": "#/hazelcast/jet/instance/scale-up-delay-millis",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          }
-        ],
-        "message": "6 schema violations found"
       }
     ],
-    "message": "11 schema violations found"
+    "message": "10 schema violations found"
   }
 }

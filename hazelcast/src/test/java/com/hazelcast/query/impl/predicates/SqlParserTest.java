@@ -164,7 +164,7 @@ public class SqlParserTest {
     }
 
     @Test
-    public void testComplexStatementWithGreaterAndEqueals() {
+    public void testComplexStatementWithGreaterAndEquals() {
         String s = "age>=5 AND ((( active = true ) AND (age = 23 )) OR age > 40) AND( salary>10 ) OR age=10";
         List<String> list = parser.toPrefix(s);
         assertEquals(Arrays.asList("age", "5", ">=", "active", "true", "=", "age", "23", "=", "AND", "age", "40", ">", "OR",

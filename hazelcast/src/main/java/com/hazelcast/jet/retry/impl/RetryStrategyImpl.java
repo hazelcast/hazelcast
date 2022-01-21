@@ -21,6 +21,8 @@ import com.hazelcast.jet.retry.RetryStrategy;
 
 public class RetryStrategyImpl implements RetryStrategy {
 
+    private static final long serialVersionUID = 1L;
+
     private final int maxAttempts;
     private final IntervalFunction intervalFunction;
 

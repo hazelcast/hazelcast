@@ -207,7 +207,7 @@ public class PutAllOperation extends MapOperation
                 toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
-                toBackupList.add(recordStore.getExpirySystem().getExpiredMetadata(dataKey));
+                toBackupList.add(recordStore.getExpirySystem().getExpiryMetadata(dataKey));
             }
         }
         return toBackupList;

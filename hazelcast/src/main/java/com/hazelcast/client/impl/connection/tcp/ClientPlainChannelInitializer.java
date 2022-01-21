@@ -17,13 +17,10 @@
 package com.hazelcast.client.impl.connection.tcp;
 
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
-
-import java.util.function.Consumer;
 
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
@@ -66,12 +63,7 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
 
         final TcpClientConnection connection = (TcpClientConnection) channel.attributeMap().get(TcpClientConnection.class);
 
-        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, new Consumer<ClientMessage>() {
-            @Override
-            public void accept(ClientMessage message) {
-                connection.handleClientMessage(message);
-            }
-        }, null);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, connection::handleClientMessage, null);
         channel.inboundPipeline().addLast(decoder);
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());

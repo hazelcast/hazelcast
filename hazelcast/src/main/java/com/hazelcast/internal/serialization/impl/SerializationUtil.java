@@ -16,15 +16,17 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
@@ -98,9 +100,15 @@ public final class SerializationUtil {
             throw (Error) e;
         }
         if (e instanceof HazelcastSerializationException) {
-            throw (HazelcastSerializationException) e;
+            return (HazelcastSerializationException) e;
         }
-        throw new HazelcastSerializationException(e);
+        if (e instanceof HazelcastInstanceNotActiveException) {
+            return (RuntimeException) e;
+        }
+        if (e instanceof HazelcastClientNotActiveException) {
+            return (RuntimeException) e;
+        }
+        return new HazelcastSerializationException(e);
     }
 
     static RuntimeException handleSerializeException(Object rootObject, Throwable e) {
@@ -111,8 +119,14 @@ public final class SerializationUtil {
         if (e instanceof Error) {
             throw (Error) e;
         }
+        if (e instanceof HazelcastInstanceNotActiveException) {
+            return (RuntimeException) e;
+        }
+        if (e instanceof HazelcastClientNotActiveException) {
+            return (RuntimeException) e;
+        }
         String clazz = rootObject == null ? "null" : rootObject.getClass().getName();
-        throw new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
+        return new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
     }
 
     public static SerializerAdapter createSerializerAdapter(Serializer serializer) {
@@ -180,8 +194,8 @@ public final class SerializationUtil {
     /**
      * Writes a map to given {@code ObjectDataOutput}.
      *
-     * @param map           the map to serialize, can be {@code null}
-     * @param out           the output to write the map to
+     * @param map the map to serialize, can be {@code null}
+     * @param out the output to write the map to
      */
     public static <K, V> void writeNullableMap(Map<K, V> map, ObjectDataOutput out) throws IOException {
         // write true when the map is NOT null
@@ -211,12 +225,12 @@ public final class SerializationUtil {
      * may be {@code null}. No guarantee is provided about the type of Map returned or its suitability
      * to be used in a thread-safe manner.
      *
-     * @param in            the {@code ObjectDataInput} input to read from
-     * @param <K>           type of key class
-     * @param <V>           type of value class
-     * @return              a {@code Map} containing the keys &amp; values read from the input or {@code null}
-     *                      if the original serialized map was {@code null}
-     * @throws IOException  when an error occurs while reading from the input
+     * @param in  the {@code ObjectDataInput} input to read from
+     * @param <K> type of key class
+     * @param <V> type of value class
+     * @return a {@code Map} containing the keys &amp; values read from the input or {@code null}
+     * if the original serialized map was {@code null}
+     * @throws IOException when an error occurs while reading from the input
      */
     public static <K, V> Map<K, V> readNullableMap(ObjectDataInput in) throws IOException {
         boolean isNull = !in.readBoolean();
@@ -279,7 +293,7 @@ public final class SerializationUtil {
      * @param out   data output to write to
      * @param <T>   type of items
      * @throws NullPointerException if {@code items} or {@code out} is {@code null}
-     * @throws IOException when an error occurs while writing to the output
+     * @throws IOException          when an error occurs while writing to the output
      */
     public static <T> void writeCollection(Collection<T> items, ObjectDataOutput out) throws IOException {
         int size = items.size();
@@ -301,7 +315,7 @@ public final class SerializationUtil {
      * @param out   data output to write to
      * @param <T>   type of items
      * @throws NullPointerException if {@code items} or {@code out} is {@code null}
-     * @throws IOException when an error occurs while writing to the output
+     * @throws IOException          when an error occurs while writing to the output
      */
     public static <T> void writeList(List<T> items, ObjectDataOutput out) throws IOException {
         writeCollection(items, out);
@@ -309,6 +323,7 @@ public final class SerializationUtil {
 
     /**
      * Writes a nullable {@link PartitionIdSet} to the given data output.
+     *
      * @param partitionIds
      * @param out
      * @throws IOException
@@ -331,9 +346,9 @@ public final class SerializationUtil {
      * the next int read from the data input is the collection's size, then that
      * many objects are read from the data input and returned as a collection.
      *
-     * @param in    data input to read from
-     * @param <T>   type of items
-     * @return      collection of items read from data input or null
+     * @param in  data input to read from
+     * @param <T> type of items
+     * @return collection of items read from data input or null
      * @throws IOException when an error occurs while reading from the input
      */
     public static <T> Collection<T> readNullableCollection(ObjectDataInput in) throws IOException {
@@ -345,9 +360,9 @@ public final class SerializationUtil {
      * the next int read from the data input is the list's size, then that
      * many objects are read from the data input and returned as a list.
      *
-     * @param in    data input to read from
-     * @param <T>   type of items
-     * @return      list of items read from data input or null
+     * @param in  data input to read from
+     * @param <T> type of items
+     * @return list of items read from data input or null
      * @throws IOException when an error occurs while reading from the input
      */
     public static <T> List<T> readNullableList(ObjectDataInput in) throws IOException {
@@ -363,10 +378,10 @@ public final class SerializationUtil {
      * the next int read from the data input is the collection's size, then that
      * many objects are read from the data input and returned as a collection.
      *
-     * @param in    data input to read from
-     * @param <T>   type of items
-     * @return      collection of items read from data input
-     * @throws IOException  when an error occurs while reading from the input
+     * @param in  data input to read from
+     * @param <T> type of items
+     * @return collection of items read from data input
+     * @throws IOException when an error occurs while reading from the input
      */
     public static <T> Collection<T> readCollection(ObjectDataInput in) throws IOException {
         return readList(in);
@@ -377,10 +392,10 @@ public final class SerializationUtil {
      * the next int read from the data input is the list's size, then that
      * many objects are read from the data input and returned as a list.
      *
-     * @param in    data input to read from
-     * @param <T>   type of items
-     * @return      list of items read from data input
-     * @throws IOException  when an error occurs while reading from the input
+     * @param in  data input to read from
+     * @param <T> type of items
+     * @return list of items read from data input
+     * @throws IOException when an error occurs while reading from the input
      */
     public static <T> List<T> readList(ObjectDataInput in) throws IOException {
         int size = in.readInt();
@@ -422,6 +437,28 @@ public final class SerializationUtil {
         }
 
         return true;
+    }
+
+    public static void writeNullableBoolean(ObjectDataOutput out, Boolean b) throws IOException {
+        if (b == null) {
+            out.writeByte(Byte.MAX_VALUE);
+        } else {
+            out.writeByte(b ? 1 : 0);
+        }
+    }
+
+    public static Boolean readNullableBoolean(ObjectDataInput in) throws IOException {
+        byte b = in.readByte();
+        switch (b) {
+            case Byte.MAX_VALUE:
+                return null;
+            case 0:
+                return Boolean.FALSE;
+            case 1:
+                return Boolean.TRUE;
+            default:
+                throw new IllegalStateException("Unexpected value " + b + " while reading nullable boolean.");
+        }
     }
 
     private static class NullOutputStream extends OutputStream {

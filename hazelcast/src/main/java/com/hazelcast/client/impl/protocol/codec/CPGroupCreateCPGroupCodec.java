@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("d3c5d68719db334e184b9d230d867472")
+@Generated("6bab5fe4b9fc1e6e15080e3bc2f6e388")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;
@@ -89,5 +89,4 @@ public final class CPGroupCreateCPGroupCodec {
         iterator.next();
         return RaftGroupIdCodec.decode(iterator);
     }
-
 }

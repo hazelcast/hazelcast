@@ -273,10 +273,10 @@ public final class JmsSourceBuilder {
 
         FunctionEx<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFactory =
                 policy -> isTopicLocal
-                        ? streamJmsTopicP(newConnectionFn, consumerFnLocal, isSharedConsumerLocal, messageIdFnLocal,
-                                projectionFn, policy, maxGuaranteeFinal)
-                        : streamJmsQueueP(newConnectionFn, consumerFnLocal, messageIdFnLocal, projectionFn, policy,
-                                maxGuaranteeFinal);
+                        ? streamJmsTopicP(destinationLocal, isSharedConsumerLocal, maxGuaranteeFinal, policy,
+                        newConnectionFn, consumerFnLocal, messageIdFnLocal, projectionFn)
+                        : streamJmsQueueP(destinationLocal, maxGuaranteeFinal, policy, newConnectionFn, consumerFnLocal,
+                        messageIdFnLocal, projectionFn);
         return Sources.streamFromProcessorWithWatermarks(sourceName(), true, metaSupplierFactory);
     }
 

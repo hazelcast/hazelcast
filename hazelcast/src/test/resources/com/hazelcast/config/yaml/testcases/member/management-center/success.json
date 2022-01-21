@@ -2,7 +2,9 @@
   "instance": {
     "hazelcast": {
       "management-center": {
-        "scripting-enabled": false
+        "scripting-enabled": false,
+        "console-enabled": false,
+        "data-access-enabled": false
       }
     }
   },

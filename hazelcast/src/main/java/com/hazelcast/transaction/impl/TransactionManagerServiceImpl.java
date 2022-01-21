@@ -204,13 +204,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             final Map.Entry<UUID, TxBackupLog> entry = it.next();
             final UUID txnId = entry.getKey();
             final TxBackupLog log = entry.getValue();
-            if (finalize(callerUuid, txnId, log)) {
+            if (finalizeTransaction(callerUuid, txnId, log)) {
                 it.remove();
             }
         }
     }
 
-    private boolean finalize(UUID uuid, UUID txnId, TxBackupLog log) {
+    private boolean finalizeTransaction(UUID uuid, UUID txnId, TxBackupLog log) {
         OperationService operationService = nodeEngine.getOperationService();
         if (!uuid.equals(log.callerUuid)) {
             return false;

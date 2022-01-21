@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
@@ -27,6 +29,7 @@ import org.junit.Test;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -112,7 +115,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsert() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         assertMapEventually(
                 "m",
@@ -123,7 +126,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsertExpression() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         assertMapEventually(
                 "m",
@@ -136,7 +139,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsertDynamicParameter() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, String.class));
+        createMapping("m", Integer.class, String.class);
 
         assertMapEventually(
                 "m",
@@ -621,7 +624,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         SqlResult result = sqlService.execute("SELECT * FROM t");
 
         assertThat(result.updateCount()).isEqualTo(-1);
-        assertThat(result.getRowMetadata().getColumnCount()).isEqualTo(14);
+        assertThat(result.getRowMetadata().getColumnCount()).isEqualTo(15);
         assertThat(result.getRowMetadata().getColumn(0).getName()).isEqualTo("string");
         assertThat(result.getRowMetadata().getColumn(0).getType()).isEqualTo(SqlColumnType.VARCHAR);
         assertThat(result.getRowMetadata().getColumn(1).getName()).isEqualTo("boolean");
@@ -648,13 +651,15 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         assertThat(result.getRowMetadata().getColumn(11).getType()).isEqualTo(SqlColumnType.TIMESTAMP);
         assertThat(result.getRowMetadata().getColumn(12).getName()).isEqualTo("timestampTz");
         assertThat(result.getRowMetadata().getColumn(12).getType()).isEqualTo(SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
-        assertThat(result.getRowMetadata().getColumn(13).getName()).isEqualTo("object");
+        assertThat(result.getRowMetadata().getColumn(13).getName()).isEqualTo("map");
         assertThat(result.getRowMetadata().getColumn(13).getType()).isEqualTo(SqlColumnType.OBJECT);
+        assertThat(result.getRowMetadata().getColumn(14).getName()).isEqualTo("object");
+        assertThat(result.getRowMetadata().getColumn(14).getType()).isEqualTo(SqlColumnType.OBJECT);
     }
 
     @Test
     public void test_sinkMetadata() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         SqlResult result = sqlService.execute("SINK INTO m(__key, this) VALUES (1, 1), (2, 2)");
 
@@ -677,5 +682,16 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT CAST(? AS VARCHAR) FROM t", 1, 2))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Unexpected parameter count: expected 1, got 2");
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/19983
+    // Checks the case when select-by-key optimization is used, but the __key (the 0-th) field isn't selected.
+    public void test_selectByKey_keyNotSelected() {
+        IMap<Long, Person> map = instance().getMap("test");
+        map.put(1L, new Person(10, "foo"));
+
+        createMapping("test", Long.class, Person.class);
+        assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("foo")));
     }
 }

@@ -86,6 +86,8 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
 
     public static final class Supplier extends AbstractHazelcastConnectorSupplier {
 
+        private static final long serialVersionUID = 1L;
+
         private final String observableName;
 
         public Supplier(String observableName) {

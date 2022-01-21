@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-@Generated("751ba5ff6b4772be7a57d18a81e1a1f4")
+@Generated("c4f28cfa8336429790b4d3e6897db6df")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -178,6 +178,7 @@ public final class ClientAuthenticationCustomCodec {
          */
         public boolean failoverSupported;
     }
+
     public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -209,5 +210,4 @@ public final class ClientAuthenticationCustomCodec {
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         return response;
     }
-
 }

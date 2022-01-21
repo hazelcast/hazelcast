@@ -272,7 +272,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public String toString() {
         return "ClientEndpoint{"
                 + "connection=" + connection
-                + ", clientUuid='" + clientUuid
+                + ", clientUuid=" + clientUuid
+                + ", clientName=" + clientName
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime

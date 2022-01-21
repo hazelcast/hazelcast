@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -37,7 +38,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -74,15 +75,15 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
     public void test_innerJoin() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
-                singletonList(new Object[]{1, "value"}));
+                singletonList(jetRow(1)),
+                singletonList(jetRow(1, "value")));
     }
 
     @Test
     public void when_innerJoinFilteredOutByProjector_then_absent() {
         map.put(1, "value");
         runTest(INNER, FALSE_PREDICATE, PROJECTION, TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
+                singletonList(jetRow(1)),
                 emptyList());
     }
 
@@ -90,15 +91,15 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
     public void when_innerJoinProjectedByProjector_then_modified() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, ConstantExpression.create("modified", VARCHAR), TRUE_PREDICATE,
-                singletonList(new Object[]{1}),
-                singletonList(new Object[]{1, "modified"}));
+                singletonList(jetRow(1)),
+                singletonList(jetRow(1, "modified")));
     }
 
     @Test
     public void when_innerJoinFilteredOutByCondition_then_absent() {
         map.put(1, "value");
         runTest(INNER, TRUE_PREDICATE, PROJECTION, FALSE_PREDICATE,
-                singletonList(new Object[]{1}),
+                singletonList(jetRow(1)),
                 emptyList());
     }
 
@@ -106,32 +107,32 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
     public void test_outerJoin() {
         map.put(1, "value");
         runTest(LEFT, TRUE_PREDICATE, PROJECTION, TRUE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, "value"}, new Object[]{2, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, "value"), jetRow(2, null)));
     }
 
     @Test
     public void when_outerJoinFilteredOutByProjector_then_absent() {
         map.put(1, "value");
         runTest(LEFT, FALSE_PREDICATE, PROJECTION, TRUE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, null}, new Object[]{2, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, null), jetRow(2, null)));
     }
 
     @Test
     public void when_outerJoinProjectedByProjector_then_modified() {
         map.put(1, "value");
         runTest(LEFT, TRUE_PREDICATE, ConstantExpression.create("modified", VARCHAR), TRUE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, "modified"}, new Object[]{2, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, "modified"), jetRow(2, null)));
     }
 
     @Test
     public void when_outerJoinFilteredOutByCondition_then_absent() {
         map.put(1, "value");
         runTest(LEFT, TRUE_PREDICATE, PROJECTION, FALSE_PREDICATE,
-                asList(new Object[]{1}, new Object[]{2}),
-                asList(new Object[]{1, null}, new Object[]{2, null}));
+                asList(jetRow(1), jetRow(2)),
+                asList(jetRow(1, null), jetRow(2, null)));
     }
 
     private void runTest(
@@ -139,8 +140,8 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
             Expression<Boolean> rowProjectorCondition,
             Expression<?> rowProjectorProjection,
             Expression<Boolean> nonEquiCondition,
-            List<Object[]> input,
-            List<Object[]> output
+            List<JetSqlRow> input,
+            List<JetSqlRow> output
     ) {
         KvRowProjector.Supplier projectorSupplier = KvRowProjector.supplier(
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},

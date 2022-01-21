@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
@@ -41,7 +42,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call() {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
 
         SqlStatement query = new SqlStatement(parameters.sql);
@@ -53,11 +54,12 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         query.setSchema(parameters.schema);
         query.setTimeoutMillis(parameters.timeoutMillis);
         query.setCursorBufferSize(parameters.cursorBufferSize);
-        query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
+        query.setExpectedResultType(SqlExpectedResultType.fromId(parameters.expectedResultType));
 
         SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-        return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
+        boolean skipUpdateStatistics = parameters.isSkipUpdateStatisticsExists && parameters.skipUpdateStatistics;
+        return sqlService.execute(query, sqlSecurityContext, parameters.queryId, skipUpdateStatistics);
     }
 
     @Override
@@ -75,22 +77,27 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
             SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
-                endpoint.getUuid(),
-                result,
-                parameters.cursorBufferSize,
-                serializationService
+                    endpoint.getUuid(),
+                    result,
+                    parameters.cursorBufferSize,
+                    serializationService
             );
 
             return SqlExecuteCodec.encodeResponse(
-                result.getRowMetadata().getColumns(),
-                page,
-                -1,
-                null
+                    result.getRowMetadata().getColumns(),
+                    page,
+                    -1,
+                    null
             );
         }
     }
 
     protected ClientMessage encodeException(Throwable throwable) {
+        // exception can be thrown before parameters are decoded
+        if (parameters == null) {
+            return super.encodeException(throwable);
+        }
+
         nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
@@ -102,10 +109,10 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
-            null,
-            null,
-            -1,
-            error
+                null,
+                null,
+                -1,
+                error
         );
     }
 
@@ -126,14 +133,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
-            parameters.sql,
-            parameters.parameters,
-            parameters.timeoutMillis,
-            parameters.cursorBufferSize,
-            parameters.schema,
-            parameters.queryId
-        } ;
+        return new Object[]{
+                parameters.sql,
+                parameters.parameters,
+                parameters.timeoutMillis,
+                parameters.cursorBufferSize,
+                parameters.schema,
+                parameters.queryId
+        };
     }
 
     @Override

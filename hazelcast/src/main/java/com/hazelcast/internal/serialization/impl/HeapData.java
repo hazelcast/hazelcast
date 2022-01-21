@@ -171,6 +171,11 @@ public class HeapData implements Data {
     }
 
     @Override
+    public boolean isCompact() {
+        return SerializationConstants.TYPE_COMPACT == getType();
+    }
+
+    @Override
     public String toString() {
         return "HeapData{"
                 + "type=" + getType()

@@ -18,63 +18,98 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.Properties;
+
 import static com.hazelcast.config.RestEndpointGroup.DATA;
-import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
-import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.entry;
-import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperties;
+import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends HazelcastTestSupport {
+
+    private static final Map<String, String> EMPTY_ENV_VARIABLES = emptyMap();
 
     @Test
     public void shouldExtractConfigFromSysProperties() {
-        runWithSystemProperties(() -> {
-              Config config = new Config();
-              new ExternalConfigurationOverride().overwriteMemberConfig(config);
+        Config config = new Config();
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.cluster-name", "test");
+        systemProperties.put("hz.network.join.autodetection.enabled", "false");
+        systemProperties.put("hz.executor-service.custom.pool-size", "42");
+        new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
 
-              assertEquals("test", config.getClusterName());
-              assertEquals(42, config.getExecutorConfig("custom").getPoolSize());
-              assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
-          },
-          entry("hz.cluster-name", "test"),
-          entry("hz.network.join.autodetection.enabled", "false"),
-          entry("hz.executor-service.custom.pool-size", "42"));
+        assertEquals("test", config.getClusterName());
+        assertEquals(42, config.getExecutorConfig("custom").getPoolSize());
+        assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
     }
 
     @Test
     public void shouldHandleRestApiConfigFromSysProperties() {
-        runWithSystemProperties(() -> {
-              Config config = new Config();
-              new ExternalConfigurationOverride().overwriteMemberConfig(config);
+        Config config = new Config();
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.network.rest-api.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
 
-              assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
-              assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
-              assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(HOT_RESTART));
-          },
-          entry("hz.network.rest-api.enabled", "true"),
-          entry("hz.network.rest-api.endpoint-groups.DATA.enabled", "true"),
-          entry("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true"));
+        new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
+    }
+
+    @Test
+    public void shouldHandleRestApiConfigFromSysProperties_whenPersistenceEnabled() {
+        Config config = new Config();
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.network.rest-api.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
+
+        new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
+    }
+
+    @Test
+    public void shouldHandleRestApiConfigFromSysProperties_when_bothPersistenceAndHotRestartAreEnabled() {
+        Config config = new Config();
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.network.rest-api.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.DATA.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.persistence.enabled", "true");
+
+        new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void shouldHandleRestApiConfigFromSysPropertiesInvalidEntry() {
-        runWithSystemProperties(() -> {
-              Config config = new Config();
-              new ExternalConfigurationOverride().overwriteMemberConfig(config);
-          },
-          entry("hz.network.rest-api.enabled", "true"),
-          entry("hz.network.rest-api.endpoint-groups.fooo.enabled", "true"),
-          entry("hz.network.rest-api.endpoint-groups.HOT_RESTART.enabled", "true"));
+        Config config = new Config();
+        Properties systemProperties = new Properties();
+        systemProperties.put("hz.network.rest-api.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.fooo.enabled", "true");
+        systemProperties.put("hz.network.rest-api.endpoint-groups.HOT_RESTART.enabled", "true");
+
+        new ExternalConfigurationOverride(EMPTY_ENV_VARIABLES, () -> systemProperties).overwriteMemberConfig(config);
     }
 }

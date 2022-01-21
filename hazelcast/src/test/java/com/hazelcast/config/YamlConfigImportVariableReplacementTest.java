@@ -82,7 +82,8 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    ${name}:\n"
-                + "      backup-count: ${async.backup.count}${backup.count}\n";
+                + "      backup-count: ${backup.count}\n"
+                + "      async-backup-count: ${async.backup.count}\n";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");

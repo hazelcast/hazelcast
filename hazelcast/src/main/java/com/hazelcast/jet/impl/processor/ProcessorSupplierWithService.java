@@ -18,9 +18,11 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -52,7 +54,9 @@ public final class ProcessorSupplierWithService<C, S> implements ProcessorSuppli
     @Override
     public void init(@Nonnull Context context) {
         ManagedContext managedContext = context.managedContext();
-        serviceContext = serviceFactory.createContextFn().apply(context);
+        FunctionEx<? super Context, ? extends C> contextFn = serviceFactory.createContextFn();
+        PermissionsUtil.checkPermission(contextFn, context);
+        serviceContext = contextFn.apply(context);
         serviceContext = (C) managedContext.initialize(serviceContext);
     }
 

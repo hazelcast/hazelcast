@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -128,12 +129,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+    private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
     private EvictionConfig evictionConfig = new EvictionConfig()
             .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
+    private TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
 
     public MapConfig() {
     }
@@ -168,8 +171,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+        this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
+        this.tieredStoreConfig = new TieredStoreConfig(config.tieredStoreConfig);
     }
 
     /**
@@ -680,13 +685,41 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     /**
+     * Gets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public @Nonnull
+    DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code MapConfig}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
+     *
+     * @deprecated since 5.0 use {@link MapConfig#setDataPersistenceConfig(DataPersistenceConfig)}
      */
+    @Deprecated
     public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setDataPersistenceConfig(@Nonnull DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = checkNotNull(dataPersistenceConfig, "DataPersistenceConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -729,6 +762,26 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      */
     public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
         this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
+        return this;
+    }
+
+    /**
+     * Gets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @return tiered-store config
+     */
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfig;
+    }
+
+    /**
+     * Sets the {@code TieredStoreConfig} for this {@code MapConfig}
+     *
+     * @param tieredStoreConfig tiered-store config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setTieredStoreConfig(TieredStoreConfig tieredStoreConfig) {
+        this.tieredStoreConfig = checkNotNull(tieredStoreConfig, "tieredStoreConfig cannot be null");
         return this;
     }
 
@@ -837,6 +890,13 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!eventJournalConfig.equals(that.eventJournalConfig)) {
             return false;
         }
+        if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
+            return false;
+        }
+        if (!tieredStoreConfig.equals(that.tieredStoreConfig)) {
+            return false;
+        }
+
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
@@ -868,6 +928,8 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + merkleTreeConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + dataPersistenceConfig.hashCode();
+        result = 31 * result + tieredStoreConfig.hashCode();
         return result;
     }
 
@@ -886,6 +948,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", merkleTree=" + merkleTreeConfig
                 + ", eventJournal=" + eventJournalConfig
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
                 + ", mergePolicyConfig=" + mergePolicyConfig
@@ -898,6 +961,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
+                + ", tieredStoreConfig=" + tieredStoreConfig
                 + '}';
     }
 
@@ -942,6 +1006,12 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
             out.writeBoolean(perEntryStatsEnabled);
         }
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            out.writeObject(dataPersistenceConfig);
+        }
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeObject(tieredStoreConfig);
+        }
     }
 
     @Override
@@ -967,13 +1037,19 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
         splitBrainProtectionName = in.readString();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
 
         if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
             perEntryStatsEnabled = in.readBoolean();
+        }
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            setDataPersistenceConfig(in.readObject());
+        }
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            setTieredStoreConfig(in.readObject());
         }
     }
 }

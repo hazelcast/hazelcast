@@ -27,7 +27,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
@@ -43,6 +42,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -109,6 +109,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final SerializationService serializationService;
+    private final SerializationService compatibilitySerializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
@@ -134,6 +135,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         try {
             this.serializationService = node.getSerializationService();
+            this.compatibilitySerializationService = node.getCompatibilitySerializationService();
             this.concurrencyDetection = newConcurrencyDetection();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
@@ -145,8 +147,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
             UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
-            DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
-            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            this.configurationService = node.getNodeExtension().createService(ClusterWideConfigurationService.class, this);
             ClassLoader configClassLoader = node.getConfigClassLoader();
             if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
                 ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
@@ -160,8 +161,7 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    getJetPacketConsumer(),
-                    sqlService
+                    getJetPacketConsumer()
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -173,6 +173,7 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -311,6 +312,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public SerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
+    }
+
+    @Override
     public OperationServiceImpl getOperationService() {
         return operationService;
     }
@@ -444,6 +450,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
         return serviceManager.getServiceInfos(serviceClass);
+    }
+
+    public void forEachMatchingService(Class serviceClass, Consumer<ServiceInfo> consumer) {
+        serviceManager.forEachMatchingService(serviceClass, consumer);
     }
 
     public Node getNode() {

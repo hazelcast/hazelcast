@@ -43,7 +43,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RELIABLE_
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class ReliableTopicService implements ManagedService, RemoteService, StatisticsAwareService, DynamicMetricsProvider {
+public class ReliableTopicService implements ManagedService, RemoteService,
+        StatisticsAwareService<LocalTopicStats>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:reliableTopicService";
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<>();

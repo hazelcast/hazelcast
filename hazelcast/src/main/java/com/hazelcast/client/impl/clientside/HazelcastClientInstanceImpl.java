@@ -31,6 +31,8 @@ import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
+import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -99,6 +101,7 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.jet.JetService;
@@ -153,6 +156,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_MS;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
@@ -190,6 +195,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final MetricsRegistryImpl metricsRegistry;
     private final ClientStatisticsService clientStatisticsService;
     private final Diagnostics diagnostics;
+    private final ClientSchemaService schemaService;
     private final InternalSerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
     private final ClientQueryCacheContext queryCacheContext;
@@ -240,6 +246,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension.logInstanceTrackingMetadata();
         lifecycleService = new LifecycleServiceImpl(this);
         metricsRegistry = initMetricsRegistry();
+        schemaService = new ClientSchemaService(this, getLoggingService().getLogger(ClientSchemaService.class));
         serializationService = clientExtension.createSerializationService((byte) -1);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
@@ -367,7 +374,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             Collection<EventListener> configuredListeners = instantiateConfiguredListenerObjects();
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
+
             connectionManager.start();
+            startHeartbeat();
+            startIcmpPing();
+            connectionManager.connectToCluster();
+
             diagnostics.start();
 
             // static loggers at beginning of file
@@ -416,6 +428,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
             throw rethrow(e);
         }
+    }
+
+    private void startHeartbeat() {
+        long heartbeatTimeout = properties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        long heartbeatInterval = properties.getPositiveMillisOrDefault(HEARTBEAT_INTERVAL);
+        ILogger logger = loggingService.getLogger(HeartbeatManager.class);
+        HeartbeatManager.start(this, executionService, logger,
+                heartbeatInterval, heartbeatTimeout,
+                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
+    }
+
+    private void startIcmpPing() {
+        ILogger logger = loggingService.getLogger(HeartbeatManager.class);
+        ClientICMPManager.start(config.getNetworkConfig().getClientIcmpPingConfig(), executionService, logger,
+                Collections.unmodifiableCollection(connectionManager.getActiveConnections()));
     }
 
     public void disposeOnClusterChange(Disposable disposable) {
@@ -860,8 +887,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         userCodeDeploymentService.deploy(this);
-        proxyManager.createDistributedObjectsOnCluster();
+        schemaService.sendAllSchemas();
         queryCacheContext.recreateAllCaches();
+        proxyManager.createDistributedObjectsOnCluster();
     }
 
     // visible for testing
@@ -900,4 +928,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
     }
 
+    public SchemaService getSchemaService() {
+        return schemaService;
+    }
 }

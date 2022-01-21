@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.Mapping;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
@@ -46,14 +47,16 @@ public class MappingColumnsTable extends InfoSchemaTable {
             new TableField("data_type", QueryDataType.VARCHAR, false)
     );
 
-    private final String mappingsSchema;
+    private final String schema;
     private final Collection<Mapping> mappings;
+    private final Collection<View> views;
 
     public MappingColumnsTable(
             String catalog,
             String schemaName,
-            String mappingsSchema,
-            Collection<Mapping> mappings
+            String schema,
+            Collection<Mapping> mappings,
+            Collection<View> views
     ) {
         super(
                 FIELDS,
@@ -63,8 +66,9 @@ public class MappingColumnsTable extends InfoSchemaTable {
                 new ConstantTableStatistics((long) mappings.size() * FIELDS.size())
         );
 
-        this.mappingsSchema = mappingsSchema;
+        this.schema = schema;
         this.mappings = mappings;
+        this.views = views;
     }
 
     @Override
@@ -76,13 +80,28 @@ public class MappingColumnsTable extends InfoSchemaTable {
                 MappingField field = fields.get(i);
                 Object[] row = new Object[]{
                         catalog(),
-                        mappingsSchema,
+                        schema,
                         mapping.name(),
                         field.name(),
                         field.externalName(),
                         i + 1,
                         String.valueOf(true),
                         field.type().getTypeFamily().name()
+                };
+                rows.add(row);
+            }
+        }
+        for (View view : views) {
+            for (int i = 0; i < view.viewColumnNames().size(); i++) {
+                Object[] row = new Object[]{
+                        catalog(),
+                        schema,
+                        view.name(),
+                        view.viewColumnNames().get(i),
+                        null,
+                        i + 1,
+                        String.valueOf(true),
+                        view.viewColumnTypes().get(i).getTypeFamily().name()
                 };
                 rows.add(row);
             }

@@ -28,8 +28,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 
-import static com.hazelcast.cache.jsr.JsrTestUtil.assertNoMBeanLeftovers;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -51,11 +50,7 @@ public class CacheManagerManagementTest extends org.jsr107.tck.management.CacheM
         MutableConfiguration<Integer, Integer> cacheConfig = new MutableConfiguration<>();
         cacheConfig.setManagementEnabled(true);
         Cache<Integer, Integer> cache = cacheManager.createCache("int-cache", cacheConfig);
-        try {
-            assertNoMBeanLeftovers();
-            fail("Should have failed due to mbean leftovers");
-        } catch (AssertionError error) {
-            cache.close();
-        }
+        assertThrows(AssertionError.class, JsrTestUtil::assertNoMBeanLeftovers);
+        cache.close();
     }
 }

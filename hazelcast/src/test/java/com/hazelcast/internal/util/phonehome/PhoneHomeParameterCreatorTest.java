@@ -43,7 +43,7 @@ public class PhoneHomeParameterCreatorTest {
         phoneHomeParameterCreator.addParam("1", "hazelcast");
         phoneHomeParameterCreator.addParam("2", "phonehome");
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
-        assertEquals("?1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
+        assertEquals("1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
         assertEquals(ImmutableMap.of("1", "hazelcast", "2", "phonehome"), map);
     }
 
@@ -52,7 +52,7 @@ public class PhoneHomeParameterCreatorTest {
         PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
         assertEquals(Collections.emptyMap(), map);
-        assertEquals(phoneHomeParameterCreator.build(), "?");
+        assertEquals(phoneHomeParameterCreator.build(), "");
     }
 
     @Test

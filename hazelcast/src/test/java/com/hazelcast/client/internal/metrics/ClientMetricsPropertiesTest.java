@@ -164,6 +164,36 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(DEBUG, metricsRegistry.minimumLevel());
     }
 
+    @Test
+    public void testDeprecatedPropertiesStillEffective() {
+        // setting non-defaults
+        clientConfig.setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), "24");
+
+        HazelcastClientProxy client = createClient();
+        ClientConfig clientConfig = client.getClientConfig();
+
+        ClientMetricsConfig metricsConfig = clientConfig.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Test
+    public void testDeprecatedPropertiesIgnored_whenNewPropertiesGiven() {
+        clientConfig.setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "true");
+        clientConfig.setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), "24");
+
+        clientConfig.setProperty(ClientProperty.METRICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.METRICS_COLLECTION_FREQUENCY.getName(), "30");
+
+        HazelcastClientProxy client = createClient();
+        ClientConfig clientConfig = client.getClientConfig();
+
+        ClientMetricsConfig metricsConfig = clientConfig.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertEquals(30, metricsConfig.getCollectionFrequencySeconds());
+    }
+
     private HazelcastClientProxy createClient() {
         return (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
     }

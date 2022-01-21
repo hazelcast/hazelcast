@@ -18,6 +18,9 @@ package com.hazelcast.jet.python;
 import com.hazelcast.jet.JetException;
 
 class InvalidPythonServiceConfigException extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
     InvalidPythonServiceConfigException(String message) {
         super(message);
     }

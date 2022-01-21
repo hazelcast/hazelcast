@@ -51,7 +51,9 @@ public class SqlCatalog {
                 String schemaName = table.getSchemaName();
                 String tableName = table.getSqlName();
 
-                Table oldTable = schemas.computeIfAbsent(schemaName, key -> new HashMap<>()).putIfAbsent(tableName, table);
+                Table oldTable = schemas
+                        .computeIfAbsent(schemaName, key -> new HashMap<>())
+                        .putIfAbsent(tableName, table);
 
                 if (oldTable == null) {
                     tableConflicts.computeIfAbsent(tableName, key -> new HashSet<>()).add(table);

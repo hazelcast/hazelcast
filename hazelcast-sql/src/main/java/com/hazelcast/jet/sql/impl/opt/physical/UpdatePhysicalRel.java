@@ -53,7 +53,8 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
     public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
         List<Expression<?>> projects = project(OptUtils.schema(getTable()), getSourceExpressionList(), parameterMetadata);
-        return IntStream.range(0, projects.size()).boxed()
+        return IntStream.range(0, projects.size())
+                .boxed()
                 .collect(toMap(i -> getUpdateColumnList().get(i), projects::get));
     }
 

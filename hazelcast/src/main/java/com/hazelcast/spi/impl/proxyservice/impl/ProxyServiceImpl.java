@@ -124,9 +124,9 @@ public class ProxyServiceImpl
         return count;
     }
 
-    public void initializeAndPublishProxies() {
+    public void initializeProxies(boolean publishAfterInitialization) {
         for (ProxyRegistry registry : registries.values()) {
-            registry.initializeAndPublishProxies();
+            registry.initializeProxies(publishAfterInitialization);
         }
     }
 
@@ -217,6 +217,17 @@ public class ProxyServiceImpl
     }
 
     @Override
+    public boolean existsDistributedObject(String serviceName, String objectId) {
+        checkServiceNameNotNull(serviceName);
+
+        ProxyRegistry registry = registries.get(serviceName);
+        if (registry == null) {
+            return false;
+        }
+        return registry.existsDistributedObject(objectId);
+    }
+
+    @Override
     public Collection<DistributedObject> getAllDistributedObjects() {
         Collection<DistributedObject> result = new LinkedList<>();
         for (ProxyRegistry registry : registries.values()) {
@@ -281,13 +292,11 @@ public class ProxyServiceImpl
         listeners.clear();
     }
 
-    private static @Nonnull
-    String checkServiceNameNotNull(@Nonnull String serviceName) {
-        return checkNotNull(serviceName, "Service name is required!");
+    private static void checkServiceNameNotNull(@Nonnull String serviceName) {
+        checkNotNull(serviceName, "Service name is required");
     }
 
-    private static @Nonnull
-    String checkObjectNameNotNull(@Nonnull String name) {
-        return checkNotNull(name, "Object name is required!");
+    private static void checkObjectNameNotNull(@Nonnull String name) {
+        checkNotNull(name, "Object name is required");
     }
 }

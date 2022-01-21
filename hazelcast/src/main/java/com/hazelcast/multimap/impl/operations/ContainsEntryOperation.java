@@ -57,7 +57,6 @@ public class ContainsEntryOperation extends AbstractMultiMapOperation implements
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

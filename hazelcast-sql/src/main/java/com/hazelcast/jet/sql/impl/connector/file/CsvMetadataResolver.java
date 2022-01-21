@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.sql.impl.extract.CsvQueryTarget;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -30,6 +30,11 @@ final class CsvMetadataResolver extends MetadataResolver<Map<String, String>> {
     static final CsvMetadataResolver INSTANCE = new CsvMetadataResolver();
 
     private static final FileFormat<?> SAMPLE_FORMAT = FileFormat.csv(Map.class);
+
+    @Override
+    protected String supportedFormat() {
+        return sampleFormat().format();
+    }
 
     @Override
     protected FileFormat<?> sampleFormat() {

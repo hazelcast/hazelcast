@@ -105,5 +105,10 @@ public class ToHeapDataConverterTest {
         public boolean isJson() {
             return false;
         }
+
+        @Override
+        public boolean isCompact() {
+            return false;
+        }
     }
 }

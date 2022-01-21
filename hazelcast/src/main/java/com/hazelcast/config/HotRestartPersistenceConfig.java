@@ -32,7 +32,18 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * HotRestartConfig configures whether hot restart is enabled,
  * where disk data will be stored, should data be persisted
  * sync or async etc.
+ *
+ *<br><br>
+ * Note: If either, but not both, persistence ({@code PersistenceConfig}) or
+ * hot-restart-persistence ({@code HotRestartPersistenceConfig}) is enabled,
+ * Hazelcast will use the configuration of the enabled element. If both are
+ * enabled, Hazelcast will use the persistence ({@code PersistenceConfig})
+ * configuration. hot-restart-persistence element (and thus {@code HotRestartPersistenceConfig})
+ * will be removed in a future release.
+ *
+ * @deprecated since 5.0 use {@link PersistenceConfig}
  */
+@Deprecated
 public class HotRestartPersistenceConfig {
     /** Default directory name for the Hot Restart store's home */
     public static final String HOT_RESTART_BASE_DIR_DEFAULT = "hot-restart";

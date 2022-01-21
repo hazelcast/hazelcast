@@ -46,6 +46,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestEnvironment.isSolaris;
 import static org.junit.Assert.assertEquals;
@@ -172,7 +173,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         HazelcastInstance server2 = null;
 
         try {
-            Config config = new Config();
+            Config config = new Config().setClusterName(getTestMethodName());
             if (isSolaris()) {
                 config.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
             }
@@ -189,7 +190,8 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
             ICacheService cacheService2 = getCacheService(server2);
 
             // Create the hazelcast client instance
-            client = HazelcastClient.newHazelcastClient();
+            ClientConfig clientConfig = new ClientConfig().setClusterName(getTestMethodName());
+            client = HazelcastClient.newHazelcastClient(clientConfig);
 
             // Create the client cache manager
             CachingProvider cachingProvider = createClientCachingProvider(client);

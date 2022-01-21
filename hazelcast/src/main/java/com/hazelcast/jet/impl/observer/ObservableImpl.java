@@ -59,7 +59,7 @@ public class ObservableImpl<T> implements Observable<T> {
 
     /**
      * Constant ID to be used as a {@link ProcessorMetaSupplier#getTags()
-     * PMS tag key} for specifying when a PMS owns an {@link Observable} (ie.
+     * PMS tag key} for specifying when a PMS owns an {@link Observable} (i.e.
      * is the entity populating the {@link Observable} with data).
      */
     public static final String OWNED_OBSERVABLE = ObservableImpl.class.getName() + ".ownedObservable";

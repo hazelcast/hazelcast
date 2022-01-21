@@ -68,14 +68,12 @@ import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.newInputStream;
 import static com.hazelcast.internal.nio.IOUtil.newOutputStream;
-import static com.hazelcast.internal.nio.IOUtil.readByteArray;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.internal.nio.IOUtil.readObject;
 import static com.hazelcast.internal.nio.IOUtil.rename;
 import static com.hazelcast.internal.nio.IOUtil.toFileName;
 import static com.hazelcast.internal.nio.IOUtil.touch;
-import static com.hazelcast.internal.nio.IOUtil.writeByteArray;
 import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
@@ -90,14 +88,11 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -130,39 +125,6 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(IOUtil.class);
-    }
-
-    @Test
-    public void testWriteAndReadByteArray() throws Exception {
-        byte[] bytes = new byte[SIZE];
-        bytes[0] = SIZE - 1;
-        bytes[1] = 23;
-        bytes[2] = 42;
-
-        byte[] output = writeAndReadByteArray(bytes);
-
-        assertNotNull(output);
-        assertEquals(SIZE - 1, output[0]);
-        assertEquals(23, output[1]);
-        assertEquals(42, output[2]);
-    }
-
-    @Test
-    public void testWriteAndReadByteArray_withNull() throws Exception {
-        byte[] output = writeAndReadByteArray(null);
-
-        assertNull(output);
-    }
-
-    private byte[] writeAndReadByteArray(byte[] bytes) throws Exception {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
-        writeByteArray(out, bytes);
-        byte[] data = bout.toByteArray();
-
-        ByteArrayInputStream bin = new ByteArrayInputStream(data);
-        ObjectDataInput in = createObjectDataInputStream(bin, serializationService);
-        return readByteArray(in);
     }
 
     @Test
@@ -434,8 +396,12 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void testTouch_failsWhenLastModifiedCannotBeSet() {
-        File file = spy(newFile("touchMe"));
-        when(file.setLastModified(anyLong())).thenReturn(false);
+        File file = new File(tempFolder.getRoot(), "touchMe") {
+            @Override
+            public boolean setLastModified(long time) {
+                return false;
+            }
+        };
 
         touch(file);
     }

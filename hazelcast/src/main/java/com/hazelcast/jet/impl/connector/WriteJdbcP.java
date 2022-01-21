@@ -30,19 +30,23 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -50,6 +54,8 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -91,6 +97,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
      * Use {@link SinkProcessors#writeJdbcP}.
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
+            @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -102,6 +109,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         checkPositive(batchLimit, "batchLimit");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
                     private transient CommonDataSource dataSource;
 
@@ -116,6 +124,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                                         .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
                                                                exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public List<Permission> permissions() {
+                        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
                     }
                 });
     }

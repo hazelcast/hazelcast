@@ -63,6 +63,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(true);
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
 
         initialize(2, config);

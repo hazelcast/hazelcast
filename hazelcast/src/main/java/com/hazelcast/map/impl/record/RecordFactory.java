@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.version.Version;
+import com.hazelcast.internal.serialization.Data;
 
 /**
  * Factory for creating records. Created for every partition.
@@ -27,16 +25,5 @@ import com.hazelcast.version.Version;
  */
 public interface RecordFactory<T> {
 
-    Record<T> newRecord(Object value);
-
-    // RU_COMPAT_4_1
-    default boolean isClusterV41() {
-        Version clusterVersion = geMapContainer().getMapServiceContext()
-                .getNodeEngine().getClusterService().getClusterVersion();
-        return clusterVersion.isUnknownOrLessThan(Versions.V4_2);
-    }
-
-    // RU_COMPAT_4_1
-    MapContainer geMapContainer();
-
+    Record<T> newRecord(Data key, Object value);
 }

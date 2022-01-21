@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.cluster.Member;
 
 import java.util.Random;
 
 /**
- * A {@link com.hazelcast.client.LoadBalancer} that selects a random member to route to.
+ * A {@link LoadBalancer} that selects a random member to route to.
  */
 public class RandomLB extends AbstractLoadBalancer {
 

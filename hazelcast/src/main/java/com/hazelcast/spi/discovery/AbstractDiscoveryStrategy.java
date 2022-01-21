@@ -16,18 +16,20 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
-import com.hazelcast.internal.util.StringUtil;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * An common abstract superclass for {@link DiscoveryStrategy} implementations,
+ * A common abstract superclass for {@link DiscoveryStrategy} implementations,
  * offering convenient access to configuration properties (which may be overridden
  * on the system's environment or JVM properties), as well as a {@link ILogger} instance.
  *
@@ -37,10 +39,16 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     private final ILogger logger;
     private final Map<String, Comparable> properties;
+    private final EnvVariableProvider envVariableProvider;
 
     public AbstractDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+        this(logger, properties, System::getenv);
+    }
+
+    AbstractDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties, EnvVariableProvider envVariableProvider) {
         this.logger = logger;
         this.properties = unmodifiableMap(properties);
+        this.envVariableProvider = envVariableProvider;
     }
 
     @Override
@@ -53,6 +61,11 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     @Override
     public PartitionGroupStrategy getPartitionGroupStrategy() {
+        return null;
+    }
+
+    @Override
+    public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
         return null;
     }
 
@@ -191,7 +204,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
             String p = getProperty(prefix, property);
             String v = System.getProperty(p);
             if (StringUtil.isNullOrEmpty(v)) {
-                v = System.getenv(p);
+                v = envVariableProvider.getVariable(p);
             }
 
             if (!StringUtil.isNullOrEmpty(v)) {
@@ -208,4 +221,10 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
         }
         return sb.append(property.key()).toString();
     }
+
+    @FunctionalInterface
+    interface EnvVariableProvider {
+        String getVariable(String name);
+    }
+
 }

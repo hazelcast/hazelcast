@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
 
@@ -124,6 +125,10 @@ public class PartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        return getNamespaces(ignored -> true, replicaIndex);
+    }
+
+    public Collection<ServiceNamespace> getNamespaces(Predicate<MapConfig> predicate, int replicaIndex) {
         if (maps.isEmpty()) {
             return Collections.emptyList();
         }
@@ -133,7 +138,8 @@ public class PartitionContainer {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
 
-            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+            if (mapConfig.getTotalBackupCount() < replicaIndex
+                    || !predicate.test(mapConfig)) {
                 continue;
             }
 

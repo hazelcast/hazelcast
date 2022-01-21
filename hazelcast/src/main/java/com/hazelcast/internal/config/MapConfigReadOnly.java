@@ -31,7 +31,9 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.util.CollectionUtil;
 
@@ -54,6 +56,7 @@ public class MapConfigReadOnly extends MapConfig {
     private final MapStoreConfigReadOnly mapStoreConfigReadOnly;
     private final NearCacheConfigReadOnly nearCacheConfigReadOnly;
     private final HotRestartConfigReadOnly hotRestartConfigReadOnly;
+    private final DataPersistenceConfigReadOnly dataPersistenceConfigReadOnly;
     private final EventJournalConfigReadOnly eventJournalConfigReadOnly;
     private final MerkleTreeConfigReadOnly merkleTreeConfigReadOnly;
     private final PartitioningStrategyConfigReadOnly partitioningStrategyConfigReadOnly;
@@ -61,6 +64,7 @@ public class MapConfigReadOnly extends MapConfig {
     private final List<MapPartitionLostListenerConfig> partitionLostListenerConfigsReadOnly;
     private final List<QueryCacheConfig> queryCacheConfigsReadOnly;
     private final List<EntryListenerConfig> entryListenerConfigsReadOnly;
+    private final TieredStoreConfigReadOnly tieredStoreConfigReadOnly;
 
     public MapConfigReadOnly(MapConfig config) {
         super(config);
@@ -83,6 +87,9 @@ public class MapConfigReadOnly extends MapConfig {
         HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
         hotRestartConfigReadOnly = new HotRestartConfigReadOnly(hotRestartConfig);
 
+        DataPersistenceConfig dataPersistenceConfig = super.getDataPersistenceConfig();
+        dataPersistenceConfigReadOnly = new DataPersistenceConfigReadOnly(dataPersistenceConfig);
+
         EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
         eventJournalConfigReadOnly = new EventJournalConfigReadOnly(eventJournalConfig);
 
@@ -97,6 +104,9 @@ public class MapConfigReadOnly extends MapConfig {
         partitionLostListenerConfigsReadOnly = getPartitionLostListenerConfigsReadOnly();
         queryCacheConfigsReadOnly = getQueryCacheConfigsReadOnly();
         entryListenerConfigsReadOnly = getEntryListenerConfigsReadOnly();
+
+        TieredStoreConfig tieredStoreConfig = super.getTieredStoreConfig();
+        tieredStoreConfigReadOnly = new TieredStoreConfigReadOnly(tieredStoreConfig);
     }
 
     private List<EntryListenerConfig> getEntryListenerConfigsReadOnly() {
@@ -212,6 +222,18 @@ public class MapConfigReadOnly extends MapConfig {
     @Override
     public HotRestartConfig getHotRestartConfig() {
         return hotRestartConfigReadOnly;
+    }
+
+    @Nonnull
+    @Override
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfigReadOnly;
+    }
+
+    @Nonnull
+    @Override
+    public TieredStoreConfig getTieredStoreConfig() {
+        return tieredStoreConfigReadOnly;
     }
 
     @Override

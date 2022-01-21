@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the cache. Clears the internal content and releases any resource.
  */
-@Generated("e1814fce2b3a16e58b5d438838f0ee6e")
+@Generated("0624765f905e95dc0e429e1708928e25")
 public final class CacheDestroyCodec {
     //hex: 0x130700
     public static final int REQUEST_MESSAGE_TYPE = 1246976;
@@ -78,6 +78,4 @@ public final class CacheDestroyCodec {
 
         return clientMessage;
     }
-
-
 }

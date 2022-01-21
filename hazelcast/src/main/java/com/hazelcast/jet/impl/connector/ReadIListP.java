@@ -48,7 +48,7 @@ public final class ReadIListP extends AbstractProcessor {
     private Traverser<Object> traverser;
     private HazelcastInstance client;
 
-    ReadIListP(String name, String clientXml) {
+    public ReadIListP(String name, String clientXml) {
         this.name = name;
         this.clientXml = clientXml;
     }

@@ -73,8 +73,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
-        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(10);
+        config.getJetConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().setScaleUpDelayMillis(10);
         instance1 = createHazelcastInstance(config);
         instance2 = createHazelcastInstance(config);
     }

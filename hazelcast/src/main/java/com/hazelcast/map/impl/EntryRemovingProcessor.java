@@ -24,15 +24,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
-public class EntryRemovingProcessor implements EntryProcessor, IdentifiedDataSerializable {
+public class EntryRemovingProcessor implements EntryProcessor<Object, Object, Void>, IdentifiedDataSerializable {
 
     public static final EntryRemovingProcessor ENTRY_REMOVING_PROCESSOR = new EntryRemovingProcessor();
 
     public EntryRemovingProcessor() {
     }
 
-    public Object process(Map.Entry entry) {
-        ((LazyMapEntry) entry).remove();
+    public Void process(Map.Entry<Object, Object> entry) {
+        ((LazyMapEntry<Object, Object>) entry).remove();
         return null;
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
@@ -45,16 +46,17 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class AbstractYamlSchemaTest {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
 
     public static final Schema SCHEMA = SchemaLoader.builder()
-            .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
+            .schemaJson(readJSONObject("/hazelcast-config-5.1.json"))
             .draftV6Support()
             .schemaClient(SchemaClient.classPathAwareClient())
             .build()

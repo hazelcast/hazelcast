@@ -46,7 +46,6 @@ import static org.mockito.Mockito.when;
 public class LazyIteratorTest extends HazelcastTestSupport {
 
     private static final InternalReplicatedMapStorage<String, Integer> TEST_DATA_SIMPLE;
-    private static final InternalReplicatedMapStorage<String, Integer> TEST_DATA_TOMBS;
 
     static {
         TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<String, Integer>();
@@ -54,14 +53,6 @@ public class LazyIteratorTest extends HazelcastTestSupport {
             String key = "key-" + i;
             TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1));
             TEST_DATA_SIMPLE.incrementVersion();
-        }
-        TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>();
-        for (int i = 0; i < 100; i++) {
-            String key = "key-" + i;
-            Integer value = i % 2 == 0 ? i : null;
-            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1);
-            TEST_DATA_TOMBS.put(key, record);
-            TEST_DATA_TOMBS.incrementVersion();
         }
     }
 
@@ -147,94 +138,6 @@ public class LazyIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLazyCollection_withValuesIterator_withTombs_hasNext() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-        Iterator<Integer> iterator = collection.iterator();
-
-        int count = 0;
-        Set<Integer> values = new HashSet<Integer>();
-        while (iterator.hasNext()) {
-            count++;
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d items in the LazyCollection.iterator(), but was %d", 50, count);
-        assertEqualsStringFormat("Expected %d unique items in the LazyCollection.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazyCollection.iterator()", iterator.hasNext());
-    }
-
-    @Test
-    public void testLazyCollection_withValuesIterator_withTombs_next() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-        Iterator<Integer> iterator = collection.iterator();
-
-        Set<Integer> values = new HashSet<Integer>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazyCollection.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazyCollection.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazyCollection.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazyCollection_withValuesIterator_withTombs_onSetCopy() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-
-        Set<Integer> copy = new HashSet<Integer>(collection);
-        Iterator<Integer> iterator = copy.iterator();
-
-        Set<Integer> values = new HashSet<Integer>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazyCollection.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazyCollection.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazyCollection.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazyCollection_withValuesIterator_withTombs_toArray() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-
-        Object[] array = collection.toArray();
-        assertEqualsStringFormat("Expected %d items in the LazyCollection.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazyCollection_withValuesIterator_withTombs_toArray_whenPassedArrayIsTooSmall() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-
-        Integer[] array = collection.toArray(new Integer[0]);
-        assertEqualsStringFormat("Expected %d items in the LazyCollection.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazyCollection_withValuesIterator_withTombs_toArray_whenPassedArrayHasMatchingSize() {
-        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
-
-        Integer[] array = collection.toArray(new Integer[50]);
-        assertEqualsStringFormat("Expected %d items in the LazyCollection.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
     public void testLazySet_size() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
         LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
@@ -306,94 +209,6 @@ public class LazyIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLazySet_withKeySetIterator_withTombs_hasNext() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-        Iterator<String> iterator = collection.iterator();
-
-        int count = 0;
-        Set<String> values = new HashSet<String>();
-        while (iterator.hasNext()) {
-            count++;
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d items in the LazySet.iterator(), but was %d", 50, count);
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-    }
-
-    @Test
-    public void testLazySet_withKeySetIterator_withTombs_next() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-        Iterator<String> iterator = collection.iterator();
-
-        Set<String> values = new HashSet<String>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazySet.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazySet_withKeySetIterator_withTombs_onSetCopy() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-
-        Set<String> copy = new HashSet<String>(collection);
-        Iterator<String> iterator = copy.iterator();
-
-        Set<String> values = new HashSet<String>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazySet.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazySet_withKeySetIterator_withTombs_toArray() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-
-        Object[] array = collection.toArray();
-        assertEqualsStringFormat("Expected %d items in the LazySet.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazySet_withKeySetIterator_withTombs_toArray_whenPassedArrayIsTooSmall() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-
-        String[] array = collection.toArray(new String[0]);
-        assertEqualsStringFormat("Expected %d items in the LazySet.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazySet_withKeySetIterator_withTombs_toArray_whenPassedArrayHasMatchingSize() {
-        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
-
-        String[] array = collection.toArray(new String[50]);
-        assertEqualsStringFormat("Expected %d items in the LazySet.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
     public void testLazySet_withEntrySetIterator_hasNext() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection
@@ -449,100 +264,6 @@ public class LazyIteratorTest extends HazelcastTestSupport {
             // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_hasNext() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-        Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
-
-        int count = 0;
-        Set<Integer> values = new HashSet<Integer>();
-        while (iterator.hasNext()) {
-            count++;
-            values.add(iterator.next().getValue());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, count);
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_next() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-        Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
-
-        Set<Integer> values = new HashSet<Integer>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next().getValue());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazySet.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_onSetCopy() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-
-        Set<Map.Entry<String, Integer>> copy = new HashSet<Map.Entry<String, Integer>>(collection);
-        Iterator<Map.Entry<String, Integer>> iterator = copy.iterator();
-
-        Set<Integer> values = new HashSet<Integer>();
-        for (int i = 0; i < 50; i++) {
-            values.add(iterator.next().getValue());
-        }
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.iterator(), but was %d", 50, values.size());
-        assertFalse("Expected no more items in LazySet.iterator()", iterator.hasNext());
-        try {
-            iterator.next();
-            fail("LazySet.iterator() shouldn't have further items");
-        } catch (NoSuchElementException expected) {
-            // we need to catch it here since we won't have a successful test
-            // if any of the prior calls would throw it!
-        }
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_toArray() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-
-        Object[] array = collection.toArray();
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_toArray_whenPassedArrayIsTooSmall() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-
-        Map.Entry[] array = collection.toArray(new Map.Entry[0]);
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.toArray(), but was %d", 50, array.length);
-    }
-
-    @Test
-    public void testLazySet_withEntrySetIterator_withTombs_toArray_whenPassedArrayHasMatchingSize() {
-        EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(replicatedRecordStore);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection
-                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
-
-        Map.Entry[] array = collection.toArray(new Map.Entry[50]);
-        assertEqualsStringFormat("Expected %d unique items in the LazySet.toArray(), but was %d", 50, array.length);
     }
 
     private static class ReturnFirstArgumentAnswer implements Answer<Object> {

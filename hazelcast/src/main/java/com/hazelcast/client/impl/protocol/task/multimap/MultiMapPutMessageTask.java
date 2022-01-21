@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapPutCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Timer;
+import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -34,10 +33,25 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_PUT}
  */
 public class MultiMapPutMessageTask
-        extends AbstractPartitionMessageTask<MultiMapPutCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapPutCodec.RequestParameters> {
+
+    private transient long startTimeNanos;
 
     public MultiMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        if (getContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        updateStats(stats -> stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos)));
+        return response;
     }
 
     @Override
@@ -53,11 +67,6 @@ public class MultiMapPutMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapPutCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override

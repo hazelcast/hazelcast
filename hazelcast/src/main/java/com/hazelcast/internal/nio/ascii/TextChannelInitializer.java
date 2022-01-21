@@ -23,6 +23,7 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.tcp.AbstractChannelInitializer;
+import com.hazelcast.internal.server.tcp.SingleProtocolEncoder;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.server.tcp.TextHandshakeDecoder;
 
@@ -39,13 +40,14 @@ public class TextChannelInitializer
     @Override
     public void initChannel(Channel channel) {
         ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
-        TextEncoder encoder = new TextEncoder(connection);
+        SingleProtocolEncoder encoder = new SingleProtocolEncoder(new TextEncoder(connection));
 
         InboundHandler decoder = rest
-                ? new RestApiTextDecoder(connection, encoder, true)
-                : new MemcacheTextDecoder(connection, encoder, true);
+                ? new RestApiTextDecoder(connection, (TextEncoder) encoder.getFirstOutboundHandler(), true)
+                : new MemcacheTextDecoder(connection, (TextEncoder) encoder.getFirstOutboundHandler(), true);
 
-        TextHandshakeDecoder handshaker = new TextHandshakeDecoder(rest ? ProtocolType.REST : ProtocolType.MEMCACHE, decoder);
+        TextHandshakeDecoder handshaker = new TextHandshakeDecoder(rest ? ProtocolType.REST : ProtocolType.MEMCACHE,
+                decoder, encoder);
         channel.outboundPipeline().addLast(encoder);
         channel.inboundPipeline().addLast(handshaker);
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
@@ -58,10 +57,7 @@ public class ClientLoggingService implements LoggingService {
     }
 
     public void updateClusterName(String clusterName) {
-        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        this.versionMessage = instanceName + " [" + clusterName + "]"
-                + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
-                + " [" + buildInfo.getVersion() + "] ";
+        this.versionMessage = instanceName + " [" + clusterName + "] [" + buildInfo.getVersion() + "] ";
     }
 
     @Override

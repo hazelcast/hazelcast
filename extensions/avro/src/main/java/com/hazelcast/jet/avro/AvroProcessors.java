@@ -17,10 +17,13 @@
 package com.hazelcast.jet.avro;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
+import com.hazelcast.security.permission.ConnectorPermission;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
@@ -29,13 +32,18 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Permission;
+import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 
 /**
  * Static utility class with factories of Apache Avro source and sink
@@ -59,14 +67,9 @@ public final class AvroProcessors {
             @Nonnull SupplierEx<? extends DatumReader<D>> datumReaderSupplier,
             @Nonnull BiFunctionEx<String, ? super D, T> mapOutputFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, true,
-                path -> {
-                    DataFileReader<D> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
-                    String fileName = path.getFileName().toString();
-                    return StreamSupport.stream(reader.spliterator(), false)
-                                        .map(item -> mapOutputFn.apply(fileName, item))
-                                        .onClose(() -> uncheckRun(reader::close));
-                });
+        FunctionEx<? super Path, ? extends Stream<T>> readFileFn =
+                dataFileReadFn(directory, datumReaderSupplier, mapOutputFn);
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, true, readFileFn);
     }
 
     /**
@@ -79,9 +82,10 @@ public final class AvroProcessors {
             @Nonnull SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) {
         String jsonSchema = schema.toString();
-        return preferLocalParallelismOne(WriteBufferedP.<DataFileWriter<D>, D>supplier(
-                        context -> createWriter(Paths.get(directoryName), context.globalProcessorIndex(),
-                                jsonSchema, datumWriterSupplier),
+        return preferLocalParallelismOne(
+                ConnectorPermission.file(directoryName, ACTION_WRITE),
+                WriteBufferedP.<DataFileWriter<D>, D>supplier(
+                        dataFileWriterFn(directoryName, jsonSchema, datumWriterSupplier),
                         DataFileWriter::append,
                         DataFileWriter::flush,
                         DataFileWriter::close
@@ -92,19 +96,50 @@ public final class AvroProcessors {
             justification = "mkdirs() returns false if the directory already existed, which is good. "
                     + "We don't care even if it didn't exist and we failed to create it, "
                     + "because we'll fail later when trying to create the file.")
-    private static <D> DataFileWriter<D> createWriter(
-            Path directory, int globalIndex,
-            String jsonSchema,
-            SupplierEx<DatumWriter<D>> datumWriterSupplier
-    ) throws IOException {
-        Schema.Parser parser = new Schema.Parser();
-        Schema schema = parser.parse(jsonSchema);
+    private static <D> FunctionEx<Processor.Context, DataFileWriter<D>> dataFileWriterFn(
+            String directoryName, String jsonSchema, SupplierEx<DatumWriter<D>> datumWriterSupplier
+    ) {
+        return new FunctionEx<Processor.Context, DataFileWriter<D>>() {
+            @Override
+            public DataFileWriter<D> applyEx(Processor.Context context) throws Exception {
+                Schema.Parser parser = new Schema.Parser();
+                Schema schema = parser.parse(jsonSchema);
 
-        directory.toFile().mkdirs();
+                Path directory = Paths.get(directoryName);
+                directory.toFile().mkdirs();
 
-        Path file = directory.resolve(String.valueOf(globalIndex));
-        DataFileWriter<D> writer = new DataFileWriter<>(datumWriterSupplier.get());
-        writer.create(schema, file.toFile());
-        return writer;
+                Path file = directory.resolve(String.valueOf(context.globalProcessorIndex()));
+                DataFileWriter<D> writer = new DataFileWriter<>(datumWriterSupplier.get());
+                writer.create(schema, file.toFile());
+                return writer;
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
+            }
+        };
+    }
+
+    private static <D, T> FunctionEx<? super Path, ? extends Stream<T>> dataFileReadFn(
+            String directoryName,
+            SupplierEx<? extends DatumReader<D>> datumReaderSupplier,
+            BiFunctionEx<String, ? super D, T> mapOutputFn
+    ) {
+        return new FunctionEx<Path, Stream<T>>() {
+            @Override
+            public Stream<T> applyEx(Path path) throws Exception {
+                DataFileReader<D> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
+                String fileName = path.getFileName().toString();
+                return StreamSupport.stream(reader.spliterator(), false)
+                        .map(item -> mapOutputFn.apply(fileName, item))
+                        .onClose(() -> uncheckRun(reader::close));
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_READ));
+            }
+        };
     }
 }

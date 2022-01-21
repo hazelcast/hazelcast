@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("ccb661ad1104a04ced55af801b933b8d")
+@Generated("0ded824f9f471c57c581937c01e26400")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -64,7 +64,6 @@ public final class ClientLocalBackupListenerCodec {
         clientMessage.add(initialFrame);
         return clientMessage;
     }
-
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();

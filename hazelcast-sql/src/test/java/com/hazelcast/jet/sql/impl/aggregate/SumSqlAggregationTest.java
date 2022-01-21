@@ -26,7 +26,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,8 +38,12 @@ public class SumSqlAggregationTest {
     @SuppressWarnings("unused")
     private Object[] types() {
         return new Object[]{
+                new Object[]{QueryDataType.TINYINT},
+                new Object[]{QueryDataType.SMALLINT},
+                new Object[]{QueryDataType.INT},
                 new Object[]{QueryDataType.BIGINT},
                 new Object[]{QueryDataType.DECIMAL},
+                new Object[]{QueryDataType.REAL},
                 new Object[]{QueryDataType.DOUBLE}
         };
     }
@@ -53,22 +59,33 @@ public class SumSqlAggregationTest {
     @SuppressWarnings("unused")
     private Object[] values() {
         return new Object[]{
-                new Object[]{QueryDataType.BIGINT, 1L, 2L, 3L},
-                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), new BigDecimal(2),
-                        new BigDecimal(3)},
-                new Object[]{QueryDataType.REAL, 1F, 2F, 3F},
-                new Object[]{QueryDataType.DOUBLE, 1D, 2D, 3D},
-                new Object[]{QueryDataType.BIGINT, 1L, null, 1L},
-                new Object[]{QueryDataType.BIGINT, null, 1L, 1L},
+                new Object[]{QueryDataType.TINYINT, (byte) 1, (byte) 2, 3L},
+                new Object[]{QueryDataType.TINYINT, null, (byte) 1, 1L},
+                new Object[]{QueryDataType.TINYINT, (byte) 1, null, 1L},
+                new Object[]{QueryDataType.TINYINT, null, null, null},
+                new Object[]{QueryDataType.SMALLINT, (short) 1, (short) 2, 3L},
+                new Object[]{QueryDataType.SMALLINT, null, (short) 1, 1L},
+                new Object[]{QueryDataType.SMALLINT, (short) 1, null, 1L},
+                new Object[]{QueryDataType.SMALLINT, null, null, null},
+                new Object[]{QueryDataType.INT, 1, 2, 3L},
+                new Object[]{QueryDataType.INT, null, 1, 1L},
+                new Object[]{QueryDataType.INT, 1, null, 1L},
+                new Object[]{QueryDataType.INT, null, null, null},
+                new Object[]{QueryDataType.BIGINT, 1L, 2L, new BigDecimal(3)},
+                new Object[]{QueryDataType.BIGINT, null, 1L, new BigDecimal(1)},
+                new Object[]{QueryDataType.BIGINT, 1L, null, new BigDecimal(1)},
                 new Object[]{QueryDataType.BIGINT, null, null, null},
-                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), null, new BigDecimal(1)},
+                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)},
                 new Object[]{QueryDataType.DECIMAL, null, new BigDecimal(1), new BigDecimal(1)},
+                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), null, new BigDecimal(1)},
                 new Object[]{QueryDataType.DECIMAL, null, null, null},
-                new Object[]{QueryDataType.REAL, 1F, null, 1F},
+                new Object[]{QueryDataType.REAL, 1F, 2F, 3F},
                 new Object[]{QueryDataType.REAL, null, 1F, 1F},
+                new Object[]{QueryDataType.REAL, 1F, null, 1F},
                 new Object[]{QueryDataType.REAL, null, null, null},
-                new Object[]{QueryDataType.DOUBLE, 1D, null, 1D},
+                new Object[]{QueryDataType.DOUBLE, 1D, 2D, 3D},
                 new Object[]{QueryDataType.DOUBLE, null, 1D, 1D},
+                new Object[]{QueryDataType.DOUBLE, 1D, null, 1D},
                 new Object[]{QueryDataType.DOUBLE, null, null, null},
         };
     }
@@ -83,25 +100,47 @@ public class SumSqlAggregationTest {
         assertThat(aggregation.collect()).isEqualTo(expected);
     }
 
+    @SuppressWarnings("unused")
+    private Object[] values_susceptible_to_overflow() {
+        return new Object[]{
+                new Object[]{QueryDataType.TINYINT, (byte) 1},
+                new Object[]{QueryDataType.SMALLINT, (short) 1},
+                new Object[]{QueryDataType.INT, 1},
+        };
+    }
+
     @Test
-    public void test_accumulateOverflow() {
-        SqlAggregation aggregation = SumSqlAggregations.from(QueryDataType.BIGINT, false);
+    @Parameters(method = "values_susceptible_to_overflow")
+    public void test_accumulateOverflow(QueryDataType operandType, Object value) {
+        SqlAggregation aggregation = SumSqlAggregations.from(operandType, false);
         aggregation.accumulate(Long.MAX_VALUE);
 
-        assertThatThrownBy(() -> aggregation.accumulate(1L))
+        assertThatThrownBy(() -> aggregation.accumulate(value))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("BIGINT overflow");
     }
 
-    @Test
-    public void test_accumulateDistinct() {
-        SqlAggregation aggregation = SumSqlAggregations.from(QueryDataType.BIGINT, true);
-        aggregation.accumulate(null);
-        aggregation.accumulate(1L);
-        aggregation.accumulate(1L);
-        aggregation.accumulate(2L);
+    @SuppressWarnings("unused")
+    private Object[] values_distinct() {
+        return new Object[]{
+                new Object[]{QueryDataType.TINYINT, asList((byte) 1, (byte) 1, (byte) 2), 3L},
+                new Object[]{QueryDataType.SMALLINT, asList((short) 1, (short) 1, (short) 2), 3L},
+                new Object[]{QueryDataType.INT, asList(1, 1, 2), 3L},
+                new Object[]{QueryDataType.BIGINT, asList(1L, 1L, 2L), new BigDecimal(3)},
+                new Object[]{QueryDataType.DECIMAL, asList(new BigDecimal(1), new BigDecimal(1), new BigDecimal(2)), new BigDecimal(3)},
+                new Object[]{QueryDataType.REAL, asList(1F, 1F, 2F), 3F},
+                new Object[]{QueryDataType.DOUBLE, asList(1D, 1D, 2D), 3D},
+        };
+    }
 
-        assertThat(aggregation.collect()).isEqualTo(3L);
+    @Test
+    @Parameters(method = "values_distinct")
+    public void test_accumulateDistinct(QueryDataType operandType, List<Object> values, Object expected) {
+        SqlAggregation aggregation = SumSqlAggregations.from(operandType, true);
+        aggregation.accumulate(null);
+        values.forEach(aggregation::accumulate);
+
+        assertThat(aggregation.collect()).isEqualTo(expected);
     }
 
     @Test

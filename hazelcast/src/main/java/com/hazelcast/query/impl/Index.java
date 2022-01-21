@@ -156,6 +156,50 @@ public interface Index {
                                                   boolean toInclusive, boolean descending);
 
     /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value);
+
+    /**
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over all index entries
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
+
+    /**
+     *
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries matching the given range in batches
+     *         grouped by the index value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    );
+
+    /**
      * Produces a result set containing entries whose attribute values are equal
      * to the given value.
      *

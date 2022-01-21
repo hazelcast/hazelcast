@@ -31,5 +31,6 @@
         <Logger name="com.hazelcast.internal.partition" level="debug"/>
         <Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>
         <Logger name="com.hazelcast.test.mocknetwork" level="debug"/>
+        <Logger name="com.hazelcast.system" level="debug"/>
     </Loggers>
 </Configuration>

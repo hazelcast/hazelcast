@@ -26,9 +26,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -57,6 +57,7 @@ public class SqlSelectTest extends SqlTestSupport {
     public void test_basicSelect() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 20);
@@ -68,18 +69,33 @@ public class SqlSelectTest extends SqlTestSupport {
     public void test_selectWithEqFilter() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         fillIMapAndGetData(map, 14);
-        List<Row> filteredRows = Collections.singletonList(new Row(5, "F"));
+        List<Row> filteredRows = singletonList(new Row(5, "F"));
 
         assertRowsAnyOrder("SELECT * FROM " + name + " AS I WHERE I.__key = 5", filteredRows);
+    }
+
+    @Test
+    public void test_selectWithEqFilterAndProject() {
+        HazelcastInstance hazelcastInstance = instance();
+        String name = randomName();
+        createMapping(name, int.class, String.class);
+        IMap<Integer, String> map = hazelcastInstance.getMap(name);
+
+        fillIMapAndGetData(map, 14);
+        List<Row> filteredAndProjectedRows = singletonList(new Row(10L, "F"));
+
+        assertRowsAnyOrder("SELECT __key * 2, this FROM " + name + " AS I WHERE I.__key = 5", filteredAndProjectedRows);
     }
 
     @Test
     public void test_selectWithEvenNumbersFilter() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 14);
@@ -95,6 +111,7 @@ public class SqlSelectTest extends SqlTestSupport {
         final int thisProjection = 1;
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 20);
@@ -103,5 +120,17 @@ public class SqlSelectTest extends SqlTestSupport {
                 .collect(toList());
 
         assertRowsAnyOrder("SELECT this FROM " + name, projected);
+    }
+
+    @Test
+    public void test_selectFromView() {
+        String name = randomName();
+        createMapping(name, int.class, String.class);
+        IMap<Integer, String> map = instance().getMap(name);
+
+        instance().getSql().execute("CREATE VIEW v AS SELECT * FROM " + name);
+
+        List<Row> rows = fillIMapAndGetData(map, 20);
+        assertRowsAnyOrder("SELECT * FROM v", rows);
     }
 }

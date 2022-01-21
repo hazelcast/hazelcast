@@ -24,13 +24,16 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -105,8 +108,18 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public InternalGenericRecord readAsInternalGenericRecord(Data data) {
-        throw new UnsupportedOperationException();
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
+        return delegate.readAsInternalGenericRecord(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromData(@Nonnull Data data) throws IOException {
+        return delegate.extractSchemaFromData(data);
+    }
+
+    @Override
+    public Schema extractSchemaFromObject(@Nonnull Object object) {
+        return delegate.extractSchemaFromObject(object);
     }
 
     @Override
@@ -115,7 +128,7 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public SerializerAdapter serializerFor(Object object) {
+    public SerializerAdapter serializerFor(Object object, boolean includeSchema) {
         Class<?> clazz = object == null ? null : object.getClass();
 
         SerializerAdapter serializer = null;
@@ -124,7 +137,7 @@ public class DelegatingSerializationService extends AbstractSerializationService
         }
         if (serializer == null) {
             try {
-                serializer = delegate.serializerFor(object);
+                serializer = delegate.serializerFor(object, includeSchema);
             } catch (HazelcastSerializationException hse) {
                 throw serializationException(clazz, hse);
             }

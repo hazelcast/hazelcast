@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,7 +39,9 @@ public class AbstractTransformUsingServiceP<C, S> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        service = serviceFactory.createServiceFn().apply(context, serviceContext);
+        BiFunctionEx<? super Context, ? super C, ? extends S> serviceFn = serviceFactory.createServiceFn();
+        PermissionsUtil.checkPermission(serviceFn, context);
+        service = serviceFn.apply(context, serviceContext);
     }
 
     @Override

@@ -26,7 +26,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
@@ -44,6 +43,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -84,12 +84,13 @@ import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 public class JobRepository {
 
@@ -440,8 +441,9 @@ public class JobRepository {
                 nodeEngine.getProxyService().getDistributedObjects(SERVICE_NAME);
 
         // we need to take the list of active job records after getting the list of maps --
-        // otherwise the job records could be missing newly submitted jobs
-        Set<Long> activeJobs = jobRecordsMap().keySet();
+        // otherwise the job records could be missing newly submitted jobs.
+        // create a new set since the returned implementation uses iterator for `contains`
+        Set<Long> activeJobs = new HashSet<>(jobRecordsMap().keySet());
 
         for (DistributedObject map : maps) {
             if (map.getName().startsWith(SNAPSHOT_DATA_MAP_PREFIX)) {
@@ -481,19 +483,26 @@ public class JobRepository {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void cleanupJobResults(NodeEngine nodeEngine) {
-        int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
+        int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(ClusterProperty.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
         Map<Long, JobResult> jobResultsMap = jobResultsMap();
         if (jobResultsMap.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
-            jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
+            Set<Long> jobIds = jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
-                    .collect(toList())
-                    .forEach(id -> {
-                        jobMetrics.get().delete(id);
-                        jobResults.get().delete(id);
-                    });
+                    .collect(toSet());
+
+            jobMetrics.get().submitToKeys(jobIds, (EntryProcessor) ENTRY_REMOVING_PROCESSOR);
+            jobResults.get().submitToKeys(jobIds, (EntryProcessor) ENTRY_REMOVING_PROCESSOR);
+
+            jobIds.forEach(jobId -> {
+                String resourcesMapName = jobResourcesMapName(jobId);
+                if (nodeEngine.getProxyService().existsDistributedObject(SERVICE_NAME, resourcesMapName)) {
+                    instance.getMap(resourcesMapName).destroy();
+                }
+            });
         }
     }
 

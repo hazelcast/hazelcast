@@ -288,6 +288,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         if (container != null) {
             container.destroy();
         }
+        statsMap.remove(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);
     }
@@ -373,6 +374,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
+    protected ConcurrentMap<String, LocalQueueStatsImpl> getStatsMap() {
+        return statsMap;
+    }
+
     @Override
     public TransactionalQueueProxy createTransactionalObject(String name, Transaction transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, name, transaction);
@@ -428,6 +433,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, QUEUE_PREFIX, getStats());
+    }
+
+    /**
+     * @since 5.1
+     */
+    public void resetAgeStats(String queueName) {
+        QueueContainer queueContainer = containerMap.get(queueName);
+        if (queueContainer != null) {
+            queueContainer.resetAgeStats();
+        }
     }
 
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {

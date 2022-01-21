@@ -23,11 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
-import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -45,7 +41,7 @@ public final class RootResultConsumerSink implements Processor {
     private final Expression<?> limitExpression;
     private final Expression<?> offsetExpression;
 
-    private JetQueryResultProducer rootResultConsumer;
+    private QueryResultProducerImpl rootResultConsumer;
 
     private RootResultConsumerSink(Expression<?> limitExpression, Expression<?> offsetExpression) {
         this.limitExpression = limitExpression;
@@ -54,12 +50,14 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
-        JetSqlCoreBackendImpl jetSqlCoreBackend = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
-        rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
+        rootResultConsumer = getNodeEngine(context.hazelcastInstance())
+                .getSqlService()
+                .getInternalService()
+                .getResultRegistry()
+                .remove(context.jobId());
         assert rootResultConsumer != null;
 
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
+        ExpressionEvalContext evalContext = ExpressionEvalContext.from(context);
 
         Number limit = evaluate(limitExpression, evalContext);
         if (limit == null) {
@@ -112,6 +110,11 @@ public final class RootResultConsumerSink implements Processor {
     @Override
     public boolean complete() {
         rootResultConsumer.done();
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
         return true;
     }
 

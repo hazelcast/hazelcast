@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -50,10 +51,11 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     private Properties properties;
     private String topic;
-    private EventTimePolicy<Object[]> eventTimePolicy;
+    private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private KvRowProjector.Supplier projectorSupplier;
 
     private transient ExpressionEvalContext evalContext;
+    private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
     private transient Extractors extractors;
 
     @SuppressWarnings("unused")
@@ -63,7 +65,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     RowProjectorProcessorSupplier(
             Properties properties,
             String topic,
-            EventTimePolicy<Object[]> eventTimePolicy,
+            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,
@@ -73,7 +75,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     ) {
         this.properties = properties;
         this.topic = topic;
-        this.eventTimePolicy = eventTimePolicy;
+        this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.projectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
@@ -86,7 +88,10 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
+        eventTimePolicy = eventTimePolicyProvider == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicyProvider.apply(evalContext);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -111,15 +116,15 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(properties);
         out.writeString(topic);
+        out.writeObject(eventTimePolicyProvider);
         out.writeObject(projectorSupplier);
-        out.writeObject(eventTimePolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         properties = in.readObject();
         topic = in.readString();
+        eventTimePolicyProvider = in.readObject();
         projectorSupplier = in.readObject();
-        eventTimePolicy = in.readObject();
     }
 }

@@ -23,8 +23,10 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.ChunkSupplier;
+import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -91,12 +93,16 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  * @see MapServiceContext
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
-public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-        EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-        SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-        NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-        DynamicMetricsProvider, TenantContextAwareService {
+public class MapService implements ManagedService, ChunkedMigrationAwareService,
+        TransactionalService, RemoteService,
+        EventPublishingService<Object, ListenerAdapter>,
+        PostJoinAwareService, SplitBrainHandlerService,
+        WanSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService,
+        SplitBrainProtectionAwareService, NotifiableEventListener,
+        ClusterStateListener, LockInterceptorService<Data>,
+        DynamicMetricsProvider, TenantContextAwareService,
+        OffloadedReplicationPreparation {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -239,25 +245,23 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onRegister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onRegister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.increaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().incCounter(mapName);
     }
 
     @Override
-    public void onDeregister(Object service, String serviceName, String topic, EventRegistration registration) {
+    public void onDeregister(Object service, String serviceName, String mapName, EventRegistration registration) {
         EventFilter filter = registration.getFilter();
         if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
-        mapContainer.decreaseInvalidationListenerCount();
+        mapServiceContext.getEventListenerCounter().decCounter(mapName);
     }
 
     public int getMigrationStamp() {
@@ -334,5 +338,15 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
                     .withDiscriminator(MAP_DISCRIMINATOR_NAME, name);
             context.collect(nearCacheDescriptor, offloadedExecutorStats);
         });
+    }
+
+    @Override
+    public boolean shouldOffload() {
+        return migrationAwareService.shouldOffload();
+    }
+
+    @Override
+    public ChunkSupplier newChunkSupplier(PartitionReplicationEvent event, Collection<ServiceNamespace> namespace) {
+        return migrationAwareService.newChunkSupplier(event, namespace);
     }
 }

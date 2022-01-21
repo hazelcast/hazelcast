@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.SqlRowImpl;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlMetadataTest extends SqlTestSupport {
+public class SqlMetadataTest extends CoreSqlTestSupport {
     @Test
     public void testColumnMetadata() {
         SqlColumnMetadata column = new SqlColumnMetadata("a", SqlColumnType.INTEGER, true);
@@ -59,7 +59,8 @@ public class SqlMetadataTest extends SqlTestSupport {
 
         SqlRow row = new SqlRowImpl(
             new SqlRowMetadata(Arrays.asList(column0Metadata, column1Metadata)),
-            HeapRow.of(1, "2")
+            HeapRow.of(1, "2"),
+            null
         );
 
         assertEquals("[a INTEGER=1, b VARCHAR=2]", row.toString());

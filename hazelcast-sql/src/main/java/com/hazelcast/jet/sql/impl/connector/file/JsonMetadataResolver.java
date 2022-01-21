@@ -17,8 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.pipeline.file.FileFormat;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.extract.JsonQueryTarget;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,11 @@ final class JsonMetadataResolver extends MetadataResolver<Map<String, Object>> {
     static final JsonMetadataResolver INSTANCE = new JsonMetadataResolver();
 
     private static final FileFormat<Map<String, String>> FORMAT = FileFormat.json();
+
+    @Override
+    protected String supportedFormat() {
+        return SqlConnector.JSON_FLAT_FORMAT;
+    }
 
     @Override
     protected FileFormat<?> sampleFormat() {

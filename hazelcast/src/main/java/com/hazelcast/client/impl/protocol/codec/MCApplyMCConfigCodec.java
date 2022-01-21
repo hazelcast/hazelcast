@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("b830cf048e3deb1553b40e26c5d8337a")
+@Generated("aef991a4d585e5f272de8e95fa2cdcb1")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200D00
     public static final int REQUEST_MESSAGE_TYPE = 2100480;
@@ -103,6 +103,4 @@ public final class MCApplyMCConfigCodec {
 
         return clientMessage;
     }
-
-
 }

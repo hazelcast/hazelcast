@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.jet.kafka.impl.HazelcastJsonValueDeserializer;
+import com.hazelcast.jet.kafka.impl.HazelcastJsonValueSerializer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.JavaClassNameResolver;
 
@@ -27,7 +30,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -72,6 +75,9 @@ final class PropertiesResolver {
 
     private static final String BYTE_ARRAY_SERIALIZER = "org.apache.kafka.common.serialization.ByteArraySerializer";
     private static final String BYTE_ARRAY_DESERIALIZER = "org.apache.kafka.common.serialization.ByteArrayDeserializer";
+
+    private static final String JSON_SERIALIZER = HazelcastJsonValueSerializer.class.getName();
+    private static final String JSON_DESERIALIZER = HazelcastJsonValueDeserializer.class.getName();
 
     private PropertiesResolver() {
     }
@@ -119,7 +125,7 @@ final class PropertiesResolver {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
             properties.putIfAbsent(deserializer, AVRO_DESERIALIZER);
-        } else if (JSON_FORMAT.equals(format)) {
+        } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
             String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
@@ -151,6 +157,8 @@ final class PropertiesResolver {
             return DOUBLE_DESERIALIZER;
         } else if (String.class.getName().equals(clazz)) {
             return STRING_DESERIALIZER;
+        } else if (HazelcastJsonValue.class.getName().equals(clazz)) {
+            return JSON_DESERIALIZER;
         } else {
             return null;
         }
@@ -168,7 +176,7 @@ final class PropertiesResolver {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, AVRO_SERIALIZER);
-        } else if (JSON_FORMAT.equals(format)) {
+        } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
             String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
@@ -200,6 +208,8 @@ final class PropertiesResolver {
             return DOUBLE_SERIALIZER;
         } else if (String.class.getName().equals(clazz)) {
             return STRING_SERIALIZER;
+        } else if (HazelcastJsonValue.class.getName().equals(clazz)) {
+            return JSON_SERIALIZER;
         } else {
             return null;
         }

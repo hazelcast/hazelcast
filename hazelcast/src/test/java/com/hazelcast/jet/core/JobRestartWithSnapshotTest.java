@@ -92,7 +92,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Before
     public void setup() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         instance1 = createHazelcastInstance(config);
         instance2 = createHazelcastInstance(config);

@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequestOffloadable;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncResponse;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRetryResponse;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
@@ -78,8 +79,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int REPLICA_MIGRATION_EVENT = 22;
     public static final int MIGRATION_EVENT = 23;
     public static final int PARTITION_LOST_EVENT = 24;
+    public static final int REPLICA_SYNC_REQUEST_OFFLOADABLE = 25;
 
-    private static final int LEN = PARTITION_LOST_EVENT + 1;
+    private static final int LEN = REPLICA_SYNC_REQUEST_OFFLOADABLE + 1;
 
     @Override
     public int getFactoryId() {
@@ -114,6 +116,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[REPLICA_MIGRATION_EVENT] = arg -> new ReplicaMigrationEventImpl();
         constructors[MIGRATION_EVENT] = arg -> new MigrationStateImpl();
         constructors[PARTITION_LOST_EVENT] = arg -> new PartitionLostEventImpl();
+        constructors[REPLICA_SYNC_REQUEST_OFFLOADABLE] = arg -> new PartitionReplicaSyncRequestOffloadable();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

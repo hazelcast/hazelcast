@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.Serializer;
@@ -28,11 +31,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SerializationUtilTest {
+
+    private final InternalSerializationService mockSs = mock(InternalSerializationService.class);
 
     @Test
     public void testIsNullData() {
@@ -57,6 +71,47 @@ public class SerializationUtilTest {
     @Test(expected = IllegalArgumentException.class)
     public void testGetPortableVersion_negativeVersion() {
         SerializationUtil.getPortableVersion(new DummyVersionedPortable(), 1);
+    }
+
+    @Test
+    public void testReadWriteNullableBoolean_whenNull()
+            throws IOException {
+        byte[] bytes = serialize(null);
+        assertNull(deserialize(bytes));
+    }
+
+    @Test
+    public void testReadWriteNullableBoolean_whenFalse()
+            throws IOException {
+        byte[] bytes = serialize(false);
+        assertFalse(deserialize(bytes));
+    }
+
+    @Test
+    public void testReadWriteNullableBoolean_whenTrue()
+            throws IOException {
+        byte[] bytes = serialize(true);
+        assertTrue(deserialize(bytes));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testReadWriteNullableBoolean_whenInvalid()
+            throws IOException {
+        byte[] bytes = new byte[1];
+        bytes[0] = 55;
+        deserialize(bytes);
+    }
+
+    private byte[] serialize(Boolean b) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectDataOutput out = createObjectDataOutputStream(bout, mockSs);
+        SerializationUtil.writeNullableBoolean(out, b);
+        return bout.toByteArray();
+    }
+
+    private Boolean deserialize(byte[] bytes) throws IOException {
+        ObjectDataInput in = createObjectDataInputStream(new ByteArrayInputStream(bytes), mockSs);
+        return SerializationUtil.readNullableBoolean(in);
     }
 
     private class InvalidSerializer implements Serializer {

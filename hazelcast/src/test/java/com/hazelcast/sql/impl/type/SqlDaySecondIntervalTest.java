@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlDaySecondIntervalTest extends SqlTestSupport {
+public class SqlDaySecondIntervalTest extends CoreSqlTestSupport {
     @Test
     public void testEquals() {
         SqlDaySecondInterval value = new SqlDaySecondInterval(1);

@@ -40,8 +40,11 @@ public final class SumSqlAggregations {
 
     private static SqlAggregation from(QueryDataType operandType) {
         switch (operandType.getTypeFamily()) {
-            case BIGINT:
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
                 return new SumLongSqlAggregation();
+            case BIGINT:
             case DECIMAL:
                 return new SumDecimalSqlAggregation();
             case REAL:
@@ -66,7 +69,7 @@ public final class SumSqlAggregations {
             }
 
             try {
-                sum = Math.addExact(sum, (long) value);
+                sum = Math.addExact(sum, ((Number) value).longValue());
             } catch (ArithmeticException e) {
                 throw QueryException.dataException(QueryDataTypeFamily.BIGINT + " overflow in 'SUM' function " +
                         "(consider adding explicit CAST to DECIMAL)");
@@ -116,7 +119,10 @@ public final class SumSqlAggregations {
                 sum = BigDecimal.ZERO;
             }
 
-            sum = sum.add((BigDecimal) value, DECIMAL_MATH_CONTEXT);
+            BigDecimal decimalValue = value instanceof BigDecimal
+                    ? (BigDecimal) value
+                    : new BigDecimal((long) value);
+            sum = sum.add(decimalValue, DECIMAL_MATH_CONTEXT);
         }
 
         @Override

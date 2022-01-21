@@ -24,6 +24,45 @@ import com.hazelcast.query.impl.JsonMetadata;
  */
 public interface JsonMetadataStore {
 
+    @SuppressWarnings("AnonInnerLength")
+    JsonMetadataStore NULL = new JsonMetadataStore() {
+
+        @Override
+        public JsonMetadata get(Data key) {
+            return null;
+        }
+
+        @Override
+        public void set(Data key, JsonMetadata metadata) {
+            // no-op
+        }
+
+        @Override
+        public void setKey(Data key, Object metadataKey) {
+            // no-op
+        }
+
+        @Override
+        public void setValue(Data key, Object metadataValue) {
+            // no-op
+        }
+
+        @Override
+        public void remove(Data key) {
+            // no-op
+        }
+
+        @Override
+        public void clear() {
+            // no-op
+        }
+
+        @Override
+        public void destroy() {
+            // no-op
+        }
+    };
+
     /**
      * @param key the key in the store
      * @return the metadata associated with the key, {@code null} if there is no the key in the store

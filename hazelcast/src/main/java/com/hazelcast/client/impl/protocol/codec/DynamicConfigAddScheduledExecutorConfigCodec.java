@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("781e5a18e9a512d4488b689f28001ad9")
+@Generated("f0011be9a6936b54e6be8c9d9483d31b")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -155,6 +155,4 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
 
         return clientMessage;
     }
-
-
 }

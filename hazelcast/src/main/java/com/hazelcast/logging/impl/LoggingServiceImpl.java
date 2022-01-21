@@ -21,7 +21,6 @@ import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
@@ -67,9 +66,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.detailsEnabled = detailsEnabled;
         this.node = node;
-        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        versionMessage = "[" + clusterName + "] ["
-                + (jetBuildInfo != null ? jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
+        versionMessage = "[" + clusterName + "] [" + buildInfo.getVersion() + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {

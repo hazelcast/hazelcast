@@ -247,7 +247,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         warmUpPartitions(instance1, instance2);
         String keyOwnedBy2 = generateKeyOwnedBy(instance2);
-
+        makeSureConnectedToServers(client, 2);
 
         IMap<Object, Object> clientMap = client.getMap("test");
 

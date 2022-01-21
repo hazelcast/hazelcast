@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -43,9 +42,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -101,15 +98,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected Address findLightJobCoordinator() {
-        Address randomMember;
-        // if we're a lite member, forward to random data member. Otherwise use local member.
-        if (container().getLocalMember().isLiteMember()) {
-            Member[] members = container().getClusterService().getMembers(DATA_MEMBER_SELECTOR).toArray(new Member[0]);
-            randomMember = members[ThreadLocalRandom.current().nextInt(members.length)].getAddress();
-        } else {
-            randomMember = container().getThisAddress();
-        }
-        return randomMember;
+        // If a light job is submitted from a member, it's always coordinated locally.
+        // This is important for SQL jobs running in mixed-version clusters - the job DAG
+        // was created locally and uses features available to the local member version.
+        // A lite member can also coordinate.
+        return container().getThisAddress();
     }
 
     @Override
@@ -193,10 +186,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private <T> CompletableFuture<T> invokeOp(Operation op) {
-        Address target = lightJobCoordinator != null ? lightJobCoordinator : masterId();
         return container()
                 .getOperationService()
-                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
                 .invoke();
     }
 

@@ -27,7 +27,8 @@ public final class SqlConnectorUtil {
     private SqlConnectorUtil() {
     }
 
-    public static SqlConnector getJetSqlConnector(Table table) {
+    @SuppressWarnings("unchecked")
+    public static <T extends SqlConnector> T getJetSqlConnector(Table table) {
         SqlConnector connector;
         if (table instanceof JetTable) {
             connector = ((JetTable) table).getSqlConnector();
@@ -36,6 +37,6 @@ public final class SqlConnectorUtil {
         } else {
             throw new JetException("Unknown table type: " + table.getClass());
         }
-        return connector;
+        return (T) connector;
     }
 }

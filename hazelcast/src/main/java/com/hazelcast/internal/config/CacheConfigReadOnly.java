@@ -25,6 +25,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.WanReplicationRef;
 
 import javax.annotation.Nonnull;
@@ -73,6 +74,13 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     public HotRestartConfig getHotRestartConfig() {
         HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
         return new HotRestartConfigReadOnly(hotRestartConfig);
+    }
+
+    @Nonnull
+    @Override
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        DataPersistenceConfig dataPersistenceConfig = super.getDataPersistenceConfig();
+        return new DataPersistenceConfigReadOnly(dataPersistenceConfig);
     }
 
     @Nonnull

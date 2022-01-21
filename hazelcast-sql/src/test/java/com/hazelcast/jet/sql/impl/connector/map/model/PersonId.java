@@ -19,8 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map.model;
 import java.io.Serializable;
 import java.util.Objects;
 
-@SuppressWarnings("unused")
-public class PersonId implements Serializable {
+public class PersonId implements Comparable<PersonId>, Serializable {
 
     private int id;
 
@@ -37,6 +36,11 @@ public class PersonId implements Serializable {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    @Override
+    public int compareTo(PersonId other) {
+        return id - other.id;
     }
 
     @Override

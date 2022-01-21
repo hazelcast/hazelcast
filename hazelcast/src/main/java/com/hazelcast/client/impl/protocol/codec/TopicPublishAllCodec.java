@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Publishes all messages to all subscribers of this topic
  */
-@Generated("5e2e0899e814d3689992c308a06e42b4")
+@Generated("20f2e1822ac9e486f9f1be801163666f")
 public final class TopicPublishAllCodec {
     //hex: 0x040400
     public static final int REQUEST_MESSAGE_TYPE = 263168;
@@ -93,6 +93,4 @@ public final class TopicPublishAllCodec {
 
         return clientMessage;
     }
-
-
 }

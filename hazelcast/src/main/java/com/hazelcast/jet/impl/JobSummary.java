@@ -31,6 +31,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 public class JobSummary implements IdentifiedDataSerializable {
 
+    private boolean isLightJob;
     private long jobId;
     private long executionId;
     private String nameOrId;
@@ -46,12 +47,14 @@ public class JobSummary implements IdentifiedDataSerializable {
      * Constructor for a running job
      */
     public JobSummary(
+            boolean isLightJob,
             long jobId,
             long executionId,
             @Nonnull String nameOrId,
             @Nonnull JobStatus status,
             long submissionTime
     ) {
+        this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
         this.nameOrId = nameOrId;
@@ -78,6 +81,10 @@ public class JobSummary implements IdentifiedDataSerializable {
         this.failureText = failureText;
     }
 
+    public boolean isLightJob() {
+        return isLightJob;
+    }
+
     public long getJobId() {
         return jobId;
     }
@@ -102,6 +109,7 @@ public class JobSummary implements IdentifiedDataSerializable {
      * @deprecated use {@link #getNameOrId()}, semantics is the same
      */
     @Nonnull
+    @Deprecated
     public String getName() {
         return nameOrId;
     }
@@ -142,6 +150,7 @@ public class JobSummary implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(isLightJob);
         out.writeLong(jobId);
         out.writeLong(executionId);
         out.writeString(nameOrId);
@@ -153,6 +162,7 @@ public class JobSummary implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        isLightJob = in.readBoolean();
         jobId = in.readLong();
         executionId = in.readLong();
         nameOrId = in.readString();

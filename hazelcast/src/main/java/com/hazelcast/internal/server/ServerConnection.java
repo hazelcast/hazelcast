@@ -35,9 +35,9 @@ public interface ServerConnection extends Connection {
      * Returns the connection type.
      *
      * See  {@link com.hazelcast.internal.nio.ConnectionType} for in-house candidates. Note that a type could be
-     * provided by a custom client and it can be a string outside of {@link com.hazelcast.internal.nio.ConnectionType}
+     * provided by a custom client, and it can be a string outside of {@link com.hazelcast.internal.nio.ConnectionType}
      *
-     * @return the the connection type. It could be that <code>null</code> is returned.
+     * @return the connection type. It could be that <code>null</code> is returned.
      */
     String getConnectionType();
 

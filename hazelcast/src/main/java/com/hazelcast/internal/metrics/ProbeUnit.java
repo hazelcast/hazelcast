@@ -52,9 +52,7 @@ public enum ProbeUnit {
     /** 0..n, ordinal of an enum */
     ENUM,
     /** Timestamp or duration represented in µs */
-    // RU_COMPAT_4_1
-    // remove constructor argument in 4.3
-    US(true);
+    US;
 
     /**
      * Setting to {@code true} indicates that when compressing a metric with this

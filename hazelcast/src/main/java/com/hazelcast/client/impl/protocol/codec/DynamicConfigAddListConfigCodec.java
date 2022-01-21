@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a list configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("99d546683f3b6e4e8af1a0104f40224c")
+@Generated("0e16a8a225c3d209e32ea4d114031853")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1B0400
     public static final int REQUEST_MESSAGE_TYPE = 1770496;
@@ -151,6 +151,4 @@ public final class DynamicConfigAddListConfigCodec {
 
         return clientMessage;
     }
-
-
 }

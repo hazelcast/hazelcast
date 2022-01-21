@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -184,7 +183,7 @@ public class MasterContext {
         return coordinationService.getJetServiceBackend();
     }
 
-    public NodeEngine nodeEngine() {
+    public NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }
 
@@ -198,6 +197,17 @@ public class MasterContext {
 
     Map<MemberInfo, ExecutionPlan> executionPlanMap() {
         return executionPlanMap;
+    }
+
+    boolean hasTimeout() {
+        return jobConfig().getTimeoutMillis() > 0;
+    }
+
+    long remainingTime(long currentTimeMillis) {
+        long elapsed = currentTimeMillis - jobRecord().getCreationTime();
+        long timeout = jobConfig().getTimeoutMillis();
+
+        return timeout - elapsed;
     }
 
     ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses() {

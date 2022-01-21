@@ -31,6 +31,7 @@ import static com.hazelcast.config.RestEndpointGroup.CLUSTER_WRITE;
 import static com.hazelcast.config.RestEndpointGroup.DATA;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
+import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
 import static com.hazelcast.config.RestEndpointGroup.WAN;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.Accessors.getAddress;
@@ -61,6 +62,14 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
             new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/partialStart", "HTTP/1.1 400 Bad Request"),
             new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackup", "HTTP/1.1 400 Bad Request"),
             new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackupInterrupt", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/backup", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/backupInterrupt", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/forceStart", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/partialStart", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/hotBackup", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/hotBackupInterrupt", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/backup", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(PERSISTENCE, POST, "/hazelcast/rest/management/cluster/backupInterrupt", "HTTP/1.1 400 Bad Request"),
             new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/map", "HTTP/1.1 400 Bad Request"),
             new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/allmaps", "HTTP/1.1 400 Bad Request"),
             new TestUrl(WAN, POST, "/hazelcast/rest/wan/clearWanQueues", "HTTP/1.1 400 Bad Request"),

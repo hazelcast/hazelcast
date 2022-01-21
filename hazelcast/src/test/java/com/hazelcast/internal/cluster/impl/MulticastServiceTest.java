@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -75,7 +77,13 @@ public class MulticastServiceTest {
         Address address = new Address("127.0.0.1",  5701);
         HazelcastProperties hzProperties = new HazelcastProperties(config);
         MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
-        verify(multicastSocket).setInterface(address.getInetAddress());
+        verify(multicastSocket).setLoopbackMode(false);
+        // https://github.com/hazelcast/hazelcast/pull/19251#issuecomment-891375270
+        if (OsHelper.isMac()) {
+            verify(multicastSocket).setInterface(address.getInetAddress());
+        } else {
+            verify(multicastSocket, never()).setInterface(any());
+        }
     }
 
     @Test
@@ -87,7 +95,8 @@ public class MulticastServiceTest {
         Address address = new Address("10.0.0.2",  5701);
         HazelcastProperties hzProperties = new HazelcastProperties(config);
         MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
-        verify(multicastSocket, never()).setInterface(any());
+        verify(multicastSocket).setInterface(address.getInetAddress());
+        verify(multicastSocket).setLoopbackMode(false);
     }
 
     @Test
@@ -95,6 +104,24 @@ public class MulticastServiceTest {
         Config config = createConfig(null);
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
         multicastConfig.setLoopbackModeEnabled(false);
+        MulticastSocket multicastSocket = mock(MulticastSocket.class);
+        Address address = new Address("10.0.0.2",  5701);
+        HazelcastProperties hzProperties = new HazelcastProperties(config);
+        MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
+        verify(multicastSocket).setInterface(address.getInetAddress());
+        verify(multicastSocket).setLoopbackMode(true);
+
+    }
+
+    /**
+     * Verifes the {@link MulticastSocket#setInterface(InetAddress)} is called by default if non-loopback address is used.
+     * This is a regression test for the <a href="https://github.com/hazelcast/hazelcast/issues/19192">issue #19192</a>
+     * (hit on Mac OS).
+     */
+    @Test
+    public void testSetInterfaceDefaultWhenNonLoopbackAddrAndDefaultLoopbackMode() throws Exception {
+        Config config = createConfig(null);
+        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
         MulticastSocket multicastSocket = mock(MulticastSocket.class);
         Address address = new Address("10.0.0.2",  5701);
         HazelcastProperties hzProperties = new HazelcastProperties(config);
@@ -112,7 +139,7 @@ public class MulticastServiceTest {
         MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
         verify(multicastSocket).bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
         verify(multicastSocket).setTimeToLive(multicastConfig.getMulticastTimeToLive());
-        verify(multicastSocket).setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+        verify(multicastSocket, never()).setLoopbackMode(anyBoolean());
         verify(multicastSocket).joinGroup(InetAddress.getByName(multicastConfig.getMulticastGroup()));
     }
 
@@ -128,7 +155,7 @@ public class MulticastServiceTest {
         MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
         verify(multicastSocket).bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
         verify(multicastSocket).setTimeToLive(multicastConfig.getMulticastTimeToLive());
-        verify(multicastSocket).setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+        verify(multicastSocket, never()).setLoopbackMode(anyBoolean());
         verify(multicastSocket).joinGroup(InetAddress.getByName(customMulticastGroup));
     }
 

@@ -69,7 +69,8 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapTableConverterResolutionTest extends MapSchemaTestSupport {
+public class MapTableConverterResolutionTest {
+
     @Test
     public void testSimpleConverters() {
         checkSimpleConverter(BOOLEAN_CONVERTER, BOOLEAN);

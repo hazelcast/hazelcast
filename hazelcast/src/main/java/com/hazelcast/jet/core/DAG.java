@@ -533,6 +533,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         if (e.getRoutingPolicy() != RoutingPolicy.UNICAST) {
             labels.add(StringUtil.lowerCaseInternal(e.getRoutingPolicy().toString()));
         }
+        if (e.getOrderComparator() != null) {
+            labels.add("ordered");
+        }
         return String.join("-", labels);
     }
 

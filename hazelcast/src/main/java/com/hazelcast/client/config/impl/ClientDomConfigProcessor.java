@@ -200,7 +200,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleConnectionStrategy(Node node) {
-        ClientConnectionStrategyConfig strategyConfig = new ClientConnectionStrategyConfig();
+        ClientConnectionStrategyConfig strategyConfig = clientConfig.getConnectionStrategyConfig();
         String attrValue = getAttribute(node, "async-start");
         strategyConfig.setAsyncStart(attrValue != null && getBooleanValue(attrValue.trim()));
         attrValue = getAttribute(node, "reconnect-mode");
@@ -276,7 +276,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleNearCacheNode(Node node) {
         String name = getName(node);
-        name = name == null ? "default" : name;
+        name = name == null ? NearCacheConfig.DEFAULT_NAME : name;
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {

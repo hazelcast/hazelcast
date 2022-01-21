@@ -287,6 +287,9 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     }
 
     public static class KafkaTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
         private final int processorIndex;
         private long producerId = -1;
         private short epoch = -1;

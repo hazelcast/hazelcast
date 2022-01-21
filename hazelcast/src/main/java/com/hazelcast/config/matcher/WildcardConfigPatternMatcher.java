@@ -65,7 +65,9 @@ public class WildcardConfigPatternMatcher implements ConfigPatternMatcher {
             return false;
         }
 
-        return true;
+        // if we remove the wildcard, itemName length cannot be
+        // less than pattern length, in order to match
+        return itemName.length() + 1 >= pattern.length();
     }
 
     @Override

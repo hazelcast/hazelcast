@@ -160,5 +160,25 @@ public final class IterableUtil {
         return iterable == null ? Collections.emptyList() : iterable;
     }
 
+    /**
+     * @return a read only iterator.
+     * @throws UnsupportedOperationException
+     */
+    public static <T> Iterator<T> asReadOnlyIterator(Iterator<T> iterator) {
+        if (iterator instanceof UnmodifiableIterator) {
+            return iterator;
+        }
 
+        return new UnmodifiableIterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public T next() {
+                return iterator.next();
+            }
+        };
+    }
 }

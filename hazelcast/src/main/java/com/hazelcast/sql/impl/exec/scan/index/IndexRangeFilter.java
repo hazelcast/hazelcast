@@ -53,8 +53,6 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
-        assert from != null || to != null;
-
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;

@@ -32,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -165,11 +167,19 @@ public class QueuePriorityTest extends HazelcastTestSupport {
     @Test
     public void queueConsistency() {
         int count = 0;
-        for (int i = 0; i < 500; i++) {
+        int itemCount = 500;
+        List<PriorityElement> expected = new ArrayList<>(itemCount * 2);
+        for (int i = 0; i < itemCount; i++) {
             queue.offer(new PriorityElement(false, count));
             queue.offer(new PriorityElement(true, count));
+
+            expected.add(new PriorityElement(false, count));
+            expected.add(new PriorityElement(true, count));
             count++;
         }
+        // We don't expect total 1000 priority elements to fill the queue capacity
+        // and don't expect offers to fail
+        assertEquals(itemCount * 2, queue.size());
 
         ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>(new PriorityElementComparator());
         CountDownLatch latch = new CountDownLatch(100);
@@ -183,7 +193,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
             });
         }
         assertOpenEventually(latch);
-        assertEquals(500 * 2, tasks.size());
+        assertContainsAll(tasks, expected);
         assertNull(queue.poll());
     }
 

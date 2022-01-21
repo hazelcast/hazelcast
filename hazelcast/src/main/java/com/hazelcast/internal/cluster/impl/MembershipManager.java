@@ -27,8 +27,8 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -83,8 +83,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 /**
- * MembershipManager maintains member list and version, manages member update, suspicion and removal mechanisms.
- * Also initiates and manages mastership claim process.
+ * MembershipManager maintains member list and version, manages member update,
+ * suspicion and removal mechanisms. Also, initiates and manages mastership
+ * claim process.
  *
  * @since 3.9
  */
@@ -107,7 +108,7 @@ public class MembershipManager {
      * doesn't allow new members to join, such as FROZEN or PASSIVE.
      * <p>
      * Missing members are associated with either their {@code UUID} or their {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence is enabled or not.
      */
     private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
@@ -186,7 +187,6 @@ public class MembershipManager {
         return memberMapRef.get();
     }
 
-    // used in Jet, must be public
     public MembersView getMembersView() {
         return memberMapRef.get().toMembersView();
     }
@@ -353,7 +353,7 @@ public class MembershipManager {
         }
 
         for (MemberImpl member : removedMembers) {
-            closeConnection(member.getAddress(), "Member left event received from master");
+            closeConnections(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }
 
@@ -691,10 +691,11 @@ public class MembershipManager {
                 .addParameter("address", address)
                 .addParameter("reason", reason)
                 .log();
+            clusterService.getClusterJoinManager().addLeftMember(suspectedMember);
         }
 
         if (shouldCloseConn) {
-            closeConnection(address, reason);
+            closeConnections(address, reason);
         }
         return true;
     }
@@ -711,7 +712,7 @@ public class MembershipManager {
 
             Address address = member.getAddress();
             if (shouldCloseConn) {
-                closeConnection(address, reason);
+                closeConnections(address, reason);
             }
 
             MemberMap currentMembers = memberMapRef.get();
@@ -725,6 +726,7 @@ public class MembershipManager {
 
             logger.info("Removing " + member);
             clusterService.getClusterJoinManager().removeJoin(address);
+            clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 
@@ -749,11 +751,9 @@ public class MembershipManager {
         }
     }
 
-    private void closeConnection(Address address, String reason) {
-        Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
-        if (conn != null) {
-            conn.close(reason, null);
-        }
+    private void closeConnections(Address address, String reason) {
+        List<ServerConnection> connections = node.getServer().getConnectionManager(MEMBER).getAllConnections(address);
+        connections.forEach(conn -> conn.close(reason, null));
     }
 
     private void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {
@@ -776,10 +776,15 @@ public class MembershipManager {
                 unmodifiableSet(new LinkedHashSet<Member>(newMembers.getMembers())), false);
     }
 
-    void onMemberRemove(MemberImpl deadMember) {
+    void onMemberRemove(MemberImpl... deadMembers) {
+        if (deadMembers.length == 0) {
+            return;
+        }
         // sync calls
-        node.getPartitionService().memberRemoved(deadMember);
-        nodeEngine.onMemberLeft(deadMember);
+        node.getPartitionService().memberRemoved(deadMembers);
+        for (MemberImpl deadMember : deadMembers) {
+            nodeEngine.onMemberLeft(deadMember);
+        }
         node.getNodeExtension().onMemberListChange();
     }
 
@@ -1005,7 +1010,7 @@ public class MembershipManager {
 
     /**
      * Returns whether member with given identity (either {@code UUID} or {@code Address}
-     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     * depending on Persistence is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member
@@ -1018,7 +1023,7 @@ public class MembershipManager {
 
     /**
      * Returns the missing member using either its {@code UUID} or its {@code Address}
-     * depending on Hot Restart is enabled or not.
+     * depending on Persistence feature is enabled or not.
      *
      * @param address Address of the missing member
      * @param uuid Uuid of the missing member
@@ -1133,12 +1138,13 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             Map<Object, MemberImpl> m = missingMembersRef.get();
-            Collection<MemberImpl> members = m.values();
-            missingMembersRef.set(Collections.emptyMap());
-            for (MemberImpl member : members) {
-                onMemberRemove(member);
+            if (m.isEmpty()) {
+                return;
             }
+            MemberImpl[] members = m.values().toArray(new MemberImpl[0]);
+            missingMembersRef.set(Collections.emptyMap());
 
+            onMemberRemove(members);
         } finally {
             clusterServiceLock.unlock();
         }

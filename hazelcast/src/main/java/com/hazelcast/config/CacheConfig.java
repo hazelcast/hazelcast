@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -107,6 +106,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
             this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
@@ -158,6 +158,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
         this.merkleTreeConfig = new MerkleTreeConfig(simpleConfig.getMerkleTreeConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.dataPersistenceConfig = new DataPersistenceConfig(simpleConfig.getDataPersistenceConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
@@ -480,10 +481,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
      *
      * @param merkleTreeConfig merkle tree config
-     * @return this {@code CacheConfig} instance
      */
     public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        this.merkleTreeConfig = merkleTreeConfig;
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "merkleTreeConfig cannot be null!");
     }
 
     /**
@@ -521,7 +521,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         out.writeObject(wanReplicationRef);
         // SUPER
         writeKeyValueTypes(out);
-        writeTenant(out);
         writeFactories(out);
 
         out.writeBoolean(isReadThrough);
@@ -544,10 +543,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
 
         writePartitionLostListenerConfigs(out);
 
-        // RU_COMPAT_4_2
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-            out.writeObject(merkleTreeConfig);
-        }
+        out.writeObject(merkleTreeConfig);
+        out.writeObject(dataPersistenceConfig);
     }
 
     private void writePartitionLostListenerConfigs(ObjectDataOutput out)
@@ -582,7 +579,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         wanReplicationRef = in.readObject();
 
         readKeyValueTypes(in);
-        readTenant(in);
         readFactories(in);
 
         isReadThrough = in.readBoolean();
@@ -590,7 +586,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
 
         splitBrainProtectionName = in.readString();
@@ -609,10 +605,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
 
         readPartitionLostListenerConfigs(in);
 
-        // RU_COMPAT_4_2
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-            merkleTreeConfig = in.readObject();
-        }
+        merkleTreeConfig = in.readObject();
+        setDataPersistenceConfig(in.readObject());
     }
 
     private void readPartitionLostListenerConfigs(ObjectDataInput in)
@@ -666,6 +660,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';

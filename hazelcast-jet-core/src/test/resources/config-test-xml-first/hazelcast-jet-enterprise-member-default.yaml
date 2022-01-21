@@ -1,3 +1,0 @@
-hazelcast:
-  cluster-name: enterprise-member-default
-  instance-name: ${enterprise-member-default.instance.name}

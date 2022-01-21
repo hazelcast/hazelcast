@@ -82,6 +82,14 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void givenNullMerkleTreeConfig_throws_NPE() {
+        expectedException.expect(NullPointerException.class);
+
+        new CacheSimpleConfig()
+                .setMerkleTreeConfig(null);
+    }
+
+    @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
 

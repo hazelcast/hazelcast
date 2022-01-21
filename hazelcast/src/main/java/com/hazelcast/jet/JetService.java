@@ -162,8 +162,8 @@ public interface JetService {
      * Submits a light job for execution. This kind of job is focused on
      * reducing the job startup and teardown time: only a single operation is
      * used to deploy the job instead of 2 for normal jobs.
-     *
-     * Limitation of light jobs:
+     * <p>
+     * Limitations of light jobs:
      * <ul>
      *     <li>very limited job configuration: no processing guarantee, no custom
      *         classes or job resources - all job code must be available in the cluster.

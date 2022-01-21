@@ -52,7 +52,7 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
-    static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1};
 
     protected InternalSerializationService mockSerializationService;
     protected ByteArrayObjectDataInput in;
@@ -107,7 +107,11 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     public void testRead() throws Exception {
         for (int i = 0; i < in.size; i++) {
             int readValidPos = in.read();
-            assertEquals(INIT_DATA[i], readValidPos);
+            // Compare the unsigned byte range equivalents of
+            // the initial values with the values we read, as
+            // the contract of the read() says that the values
+            // need to be in that range.
+            assertEquals(INIT_DATA[i] & 0xFF, readValidPos);
 
         }
         //try to read an invalid position should return -1
@@ -117,8 +121,11 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     @Test
     public void testReadPosition() throws Exception {
         int read = in.read(1);
+        int readUnsigned = in.read(INIT_DATA.length - 1);
         int readEnd = in.read(INIT_DATA.length);
         assertEquals(1, read);
+        // Map the expected negative value to unsigned byte range
+        assertEquals(-1 & 0xFF, readUnsigned);
         assertEquals(-1, readEnd);
     }
 

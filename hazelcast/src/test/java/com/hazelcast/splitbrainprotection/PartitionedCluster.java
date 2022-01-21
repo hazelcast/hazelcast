@@ -74,8 +74,12 @@ public class PartitionedCluster {
         return instance[index];
     }
 
-    public void createFiveMemberCluster(Config config) {
+    public void createFiveMemberCluster(Config config, String[] splitBrainProtectionIds) {
         createInstances(config);
+        verifySplitBrainProtectionsPresentEventually(SUCCESSFUL_SPLIT_BRAIN_PROTECTION_TEST_NAME);
+        for (String splitBrainProtectionId : splitBrainProtectionIds) {
+            verifySplitBrainProtectionsPresentEventually(splitBrainProtectionId);
+        }
     }
 
     public void splitFiveMembersThreeAndTwo(String... splitBrainProtectionIds) {
@@ -131,6 +135,14 @@ public class PartitionedCluster {
         closeConnectionBetween(instance[4], instance[2]);
         closeConnectionBetween(instance[4], instance[1]);
         closeConnectionBetween(instance[4], instance[0]);
+    }
+
+    private void verifySplitBrainProtectionsPresentEventually(String splitBrainProtectionId) {
+        assertSplitBrainProtectionIsPresentEventually(instance[0], splitBrainProtectionId);
+        assertSplitBrainProtectionIsPresentEventually(instance[1], splitBrainProtectionId);
+        assertSplitBrainProtectionIsPresentEventually(instance[2], splitBrainProtectionId);
+        assertSplitBrainProtectionIsPresentEventually(instance[3], splitBrainProtectionId);
+        assertSplitBrainProtectionIsPresentEventually(instance[4], splitBrainProtectionId);
     }
 
     private void verifySplitBrainProtections(String splitBrainProtectionId) {

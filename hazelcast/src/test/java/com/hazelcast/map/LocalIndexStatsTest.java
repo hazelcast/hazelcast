@@ -28,6 +28,7 @@ import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalIndexStatsTest extends HazelcastTestSupport {
@@ -337,7 +337,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, valueStats().getQueryCount());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testQueryCounting_WhenPartitionPredicateIsUsed() {
         addIndex(map, "this", false);
@@ -411,6 +410,37 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
         assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
+    }
+
+    @Test
+    public void testMemoryCostIsNotDrifting() {
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
+
+        long keyEmptyCost = keyStats().getMemoryCost();
+        long valueEmptyCost = valueStats().getMemoryCost();
+        assertTrue(keyEmptyCost > 0);
+        assertTrue(valueEmptyCost > 0);
+
+        map.set(0, 0);
+        long keyPopulatedCost = keyStats().getMemoryCost();
+        long valuePopulatedCost = valueStats().getMemoryCost();
+        assertTrue(keyPopulatedCost > keyEmptyCost);
+        assertTrue(valuePopulatedCost > valueEmptyCost);
+
+        for (int i = 0; i < 100; ++i) {
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+
+            map.remove(0);
+            assertEquals(keyEmptyCost, keyStats().getMemoryCost());
+            assertEquals(valueEmptyCost, valueStats().getMemoryCost());
+
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+        }
     }
 
     @Test

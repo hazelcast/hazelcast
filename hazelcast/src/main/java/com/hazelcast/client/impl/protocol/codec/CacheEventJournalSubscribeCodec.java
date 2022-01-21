@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("0a6fe7b7d90eef7db732151b6872726a")
+@Generated("9bc9966e1800834bb874649ccbe73ef8")
 public final class CacheEventJournalSubscribeCodec {
     //hex: 0x131F00
     public static final int REQUEST_MESSAGE_TYPE = 1253120;
@@ -87,6 +87,7 @@ public final class CacheEventJournalSubscribeCodec {
          */
         public long newestSequence;
     }
+
     public static ClientMessage encodeResponse(long oldestSequence, long newestSequence) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -106,5 +107,4 @@ public final class CacheEventJournalSubscribeCodec {
         response.newestSequence = decodeLong(initialFrame.content, RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET);
         return response;
     }
-
 }

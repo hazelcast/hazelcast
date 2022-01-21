@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.networking.nio.NioChannel;
+
 import javax.net.ssl.SSLEngine;
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,12 +32,11 @@ import java.util.concurrent.ConcurrentMap;
  * com.hazelcast.internal.networking to a Connection (no cycles). This means that a
  * Channel can be used perfectly without Connection.
  *
- * The standard channel implementation is the
- * {@link com.hazelcast.internal.networking.nio.NioChannel} that uses TCP in combination
- * with selectors to transport data. In the future also other channel implementations
- * could be added, e.g. UDP based.
+ * The standard channel implementation is the {@link NioChannel} that uses TCP in
+ * combination with selectors to transport data. In the future also other channel
+ * implementations could be added, e.g. UDP based.
  *
- * Channel data is read using a {@link InboundHandler}. E.g data from a socket
+ * Channel data is read using a {@link InboundHandler}. E.g. data from a socket
  * is received and needs to get processed. The {@link InboundHandler} can convert
  * this to e.g. a Packet.
  *
@@ -49,13 +50,13 @@ import java.util.concurrent.ConcurrentMap;
  * act as a guide how to move forward.
  *
  * <h2>Fragmentation</h2>
- * Packets are currently not fragmented, meaning that they are send as 1 atomic unit
+ * Packets are currently not fragmented, meaning that they are sent as 1 atomic unit
  * and this can cause a 2 way communication blackout for operations (since either
  * operation or response can get blocked). Fragmentation needs to be added to make sure
  * the system doesn't suffer from head of line blocking.
  *
  * <h2>Ordering</h2>
- * In a channel messages don't need to remain ordered. Currently they are, but as soon as
+ * In a channel messages don't need to remain ordered. Currently, they are, but as soon as
  * we add packet fragmentation, packets can get out of order. Under certain conditions
  * you want to keep ordering, e.g. for events. In this case it should be possible
  * to have multiple streams in a channel. Within a stream there will be ordering.
@@ -81,7 +82,7 @@ public interface Channel extends Closeable {
     /**
      * Returns the {@link ChannelOptions} of this Channel.
      *
-     * Call is threadsafe; but calls to the ChannelOptions are not.
+     * Call is thread-safe; but calls to the ChannelOptions are not.
      *
      * @return the config for this channel. Returned value will never be null.
      */
@@ -101,7 +102,7 @@ public interface Channel extends Closeable {
     /**
      * Returns the {@link InboundPipeline} that belongs to this Channel.
      *
-     * This method is threadsafe, but most methods on the {@link InboundPipeline} are not!
+     * This method is thread-safe, but most methods on the {@link InboundPipeline} are not!
      *
      * @return the InboundPipeline.
      */
@@ -110,7 +111,7 @@ public interface Channel extends Closeable {
     /**
      * Returns the {@link OutboundPipeline} that belongs to this Channel.
      *
-     * This method is threadsafe, but most methods on the {@link OutboundPipeline} are not!
+     * This method is thread-safe, but most methods on the {@link OutboundPipeline} are not!
      *
      * @return the OutboundPipeline.
      */
@@ -148,11 +149,11 @@ public interface Channel extends Closeable {
     long lastReadTimeMillis();
 
     /**
-     * Returns the last time epoch time in ms a write to the socket was done.
+     * Returns the last time epoch time in ms that a write to the socket was done.
      *
-     * Writing to the socket doesn't mean that data has been send or received; it means
+     * Writing to the socket doesn't mean that data has been sent or received; it means
      * that data was written to the SocketChannel. It could very well be that this data
-     * is stuck somewhere in an network-buffer.
+     * is stuck somewhere in a network-buffer.
      *
      * This method is thread-safe.
      *
@@ -169,17 +170,17 @@ public interface Channel extends Closeable {
      * When the Channel is started, the {@link ChannelInitializer} will be called to
      * initialize the channel and to start with processing inbound and outbound data.
      *
-     * This method is not threadsafe and should be made only once.
+     * This method is not thread-safe and should be made only once.
      *
-     * This method should be called for clientMode and non clientMode channels. Otherwise
-     * the connection will not start to read from or write to the socket.
+     * This method should be called for clientMode and non clientMode channels.
+     * Otherwise, the connection will not start to read from or write to the socket.
      */
     void start();
 
     /**
      * Connects the channel.
      *
-     * This call should only be made once and is not threadsafe.
+     * This call should only be made once and is not thread-safe.
      *
      * This call blocks until:
      * <ol>

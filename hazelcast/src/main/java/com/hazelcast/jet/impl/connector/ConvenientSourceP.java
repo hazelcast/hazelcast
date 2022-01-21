@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -104,6 +105,7 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
+        PermissionsUtil.checkPermission(createSnapshotFn, context);
         // createFn is allowed to return null, we'll call `destroyFn` even for null `ctx`
         ManagedContext managedContext = context.managedContext();
         ctx = (C) managedContext.initialize(createFn.apply(context));

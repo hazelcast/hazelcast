@@ -42,8 +42,10 @@ import java.util.List;
 
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -79,6 +81,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
+        assertFalse(jobSummary.isLightJob());
         assertEquals("jobA", jobSummary.getNameOrId());
         assertEquals(job.getId(), jobSummary.getJobId());
         assertEquals(JobStatus.COMPLETED, jobSummary.getStatus());
@@ -92,6 +95,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
+        assertFalse(jobSummary.isLightJob());
         assertEquals("jobA", jobSummary.getNameOrId());
         assertEquals(job.getId(), jobSummary.getJobId());
 
@@ -121,6 +125,19 @@ public class JobSummaryTest extends JetTestSupport {
             assertEquals(JobStatus.FAILED, summary.getStatus());
             assertEquals(0, summary.getExecutionId());
         }, 20);
+    }
+
+    @Test
+    public void when_lightJob() {
+        Job job = instance.getJet().newLightJob(newStreamPipeline());
+
+        List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
+        assertEquals(1, list.size());
+        JobSummary jobSummary = list.get(0);
+
+        assertTrue(jobSummary.isLightJob());
+        assertEquals(idToString(job.getId()), jobSummary.getNameOrId());
+        assertEquals(job.getId(), jobSummary.getJobId());
     }
 
     @Test

@@ -32,7 +32,9 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -130,10 +132,16 @@ public class SqlCreateJob extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.notSupported("OR REPLACE", "CREATE JOB"));
         }
 
+        Set<String> optionNames = new HashSet<>();
         for (SqlNode option0 : options.getList()) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();
             String value = option.valueString();
+
+            if (!optionNames.add(key)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
+            }
+
             switch (key) {
                 case "processingGuarantee":
                     switch (value) {

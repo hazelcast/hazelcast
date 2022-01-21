@@ -25,8 +25,8 @@ public final class BooleanConverter extends Converter {
 
     public static final BooleanConverter INSTANCE = new BooleanConverter();
 
-    protected static final String TRUE = "true";
-    protected static final String FALSE = "false";
+    static final String TRUE = "true";
+    static final String FALSE = "false";
 
     private BooleanConverter() {
         super(ID_BOOLEAN, QueryDataTypeFamily.BOOLEAN);

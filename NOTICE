@@ -41,3 +41,6 @@ code derived from the Apache Flink project.
 
 The class com.hazelcast.internal.util.ConcurrentReferenceHashMap contains code written by Doug Lea
 and updated within the WildFly project (https://github.com/wildfly/wildfly).
+
+The class org.apache.calcite.linq4j.tree.ConstantExpression contains code
+originating from the Calcite project (https://github.com/apache/calcite).

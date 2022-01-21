@@ -25,10 +25,10 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.SessionWindowDefinition;
 import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.WindowDefinition;
@@ -48,6 +48,9 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R> extends AbstractTransform {
+
+    private static final long serialVersionUID = 1L;
+
     private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
     @SuppressWarnings("rawtypes")

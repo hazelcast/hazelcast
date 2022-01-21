@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.cluster.Member;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A {@link com.hazelcast.client.LoadBalancer} implementation that relies on using round robin
+ * A {@link LoadBalancer} implementation that relies on using round robin
  * to a next member to send a request to.
  * <p/>
  * Round robin is done based on best effort basis, the order of members for concurrent calls to

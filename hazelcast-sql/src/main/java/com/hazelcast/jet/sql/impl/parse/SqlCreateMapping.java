@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -26,6 +28,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -39,8 +42,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
-import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateMapping extends SqlCreate {
@@ -96,12 +98,12 @@ public class SqlCreateMapping extends SqlCreate {
 
     public Map<String, String> options() {
         return options.getList().stream()
-                      .map(node -> (SqlOption) node)
-                      .collect(
-                              LinkedHashMap::new,
-                              (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
-                              Map::putAll
-                      );
+                .map(node -> (SqlOption) node)
+                .collect(
+                        LinkedHashMap::new,
+                        (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
+                        Map::putAll
+                );
     }
 
     public boolean ifNotExists() {
@@ -135,6 +137,10 @@ public class SqlCreateMapping extends SqlCreate {
         }
 
         name.unparse(writer, leftPrec, rightPrec);
+        if (externalName != null) {
+            writer.keyword("EXTERNAL NAME");
+            externalName.unparse(writer, leftPrec, rightPrec);
+        }
 
         if (columns.size() > 0) {
             SqlWriter.Frame frame = writer.startList("(", ")");
@@ -163,7 +169,58 @@ public class SqlCreateMapping extends SqlCreate {
         }
     }
 
-    private void printIndent(SqlWriter writer) {
+    public static String unparse(Mapping mapping) {
+        SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
+
+        writer.keyword("CREATE MAPPING");
+        writer.identifier(mapping.name(), true);
+
+        // external name defaults to mapping name - omit it if it's equal
+        if (mapping.externalName() != null && !mapping.externalName().equals(mapping.name())) {
+            writer.keyword("EXTERNAL NAME");
+            writer.identifier(mapping.externalName(), true);
+        }
+
+        List<MappingField> fields = mapping.fields();
+        if (fields.size() > 0) {
+            SqlWriter.Frame frame = writer.startList("(", ")");
+            for (MappingField field : fields) {
+                printIndent(writer);
+                writer.identifier(field.name(), true);
+                writer.print(field.type().getTypeFamily().toString());
+                if (field.externalName() != null) {
+                    writer.print(" ");
+                    writer.keyword("EXTERNAL NAME");
+                    writer.identifier(field.externalName(), true);
+                }
+            }
+            writer.newlineAndIndent();
+            writer.endList(frame);
+        }
+
+        writer.newlineAndIndent();
+        writer.keyword("TYPE");
+        writer.print(mapping.type());
+
+        Map<String, String> options = mapping.options();
+        if (options.size() > 0) {
+            writer.newlineAndIndent();
+            writer.keyword("OPTIONS");
+            SqlWriter.Frame withFrame = writer.startList("(", ")");
+            for (Map.Entry<String, String> option : options.entrySet()) {
+                printIndent(writer);
+                writer.literal(writer.getDialect().quoteStringLiteral(option.getKey()));
+                writer.print("= ");
+                writer.literal(writer.getDialect().quoteStringLiteral(option.getValue()));
+            }
+            writer.newlineAndIndent();
+            writer.endList(withFrame);
+        }
+
+        return writer.toString();
+    }
+
+    private static void printIndent(SqlWriter writer) {
         writer.sep(",", false);
         writer.newlineAndIndent();
         writer.print("  ");
@@ -175,7 +232,7 @@ public class SqlCreateMapping extends SqlCreate {
             throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
         }
 
-        if (!isMappingNameValid(name)) {
+        if (!isCatalogObjectNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
         }
 
@@ -194,22 +251,5 @@ public class SqlCreateMapping extends SqlCreate {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
             }
         }
-    }
-
-    /**
-     * Returns true if the mapping name is in a valid schema, that is it must
-     * be either:
-     * <ul>
-     *     <li>a simple name
-     *     <li>a name in schema "public"
-     *     <li>a name in schema "hazelcast.public"
-     * </ul>
-     */
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    public static boolean isMappingNameValid(SqlIdentifier name) {
-        return name.names.size() == 1
-                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
-                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
-                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

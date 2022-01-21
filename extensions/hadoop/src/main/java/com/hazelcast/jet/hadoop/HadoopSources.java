@@ -171,7 +171,7 @@ public final class HadoopSources {
             @Nonnull ConsumerEx<Configuration> configureFn,
             @Nonnull BiFunctionEx<K, V, E> projectionFn
     ) {
-        return Sources.batchFromProcessor("readHadoop", readHadoopP(configureFn, projectionFn));
+        return Sources.batchFromProcessor("readHadoop", readHadoopP(null, configureFn, projectionFn));
     }
 
     /**

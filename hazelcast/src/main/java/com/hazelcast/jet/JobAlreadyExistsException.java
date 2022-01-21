@@ -25,6 +25,8 @@ package com.hazelcast.jet;
  */
 public class JobAlreadyExistsException extends JetException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates the exception
      */

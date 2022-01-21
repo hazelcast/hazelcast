@@ -56,6 +56,7 @@ public class UnifiedProtocolEncoder
     private final HazelcastProperties props;
     private volatile String inboundProtocol;
     private boolean clusterProtocolBuffered;
+    private volatile boolean encoderCanReplace;
 
     public UnifiedProtocolEncoder(ServerContext serverContext) {
         this.serverContext = serverContext;
@@ -109,13 +110,19 @@ public class UnifiedProtocolEncoder
                     return DIRTY;
                 }
 
-                initChannelForCluster();
+                if (encoderCanReplace) {
+                    initChannelForCluster();
+                }
             } else if (CLIENT_BINARY.equals(inboundProtocol)) {
                 // in case of a client, the member will not send the member protocol
-                initChannelForClient();
+                if (encoderCanReplace) {
+                    initChannelForClient();
+                }
             } else {
                 // in case of a text-client, the member will not send the member protocol
-                initChannelForText();
+                if (encoderCanReplace) {
+                    initChannelForText();
+                }
             }
 
             return CLEAN;
@@ -166,5 +173,10 @@ public class UnifiedProtocolEncoder
             sndBuf = props.getInteger(SOCKET_SEND_BUFFER_SIZE);
         }
         return sndBuf * KILO_BYTE;
+    }
+
+    public void signalEncoderCanReplace() {
+        encoderCanReplace = true;
+        channel.outboundPipeline().wakeup();
     }
 }

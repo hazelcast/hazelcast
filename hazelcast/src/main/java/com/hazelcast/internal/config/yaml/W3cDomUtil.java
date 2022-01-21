@@ -17,9 +17,7 @@
 package com.hazelcast.internal.config.yaml;
 
 import com.hazelcast.internal.yaml.MutableYamlNode;
-import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import com.hazelcast.internal.yaml.YamlUtil;
 import org.w3c.dom.Node;
@@ -49,23 +47,6 @@ public final class W3cDomUtil {
     }
 
     /**
-     * Returns the the wrapped {@link YamlMapping} instance of the
-     * provided {@link Node} if the {@code node} is an instance of
-     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
-     * is a {@link YamlMapping}.
-     *
-     * @param node The W3C node wrapping a YAML node
-     * @return the wrapped YAML node as mapping
-     * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link YamlElementAdapter}
-     */
-    public static YamlMapping getWrappedYamlMapping(Node node) {
-        checkNodeIsElementAdapter(node);
-
-        return asYamlType(node, YamlMapping.class);
-    }
-
-    /**
      * Returns the the wrapped {@link YamlSequence} instance of the
      * provided {@link Node} if the {@code node} is an instance of
      * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
@@ -80,23 +61,6 @@ public final class W3cDomUtil {
         checkNodeIsElementAdapter(node);
 
         return asYamlType(node, YamlSequence.class);
-    }
-
-    /**
-     * Returns the the wrapped {@link YamlScalar} instance of the
-     * provided {@link Node} if the {@code node} is an instance of
-     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
-     * is a {@link YamlScalar}.
-     *
-     * @param node The W3C node wrapping a YAML node
-     * @return the wrapped YAML node as scalar
-     * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link YamlElementAdapter}
-     */
-    public static YamlScalar getWrappedYamlScalar(Node node) {
-        checkNodeIsElementAdapter(node);
-
-        return asYamlType(node, YamlScalar.class);
     }
 
     /**

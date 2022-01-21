@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.PortableUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -162,25 +163,25 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public LocalTime readTime(@Nonnull String fieldName) throws IOException {
-        return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
+        return readNullableField(fieldName, FieldType.TIME, PortableUtil::readLocalTime);
     }
 
     @Override
     @Nullable
     public LocalDate readDate(@Nonnull String fieldName) throws IOException {
-        return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
+        return readNullableField(fieldName, FieldType.DATE, PortableUtil::readLocalDate);
     }
 
     @Override
     @Nullable
     public LocalDateTime readTimestamp(@Nonnull String fieldName) throws IOException {
-        return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP, PortableUtil::readLocalDateTime);
     }
 
     @Override
     @Nullable
     public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) throws IOException {
-        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, PortableUtil::readOffsetDateTime);
     }
 
     @Override
@@ -264,19 +265,12 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    private boolean isNullOrEmpty(int pos) {
-        return pos == -1;
-    }
-
     @Nullable
     private <T> T readPrimitiveArrayField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader)
             throws IOException {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, fieldType);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             return reader.read(in);
         } finally {
@@ -358,9 +352,6 @@ public class DefaultPortableReader implements PortableReader {
             }
 
             int position = readPosition(fd);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             int len = in.readInt();
             int factoryId = in.readInt();
@@ -404,9 +395,6 @@ public class DefaultPortableReader implements PortableReader {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, fieldType);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             int len = in.readInt();
 
@@ -438,25 +426,26 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public LocalTime[] readTimeArray(@Nonnull String fieldName) throws IOException {
-        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, PortableUtil::readLocalTime);
     }
 
     @Override
     @Nullable
     public LocalDate[] readDateArray(@Nonnull String fieldName) throws IOException {
-        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
+        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, PortableUtil::readLocalDate);
     }
 
     @Override
     @Nullable
     public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) throws IOException {
-        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, PortableUtil::readLocalDateTime);
     }
 
     @Override
     @Nullable
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) throws IOException {
-        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
+                PortableUtil::readOffsetDateTime);
     }
 
     private int readPosition(@Nonnull String fieldName, FieldType fieldType) throws IOException {

@@ -46,6 +46,7 @@ public class JdbcSinkBuilder<T> {
     public static final int DEFAULT_BATCH_LIMIT = 50;
 
     private String updateQuery;
+    private String jdbcUrl;
     private BiConsumerEx<PreparedStatement, T> bindFn;
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
@@ -116,7 +117,7 @@ public class JdbcSinkBuilder<T> {
      */
     @Nonnull
     public JdbcSinkBuilder<T> jdbcUrl(String connectionUrl) {
-        this.dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
+        this.jdbcUrl = connectionUrl;
         return this;
     }
 
@@ -182,11 +183,15 @@ public class JdbcSinkBuilder<T> {
      */
     @Nonnull
     public Sink<T> build() {
-        if (dataSourceSupplier == null) {
+        if (dataSourceSupplier == null && jdbcUrl == null) {
             throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
         }
+        if (dataSourceSupplier == null) {
+            String connectionUrl = jdbcUrl;
+            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
+        }
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(updateQuery, dataSourceSupplier, bindFn,
+                SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
                         exactlyOnce, batchLimit));
     }
 }

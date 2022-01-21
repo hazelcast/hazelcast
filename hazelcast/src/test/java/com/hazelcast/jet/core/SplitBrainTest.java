@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -66,8 +67,8 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
     @Override
     protected void onConfigCreated(Config config) {
-        config.getJetConfig().getInstanceConfig().setBackupCount(MAX_BACKUP_COUNT);
-        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(3000);
+        config.getJetConfig().setBackupCount(MAX_BACKUP_COUNT);
+        config.getJetConfig().setScaleUpDelayMillis(3000);
     }
 
     @Test
@@ -304,12 +305,22 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
         NoOutputSourceP.proceedLatch.countDown();
         assertJobStatusEventually(job, NOT_RUNNING, 10);
-        createHazelcastInstance(createConfig());
+        HazelcastInstance instance6 = createHazelcastInstance(createConfig());
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
+
+        // The test ends with a cluster size 2, which is below quorum
+        // Start another instance so the job can restart and be cleaned up correctly
+        HazelcastInstance instance7 = createHazelcastInstance(createConfig());
+        waitAllForSafeState(newArrayList(instances[0], instance6, instance7));
+        assertTrueEventually(() -> assertStatusRunningOrCompleted(job.getStatus()), 5);
     }
 
     private void assertStatusNotRunningOrStarting(JobStatus status) {
         assertTrue("status=" + status, status == NOT_RUNNING || status == STARTING);
+    }
+
+    private void assertStatusRunningOrCompleted(JobStatus status) {
+        assertTrue("status=" + status, status == RUNNING || status == COMPLETED);
     }
 
     @Test

@@ -84,6 +84,18 @@ public final class TestProcessors {
         CollectPerProcessorSink.lists = null;
     }
 
+    public static DAG batchDag() {
+        DAG dag = new DAG();
+        dag.newVertex("v", MockP::new);
+        return dag;
+    }
+
+    public static DAG streamingDag() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        return dag;
+    }
+
     public static class Identity extends AbstractProcessor {
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {

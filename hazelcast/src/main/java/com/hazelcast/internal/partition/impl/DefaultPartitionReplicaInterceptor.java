@@ -36,8 +36,6 @@ final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterc
         if (replicaIndex == 0) {
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
         }
-        // RU_COMPAT_4_0 todo: where is partition version incremented? do we really need to update stamp?
-        //                previously this was also incrementing partition state version which is gone now
         partitionService.getPartitionStateManager().updateStamp();
     }
 }

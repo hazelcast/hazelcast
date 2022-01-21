@@ -44,6 +44,7 @@ public class ImdgUtilTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setupCluster() {
         Config config = new Config();
+        config.getJetConfig().setEnabled(true);
         config.getMapConfig(NEAR_CACHED_SERIALIZED_MAP).setNearCacheConfig(
                 new NearCacheConfig().setInMemoryFormat(InMemoryFormat.BINARY)
         );

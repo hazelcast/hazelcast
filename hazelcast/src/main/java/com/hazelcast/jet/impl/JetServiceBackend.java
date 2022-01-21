@@ -20,9 +20,9 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -52,8 +52,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.version.Version;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -74,8 +75,12 @@ import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetServiceBackend implements ManagedService, MembershipAwareService,
@@ -87,6 +92,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
     private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
+    private NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
@@ -99,6 +105,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
+    private JobClassLoaderService jobClassLoaderService;
     private JobExecutionService jobExecutionService;
     private AtomicBoolean isJobScanStarted;
     private volatile Version clusterVersion;
@@ -106,23 +113,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
-    @Nullable
-    private final JetSqlCoreBackend sqlCoreBackend;
-
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.jetConfig = node.getConfig().getJetConfig();
-        JetSqlCoreBackend sqlCoreBackend;
-        try {
-            Class<?> jetSqlServiceClass = Class.forName("com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl");
-            sqlCoreBackend = (JetSqlCoreBackend) jetSqlServiceClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            sqlCoreBackend = null;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-        this.sqlCoreBackend = sqlCoreBackend;
         this.isJobScanStarted = new AtomicBoolean(false);
     }
 
@@ -134,16 +128,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         jobRepository = new JobRepository(hazelcastInstance);
         taskletExecutionService = new TaskletExecutionService(
-                nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
+                nodeEngine, jetConfig.getCooperativeThreadCount(), nodeEngine.getProperties()
         );
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
+        jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
                 nodeEngine.getLocalMember()));
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
-        networking = new Networking(engine, jobExecutionService, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
+        networking = new Networking(engine, jobExecutionService, jetConfig.getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
@@ -154,15 +150,29 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + jetConfig.getInstanceConfig().getCooperativeThreadCount());
-        if (sqlCoreBackend != null) {
-            try {
-                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", HazelcastInstance.class);
-                initJetInstanceMethod.invoke(sqlCoreBackend, hazelcastInstance);
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
-            }
-        }
+                + jetConfig.getCooperativeThreadCount());
+    }
+
+    public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
+        JetConfig jetConfig = config.getJetConfig();
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+                .setBackupCount(jetConfig.getBackupCount())
+                // we query creationTime of resources maps
+                .setStatisticsEnabled(true);
+
+        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
+
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_METRICS_MAP_NAME)
+                .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        config.addMapConfig(internalMapConfig)
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
     }
 
     /**
@@ -170,9 +180,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * all are down.
      */
     public void shutDownJobs() {
-        if (clusterVersion.isLessThan(Versions.V5_0)) {
-            return;
-        }
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
             notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
@@ -219,6 +226,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.reset();
     }
 
+    // Overridden in EE with EnterpriseJobCoordinationService
     JobCoordinationService createJobCoordinationService() {
         return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
@@ -234,11 +242,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public JetService getJet() {
-        if (clusterVersion.isGreaterOrEqual(Versions.V5_0)) {
-            return jet;
-        } else {
-            throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
-        }
+        return this.jet;
     }
 
     public LiveOperationRegistry getLiveOperationRegistry() {
@@ -258,11 +262,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public JobCoordinationService getJobCoordinationService() {
-        if (clusterVersion.isGreaterOrEqual(Versions.V5_0)) {
-            return jobCoordinationService;
-        } else {
-            throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
-        }
+        return jobCoordinationService;
+    }
+
+    public JobClassLoaderService getJobClassLoaderService() {
+        return jobClassLoaderService;
     }
 
     public JobExecutionService getJobExecutionService() {
@@ -340,11 +344,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             }
         }
         return keys;
-    }
-
-    @Nullable
-    public JetSqlCoreBackend getSqlCoreBackend() {
-        return sqlCoreBackend;
     }
 
     public TaskletExecutionService getTaskletExecutionService() {

@@ -49,7 +49,7 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
 
     @SuppressWarnings("unchecked")
     public static <T> CaseExpression<T> nullif(Expression<?> left, Expression<?> right) {
-        return new CaseExpression<>(
+        return new CaseExpression<T>(
                 new Expression[]{ComparisonPredicate.create(left, right, ComparisonMode.EQUALS)},
                 new Expression[]{ConstantExpression.create(null, left.getType())},
                 left

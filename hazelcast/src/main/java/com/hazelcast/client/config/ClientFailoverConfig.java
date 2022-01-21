@@ -18,17 +18,15 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
-import com.hazelcast.core.HazelcastException;
-
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.core.HazelcastException;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
-
-import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
  * Config class to configure multiple client configs to be used by single client instance.
@@ -107,19 +105,30 @@ public class ClientFailoverConfig {
     }
 
     /**
-     * Sets the count of attempts to connect to a cluster. For each alternative cluster,
-     * the client will try to connect to the cluster respecting related ConnectionRetryConfig.
+     * Sets the count that the client iterates over the given list of alternative clusters.
+     * For each alternative cluster, the client will try to connect to the cluster
+     * respecting related ConnectionRetryConfig.
      * <p>
      * When the client can not connect a cluster, it will try to connect tryCount times going
      * over the alternative client configs in a round-robin fashion. This is triggered at the
      * start and also when the client disconnects from the cluster and can not connect back
      * to it by exhausting attempts described in ConnectionRetryConfig. In that case,
      * the client will continue from where it is left off in ClientConfig lists, and try
-     * the next one again in round-robin tryCount times.
+     * the next one again in round-robin tryCount X number of alternative cluster times.
      * <p>
-     * For example, if two alternative clusters are given in the ClientConfig list and
-     * the tryCount is set as 4, the maximum number of subsequent connection attempts done
-     * by the client is 4 x 2 = 8.
+     * Example:
+     * Assume that 3 alternative clusters are given in the ClientConfig list.
+     * Let's call them cluster A , B and C .
+     * When the tryCount is set as 2, the maximum number of subsequent connection attempts done
+     * by the client is 3 x 2 = 6.
+     * They will be tried in the following order as long as the client can not connect to any of them:
+     * A -> B -> C -> A -> B -> C -> Client Shutdown.
+     * Trial 1     ->  Trial 2    -> Client Shutdown.
+     * <p>
+     * Assume that client was connected to cluster B, and then it is disconnected from it. In that case, the trial
+     * oder will be as follows:
+     * C -> A -> B -> C -> A -> B -> Client Shutdown.
+     * Trial 1     ->  Trial 2    -> Client Shutdown.
      *
      * @param tryCount the count of attempts
      * @return this for chaining
@@ -154,10 +163,12 @@ public class ClientFailoverConfig {
     }
 
     /**
-     * Returns the count of attempts to connect to a cluster.
+     * Sets the count that the client iterates over the given list of alternative clusters.
+     * For each alternative cluster, the client will try to connect to the cluster
+     * respecting related ConnectionRetryConfig.
      * Default value is {@code Integer.MAX_VALUE}.
      *
-     * @return the count of attempts
+     * @return the max try count
      */
     public int getTryCount() {
         return tryCount;

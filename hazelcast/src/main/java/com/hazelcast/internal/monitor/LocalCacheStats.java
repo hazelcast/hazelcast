@@ -120,5 +120,4 @@ public interface LocalCacheStats extends LocalInstanceStats {
      * @return the mean time in µs to execute removes on the cache
      */
     float getAverageRemoveTime();
-
 }

@@ -33,6 +33,7 @@ import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,7 +44,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -57,8 +57,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntPredicate;
-import static java.util.Arrays.asList;
-
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.LONG;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.OBJECT;
@@ -68,10 +66,10 @@ import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SingleValueBitmapIndexTest extends HazelcastTestSupport {

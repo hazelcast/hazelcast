@@ -24,7 +24,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.ExpirationTimeSetter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -43,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.nextExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * can be ttl or idleness. An instance of this class is created for
  * each {@link RecordStore} and it is always accessed by same single thread.
  */
-public class ExpirySystem {
+public class ExpirySystem implements ExpirySystemIf {
     private static final long DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
             = TimeUnit.MILLISECONDS.toNanos(1);
     private static final String PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
@@ -96,6 +96,7 @@ public class ExpirySystem {
         this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
     }
 
+    @Override
     public final boolean isEmpty() {
         return MapUtil.isNullOrEmpty(expireTimeByKey);
     }
@@ -111,12 +112,13 @@ public class ExpirySystem {
     }
 
     // this method is overridden
+    @Override
     public void clear() {
         Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
         map.clear();
     }
 
-    protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
+    protected final Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
         if (expireTimeByKey != null) {
             return expireTimeByKey;
         }
@@ -130,83 +132,127 @@ public class ExpirySystem {
     }
 
     // this method is overridden
-    protected ExpiryMetadata createExpiryMetadata(long ttlMillis, long maxIdleMillis, long expirationTime) {
-        return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
+    protected ExpiryMetadata createExpiryMetadata(long ttlMillis, long maxIdleMillis,
+                                                  long expirationTime, long lastUpdateTime) {
+        return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime, lastUpdateTime);
     }
 
-    public final void addKeyIfExpirable(Data key, long ttl, long maxIdle, long expiryTime, long now) {
-        if (expiryTime <= 0) {
-            MapConfig mapConfig = mapContainer.getMapConfig();
-            long ttlMillis = pickTTLMillis(ttl, mapConfig);
-            long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-            long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, now);
-            addExpirableKey(key, ttlMillis, maxIdleMillis, expirationTime);
-        } else {
-            addExpirableKey(key, ttl, maxIdle, expiryTime);
-        }
-    }
-
-    private void addExpirableKey(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
-        if (expirationTime == Long.MAX_VALUE) {
-            if (!isEmpty()) {
-                callRemove(key, expireTimeByKey);
-            }
+    /**
+     * Add expiryMetadata of key to this expiry system.
+     */
+    @Override
+    public final void add(Data key, ExpiryMetadata expiryMetadata, long now) {
+        if (expiryMetadata == ExpiryMetadata.NULL) {
+            removeKeyFromExpirySystem(key);
             return;
         }
 
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(true);
-        ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
-        if (expiryMetadata == null) {
-            expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis, expirationTime);
-            Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
-            expireTimeByKey.put(nativeKey, expiryMetadata);
-        } else {
-            expiryMetadata.setTtl(ttlMillis)
-                    .setMaxIdle(maxIdleMillis)
-                    .setExpirationTime(expirationTime);
+        add(key, expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                expiryMetadata.getExpirationTime(),
+                expiryMetadata.getLastUpdateTime(), now);
+
+    }
+
+    /**
+     * Add expirable key to this expiry system.
+     */
+    @Override
+    public final void add(Data key, long ttl, long maxIdle,
+                          long expiryTime, long lastUpdateTime, long now) {
+        // If expiry-time <= 0, no expiry-time exists, this is update
+        // or first put of the key hence we need to calculate it.
+        // If expiry-time > 0, this means we have a previously
+        // calculated expiry-time, we see this case in data replications.
+        if (expiryTime <= 0) {
+            MapConfig mapConfig = mapContainer.getMapConfig();
+            ttl = pickTTLMillis(mapConfig, ttl);
+            maxIdle = pickMaxIdleMillis(mapConfig, maxIdle);
+            expiryTime = nextExpirationTime(ttl, maxIdle, now, lastUpdateTime);
         }
+
+        storeExpiryMetadata(key, ttl, maxIdle, expiryTime, lastUpdateTime);
+    }
+
+    private void storeExpiryMetadata(Data key, long ttlMillis, long maxIdleMillis,
+                                     long expirationTime, long lastUpdateTime) {
+        // If expirationTime is long max, this
+        // means key is no longer expirable.
+        if (expirationTime == Long.MAX_VALUE) {
+            removeKeyFromExpirySystem(key);
+            return;
+        }
+
+        createOrUpdateExpiryMetadata(key, ttlMillis, maxIdleMillis,
+                expirationTime, lastUpdateTime);
 
         mapServiceContext.getExpirationManager().scheduleExpirationTask();
     }
 
-    public final long calculateExpirationTime(long ttl, long maxIdle, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        long ttlMillis = pickTTLMillis(ttl, mapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-        return ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+    private void createOrUpdateExpiryMetadata(Data key, long ttlMillis, long maxIdleMillis,
+                                              long expirationTime, long lastUpdateTime) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(true);
+        ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
+
+        // create expiryMetadata if not exists
+        if (expiryMetadata == null) {
+            expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis,
+                    expirationTime, lastUpdateTime);
+            Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
+            expireTimeByKey.put(nativeKey, expiryMetadata);
+            return;
+        }
+
+        // update existing expiryMetadata
+        expiryMetadata.setTtl(ttlMillis)
+                .setMaxIdle(maxIdleMillis)
+                .setExpirationTime(expirationTime)
+                .setLastUpdateTime(lastUpdateTime);
     }
 
+    @Override
+    public final long calculateExpirationTime(long ttl, long maxIdle,
+                                              long now, long lastUpdateTime) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        long ttlMillis = pickTTLMillis(mapConfig, ttl);
+        long maxIdleMillis = pickMaxIdleMillis(mapConfig, maxIdle);
+        return nextExpirationTime(ttlMillis, maxIdleMillis, now, lastUpdateTime);
+    }
+
+    @Override
     public final void removeKeyFromExpirySystem(Data key) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return;
         }
         callRemove(key, expireTimeByKey);
     }
 
+    @Override
     public final void extendExpiryTime(Data dataKey, long now) {
         if (isEmpty()) {
             return;
         }
 
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (isEmpty()) {
-            return;
-        }
-
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
-        if (expiryMetadata == null
-                || expiryMetadata.getMaxIdle() == Long.MAX_VALUE) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return;
         }
 
-        long expirationTime = ExpirationTimeSetter.calculateExpirationTime(expiryMetadata.getTtl(),
-                expiryMetadata.getMaxIdle(), now);
-        expiryMetadata.setExpirationTime(expirationTime);
+        long maxIdle = expiryMetadata.getMaxIdle();
+        if (maxIdle == Long.MAX_VALUE) {
+            return;
+        }
+
+        long ttl = expiryMetadata.getTtl();
+        if (ttl <= maxIdle) {
+            return;
+        }
+
+        expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
+                maxIdle, now, expiryMetadata.getLastUpdateTime()));
     }
 
+    @Override
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
         }
@@ -215,7 +261,7 @@ public class ExpirySystem {
     }
 
     private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null || expiryMetadata == ExpiryMetadata.NULL) {
             return ExpiryReason.NOT_EXPIRED;
         }
 
@@ -237,17 +283,20 @@ public class ExpirySystem {
         return expiryReason;
     }
 
+    @Override
     public final InvalidationQueue<ExpiredKey> getExpiredKeys() {
         return expiredKeys;
     }
 
+    @Override
     @Nonnull
-    public final ExpiryMetadata getExpiredMetadata(Data key) {
+    public final ExpiryMetadata getExpiryMetadata(Data key) {
         ExpiryMetadata expiryMetadata = getOrCreateExpireTimeByKeyMap(false).get(key);
         return expiryMetadata != null ? expiryMetadata : ExpiryMetadata.NULL;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
+    @Override
     public final void evictExpiredEntries(final int percentage, final long now, final boolean backup) {
         // 1. Find how many keys we can scan at max.
         final int maxScannableCount = findMaxScannableCount(percentage);
@@ -259,8 +308,8 @@ public class ExpirySystem {
         // 2. Do scanning and evict expired keys.
         int scannedCount = 0;
         int expiredCount = 0;
+        long scanLoopStartNanos = System.nanoTime();
         try {
-            long scanLoopStartNanos = System.nanoTime();
             do {
                 scannedCount += findExpiredKeys(now, backup);
                 expiredCount += evictExpiredKeys(backup);
@@ -275,20 +324,22 @@ public class ExpirySystem {
         tryToSendBackupExpiryOp();
 
         if (logger.isFinestEnabled()) {
-            logProgress(maxScannableCount, scannedCount, expiredCount);
+            logProgress(maxScannableCount, scannedCount, expiredCount, scanLoopStartNanos);
         }
     }
 
-    private void logProgress(int maxScannableCount, int scannedCount, int expiredCount) {
+
+    private void logProgress(int maxScannableCount, int scannedCount,
+                             int expiredCount, long scanLoopStartNanos) {
         logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
-                        + "remainingKeyCountToExpire: %d, maxScannableKeyCount: %d, "
-                        + "scannedKeyCount: %d, expiredKeyCount: %d"
+                        + "maxScannableCount: %d, scannedCount: %d, expiredCount: %d, "
+                        + "remainedCount: %d, scanTookNanos: %d"
                 , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
-                , expireTimeByKey.size(), maxScannableCount, scannedCount, expiredCount));
+                , maxScannableCount, scannedCount, expiredCount, expireTimeByKey.size(),
+                (System.nanoTime() - scanLoopStartNanos)));
     }
 
     private int findMaxScannableCount(int percentage) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return 0;
         }
@@ -367,10 +418,12 @@ public class ExpirySystem {
     }
 
     // this method is overridden
+    @Override
     public void destroy() {
         getOrCreateExpireTimeByKeyMap(false).clear();
     }
 
+    @Override
     public final void accumulateOrSendExpiredKey(Data dataKey, long valueHashCode) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;

@@ -29,9 +29,12 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -53,6 +56,7 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -60,6 +64,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
@@ -77,6 +82,8 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
+import com.hazelcast.config.PersistenceClusterDataRecoveryPolicy;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
@@ -105,6 +112,7 @@ import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -126,6 +134,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -148,9 +157,11 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -172,6 +183,7 @@ import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
@@ -183,6 +195,7 @@ import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
 import static com.hazelcast.internal.config.ConfigSections.LITE_MEMBER;
+import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
@@ -191,6 +204,7 @@ import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.internal.config.ConfigSections.NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
+import static com.hazelcast.internal.config.ConfigSections.PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.PN_COUNTER;
 import static com.hazelcast.internal.config.ConfigSections.PROPERTIES;
 import static com.hazelcast.internal.config.ConfigSections.QUEUE;
@@ -223,6 +237,7 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -331,6 +346,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleLiteMember(node);
         } else if (matches(HOT_RESTART_PERSISTENCE.getName(), nodeName)) {
             handleHotRestartPersistence(node);
+        } else if (matches(PERSISTENCE.getName(), nodeName)) {
+            handlePersistence(node);
         } else if (matches(USER_CODE_DEPLOYMENT.getName(), nodeName)) {
             handleUserCodeDeployment(node);
         } else if (matches(CARDINALITY_ESTIMATOR.getName(), nodeName)) {
@@ -355,6 +372,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSql(node);
         } else if (matches(JET.getName(), nodeName)) {
             handleJet(node);
+        } else if (matches(LOCAL_DEVICE.getName(), nodeName)) {
+            handleLocalDevice(node);
+        } else if (matches(DYNAMIC_CONFIGURATION.getName(), nodeName)) {
+            handleDynamicConfiguration(node);
         } else {
             return true;
         }
@@ -431,6 +452,128 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setHotRestartPersistenceConfig(hrConfig);
     }
 
+    private void handlePersistence(Node prRoot)
+            throws Exception {
+        PersistenceConfig prConfig = config.getPersistenceConfig()
+                .setEnabled(getBooleanValue(getAttribute(prRoot, "enabled")));
+
+        String parallelismName = "parallelism";
+        String validationTimeoutName = "validation-timeout-seconds";
+        String dataLoadTimeoutName = "data-load-timeout-seconds";
+        String rebalanceDelaySecondsName = "rebalance-delay-seconds";
+
+        for (Node n : childElements(prRoot)) {
+            String name = cleanNodeName(n);
+            if (matches("encryption-at-rest", name)) {
+                handleEncryptionAtRest(n, prConfig);
+            } else {
+                if (matches("base-dir", name)) {
+                    prConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+                } else if (matches("backup-dir", name)) {
+                    prConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
+                } else if (matches(parallelismName, name)) {
+                    prConfig.setParallelism(getIntegerValue(parallelismName, getTextContent(n)));
+                } else if (matches(validationTimeoutName, name)) {
+                    prConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
+                } else if (matches(dataLoadTimeoutName, name)) {
+                    prConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
+                } else if (matches("cluster-data-recovery-policy", name)) {
+                    prConfig.setClusterDataRecoveryPolicy(
+                            PersistenceClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
+                } else if (matches("auto-remove-stale-data", name)) {
+                    prConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
+                } else if (matches("rebalance-delay-seconds", name)) {
+                    prConfig.setRebalanceDelaySeconds(getIntegerValue(rebalanceDelaySecondsName, getTextContent(n)));
+                }
+            }
+        }
+        config.setPersistenceConfig(prConfig);
+    }
+
+    private void handleDynamicConfiguration(Node node) {
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches("persistence-enabled", name)) {
+                dynamicConfigurationConfig.setPersistenceEnabled(parseBoolean(getTextContent(n)));
+            } else if (matches("persistence-file", name)) {
+                dynamicConfigurationConfig.setPersistenceFile(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches("backup-dir", name)) {
+                dynamicConfigurationConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches("backup-count", name)) {
+                dynamicConfigurationConfig.setBackupCount(parseInt(getTextContent(n)));
+            }
+        }
+    }
+
+    protected void handleLocalDevice(Node parentNode) {
+        String name = getAttribute(parentNode, "name");
+        LocalDeviceConfig localDeviceConfig =
+                (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
+
+        handleLocalDeviceNode(parentNode, localDeviceConfig);
+    }
+
+    protected void handleLocalDeviceNode(Node deviceNode, LocalDeviceConfig localDeviceConfig) {
+        String blockSizeName = "block-size";
+        String readIOThreadCountName = "read-io-thread-count";
+        String writeIOThreadCountName = "write-io-thread-count";
+
+        for (Node n : childElements(deviceNode)) {
+            String name = cleanNodeName(n);
+            if (matches("base-dir", name)) {
+                localDeviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches(blockSizeName, name)) {
+                localDeviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
+            } else if (matches(readIOThreadCountName, name)) {
+                localDeviceConfig.setReadIOThreadCount(getIntegerValue(readIOThreadCountName, getTextContent(n)));
+            } else if (matches(writeIOThreadCountName, name)) {
+                localDeviceConfig.setWriteIOThreadCount(getIntegerValue(writeIOThreadCountName, getTextContent(n)));
+            }
+        }
+        config.addDeviceConfig(localDeviceConfig);
+    }
+
+    private TieredStoreConfig createTieredStoreConfig(Node tsRoot) {
+        TieredStoreConfig tieredStoreConfig = new TieredStoreConfig();
+
+        Node attrEnabled = getNamedItemNode(tsRoot, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        tieredStoreConfig.setEnabled(enabled);
+
+        for (Node n : childElements(tsRoot)) {
+            String name = cleanNodeName(n);
+
+            if (matches("memory-tier", name)) {
+                tieredStoreConfig.setMemoryTierConfig(createMemoryTierConfig(n));
+            } else if (matches("disk-tier", name)) {
+                tieredStoreConfig.setDiskTierConfig(createDiskTierConfig(n));
+            }
+        }
+        return tieredStoreConfig;
+    }
+
+    private MemoryTierConfig createMemoryTierConfig(Node node) {
+        String capacity = getTextContent(childElements(node).iterator().next());
+        return new MemoryTierConfig()
+                .setCapacity(parseMemorySize(capacity));
+    }
+
+    private DiskTierConfig createDiskTierConfig(Node node) {
+        DiskTierConfig diskTierConfig = new DiskTierConfig();
+
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        diskTierConfig.setEnabled(enabled);
+
+        Node attrDeviceName = getNamedItemNode(node, "device-name");
+        if (attrDeviceName != null) {
+            diskTierConfig.setDeviceName(getTextContent(attrDeviceName));
+        }
+
+        return diskTierConfig;
+    }
+
     private void handleEncryptionAtRest(Node encryptionAtRestRoot, HotRestartPersistenceConfig hrConfig)
             throws Exception {
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
@@ -439,6 +582,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSecureStore(secureStore, encryptionAtRestConfig);
         }
         hrConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+    }
+
+    private void handleEncryptionAtRest(Node encryptionAtRestRoot, PersistenceConfig prConfig)
+            throws Exception {
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        handleViaReflection(encryptionAtRestRoot, prConfig, encryptionAtRestConfig, "secure-store");
+        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store", strict)) {
+            handleSecureStore(secureStore, encryptionAtRestConfig);
+        }
+        prConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
     }
 
     private void handleSecureStore(Node secureStoreRoot, EncryptionAtRestConfig encryptionAtRestConfig) {
@@ -1756,6 +1909,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleViaReflection(node, mapConfig, mapConfig.getEventJournalConfig());
             } else if (matches("hot-restart", nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
+            } else if (matches("data-persistence", nodeName)) {
+                mapConfig.setDataPersistenceConfig(createDataPersistenceConfig(node));
             } else if (matches("read-backup-data", nodeName)) {
                 mapConfig.setReadBackupData(getBooleanValue(getTextContent(node)));
             } else if (matches("statistics-enabled", nodeName)) {
@@ -1782,6 +1937,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if (matches("tiered-store", nodeName)) {
+                mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
             }
         }
         config.addMapConfig(mapConfig);
@@ -1789,6 +1946,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
+        name = name == null ? NearCacheConfig.DEFAULT_NAME : name;
         NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
                 ? existingNearCacheConfig
                 : new NearCacheConfig(name);
@@ -1837,6 +1995,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         return hotRestartConfig;
+    }
+
+    private DataPersistenceConfig createDataPersistenceConfig(Node node) {
+        DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
+
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        dataPersistenceConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches("fsync", name)) {
+                dataPersistenceConfig.setFsync(getBooleanValue(getTextContent(n)));
+            }
+        }
+        return dataPersistenceConfig;
     }
 
     protected void handleCache(Node node) throws Exception {
@@ -1896,6 +2070,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleViaReflection(n, cacheConfig, eventJournalConfig);
             } else if (matches("hot-restart", nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
+            } else if (matches("data-persistence", nodeName)) {
+                cacheConfig.setDataPersistenceConfig(createDataPersistenceConfig(n));
             } else if (matches("disable-per-entry-invalidation-events", nodeName)) {
                 cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(getTextContent(n)));
             } else if (matches("merkle-tree", nodeName)) {
@@ -2189,6 +2365,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if (matches("populate", nodeName)) {
                     boolean populate = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setPopulate(populate);
+                } else if (matches("serialize-keys", nodeName)) {
+                    boolean serializeKeys = getBooleanValue(getTextContent(childNode));
+                    queryCacheConfig.setSerializeKeys(serializeKeys);
                 } else if (matches("indexes", nodeName)) {
                     queryCacheIndexesHandle(childNode, queryCacheConfig);
                 } else if (matches("predicate", nodeName)) {
@@ -2549,6 +2728,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node scriptingEnabledNode = getNamedItemNode(node, "scripting-enabled");
         if (scriptingEnabledNode != null) {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
+        }
+
+        Node consoleEnabledNode = getNamedItemNode(node, "console-enabled");
+        if (consoleEnabledNode != null) {
+            managementCenterConfig.setConsoleEnabled(getBooleanValue(getTextContent(consoleEnabledNode)));
+        }
+
+        Node dataAccessEnabledNode = getNamedItemNode(node, "data-access-enabled");
+        if (dataAccessEnabledNode != null) {
+            managementCenterConfig.setDataAccessEnabled(getBooleanValue(getTextContent(dataAccessEnabledNode)));
         }
 
         for (Node n : childElements(node)) {
@@ -2914,15 +3103,55 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
             }
         }
-
+        // if JetConfig contains InstanceConfig(deprecated) fields
+        // <instance> tag will be ignored.
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("instance", nodeName)) {
-                handleInstance(jetConfig, child);
+            if (matches("cooperative-thread-count", nodeName)) {
+                jetConfig.setCooperativeThreadCount(
+                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+            } else if (matches("flow-control-period", nodeName)) {
+                jetConfig.setFlowControlPeriodMs(
+                        getIntegerValue("flow-control-period", getTextContent(child)));
+            } else if (matches("backup-count", nodeName)) {
+                jetConfig.setBackupCount(
+                        getIntegerValue("backup-count", getTextContent(child)));
+            } else if (matches("scale-up-delay-millis", nodeName)) {
+                jetConfig.setScaleUpDelayMillis(
+                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+            } else if (matches("lossless-restart-enabled", nodeName)) {
+                jetConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("max-processor-accumulated-records", nodeName)) {
+                jetConfig.setMaxProcessorAccumulatedRecords(
+                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
             } else if (matches("edge-defaults", nodeName)) {
                 handleEdgeDefaults(jetConfig, child);
+            } else if (matches("instance", nodeName)) {
+                if (jetConfigContainsInstanceConfigFields(node)) {
+                    LOGGER.warning("<instance> tag will be ignored "
+                            + "since <jet> tag already contains the instance fields.");
+                } else {
+                    LOGGER.warning("<instance> tag is deprecated, use <jet> tag directly for configuration.");
+                    handleInstance(jetConfig, child);
+                }
             }
         }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private boolean jetConfigContainsInstanceConfigFields(Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("cooperative-thread-count".equals(nodeName)
+                    || "flow-control-period".equals(nodeName)
+                    || "backup-count".equals(nodeName)
+                    || "scale-up-delay-millis".equals(nodeName)
+                    || "lossless-restart-enabled".equals(nodeName)
+                    || "max-processor-accumulated-records".equals(nodeName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handleInstance(JetConfig jetConfig, Node node) {
@@ -2970,9 +3199,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("executor-pool-size", nodeName)) {
-                sqlConfig.setExecutorPoolSize(Integer.parseInt(getTextContent(child)));
-            } else if (matches("statement-timeout-millis", nodeName)) {
+            if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
         }
@@ -3003,6 +3230,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 realmConfig.setLdapAuthenticationConfig(createLdapAuthentication(child));
             } else if (matches("kerberos", nodeName)) {
                 handleKerberosAuthentication(realmConfig, child);
+            } else if (matches("simple", nodeName)) {
+                handleSimpleAuthentication(realmConfig, child);
             }
         }
     }
@@ -3134,6 +3363,34 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         realmConfig.setKerberosAuthenticationConfig(krbCfg);
     }
 
+    protected void handleSimpleAuthentication(RealmConfig realmConfig, Node node) {
+        SimpleAuthenticationConfig simpleCfg = new SimpleAuthenticationConfig();
+        fillClusterLoginConfig(simpleCfg, node);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("user", nodeName)) {
+                addSimpleUser(simpleCfg, child);
+            } else if (matches("role-separator", nodeName)) {
+                simpleCfg.setRoleSeparator(getTextContent(child));
+            }
+        }
+        realmConfig.setSimpleAuthenticationConfig(simpleCfg);
+    }
+
+    private void addSimpleUser(SimpleAuthenticationConfig simpleCfg, Node node) {
+        String username = getAttribute(node, "username");
+        List<String> roles = new ArrayList<>();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("role", nodeName)) {
+                roles.add(getTextContent(child));
+            }
+        }
+        SimpleAuthenticationConfig.UserDto userDto = new SimpleAuthenticationConfig.UserDto(getAttribute(node, "password"),
+                roles.toArray(new String[roles.size()]));
+        simpleCfg.addUser(username, userDto);
+    }
+
     private void handleCredentialsFactory(RealmConfig realmConfig, Node node) {
         String className = getAttribute(node, "class-name");
         CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
@@ -3146,7 +3403,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
+    protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("skip-identity", nodeName)) {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Portable;
@@ -72,7 +73,8 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     /**
      * Get target that should be used for field access.
      *
-     * @return serialized form for {@link Portable}, deserialized form otherwise
+     * @return serialized form for {@link Portable}/Compact (see {@link CompactSerializationConfig}),
+     * deserialized form otherwise
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
     private Object prepareTargetForFieldAccess() {
@@ -83,8 +85,8 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         }
 
         if (deserialized != null) {
-            if (deserialized instanceof Portable) {
-                // Serialize Portable to Data.
+            if (deserialized instanceof Portable || serializationService.isCompactSerializable(deserialized)) {
+                // Serialize Portable/Compact to Data.
                 if (serialized == null) {
                     serialized = serializationService.toData(deserialized);
 
@@ -101,8 +103,8 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         } else {
             assert serialized != null;
 
-            if (serialized.isPortable()) {
-                // Return Portable as Data.
+            if (serialized.isPortable() || serialized.isCompact()) {
+                // Return Portable/Compact as Data.
                 return serialized;
             } else {
                 // Deserialize otherwise.

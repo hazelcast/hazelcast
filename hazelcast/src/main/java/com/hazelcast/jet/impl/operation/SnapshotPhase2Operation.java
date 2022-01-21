@@ -50,7 +50,7 @@ public class SnapshotPhase2Operation extends AsyncJobOperation {
 
     @Override
     protected CompletableFuture<Void> doRun() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );

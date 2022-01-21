@@ -24,12 +24,12 @@ import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
  * The {@link InboundHandler} provides control when data is received and
  * needs to be processed. For example data has received on the socket and needs
  * to be decoded into a Packet.
- *
- * {@link InboundHandler} are not expected to be thread-safe; each channel
- * will gets its own instance(s).
- *
- * A {@link InboundHandler} is constructed through a {@link ChannelInitializer}.
- *
+ * <p>
+ * An {@link InboundHandler} is not expected to be thread-safe; each channel
+ * will get its own instance(s).
+ * <p>
+ * An {@link InboundHandler} is constructed through a {@link ChannelInitializer}.
+ * <p>
  * If the main task of a InboundHandler is to decode a message (e.g. a Packet),
  * it is best to call this handler a decoder. For example PacketDecoder.
  *

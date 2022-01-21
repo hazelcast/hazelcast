@@ -23,4 +23,7 @@ import com.hazelcast.jet.JetException;
  * result of a terminal snapshot.
  */
 public class TerminatedWithSnapshotException extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
 }

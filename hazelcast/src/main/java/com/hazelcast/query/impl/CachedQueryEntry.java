@@ -17,7 +17,10 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,29 +47,34 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService ss, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry(SerializationService ss, Object key, Object value, Extractors extractors) {
         init(ss, key, value, extractors);
     }
 
     public CachedQueryEntry(SerializationService ss, Extractors extractors) {
-        this.serializationService = ss;
+        this.serializationService = (InternalSerializationService) ss;
         this.extractors = extractors;
     }
 
-    public CachedQueryEntry<K, V> init(SerializationService ss, Data key, Object value, Extractors extractors) {
-        this.serializationService = ss;
+    public CachedQueryEntry<K, V> init(SerializationService ss, Object key, Object value, Extractors extractors) {
+        this.serializationService = (InternalSerializationService) ss;
         this.extractors = extractors;
         return init(key, value);
     }
 
     @SuppressWarnings("unchecked")
-    public CachedQueryEntry<K, V> init(Data key, Object value) {
+    public CachedQueryEntry<K, V> init(Object key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        this.keyData = key;
-        this.keyObject = null;
+        if (key instanceof Data) {
+            this.keyData = (Data) key;
+            this.keyObject = null;
+        } else {
+            this.keyObject = (K) key;
+            this.keyData = null;
+        }
 
         if (value instanceof Data) {
             this.valueData = (Data) value;
@@ -75,6 +83,16 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             this.valueObject = (V) value;
             this.valueData = null;
         }
+
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public CachedQueryEntry<K, V> initWithObjectKeyValue(Object key, Object value) {
+        this.keyObject = (K) key;
+        this.keyData = null;
+        this.valueObject = (V) value;
+        this.valueData = null;
 
         return this;
     }
@@ -161,31 +179,42 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         return null;
     }
 
+    public Object getByPrioritizingObjectValue() {
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        if (valueData != null) {
+            return valueData;
+        }
+
+        return null;
+    }
+
     @Override
     protected Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable() || keyData.isJson()) {
+            if (keyData.isPortable() || keyData.isJson() || keyData.isCompact()) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData == null) {
-                    // Query Cache depends on this behaviour when its caching of
-                    // values is off.
-                    return null;
-                }
-
-                if (valueData.isPortable() || valueData.isJson()) {
-                    targetObject = valueData;
-                } else {
-                    targetObject = getValue();
-                }
+                targetObject = getTargetObjectFromData();
             } else {
-                if (valueObject instanceof Portable) {
+                if (valueObject instanceof PortableGenericRecord
+                        || valueObject instanceof CompactGenericRecord) {
+                    // These two classes should be able to be handled by respective Getters
+                    // see PortableGetter and CompactGetter
+                    // We get into this branch when in memory format is Object and
+                    // - the cluster does not have PortableFactory configuration for Portable
+                    // - the cluster does not related classes for Compact
+                    targetObject = getValue();
+                } else if (valueObject instanceof Portable
+                        || serializationService.isCompactSerializable(valueObject)) {
                     targetObject = getValueData();
                 } else {
                     // Note that targetObject can be PortableGenericRecord
@@ -197,6 +226,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             }
         }
         return targetObject;
+    }
+
+    private Object getTargetObjectFromData() {
+        if (valueData == null) {
+            // Query Cache depends on this behaviour when its caching of
+            // values is off.
+            return null;
+        } else if (valueData.isPortable() || valueData.isJson() || valueData.isCompact()) {
+            return valueData;
+        } else {
+            return getValue();
+        }
     }
 
     @Override

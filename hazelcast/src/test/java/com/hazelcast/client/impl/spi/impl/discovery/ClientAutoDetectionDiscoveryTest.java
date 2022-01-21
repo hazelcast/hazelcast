@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.TestEnvironment.isSolaris;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -38,12 +39,16 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Test
     public void defaultDiscovery() {
         Config c = new Config();
+        c.setClusterName(getTestMethodName());
+
         if (isSolaris()) {
             c.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
         }
@@ -51,7 +56,8 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(c);
         Hazelcast.newHazelcastInstance(c);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig().setClusterName(getTestMethodName());
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         assertClusterSizeEventually(2, client);
     }
 

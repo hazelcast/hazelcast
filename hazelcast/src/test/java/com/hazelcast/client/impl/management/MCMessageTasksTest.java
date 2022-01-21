@@ -81,6 +81,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -190,7 +191,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         assertTrue(response.clusterTime > 0);
         assertEquals(0, response.currentState);
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), response.memberVersion);
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), response.jetVersion);
+        assertNull(response.jetVersion);
     }
 
     @Test
@@ -408,19 +409,9 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
 
     @Test
     public void testRunConsoleCommandMessageTask() throws Exception {
-        ClientInvocation invocation = new ClientInvocation(
-                getClientImpl(),
-                MCRunConsoleCommandCodec.encodeRequest(randomString(), "help"),
-                null
-        );
-
-        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
-                MCRunConsoleCommandCodec::decodeResponse
-        );
-
-        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
+        ClientMessage clientMessage = MCRunConsoleCommandCodec.encodeRequest(randomString(), randomString());
+        assertFailure(clientMessage, AccessControlException.class,
+                "Using Console is not allowed on this Hazelcast member.");
     }
 
     @Test

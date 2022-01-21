@@ -472,7 +472,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + topicName + " VALUES(42)");
+        sqlService.execute("INSERT INTO " + topicName + " VALUES(42)");
 
         assertRowsEventuallyInAnyOrder("SELECT * FROM " + topicName, singletonList(new Row(42)));
     }

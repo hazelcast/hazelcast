@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
@@ -29,6 +29,8 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static java.util.Arrays.asList;
 
 public class MergeTransform<T> extends AbstractTransform {
+
+    private static final long serialVersionUID = 1L;
 
     public MergeTransform(@Nonnull Transform upstream1, @Nonnull Transform upstream2) {
         super("merge", asList(upstream1, upstream2));

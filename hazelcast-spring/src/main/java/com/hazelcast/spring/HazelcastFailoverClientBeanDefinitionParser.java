@@ -82,9 +82,9 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         AbstractBeanDefinition handleMultipleClusterAwareClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             String attribute = element.getAttribute("try-count");
-            failoverConfigBuilder.addPropertyValue("tryCount", Integer.valueOf(attribute));
+            failoverConfigBuilder.addPropertyValue("tryCount", attribute);
 
-            ManagedList<BeanDefinition> configs = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> configs = new ManagedList<>();
             for (Node node : childElements(element)) {
                 HazelcastClientBeanDefinitionParser.SpringXmlBuilder springXmlBuilder =
                         new HazelcastClientBeanDefinitionParser.SpringXmlBuilder(parserContext);

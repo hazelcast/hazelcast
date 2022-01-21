@@ -285,7 +285,7 @@ public class ClientClusterServiceImpl
                     .uuid(memberInfo.getUuid())
                     .attributes(memberInfo.getAttributes())
                     .liteMember(memberInfo.isLiteMember())
-                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
+                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion());
             newMembers.put(memberInfo.getUuid(), memberBuilder.build());
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
@@ -360,10 +360,10 @@ public class ClientClusterServiceImpl
         }
 
         List<MembershipEvent> events = emptyList();
-        if (memberListVersion >= clusterViewSnapshot.version) {
+        if (memberListVersion > clusterViewSnapshot.version) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();
-                if (memberListVersion >= clusterViewSnapshot.version) {
+                if (memberListVersion > clusterViewSnapshot.version) {
                     Collection<Member> prevMembers = clusterViewSnapshot.members.values();
                     MemberListSnapshot snapshot = createSnapshot(memberListVersion, memberInfos);
                     memberListSnapshot.set(snapshot);

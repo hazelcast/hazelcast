@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all entries which match with the supplied predicate
  */
-@Generated("0122ecefdd77a587395e7c4d772b3745")
+@Generated("89b812a2a4bb559cdf941aed2231174c")
 public final class MapRemoveAllCodec {
     //hex: 0x013E00
     public static final int REQUEST_MESSAGE_TYPE = 81408;
@@ -93,6 +93,4 @@ public final class MapRemoveAllCodec {
 
         return clientMessage;
     }
-
-
 }

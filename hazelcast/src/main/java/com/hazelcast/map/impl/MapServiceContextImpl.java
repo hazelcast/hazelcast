@@ -124,7 +124,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    private final ILogger logger;
+    protected final ILogger logger;
     private final NodeEngine nodeEngine;
     private final QueryEngine queryEngine;
     private final EventService eventService;
@@ -149,6 +149,8 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
+    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
+
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
@@ -287,6 +289,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public MapContainer getExistingMapContainer(String mapName) {
+        return mapContainers.get(mapName);
+    }
+
+    @Override
     public Map<String, MapContainer> getMapContainers() {
         return mapContainers;
     }
@@ -422,6 +429,8 @@ class MapServiceContextImpl implements MapServiceContext {
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
+        getEventListenerCounter()
+                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
     }
 
     /**
@@ -560,6 +569,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public Data toData(Object object) {
         return serializationService.toData(object, DataType.HEAP);
+    }
+
+    @Override
+    public Data toDataWithSchema(Object object) {
+        return serializationService.toDataWithSchema(object);
     }
 
     @Override
@@ -891,5 +905,10 @@ class MapServiceContextImpl implements MapServiceContext {
     // used only for testing purposes
     PartitioningStrategyFactory getPartitioningStrategyFactory() {
         return partitioningStrategyFactory;
+    }
+
+    @Override
+    public EventListenerCounter getEventListenerCounter() {
+        return eventListenerCounter;
     }
 }

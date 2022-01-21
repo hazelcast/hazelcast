@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("4f161bc09de089afe5e0779198f9034b")
+@Generated("d6381d304f093edc444a15dd12d3dde4")
 public final class SqlErrorCodec {
     private static final int CODE_FIELD_OFFSET = 0;
     private static final int ORIGINATING_MEMBER_ID_FIELD_OFFSET = CODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -42,6 +42,7 @@ public final class SqlErrorCodec {
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, sqlError.getMessage(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, sqlError.getSuggestion(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -55,9 +56,15 @@ public final class SqlErrorCodec {
         java.util.UUID originatingMemberId = decodeUUID(initialFrame.content, ORIGINATING_MEMBER_ID_FIELD_OFFSET);
 
         java.lang.String message = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        boolean isSuggestionExists = false;
+        java.lang.String suggestion = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            suggestion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            isSuggestionExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.sql.impl.client.SqlError(code, message, originatingMemberId);
+        return new com.hazelcast.sql.impl.client.SqlError(code, message, originatingMemberId, isSuggestionExists, suggestion);
     }
 }

@@ -168,7 +168,7 @@ hazelcast:
           enabled: true
         HEALTH_CHECK:
           enabled: true
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: true
         WAN:
           enabled: true

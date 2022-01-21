@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.core.HazelcastJsonValue;
+
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -74,7 +76,10 @@ public enum SqlColumnType {
      * <p>
      * The only valid value of {@code NULL} type is {@code null}.
      */
-    NULL(14, Void.class);
+    NULL(14, Void.class),
+
+    /** JSON type, represented by {@link HazelcastJsonValue} */
+    JSON(15, HazelcastJsonValue.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 

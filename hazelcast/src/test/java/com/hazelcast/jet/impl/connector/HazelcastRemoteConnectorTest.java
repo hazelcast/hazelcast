@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
@@ -114,6 +115,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @AfterClass
     public static void teardown() {
+        HazelcastClient.shutdownAll();
         HazelcastInstanceFactory.terminateAll();
         factory.terminateAll();
     }

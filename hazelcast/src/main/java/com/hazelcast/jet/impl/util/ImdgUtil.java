@@ -37,11 +37,16 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -50,12 +55,6 @@ import static java.util.stream.Collectors.toList;
 public final class ImdgUtil {
 
     private ImdgUtil() {
-    }
-
-    public static boolean existsDistributedObject(NodeEngine nodeEngine, String serviceName, String objectName) {
-        return nodeEngine.getProxyService()
-                         .getDistributedObjectNames(serviceName)
-                         .contains(objectName);
     }
 
     public static <K, V> EntryProcessor<K, V, V> entryProcessor(
@@ -139,6 +138,41 @@ public final class ImdgUtil {
                 .createObjectDataInput(buf);
     }
 
+    public static void writeSubject(@Nonnull ObjectDataOutput output, @Nullable Subject subject) throws IOException {
+        if (subject == null) {
+            output.writeBoolean(false);
+        } else {
+            output.writeBoolean(true);
+            output.writeBoolean(subject.isReadOnly());
+            writeSet(output, subject.getPrincipals());
+        }
+    }
+
+    @Nullable
+    public static Subject readSubject(@Nonnull ObjectDataInput input) throws IOException {
+        if (input.readBoolean()) {
+            return new Subject(input.readBoolean(), readSet(input), Collections.emptySet(), Collections.emptySet());
+        }
+        return null;
+    }
+
+    public static void writeSet(@Nonnull ObjectDataOutput output, @Nonnull Set set) throws IOException {
+        output.writeInt(set.size());
+        for (Object o : set) {
+            output.writeObject(o);
+        }
+    }
+
+    @Nonnull
+    public static <E> Set<E> readSet(@Nonnull ObjectDataInput input) throws IOException {
+        int length = input.readInt();
+        Set<E> set = new HashSet<>(length);
+        for (int i = 0; i < length; i++) {
+            set.add(input.readObject());
+        }
+        return set;
+    }
+
     public static void writeList(@Nonnull ObjectDataOutput output, @Nonnull List list) throws IOException {
         output.writeInt(list.size());
         for (Object o : list) {
@@ -147,16 +181,19 @@ public final class ImdgUtil {
     }
 
     @Nonnull
-    public static <E> List<E> readList(@Nonnull ObjectDataInput output) throws IOException {
-        int length = output.readInt();
+    public static <E> List<E> readList(@Nonnull ObjectDataInput input) throws IOException {
+        int length = input.readInt();
         List<E> list = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
-            list.add(output.readObject());
+            list.add(input.readObject());
         }
         return list;
     }
 
     private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {
+
+        private static final long serialVersionUID = 1L;
+
         private final Predicate<T> wrapped;
 
         ImdgPredicateWrapper(Predicate<T> wrapped) {
@@ -170,6 +207,9 @@ public final class ImdgUtil {
     }
 
     private static final class ImdgFunctionWrapper<T, R> implements FunctionEx<T, R> {
+
+        private static final long serialVersionUID = 1L;
+
         private final Function<T, R> wrapped;
 
         ImdgFunctionWrapper(Function<T, R> wrapped) {

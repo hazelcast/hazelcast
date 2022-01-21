@@ -1,5 +1,9 @@
-SCRIPT_DIR="$(dirname "$0")"
-HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [ -z "$SCRIPT_DIR" ]; then
+  echo "Variable SCRIPT_DIR is expected to be set by the calling script";
+  exit 1;
+fi;
+
+export HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"
@@ -10,6 +14,22 @@ fi
 if [ -z "$JAVA" ]; then
     echo "Cannot find a way to start the JVM: neither JAVA_HOME is set nor the java command is on the PATH"
     exit 1
+fi
+
+#### you can enable following variables by uncommenting them
+
+#### minimum heap size
+# MIN_HEAP_SIZE=1G
+
+#### maximum heap size
+# MAX_HEAP_SIZE=1G
+
+if [ "x$MIN_HEAP_SIZE" != "x" ]; then
+	JAVA_OPTS="$JAVA_OPTS -Xms${MIN_HEAP_SIZE}"
+fi
+
+if [ "x$MAX_HEAP_SIZE" != "x" ]; then
+	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
 fi
 
 # 1 -> Java 8 or earlier (1.8..)
@@ -39,7 +59,7 @@ else
   export JAVA_OPTS="${JAVA_OPTS_DEFAULT}"
 fi
 
-CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$CLASSPATH"
+CLASSPATH="$CLASSPATH:$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
 
 function readJvmOptionsFile {
     # Read jvm.options file

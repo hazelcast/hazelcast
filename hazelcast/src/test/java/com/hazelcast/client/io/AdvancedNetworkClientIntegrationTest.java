@@ -67,7 +67,7 @@ public class AdvancedNetworkClientIntegrationTest {
     private static final int CLUSTER_SIZE = 3;
     private static final int BASE_CLIENT_PORT = 9090;
 
-    private HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
+    private final HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
     private HazelcastInstance client;
 
     @Before
@@ -152,6 +152,7 @@ public class AdvancedNetworkClientIntegrationTest {
         instances[2] = Hazelcast.newHazelcastInstance(getConfig());
         assertClusterSizeEventually(3, instances);
 
+        assertTrueEventually(() -> assertNotNull(memberAdded.get()));
         assertEquals(memberAdded.get().getAddress(), instances[2].getCluster().getLocalMember().getAddressMap().get(CLIENT));
     }
 

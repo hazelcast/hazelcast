@@ -35,19 +35,6 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_rightJoin() {
-        TestBatchSqlConnector.create(sqlService, "b", 0);
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT 1 FROM b AS b1 RIGHT JOIN b AS b2 ON b1.v = b2.v"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("RIGHT join not supported");
-
-        assertThatThrownBy(() -> sqlService.execute("SELECT 1 FROM b AS b1 RIGHT OUTER JOIN b AS b2 ON b1.v = b2.v"))
-                .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("RIGHT join not supported");
-    }
-
-    @Test
     public void test_fullJoin() {
         TestBatchSqlConnector.create(sqlService, "b", 0);
 
@@ -61,23 +48,18 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_semiJoin() {
+    public void test_multiFullJoin() {
         TestBatchSqlConnector.create(sqlService, "b", 0);
 
         assertThatThrownBy(() -> sqlService.execute(
-                    "SELECT 1 FROM b WHERE EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
+                "SELECT 1 FROM b AS b1 JOIN b AS b2 ON b1.v = b2.v FULL OUTER JOIN b AS b3 ON b2.v = b3.v"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Function 'EXISTS' does not exist");
-    }
-
-    @Test
-    public void test_antiJoin() {
-        TestBatchSqlConnector.create(sqlService, "b", 0);
+                .hasMessageContaining("FULL join not supported");
 
         assertThatThrownBy(() -> sqlService.execute(
-                    "SELECT 1 FROM b WHERE NOT EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
+                "SELECT 1 FROM b AS b1 JOIN b AS b2 ON b1.v = b2.v FULL JOIN b AS b3 ON b2.v = b3.v"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("Function 'EXISTS' does not exist");
+                .hasMessageContaining("FULL join not supported");
     }
 
     @Test
@@ -93,7 +75,7 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO b VALUES(1)"))
-                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+                .hasMessageContaining("INSERT INTO not supported for TestBatch");
     }
 
     @Test
@@ -101,7 +83,7 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO b VALUES(1)"))
-                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+                .hasMessageContaining("SINK INTO not supported for TestBatch");
     }
 
     @Test
@@ -114,7 +96,10 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
 
     @Test
     public void test_update_fromSelect() {
+        createMapping("m1", int.class, int.class);
         instance().getMap("m1").put(1, 1);
+
+        createMapping("m2", int.class, int.class);
         instance().getMap("m2").put(1, 2);
 
         assertThatThrownBy(() -> sqlService.execute("UPDATE m1 SET __key = (select m2.this from m2 WHERE m1.__key = m2.__key)"))

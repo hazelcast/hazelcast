@@ -16,8 +16,10 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,8 +29,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.System.getenv;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -73,4 +78,32 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
         assertTrue(phoneHome.phoneHomeFuture.isCancelled());
     }
 
+    @Test
+    public void testCPSubsystemEnabled() {
+        Config config = new Config()
+                .setCPSubsystemConfig(new CPSubsystemConfig()
+                        .setCPMemberCount(3));
+
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 3);
+        Node node = getNode(hazelcastInstances[0]);
+
+        PhoneHome phoneHome = new PhoneHome(node);
+
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals("true", parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()));
+    }
+
+    @Test
+    public void testJetDisabled() {
+        Config config = new Config()
+                .setJetConfig(new JetConfig().setEnabled(false));
+        HazelcastInstance hazelcastInstances = createHazelcastInstance(config);
+        Node node = getNode(hazelcastInstances);
+
+        PhoneHome phoneHome = new PhoneHome(node);
+
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals("false", parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()));
+        assertEquals("false", parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()));
+    }
 }

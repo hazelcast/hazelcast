@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a set configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("8f55fc614eb94bd5417c3f6e4a22fe27")
+@Generated("1a32cc9869f1199dd5512f5127cb9175")
 public final class DynamicConfigAddSetConfigCodec {
     //hex: 0x1B0500
     public static final int REQUEST_MESSAGE_TYPE = 1770752;
@@ -151,6 +151,4 @@ public final class DynamicConfigAddSetConfigCodec {
 
         return clientMessage;
     }
-
-
 }

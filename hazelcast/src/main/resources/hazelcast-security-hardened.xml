@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  This is a sample Hazelcast configuration focused on hardened security.
+  It lists configuration sections which could help with securing your installation.
+
+  How to use it:
+    * rename `hazelcast.xml` in the `[HAZELCAST_INSTALL]/config` directory to `hazelcast.xml.bak`
+    * copy this file to the `[HAZELCAST_INSTALL]/config` directory with a new name `hazelcast.xml`
+    * edit the copied `hazelcast.yaml` file:
+      - update IP addresses to match your environment;
+      - enable TLS, security and auditlog if you use the Hazelcast Enterprise;
+    * run Hazelcast with sensitive config values specified via a system property:
+
+      $ export JAVA_OPTS="-Dcustom.cluster.name=[YOUR_CLUSTER_NAME] -Duser.root.password=[SECRET_VALUE_HERE] -Duser.appuser.password=[ANOTHER_SECRET_HERE]"
+      $ HAZELCAST_CONFIG=config/hazelcast.yaml [HAZELCAST_INSTALL]/bin/hz-start
+
+-->
+
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
+
+    <!-- 
+      Custom cluster name protects against unintended cluster formation between foreign members.
+      Let's set it via a system property.
+     -->
+    <cluster-name>${custom.cluster.name}</cluster-name>
+
+    <properties>
+        <!-- 
+          Don't listen on all network interfaces, but bind to just one.
+          You should specify the interface IP address in the socket-endpoint configuration sections
+          within the advanced-network configuration part of this file.
+          E.g. advanced-network/member-server-socket-endpoint-config/interfaces/interfaces
+          See also https://docs.hazelcast.com/imdg/4.2/clusters/network-configuration.html#interfaces
+         -->
+        <property name="hazelcast.socket.bind.any">false</property>
+    </properties>
+
+    <!-- 
+      Explicitly disable the scripting operations and the console commands sent from the Management center.
+      The default value for both attributes is false already so this one is just to be sure and explicit.
+      Also disable access to the data for Management Center. The data access is enabled by default.
+     -->
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="false" />
+
+    <!--
+      Explicitly disable the user-code deployments. I.e. allow only code which already is on the classpath.
+      The default value is false already so this one is just to be sure and explicit. 
+     -->
+    <user-code-deployment enabled="false" />
+
+    <!--
+      Keep the Jet stream/batch processing engine disabled if you don't need it.
+      The default value is false already so this one is just to be sure and explicit.
+
+      If you allow the Jet jobs, think twice before allowing custom code upload to the cluster!
+      The default value is false already so this one is just to be sure and explicit.
+     -->
+    <jet enabled="false" resource-upload-enabled="false" />
+
+    <!--
+      Use the Advanced networking feature to separate protocols used in Hazelcast. Each protocol will have its own endpoint.
+      Protection introduced by the Advanced networking feature can be simply extended by the operating system features (e.g. firewall).
+     -->
+    <advanced-network enabled="true">
+        <join>
+            <!--
+              Safer than the autodetection is the explicit usage of one discovery method. Let's disable the autodetection.'
+             -->
+            <auto-detection enabled="false" />
+            <!--
+              If you don't need to, don't use the multicast discovery as it advertises own socket address and cluster configuration
+              within the network
+             -->
+            <multicast enabled="false"/>
+            <!--
+              The TCP-IP discovery directly lists explicitly cluster member addresses. 
+             -->
+            <tcp-ip enabled="true" connection-timeout-seconds="5">
+                <!--
+                  Use the member addresses including the port numbers, so Hazelcast won't try other socket addresses as a fallback.
+                  UPDATE ADDRESSES IN THE LIST TO FIT TO YOUR ENVIRONMENT! 
+                 -->
+                <member-list>
+                    <member>192.168.1.101:15701</member>
+                    <member>192.168.1.102:15701</member>
+                    <member>192.168.1.103:15701</member>
+                </member-list>
+            </tcp-ip>
+            <aws enabled="false" />
+            <gcp enabled="false" />
+            <azure enabled="false" />
+            <kubernetes enabled="false" />
+            <eureka enabled="false" />
+        </join>
+        <!--
+          The following part defines different kind of endpoints (protocols) each with its own socket address and configuration.'
+          Enable only endpoints (protocols) you will need!
+          For each endpoint only bind to interface with minimal scope access.
+          The Member endpoint is used for the member-to-member communication. You can increase the endpoint protection
+          by configuring firewall rules in such a way that only access from other member IP addresses will be allowed.
+         -->
+        <member-server-socket-endpoint-config>
+            <interfaces enabled="true">
+                <!-- UPDATE THE INTERFACE VALUE TO FIT TO YOUR ENVIRONMENT! -->
+                <interface>192.168.1.*</interface>
+            </interfaces>
+            <!--
+              Use the explicit port number without fallback.
+              A non-default port number can prevent an attacker to identify the scanned open port.
+             -->
+            <port port-count="100" auto-increment="false">15701</port>
+            <!--
+              TLS configuration for the Hazelcast member-to-member communication protocol.
+              TLS (SSL) is an enterprise feature and it's not available in Hazelcast community distribution
+              (therefor the value of enable attribute is `false` here).
+              If you have an Enterprise license and the Hazelcast Enterprise distribution,
+              you can enable the TLS (SSL) to secure the communication between members.
+             -->
+            <ssl enabled="false">
+                <properties>
+                    <!-- The PKCS12 is a standard and recommended type for keystores and truststores. -->
+                    <property name="keyStoreType">PKCS12</property>
+                    <property name="keyStore">/opt/hazelcast-keystore.p12</property>
+                    <property name="keyStorePassword">YourSecretGoesHere</property>
+                    <property name="trustStoreType">PKCS12</property>
+                    <property name="trustStore">/opt/hazelcast-truststore.p12</property>
+                    <property name="trustStorePassword">ACorrectPasswordGoesHere</property>
+                    <!--
+                      Without mutual authentication, the communication between the nodes would be encrypted, but still anyone can
+                      connect and establish such encrypted connection. Its (client-side) identity would not be verified.
+                      Therefor use REQUIRED for the mutual authentication.
+                     -->
+                    <property name="mutualAuthentication">REQUIRED</property>
+                    <!-- we recommend to use TLS version 1.3 if your Java version supports it -->
+                    <property name="protocol">TLSv1.3</property>
+                    <!-- explicit ciphersuites specification prevents defaulting to platform configured ones which may be weak -->
+                    <property name="ciphersuites">TLS_AES_128_GCM_SHA256</property>
+                    <!--
+                      If your PKI infrastructure supports it, enable the identity validation. In such case the client side of
+                      a TLS connection will verify the server's IP address matches the ones listed in the server's' certificate.
+                     -->
+                    <property name="validateIdentity">false</property>
+                </properties>
+            </ssl>
+        </member-server-socket-endpoint-config>
+        <!--
+          If you use client-server Hazelcast deployment mode, you'll probably use more clients and the access restrictions 
+          to the client endpoint won't be so strict.
+          -->
+        <client-server-socket-endpoint-config>
+            <interfaces enabled="true">
+                <!-- UPDATE THE INTERFACE VALUE TO FIT TO YOUR ENVIRONMENT! -->
+                <interface>192.168.1.*</interface>
+            </interfaces>
+            <port port-count="100" auto-increment="false">22957</port>
+            <!--
+              TLS configuration for the client protocol listener (acceptor).
+              TLS (SSL) is an enterprise feature and it's not available in Hazelcast community distribution
+              (therefor the value of enable attribute is `false` here).
+              If you have an Enterprise license and the Hazelcast Enterprise distribution,
+              you can enable the TLS (SSL) to secure the communication between clients and members.
+             -->
+            <ssl enabled="false">
+                <properties>
+                    <property name="keyStoreType">PKCS12</property>
+                    <property name="keyStore">/opt/hazelcast-keystore.p12</property>
+                    <property name="keyStorePassword">YourSecretGoesHere</property>
+                    <property name="trustStoreType">PKCS12</property>
+                    <property name="trustStore">/opt/hazelcast-truststore.p12</property>
+                    <property name="trustStorePassword">ACorrectPasswordGoesHere</property>
+                    <property name="mutualAuthentication">REQUIRED</property>
+                    <property name="protocol">TLSv1.3</property>
+                    <property name="ciphersuites">TLS_AES_128_GCM_SHA256</property>
+                    <property name="validateIdentity">false</property>
+                </properties>
+            </ssl>
+        </client-server-socket-endpoint-config>
+        <!-- If you don't need the HTTP REST access, remove the following section. -->
+        <rest-server-socket-endpoint-config>
+            <!--
+              If you want to allow REST cluster management operations, it's a good idea to allow access from the localhost only.
+             -->
+            <interfaces enabled="true">
+                <interface>127.0.0.1</interface>
+            </interfaces>
+            <port port-count="100" auto-increment="false">8080</port>
+            <!--
+              Enable only REST URL groups you need. Keep the rest disabled.
+             -->
+            <endpoint-groups>
+                <endpoint-group name="CLUSTER_READ" enabled="false" />
+                <endpoint-group name="CLUSTER_WRITE" enabled="false" />
+                <endpoint-group name="HEALTH_CHECK" enabled="true" />
+                <endpoint-group name="PERSISTENCE" enabled="false" />
+                <endpoint-group name="WAN" enabled="false" />
+                <endpoint-group name="DATA" enabled="false" />
+                <endpoint-group name="CP" enabled="false" />
+            </endpoint-groups>
+            <!-- Again, the Enterprise users may enable the TLS encryption for this endpoint. -->
+            <ssl enabled="false">
+                <properties>
+                    <property name="keyStoreType">PKCS12</property>
+                    <property name="keyStore">/opt/hazelcast-https.p12</property>
+                    <property name="keyStorePassword">YourSecretGoesHere</property>
+                </properties>
+            </ssl>
+        </rest-server-socket-endpoint-config>
+    </advanced-network>
+
+<!-- 
+################################################################################
+### Enterprise settings
+################################################################################
+ -->
+ 
+    <!-- The License is required if you want to use Enterprise security features. -->
+    <license-key>Enterprise License Key</license-key>
+
+    <!-- 
+      Enterprise users may enable additional logging through the auditlog feature.
+      The default implementation logs through the standard Hazelcast logging mechanism
+      with category name "hazelcast.auditlog".
+     -->
+    <auditlog enabled="false" />
+
+    <!-- Enterprise security configuration -->
+    <security enabled="false">
+        <!-- 
+          The realms are named security configuration definitions which can be referred from other parts of the
+          configuration. The realms may contain authentication and identity part. The authentication defines how
+          authentication requests from outside are verified. The identity defines the member own identity in a 
+          given realm.
+         -->
+        <realms>
+            <!-- 
+              In this sample configuration we use a simple username/password authentication between cluster members.
+              All members share the same identity defined here. We don't need to add authentication section here, because
+              the default one will check username and password from the defined "identity" configuration.
+             -->
+            <realm name="passwordRealm-members">
+                <identity>
+                    <username-password username="aUserNameOfYourChoice"
+                        password="PutAPasswordHere" />
+                </identity>
+            </realm>
+            <!-- 
+              As a sample configuration for client protocol is the simple authentication. It allows a fine-grained control
+              over the role assignment. As this realm is used to verify incoming client requests only, there is no need
+              to specify the identity.
+             -->
+            <realm name="simpleRealm-clients">
+                <authentication>
+                    <simple>
+                        <user username="appuser" password="${user.appuser.password}">
+                            <role>application</role>
+                            <role>monitor</role>
+                        </user>
+                        <user username="root" password="${user.root.password}">
+                            <role>admin</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+        </realms>
+        <!-- map the member protocol authentication to one of the defined realms -->
+        <member-authentication realm="passwordRealm-members" />
+        <!-- map the client protocol authentication to one of the defined realms -->
+        <client-authentication realm="simpleRealm-clients" />
+        <!-- 
+          Assign permissions to role names (principals) and remote addresses (endpoints).
+          Follow the least privilege principle.
+         -->
+        <client-permissions on-join-operation="RECEIVE">
+            <!-- local clients with "admin" role assigned have full access to all operations -->
+            <all-permissions principal="admin">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+            </all-permissions>
+            <!-- every authenticated client can work with a map named "playground" -->
+            <map-permission name="playground">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </map-permission>
+            <!-- clients with role "monitor" can read from a map named "accounts" -->
+            <map-permission principal="monitor" name="accounts">
+                <actions>
+                    <action>read</action>
+                </actions>
+            </map-permission>
+            <!-- clients with role "application" can work with the "accounts" map if they come from given network segments -->
+            <map-permission principal="application" name="accounts">
+                <endpoints>
+                    <!-- UPDATE THE ENDPOINTS TO FIT TO YOUR ENVIRONMENT! -->
+                    <endpoint>192.168.2.*</endpoint>
+                    <endpoint>192.168.1.*</endpoint>
+                </endpoints>
+                <actions>
+                    <action>read</action>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>lock</action>
+                    <action>put</action>
+                    <action>remove</action>
+                </actions>
+            </map-permission>
+        </client-permissions>
+    </security>
+
+    <!--
+      If you use persistence in Hazelcast, consider encrypting the data stored on the filesystem.
+     -->
+    <persistence enabled="false">
+          <base-dir>/path/to/persistence-data</base-dir>
+          <encryption-at-rest enabled="true">
+               <algorithm>AES/CBC/PKCS5Padding</algorithm>
+               <salt>YourSaltHerePlease</salt>
+               <secure-store>
+                    <keystore>
+                         <type>PKCS12</type>
+                         <path>/opt/persistence-master-key.p12</path>
+                         <password>ACorrectPasswordGoesHere</password>
+                    </keystore>
+               </secure-store>
+          </encryption-at-rest>
+     </persistence>
+</hazelcast>

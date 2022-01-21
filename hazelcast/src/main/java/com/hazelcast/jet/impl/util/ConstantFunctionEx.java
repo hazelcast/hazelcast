@@ -25,6 +25,9 @@ import com.hazelcast.function.FunctionEx;
  * it to be able to do some optimizations.
  */
 public class ConstantFunctionEx<T, R> implements FunctionEx<T, R> {
+
+    private static final long serialVersionUID = 1L;
+
     private final R key;
 
     public ConstantFunctionEx(R key) {

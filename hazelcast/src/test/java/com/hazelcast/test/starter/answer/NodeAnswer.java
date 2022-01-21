@@ -19,11 +19,8 @@ package com.hazelcast.test.starter.answer;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.mockito.invocation.InvocationOnMock;
-
-import java.lang.reflect.Method;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static org.mockito.Mockito.mock;
@@ -59,29 +56,11 @@ public class NodeAnswer extends AbstractAnswer {
             return mock(NodeEngineImpl.class, new NodeEngineAnswer(nodeEngine));
         } else if (arguments.length == 1 && methodName.equals("getConnectionManager")) {
             arguments = proxyArgumentsIfNeeded(arguments, delegateClassloader);
-            try {
-                Object endpointManager = invokeForMock(invocation, arguments);
-                return createMockForTargetClass(endpointManager, new FirewallingConnectionManagerAnswer(endpointManager));
-            } catch (NoSuchMethodException e) {
-                // RU_COMPAT_4_0
-                Class<?> endpointQualifierClass = arguments[0].getClass();
-                Method method = delegate.getClass().getMethod("getEndpointManager", endpointQualifierClass);
-                Object endpointManager = invoke(false, method, arguments);
-                return mock(targetClassloader.loadClass(FirewallingServer.FirewallingServerConnectionManager.class.getName()),
-                        new FirewallingConnectionManagerAnswer(endpointManager));
-            }
+            Object endpointManager = invokeForMock(invocation, arguments);
+            return createMockForTargetClass(endpointManager, new FirewallingConnectionManagerAnswer(endpointManager));
         } else if (arguments.length == 0 && methodName.equals("getServer")) {
-            try {
-                Object server = invokeForMock(invocation);
-                return createMockForTargetClass(server, new ServerAnswer(server));
-            } catch (NoSuchMethodException e) {
-                // RU_COMPAT_4_0
-                // In 4.0 the method was called getNetworkingService()
-                Method method = delegate.getClass().getMethod("getNetworkingService");
-                Object networkingService = invoke(false, method);
-                return mock(targetClassloader.loadClass(FirewallingServer.class.getName()),
-                        new ServerAnswer(networkingService));
-            }
+            Object server = invokeForMock(invocation);
+            return createMockForTargetClass(server, new ServerAnswer(server));
         } else if (arguments.length == 0 && (methodName.startsWith("get") || methodName.startsWith("is"))) {
             return invoke(invocation);
         }

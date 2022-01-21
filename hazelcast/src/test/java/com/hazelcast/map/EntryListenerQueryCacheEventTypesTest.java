@@ -20,19 +20,21 @@ import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.event.QueryCacheNaturalFilteringStrategy;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Test event types as published by {@link QueryCacheNaturalFilteringStrategy}
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryListenerQueryCacheEventTypesTest extends AbstractEntryEventTypesTest {
 

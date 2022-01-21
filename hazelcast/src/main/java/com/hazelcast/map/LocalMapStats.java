@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;
@@ -229,7 +230,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Cost of map &amp; Near Cache &amp; backup &amp; Merkle trees in bytes
      * <p>
-     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
+     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heap cost is zero.
      *
      * @return heap cost
      */
@@ -274,4 +275,9 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
+    /**
+     * @return replication statistics.
+     * @since 5.0
+     */
+    LocalReplicationStats getReplicationStats();
 }

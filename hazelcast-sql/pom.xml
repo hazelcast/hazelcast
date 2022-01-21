@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright 2021 Hazelcast Inc.
   ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://hazelcast.com/hazelcast-community-license
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,7 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.23.0</calcite.version>
+        <calcite.version>1.28.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
@@ -62,51 +62,6 @@
 
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>unpack-parser-template</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <includeGroupIds>org.apache.calcite</includeGroupIds>
-                            <includeArtifactIds>calcite-core</includeArtifactIds>
-                            <includes>**/Parser.jj</includes>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <overWriteReleases>true</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${maven.resources.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>copy-fmpp-resources</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/codegen</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>src/main/codegen</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>com.googlecode.fmpp-maven-plugin</groupId>
                 <artifactId>fmpp-maven-plugin</artifactId>
                 <version>1.0</version>
@@ -114,7 +69,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.28</version>
+                        <version>2.3.31</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -125,9 +80,9 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <cfgFile>${project.build.directory}/codegen/config.fmpp</cfgFile>
+                            <cfgFile>src/main/codegen/config.fmpp</cfgFile>
+                            <templateDirectory>src/main/codegen/templates</templateDirectory>
                             <outputDirectory>target/generated-sources</outputDirectory>
-                            <templateDirectory>${project.build.directory}/codegen/templates</templateDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -138,8 +93,8 @@
                 <version>2.4</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
                         <id>javacc</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>javacc</goal>
                         </goals>
@@ -208,7 +163,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>false</shadeTestJar>
+                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <!--
                                 Including instead of excluding to workaround maven-shade-plugin issues:
@@ -220,13 +175,19 @@
                                     <include>org.apache.calcite:calcite-core</include>
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
+                                    <include>org.checkerframework:checker-qual</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-core</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
+                                    <include>com.google.code.gson:gson</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
+                                    <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
                                 </includes>
                             </artifactSet>
@@ -250,16 +211,16 @@
                                     </excludes>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.checkerframework</pattern>
+                                    <shadedPattern>${relocation.root}.org.checkerframework</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.jayway</pattern>
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.calcite</pattern>
-                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
@@ -270,8 +231,24 @@
                                     <shadedPattern>${relocation.root}.org.codehaus</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.esri.core.geometry</pattern>
+                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.slf4</pattern>
                                     <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jsfr</pattern>
+                                    <shadedPattern>${relocation.root}.org.jsfr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -280,7 +257,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                             </transformers>
@@ -312,11 +289,45 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <artifact>org.checkerframework:checker-qual</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
-                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.antlr:antlr4-runtime</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.code.gson:gson</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -326,13 +337,21 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
+                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>com.google.guava:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -372,12 +391,12 @@
             <version>${calcite.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.esri.geometry</groupId>
-                    <artifactId>esri-geometry-api</artifactId>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -461,10 +480,6 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.checkerframework</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.google.j2objc</groupId>
                     <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
@@ -479,7 +494,20 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-core</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-jackson-jr</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

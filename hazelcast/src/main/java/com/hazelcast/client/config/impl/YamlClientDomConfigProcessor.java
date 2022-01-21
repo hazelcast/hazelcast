@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -32,10 +33,8 @@ import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.yaml.YamlScalar;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.nio.ByteOrder;
 import java.util.Map;
@@ -46,8 +45,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
-import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
 public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     public YamlClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig) {
@@ -111,6 +108,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
                 fillGlobalSerializer(child, serializationConfig);
             } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
+            } else if (matches("compact-serialization", name)) {
+                handleCompactSerialization(child, serializationConfig);
             }
         }
         return serializationConfig;
@@ -119,6 +118,30 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected String parseCustomLoadBalancerClassName(Node node) {
         return getAttribute(node, "class-name");
+    }
+
+    @Override
+    protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("enabled", name)) {
+                boolean enabled = getBooleanValue(getTextContent(child));
+                compactSerializationConfig.setEnabled(enabled);
+            } else if (matches("registered-classes", name)) {
+                fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    @Override
+    protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String className = getAttribute(child, "class");
+            String typeName = getAttribute(child, "type-name");
+            String serializerClassName = getAttribute(child, "serializer");
+            registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+        }
     }
 
     private void fillGlobalSerializer(Node child, SerializationConfig serializationConfig) {
@@ -257,23 +280,19 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 
     @Override
     protected void fillProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 

@@ -18,12 +18,14 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequestOffloadable;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -66,6 +68,16 @@ import static java.util.Collections.newSetFromMap;
  * Maintains the version values for the partition replicas and manages the replica-related operations for partitions
  */
 public class PartitionReplicaManager implements PartitionReplicaVersionManager {
+
+    /**
+     * Allow running partition replica sync on generic operation threads? Default is true.
+     * System property supplied as a workaround in case of unexpected issues.
+     *
+     * @since 5.0
+     */
+    private static final String PARTITION_REPLICA_ALLOW_OFFLOAD = "hazelcast.partition.replica.offload";
+    private static final boolean ALLOW_OFFLOAD =
+            Boolean.parseBoolean(System.getProperty(PARTITION_REPLICA_ALLOW_OFFLOAD, "true"));
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -217,7 +229,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
 
         // Select only permitted number of namespaces
-        List<ServiceNamespace> namespaces =
+        Collection<ServiceNamespace> namespaces =
                 registerSyncInfoForNamespaces(partitionId, requestedNamespaces, replicaIndex, target, permits);
 
         // release unused permits
@@ -230,18 +242,28 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+            logger.finest("Sending sync replica request for partitionId="
+                    + partitionId + ", replicaIndex=" + replicaIndex
                     + ", namespaces=" + namespaces);
         }
         replicaSyncRequestsCounter.inc();
 
-        PartitionReplicaSyncRequest syncRequest = new PartitionReplicaSyncRequest(partitionId, namespaces, replicaIndex);
+        Operation syncRequest = shouldOffload()
+                ? new PartitionReplicaSyncRequestOffloadable(namespaces, partitionId, replicaIndex)
+                : new PartitionReplicaSyncRequest(namespaces, partitionId, replicaIndex);
+
         nodeEngine.getOperationService().send(syncRequest, target.address());
     }
 
-    private List<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
-                                                                 Collection<ServiceNamespace> requestedNamespaces,
-                                                                 int replicaIndex, PartitionReplica target, int permits) {
+    private boolean shouldOffload() {
+        return ALLOW_OFFLOAD
+                && nodeEngine.getClusterService().getClusterVersion()
+                .isGreaterOrEqual(Versions.V5_0);
+    }
+
+    private Collection<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
+                                                                       Collection<ServiceNamespace> requestedNamespaces,
+                                                                       int replicaIndex, PartitionReplica target, int permits) {
 
         List<ServiceNamespace> namespaces = new ArrayList<>(permits);
         for (ServiceNamespace namespace : requestedNamespaces) {

@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyMap;
@@ -56,7 +56,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + "nonExistingField VARCHAR"
                 + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.json" + '\''
                 + ")"
@@ -76,7 +76,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR EXTERNAL NAME string"
                 + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.json" + '\''
                 + ")"
@@ -108,7 +108,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", object OBJECT"
                 + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.json" + '\''
                 + ")"
@@ -141,7 +141,7 @@ public class SqlJsonTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.json" + '\''
                 + ")"
@@ -205,7 +205,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ", \"null\""
                         + ", object"
                         + " FROM TABLE ("
-                        + "JSON_FILE ('" + RESOURCES_PATH + "', 'file.json')"
+                        + "JSON_FLAT_FILE ('" + RESOURCES_PATH + "', 'file.json')"
                         + ")",
                 singletonList(new Row(
                         "string",
@@ -233,7 +233,7 @@ public class SqlJsonTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + " (string INT) "
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.json" + '\''
                 + ")"
@@ -249,7 +249,7 @@ public class SqlJsonTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + " (field INT) "
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='/non-existent-directory'"
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.json" + '\''
                 + ")"
@@ -263,7 +263,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 sqlService.execute("CREATE MAPPING " + name
                         + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                        + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                         + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                         + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.json" + '\''
                         + ")"
@@ -277,7 +277,7 @@ public class SqlJsonTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + " (field INT) "
                 + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.json" + '\''
                 + ", '" + FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND + "'='" + "true" + '\''
@@ -295,7 +295,7 @@ public class SqlJsonTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT *"
                 + " FROM TABLE ("
-                + "json_file (path => '" + path + "')"
+                + "json_flat_file (path => '" + path + "')"
                 + ")"
         )).isInstanceOf(HazelcastSqlException.class)
           .hasMessageContaining("The directory '" + path + "' does not exist");
@@ -306,7 +306,7 @@ public class SqlJsonTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * "
                 + " FROM TABLE ("
-                + "json_file ("
+                + "json_flat_file ("
                 + " path => '" + RESOURCES_PATH + "'"
                 + " , glob => 'foo.json'"
                 + ")"

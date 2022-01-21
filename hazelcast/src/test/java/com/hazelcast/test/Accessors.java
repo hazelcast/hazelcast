@@ -26,12 +26,13 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -100,6 +101,10 @@ public class Accessors {
 
     public static AuditlogService getAuditlogService(HazelcastInstance hz) {
         return getNode(hz).getNodeExtension().getAuditlogService();
+    }
+
+    public static <T> T getService(HazelcastInstance hz, String serviceName) {
+        return getNodeEngineImpl(hz).getService(serviceName);
     }
 
     public static Address getAddress(HazelcastInstance hz) {
@@ -194,5 +199,9 @@ public class Accessors {
         }
 
         return allIndexes;
+    }
+
+    public static PartitionReplicaStateChecker getPartitionReplicaStateChecker(HazelcastInstance instance) {
+        return getPartitionService(instance).getPartitionReplicaStateChecker();
     }
 }

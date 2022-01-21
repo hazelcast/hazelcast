@@ -57,12 +57,17 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
 
     @Override
     public boolean shouldWait() {
+        RingbufferContainer ringbuffer = getRingBufferContainerOrNull();
+
         if (resultSet == null) {
             resultSet = new ReadResultSetImpl<>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
             sequence = startSequence;
         }
 
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        if (ringbuffer == null) {
+            return minSize > 0;
+        }
+
         sequence = ringbuffer.clampReadSequenceToBounds(sequence);
 
         if (minSize == 0) {
@@ -97,14 +102,18 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        reportReliableTopicReceived(resultSet.size());
+    }
+
+    @Override
     public Object getResponse() {
         return resultSet;
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        return ringbuffer.getRingEmptyWaitNotifyKey();
+        return getRingbufferWaitNotifyKey();
     }
 
     @Override

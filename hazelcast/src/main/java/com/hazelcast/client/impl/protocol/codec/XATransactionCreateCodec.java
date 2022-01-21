@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates an XA transaction with the given parameters.
  */
-@Generated("5594023edb0a24d293808940bbf5b703")
+@Generated("da9720fc7b48f600cf7a0062d93699bf")
 public final class XATransactionCreateCodec {
     //hex: 0x140500
     public static final int REQUEST_MESSAGE_TYPE = 1312000;
@@ -104,5 +104,4 @@ public final class XATransactionCreateCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

@@ -45,6 +45,7 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -1029,7 +1030,7 @@ public final class Sources {
     @Nonnull
     public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
         return filesBuilder(directory)
-                .build(path -> JsonUtil.beanSequenceFrom(path, type));
+                .build(SecuredFunctions.jsonReadFileFn(directory, type));
     }
 
     /**
@@ -1043,7 +1044,7 @@ public final class Sources {
     @Nonnull
     public static BatchSource<Map<String, Object>> json(@Nonnull String directory) {
         return filesBuilder(directory)
-                .build(path -> JsonUtil.mapSequenceFrom(path));
+                .build(SecuredFunctions.jsonReadFileFn(directory));
     }
 
 

@@ -49,7 +49,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUpClass() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig()
+        config.getJetConfig()
                 .setCooperativeThreadCount(1)
                 .setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS);
 

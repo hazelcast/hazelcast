@@ -16,13 +16,9 @@
 
 package com.hazelcast.test.starter.answer;
 
-import com.hazelcast.internal.server.FirewallingServer;
 import org.mockito.invocation.InvocationOnMock;
 
-import java.lang.reflect.Method;
-
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
-import static org.mockito.Mockito.mock;
 
 public class ServerAnswer
         extends AbstractAnswer {
@@ -37,17 +33,8 @@ public class ServerAnswer
         if (arguments.length == 1) {
             if (methodName.equals("getConnectionManager")) {
                 arguments = proxyArgumentsIfNeeded(arguments, delegateClassloader);
-                try {
-                    Object endpointManager = invokeForMock(invocation, arguments);
-                    return createMockForTargetClass(endpointManager, new FirewallingConnectionManagerAnswer(endpointManager));
-                } catch (NoSuchMethodException e) {
-                    // RU_COMPAT_4_0
-                    Class<?> endpointQualifierClass = arguments[0].getClass();
-                    Method method = delegate.getClass().getMethod("getEndpointManager", endpointQualifierClass);
-                    Object endpointManager = invoke(false, method, arguments);
-                    return mock(targetClassloader.loadClass(FirewallingServer.FirewallingServerConnectionManager.class.getName()),
-                            new FirewallingConnectionManagerAnswer(endpointManager));
-                }
+                Object endpointManager = invokeForMock(invocation, arguments);
+                return createMockForTargetClass(endpointManager, new FirewallingConnectionManagerAnswer(endpointManager));
             }
         }
         throw new UnsupportedOperationException("Not implemented: " + invocation);

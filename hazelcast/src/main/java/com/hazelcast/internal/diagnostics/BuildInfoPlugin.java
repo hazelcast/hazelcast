@@ -18,7 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -61,12 +60,6 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
         writer.writeKeyValueEntry("Version", buildInfo.getVersion());
         writer.writeKeyValueEntry("SerialVersion", buildInfo.getSerializationVersion());
         writer.writeKeyValueEntry("Enterprise", buildInfo.isEnterprise());
-        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        if (jetBuildInfo != null) {
-            writer.writeKeyValueEntry("JetVersion", jetBuildInfo.getVersion());
-            writer.writeKeyValueEntry("JetBuild", jetBuildInfo.getBuild());
-            writer.writeKeyValueEntry("JetRevision", jetBuildInfo.getRevision());
-        }
         writer.endSection();
     }
 }

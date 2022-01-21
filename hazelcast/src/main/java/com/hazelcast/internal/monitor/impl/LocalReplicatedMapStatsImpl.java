@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 
@@ -361,6 +362,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Override
     public long getMaxSetLatency() {
         throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
+    public LocalReplicationStats getReplicationStats() {
+        throw new UnsupportedOperationException("Replication stats are not available for replicated maps.");
     }
 
     @Override

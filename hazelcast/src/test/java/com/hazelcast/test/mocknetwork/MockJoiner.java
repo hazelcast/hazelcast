@@ -16,17 +16,21 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.Level;
+
+import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_PORT_TRY_COUNT;
+import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_SHOULD_ISOLATE_CLUSTERS;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -35,11 +39,16 @@ class MockJoiner extends AbstractJoiner {
     // blacklisted addresses
     private final Set<Address> blacklist;
     private final TestNodeRegistry registry;
+    private final boolean shouldIsolateClusters;
+    private final int maxTryCount;
 
     MockJoiner(Node node, TestNodeRegistry registry, Set<Address> initiallyBlockedAddresses) {
         super(node);
         this.registry = registry;
-        this.blacklist = new CopyOnWriteArraySet<Address>(initiallyBlockedAddresses);
+        this.blacklist = new CopyOnWriteArraySet<>(initiallyBlockedAddresses);
+
+        shouldIsolateClusters = node.getProperties().getBoolean(MOCK_JOIN_SHOULD_ISOLATE_CLUSTERS);
+        maxTryCount = node.getProperties().getInteger(MOCK_JOIN_PORT_TRY_COUNT);
     }
 
     public void doJoin() {
@@ -83,7 +92,7 @@ class MockJoiner extends AbstractJoiner {
                 break;
             }
             try {
-                Thread.sleep(500);
+                clusterService.blockOnJoin(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;
@@ -149,10 +158,30 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
+            if (shouldIsolateClusters && isMemberOfIsolatedCluster(foundNode)) {
+                String message = "Node for " + address + " is outside of the join range and should not be joined.";
+                boolean suspicious = isSuspiciousIsolation(foundNode);
+                logger.log(suspicious ? Level.WARNING : Level.FINE, message);
+                continue;
+            }
+
             logger.fine("Found an alive node. Will ask master of " + address);
             return foundNode;
         }
         return null;
+    }
+
+    private boolean isSuspiciousIsolation(Node node) {
+        int thisPort = this.node.getConfig().getNetworkConfig().getPort();
+        int thatPort = node.getConfig().getNetworkConfig().getPort();
+        return thisPort == thatPort;
+    }
+
+    private boolean isMemberOfIsolatedCluster(Node node) {
+        int rangeStartPort = this.node.getConfig().getNetworkConfig().getPort();
+        int foundNodePort = node.getThisAddress().getPort();
+        return rangeStartPort + maxTryCount < foundNodePort
+                || rangeStartPort > foundNodePort;
     }
 
     public void searchForOtherClusters() {

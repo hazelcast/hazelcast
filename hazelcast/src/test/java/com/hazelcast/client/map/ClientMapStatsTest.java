@@ -41,7 +41,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
 
     @Before
     public void setUp() {
-        member = factory.newHazelcastInstance();
+        member = factory.newHazelcastInstance(createMemberConfig());
         client = factory.newHazelcastClient();
     }
 
@@ -51,7 +51,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     }
 
     @Override
-    protected LocalMapStats getMapStats() {
+    protected LocalMapStats getMapStats(String mapName) {
         return member.getMap(mapName).getLocalMapStats();
     }
 
@@ -61,7 +61,7 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     }
 
     @Override
-    protected <K, V> IMap<K, V> getMap() {
+    protected <K, V> IMap<K, V> getMap(String mapName) {
         return client.getMap(mapName);
     }
 }

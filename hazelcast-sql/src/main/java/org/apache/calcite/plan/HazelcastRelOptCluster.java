@@ -17,7 +17,7 @@
 package org.apache.calcite.plan;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -37,6 +37,9 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     /** Metadata about parameters. */
     private QueryParameterMetadata parameterMetadata;
+
+    /** Whether 'CREATE JOB' is used */
+    private boolean requiresJob;
 
     private HazelcastRelOptCluster(
             RelOptPlanner planner,
@@ -76,6 +79,14 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
         this.parameterMetadata = parameterMetadata;
+    }
+
+    public boolean requiresJob() {
+        return requiresJob;
+    }
+
+    public void setRequiresJob(boolean requiresJob) {
+        this.requiresJob = requiresJob;
     }
 
     @Override

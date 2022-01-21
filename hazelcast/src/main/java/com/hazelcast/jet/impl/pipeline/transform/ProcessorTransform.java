@@ -23,12 +23,12 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -42,6 +42,8 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 
 public class ProcessorTransform extends AbstractTransform {
     public static final int NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM = 2;
+
+    private static final long serialVersionUID = 1L;
 
     final ProcessorMetaSupplier processorSupplier;
 
@@ -68,7 +70,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         return new ProcessorTransform("mapUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), mapUsingServiceP(serviceFactory, mapFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        mapUsingServiceP(serviceFactory, mapFn)));
     }
 
     public static <S, T> ProcessorTransform filterUsingServiceTransform(
@@ -77,7 +80,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         return new ProcessorTransform("filterUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), filterUsingServiceP(serviceFactory, filterFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        filterUsingServiceP(serviceFactory, filterFn)));
     }
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceTransform(
@@ -86,7 +90,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), flatMapUsingServiceP(serviceFactory, flatMapFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        flatMapUsingServiceP(serviceFactory, flatMapFn)));
     }
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceAsyncTransform(
@@ -102,7 +107,8 @@ public class ProcessorTransform extends AbstractTransform {
         //      the number of in-flight items is limited (maxConcurrentOps)
         ProcessorSupplier supplier = flatMapUsingServiceAsyncP(
                 serviceFactory, maxConcurrentOps, preserveOrder, Object::hashCode, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new ProcessorTransform(operationName + "UsingServiceAsync", upstream, metaSupplier);
     }
 
@@ -117,7 +123,8 @@ public class ProcessorTransform extends AbstractTransform {
         String name = operationName + "UsingServiceAsyncBatched";
         ProcessorSupplier supplier = flatMapUsingServiceAsyncBatchedP(
                 serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new ProcessorTransform(name, upstream, metaSupplier);
     }
 

@@ -122,7 +122,7 @@ public final class ClientProperty {
 
     /**
      * Controls the number of IO input threads. Defaults to -1, so the system will decide.
-     *
+     * <p>
      * If client is a smart client and processor count larger than 8, it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_INPUT_THREAD_COUNT
@@ -130,7 +130,7 @@ public final class ClientProperty {
 
     /**
      * Controls the number of IO output threads. Defaults to -1, so the system will decide.
-     *
+     * <p>
      * If client is a smart client and processor count larger than 8 , it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_OUTPUT_THREAD_COUNT
@@ -151,7 +151,7 @@ public final class ClientProperty {
     /**
      * Optimization that allows sending of packets over the network to be done on the calling thread if the
      * conditions are right. This can reduce latency and increase performance for low threaded environments.
-     *
+     * <p>
      * It is enabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
@@ -161,10 +161,10 @@ public final class ClientProperty {
      * Property needed for concurrency detection so that write through and dynamic response handling
      * can be done correctly. This property sets the window the concurrency detection will signalling
      * that concurrency has been detected, even if there are no further updates in that window.
-     *
+     * <p>
      * Normally in a concurrent system the window keeps sliding forward so it will always remain
      * concurrent.
-     *
+     * <p>
      * Setting it too high effectively disables the optimization because once concurrency has been detected
      * it will keep that way. Setting it too low could lead to suboptimal performance because the system
      * will try write through and other optimizations even though the system is concurrent.
@@ -174,13 +174,13 @@ public final class ClientProperty {
 
     /**
      * The number of response threads.
-     *
+     * <p>
      * By default there are 2 response threads; this gives stable and good performance.
-     *
+     * <p>
      * If set to 0, the response threads are bypassed and the response handling is done
      * on the IO threads. Under certain conditions this can give a higher throughput, but
      * setting to 0 should be regarded an experimental feature.
-     *
+     * <p>
      * If set to 0, the IO_OUTPUT_THREAD_COUNT is really going to matter because the
      * inbound thread will have more work to do. By default when TLS isn't enable,
      * there is just 1 inbound thread.
@@ -191,7 +191,7 @@ public final class ClientProperty {
     /**
      * Enabled dynamic switching between processing responses on the io threads
      * and offloading the response threads.
-     *
+     * <p>
      * Under certain conditions (single threaded clients) processing on the io
      * thread can increase performance because useless handover to the response
      * thread is removed. Also the response thread isn't created until it is needed
@@ -224,16 +224,36 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.operation.fail.on.indeterminate.state", false);
 
     /**
-     * Use to enable the client statistics collection.
+     * Enables the client statistics collection.
      * <p>
-     * The default is false.
+     * The default is {@code false}.
+     * <p>
+     * Setting this enables Metrics since 4.0.
+     * <p>
+     * If both this and {@link #METRICS_ENABLED} are configured, this is
+     * ignored.
+     * <p>
+     * Note that when this is enabled, the default value of
+     * {@link #METRICS_COLLECTION_FREQUENCY} (5 seconds) will be used instead
+     * of {@link #STATISTICS_PERIOD_SECONDS} (3 seconds), when not set
+     * explicitly.
+     * @deprecated since 4.0. Use {@link #METRICS_ENABLED}
+     * ({@code "hazelcast.client.metrics.enabled"}) instead.
      */
+    @Deprecated
     public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
             false);
 
     /**
      * The period in seconds the statistics run.
+     * <p>
+     * The values set here is used as {@link #METRICS_COLLECTION_FREQUENCY} as instead.
+     * If both this and {@link #METRICS_COLLECTION_FREQUENCY} are configured,
+     * this is ignored.
+     * @deprecated since 4.0. Use {@link #METRICS_COLLECTION_FREQUENCY}
+     * ({@code "hazelcast.client.metrics.collection.frequency"}) instead.
      */
+    @Deprecated
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
@@ -288,7 +308,7 @@ public final class ClientProperty {
      * potentially embedded into a signed artifact.
      */
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
-            = new HazelcastProperty("hazelcast.client.metrics.collection.frequency");
+            = new HazelcastProperty("hazelcast.client.metrics.collection.frequency", 5);
 
 
     private ClientProperty() {

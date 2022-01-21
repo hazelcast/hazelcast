@@ -70,6 +70,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         Config config = new Config();
         config.getMapConfig("*")
               .getEventJournalConfig().setEnabled(true);
+        config.getJetConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
         config.setProperty(PARTITION_COUNT.getName(), "1");
         instance = factory.newHazelcastInstance(config);

@@ -194,6 +194,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             } catch (UserInterruptException e) {
                 // Ctrl+C cancels the not-yet-submitted command
                 continue;
+            } catch (Throwable e) {
+                e.printStackTrace(writer);
+                writer.flush();
             }
             running = running && client.getLifecycleService().isRunning();
         }
@@ -307,7 +310,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleWho();
         } else if (equalsIgnoreCase(first, "jvm")) {
             handleJvm();
-        } else if (first.contains("lock") && !first.contains(".")) {
+        } else if (lowerCaseInternal(first).contains("lock") && !first.contains(".")) {
             handleLock(args);
         } else if (first.contains(".size")) {
             handleSize(args);
@@ -320,7 +323,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if (first.contains(".contains")) {
             handleContains(args);
         } else if (first.contains(".stats")) {
-            handStats(args);
+            handleStats(args);
         } else if ("t.publish".equals(first)) {
             handleTopicPublish(args);
         } else if ("q.offer".equals(first)) {
@@ -371,10 +374,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMapGetMany(args);
         } else if (first.equals("m.removemany")) {
             handleMapRemoveMany(args);
-        } else if (equalsIgnoreCase(command, "m.localKeys")) {
-            handleMapLocalKeys();
-        } else if (equalsIgnoreCase(command, "m.localSize")) {
-            handleMapLocalSize();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
         } else if (command.equals("m.values")) {
@@ -824,21 +823,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("true");
     }
 
-    protected void handleMapLocalKeys() {
-        Set set = getMap().localKeySet();
-        Iterator it = set.iterator();
-        int count = 0;
-        while (it.hasNext()) {
-            count++;
-            println(it.next());
-        }
-        println("Total " + count);
-    }
-
-    protected void handleMapLocalSize() {
-        println("Local Size = " + getMap().localKeySet().size());
-    }
-
     protected void handleMapKeys() {
         Set set = getMap().keySet();
         Iterator it = set.iterator();
@@ -950,18 +934,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     // =======================================================
 
-    private void handStats(String[] args) {
+    private void handleStats(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("m.")) {
             println(getMap().getLocalMapStats());
-        } else if (iteratorStr.startsWith("mm.")) {
-            println(getMultiMap().getLocalMultiMapStats());
-        } else if (iteratorStr.startsWith("q.")) {
-            println(getQueue().getLocalQueueStats());
-        } else if (iteratorStr.startsWith("l.")) {
-            println(getList().getLocalListStats());
-        } else if (iteratorStr.startsWith("s.")) {
-            println(getSet().getLocalSetStats());
         }
     }
 
@@ -1494,7 +1470,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("  m.entries                               iterates the entries of the map");
         println("  m.iterator [remove]                     iterates the keys of the map, remove if specified");
         println("  m.size                                  size of the map");
-        println("  m.localSize                             local size of the map");
         println("  m.clear                                 clears the map");
         println("  m.destroy                               destroys the map");
         println("  m.lock <key>                            locks the key");
@@ -1521,7 +1496,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("  mm.tryLock <key>                        tries to lock the key and returns immediately");
         println("  mm.tryLock <key> <time>                 tries to lock the key within given seconds");
         println("  mm.unlock <key>                         unlocks the key");
-        println("  mm.stats                                shows the local stats of the multimap");
         println("");
     }
 

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("0dbc7263ae5e452261583566d79e00fb")
+@Generated("39fd0ba02e61f07ce91fa1e4616c73e6")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
@@ -59,7 +59,6 @@ public final class ClientGetDistributedObjectsCodec {
         return clientMessage;
     }
 
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.client.impl.client.DistributedObjectInfo> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -79,5 +78,4 @@ public final class ClientGetDistributedObjectsCodec {
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, DistributedObjectInfoCodec::decode);
     }
-
 }

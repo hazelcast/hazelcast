@@ -46,7 +46,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected static final int LOAD_BALANCING_BYTE = 1;
     protected static final int LOAD_BALANCING_FRAME = 2;
 
-    // for the time being we configure using a int until we have decided which load strategy to use.
+    // for the time being we configure using an int until we have decided which load strategy to use.
     protected final int loadType = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     // the number of time the NioPipeline.process() method has been called.
@@ -55,8 +55,8 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected final ILogger logger;
     protected final NioChannel channel;
     protected final SocketChannel socketChannel;
-    // needs to be volatile because it can accessed concurrently (only the owner will modify). Owner can be null if the
-    // pipeline is being migrated.
+    // needs to be volatile because it can be accessed concurrently (only the owner will modify).
+    // Owner can be null if the pipeline is being migrated.
     protected volatile NioThread owner;
 
     // in case of outbound pipeline, this selectionKey is only changed when the pipeline is scheduled

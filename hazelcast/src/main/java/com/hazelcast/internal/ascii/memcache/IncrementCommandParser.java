@@ -37,7 +37,7 @@ public class IncrementCommandParser extends TypeAwareCommandParser {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String key;
-        int value;
+        long value;
         boolean noReply = false;
         if (st.hasMoreTokens()) {
             key = st.nextToken();
@@ -45,7 +45,7 @@ public class IncrementCommandParser extends TypeAwareCommandParser {
             return new ErrorCommand(ERROR_CLIENT);
         }
         if (st.hasMoreTokens()) {
-            value = Integer.parseInt(st.nextToken());
+            value = Long.parseUnsignedLong(st.nextToken());
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }

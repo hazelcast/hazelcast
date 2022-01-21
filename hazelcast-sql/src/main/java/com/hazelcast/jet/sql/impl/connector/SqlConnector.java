@@ -16,14 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
@@ -107,6 +111,18 @@ public interface SqlConnector {
     String OPTION_VALUE_CLASS_VERSION = "valuePortableClassVersion";
 
     /**
+     * The key Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_KEY_COMPACT_TYPE_NAME = "keyCompactTypeName";
+
+    /**
+     * The value Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */
@@ -119,10 +135,16 @@ public interface SqlConnector {
     String PORTABLE_FORMAT = "portable";
 
     /**
+     * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
+     * for Compact serialization.
+     */
+    String COMPACT_FORMAT = "compact";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT}, {@value #OPTION_VALUE_FORMAT}
      * and {@value #OPTION_FORMAT} for JSON serialization.
      */
-    String JSON_FORMAT = "json";
+    String JSON_FLAT_FORMAT = "json-flat";
 
     /**
      * Value for {@value #OPTION_FORMAT} for CSV (comma-separated values)
@@ -203,7 +225,7 @@ public interface SqlConnector {
     /**
      * Returns a supplier for a source vertex reading the input according to
      * the {@code projection}/{@code predicate}. The output type of the source
-     * is Object[].
+     * is {@link JetSqlRow}.
      * <p>
      * The field indexes in the predicate and projection refer to the
      * zero-based indexes of the original fields of the {@code table}. For
@@ -214,9 +236,10 @@ public interface SqlConnector {
      * Then the projection will be {@code {1}} and the predicate will be {@code
      * {2}=10}.
      *
-     * @param table      the table object
-     * @param predicate  SQL expression to filter the rows
-     * @param projection the list of field names to return
+     * @param table                   the table object
+     * @param predicate               SQL expression to filter the rows
+     * @param projection              the list of field names to return
+     * @param eventTimePolicyProvider {@link EventTimePolicy}
      * @return The DAG Vertex handling the reading
      */
     @Nonnull
@@ -224,7 +247,8 @@ public interface SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
     }
@@ -232,11 +256,11 @@ public interface SqlConnector {
     /**
      * Creates a vertex to read the given {@code table} as a part of a
      * nested-loop join. The vertex will receive items from the left side of
-     * the join as {@code Object[]}. For each record it must read the matching
+     * the join as {@link JetSqlRow}. For each record it must read the matching
      * records from the {@code table}, according to the {@code joinInfo} and
-     * emit joined records, again as {@code Object[]}. The length of the output
-     * array is {@code inputRecordLength + projection.size()}. See {@link
-     * ExpressionUtil#join} for a utility to create output records.
+     * emit joined records, again as {@link JetSqlRow}. The number of fields in
+     * the output row is {@code inputRecordLength + projection.size()}. See
+     * {@link ExpressionUtil#join} for a utility to create output rows.
      * <p>
      * The given {@code predicate} and {@code projection} apply only to the
      * records of the {@code table} (i.e. of the right-side of the join, before
@@ -283,24 +307,19 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
-     * INSERT INTO} statements.
-     * <p>
-     * Unused for connectors that don't override {@link #sinkProcessor}.
+     * Returns the supplier for the insert processor.
      */
-    default boolean requiresSink() {
-        return false;
+    @Nonnull
+    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sinkProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table
-    ) {
-        throw new UnsupportedOperationException("INSERT INTO or SINK INTO not supported for " + typeName());
+    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
     }
 
     /**

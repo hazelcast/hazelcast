@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlSortTest extends SqlTestSupport {
@@ -58,7 +59,7 @@ public class SqlSortTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_orderByOnNonProjectExpression() {
+    public void test_orderByProjectExpression() {
         String tableName = createTable(
                 new String[]{"A", "1"},
                 new String[]{"B", "4"},
@@ -89,10 +90,10 @@ public class SqlSortTest extends SqlTestSupport {
         assertRowsOrdered(
                 String.format("SELECT name, distance FROM %s ORDER BY distance ASC, name ASC", tableName),
                 asList(
-                        new Row("A", 1),
-                        new Row("B", 1),
                         new Row("A", null),
-                        new Row("B", null)
+                        new Row("B", null),
+                        new Row("A", 1),
+                        new Row("B", 1)
                 )
         );
     }
@@ -109,99 +110,73 @@ public class SqlSortTest extends SqlTestSupport {
         assertRowsOrdered(
                 String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC", tableName),
                 asList(
-                        new Row("B", null),
-                        new Row("A", null),
-                        new Row("B", 1),
-                        new Row("A", 1)
-                )
-        );
-    }
-
-    @Test
-    public void test_nullsFirstAscending() {
-        String tableName = createTable(
-                new String[]{"B", null},
-                new String[]{"B", "1"},
-                new String[]{"A", null},
-                new String[]{"A", "1"},
-                new String[]{"C", "1"}
-        );
-
-        assertRowsOrdered(
-                String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS FIRST, name ASC", tableName),
-                asList(
-                        new Row("A", null),
-                        new Row("B", null),
-                        new Row("A", 1),
-                        new Row("B", 1),
-                        new Row("C", 1)
-                )
-        );
-    }
-
-    @Test
-    public void test_nullsLastAscending() {
-        String tableName = createTable(
-                new String[]{"B", null},
-                new String[]{"B", "1"},
-                new String[]{"A", null},
-                new String[]{"A", "1"},
-                new String[]{"C", "1"}
-        );
-
-        assertRowsOrdered(
-                String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS LAST, name ASC", tableName),
-                asList(
-                        new Row("A", 1),
-                        new Row("B", 1),
-                        new Row("C", 1),
-                        new Row("A", null),
-                        new Row("B", null)
-                )
-        );
-    }
-
-    @Test
-    public void test_nullsFirstDescending() {
-        String tableName = createTable(
-                new String[]{"B", null},
-                new String[]{"B", "1"},
-                new String[]{"A", null},
-                new String[]{"A", "1"},
-                new String[]{"C", "1"}
-        );
-
-        assertRowsOrdered(
-                String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS FIRST, name DESC", tableName),
-                asList(
-                        new Row("B", null),
-                        new Row("A", null),
-                        new Row("C", 1),
-                        new Row("B", 1),
-                        new Row("A", 1)
-                )
-        );
-    }
-
-    @Test
-    public void test_nullsLastDescending() {
-        String tableName = createTable(
-                new String[]{"B", null},
-                new String[]{"B", "1"},
-                new String[]{"A", null},
-                new String[]{"A", "1"},
-                new String[]{"C", "1"}
-        );
-        assertRowsOrdered(
-                String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS LAST, name DESC", tableName),
-                asList(
-                        new Row("C", 1),
                         new Row("B", 1),
                         new Row("A", 1),
                         new Row("B", null),
                         new Row("A", null)
                 )
         );
+    }
+
+    @Test
+    public void test_nullsFirstAscending_notSupported() {
+        String tableName = createTable(
+                new String[]{"B", null},
+                new String[]{"B", "1"},
+                new String[]{"A", null},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+
+        assertThatThrownBy(() -> sqlService.execute(
+                String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS FIRST, name ASC", tableName)
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS FIRST' does not exist");
+    }
+
+    @Test
+    public void test_nullsLastAscending_notSupported() {
+        String tableName = createTable(
+                new String[]{"B", null},
+                new String[]{"B", "1"},
+                new String[]{"A", null},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+
+        assertThatThrownBy(() -> sqlService.execute(
+                String.format("SELECT name, distance FROM %s ORDER BY distance ASC NULLS LAST, name ASC", tableName)
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS LAST' does not exist");
+    }
+
+    @Test
+    public void test_nullsFirstDescending_notSupported() {
+        String tableName = createTable(
+                new String[]{"B", null},
+                new String[]{"B", "1"},
+                new String[]{"A", null},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+
+        assertThatThrownBy(() -> sqlService.execute(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS FIRST, name DESC", tableName)
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS FIRST' does not exist");
+
+    }
+
+    @Test
+    public void test_nullsLastDescending_notSupported() {
+        String tableName = createTable(
+                new String[]{"B", null},
+                new String[]{"B", "1"},
+                new String[]{"A", null},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+
+        assertThatThrownBy(() -> sqlService.execute(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC NULLS LAST, name DESC", tableName)
+        )).isInstanceOf(HazelcastSqlException.class).hasMessageContaining("Function 'NULLS LAST' does not exist");
     }
 
     @Test
@@ -269,7 +244,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET 100", tableName),
-                asList()
+                emptyList()
         );
     }
 

@@ -63,6 +63,7 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
         @Bean
         Config config() {
             Config config = smallInstanceConfig();
+            config.setClusterName("readtimeout-javaConfig");
             config.setProperty("hazelcast.graceful.shutdown.max.wait", "120");
             config.setProperty("hazelcast.partition.backup.sync.interval", "1");
 

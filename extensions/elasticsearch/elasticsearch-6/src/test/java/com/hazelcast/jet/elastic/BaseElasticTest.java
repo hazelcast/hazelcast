@@ -43,8 +43,10 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.testcontainers.DockerClientFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Base class for running Elasticsearch connector tests
@@ -77,6 +80,11 @@ public abstract class BaseElasticTest {
     protected RestHighLevelClient elasticClient;
     protected HazelcastInstance hz;
     protected IList<String> results;
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+    }
 
     @Before
     public void setUpBase() {

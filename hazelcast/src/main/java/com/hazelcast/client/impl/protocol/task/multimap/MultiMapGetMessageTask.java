@@ -18,10 +18,9 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.internal.nio.Connection;
@@ -40,10 +39,25 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_GET}
  */
 public class MultiMapGetMessageTask
-        extends AbstractPartitionMessageTask<MultiMapGetCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapGetCodec.RequestParameters> {
+
+    private transient long startTimeNanos;
 
     public MultiMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        if (getContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        updateStats(stats -> stats.incrementGetLatencyNanos(Timer.nanosElapsed(startTimeNanos)));
+        return response;
     }
 
     @Override
@@ -71,11 +85,6 @@ public class MultiMapGetMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
-    }
-
-    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
@@ -94,4 +103,5 @@ public class MultiMapGetMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.key};
     }
+
 }

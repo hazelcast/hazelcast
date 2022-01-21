@@ -25,6 +25,9 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
  */
 @SerializableByConvention
 public class SessionWindowDefinition extends WindowDefinition {
+
+    private static final long serialVersionUID = 1L;
+
     private final long sessionTimeout;
 
     SessionWindowDefinition(long sessionTimeout) {

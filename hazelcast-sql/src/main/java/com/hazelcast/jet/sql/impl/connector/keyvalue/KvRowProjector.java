@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -37,9 +39,10 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
- * A utility to convert a key-value entry to a row represented as
- * {@code Object[]}. As a convenience, it also contains a
- * {@link #predicate} - it is applied before projecting.
+ * A utility to convert a key-value entry represented as {@code
+ * Entry<Object, Object>} to a row represented as {@link JetSqlRow}. As a
+ * convenience, it also contains a {@link #predicate} - it is applied
+ * before projecting.
  * <p>
  * {@link KvProjector} does the reverse.
  */
@@ -92,9 +95,17 @@ public class KvRowProjector implements Row {
         return extractors;
     }
 
-    public Object[] project(Object key, Object value) {
-        keyTarget.setTarget(key, null);
-        valueTarget.setTarget(value, null);
+    public JetSqlRow project(Object key, Object value) {
+        return project(key, null, value, null);
+    }
+
+    public JetSqlRow project(Data key, Data value) {
+        return project(null, key, null, value);
+    }
+
+    private JetSqlRow project(Object key, Data keyData, Object value, Data valueData) {
+        keyTarget.setTarget(key, keyData);
+        valueTarget.setTarget(value, valueData);
 
         if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;
@@ -104,7 +115,7 @@ public class KvRowProjector implements Row {
         for (int i = 0; i < projections.size(); i++) {
             row[i] = evaluate(projections.get(i), this, evalContext);
         }
-        return row;
+        return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
     @Override

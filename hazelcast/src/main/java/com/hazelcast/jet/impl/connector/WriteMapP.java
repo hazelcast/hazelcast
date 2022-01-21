@@ -34,10 +34,14 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.function.Consumer;
 
+import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
 import static java.lang.Integer.max;
+import static java.util.Collections.singletonList;
 
 public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
 
@@ -174,6 +178,11 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         @Override
         protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
             return new WriteMapP<>(instance, maxParallelAsyncOps, mapName, serializationService, toKeyFn, toValueFn);
+        }
+
+        @Override
+        public List<Permission> permissions() {
+            return singletonList(mapPutPermission(clientXml, mapName));
         }
     }
 }

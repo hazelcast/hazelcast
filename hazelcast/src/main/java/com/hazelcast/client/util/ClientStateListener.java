@@ -17,15 +17,19 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 
+import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
@@ -41,8 +45,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * will not be useful. It is the user's responsibility to instantiate the client with the same
  * ClientConfig which was used to instantiate this helper.
  */
-public class ClientStateListener
-        implements LifecycleListener {
+public class ClientStateListener implements LifecycleListener {
     private LifecycleEvent.LifecycleState currentState = STARTING;
 
     private final Lock lock = new ReentrantLock();
@@ -51,10 +54,40 @@ public class ClientStateListener
 
     /**
      * Registers this instance with the provided client configuration
+     * <p>
+     * This constructor is introduced to let ClientStateListener to be used via
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)}
+     * <p>
+     * Listeners used in the different client configs registered to single {@link ClientFailoverConfig} should be
+     * same. It can be achieved using this constructor while the other constructor
+     * {@link ClientStateListener#ClientStateListener(ClientConfig)} does not allow that usage.
+     * <p>
+     * Note that ClientStateListener should be created after all the alternative client configs are added to the
+     * client failoverConfig.
+     * Example usage:
+     * <pre>{@code
+     * ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
+     * clientFailoverConfig.addClientConfig(clientConfig).addClientConfig(clientConfig2);
+     * ClientStateListener listener = new ClientStateListener(clientFailoverConfig);
+     * HazelcastClient.newHazelcastFailoverClient(clientFailoverConfig);
+     * }<pre>
+     *
+     * @param clientFailoverConfig The client configuration to which this listener will be registered
+     * @since 5.0
+     */
+    public ClientStateListener(@Nonnull ClientFailoverConfig clientFailoverConfig) {
+        List<ClientConfig> clientConfigs = clientFailoverConfig.getClientConfigs();
+        for (ClientConfig clientConfig : clientConfigs) {
+            clientConfig.addListenerConfig(new ListenerConfig(this));
+        }
+    }
+
+    /**
+     * Registers this instance with the provided client configuration
      *
      * @param clientConfig The client configuration to which this listener will be registered
      */
-    public ClientStateListener(ClientConfig clientConfig) {
+    public ClientStateListener(@Nonnull ClientConfig clientConfig) {
         clientConfig.addListenerConfig(new ListenerConfig(this));
     }
 
@@ -62,6 +95,9 @@ public class ClientStateListener
     public void stateChanged(LifecycleEvent event) {
         lock.lock();
         try {
+            if (event.getState().equals(CLIENT_CHANGED_CLUSTER)) {
+                return;
+            }
             currentState = event.getState();
             if (currentState.equals(CLIENT_CONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 connectedCondition.signalAll();

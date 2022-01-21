@@ -74,7 +74,6 @@ public final class PortableContextImpl implements PortableContext {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Data is not Portable!");
         }
-
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
         int factoryId = in.readInt();
         int classId = in.readInt();

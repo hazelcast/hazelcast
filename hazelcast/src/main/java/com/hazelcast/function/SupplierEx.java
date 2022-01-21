@@ -17,6 +17,7 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
@@ -30,7 +31,7 @@ import java.util.function.Supplier;
  * @since 4.0
  */
 @FunctionalInterface
-public interface SupplierEx<T> extends Supplier<T>, Serializable {
+public interface SupplierEx<T> extends Supplier<T>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Supplier#get}.
@@ -46,5 +47,4 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
-
 }

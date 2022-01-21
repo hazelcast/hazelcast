@@ -45,13 +45,7 @@ public class InternalPartitionImplConstructor extends AbstractStarterObjectConst
         Integer partitionId = getFieldValueReflectively(delegate, "partitionId");
         Object interceptor = getFieldValueReflectively(delegate, "interceptor");
         Object localReplica = getFieldValueReflectively(delegate, "localReplica");
-        // RU_COMPAT_4_0: no field InternalPartitionImpl#version in 4.0
-        Integer version = 0;
-        try {
-            version = getFieldValueReflectively(delegate, "version");
-        } catch (NoSuchFieldError e) {
-            // ignore
-        }
+        Integer version = getFieldValueReflectively(delegate, "version");
         Object replicas = getFieldValueReflectively(delegate, "replicas");
 
         Object[] args = new Object[] {partitionId, localReplica, replicas, version, interceptor};

@@ -18,7 +18,6 @@ package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -63,14 +62,11 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             return cloneSplitBrainProtectionFunctionImplementation(thisConfigObject, otherConfigClass);
         }
 
-        // RU_COMPAT_4_1
-        // since empty constructor is added this could be reverted in later versions
-        Object otherConfigObject;
-        if (thisConfigClass.getName().equals("com.hazelcast.config.JavaKeyStoreSecureStoreConfig")) {
-            otherConfigObject = cloneJavaKeyStoreConfig(thisConfigObject, otherConfigClass);
-        } else {
-            otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(), otherConfigClass.getName());
+        if (thisConfigClass.getName().equals("com.hazelcast.jet.impl.config.DelegatingInstanceConfig")) {
+            otherConfigClass = classloader.loadClass("com.hazelcast.jet.config.InstanceConfig");
         }
+
+        Object otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(), otherConfigClass.getName());
 
         for (Method method : thisConfigClass.getMethods()) {
             if (!isGetter(method)) {
@@ -262,13 +258,5 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         Class<?> splitBrainProtectionFunctionInterface =
                 classLoader.loadClass("com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction");
         return splitBrainProtectionFunctionInterface.isAssignableFrom(klass);
-    }
-
-    // RU_COMPAT_4_1
-    // since empty constructor is added this could be reverted in later versions
-    private static Object cloneJavaKeyStoreConfig(Object javaKeyStoreConfig, Class<?> targetClass) throws Exception {
-        File path = getFieldValueReflectively(javaKeyStoreConfig, "path");
-        Constructor<?> constructor = targetClass.getConstructor(File.class);
-        return constructor.newInstance(path);
     }
 }

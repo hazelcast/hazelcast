@@ -22,6 +22,9 @@ import com.hazelcast.jet.impl.TerminationMode;
 import javax.annotation.Nonnull;
 
 public class JobTerminateRequestedException extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
     private final TerminationMode mode;
 
     public JobTerminateRequestedException(@Nonnull TerminationMode mode) {

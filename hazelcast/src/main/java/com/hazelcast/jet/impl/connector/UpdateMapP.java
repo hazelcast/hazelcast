@@ -49,7 +49,7 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
     private final BiFunction<Object, Object, Object> remappingFunction =
             (o, n) -> ApplyFnEntryProcessor.append(o, (Data) n);
 
-    UpdateMapP(HazelcastInstance instance,
+    public UpdateMapP(HazelcastInstance instance,
                String mapName,
                @Nonnull FunctionEx<? super T, ? extends K> keyFn,
                @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn) {

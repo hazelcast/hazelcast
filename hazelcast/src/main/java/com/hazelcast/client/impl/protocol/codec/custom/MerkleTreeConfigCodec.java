@@ -24,11 +24,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("42bd443e765b2a62bf51a957c7a5bbd6")
+@Generated("59223d9a4711dc1311b7d132c3fbdd11")
 public final class MerkleTreeConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int DEPTH_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = DEPTH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int ENABLED_SET_FIELD_OFFSET = DEPTH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = ENABLED_SET_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MerkleTreeConfigCodec() {
     }
@@ -39,6 +40,7 @@ public final class MerkleTreeConfigCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET, merkleTreeConfig.isEnabled());
         encodeInt(initialFrame.content, DEPTH_FIELD_OFFSET, merkleTreeConfig.getDepth());
+        encodeBoolean(initialFrame.content, ENABLED_SET_FIELD_OFFSET, merkleTreeConfig.isEnabledSet());
         clientMessage.add(initialFrame);
 
         clientMessage.add(END_FRAME.copy());
@@ -51,9 +53,15 @@ public final class MerkleTreeConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         boolean enabled = decodeBoolean(initialFrame.content, ENABLED_FIELD_OFFSET);
         int depth = decodeInt(initialFrame.content, DEPTH_FIELD_OFFSET);
+        boolean isEnabledSetExists = false;
+        boolean enabledSet = false;
+        if (initialFrame.content.length >= ENABLED_SET_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            enabledSet = decodeBoolean(initialFrame.content, ENABLED_SET_FIELD_OFFSET);
+            isEnabledSetExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createMerkleTreeConfig(enabled, depth);
+        return CustomTypeFactory.createMerkleTreeConfig(enabled, depth, isEnabledSetExists, enabledSet);
     }
 }

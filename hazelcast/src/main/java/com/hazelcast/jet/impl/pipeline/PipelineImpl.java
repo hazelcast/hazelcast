@@ -53,11 +53,14 @@ import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
 
+    private static final long serialVersionUID = 1L;
+
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
     private final Map<String, File> attachedFiles = new HashMap<>();
     private boolean preserveOrder;
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     @SuppressWarnings("unchecked")
     public <T> BatchStage<T> readFrom(@Nonnull BatchSource<? extends T> source) {
         BatchSourceTransform<? extends T> xform = (BatchSourceTransform<? extends T>) source;

@@ -660,6 +660,7 @@
                                     </xs:element>
                                     <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0"/>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0"/>
+                                    <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="partition-strategy" type="xs:string" minOccurs="0"/>
                                 </xs:sequence>
@@ -876,6 +877,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0"/>
+                                    <xs:element name="data-persistence" type="data-persistence" minOccurs="0"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
                                 </xs:sequence>
@@ -1000,14 +1002,6 @@
                                             `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which
                                             is `6`.
                                             Valid numbers are 0 (no backup), 1, 2 ... 6.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="hot-restart-enabled" type="parameterized-boolean">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This boolean parameter enables hot-restart feature when set as true.
-                                            Only available on Hazelcast Enterprise.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1332,6 +1326,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0"/>
+                        <xs:element name="persistence" type="persistence" minOccurs="0"/>
                         <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"/>
                         <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0"/>
                         <xs:element name="pn-counter" minOccurs="0" maxOccurs="unbounded">
@@ -2045,7 +2040,7 @@
         <xs:attribute name="multicast-port" type="xs:string" default="54327"/>
         <xs:attribute name="multicast-timeout-seconds" type="xs:string" default="2"/>
         <xs:attribute name="multicast-time-to-live" type="xs:string" default="32"/>
-        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean"/>
     </xs:complexType>
 
     <xs:complexType name="aliased-discovery-strategy">
@@ -2765,7 +2760,21 @@
             <xs:enumeration value="CLUSTER_READ"/>
             <xs:enumeration value="CLUSTER_WRITE"/>
             <xs:enumeration value="HEALTH_CHECK"/>
-            <xs:enumeration value="HOT_RESTART"/>
+            <xs:enumeration value="PERSISTENCE"/>
+            <xs:enumeration value="HOT_RESTART">
+                <xs:annotation>
+                    <xs:documentation>
+                        DEPRECATED. Please use PERSISTENCE endpoint group instead.
+                        Note: We define PERSISTENCE and HOT_RESTART endpoint group
+                        names as alias of each other and these names actually refer to
+                        the same endpoint group. We're using PERSISTENCE as canonical name
+                        for this group while listing enabled endpoint groups. If this
+                        group enabled by using any of these name, Hazelcast will activate
+                        this PERSISTENCE endpoint group. HOT_RESTART endpoint group name
+                        will be removed in a future release.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
             <xs:enumeration value="MEMCACHE"/>
@@ -2904,6 +2913,12 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="management-permission" type="management-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="job-permission" type="job-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="connector-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="sql-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
                 </xs:complexType>
@@ -3011,6 +3026,16 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="job-permission">
+        <xs:complexContent>
+            <xs:extension base="base-permission">
+                <xs:sequence>
+                    <xs:element name="actions" type="actions"/>
+                </xs:sequence>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -4375,6 +4400,15 @@
     </xs:complexType>
 
     <xs:complexType name="hot-restart-persistence">
+        <xs:annotation>
+            <xs:documentation>
+                DEPRECATED, use 'persistence' instead.
+                Note: If either, but not both, hot-restart-persistence or
+                persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
+                enabled, Hazelcast will use the persistence configuration.
+                hot-restart-persistence element will be removed in a future release.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" default="hot-restart">
                 <xs:annotation>
@@ -4420,9 +4454,9 @@
         <xs:attribute name="data-load-timeout-seconds" type="parameterized-unsigned-int">
             <xs:annotation>
                 <xs:documentation>
-                    Data load timeout for hot-restart process,
-                    all members in the cluster should complete restoring their local data
-                    before this timeout.
+                    DEPRECATED. Please leave it to default.
+                    Data load timeout for hot-restart process, all members in the cluster
+                    should complete restoring their local data before this timeout.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4458,6 +4492,132 @@
                     When auto-removal of stale Hot Restart data is enabled, while restarting that member,
                     Hot Restart data is automatically removed and it joins the cluster as a completely new member.
                     Otherwise, Hot Restart data should be removed manually.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="persistence">
+        <xs:annotation>
+            <xs:documentation>
+                Successor of hot-restart-persistence.
+                Note: If either, but not both, hot-restart-persistence or
+                persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
+                enabled, Hazelcast will use the persistence configuration.
+                hot-restart-persistence element will be removed in a future release.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" default="persistence">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for all persistence data. Can be an absolute or relative path to the node startup
+                        directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for persistence backups. Each new backup will be created in a separate directory inside this one.
+                        Can be an absolute or relative path to the node startup directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="encryption-at-rest" type="encryption-at-rest" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies parameters for encryption of Persistence data. This includes the encryption algorithm
+                        to be used (such as AES, DESede etc.) and the Secure Store configuration for retrieving the
+                        encryption keys.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="parameterized-boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable persistence, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validation-timeout-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Validation timeout for the restart procedure, includes validating
+                    cluster members expected to join and partition table on all cluster.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="data-load-timeout-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    DEPRECATED. Please leave it to default.
+                    Data load timeout for the restart procedure,
+                    all members in the cluster should complete restoring their local data
+                    before this timeout.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-data-recovery-policy" default="FULL_RECOVERY_ONLY">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies the policy that will be respected during cluster restart. Valid values are :
+                    FULL_RECOVERY_ONLY : Starts the cluster only when all expected nodes are present and correct.
+                    Otherwise, it fails.
+                    PARTIAL_RECOVERY_MOST_RECENT : Starts the cluster with the members which have most up-to-date
+                    partition table and successfully restored their data. All other members will leave the cluster and
+                    force-start themselves. If no member restores its data successfully, cluster start fails.
+                    PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have the
+                    same partition table version and successfully restored their data. All other members will leave the
+                    cluster and force-start themselves. If no member restores its data successfully, cluster start fails.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="FULL_RECOVERY_ONLY"/>
+                    <xs:enumeration value="PARTIAL_RECOVERY_MOST_RECENT"/>
+                    <xs:enumeration value="PARTIAL_RECOVERY_MOST_COMPLETE"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="auto-remove-stale-data" type="parameterized-boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets whether or not automatic removal of stale Persistence data is enabled.
+                    When a member terminates or crashes when cluster state is ACTIVE, remaining members
+                    redistributes data among themselves and data persisted on terminated member's storage becomes
+                    stale. That terminated member cannot rejoin the cluster without removing Persistence data.
+                    When auto-removal of stale Persistence data is enabled, while restarting that member,
+                    Persistence data is automatically removed and it joins the cluster as a completely new member.
+                    Otherwise, Persistence data should be removed manually.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="rebalance-delay-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Time (in seconds) to wait before triggering automatic partition rebalancing
+                    after a member leaves the cluster unexpectedly. Unexpectedly in this context
+                    means that a member leaves the cluster by means other than graceful shutdown:
+                    programmatic termination (eg LifecycleService.terminate()), a
+                    process crash or network partition.
+                    Default is 0, which means rebalancing is triggered immediately.
+                    Setting this to a higher value will allow some time for members that are gone
+                    to rejoin the cluster. The benefit is that partition rebalancing in this
+                    case will be avoided, saving the burden of migrating partition data over
+                    the network.
+                    Do not use this option if your cluster also stores in-memory data. This option
+                    stops the cluster from migrating in-memory data. As a result any data that is
+                    not persisted will be lost if the member restarts within the configured delay,
+                    including backups.
+                    While members are gone, operations on partitions for which the owner is missing
+                    may fail immediately or will be retried until the member rejoins or operation
+                    timeout is exceeded.
+                    Notice that this delay only applies when cluster members leave the cluster;
+                    when the cluster is being scaled up and members are being added, partition
+                    rebalancing will be triggered immediately (subject to limitations imposed
+                    by the current cluster state).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4500,6 +4660,15 @@
     </xs:complexType>
 
     <xs:complexType name="hot-restart">
+        <xs:annotation>
+            <xs:documentation>
+                DEPRECATED, use 'data-persistence' instead.
+                Note: If either, but not both, data-persistence or hot-restart is enabled,
+                Hazelcast will use the configuration of the enabled element. If both are
+                enabled, Hazelcast will use the data-persistence configuration.
+                hot-restart element will be removed in a future release.
+            </xs:documentation>
+        </xs:annotation>
         <xs:attribute name="fsync" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
@@ -4512,6 +4681,34 @@
             <xs:annotation>
                 <xs:documentation>
                     True if hot-restart is enabled, false otherwise
+                    Only available on Hazelcast Enterprise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="data-persistence">
+        <xs:annotation>
+            <xs:documentation>
+                Successor to hot-restart.
+                Note: If either, but not both, data-persistence or hot-restart is enabled,
+                Hazelcast will use the configuration of the enabled element. If both are
+                enabled, Hazelcast will use the data-persistence configuration.
+                hot-restart element will be removed in a future release.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="fsync" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if disk write should be followed by an fsync() system call,
+                    false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if Data Persistence is enabled, false otherwise
                     Only available on Hazelcast Enterprise.
                 </xs:documentation>
             </xs:annotation>
@@ -4869,6 +5066,7 @@
             <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0" default="120">
                 <xs:annotation>
                     <xs:documentation>
+                        DEPRECATED. Please leave it to default.
                         Timeout duration for CP members to restore their data from disk.
                         A CP member fails its startup if it cannot complete its CP data restore
                         process in the configured duration.
@@ -5223,20 +5421,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" default="-1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the number of threads responsible for execution of SQL statements.
-                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
-                        for most workloads.
-                        Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
-                        subsystem. This may be beneficial if you would like to prioritize other CPU-intensive workloads on the
-                        same machine.
-                        It is not recommended to set the value of this parameter higher than the number of CPU cores because it
-                        may decrease the system's overall performance due to excessive context switches.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="statement-timeout-millis" type="xs:unsignedLong" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -5260,6 +5444,7 @@
             <xs:element name="instance" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
+                        Deprecated, use `jet` tag to configure the fields directly.
                         General configuration options pertaining to a Jet instance.
                     </xs:documentation>
                 </xs:annotation>
@@ -5350,6 +5535,88 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads each cluster member will use to execute Jet
+                        jobs. This refers only to threads executing `cooperative`
+                        processors; each `blocking` processor is assigned its own thread.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="flow-control-period" type="positive-int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        While executing a Jet job there is the issue of regulating the rate
+                        at which one member of the cluster sends data to another member. The
+                        receiver will regularly report to each sender how much more data it
+                        is allowed to send over a given DAG edge. This method sets the length
+                        (in milliseconds) of the interval between flow-control ("ack") packets.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of backups that Jet will maintain for the job metadata
+                        and snapshots. Each backup is on another cluster member; all backup
+                        write operations must complete before the overall write operation can
+                        complete. The maximum allowed number of backups is 6 and the default is
+                        1.
+                        For example, if you set the backup count to 2, Jet will replicate all
+                        the job metadata and snapshot data to two other members. If one or two
+                        members of the cluster fail, Jet can recover the data from the snapshot
+                        and continue executing the job on the remaining members without loss.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="scale-up-delay-millis" type="non-negative-long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the delay after which auto-scaled jobs will restart if a new member
+                        is added to the cluster. The default is 10 seconds. Has no effect on
+                        jobs with auto scaling disabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="lossless-restart-enabled" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether lossless job restart is enabled for the node. With lossless
+                        restart you can restart the whole cluster without losing the jobs and
+                        their state. The feature is implemented on top of the Hot Restart
+                        feature of Hazelcast which persists the data to disk. If enabled, you
+                        have to also configure Hot Restart.
+                        Note: the snapshots exported using `Job#exportSnapshot` will also have
+                        Hot Restart storage enabled.
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-processor-accumulated-records" type="xs:long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the maximum number of records that can be accumulated by any single
+                        processor instance.
+                        Operations like grouping, sorting or joining require certain amount of
+                        records to be accumulated before they can proceed. You can set this option
+                        to reduce the probability of OutOfMemoryError.
+                        This option applies to each processor instance separately, hence the
+                        effective limit of records accumulated by each cluster member is influenced
+                        by the vertex's localParallelism and the number of jobs in the cluster.
+                        Currently, maxProcessorAccumulatedRecords limits:
+                        1. number of items sorted by the sort operation
+                        2. number of distinct keys accumulated by aggregation operations
+                        3. number of entries in each hash-join lookup table
+                        4. number of entries in stateful transforms
+                        5. number of distinct items in distinct operation
+                        Note: the limit does not apply to streaming aggregations.
+                        The default value is Long.MAX_VALUE.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="edge-defaults" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -5416,7 +5683,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Specifies whether the Jet Service is enabled or not. Values can be true or false.
@@ -5453,6 +5720,7 @@
             <xs:element name="tls" type="tls-authentication"/>
             <xs:element name="ldap" type="ldap-authentication"/>
             <xs:element name="kerberos" type="kerberos-authentication"/>
+            <xs:element name="simple" type="simple-authentication"/>
         </xs:choice>
     </xs:complexType>
 
@@ -5512,6 +5780,22 @@
             <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
             <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
         </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="simple-authentication">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="user" type="simple-user" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="role-separator" type="xs:string" minOccurs="0" default=","/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="simple-user">
+        <xs:complexContent>
+            <xs:extension base="username-password">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="role" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="identity">

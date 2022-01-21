@@ -80,4 +80,8 @@ public class DataSourceFromConnectionSupplier implements DataSource {
     public boolean isWrapperFor(Class<?> iface) {
         throw new UnsupportedOperationException();
     }
+
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
 }

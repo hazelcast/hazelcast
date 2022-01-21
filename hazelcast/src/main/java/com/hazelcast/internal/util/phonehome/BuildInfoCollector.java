@@ -17,13 +17,16 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.Math.min;
@@ -33,21 +36,35 @@ import static java.lang.Math.min;
  */
 class BuildInfoCollector implements MetricsCollector {
 
-    static final int CLASSPATH_MAX_LENGTH = 10_000;
+    static final int CLASSPATH_MAX_LENGTH = 100_000;
+
+    private static final String PARDOT_ID_ENV_VAR = "HZ_PARDOT_ID";
+
+    private final Map<String, String> envVars;
+
+    BuildInfoCollector(Map<String, String> envVars) {
+        this.envVars = envVars;
+    }
+
+    static String formatClassPath(String classpath) {
+        String[] classPathEntries = classpath.split(File.pathSeparator);
+        String shortenedEntries = Arrays.stream(classPathEntries)
+                .filter(cpEntry -> cpEntry.endsWith(".jar"))
+                .map(cpEntry -> cpEntry.substring(cpEntry.lastIndexOf(File.separator) + 1))
+                .collect(Collectors.joining(","));
+        return shortenedEntries.substring(0, min(CLASSPATH_MAX_LENGTH, shortenedEntries.length()));
+    }
 
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         BuildInfo imdgInfo = node.getBuildInfo();
-        JetBuildInfo jetInfo = imdgInfo.getJetBuildInfo();
         metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
         metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
-        metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
-                jetInfo == null ? "" : jetInfo.getVersion());
         String classpath = System.getProperty("java.class.path");
         if (classpath != null) {
             metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,
-                    classpath.substring(0, min(CLASSPATH_MAX_LENGTH, classpath.length())));
+                    formatClassPath(classpath));
         }
     }
 
@@ -56,6 +73,10 @@ class BuildInfoCollector implements MetricsCollector {
      * {@code source} if unable to find the download ID.
      */
     private String getDownloadId() {
+        String passedByEnvVar = envVars.get(PARDOT_ID_ENV_VAR);
+        if (passedByEnvVar != null) {
+            return passedByEnvVar;
+        }
         try (InputStream is = getClass().getClassLoader()
                                         .getResourceAsStream("hazelcast-download.properties")) {
             if (is != null) {

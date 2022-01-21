@@ -91,9 +91,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
         "checkstyle:MethodCount",
 })
 @Command(
-        name = "hazelcast",
+        name = "hz-cli",
         description = "Utility to perform operations on a Hazelcast cluster.%n"
-                + "By default it uses the file config/hazelcast-client.yaml to configure the client connection."
+                + "By default it uses the file config/hazelcast-client.xml to configure the client connection."
                 + "%n%n"
                 + "Global options are:%n",
         versionProvider = HazelcastVersionProvider.class,
@@ -112,7 +112,7 @@ public class HazelcastCommandLine implements Runnable {
 
     @Option(names = {"-f", "--config"},
             description = "Optional path to a client config XML/YAML file."
-                    + " The default is to use config/hazelcast-client.yaml.",
+                    + " The default is to use config/hazelcast-client.xml.",
             order = 0
     )
     private File config;
@@ -420,7 +420,7 @@ public class HazelcastCommandLine implements Runnable {
             Cluster cluster = hazelcastClientImpl.getCluster();
 
             println("State: " + clusterMetadata.getCurrentState());
-            println("Version: " + clusterMetadata.getJetVersion());
+            println("Version: " + clusterMetadata.getMemberVersion());
             println("Size: " + cluster.getMembers().size());
 
             println("");
@@ -452,7 +452,6 @@ public class HazelcastCommandLine implements Runnable {
                     metadata.setCurrentState(ClusterState.getById(response.currentState));
                     metadata.setClusterTime(response.clusterTime);
                     metadata.setMemberVersion(response.memberVersion);
-                    metadata.setJetVersion(response.jetVersion);
                     return metadata;
                 }
         );
@@ -636,7 +635,7 @@ public class HazelcastCommandLine implements Runnable {
     public static class Verbosity {
 
         @Option(names = {"-v", "--verbosity"},
-                description = {"Show logs from Jet client and full stack trace of errors"},
+                description = {"Show verbose logs and full stack trace of errors"},
                 order = 1
         )
         private boolean isVerbose;

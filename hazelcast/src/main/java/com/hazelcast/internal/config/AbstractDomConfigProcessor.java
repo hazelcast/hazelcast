@@ -18,6 +18,8 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -48,6 +50,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 /**
@@ -177,9 +180,57 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 fillSerializers(child, serializationConfig);
             } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
+            } else if (matches("compact-serialization", name)) {
+                handleCompactSerialization(child, serializationConfig);
             }
         }
         return serializationConfig;
+    }
+
+    protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        Node enabledNode = getNamedItemNode(node, "enabled");
+        if (enabledNode != null) {
+            boolean enabled = getBooleanValue(getTextContent(enabledNode));
+            compactSerializationConfig.setEnabled(enabled);
+        }
+
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("registered-classes", name)) {
+                fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("class", name)) {
+                String className = getTextContent(child);
+                Node typeNameNode = getNamedItemNode(child, "type-name");
+                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : null;
+                Node serializerClassNameNode = getNamedItemNode(child, "serializer");
+                String serializerClassName = serializerClassNameNode != null
+                        ? getTextContent(serializerClassNameNode) : null;
+                registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+            }
+        }
+    }
+
+    protected void registerCompactSerializableClass(CompactSerializationConfig compactSerializationConfig,
+                                                    String className, String typeName, String serializerClassName) {
+        if (typeName != null && serializerClassName != null) {
+            CompactSerializationConfigAccessor.registerExplicitSerializer(compactSerializationConfig, className,
+                    typeName, serializerClassName);
+        } else if (typeName == null && serializerClassName == null) {
+            CompactSerializationConfigAccessor.registerReflectiveSerializer(compactSerializationConfig, className);
+        } else {
+            throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
+                    + "must be defined to register a class with an explicit serializer, "
+                    + "or no attributes should be defined to register a class to be used with "
+                    + "reflective compact serializer.");
+        }
     }
 
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
@@ -329,7 +380,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     private void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {
         Node enabledNode = getNamedItemNode(node, "enabled");
-            if (enabledNode != null) {
+        if (enabledNode != null) {
             boolean enabled = getBooleanValue(getTextContent(enabledNode));
             persistentMemoryConfig.setEnabled(enabled);
         }
@@ -404,8 +455,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected void handleInstanceTracking(Node node, InstanceTrackingConfig trackingConfig) {
         Node attrEnabled = getNamedItemNode(node, "enabled");
-        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
-        trackingConfig.setEnabled(enabled);
+        String textContent = getTextContent(attrEnabled);
+        if (!isNullOrEmptyAfterTrim(textContent)) {
+            trackingConfig.setEnabled(getBooleanValue(textContent));
+        }
 
         for (Node n : childElements(node)) {
             final String name = cleanNodeName(n);

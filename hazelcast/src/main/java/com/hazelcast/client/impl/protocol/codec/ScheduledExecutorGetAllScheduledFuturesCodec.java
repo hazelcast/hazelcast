@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("ae848fe7f3dd0879e6372c4cdcdd93c7")
+@Generated("d1afcb707ef7bab0aa900e08aeb416eb")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;
@@ -89,5 +89,4 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
-
 }

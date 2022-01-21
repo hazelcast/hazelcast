@@ -32,6 +32,8 @@ public class ParquetFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_PARQUET = "parquet";
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates {@link ParquetFileFormat}. See {@link FileFormat#parquet()}
      * for more details.
@@ -39,7 +41,8 @@ public class ParquetFileFormat<T> implements FileFormat<T> {
     ParquetFileFormat() {
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_PARQUET;
     }

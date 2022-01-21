@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -52,7 +55,7 @@ public final class StreamSocketP extends AbstractProcessor {
     private boolean socketDone;
     private boolean maybeLfExpected;
 
-    private StreamSocketP(String host, int port, Charset charset) {
+    public StreamSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
         this.charsetDecoder = charset.newDecoder();
@@ -160,6 +163,8 @@ public final class StreamSocketP extends AbstractProcessor {
      */
     public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                () -> new StreamSocketP(host, port, Charset.forName(charset)));
+                ConnectorPermission.socket(host, port, ACTION_READ),
+                SecuredFunctions.streamSocketProcessorFn(host, port, charset)
+        );
     }
 }

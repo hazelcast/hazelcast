@@ -150,11 +150,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         return this;
     }
 
-    // RU_COMPAT_4_0 to be removed
-    public boolean isValid() {
-        return true;
-    }
-
     public int getInitialPartitionVersion() {
         return initialPartitionVersion;
     }

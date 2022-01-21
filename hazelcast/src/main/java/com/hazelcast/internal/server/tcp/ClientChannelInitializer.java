@@ -35,10 +35,13 @@ public class ClientChannelInitializer
     @Override
     public void initChannel(Channel channel) {
         ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
-        SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(CLIENT,
-                new ClientMessageDecoder(connection, serverContext.getClientEngine(), serverContext.properties()));
+        SingleProtocolEncoder protocolEncoder = new SingleProtocolEncoder(new ClientMessageEncoder());
+        SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(
+                CLIENT,
+                new ClientMessageDecoder(connection, serverContext.getClientEngine(), serverContext.properties()),
+                protocolEncoder);
 
-        channel.outboundPipeline().addLast(new ClientMessageEncoder());
+        channel.outboundPipeline().addLast(protocolEncoder);
         channel.inboundPipeline().addLast(protocolDecoder);
     }
 }

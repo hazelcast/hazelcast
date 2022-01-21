@@ -33,6 +33,7 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -93,7 +94,7 @@ public class TestSourcesTest extends PipelineTestSupport {
                      avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
+        expectAssertionsCompleted();
         executeAndPeel();
     }
 
@@ -110,7 +111,7 @@ public class TestSourcesTest extends PipelineTestSupport {
              }
          }));
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
+        expectAssertionsCompleted();
         executeAndPeel();
     }
 
@@ -142,7 +143,7 @@ public class TestSourcesTest extends PipelineTestSupport {
                      avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
+        expectAssertionsCompleted();
         executeAndPeel();
     }
 
@@ -168,8 +169,23 @@ public class TestSourcesTest extends PipelineTestSupport {
                             (long) windowResults.get(1).result() < itemsPerSecond * 2);
                 }));
 
-        expectedException.expectMessage(AssertionCompletedException.class.getName());
+        expectAssertionsCompleted();
         executeAndPeel();
+    }
+
+    @Test
+    public void itemStream_should_handle_extremely_high_rate() throws Throwable {
+        p.readFrom(TestSources.itemStream(Integer.MAX_VALUE))
+                .withNativeTimestamps(1000)
+                .apply(assertCollectedEventually(10, items -> {
+                    assertFalse("TestSources should generate some items", items.isEmpty());
+                }));
+        expectAssertionsCompleted();
+        executeAndPeel();
+    }
+
+    private void expectAssertionsCompleted() {
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
     }
 
 }

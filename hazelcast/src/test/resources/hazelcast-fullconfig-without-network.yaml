@@ -39,6 +39,8 @@ hazelcast:
 
   management-center:
     scripting-enabled: false
+    console-enabled: false
+    data-access-enabled: true
     trusted-interfaces:
       - 10.10.1.*
       - 10.10.2.*
@@ -380,6 +382,7 @@ hazelcast:
           in-memory-format: BINARY
           coalesce: false
           populate: true
+          serialize-keys: false
           eviction:
             eviction-policy: LRU
             max-size-policy: ENTRY_COUNT
@@ -390,6 +393,13 @@ hazelcast:
                 - "name"
             - attributes:
               - "age"
+      tiered-store:
+        enabled: true
+        memory-tier:
+          capacity: "1 GB"
+        disk-tier:
+          enabled: true
+          device-name: my-local-device
 
   multimap:
     default:
@@ -593,6 +603,13 @@ hazelcast:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -615,7 +632,20 @@ hazelcast:
   security:
     enabled: false
     realms:
-      - name: mr
+      - name: simpleRealm
+        authentication:
+          simple:
+            users:
+              - username: test
+                password: 'a1234'
+                roles:
+                  - monitor
+                  - hazelcast
+              - username: dev
+                password: 'secret'
+                roles:
+                  - root
+      - name: jaasRealm
         authentication:
           jaas:
             - class-name: com.hazelcast.examples.MyRequiredLoginModule
@@ -627,17 +657,6 @@ hazelcast:
             class-name: com.hazelcast.examples.MyCredentialsFactory
             properties:
               property: value
-      - name: cr
-        authentication:
-          jaas:
-            - class-name: com.hazelcast.examples.MyOptionalLoginModule
-              usage: OPTIONAL
-              properties:
-                property: value
-            - class-name: com.hazelcast.examples.MyRequiredLoginModule
-              usage: REQUIRED
-              properties:
-                property: value
       - name: ldapRealm
         authentication:
           ldap:
@@ -732,9 +751,9 @@ hazelcast:
                 principal: hz/127.0.0.1@HAZELCAST.COM
                 keyTab: /opt/hz-localhost.keytab
     member-authentication:
-      realm: mr
+      realm: jaasRealm
     client-authentication:
-      realm: cr
+      realm: simpleRealm
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -849,6 +868,19 @@ hazelcast:
             - all
       management:
         - principal: "mcadmin"
+      job:
+        - principal: "*"
+          actions:
+            - all
+      connector:
+        - name: "*"
+          actions:
+            - all
+      sql:
+        - name: "*"
+          actions:
+            - all
+
     client-block-unmapped-actions: true
 
   member-attributes:
@@ -893,7 +925,7 @@ hazelcast:
       recently-active-split-brain-protection:
         heartbeat-tolerance-millis: 60000
 
-  hot-restart-persistence:
+  persistence:
     enabled: false
     backup-dir: backup-dir
     base-dir: base-dir
@@ -901,6 +933,20 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
+    rebalance-delay-seconds: 240
+
+  dynamic-configuration:
+    persistence-enabled: true
+    persistence-file: /mnt/persistence-file
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
+
+  local-device:
+    my-local-device:
+      base-dir: base-dir
+      block-size: 4096
+      read-io-thread-count: 4
+      write-io-thread-count: 1
 
   lite-member:
     enabled: true
@@ -955,5 +1001,4 @@ hazelcast:
     enabled: false
 
   sql:
-    executor-pool-size: 16
     statement-timeout-millis: 0

@@ -28,6 +28,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  */
 @SerializableByConvention
 public class SlidingWindowDefinition extends WindowDefinition {
+
+    private static final long serialVersionUID = 1L;
+
     private final long windowSize;
     private final long slideBy;
 

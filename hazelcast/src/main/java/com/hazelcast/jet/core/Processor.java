@@ -21,6 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 
@@ -115,7 +116,7 @@ public interface Processor {
      *     Violations of this rule will manifest as less than 100% CPU usage
      *     under maximum load (note that this is possible for other reasons
      *     too, for example if the network is the bottleneck or if {@linkplain
-     *     JetProperties#JET_IDLE_COOPERATIVE_MAX_MICROSECONDS parking time} is
+     *     ClusterProperty#JET_IDLE_COOPERATIVE_MAX_MICROSECONDS parking time} is
      *     too high). The processor must also return as soon as the outbox
      *     rejects an item (that is when the {@link Outbox#offer(Object)
      *     offer()} method returns {@code false}).

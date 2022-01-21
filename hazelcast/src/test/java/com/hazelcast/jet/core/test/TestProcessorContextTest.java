@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.mock;

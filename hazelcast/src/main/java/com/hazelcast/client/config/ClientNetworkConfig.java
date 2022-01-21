@@ -158,7 +158,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * If {@code true}, client will route the key based operations to owner of the key on best-effort basis.
+     * If {@code true}, client will route the key-based operations to owner of the key on best-effort basis.
      * Note that it uses a cached version of {@link PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
      * <p>

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("5c6b5764664673c4c6ac6d030a870f4e")
+@Generated("b8186065e981ba709b55c5e60cca8a5e")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013100
     public static final int REQUEST_MESSAGE_TYPE = 78080;
@@ -112,5 +112,4 @@ public final class MapExecuteWithPredicateCodec {
         iterator.next();
         return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
-
 }

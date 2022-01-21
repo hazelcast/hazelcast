@@ -27,13 +27,13 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -71,7 +71,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class WordCountTest extends HazelcastTestSupport implements Serializable {
+public class WordCountTest extends JetTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 1;
     private static final int PARALLELISM = Runtime.getRuntime().availableProcessors() / NODE_COUNT;
@@ -93,8 +93,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void before() {
-        Config config = new Config();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        Config config = defaultInstanceConfigWithJetEnabled();
+        config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
         config.setClusterName(randomName());
         final JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);

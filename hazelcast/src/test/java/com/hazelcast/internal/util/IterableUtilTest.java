@@ -30,6 +30,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -116,5 +117,21 @@ public class IterableUtilTest {
         for (int i = 0; i < numbers.size() + 1; i++) {
             iterator.next();
         }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void test_asReadOnlyIterator_throws_exception_when_remove_called() {
+        Iterator<Integer> iterator = IterableUtil.asReadOnlyIterator(numbers.iterator());
+        while (iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+    }
+
+    @Test
+    public void test_asReadOnlyIterator_returns_same_iterator_when_given_iterator_is_read_only() {
+        Iterator<Integer> iterator = IterableUtil.asReadOnlyIterator(numbers.iterator());
+
+        assertTrue(iterator == IterableUtil.asReadOnlyIterator(iterator));
     }
 }

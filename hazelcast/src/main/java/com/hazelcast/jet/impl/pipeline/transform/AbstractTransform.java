@@ -35,15 +35,18 @@ public abstract class AbstractTransform implements Transform {
     private String name;
 
     @Nonnull
-    private final List<Transform> upstream;
+    private List<Transform> upstream;
 
     private int localParallelism = LOCAL_PARALLELISM_USE_DEFAULT;
 
     private int determinedLocalParallelism = LOCAL_PARALLELISM_USE_DEFAULT;
 
-    private final boolean[] upstreamRebalancingFlags;
+    private boolean[] upstreamRebalancingFlags;
 
-    private final FunctionEx<?, ?>[] upstreamPartitionKeyFns;
+    private FunctionEx<?, ?>[] upstreamPartitionKeyFns;
+
+    public AbstractTransform() {
+    }
 
     protected AbstractTransform(@Nonnull String name, @Nonnull List<Transform> upstream) {
         this.name = name;
@@ -60,6 +63,10 @@ public abstract class AbstractTransform implements Transform {
     @Nonnull @Override
     public List<Transform> upstream() {
         return upstream;
+    }
+
+    void setUpstream(@Nonnull List<Transform> upstream) {
+        this.upstream = upstream;
     }
 
     @Override
@@ -102,9 +109,17 @@ public abstract class AbstractTransform implements Transform {
         return upstreamRebalancingFlags[ordinal];
     }
 
+    protected boolean[] upstreamRebalancingFlags() {
+        return upstreamRebalancingFlags;
+    }
+
     @Override
     public void setPartitionKeyFnForInput(int ordinal, FunctionEx<?, ?> keyFn) {
         upstreamPartitionKeyFns[ordinal] = keyFn;
+    }
+
+    protected FunctionEx<?, ?>[] upstreamPartitionKeyFns() {
+        return upstreamPartitionKeyFns;
     }
 
     @Override

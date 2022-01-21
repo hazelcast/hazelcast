@@ -23,9 +23,9 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -36,6 +36,8 @@ import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 
 public final class PartitionedProcessorTransform<T, K> extends ProcessorTransform {
+
+    private static final long serialVersionUID = 1L;
 
     private final FunctionEx<? super T, ? extends K> partitionKeyFn;
 
@@ -65,7 +67,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("mapUsingPartitionedService",
-                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
                 Processors.mapUsingServiceP(serviceFactory, mapFn)), partitionKeyFn);
     }
 
@@ -76,7 +78,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("filterUsingPartitionedService",
-                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
                 filterUsingServiceP(serviceFactory, filterFn)), partitionKeyFn);
     }
 
@@ -87,7 +89,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("flatMapUsingPartitionedService",
-                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                upstream, ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
                 flatMapUsingServiceP(serviceFactory, flatMapFn)), partitionKeyFn);
     }
 
@@ -103,7 +105,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
         String name = operationName + "UsingPartitionedServiceAsync";
         ProcessorSupplier supplier = flatMapUsingServiceAsyncP(
                 serviceFactory, maxConcurrentOps, preserveOrder, partitionKeyFn, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new PartitionedProcessorTransform<>(name, upstream, metaSupplier, partitionKeyFn);
     }
 
@@ -119,7 +122,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
         String name = operationName + "UsingPartitionedServiceAsync";
         ProcessorSupplier supplier = flatMapUsingServiceAsyncBatchedP(
                 serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new PartitionedProcessorTransform<>(name, upstream, metaSupplier, partitionKeyFn);
     }
 

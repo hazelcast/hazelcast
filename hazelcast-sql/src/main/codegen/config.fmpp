@@ -16,20 +16,27 @@ data: {
   parser: {
     # Generated parser implementation package and class name.
     package: "com.hazelcast.jet.sql.impl.calcite.parser",
-    class: "JetSqlParser",
+    class: "HazelcastSqlParser",
 
     # List of additional classes and packages to import.
-    # Example. "org.apache.calcite.sql.*", "java.util.List".
+    # Example: "org.apache.calcite.sql.*", "java.util.List".
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
-      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropView"
+      "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
       "com.hazelcast.jet.sql.impl.parse.SqlMappingColumn"
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
@@ -41,10 +48,11 @@ data: {
       "org.apache.calcite.sql.SqlDrop"
     ]
 
-    # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is not a reserved
-    # keyword add it to 'nonReservedKeywords' section.
+    # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
+    # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "IF"
+      "INDEX"
       "JOB"
       "JOBS"
       "MAPPING"
@@ -53,6 +61,7 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -67,6 +76,8 @@ data: {
       "AFTER"
       "ALWAYS"
       "APPLY"
+      "ARRAY_AGG"
+      "ARRAY_CONCAT_AGG"
       "ASC"
       "ASSERTION"
       "ASSIGNMENT"
@@ -129,6 +140,7 @@ data: {
       "DOMAIN"
       "DOW"
       "DOY"
+      "DOT_FORMAT"
       "DYNAMIC_FUNCTION"
       "DYNAMIC_FUNCTION_CODE"
       "ENCODING"
@@ -151,12 +163,16 @@ data: {
       "GO"
       "GOTO"
       "GRANTED"
+      "GROUP_CONCAT"
       "HIERARCHY"
+      "HOP"
       "HOURS"
       "IGNORE"
+      "ILIKE"
       "IMMEDIATE"
       "IMMEDIATELY"
       "IMPLEMENTATION"
+      "INCLUDE"
       "INCLUDING"
       "INCREMENT"
       "INITIALLY"
@@ -224,6 +240,7 @@ data: {
       "PASSTHROUGH"
       "PAST"
       "PATH"
+      "PIVOT"
       "PLACING"
       "PLAN"
       "PLI"
@@ -245,6 +262,7 @@ data: {
       "RETURNED_OCTET_LENGTH"
       "RETURNED_SQLSTATE"
       "RETURNING"
+      "RLIKE"
       "ROLE"
       "ROUTINE"
       "ROUTINE_CATALOG"
@@ -262,6 +280,7 @@ data: {
       "SECTION"
       "SECURITY"
       "SELF"
+      "SEPARATOR"
       "SEQUENCE"
       "SERIALIZABLE"
       "SERVER"
@@ -324,6 +343,7 @@ data: {
       "SQL_VARCHAR"
       "STATE"
       "STATEMENT"
+      "STRING_AGG"
       "STRUCTURE"
       "STYLE"
       "SUBCLASS_ORIGIN"
@@ -349,6 +369,7 @@ data: {
       "UNCOMMITTED"
       "UNCONDITIONAL"
       "UNDER"
+      "UNPIVOT"
       "UNNAMED"
       "USAGE"
       "USER_DEFINED_TYPE_CATALOG"
@@ -378,28 +399,30 @@ data: {
       "SINK"
       "SNAPSHOT"
       "SUSPEND"
+      "VIEWS"
     ]
 
     # List of non-reserved keywords to add;
-    # items in this list become non-reserved
+    # items in this list become non-reserved.
     nonReservedKeywordsToAdd: [
     ]
 
     # List of non-reserved keywords to remove;
-    # items in this list become reserved
+    # items in this list become reserved.
     nonReservedKeywordsToRemove: [
     ]
 
     # List of additional join types. Each is a method with no arguments.
-    # Example: LeftSemiJoin()
+    # Example: "LeftSemiJoin".
     joinTypes: [
     ]
 
     # List of methods for parsing custom SQL statements.
     # Return type of method implementation should be 'SqlNode'.
-    # Example: SqlShowDatabases(), SqlShowTables().
+    # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
+      "SqlExplainStatement()"
       "SqlExtendedInsert()"
       "SqlShowStatement()"
     ]
@@ -419,37 +442,45 @@ data: {
 
     # List of methods for parsing builtin function calls.
     # Return type of method implementation should be "SqlNode".
-    # Example: DateFunctionCall().
+    # Example: "DateFunctionCall()".
     builtinFunctionCallMethods: [
     ]
 
     # List of methods for parsing extensions to "ALTER <scope>" calls.
     # Each must accept arguments "(SqlParserPos pos, String scope)".
-    # Example: "SqlUploadJarNode"
+    # Example: "SqlAlterTable".
     alterStatementParserMethods: [
     ]
 
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
+    # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
       "SqlCreateMapping"
+      "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateSnapshot"
+      "SqlCreateView"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
     # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlDropSchema".
     dropStatementParserMethods: [
       "SqlDropMapping"
+      "SqlDropIndex"
       "SqlDropJob"
       "SqlDropSnapshot"
+      "SqlDropView"
     ]
 
-    # Binary operators tokens
+    # Binary operators tokens.
+    # Example: "< INFIX_CAST: \"::\" >".
     binaryOperatorsTokens: [
     ]
 
-    # Binary operators initialization
+    # Binary operators initialization.
+    # Example: "InfixCast".
     extraBinaryExpressions: [
     ]
 
@@ -457,6 +488,7 @@ data: {
     # implementations for parsing custom SQL statements, literals or types
     # given as part of "statementParserMethods", "literalParserMethods" or
     # "dataTypeParserMethods".
+    # Example: "parserImpls.ftl".
     implementationFiles: [
       "parserImpls.ftl"
     ]

@@ -32,6 +32,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.containers.ToxiproxyContainer.ContainerProxy;
@@ -50,6 +51,7 @@ import static com.hazelcast.jet.kinesis.KinesisSinks.MAX_RECORD_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeTrue;
 import static org.testcontainers.shaded.org.apache.commons.lang.StringUtils.repeat;
 import static org.testcontainers.utility.DockerImageName.parse;
 
@@ -77,6 +79,11 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     public KinesisFailureTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
+    }
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
 
     @BeforeClass

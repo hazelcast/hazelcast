@@ -30,6 +30,9 @@ public class DistinctSqlAggregationTest {
     @Mock
     private SqlAggregation delegate;
 
+    @Mock
+    private SqlAggregation otherDelegate;
+
     @Test
     public void test_accumulate() {
         SqlAggregation aggregation = new DistinctSqlAggregation(delegate);
@@ -39,6 +42,24 @@ public class DistinctSqlAggregationTest {
 
         verify(delegate).accumulate("1");
         verify(delegate).accumulate("2");
+        verifyNoMoreInteractions(delegate);
+    }
+
+    @Test
+    public void test_combine() {
+        SqlAggregation left = new DistinctSqlAggregation(delegate);
+        left.accumulate("1");
+        left.accumulate("2");
+
+        SqlAggregation right = new DistinctSqlAggregation(otherDelegate);
+        right.accumulate("2");
+        right.accumulate("3");
+
+        left.combine(right);
+
+        verify(delegate).accumulate("1");
+        verify(delegate).accumulate("2");
+        verify(delegate).accumulate("3");
         verifyNoMoreInteractions(delegate);
     }
 }

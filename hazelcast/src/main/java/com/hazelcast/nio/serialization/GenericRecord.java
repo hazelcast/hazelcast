@@ -28,13 +28,13 @@ import java.time.OffsetDateTime;
 import java.util.Set;
 
 /**
- * A generic object interface that is returned to user when the domain class can not be created from any of the distributed
- * hazelcast data structures like {@link com.hazelcast.map.IMap} ,{@link com.hazelcast.collection.IQueue} etc.
+ * A generic object interface that is returned to the user when the domain class can not be created from any of the distributed
+ * hazelcast data structures like {@link IMap}, {@link IQueue} etc.
  * <p>
- * On remote calls like distributed executor service or EntryProcessors, you may need to access to the domain object. In
- * case class of the domain object is not available on the cluster, GenericRecord allows to access, read and write the objects
- * back without the class of the domain object on the classpath. Here is an read example with EntryProcessor:
- * <pre>
+ * On remote calls like in the distributed executor service or EntryProcessors, you may need access to the domain object. In
+ * case the class of the domain object is not available on the cluster, GenericRecord allows you to read and write the object
+ * without the domain class on the classpath. Here is an example with EntryProcessor:
+ * <pre>{@code
  * map.executeOnKey(key, (EntryProcessor<Object, Object, Object>) entry -> {
  *             Object value = entry.getValue();
  *             GenericRecord genericRecord = (GenericRecord) value;
@@ -43,9 +43,9 @@ import java.util.Set;
  *
  *             return null;
  *         });
- * </pre>
- * Another example with EntryProcessor to demonstrate how to read, modify and set back to the map:
- * <pre>
+ * }</pre>
+ * Another example with EntryProcessor to demonstrate how to read, modify and set the value back to the map:
+ * <pre>{@code
  * map.executeOnKey("key", (EntryProcessor<Object, Object, Object>) entry -> {
  *             GenericRecord genericRecord = (GenericRecord) entry.getValue();
  *             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
@@ -53,13 +53,13 @@ import java.util.Set;
  *             entry.setValue(modifiedGenericRecord);
  *             return null;
  *         });
- * </pre>
+ * }</pre>
  * <p>
- * GenericRecord also allows to read from a cluster without having the classes on the client side.
+ * GenericRecord also allows reading from a cluster without having the classes on the client side.
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
  * a {@link HazelcastSerializationException} was thrown stating that a factory could not be found. Starting from 4.1,
- * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write the objects back to
- * the cluster without needing the classes of the domain objects on the classpath.
+ * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
+ * the cluster without the need to have the domain classes on the classpath.
  * <p>
  * Currently this is valid for {@link Portable} objects.
  *
@@ -122,7 +122,7 @@ public interface GenericRecord {
      * @throws IllegalArgumentException if the field name does not exist in the class definition
      */
     @Nonnull
-    FieldType getFieldType(@Nonnull String fieldName);
+    FieldKind getFieldKind(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -144,14 +144,6 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    byte getByte(@Nonnull String fieldName);
-
-    /**
-     * @param fieldName the name of the field
-     * @return the value of the field
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
-     */
     char getChar(@Nonnull String fieldName);
 
     /**
@@ -160,7 +152,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    double getDouble(@Nonnull String fieldName);
+    byte getInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -168,7 +160,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    float getFloat(@Nonnull String fieldName);
+    short getInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -176,7 +168,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    int getInt(@Nonnull String fieldName);
+    int getInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -184,7 +176,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    long getLong(@Nonnull String fieldName);
+    long getInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -192,7 +184,15 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short getShort(@Nonnull String fieldName);
+    float getFloat32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    double getFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -266,7 +266,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    boolean[] getBooleanArray(@Nonnull String fieldName);
+    boolean[] getArrayOfBoolean(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -275,7 +275,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    byte[] getByteArray(@Nonnull String fieldName);
+    char[] getArrayOfChar(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -284,7 +284,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    char[] getCharArray(@Nonnull String fieldName);
+    byte[] getArrayOfInt8(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -293,7 +293,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    double[] getDoubleArray(@Nonnull String fieldName);
+    short[] getArrayOfInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -302,7 +302,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    float[] getFloatArray(@Nonnull String fieldName);
+    int[] getArrayOfInt32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -311,7 +311,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    int[] getIntArray(@Nonnull String fieldName);
+    long[] getArrayOfInt64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -320,7 +320,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    long[] getLongArray(@Nonnull String fieldName);
+    float[] getArrayOfFloat32(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -329,7 +329,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    short[] getShortArray(@Nonnull String fieldName);
+    double[] getArrayOfFloat64(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -338,7 +338,7 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    String[] getStringArray(@Nonnull String fieldName);
+    String[] getArrayOfString(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -348,7 +348,7 @@ public interface GenericRecord {
      * @see #getDecimal(String)
      */
     @Nullable
-    BigDecimal[] getDecimalArray(@Nonnull String fieldName);
+    BigDecimal[] getArrayOfDecimal(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -358,7 +358,7 @@ public interface GenericRecord {
      * @see #getTime(String)
      */
     @Nullable
-    LocalTime[] getTimeArray(@Nonnull String fieldName);
+    LocalTime[] getArrayOfTime(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -368,7 +368,7 @@ public interface GenericRecord {
      * @see #getDate(String)
      */
     @Nullable
-    LocalDate[] getDateArray(@Nonnull String fieldName);
+    LocalDate[] getArrayOfDate(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -378,7 +378,7 @@ public interface GenericRecord {
      * @see #getTimestamp(String)
      */
     @Nullable
-    LocalDateTime[] getTimestampArray(@Nonnull String fieldName);
+    LocalDateTime[] getArrayOfTimestamp(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -388,7 +388,7 @@ public interface GenericRecord {
      * @see #getTimestampWithTimezone(String)
      */
     @Nullable
-    OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName);
+    OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -397,5 +397,131 @@ public interface GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    GenericRecord[] getGenericRecordArray(@Nonnull String fieldName);
+    GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean getNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte getNullableInt8(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short getNullableInt16(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getNullableInt32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long getNullableInt64(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float getNullableFloat32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double getNullableFloat64(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Byte[] getArrayOfNullableInt8(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Short[] getArrayOfNullableInt16(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer[] getArrayOfNullableInt32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Long[] getArrayOfNullableInt64(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Float[] getArrayOfNullableFloat32(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Double[] getArrayOfNullableFloat64(@Nonnull String fieldName);
 }

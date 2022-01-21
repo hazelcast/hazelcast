@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("d684b4d3f425e87c3bacc29563b202b3")
+@Generated("474b893fdd5ca60db1dc2a9a9d0b61f2")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -183,6 +183,4 @@ public final class DynamicConfigAddQueueConfigCodec {
 
         return clientMessage;
     }
-
-
 }

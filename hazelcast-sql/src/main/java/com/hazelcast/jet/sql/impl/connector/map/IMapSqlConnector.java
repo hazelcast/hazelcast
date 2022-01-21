@@ -16,11 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -29,37 +35,43 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
-import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -69,14 +81,14 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
+    public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
             MetadataPortableResolver.INSTANCE,
+            MetadataCompactResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
-
-    private static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     @Override
     public String typeName() {
@@ -117,10 +129,13 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getMapContainer(externalName);
+        MapContainer container = context.getExistingMapContainer(externalName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
+        List<MapTableIndex> indexes = container != null
+                ? MapTableUtils.getPartitionedMapIndexes(container, fields)
+                : emptyList();
 
         return new PartitionedMapTable(
                 schemaName,
@@ -132,7 +147,7 @@ public class IMapSqlConnector implements SqlConnector {
                 valueMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
-                Collections.emptyList(),
+                indexes,
                 hd
         );
     }
@@ -143,8 +158,13 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> filter,
-            @Nonnull List<Expression<?>> projection
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
+        }
+
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(
@@ -169,6 +189,62 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Nonnull
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Vertex indexScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Address localMemberAddress,
+            @Nonnull Table table0,
+            @Nonnull MapTableIndex tableIndex,
+            @Nullable Expression<Boolean> remainingFilter,
+            @Nonnull List<Expression<?>> projection,
+            @Nullable IndexFilter indexFilter,
+            @Nullable ComparatorEx<JetSqlRow> comparator,
+            boolean descending
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+        MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
+                table.getMapName(),
+                tableIndex.getName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                Arrays.asList(table.paths()),
+                Arrays.asList(table.types()),
+                indexFilter,
+                projection,
+                remainingFilter,
+                comparator,
+                descending
+        );
+
+        Vertex scanner = dag.newUniqueVertex(
+                "Index(" + toString(table) + ")",
+                readMapIndexSupplier(indexScanMetadata)
+        );
+        // LP must be 1 - one local index contains all local partitions, if there are 2 local processors,
+        // the index will be scanned twice and each time half of the partitions will be thrown out.
+        scanner.localParallelism(1);
+
+        if (tableIndex.getType() == IndexType.SORTED) {
+            Vertex sorter = dag.newUniqueVertex(
+                    "SortCombine",
+                    ProcessorMetaSupplier.forceTotalParallelismOne(
+                            ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                            localMemberAddress
+                    )
+            );
+
+            assert comparator != null;
+            dag.edge(between(scanner, sorter)
+                    .ordered(comparator)
+                    .distributeTo(localMemberAddress)
+                    .allToOne("")
+            );
+            return sorter;
+        }
+        return scanner;
+    }
+
+    @Nonnull
     @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
@@ -188,12 +264,31 @@ public class IMapSqlConnector implements SqlConnector {
                 projections
         );
 
-        return IMapJoiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
+        return Joiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
+    @Nonnull
     @Override
-    public boolean requiresSink() {
-        return true;
+    public VertexWithInputConfig insertProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        Vertex vertex = dag.newUniqueVertex(
+                toString(table),
+                new InsertProcessorSupplier(
+                        table.getMapName(),
+                        KvProjector.supplier(
+                                table.paths(),
+                                table.types(),
+                                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                                (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                                true
+                        )
+                )
+        ).localParallelism(1);
+        return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne(newUnsecureUuidString()));
     }
 
     @Nonnull
@@ -210,7 +305,8 @@ public class IMapSqlConnector implements SqlConnector {
                         table.paths(),
                         table.types(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                        true
                 )
         );
 
@@ -232,48 +328,12 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        table.keyFields().filter(field -> updatesByFieldNames.containsKey(field.getName())).findFirst().ifPresent(field -> {
-            throw QueryException.error("Cannot update '" + field.getName() + '\'');
-        });
-        if (updatesByFieldNames.containsKey(VALUE) && table.valueFields().count() > 1) {
-            throw QueryException.error("Cannot update '" + VALUE + '\'');
-        }
-
-        List<Expression<?>> projections = IntStream.range(0, table.getFieldCount())
-                .mapToObj(i -> ColumnExpression.create(i, table.getField(i).getType()))
-                .collect(toList());
-        KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
-                table.paths(),
-                table.types(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                null,
-                projections
-        );
-
-        List<Expression<?>> updates = IntStream.range(0, table.getFieldCount())
-                .filter(i -> !((MapTableField) table.getField(i)).getPath().isKey())
-                .mapToObj(i -> {
-                    TableField field = table.getField(i);
-                    if (updatesByFieldNames.containsKey(field.getName())) {
-                        return updatesByFieldNames.get(field.getName());
-                    } else if (field.getName().equals(VALUE)) {
-                        // this works because assigning `this = null` is ignored if this is expanded to fields
-                        return ConstantExpression.create(null, field.getType());
-                    } else {
-                        return ColumnExpression.create(i, field.getType());
-                    }
-                }).collect(toList());
-        ValueProjector.Supplier valueProjectorSupplier = ValueProjector.supplier(
-                table.valuePaths(),
-                table.valueTypes(),
-                (UpsertTargetDescriptor) table.getValueJetMetadata(),
-                updates
-        );
-
         return dag.newUniqueVertex(
                 "Update(" + toString(table) + ")",
-                new UpdateProcessorSupplier(table.getMapName(), rowProjectorSupplier, valueProjectorSupplier)
+                new UpdateProcessorSupplier(
+                        table.getMapName(),
+                        UpdatingEntryProcessor.supplier(table, updatesByFieldNames)
+                )
         );
     }
 
@@ -285,9 +345,9 @@ public class IMapSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 toString(table),
                 // TODO do a simpler, specialized deleting-only processor
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
-                    assert row.length == 1;
-                    return row[0];
+                updateMapP(table.getMapName(), (FunctionEx<JetSqlRow, Object>) row -> {
+                    assert row.getFieldCount() == 1;
+                    return row.get(0);
                 }, (v, t) -> null));
     }
 

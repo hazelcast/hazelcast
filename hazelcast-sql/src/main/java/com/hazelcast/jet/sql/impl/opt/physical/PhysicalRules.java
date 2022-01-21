@@ -28,16 +28,49 @@ public final class PhysicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
+                // Filter rules
                 FilterPhysicalRule.INSTANCE,
+
+                // Project rules
                 ProjectPhysicalRule.INSTANCE,
+
+                // Scan rules
                 FullScanPhysicalRule.INSTANCE,
-                AggregatePhysicalRule.INSTANCE,
+                IndexScanMapPhysicalRule.INSTANCE,
+
+                // Windowing rules
+                WatermarkPhysicalRule.INSTANCE,
+                SlidingWindowPhysicalRule.INSTANCE,
+
+                // Aggregate rules
+                AggregateBatchPhysicalRule.INSTANCE,
+                AggregateStreamPhysicalRule.INSTANCE,
+
+                // Sort rules
                 SortPhysicalRule.INSTANCE,
-                JoinPhysicalRule.INSTANCE,
+
+                // Join rules
+                JoinNestedLoopPhysicalRule.INSTANCE,
+                JoinHashPhysicalRule.INSTANCE,
+
+                // Union rules
+                UnionPhysicalRule.INSTANCE,
+
+                // Value rules
                 ValuesPhysicalRule.INSTANCE,
+
+                // DML rules
                 InsertPhysicalRule.INSTANCE,
+                SinkPhysicalRule.INSTANCE,
                 UpdatePhysicalRule.INSTANCE,
                 DeletePhysicalRule.INSTANCE,
+
+                SelectByKeyMapPhysicalRule.INSTANCE,
+                InsertMapPhysicalRule.INSTANCE,
+                SinkMapPhysicalRule.INSTANCE,
+                UpdateByKeyMapPhysicalRule.INSTANCE,
+                DeleteByKeyMapPhysicalRule.INSTANCE,
+
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
     }

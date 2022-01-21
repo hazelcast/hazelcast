@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -84,6 +86,10 @@ public final class ThreadUtil {
     }
 
     public static void assertRunningOnPartitionThread() {
-        assert Thread.currentThread().getName().contains("partition-operation");
+        assert Thread.currentThread() instanceof PartitionOperationThread;
+    }
+
+    public static boolean isRunningOnPartitionThread() {
+        return Thread.currentThread() instanceof PartitionOperationThread;
     }
 }

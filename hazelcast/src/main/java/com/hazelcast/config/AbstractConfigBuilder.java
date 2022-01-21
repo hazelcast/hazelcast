@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
@@ -29,7 +30,7 @@ public class AbstractConfigBuilder {
             = new HazelcastProperty("hazelcast.config.schema.validation.enabled", "true");
 
     protected final boolean shouldValidateTheSchema() {
-        return !"false".equals(VALIDATION_ENABLED_PROP.getSystemProperty())
+        return new HazelcastProperties(System.getProperties()).getBoolean(VALIDATION_ENABLED_PROP)
                 && System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) == null;
     }
 

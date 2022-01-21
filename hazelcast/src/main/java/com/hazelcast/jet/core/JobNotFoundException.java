@@ -26,8 +26,10 @@ import com.hazelcast.jet.Util;
  */
 public class JobNotFoundException extends JetException {
 
+    private static final long serialVersionUID = 1L;
+
     public JobNotFoundException(long jobId) {
-       super("Job with id " + Util.idToString(jobId) + " not found");
+        super("Job with id " + Util.idToString(jobId) + " not found");
     }
 
     public JobNotFoundException(String message) {

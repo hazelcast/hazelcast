@@ -17,19 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.concurrent.Future;
-
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class SqlStreamGeneratorTest extends SqlTestSupport {
 
@@ -138,11 +132,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_generateEmptyStream() {
-        SqlResult result = sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(0))");
-        Future<Boolean> future = spawn(() -> result.iterator().hasNext());
-        assertTrueAllTheTime(() -> assertFalse(future.isDone()), 2);
-        result.close();
-        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertEmptyResultStream("SELECT * FROM TABLE(GENERATE_STREAM(0))");
     }
 
     @Test
@@ -165,10 +155,10 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void when_notInFromClause_then_throws() {
-        IMap<Integer, Integer> map = instance().getMap("m");
-        map.put(42, 43);
+        createMapping("m", int.class, int.class);
+        instance().getMap("m").put(42, 43);
         assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_STREAM(null) FROM m"))
-                .hasMessage("unexpected SQL type: ROW");
+                .hasMessage("Cannot call table function here: 'GENERATE_STREAM'");
     }
 
     @Test

@@ -20,10 +20,13 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,10 +36,13 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -47,12 +53,27 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     @Rule
     public ExpectedException expect = ExpectedException.none();
 
+    int firstMemberPort = 6000;
+    int firstClientPort = 7000;
+    int secondMemberPort = 8000;
+
     @Test
     @Category(QuickTest.class)
     public void testCompleteMultisocketConfig() {
         Config config = createCompleteMultiSocketConfig();
         newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);
+
+        // Test if invalid protocol given then instance replies with HZX(UNEXPECTED_PROTOCOL)
+        assertWrongProtocolAlert(MEMBER_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(CLIENT_PORT, Protocols.CLUSTER, "AAA");
+        assertWrongProtocolAlert(WAN1_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(WAN2_PORT, Protocols.CLIENT_BINARY, "AAA");
+
+        assertWrongProtocolAlert(REST_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(REST_PORT, Protocols.CLUSTER, "AAA");
+        assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLUSTER, "AAA");
     }
 
     @Test
@@ -78,30 +99,82 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
     @Test
     public void testConnectionToWrongPort() {
-        int firstMemberPort = 6000;
-        int firstClientPort = 7000;
-        int secondMemberPort = 8000;
+        Tuple2<Config, Config> cfgTuple = prepareConfigs();
 
-        Config config = smallInstanceConfig();
-        config.getAdvancedNetworkConfig().setEnabled(true);
-        config.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(firstMemberPort))
-                .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
-        JoinConfig joinConfig = config.getAdvancedNetworkConfig().getJoin();
-        joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + secondMemberPort);
-        HazelcastInstance hz = newHazelcastInstance(config);
-
-        Config other = smallInstanceConfig();
-        other.getAdvancedNetworkConfig().setEnabled(true);
-        other.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(secondMemberPort));
-        JoinConfig otherJoinConfig = other.getAdvancedNetworkConfig().getJoin();
         // Mis-configured to point to Client port of 1st member
-        otherJoinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + firstClientPort);
-        other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
+        Objects.requireNonNull(cfgTuple.f1())
+                .getAdvancedNetworkConfig()
+                .getJoin()
+                .getTcpIpConfig()
+                .setEnabled(true)
+                .addMember("127.0.0.1:" + firstClientPort);
+
+        newHazelcastInstance(cfgTuple.f0());
 
         expect.expect(IllegalStateException.class);
         expect.expectMessage("Node failed to start!");
 
-        HazelcastInstance hz2 = newHazelcastInstance(other);
+        newHazelcastInstance(cfgTuple.f1());
+    }
+
+    @Test
+    public void testConnectionToWrongPortWithRequiredMember() {
+        Tuple2<Config, Config> cfgTuple = prepareConfigs();
+
+        // Mis-configured to point to Client port of 1st member
+        Objects.requireNonNull(cfgTuple.f1())
+                .getAdvancedNetworkConfig()
+                .getJoin()
+                .getTcpIpConfig()
+                .setEnabled(true)
+                .setRequiredMember("127.0.0.1:" + firstClientPort);
+
+        newHazelcastInstance(cfgTuple.f0());
+
+        expect.expect(IllegalStateException.class);
+        expect.expectMessage("Node failed to start!");
+
+        newHazelcastInstance(cfgTuple.f1());
+    }
+
+    @Test
+    public void doNotShutdownIfSomeMembersCanBeConnected() {
+        Tuple2<Config, Config> cfgTuple = prepareConfigs();
+
+        // Mis-configured to point to Client port of 1st member
+        // However member port also added to the config
+        Objects.requireNonNull(cfgTuple.f1())
+                .getAdvancedNetworkConfig()
+                .getJoin()
+                .getTcpIpConfig()
+                .setEnabled(true)
+                .addMember("127.0.0.1:" + firstClientPort)
+                .addMember("127.0.0.1:" + firstMemberPort);
+
+        newHazelcastInstance(cfgTuple.f0());
+        newHazelcastInstance(cfgTuple.f1());
+    }
+
+    @Test
+    public void doShutdownIfSomeMembersCanBeConnectedWithRequiredMember() {
+        Tuple2<Config, Config> cfgTuple = prepareConfigs();
+
+        // Mis-configured to point to Client port of 1st member
+        // However member port also added to the config
+        Objects.requireNonNull(cfgTuple.f1())
+                .getAdvancedNetworkConfig()
+                .getJoin()
+                .getTcpIpConfig()
+                .setEnabled(true)
+                .setRequiredMember("127.0.0.1:" + firstClientPort)
+                .addMember("127.0.0.1:" + firstMemberPort);
+
+        newHazelcastInstance(cfgTuple.f0());
+
+        expect.expect(IllegalStateException.class);
+        expect.expectMessage("Node failed to start!");
+
+        newHazelcastInstance(cfgTuple.f1());
     }
 
     private void assertLocalPortsOpen(int... ports) {
@@ -114,5 +187,47 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
                 fail("Failed to connect to port " + port + ": " + e.getMessage());
             }
         }
+    }
+
+    protected Socket buildSocket(int port) {
+        Socket socket;
+        try {
+            socket = new Socket("127.0.0.1", port);
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
+        return socket;
+    }
+
+    private void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
+        byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
+        for (String header : protocolHeadersToTry) {
+            try (Socket socket = buildSocket(port)) {
+                socket.getOutputStream().write(header.getBytes());
+                byte[] response = new byte[3];
+                IOUtil.readFully(socket.getInputStream(), response);
+                assertArrayEquals(
+                        "The protocol header " + header + " should be unexpected on port " + port,
+                        expected, response);
+            } catch (IOException e) {
+                fail("Failed to connect to port " + port + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private Tuple2<Config, Config> prepareConfigs() {
+        Config config = smallInstanceConfig();
+        config.getAdvancedNetworkConfig().setEnabled(true);
+        config.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(firstMemberPort))
+                .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
+        JoinConfig joinConfig = config.getAdvancedNetworkConfig().getJoin();
+        joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + secondMemberPort);
+
+        Config other = smallInstanceConfig();
+        other.getAdvancedNetworkConfig().setEnabled(true);
+        other.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(secondMemberPort));
+        other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
+
+        return Tuple2.tuple2(config, other);
     }
 }

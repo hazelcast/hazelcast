@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
+
+import javax.annotation.Nullable;
+
 /**
  * An event send to {@link MigrationAwareService} when partition changes happen.
  */
@@ -25,13 +29,17 @@ public class PartitionReplicationEvent {
 
     private final int replicaIndex;
 
+    @Nullable
+    private final Address target;
+
     /**
      * Creates a PartitionReplicationEvent
      *
      * @param partitionId  the partition ID
      * @param replicaIndex the replica index
      */
-    public PartitionReplicationEvent(int partitionId, int replicaIndex) {
+    public PartitionReplicationEvent(Address target, int partitionId, int replicaIndex) {
+        this.target = target;
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
     }
@@ -52,6 +60,10 @@ public class PartitionReplicationEvent {
      */
     public int getReplicaIndex() {
         return replicaIndex;
+    }
+
+    public Address getTarget() {
+        return target;
     }
 
     @Override

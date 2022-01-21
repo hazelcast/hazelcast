@@ -31,6 +31,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.Permission;
 
 /**
  * Static utility class with factories of Apache Hadoop Hadoop source and sink
@@ -54,7 +56,7 @@ public final class HadoopProcessors {
     ) {
         configuration = SerializableConfiguration.asSerializable(configuration);
         if (configuration.get(MRJobConfig.INPUT_FORMAT_CLASS_ATTR) != null) {
-            return new ReadHadoopNewApiP.MetaSupplier<>(configuration, ConsumerEx.noop(), projectionFn);
+            return new ReadHadoopNewApiP.MetaSupplier<>(null, configuration, ConsumerEx.noop(), projectionFn);
         } else {
             return new ReadHadoopOldApiP.MetaSupplier<>((JobConf) configuration, projectionFn);
         }
@@ -70,10 +72,12 @@ public final class HadoopProcessors {
      */
     @Nonnull
     public static <K, V, R> ProcessorMetaSupplier readHadoopP(
+            @Nullable Permission permission,
             @Nonnull ConsumerEx<Configuration> configureFn,
             @Nonnull BiFunctionEx<K, V, R> projectionFn
     ) {
         return new ReadHadoopNewApiP.MetaSupplier<>(
+                permission,
                 SerializableConfiguration.asSerializable(new Configuration()),
                 configureFn,
                 projectionFn

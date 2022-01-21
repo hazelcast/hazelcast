@@ -493,6 +493,12 @@ public class CacheConfigTest extends HazelcastTestSupport {
         config.setBackupCount(200); //max allowed is 6..
     }
 
+    @Test(expected = NullPointerException.class)
+    public void givenNullMerkleTreeConfig_throws_NPE() {
+        new CacheConfig()
+                .setMerkleTreeConfig(null);
+    }
+
     @Test
     public void createCache_WhenCacheConfigIsNull() {
         String cacheName = "cacheNull";

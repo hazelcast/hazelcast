@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.Mapping;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,22 +45,32 @@ public class MappingColumnsTableTest {
                 "table-external-name",
                 "table-type",
                 singletonList(new MappingField("table-field-name", INT, "table-field-external-name")),
-                emptyMap()
-        );
+                emptyMap());
+        View view = new View("view-name", "select * from table-name", false, singletonList("col1"), singletonList(INT));
         MappingColumnsTable mappingColumnsTable =
-                new MappingColumnsTable("catalog", null, "table-schema", singletonList(mapping));
+                new MappingColumnsTable("catalog", null, "schema", singletonList(mapping), singletonList(view));
 
         // when
         List<Object[]> rows = mappingColumnsTable.rows();
 
         // then
-        assertThat(rows).containsExactly(
+        assertThat(rows).containsExactlyInAnyOrder(
                 new Object[]{
                         "catalog",
-                        "table-schema",
+                        "schema",
                         "table-name",
                         "table-field-name",
                         "table-field-external-name",
+                        1,
+                        "true",
+                        "INTEGER"
+                },
+                new Object[]{
+                        "catalog",
+                        "schema",
+                        "view-name",
+                        "col1",
+                        null,
                         1,
                         "true",
                         "INTEGER"

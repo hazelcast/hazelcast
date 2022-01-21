@@ -18,12 +18,27 @@ package com.hazelcast.spring.config;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spring.HazelcastClientBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastFailoverClientBeanDefinitionParser;
 
+import java.util.Map;
 import java.util.function.Supplier;
+
+import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 
 /**
  * Provides factory methods for {@link Config} and {@link ClientConfig}.
@@ -65,6 +80,103 @@ public final class ConfigFactory {
 
     public static ClientFailoverConfig newClientFailoverConfig() {
         return clientFailoverConfigSupplier.get();
+    }
+
+    public static EvictionConfig newEvictionConfig(Integer maxSize, MaxSizePolicy maxSizePolicy, EvictionPolicy evictionPolicy,
+                                                   boolean isNearCache, boolean isIMap, String comparatorClassName,
+                                                   EvictionPolicyComparator<?, ?, ?> comparator) {
+        int finalSize = maxSize(maxSize, isIMap);
+        MaxSizePolicy finalMaxSizePolicy = maxSizePolicy(maxSizePolicy, isIMap);
+        EvictionPolicy finalEvictionPolicy = evictionPolicy(evictionPolicy, isIMap);
+
+        try {
+            doEvictionConfigChecks(finalMaxSizePolicy, finalEvictionPolicy,
+                    comparatorClassName, comparator, isIMap, isNearCache);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException(e.getMessage());
+        }
+
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setSize(finalSize)
+                .setMaxSizePolicy(finalMaxSizePolicy)
+                .setEvictionPolicy(finalEvictionPolicy);
+
+        if (comparatorClassName != null) {
+            evictionConfig.setComparatorClassName(comparatorClassName);
+        }
+        if (comparator != null) {
+            evictionConfig.setComparator(comparator);
+        }
+        return evictionConfig;
+    }
+
+    public static CompactSerializationConfig newCompactSerializationConfig(
+            boolean isEnabled,
+            Map<String, TriTuple<String, String, String>> registrations) {
+        CompactSerializationConfig config = new CompactSerializationConfig();
+        config.setEnabled(isEnabled);
+
+        for (TriTuple<String, String, String> registration : registrations.values()) {
+            String className = registration.element1;
+            String typeName = registration.element2;
+            String serializerName = registration.element3;
+            if (serializerName != null) {
+                CompactSerializationConfigAccessor.registerExplicitSerializer(config, className, typeName, serializerName);
+            } else {
+                CompactSerializationConfigAccessor.registerReflectiveSerializer(config, className);
+            }
+        }
+
+        return config;
+    }
+
+    private static int maxSize(Integer size, boolean isIMap) {
+        if (size == null) {
+            return isIMap ? MapConfig.DEFAULT_MAX_SIZE : EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
+        }
+
+        if (isIMap && size == 0) {
+            return MapConfig.DEFAULT_MAX_SIZE;
+        }
+        return size;
+    }
+
+    private static EvictionPolicy evictionPolicy(EvictionPolicy evictionPolicy, boolean isIMap) {
+        if (evictionPolicy == null) {
+            return isIMap
+                    ? MapConfig.DEFAULT_EVICTION_POLICY : EvictionConfig.DEFAULT_EVICTION_POLICY;
+        }
+        return evictionPolicy;
+    }
+
+    private static MaxSizePolicy maxSizePolicy(MaxSizePolicy maxSizePolicy, boolean isIMap) {
+        if (maxSizePolicy == null) {
+            return isIMap
+                    ? MapConfig.DEFAULT_MAX_SIZE_POLICY : EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
+        }
+        return maxSizePolicy;
+    }
+
+    private static void doEvictionConfigChecks(MaxSizePolicy maxSizePolicyValue,
+                                               EvictionPolicy evictionPolicyValue,
+                                               String comparatorClassNameValue,
+                                               Object comparatorBeanValue,
+                                               boolean isIMap, boolean isNearCache) {
+        if (isIMap) {
+            checkMapEvictionConfig(maxSizePolicyValue, evictionPolicyValue,
+                    comparatorClassNameValue, comparatorBeanValue);
+            return;
+        }
+
+        if (isNearCache) {
+            checkNearCacheEvictionConfig(evictionPolicyValue,
+                    comparatorClassNameValue, comparatorBeanValue);
+            return;
+        }
+
+        checkEvictionConfig(evictionPolicyValue,
+                comparatorClassNameValue, comparatorBeanValue,
+                COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
 
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
@@ -36,7 +37,7 @@ import java.util.Collection;
  * @since Jet 3.0
  */
 @FunctionalInterface
-public interface ProcessorSupplier extends Serializable {
+public interface ProcessorSupplier extends Serializable, SecuredFunction {
 
     /**
      * Called on each cluster member after deserialization.

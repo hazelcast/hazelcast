@@ -107,6 +107,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
             new ConcurrentHashMap<>();
     private final Map<String, LocalIndexStats> indexStats = Collections.unmodifiableMap(mutableIndexStats);
+    private final LocalReplicationStatsImpl replicationStats = new LocalReplicationStatsImpl();
 
     // These fields are only accessed through the updaters
     @Probe(name = MAP_METRIC_LAST_ACCESS_TIME, unit = MS)
@@ -167,8 +168,19 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe(name = MAP_METRIC_INDEXED_QUERY_COUNT)
     private volatile long indexedQueryCount;
 
-    public LocalMapStatsImpl() {
+    private final boolean ignoreMemoryCosts;
+
+    public LocalMapStatsImpl(boolean ignoreMemoryCosts) {
+        this.ignoreMemoryCosts = ignoreMemoryCosts;
         creationTime = Clock.currentTimeMillis();
+        if (ignoreMemoryCosts) {
+            ownedEntryMemoryCost = -1;
+            backupEntryMemoryCost = -1;
+        }
+    }
+
+    public LocalMapStatsImpl() {
+        this(false);
     }
 
     @Override
@@ -204,7 +216,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        }
     }
 
     @Override
@@ -213,7 +227,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
-        this.backupEntryMemoryCost = backupEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.backupEntryMemoryCost = backupEntryMemoryCost;
+        }
     }
 
     @Override
@@ -410,6 +426,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return indexStats;
     }
 
+    @Override
+    public LocalReplicationStatsImpl getReplicationStats() {
+        return replicationStats;
+    }
+
     /**
      * Sets the per-index stats of this map stats to the given per-index stats.
      *
@@ -519,6 +540,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", queryCount=" + queryCount
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
+                + ", replicationStats=" + replicationStats
                 + '}';
     }
 }

@@ -36,6 +36,8 @@ public class LinesTextFileFormat implements FileFormat<String> {
      */
     public static final String FORMAT_LINES = "lines";
 
+    private static final long serialVersionUID = 1L;
+
     private final String charset;
 
     /**

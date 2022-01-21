@@ -19,12 +19,15 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.extract.GenericQueryTarget;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -37,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -63,9 +67,31 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1, 8);
+        JetSqlRow row = projector.project(1, 8);
 
-        assertThat(row).isEqualTo(new Object[]{2, 4});
+        assertThat(row.getValues()).isEqualTo(new Object[]{2, 4});
+    }
+
+    @Test
+    public void test_project_onlyDataKeyAndValueIsProvided() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        KvRowProjector projector = new KvRowProjector(
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryDataType[]{INT, INT},
+                new GenericQueryTarget(serializationService, null, true),
+                new GenericQueryTarget(serializationService, null, false),
+                null,
+                asList(
+                        MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
+                        DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
+                ),
+                SqlTestSupport.createExpressionEvalContext()
+        );
+
+        JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
+
+        assertThat(row).isEqualTo(jetRow(2, 4));
     }
 
     @Test
@@ -81,7 +107,7 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1, 8);
+        JetSqlRow row = projector.project(1, 8);
 
         assertThat(row).isNull();
     }
@@ -114,7 +140,6 @@ public class KvRowProjectorTest {
 
         @Override
         public void setTarget(Object value, Data valueData) {
-            assert valueData == null;
             this.value = value;
         }
 

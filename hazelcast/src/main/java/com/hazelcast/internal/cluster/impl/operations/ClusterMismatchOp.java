@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.server.tcp.LinkedAddresses;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,13 +37,20 @@ public class ClusterMismatchOp extends AbstractClusterOperation {
         String message = "Node could not join cluster at node: " + connection.getRemoteAddress()
                 + " Cause: the target cluster has a different cluster-name";
 
+        Node node = nodeEngine.getNode();
+        LinkedAddresses linkedAddresses = node.getLocalAddressRegistry().linkedAddressesOf(getCallerUuid());
+
         connection.close(message, null);
 
         ILogger logger = nodeEngine.getLogger("com.hazelcast.cluster");
         logger.warning(message);
-
-        Node node = nodeEngine.getNode();
-        node.getJoiner().blacklist(getCallerAddress(), true);
+        if (linkedAddresses != null) {
+            for (Address address : linkedAddresses.getAllAddresses()) {
+                node.getJoiner().blacklist(address, true);
+            }
+        } else {
+            node.getJoiner().blacklist(getCallerAddress(), true);
+        }
     }
 
     @Override

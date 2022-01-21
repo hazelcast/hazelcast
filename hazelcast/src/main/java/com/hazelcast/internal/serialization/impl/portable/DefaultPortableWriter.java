@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.PortableUtil;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -211,22 +212,22 @@ public class DefaultPortableWriter implements PortableWriter {
 
     @Override
     public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) throws IOException {
-        writeNullable(fieldName, FieldType.TIME, value, IOUtil::writeLocalTime);
+        writeNullable(fieldName, FieldType.TIME, value, PortableUtil::writeLocalTime);
     }
 
     @Override
     public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) throws IOException {
-        writeNullable(fieldName, FieldType.DATE, value, IOUtil::writeLocalDate);
+        writeNullable(fieldName, FieldType.DATE, value, PortableUtil::writeLocalDate);
     }
 
     @Override
     public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) throws IOException {
-        writeNullable(fieldName, FieldType.TIMESTAMP, value, IOUtil::writeLocalDateTime);
+        writeNullable(fieldName, FieldType.TIMESTAMP, value, PortableUtil::writeLocalDateTime);
     }
 
     @Override
     public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) throws IOException {
-        writeNullable(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, value, IOUtil::writeOffsetDateTime);
+        writeNullable(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, value, PortableUtil::writeOffsetDateTime);
     }
 
     @Override
@@ -343,22 +344,22 @@ public class DefaultPortableWriter implements PortableWriter {
 
     @Override
     public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values) throws IOException {
-        writeObjectArrayField(fieldName, FieldType.TIME_ARRAY, values, IOUtil::writeLocalTime);
+        writeObjectArrayField(fieldName, FieldType.TIME_ARRAY, values, PortableUtil::writeLocalTime);
     }
 
     @Override
     public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values) throws IOException {
-        writeObjectArrayField(fieldName, FieldType.DATE_ARRAY, values, IOUtil::writeLocalDate);
+        writeObjectArrayField(fieldName, FieldType.DATE_ARRAY, values, PortableUtil::writeLocalDate);
     }
 
     @Override
     public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values) throws IOException {
-        writeObjectArrayField(fieldName, FieldType.TIMESTAMP_ARRAY, values, IOUtil::writeLocalDateTime);
+        writeObjectArrayField(fieldName, FieldType.TIMESTAMP_ARRAY, values, PortableUtil::writeLocalDateTime);
     }
 
     @Override
     public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) throws IOException {
-        writeObjectArrayField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, values, IOUtil::writeOffsetDateTime);
+        writeObjectArrayField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, values, PortableUtil::writeOffsetDateTime);
     }
 
     void writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] portables) throws IOException {

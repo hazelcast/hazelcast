@@ -27,10 +27,6 @@ public class FunctionalPredicateExpression implements Expression<Boolean> {
 
     private NullablePredicate predicate;
 
-    public FunctionalPredicateExpression() {
-        // No-op.
-    }
-
     public FunctionalPredicateExpression(NullablePredicate predicate) {
         this.predicate = predicate;
     }

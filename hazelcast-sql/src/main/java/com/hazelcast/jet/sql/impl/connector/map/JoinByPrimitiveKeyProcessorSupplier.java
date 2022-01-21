@@ -21,25 +21,30 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.jet.Traversers.singleton;
-import static com.hazelcast.jet.impl.util.Util.extendArray;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @SuppressFBWarnings(
@@ -79,7 +84,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -91,21 +96,22 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
-                    (IMap<Object, Object> map, Object[] left) -> {
-                        Object key = left[leftEquiJoinIndex];
+                    (IMap<Object, Object> map, JetSqlRow left) -> {
+                        Object key = left.get(leftEquiJoinIndex);
                         if (key == null) {
                             return inner ? null : completedFuture(null);
                         }
                         return map.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
-                        Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition, evalContext);
+                        JetSqlRow joined = join(left, left.get(leftEquiJoinIndex), value,
+                                projector, condition, evalContext);
                         return joined != null ? singleton(joined)
                                 : inner ? null
-                                : singleton(extendArray(left, projector.getColumnCount()));
+                                : singleton(left.extendedRow(projector.getColumnCount()));
                     }
             );
             processors.add(processor);
@@ -113,8 +119,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
         return processors;
     }
 
-    private static Object[] join(
-            Object[] left,
+    private static JetSqlRow join(
+            JetSqlRow left,
             Object key,
             Object value,
             KvRowProjector rightRowProjector,
@@ -125,12 +131,17 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             return null;
         }
 
-        Object[] right = rightRowProjector.project(key, value);
+        JetSqlRow right = rightRowProjector.project(key, value);
         if (right == null) {
             return null;
         }
 
         return ExpressionUtil.join(left, right, condition, evalContext);
+    }
+
+    @Override
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override

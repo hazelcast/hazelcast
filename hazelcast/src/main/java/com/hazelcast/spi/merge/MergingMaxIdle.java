@@ -28,6 +28,5 @@ public interface MergingMaxIdle extends MergingView {
      *
      * @return the MaxIdle of the merge data
      */
-    //RU_COMPAT_3_10 (Long -> long)
     Long getMaxIdle();
 }

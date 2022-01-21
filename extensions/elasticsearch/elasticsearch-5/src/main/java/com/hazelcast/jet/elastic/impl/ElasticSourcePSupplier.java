@@ -33,6 +33,8 @@ import static java.util.stream.Collectors.toList;
 
 class ElasticSourcePSupplier<T> implements ProcessorSupplier {
 
+    private static final long serialVersionUID = 1L;
+
     private final ElasticSourceConfiguration<T> configuration;
 
     private final List<Shard> shards;

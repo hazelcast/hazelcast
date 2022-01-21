@@ -26,4 +26,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
  * passive state.
  */
 public class EnteringPassiveClusterStateException extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
 }

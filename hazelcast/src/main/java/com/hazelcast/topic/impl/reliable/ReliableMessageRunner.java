@@ -41,11 +41,6 @@ public class ReliableMessageRunner<E> extends MessageRunner<E> {
     }
 
     @Override
-    protected void updateStatistics() {
-        proxy.localTopicStats.incrementReceives();
-    }
-
-    @Override
     protected Member getMember(ReliableTopicMessage m) {
         return clusterService.getMember(m.getPublisherAddress());
     }

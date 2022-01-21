@@ -21,6 +21,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.LazyTarget;
+import com.hazelcast.sql.impl.LazyDeserializer;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -36,7 +38,7 @@ import java.util.NoSuchElementException;
 /**
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
  */
-public class SqlClientResult implements SqlResult {
+public class SqlClientResult implements SqlResult, LazyDeserializer {
 
     private final SqlClientService service;
     private final Connection connection;
@@ -181,6 +183,16 @@ public class SqlClientResult implements SqlResult {
                 closed = true;
             }
         }
+    }
+
+    @Override
+    public Object deserialize(Object value) {
+        return service.deserializeRowValue(value);
+    }
+
+    @Override
+    public Object deserialize(LazyTarget value) {
+        return service.deserializeRowValue(value);
     }
 
     /**
@@ -338,7 +350,7 @@ public class SqlClientResult implements SqlResult {
 
             Row row = getCurrentRow();
             currentPosition++;
-            return new SqlRowImpl(rowMetadata, row);
+            return new SqlRowImpl(rowMetadata, row, SqlClientResult.this);
         }
 
         private void onNextPage(SqlPage page) {
@@ -357,9 +369,7 @@ public class SqlClientResult implements SqlResult {
             Object[] values = new Object[rowMetadata.getColumnCount()];
 
             for (int i = 0; i < currentPage.getColumnCount(); i++) {
-                Object value = currentPage.getColumnValueForClient(i, currentPosition);
-
-                values[i] = service.deserializeRowValue(value);
+                values[i] = currentPage.getColumnValueForClient(i, currentPosition);
             }
 
             return new HeapRow(values);

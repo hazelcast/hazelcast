@@ -21,9 +21,10 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
@@ -559,4 +560,6 @@ public interface ICacheRecordStore {
     InvalidationQueue<ExpiredKey> getExpiredKeysQueue();
 
     void disposeDeferredBlocks();
+
+    SerializationService getSerializationService();
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -296,6 +298,17 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     @Override
     public MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize) {
         return new MapFetchEntriesOperation(name, pointers, fetchSize);
+    }
+
+    @Override
+    public MapOperation createFetchIndexOperation(
+            String mapName,
+            String indexName,
+            IndexIterationPointer[] pointers,
+            PartitionIdSet partitionIdSet,
+            int sizeLimit
+    ) {
+        return new MapFetchIndexOperation(mapName, indexName, pointers, partitionIdSet, sizeLimit);
     }
 
     @Override

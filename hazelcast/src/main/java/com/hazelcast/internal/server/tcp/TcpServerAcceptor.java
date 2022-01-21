@@ -58,11 +58,11 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Contains the logic for accepting TcpIpConnections.
+ * Contains the logic for accepting {@link TcpServerConnection}s.
  *
  * The {@link TcpServerAcceptor} and {@link TcpServerConnector} are 2 sides of the same coin. The
  * {@link TcpServerConnector} take care of the 'client' side of a connection and the {@link TcpServerAcceptor}
- * is the 'server' side of a connection (each connection has a client and server-side
+ * is the 'server' side of a connection (each connection has a client and server-side)
  */
 public class TcpServerAcceptor implements DynamicMetricsProvider {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
@@ -296,7 +296,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 .addParameter("remoteAddress", socketChannel.getRemoteAddress())
                 .log();
             if (serverContext.isSocketInterceptorEnabled(qualifier)) {
-                serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
+                serverContext.submitAsync(() -> newConnection0(connectionManager, channel));
             } else {
                 newConnection0(connectionManager, channel);
             }
@@ -305,7 +305,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         private void newConnection0(TcpServerConnectionManager connectionManager, Channel channel) {
             try {
                 serverContext.interceptSocket(connectionManager.getEndpointQualifier(), channel.socket(), true);
-                connectionManager.newConnection(channel, null);
+                connectionManager.newConnection(channel, null, true);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);

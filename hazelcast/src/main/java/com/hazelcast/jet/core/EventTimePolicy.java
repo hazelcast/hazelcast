@@ -70,11 +70,14 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
+    private static final long serialVersionUID = 1L;
+
     private static final ObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;
 
     private static final SupplierEx<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
         @Override
-        public void reportEvent(long timestamp) { }
+        public void reportEvent(long timestamp) {
+        }
 
         @Override
         public long getCurrentWatermark() {

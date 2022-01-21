@@ -28,6 +28,8 @@ import com.hazelcast.jet.JetException;
  */
 public class TopologyChangedException extends JetException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates the exception
      */

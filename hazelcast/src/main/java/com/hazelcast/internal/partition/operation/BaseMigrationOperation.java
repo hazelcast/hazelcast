@@ -55,8 +55,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeL
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
 
-    protected MigrationInfo migrationInfo;
-    protected boolean success;
+    /**
+     * Volatile fields can be accessed from another thread, as replication
+     * operation preparation may occur on another thread.
+     * see {@link MigrationRequestOperation#trySendNewFragment()}
+     */
+    protected volatile MigrationInfo migrationInfo;
+    protected volatile boolean success;
     protected List<MigrationInfo> completedMigrations;
     protected int partitionStateVersion;
 
@@ -209,7 +214,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     /** Verifies that the cluster is active. */
     private void verifyClusterState() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
         if (!clusterState.isMigrationAllowed()) {
             throw new IllegalStateException("Cluster state does not allow migrations! " + clusterState);
@@ -296,9 +301,6 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        if (!migrationInfo.isValid()) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onInvocationException(throwable);

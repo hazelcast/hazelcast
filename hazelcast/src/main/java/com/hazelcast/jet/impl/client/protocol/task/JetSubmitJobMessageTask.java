@@ -17,11 +17,15 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters, Void> {
     protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -30,8 +34,14 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     }
 
     @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
     protected Operation prepareOperation() {
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig, parameters.isLightJob);
+        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig,
+                parameters.lightJobCoordinator != null, endpoint.getSubject());
     }
 
     @Override
@@ -44,4 +54,9 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
         return new Object[]{};
     }
 
+    @Nullable
+    @Override
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_SUBMIT};
+    }
 }

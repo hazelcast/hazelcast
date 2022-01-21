@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("e7d58be82e7ca5327e2d18b81a3cc610")
+@Generated("0eac3f0747cb90df199b1bd07bc9470d")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -104,5 +104,4 @@ public final class MCRunScriptCodec {
         iterator.next();
         return CodecUtil.decodeNullable(iterator, StringCodec::decode);
     }
-
 }

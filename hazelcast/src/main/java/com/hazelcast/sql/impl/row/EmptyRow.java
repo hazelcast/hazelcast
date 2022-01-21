@@ -21,8 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
-import java.io.IOException;
-
 /**
  * Row with no columns. It may appear when the downstream operator doesn't need any columns from
  * the upstream, and only the number of returned rows is important.
@@ -61,12 +59,12 @@ public class EmptyRow implements Row, IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
         // No-op.
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
         // No-op.
     }
 

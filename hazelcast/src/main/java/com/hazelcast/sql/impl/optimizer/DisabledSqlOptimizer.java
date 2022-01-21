@@ -17,11 +17,21 @@
 package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.TableResolver;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * An optimizer that is instantiated when {@code hazelcast-sql} is not in the classpath.
  */
 public class DisabledSqlOptimizer implements SqlOptimizer {
+
+    @Override
+    public List<TableResolver> tableResolvers() {
+        return Collections.emptyList();
+    }
+
     @Override
     public SqlPlan prepare(OptimizationTask task) {
         throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");

@@ -22,8 +22,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.IOException;
-
 /**
  * Surrogate expression that is used to pass literal symbols during conversion.
  * <p>
@@ -73,12 +71,12 @@ public final class SymbolExpression implements Expression<Object>, IdentifiedDat
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
         throw unsupported();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
         throw unsupported();
     }
 

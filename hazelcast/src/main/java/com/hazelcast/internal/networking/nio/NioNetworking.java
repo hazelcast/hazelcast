@@ -73,7 +73,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 
 /**
- * A non blocking {@link Networking} implementation that makes use of
+ * A non-blocking {@link Networking} implementation that makes use of
  * {@link java.nio.channels.Selector} to have a limited set of io threads, handle
  * an arbitrary number of connections.
  * <p>
@@ -92,8 +92,8 @@ import static java.util.logging.Level.FINE;
  * </li>
  * </ol>
  * <p>
- * By default the {@link NioThread} blocks on the Selector, but it can be put in a
- * 'selectNow' mode that makes it spinning on the selector. This is an experimental
+ * By default, the {@link NioThread} blocks on the Selector, but it can be put in a
+ * 'selectNow' mode that makes it spin on the selector. This is an experimental
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
@@ -125,7 +125,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
     private volatile ScheduledFuture publishFuture;
-    // Currently this is a coarse grained aggregation of the bytes/send received.
+    // Currently, this is a coarse-grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
     @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND, unit = BYTES)

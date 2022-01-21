@@ -21,11 +21,13 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
@@ -81,15 +83,53 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
 
+    BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder);
+
     BufferObjectDataInput createObjectDataInput(byte[] data, int offset);
 
     BufferObjectDataInput createObjectDataInput(Data data);
 
     BufferObjectDataOutput createObjectDataOutput(int size);
 
+    BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder);
+
     BufferObjectDataOutput createObjectDataOutput();
 
+    /**
+     * @param data
+     * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
+     * IllegalArgumentException
+     * @throws IOException
+     */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+
+    /**
+     * @param data to extract the schema from
+     * @return schema of the given Compact Data
+     * @throws IOException
+     * @throws IllegalArgumentException if given data is not in the Compact format
+     */
+    Schema extractSchemaFromData(@Nonnull Data data) throws IOException;
+
+    /**
+     * @param object to extract the schema from
+     * @return schema of the given Compact Data
+     * @throws IllegalArgumentException if given object is not compact serializable
+     *                                  see {@link #isCompactSerializable(Object)}
+     */
+    Schema extractSchemaFromObject(@Nonnull Object object);
+
+    /**
+     * Returns {@code true} if the {@code object} is compact serializable.
+     * <p>
+     * It will return {@code true} if
+     * <ul>
+     *     <li>it is registered as compact serializable through configuration.</li>
+     *     <li>it cannot be serialized through other mechanisms and the object might
+     *     be serialized reflectively (zero-config use case).</li>
+     * </ul>
+     */
+    boolean isCompactSerializable(Object object);
 
     PortableContext getPortableContext();
 

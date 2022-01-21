@@ -25,7 +25,6 @@ public enum PhoneHomeMetrics {
     CLIENT_ENDPOINT_COUNT("cssz"),
     JAVA_VERSION_OF_SYSTEM("jvmv"),
     BUILD_VERSION("version"),
-    JET_BUILD_VERSION("jetv"),
     JAVA_CLASSPATH("classpath"),
 
     //CLIENT INFO METRICS
@@ -63,7 +62,13 @@ public enum PhoneHomeMetrics {
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),
     CLUSTER_ID("c"),
+    /**
+     * Maintained for backward-compatibility (in PhoneHome reports), but otherwise deprecated, please use
+     * {@link #EXACT_CLUSTER_SIZE} instead.
+     */
+    @Deprecated
     CLUSTER_SIZE("crsz"),
+    EXACT_CLUSTER_SIZE("ecrsz"),
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),
@@ -128,8 +133,41 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
-    DOCKER("dck");
+    DOCKER("dck"),
 
+    //JET METRICS
+    JET_ENABLED("jet"),
+    JET_RESOURCE_UPLOAD_ENABLED("jetrsup"),
+    JET_JOBS_SUBMITTED("jetjobss"),
+
+    // SQL METRICS
+    SQL_QUERIES_SUBMITTED("sqlqs"),
+
+    //CP SUBSYSTEM METRICS
+    CP_SUBSYSTEM_ENABLED("cp"),
+
+    // REST API metrics
+    REST_ENABLED("restenabled"),
+    REST_MAP_GET_SUCCESS("restmapgetsucc"),
+    REST_MAP_GET_FAILURE("restmapgetfail"),
+    REST_MAP_POST_SUCCESS("restmappostsucc"),
+    REST_MAP_POST_FAILURE("restmappostfail"),
+    REST_MAP_DELETE_SUCCESS("restmapdeletesucc"),
+    REST_MAP_DELETE_FAILURE("restmapdeletefail"),
+    REST_MAP_TOTAL_REQUEST_COUNT("restmaprequestct"),
+    REST_ACCESSED_MAP_COUNT("restmapct"),
+
+    REST_QUEUE_POST_SUCCESS("restqueuepostsucc"),
+    REST_QUEUE_POST_FAILURE("restqueuepostfail"),
+    REST_QUEUE_GET_SUCCESS("restqueuegetsucc"),
+    REST_QUEUE_GET_FAILURE("restqueuegetfail"),
+    REST_QUEUE_DELETE_SUCCESS("restqueuedeletesucc"),
+    REST_QUEUE_DELETE_FAILURE("restqueuedeletefail"),
+    REST_QUEUE_TOTAL_REQUEST_COUNT("restqueuerequestct"),
+    REST_ACCESSED_QUEUE_COUNT("restqueuect"),
+
+    REST_REQUEST_COUNT("restrequestct"),
+    REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");
     private final String query;
 
     PhoneHomeMetrics(String query) {

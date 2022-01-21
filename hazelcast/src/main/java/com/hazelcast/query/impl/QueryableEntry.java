@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
@@ -43,7 +43,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
  */
 public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, V> {
 
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
     protected Record record;
@@ -63,13 +63,19 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     public abstract K getKey();
+
     public abstract Data getKeyData();
+
     public abstract V getValue();
+
     public abstract Data getValueData();
 
     public abstract K getKeyIfPresent();
+
     public abstract Data getKeyDataIfPresent();
+
     public abstract V getValueIfPresent();
+
     public abstract Data getValueDataIfPresent();
 
     protected abstract Object getTargetObject(boolean key);

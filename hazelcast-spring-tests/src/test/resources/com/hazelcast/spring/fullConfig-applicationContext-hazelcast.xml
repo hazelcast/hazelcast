@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -35,9 +35,9 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
-            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:cluster-name>${cluster.name}-fullConfig</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center scripting-enabled="true">
+            <hz:management-center scripting-enabled="true" console-enabled="true" data-access-enabled="true">
                 <hz:trusted-interfaces>
                     <hz:interface>10.1.2.*</hz:interface>
                 </hz:trusted-interfaces>
@@ -201,14 +201,14 @@
                         <hz:max-attempts>2</hz:max-attempts>
                         <hz:parallel-mode>true</hz:parallel-mode>
                         <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
-                        <hz:ttl>1</hz:ttl>
+                        <hz:ttl>${failure.detector.ttl}</hz:ttl>
                     </hz:icmp>
                 </hz:failure-detector>
                 <hz:rest-api enabled="false">
                     <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
                     <hz:endpoint-group name="CLUSTER_WRITE" enabled="true"/>
                     <hz:endpoint-group name="HEALTH_CHECK" enabled="true"/>
-                    <hz:endpoint-group name="HOT_RESTART" enabled="true"/>
+                    <hz:endpoint-group name="PERSISTENCE" enabled="true"/>
                     <hz:endpoint-group name="WAN" enabled="true"/>
                     <hz:endpoint-group name="DATA" enabled="true"/>
                     <hz:endpoint-group name="CP" enabled="true"/>
@@ -446,10 +446,11 @@
                 <hz:query-caches>
                     <hz:query-cache name="my-query-cache-1">
                         <hz:predicate type="sql">__key > 12</hz:predicate>
-                        <hz:batch-size>12</hz:batch-size>
+                        <hz:batch-size>${query.cache.batch.size}</hz:batch-size>
                         <hz:buffer-size>33</hz:buffer-size>
                         <hz:coalesce>true</hz:coalesce>
                         <hz:populate>false</hz:populate>
+                        <hz:serialize-keys>true</hz:serialize-keys>
                         <hz:delay-seconds>12</hz:delay-seconds>
                         <hz:entry-listeners>
                             <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
@@ -466,6 +467,15 @@
                         </hz:indexes>
                     </hz:query-cache>
                 </hz:query-caches>
+            </hz:map>
+
+            <hz:map name="testMap5">
+                <hz:tiered-store enabled="true">
+                    <hz:memory-tier>
+                        <hz:capacity>128 MB</hz:capacity>
+                    </hz:memory-tier>
+                    <hz:disk-tier enabled="true" device-name="the-local0751"/>
+                </hz:tiered-store>
             </hz:map>
 
             <hz:map name="simpleMap"
@@ -580,7 +590,7 @@
                               use-native-byte-order="false">
 
                 <hz:data-serializable-factories>
-                    <hz:data-serializable-factory factory-id="1"
+                    <hz:data-serializable-factory factory-id="${test.factory.id}"
                                                   class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
 
                     <hz:data-serializable-factory factory-id="2" implementation="dummyDataSerializableFactory"/>
@@ -612,6 +622,16 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
+                <hz:compact-serialization enabled="true">
+                    <hz:registered-classes>
+                        <hz:class>
+                            com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                        </hz:class>
+                        <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                            com.hazelcast.spring.serialization.DummyCompactSerializable
+                        </hz:class>
+                    </hz:registered-classes>
+                </hz:compact-serialization>
             </hz:serialization>
 
             <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
@@ -672,6 +692,19 @@
                         <hz:identity>
                             <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
                         </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="simpleRealm">
+                        <hz:authentication>
+                            <hz:simple>
+                                <hz:user username="test" password="a1234">
+                                    <hz:role>monitor</hz:role>
+                                    <hz:role>hazelcast</hz:role>
+                                </hz:user>
+                                <hz:user username="root" password="secret">
+                                    <hz:role>root</hz:role>
+                                </hz:user>
+                            </hz:simple>
+                        </hz:authentication>
                     </hz:realm>
                     <hz:realm name="kerberosRealm">
                         <hz:authentication>
@@ -876,12 +909,27 @@
                         </hz:actions>
                     </hz:replicatedmap-permission>
                     <hz:management-permission principal="mcadmin"/>
+                    <hz:job-permission>
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:job-permission>
+                    <hz:connector-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:connector-permission>
+                    <hz:sql-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:sql-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
 
             <hz:member-attributes>
-                <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
+                <hz:attribute name="cluster.name">${cluster.name}</hz:attribute>
             </hz:member-attributes>
 
             <hz:split-brain-protection enabled="true" name="my-split-brain-protection">
@@ -911,13 +959,14 @@
                 <hz:recently-active-split-brain-protection heartbeat-tolerance-millis="5123"/>
             </hz:split-brain-protection>
 
-            <hz:hot-restart-persistence enabled="false"
+            <hz:persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
-                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
-                <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
-                <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
+                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE"
+                                        rebalance-delay-seconds="240">
+                <hz:base-dir>/mnt/persistence/</hz:base-dir>
+                <hz:backup-dir>/mnt/persistence-backup/</hz:backup-dir>
                 <hz:encryption-at-rest enabled="true">
                     <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
                     <hz:salt>sugar</hz:salt>
@@ -933,7 +982,7 @@
                         </hz:vault>
                     </hz:secure-store>
                 </hz:encryption-at-rest>
-            </hz:hot-restart-persistence>
+            </hz:persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"
                                    epochStart="1514764800001" nodeIdOffset="30"
@@ -1004,25 +1053,41 @@
             </hz:instance-tracking>
 
             <hz:sql>
-                <hz:executor-pool-size>5</hz:executor-pool-size>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 
             <hz:jet enabled="true" resource-upload-enabled="true">
-                <hz:instance>
-                    <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
-                    <hz:backup-count>2</hz:backup-count>
-                    <hz:flow-control-period>200</hz:flow-control-period>
-                    <hz:scale-up-delay-millis>20000</hz:scale-up-delay-millis>
-                    <hz:lossless-restart-enabled>false</hz:lossless-restart-enabled>
-                    <hz:max-processor-accumulated-records>1000000</hz:max-processor-accumulated-records>
-                </hz:instance>
+                <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
+                <hz:backup-count>2</hz:backup-count>
+                <hz:flow-control-period>200</hz:flow-control-period>
+                <hz:scale-up-delay-millis>20000</hz:scale-up-delay-millis>
+                <hz:lossless-restart-enabled>false</hz:lossless-restart-enabled>
+                <hz:max-processor-accumulated-records>1000000</hz:max-processor-accumulated-records>
                 <hz:edge-defaults>
                     <hz:queue-size>2048</hz:queue-size>
                     <hz:packet-size-limit>15000</hz:packet-size-limit>
                     <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
                 </hz:edge-defaults>
             </hz:jet>
+            <hz:local-device name="device0">
+                <hz:base-dir>/dev/devices/tiered_store_device0</hz:base-dir>
+                <hz:block-size>8192</hz:block-size>
+                <hz:read-io-thread-count>16</hz:read-io-thread-count>
+                <hz:write-io-thread-count>8</hz:write-io-thread-count>
+            </hz:local-device>
+            <hz:local-device name="device1">
+                <hz:base-dir>/dev/devices/tiered_store_device1</hz:base-dir>
+                <hz:block-size>8192</hz:block-size>
+                <hz:read-io-thread-count>16</hz:read-io-thread-count>
+                <hz:write-io-thread-count>16</hz:write-io-thread-count>
+            </hz:local-device>
+
+            <hz:dynamic-configuration>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
+                <hz:persistence-file>/mnt/persistence-file</hz:persistence-file>
+                <hz:backup-dir>/mnt/backup-dir</hz:backup-dir>
+                <hz:backup-count>7</hz:backup-count>
+            </hz:dynamic-configuration>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>

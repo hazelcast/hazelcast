@@ -16,16 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.type.SqlOperandMetadata;
+
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static java.util.Objects.requireNonNull;
 
 public class NamedOperandCheckerProgram {
 
@@ -59,8 +62,9 @@ public class NamedOperandCheckerProgram {
 
     private OperandChecker findOperandChecker(SqlIdentifier identifier, SqlFunction operator) {
         String name = identifier.getSimple();
-        for (int i = 0; i < operator.getParamNames().size(); i++) {
-            String paramName = operator.getParamNames().get(i);
+        List<String> paramNames = ((SqlOperandMetadata) requireNonNull(operator.getOperandTypeChecker())).paramNames();
+        for (int i = 0; i < paramNames.size(); i++) {
+            String paramName = paramNames.get(i);
             if (paramName.equals(name)) {
                 return checkers[i];
             }

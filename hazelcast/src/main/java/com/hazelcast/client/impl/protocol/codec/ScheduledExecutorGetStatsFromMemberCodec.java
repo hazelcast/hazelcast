@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("78787a7579f775ab0166ea23b9d70dd8")
+@Generated("05a60e6786147b7e304823d79e0e3be0")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -125,6 +125,7 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
          */
         public long lastRunDurationNanos;
     }
+
     public static ClientMessage encodeResponse(long lastIdleTimeNanos, long totalIdleTimeNanos, long totalRuns, long totalRunTimeNanos, long lastRunDurationNanos) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -150,5 +151,4 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
         response.lastRunDurationNanos = decodeLong(initialFrame.content, RESPONSE_LAST_RUN_DURATION_NANOS_FIELD_OFFSET);
         return response;
     }
-
 }

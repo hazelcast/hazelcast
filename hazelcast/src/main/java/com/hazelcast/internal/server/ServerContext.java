@@ -37,6 +37,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Contains many of the dependencies passed to the {@link Server}.
@@ -56,6 +57,13 @@ public interface ServerContext {
 
     // returns the MEMBER server socket address
     Address getThisAddress();
+
+    /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getThisUuid();
 
     /**
      * @return all server socket addresses of this Hazelcast member, as picked by the
@@ -81,7 +89,7 @@ public interface ServerContext {
 
     TextCommandService getTextCommandService();
 
-    void removeEndpoint(Address endpoint);
+    void removeEndpoint(Address endpointAddress);
 
     void onSuccessfulConnection(Address address);
 
@@ -101,7 +109,7 @@ public interface ServerContext {
 
     void onDisconnect(Address endpoint, Throwable cause);
 
-    void executeAsync(Runnable runnable);
+    Future<Void> submitAsync(Runnable runnable);
 
     EventService getEventService();
 
@@ -116,11 +124,4 @@ public interface ServerContext {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
     AuditlogService getAuditLogService();
-
-    /**
-     * Returns UUID of the local member.
-     *
-     * @return member UUID
-     */
-    UUID getUuid();
 }

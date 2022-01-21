@@ -21,9 +21,14 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
+
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.RabbitMQContainer;
+
+import static org.junit.Assume.assumeTrue;
 
 import javax.jms.ConnectionFactory;
 
@@ -38,6 +43,11 @@ public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestB
         f.setUri(container.getAmqpUrl());
         return f;
     };
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+    }
 
     @Override
     protected SupplierEx<ConnectionFactory> getConnectionFactory() {

@@ -88,6 +88,9 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     // We need a custom ArrayList subclass because the user's V type could be
     // ArrayList and then the logic that relies on instanceof would break
     static final class HashJoinArrayList extends ArrayList<Object> {
+
+        private static final long serialVersionUID = 1L;
+
         HashJoinArrayList() {
             super(2);
         }

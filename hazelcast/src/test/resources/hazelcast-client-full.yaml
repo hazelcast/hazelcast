@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast client.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at https://docs.hazelcast.com/
 
 hazelcast-client:
   config-replacers:
@@ -203,6 +203,13 @@ hazelcast-client:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     enabled: false
@@ -273,6 +280,7 @@ hazelcast-client:
       in-memory-format: BINARY
       coalesce: false
       populate: true
+      serialize-keys: false
       eviction:
         eviction-policy: LRU
         max-size-policy: ENTRY_COUNT

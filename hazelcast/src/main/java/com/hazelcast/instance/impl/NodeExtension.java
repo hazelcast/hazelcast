@@ -25,7 +25,6 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -195,6 +194,14 @@ public interface NodeExtension {
     InternalSerializationService createSerializationService();
 
     /**
+     * Creates and returns a serialization service for (de)serializing objects
+     * compatible with a compatibility (3.x) format.
+     *
+     * @return the compatibility serialization service
+     */
+    InternalSerializationService createCompatibilitySerializationService();
+
+    /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.
      *
      * @return security context
@@ -205,10 +212,11 @@ public interface NodeExtension {
      * Creates a service which is an implementation of given type parameter.
      *
      * @param type type of service
+     * @param params additional parameter to create the service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
-    <T> T createService(Class<T> type);
+    <T> T createService(Class<T> type, Object... params);
 
     /**
      * Creates additional extension services, which will be registered by
@@ -331,7 +339,9 @@ public interface NodeExtension {
      */
     boolean registerListener(Object listener);
 
-    /** Returns the public hot restart service */
+    /**
+     * Returns the public hot restart service
+     */
     HotRestartService getHotRestartService();
 
     /** Returns the internal hot restart service */
@@ -347,13 +357,6 @@ public interface NodeExtension {
     ManagementService createJMXManagementService(HazelcastInstanceImpl instance);
 
     TextCommandService createTextCommandService();
-
-    /**
-     * Creates a listener for changes in dynamic data structure configurations
-     *
-     * @return Listener to be notfied about changes in data structure configurations
-     */
-    DynamicConfigListener createDynamicConfigListener();
 
     /**
      * Register the node extension specific diagnostics plugins on the provided

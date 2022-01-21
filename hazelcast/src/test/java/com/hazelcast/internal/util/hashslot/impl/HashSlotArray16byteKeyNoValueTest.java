@@ -37,8 +37,8 @@ import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -240,11 +240,7 @@ public class HashSlotArray16byteKeyNoValueTest {
         cursor.advance();
         cursor.advance();
 
-        try {
-            cursor.advance();
-            fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
-        } catch (AssertionError ignored) {
-        }
+        assertThrows(AssertionError.class, cursor::advance);
     }
 
     @Test

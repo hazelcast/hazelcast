@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.monitor;
 
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.json.internal.JsonSerializable;
+import com.hazelcast.persistence.BackupTaskStatus;
 
 /**
  * Hot Restart statistics to be used by {@link MemberState} implementations.

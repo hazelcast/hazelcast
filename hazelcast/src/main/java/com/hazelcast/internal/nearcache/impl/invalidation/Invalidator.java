@@ -89,10 +89,9 @@ public abstract class Invalidator {
         return metaDataGenerator;
     }
 
-    public final void resetPartitionMetaData(String dataStructureName, int partitionId) {
+    public final void forceIncrementSequence(String dataStructureName, int partitionId) {
         MetaDataGenerator metaDataGenerator = getMetaDataGenerator();
-        metaDataGenerator.regenerateUuid(partitionId);
-        metaDataGenerator.resetSequence(dataStructureName, partitionId);
+        metaDataGenerator.nextSequence(dataStructureName, partitionId);
     }
 
     private Invalidation newKeyInvalidation(Data key, String dataStructureName, UUID sourceUuid) {

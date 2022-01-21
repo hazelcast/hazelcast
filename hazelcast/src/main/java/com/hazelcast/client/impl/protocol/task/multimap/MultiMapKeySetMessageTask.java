@@ -18,13 +18,12 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -41,7 +40,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_KEYSET}
  */
 public class MultiMapKeySetMessageTask
-        extends AbstractAllPartitionsMessageTask<String> {
+        extends AbstractMultiMapAllPartitionsMessageTask<String> {
 
     public MultiMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -66,6 +65,7 @@ public class MultiMapKeySetMessageTask
                 keys.addAll(coll);
             }
         }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return keys;
     }
 
@@ -77,11 +77,6 @@ public class MultiMapKeySetMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapKeySetCodec.encodeResponse((List<Data>) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override

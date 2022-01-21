@@ -83,6 +83,19 @@ public class WildcardConfigPatternMatcherTest {
     }
 
     @Test
+    public void testQueueConfigWildcardSamePrefixAndSuffix() {
+        QueueConfig queueConfig = new QueueConfig().setName("abc*abc");
+
+        Config config = new Config();
+        config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
+        config.addQueueConfig(queueConfig);
+
+        assertNotEquals(queueConfig, config.getQueueConfig("abc"));
+        assertEquals(queueConfig, config.getQueueConfig("abcabc"));
+        assertEquals(queueConfig, config.getQueueConfig("abcDabc"));
+    }
+
+    @Test
     public void testMapConfigWithoutWildcard() {
         MapConfig mapConfig = new MapConfig().setName("someMap");
 

@@ -96,7 +96,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         return true;
     }
 
-    public boolean isSameGroup(ConfigCheck found) {
+    public boolean hasSameClusterName(ConfigCheck found) {
         return equals(clusterName, found.clusterName);
     }
 

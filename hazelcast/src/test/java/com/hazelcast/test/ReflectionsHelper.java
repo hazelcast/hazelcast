@@ -72,13 +72,16 @@ public final class ReflectionsHelper {
      * Removes abstract and anonymous classes and interfaces from the given set.
      */
     public static void filterNonConcreteClasses(Set<? extends Class> classes) {
-        Iterator<? extends Class> iterator = classes.iterator();
-        while (iterator.hasNext()) {
-            Class<?> klass = iterator.next();
-            if (klass.isAnonymousClass() || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
-                iterator.remove();
-            }
-        }
+        classes.removeIf(klass -> klass.isAnonymousClass()
+                || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())
+        );
+    }
+
+    /**
+     * Removes the classes that does not belong to `com.hazelcast` package.
+     */
+    public static void filterNonHazelcastClasses(Set<? extends Class> classes) {
+        classes.removeIf(klass -> !klass.getName().startsWith("com.hazelcast"));
     }
 
     /**

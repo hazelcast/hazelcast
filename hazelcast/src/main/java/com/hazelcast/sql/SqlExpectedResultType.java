@@ -23,11 +23,33 @@ package com.hazelcast.sql;
  */
 public enum SqlExpectedResultType {
     /** The statement may produce either rows or an update count. */
-    ANY,
+    ANY((byte) 0),
 
     /** The statement must produce rows. An exception is thrown is the statement produces an update count. */
-    ROWS,
+    ROWS((byte) 1),
 
     /** The statement must produce an update count. An exception is thrown is the statement produces rows. */
-    UPDATE_COUNT;
+    UPDATE_COUNT((byte) 2);
+
+    private final byte id;
+
+    SqlExpectedResultType(byte id) {
+        this.id = id;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static SqlExpectedResultType fromId(byte id) {
+        switch (id) {
+            case 0:
+                return ANY;
+            case 1:
+                return ROWS;
+            default:
+                assert id == UPDATE_COUNT.id;
+                return UPDATE_COUNT;
+        }
+    }
 }

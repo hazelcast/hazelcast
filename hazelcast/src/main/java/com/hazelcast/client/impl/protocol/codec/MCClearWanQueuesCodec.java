@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clear WAN replication queues for the given wan replication and publisher
  */
-@Generated("c9dc27efca36b4905e90023319accc78")
+@Generated("2b7460d63f771da59c75fa47594f4759")
 public final class MCClearWanQueuesCodec {
     //hex: 0x201400
     public static final int REQUEST_MESSAGE_TYPE = 2102272;
@@ -93,6 +93,4 @@ public final class MCClearWanQueuesCodec {
 
         return clientMessage;
     }
-
-
 }

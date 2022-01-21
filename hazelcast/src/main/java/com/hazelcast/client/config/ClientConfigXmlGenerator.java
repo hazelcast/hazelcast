@@ -21,6 +21,8 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
+import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -49,9 +51,12 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.query.impl.IndexUtils;
 
 import java.util.ArrayList;
@@ -297,8 +302,30 @@ public final class ClientConfigXmlGenerator {
         }
 
         serializers(gen, serialization);
+        compactSerialization(gen, serialization);
 
         //close serialization
+        gen.close();
+    }
+
+    private static void compactSerialization(XmlGenerator gen, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        if (!compactSerializationConfig.isEnabled()) {
+            return;
+        }
+
+        gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
+
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
+            gen.open("registered-classes");
+            appendRegisteredClasses(gen, registries);
+            appendNamedRegisteredClasses(gen, namedRegistries);
+            gen.close();
+        }
+
         gen.close();
     }
 
@@ -409,6 +436,7 @@ public final class ClientConfigXmlGenerator {
                         .node("coalesce", queryCache.isCoalesce())
                         .node("delay-seconds", queryCache.getDelaySeconds())
                         .node("batch-size", queryCache.getBatchSize())
+                        .node("serialize-keys", queryCache.isSerializeKeys())
                         .node("buffer-size", queryCache.getBufferSize())
                         .node("eviction", null, "size", evictionConfig.getSize(),
                                 "max-size-policy", evictionConfig.getMaxSizePolicy(),
@@ -647,5 +675,42 @@ public final class ClientConfigXmlGenerator {
            .node("file-name", trackingConfig.getFileName())
            .node("format-pattern", trackingConfig.getFormatPattern())
            .close();
+    }
+
+    private static void appendRegisteredClasses(XmlGenerator gen,
+                                                Map<String, TriTuple<Class, String, CompactSerializer>> registries) {
+        if (registries.isEmpty()) {
+            return;
+        }
+
+        for (TriTuple<Class, String, CompactSerializer> registration : registries.values()) {
+            Class registeredClass = registration.element1;
+            String typeName = registration.element2;
+            CompactSerializer serializer = registration.element3;
+            if (serializer != null) {
+                String serializerClassName = serializer.getClass().getName();
+                gen.node("class", registeredClass.getName(), "type-name", typeName, "serializer", serializerClassName);
+            } else {
+                gen.node("class", registeredClass.getName());
+            }
+        }
+    }
+
+    private static void appendNamedRegisteredClasses(XmlGenerator gen,
+                                                     Map<String, TriTuple<String, String, String>> namedRegistries) {
+        if (namedRegistries.isEmpty()) {
+            return;
+        }
+
+        for (TriTuple<String, String, String> registration : namedRegistries.values()) {
+            String registeredClassName = registration.element1;
+            String typeName = registration.element2;
+            String serializerClassName = registration.element3;
+            if (serializerClassName != null) {
+                gen.node("class", registeredClassName, "type-name", typeName, "serializer", serializerClassName);
+            } else {
+                gen.node("class", registeredClassName);
+            }
+        }
     }
 }

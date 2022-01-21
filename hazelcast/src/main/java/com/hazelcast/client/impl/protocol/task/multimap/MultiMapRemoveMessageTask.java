@@ -18,14 +18,13 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Timer;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -40,10 +39,25 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVE}
  */
 public class MultiMapRemoveMessageTask
-        extends AbstractPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {
+
+    private transient long startTimeNanos;
 
     public MultiMapRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        if (getContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        updateStats(stats -> stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos)));
+        return response;
     }
 
     @Override
@@ -60,16 +74,11 @@ public class MultiMapRemoveMessageTask
     protected ClientMessage encodeResponse(Object response) {
         MultiMapResponse multiMapResponse = (MultiMapResponse) response;
         Collection<MultiMapRecord> collection = multiMapResponse.getCollection();
-        List<Data> resultCollection = new ArrayList<Data>(collection.size());
+        List<Data> resultCollection = new ArrayList<>(collection.size());
         for (MultiMapRecord multiMapRecord : collection) {
             resultCollection.add(serializationService.toData(multiMapRecord.getObject()));
         }
         return MultiMapRemoveCodec.encodeResponse(resultCollection);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -91,4 +100,5 @@ public class MultiMapRemoveMessageTask
     public Object[] getParameters() {
         return new Object[]{parameters.key};
     }
+
 }

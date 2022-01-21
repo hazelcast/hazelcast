@@ -22,6 +22,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Interface to resolve field types of a single node.
  */
 public interface PlanNodeFieldTypeProvider {
+
+    PlanNodeFieldTypeProvider FAILING_FIELD_TYPE_PROVIDER = index -> {
+        throw new IllegalStateException("The operation should not be called.");
+    };
+
     /**
      * Gets the type of the operator's column at the given index (zero-based).
      *

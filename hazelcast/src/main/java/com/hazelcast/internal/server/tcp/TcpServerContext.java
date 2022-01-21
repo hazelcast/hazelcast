@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -126,6 +127,11 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
+    public UUID getThisUuid() {
+        return node.getThisUuid();
+    }
+
+    @Override
     public Map<EndpointQualifier, Address> getThisAddresses() {
         return nodeEngine.getLocalMember().getAddressMap();
     }
@@ -173,9 +179,9 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void removeEndpoint(final Address endPoint) {
+    public void removeEndpoint(Address endpointAddress) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
-                () -> node.clusterService.suspectAddressIfNotConnected(endPoint));
+                () -> node.clusterService.suspectAddressIfNotConnected(endpointAddress));
     }
 
     @Override
@@ -212,7 +218,8 @@ public class TcpServerContext implements ServerContext {
 
     @Override
     public void shouldConnectTo(Address address) {
-        if (node.getThisAddress().equals(address)) {
+        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(address);
+        if (memberUuid != null && memberUuid.equals(node.getThisUuid())) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }
@@ -265,8 +272,9 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void executeAsync(final Runnable runnable) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
+    @SuppressWarnings("unchecked")
+    public Future<Void> submitAsync(final Runnable runnable) {
+        return (Future<Void>) nodeEngine.getExecutionService().submit(ExecutionService.IO_EXECUTOR, runnable);
     }
 
     @Override
@@ -341,10 +349,5 @@ public class TcpServerContext implements ServerContext {
     @Override
     public AuditlogService getAuditLogService() {
         return node.getNodeExtension().getAuditlogService();
-    }
-
-    @Override
-    public UUID getUuid() {
-        return node.getThisUuid();
     }
 }

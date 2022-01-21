@@ -109,7 +109,7 @@ class JsonWriter {
     writer.write(string, start, length - start);
   }
 
-  private static char[] getReplacementChars(char ch) {
+  static char[] getReplacementChars(char ch) {
     if (ch > '\\') {
       if (ch < '\u2028' || ch > '\u2029') {
         // The lower range contains 'a' .. 'z'. Only 2 checks required.

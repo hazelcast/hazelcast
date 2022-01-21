@@ -15,7 +15,8 @@
  */
 
 /**
- * Contains the non blocking {@link com.hazelcast.internal.networking.Networking} functionality. It relies
- * on {@link java.nio.channels.Selector} to be notified if there is something to read/write.
+ * Contains the non-blocking {@link com.hazelcast.internal.networking.Networking}
+ * functionality. It relies on {@link java.nio.channels.Selector} to be notified
+ * if there is something to read/write.
  */
 package com.hazelcast.internal.networking.nio;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.connector.map.model.InsuredPerson;
@@ -35,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -63,28 +65,9 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertIntoDiscoveredMap() {
-        String mapName = randomName();
-        instance().getMap(mapName).put(new PersonId(1), new Person(1, "Alice"));
-
-        assertMapEventually(
-                mapName,
-                "SINK INTO partitioned." + mapName + " VALUES (2, 'Bob')",
-                createMap(new PersonId(1), new Person(1, "Alice"), new PersonId(2), new Person(null, "Bob"))
-        );
-        assertRowsAnyOrder(
-                "SELECT * FROM " + mapName,
-                asList(
-                        new Row(1, "Alice"),
-                        new Row(2, "Bob")
-                )
-        );
-    }
-
-    @Test
     public void test_nulls() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+        createMapping(name, PersonId.class, Person.class);
 
         assertMapEventually(
                 name,
@@ -98,9 +81,9 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertsNullIntoPrimitive_then_fails() {
+    public void when_nullIntoPrimitive_then_fails() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+        createMapping(name, PersonId.class, Person.class);
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
                 .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
@@ -109,7 +92,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_fieldsShadowing() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+        createMapping(name, PersonId.class, Person.class);
 
         assertMapEventually(
                 name,
@@ -153,7 +136,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_schemaEvolution() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+        createMapping(name, PersonId.class, Person.class);
 
         // insert initial record
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");
@@ -226,7 +209,7 @@ public class SqlPojoTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
-        sqlService.execute(javaSerializableMapDdl(to, BigInteger.class, AllTypesValue.class));
+        createMapping(to, BigInteger.class, AllTypesValue.class);
 
         assertMapEventually(
                 to,
@@ -251,6 +234,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime"
+                        + ", map"
                         + ", object"
                         + ") SELECT "
                         + "CAST(1 AS DECIMAL)"
@@ -273,6 +257,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
                         + ", \"timestampTz\""
+                        + ", map"
                         + ", object"
                         + " FROM " + from,
                 createMap(BigInteger.valueOf(1), AllTypesValue.testValue()));
@@ -299,6 +284,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", instant"
                         + ", zonedDateTime"
                         + ", offsetDateTime "
+                        + ", map"
                         + ", object "
                         + "FROM " + to,
                 singletonList(new Row(
@@ -322,6 +308,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         OffsetDateTime.ofInstant(ofEpochMilli(1586953414200L), systemDefault()),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        ImmutableMap.of(42, 43),
                         null
                 )));
     }
@@ -351,7 +338,7 @@ public class SqlPojoTest extends SqlTestSupport {
         // are always overwritten: if they're not present, we'll write null. We don't support DEFAULT values yet, but
         // it behaves as if the DEFAULT was null.
         String mapName = randomName();
-        sqlService.execute(javaSerializableMapDdl(mapName, Integer.class, ClassInitialValue.class));
+        createMapping(mapName, Integer.class, ClassInitialValue.class);
         sqlService.execute("SINK INTO " + mapName + "(__key) VALUES (1)");
         assertRowsAnyOrder("SELECT * FROM " + mapName, singletonList(new Row(1, null)));
     }
@@ -359,7 +346,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_fieldWithInitialValueAssignedNull_then_isNull() {
         String mapName = randomName();
-        sqlService.execute(javaSerializableMapDdl(mapName, Integer.class, ClassInitialValue.class));
+        createMapping(mapName, Integer.class, ClassInitialValue.class);
         sqlService.execute("SINK INTO " + mapName + "(__key, field) VALUES (1, null)");
         assertRowsAnyOrder("SELECT * FROM " + mapName, singletonList(new Row(1, null)));
     }
@@ -410,7 +397,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_topLevelFieldExtraction() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+        createMapping(name, PersonId.class, Person.class);
         sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
 
         assertRowsAnyOrder(
@@ -436,8 +423,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_noFieldsResolved_then_wholeValueMapped() {
         String name = randomName();
-
-        sqlService.execute(javaSerializableMapDdl(name, Object.class, Object.class));
+        createMapping(name, Object.class, Object.class);
 
         Person key = new Person(1, "foo");
         Person value = new Person(2, "bar");
@@ -450,7 +436,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void when_keyHasKeyField_then_fieldIsSkipped() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, ClassWithKey.class, Integer.class));
+        createMapping(name, ClassWithKey.class, Integer.class);
 
         instance().getMap(name).put(new ClassWithKey(), 0);
 
@@ -462,6 +448,19 @@ public class SqlPojoTest extends SqlTestSupport {
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(new ClassWithKey(), 0))
         );
+    }
+
+    @Test
+    public void test_classWithMapField() {
+        final String name = randomName();
+        final ClassWithMapField obj = new ClassWithMapField(100L, "k", "v");
+
+        createMapping(name, Long.class, ClassWithMapField.class);
+
+        instance().getSql().execute("SINK INTO " + name + " VALUES (?, ?, ?)", 1L, obj.id, obj.props);
+        assertRowsAnyOrder("SELECT * FROM " + name, singletonList(
+                new Row(1L, obj.id, obj.props)
+        ));
     }
 
     public static class ClassInitialValue implements Serializable {
@@ -488,6 +487,38 @@ public class SqlPojoTest extends SqlTestSupport {
         @Override
         public int hashCode() {
             return Objects.hash(__key);
+        }
+    }
+
+    public static class ClassWithMapField implements Serializable {
+        private Long id;
+        private Map<String, String> props;
+
+        public ClassWithMapField() {
+        }
+
+        public ClassWithMapField(final Long id, String ...values) {
+            this.id = id;
+            this.props = new HashMap<>();
+            for (int i = 0; i < values.length; i += 2) {
+                props.put(values[i], values[i + 1]);
+            }
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(final Long id) {
+            this.id = id;
+        }
+
+        public Map<String, String> getProps() {
+            return props;
+        }
+
+        public void setProps(final Map<String, String> props) {
+            this.props = props;
         }
     }
 }

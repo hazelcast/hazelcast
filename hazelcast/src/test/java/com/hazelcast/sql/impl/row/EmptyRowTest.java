@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.row;
 
+import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class EmptyRowTest extends SqlTestSupport {
+public class EmptyRowTest extends CoreSqlTestSupport {
     @Test
     public void testEmptyRow() {
         EmptyRow row = EmptyRow.INSTANCE;

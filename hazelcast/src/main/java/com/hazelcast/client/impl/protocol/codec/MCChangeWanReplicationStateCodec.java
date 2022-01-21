@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
-@Generated("609134acb0891b1f93bf9f94b1114c77")
+@Generated("2faa5442a6b45f1391b29d3d05132260")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -103,6 +103,4 @@ public final class MCChangeWanReplicationStateCodec {
 
         return clientMessage;
     }
-
-
 }

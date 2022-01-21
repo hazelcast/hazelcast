@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Sprint related {@link Cache} implementation for Hazelcast.
+ * Spring related {@link Cache} implementation for Hazelcast.
  */
 public class HazelcastCache implements Cache {
 

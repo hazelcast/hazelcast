@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 /**
  * Provides the private index API.
@@ -93,25 +93,22 @@ public interface InternalIndex extends Index {
     PerIndexStats getPerIndexStats();
 
     /**
-     * Get monotonically increasing stamp that confirms that the index contains
-     * only expected partitions, and that there are no concurrent partition updates, and
-     * there are no active partition updates (see {@link #beginPartitionUpdate()}).
-     * <p>
-     * Received stamp is used to verify that the index is still valid for the given
-     * set of partitions through a call to {@link #validatePartitionStamp(long)}.
+     * Get a monotonically increasing stamp and the partition ID set currently
+     * contained in the index. The received stamp is used later to verify that
+     * no partition was added or removed by calling to {@link
+     * #validatePartitionStamp(long)}.
      *
-     * @param expectedPartitionIds expected indexed partitions
-     * @return stamp
-     * @see GlobalIndexPartitionTracker#getPartitionStamp(PartitionIdSet)
+     * @return the stamp and the partitions, or {@code null}, if the index is
+     *     currently being updated and cannot be safely read.
      */
-    long getPartitionStamp(PartitionIdSet expectedPartitionIds);
+    PartitionStamp getPartitionStamp();
 
     /**
      * Verifies that the given partition stamp is still valid. It is valid iff there were
-     * no partition updates since the call to the {@link #getPartitionStamp(PartitionIdSet)}
+     * no partition updates since the call to the {@link #getPartitionStamp()}
      * that produced this stamp.
      *
-     * @param stamp stamp
+     * @param stamp the value of {@link PartitionStamp#stamp} field
      * @return {@code true} if the stamp is still valid, {@code false} otherwise
      */
     boolean validatePartitionStamp(long stamp);

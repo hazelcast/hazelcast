@@ -25,6 +25,9 @@ import io.grpc.StatusRuntimeException;
  * Jet replaces it with a serializable one.
  */
 public class StatusRuntimeExceptionJet extends JetException {
+
+    private static final long serialVersionUID = 1L;
+
     StatusRuntimeExceptionJet(StatusRuntimeException brokenGrpcException) {
         super(brokenGrpcException.getMessage(), brokenGrpcException.getCause());
         setStackTrace(brokenGrpcException.getStackTrace());

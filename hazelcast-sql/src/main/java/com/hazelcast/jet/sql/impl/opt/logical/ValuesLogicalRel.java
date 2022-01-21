@@ -43,6 +43,10 @@ public class ValuesLogicalRel extends AbstractRelNode implements LogicalRel {
         this.values = values;
     }
 
+    public int size() {
+        return values.stream().mapToInt(ExpressionValues::size).sum();
+    }
+
     public List<ExpressionValues> values() {
         return values;
     }

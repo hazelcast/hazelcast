@@ -20,30 +20,37 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.ProcessorClassLoaderTLHolder;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.StreamSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
-    public final FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
+    private static final long serialVersionUID = 1L;
+
+    public FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
     private boolean isAssignedToStage;
-    private final boolean emitsWatermarks;
+    private boolean emitsWatermarks;
 
     @Nullable
     private EventTimePolicy<? super T> eventTimePolicy;
-    private final boolean supportsNativeTimestamps;
+    private boolean supportsNativeTimestamps;
     private long partitionIdleTimeout = DEFAULT_IDLE_TIMEOUT;
 
     public StreamSourceTransform(
@@ -124,5 +131,28 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     @Override
     public long partitionIdleTimeout() {
         return partitionIdleTimeout;
+    }
+
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeObject(metaSupplierFn);
+        out.writeBoolean(isAssignedToStage);
+        out.writeBoolean(emitsWatermarks);
+
+        out.writeObject(eventTimePolicy);
+        out.writeBoolean(supportsNativeTimestamps);
+        out.writeLong(partitionIdleTimeout);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        metaSupplierFn = doWithClassLoader(
+                ProcessorClassLoaderTLHolder.get(name()),
+                () -> (FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier>) in.readObject()
+        );
+        isAssignedToStage = in.readBoolean();
+        emitsWatermarks = in.readBoolean();
+
+        eventTimePolicy = (EventTimePolicy<? super T>) in.readObject();
+        supportsNativeTimestamps = in.readBoolean();
+        partitionIdleTimeout = in.readLong();
     }
 }

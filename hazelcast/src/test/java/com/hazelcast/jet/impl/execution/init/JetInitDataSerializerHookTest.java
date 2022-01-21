@@ -24,12 +24,13 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -51,10 +52,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class JetInitDataSerializerHookTest {
 
     @Parameter
@@ -71,8 +73,8 @@ public class JetInitDataSerializerHookTest {
         return asList(
                 new Object[]{
                         "JobRecord",
-                        new JobRecord(1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-                                "dagJson", new JobConfig(), Collections.emptySet()),
+                        new JobRecord(Version.of(2, 4), 1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
+                                "dagJson", new JobConfig(), Collections.emptySet(), null),
                         singleton("config")},
 
                 new Object[]{

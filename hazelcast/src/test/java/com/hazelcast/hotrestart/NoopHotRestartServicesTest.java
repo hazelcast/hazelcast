@@ -19,6 +19,8 @@ package com.hazelcast.hotrestart;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
 import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.persistence.BackupTaskState;
+import com.hazelcast.persistence.BackupTaskStatus;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

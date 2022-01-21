@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.impl.MasterJobContext;
+import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -36,8 +37,6 @@ import com.hazelcast.query.impl.predicates.EvaluatePredicate;
 import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
-import com.hazelcast.sql.impl.expression.SymbolExpression;
-import com.hazelcast.sql.impl.operation.QueryExecuteFragmentOperation;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -60,6 +59,7 @@ import java.util.TreeSet;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
+import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -149,6 +149,9 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
 
         serializableClasses.removeAll(allIdDataSerializableClasses);
+
+        // do not check non hazelcast classes & interfaces
+        filterNonHazelcastClasses(serializableClasses);
         // do not check abstract classes & interfaces
         filterNonConcreteClasses(serializableClasses);
 
@@ -384,7 +387,6 @@ public class DataSerializableConventionsTest {
         whiteList.add(LocalLockCleanupOperation.class);
         whiteList.add(FinalizeMigrationOperation.class);
         whiteList.add(SymbolExpression.class);
-        whiteList.add(QueryExecuteFragmentOperation.class);
         whiteList.add(MasterJobContext.SnapshotRestoreEdge.class);
         try {
             // these can't be accessed through the meta class since they are private

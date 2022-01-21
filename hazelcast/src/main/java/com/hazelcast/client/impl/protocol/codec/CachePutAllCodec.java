@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Copies all the mappings from the specified map to this cache with the given expiry policy.
  */
-@Generated("26db96991346b84c60f4f04726de8a8d")
+@Generated("977525cb74c50a390ccdcfde2c0b952b")
 public final class CachePutAllCodec {
     //hex: 0x131B00
     public static final int REQUEST_MESSAGE_TYPE = 1252096;
@@ -109,6 +109,4 @@ public final class CachePutAllCodec {
 
         return clientMessage;
     }
-
-
 }

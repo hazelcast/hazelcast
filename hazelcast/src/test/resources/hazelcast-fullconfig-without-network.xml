@@ -39,12 +39,12 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false">
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true">
         <trusted-interfaces>
             <interface>10.10.1.*</interface>
             <interface>10.10.2.*</interface>
@@ -428,6 +428,12 @@
                 </indexes>
             </query-cache>
         </query-caches>
+        <tiered-store enabled="true">
+            <memory-tier>
+                <capacity>1 GB</capacity>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="my-local-device"/>
+        </tiered-store>
     </map>
 
     <multimap name="default">
@@ -613,6 +619,16 @@
                 <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
+        <compact-serialization enabled="true">
+            <registered-classes>
+                <class>
+                    com.hazelcast.examples.DummyType
+                </class>
+                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
+                    com.hazelcast.examples.DummyTypeWithSerializer
+                </class>
+            </registered-classes>
+        </compact-serialization>
     </serialization>
 
     <native-memory allocator-type="STANDARD" enabled="true">
@@ -630,7 +646,20 @@
 
     <security enabled="false">
         <realms>
-            <realm name="mr">
+            <realm name="simpleRealm">
+                <authentication>
+                    <simple>
+                        <user username="test" password="a1234">
+                            <role>monitor</role>
+                            <role>hazelcast</role>
+                        </user>
+                        <user username="dev" password="secret">
+                            <role>root</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+            <realm name="jaasRealm">
                 <authentication>
                     <jaas>
                         <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
@@ -647,22 +676,6 @@
                         </properties>
                     </credentials-factory>
                 </identity>
-            </realm>
-            <realm name="cr">
-                <authentication>
-                    <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                    </jaas>
-                </authentication>
             </realm>
             <realm name="ldapRealm">
                 <authentication>
@@ -781,8 +794,8 @@
                 </authentication>
             </realm>
         </realms>
-        <member-authentication realm="mr"/>
-        <client-authentication realm="cr"/>
+        <member-authentication realm="jaasRealm"/>
+        <client-authentication realm="simpleRealm"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
@@ -913,6 +926,21 @@
                 </actions>
             </replicatedmap-permission>
             <management-permission principal="mcadmin"/>
+            <job-permission principal="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </job-permission>
+            <connector-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </connector-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </sql-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -957,14 +985,29 @@
         <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
-    <hot-restart-persistence enabled="false">
+    <persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>
         <base-dir>base-dir</base-dir>
         <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
         <data-load-timeout-seconds>42</data-load-timeout-seconds>
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
-    </hot-restart-persistence>
+        <rebalance-delay-seconds>240</rebalance-delay-seconds>
+    </persistence>
+
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <persistence-file>/mnt/persistence-file</persistence-file>
+        <backup-dir>/mnt/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
+
+    <local-device name="my-local-device">
+        <base-dir>base-dir</base-dir>
+        <block-size>4096</block-size>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>1</write-io-thread-count>
+    </local-device>
 
     <lite-member enabled="true"/>
 
@@ -1031,7 +1074,6 @@
     </instance-tracking>
 
     <sql>
-        <executor-pool-size>16</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>

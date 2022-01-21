@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.hotrestart;
 
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.persistence.BackupTaskState;
+import com.hazelcast.persistence.BackupTaskStatus;
 
 /**
  * Empty implementation of HotRestartService to avoid null checks. This will provide default behaviour when hot restart is
@@ -50,6 +50,11 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public boolean isHotBackupEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean isBackupEnabled() {
         return false;
     }
 

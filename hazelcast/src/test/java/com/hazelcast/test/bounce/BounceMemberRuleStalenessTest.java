@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -60,6 +61,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
             fail("The Bouncing Rule should detect a staleness!");
         } catch (AssertionError ae) {
+            assertThat(ae).hasMessageStartingWith("Stalling task detected");
             long detectionDurationSeconds = Timer.secondsElapsed(startNanos);
             assertTrue("Staleness detector was too slow to detect stale. "
                             + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS

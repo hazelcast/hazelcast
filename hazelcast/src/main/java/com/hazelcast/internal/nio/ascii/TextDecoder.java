@@ -198,7 +198,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
             CommandParser commandParser = textParsers.getParser(operation);
             if (commandParser != null) {
-                command = commandParser.parser(this, cmd, space, connection);
+                command = commandParser.parser(this, cmd, space);
             } else {
                 command = new ErrorCommand(UNKNOWN);
             }
@@ -214,5 +214,9 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     public void closeConnection() {
         connection.close(null, null);
+    }
+
+    public ServerConnection getConnection() {
+        return connection;
     }
 }

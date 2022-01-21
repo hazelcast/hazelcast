@@ -107,7 +107,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
                 continue;
             }
             recordStore.forEach((data, record) -> msg.add(recordStore.getExpirySystem()
-                    .getExpiredMetadata(data).getTtl()), false);
+                    .getExpiryMetadata(data).getTtl()), false);
         }
         return msg.toString();
     }

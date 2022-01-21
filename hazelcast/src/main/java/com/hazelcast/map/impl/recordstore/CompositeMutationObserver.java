@@ -16,142 +16,194 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static java.util.Collections.EMPTY_LIST;
 
 class CompositeMutationObserver<R extends Record> implements MutationObserver<R> {
 
-    private Collection<MutationObserver<R>> mutationObservers;
+    private static final int DEFAULT_OBSERVER_COUNT = 4;
+
+    private List<MutationObserver> mutationObservers = EMPTY_LIST;
 
     CompositeMutationObserver() {
     }
 
-    void add(MutationObserver<R> mutationObserver) {
-        if (mutationObservers == null) {
-            mutationObservers = new LinkedList<>();
+    public void add(MutationObserver<R> mutationObserver) {
+        if (mutationObservers == EMPTY_LIST) {
+            mutationObservers = new ArrayList<>(DEFAULT_OBSERVER_COUNT);
         }
         mutationObservers.add(mutationObserver);
     }
 
     @Override
     public void onClear() {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onClear();
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onClear();
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onPutRecord(Data key, R record,
                             Object oldValue, boolean backup) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onPutRecord(key, record, oldValue, backup);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onPutRecord(key, record, oldValue, backup);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onReplicationPutRecord(@Nonnull Data key,
                                        @Nonnull R record, boolean populateIndex) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onReplicationPutRecord(key, record, populateIndex);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReplicationPutRecord(key, record, populateIndex);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onUpdateRecord(@Nonnull Data key, @Nonnull R record,
                                Object oldValue, Object newValue, boolean backup) {
-        if (isEmpty(mutationObservers)) {
-            return;
-        }
-
-        Throwable exception = null;
-
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+                mutationObservers.get(i).onUpdateRecord(key, record, oldValue, newValue, backup);
             } catch (Throwable t) {
-                if (exception == null) {
-                    exception = t;
+                if (throwable == null) {
+                    throwable = t;
                 }
             }
         }
 
-        if (exception != null) {
-            rethrow(exception);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onRemoveRecord(Data key, R record) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onRemoveRecord(key, record);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onRemoveRecord(key, record);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onEvictRecord(Data key, R record) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onEvictRecord(key, record);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onEvictRecord(key, record);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onLoadRecord(key, record, backup);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onLoadRecord(key, record, backup);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
-
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onDestroy(isDuringShutdown, internal);
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onDestroy(isDuringShutdown, internal);
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
     public void onReset() {
-        if (isEmpty(mutationObservers)) {
-            return;
+        Throwable throwable = null;
+        for (int i = 0; i < mutationObservers.size(); i++) {
+            try {
+                mutationObservers.get(i).onReset();
+            } catch (Throwable t) {
+                if (throwable == null) {
+                    throwable = t;
+                }
+            }
         }
 
-        for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReset();
+        if (throwable != null) {
+            throw rethrow(throwable);
         }
     }
 }

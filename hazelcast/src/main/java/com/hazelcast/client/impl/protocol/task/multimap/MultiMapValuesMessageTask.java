@@ -18,14 +18,13 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -41,7 +40,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_VALUES}
  */
 public class MultiMapValuesMessageTask
-        extends AbstractAllPartitionsMessageTask<String> {
+        extends AbstractMultiMapAllPartitionsMessageTask<String> {
 
     public MultiMapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -54,7 +53,7 @@ public class MultiMapValuesMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> list = new ArrayList<Data>();
+        List<Data> list = new ArrayList<>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -68,6 +67,7 @@ public class MultiMapValuesMessageTask
                 list.add(serializationService.toData(record.getObject()));
             }
         }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return list;
     }
 
@@ -79,11 +79,6 @@ public class MultiMapValuesMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapValuesCodec.encodeResponse((List<Data>) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -105,4 +100,5 @@ public class MultiMapValuesMessageTask
     public Object[] getParameters() {
         return null;
     }
+
 }

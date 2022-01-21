@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Enum of REST endpoint groups. A REST group is predefined set of REST endpoints which can be enabled or disabled. Groups don't
  * overlap - each Hazelcast REST endpoint belongs to exactly one group. Each group has a default value
@@ -28,37 +32,63 @@ public enum RestEndpointGroup {
     /**
      * Group of operations for retrieving cluster state and its version.
      */
-    CLUSTER_READ(true),
+    CLUSTER_READ(0, true),
     /**
      * Operations which changes cluster or node state or their configurations.
      */
-    CLUSTER_WRITE(false),
+    CLUSTER_WRITE(1, false),
     /**
      * Group of endpoints for HTTP health checking.
      */
-    HEALTH_CHECK(true),
+    HEALTH_CHECK(2, true),
     /**
-     * Group of HTTP REST APIs related to Hot Restart feature.
+     * Group of HTTP REST APIs related to Persistence feature.
      */
-    HOT_RESTART(false),
+    PERSISTENCE(3, false),
+    /**
+     * @deprecated since 5.0
+     * Please use {@link #PERSISTENCE} instead.
+     * If this deprecated endpoint group is tried to be activated, we apply this
+     * change as it's made to RestEndpointGroup#PERSISTENCE.
+     */
+    @Deprecated
+    HOT_RESTART(3, false),
     /**
      * Group of HTTP REST APIs related to WAN Replication feature.
      */
-    WAN(false),
+    WAN(4, false),
     /**
      * Group of HTTP REST APIs for data manipulation in the cluster (e.g. IMap and IQueue operations).
      */
-    DATA(false),
+    DATA(5, false),
 
     /**
      * Groups of HTTP REST APIs for CP subsystem interaction
      */
-    CP(false);
+    CP(6, false);
+
+
+    private static final Map<Integer, RestEndpointGroup> CODE_TO_ENDPOINT_GROUPS_MAP =
+            new HashMap<>();
+
+    static {
+        for (RestEndpointGroup group : RestEndpointGroup.values()) {
+            if (group != HOT_RESTART) {
+                CODE_TO_ENDPOINT_GROUPS_MAP.put(group.getCode(), group);
+            }
+        }
+    }
 
     private final boolean enabledByDefault;
+    private final int code;
 
-    RestEndpointGroup(boolean enabledByDefault) {
+    RestEndpointGroup(int code, boolean enabledByDefault) {
+        this.code = code;
         this.enabledByDefault = enabledByDefault;
+    }
+
+    public static Collection<RestEndpointGroup> getAllEndpointGroups() {
+        return CODE_TO_ENDPOINT_GROUPS_MAP.values();
     }
 
     /**
@@ -66,5 +96,13 @@ public enum RestEndpointGroup {
      */
     public boolean isEnabledByDefault() {
         return enabledByDefault;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public static RestEndpointGroup getRestEndpointGroup(int code) {
+        return CODE_TO_ENDPOINT_GROUPS_MAP.get(code);
     }
 }

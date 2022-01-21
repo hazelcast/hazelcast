@@ -16,7 +16,11 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+
+import java.util.List;
 
 /**
  * Abstraction over execution plan that allows for specialization for an execution backend.
@@ -66,4 +70,6 @@ public abstract class SqlPlan {
      * @return {@code true} if the query produces rows, {@code false} otherwise
      */
     public abstract boolean producesRows();
+
+    public abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
 }

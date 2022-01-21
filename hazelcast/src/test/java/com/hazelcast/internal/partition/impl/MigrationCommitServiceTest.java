@@ -102,12 +102,18 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
                 for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
                     InternalPartitionService partitionService = getPartitionService(instances[0]);
                     InternalPartition partition = partitionService.getPartition(partitionId);
-                    for (int i = 0; i <= BACKUP_COUNT; i++) {
+
+                    // given that NODE_COUNT < BACKUP_COUNT, there can be at most
+                    // NODE_COUNT replicas overall.
+                    final int replicasCount = Math.min(BACKUP_COUNT + 1, NODE_COUNT);
+                    for (int i = 0; i < replicasCount; i++) {
+                        // replica assignment should complete, so that when we later
+                        // reference a replica, we do not get NPE.
                         Address replicaAddress = partition.getReplicaAddress(i);
-                        if (replicaAddress != null) {
-                            TestMigrationAwareService service = getService(replicaAddress);
-                            assertNotNull(service.get(partitionId));
-                        }
+                        assertNotNull(replicaAddress);
+
+                        TestMigrationAwareService service = getService(replicaAddress);
+                        assertNotNull(service.get(partitionId));
                     }
                 }
             }
@@ -569,7 +575,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private Config createConfig() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
 
         ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(BACKUP_COUNT);
         ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);

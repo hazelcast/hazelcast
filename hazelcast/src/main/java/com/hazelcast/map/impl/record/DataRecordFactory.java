@@ -36,7 +36,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     @Override
-    public Record<Data> newRecord(Object value) {
+    public Record<Data> newRecord(Data key, Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
         boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
@@ -52,14 +52,9 @@ public class DataRecordFactory implements RecordFactory<Data> {
         }
     }
 
-    @Override
-    public MapContainer geMapContainer() {
-        return mapContainer;
-    }
-
     private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
                                                boolean perEntryStatsEnabled, boolean hasEviction) {
-        if (perEntryStatsEnabled || isClusterV41()) {
+        if (perEntryStatsEnabled) {
             return new CachedDataRecordWithStats(valueData);
         }
 
@@ -84,7 +79,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
                                          boolean perEntryStatsEnabled, boolean hasEviction) {
-        if (perEntryStatsEnabled || isClusterV41()) {
+        if (perEntryStatsEnabled) {
             return new DataRecordWithStats(valueData);
         }
 

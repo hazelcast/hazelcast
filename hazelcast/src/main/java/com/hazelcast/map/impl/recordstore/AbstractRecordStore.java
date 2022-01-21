@@ -39,7 +39,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
@@ -74,7 +73,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(() -> partitionId);
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
@@ -139,8 +138,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
-        Record record = recordFactory.newRecord(value);
+    public Record createRecord(Data key, Object value, long now) {
+        Record record = recordFactory.newRecord(key, value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
         if (record.getMatchingRecordReaderWriter()
@@ -153,16 +152,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         updateStatsOnPut(false, now);
         return record;
-    }
-
-    @Override
-    public Record createRecord(Record fromRecord, long nowInMillis) {
-        Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
-        if (fromRecord != null) {
-            Records.copyMetadataFrom(fromRecord, newRecord);
-        }
-        updateStatsOnPut(false, nowInMillis);
-        return newRecord;
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {

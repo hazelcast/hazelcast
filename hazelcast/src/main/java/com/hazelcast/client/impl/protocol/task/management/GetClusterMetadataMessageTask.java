@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
@@ -42,8 +41,6 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
         MCClusterMetadata metadata = new MCClusterMetadata();
         metadata.setCurrentState(nodeEngine.getClusterService().getClusterState());
         metadata.setMemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
-        JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
-        metadata.setJetVersion(jetBuildInfo != null ? jetBuildInfo.getVersion() : null);
         metadata.setClusterTime(nodeEngine.getClusterService().getClusterTime());
         return metadata;
     }
@@ -59,7 +56,7 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
         return MCGetClusterMetadataCodec.encodeResponse(
                 metadata.getCurrentState().getId(),
                 metadata.getMemberVersion(),
-                metadata.getJetVersion(),
+                null,
                 metadata.getClusterTime());
     }
 

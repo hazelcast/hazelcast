@@ -19,8 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -181,6 +181,41 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(comparison, value, descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparable from,
+                boolean fromInclusive,
+                Comparable to,
+                boolean toInclusive,
+                boolean descending
+        ) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(
+                    from, fromInclusive, to, toInclusive, descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Set<QueryableEntry> result = delegate.getRecords(value);
             hasQueries = true;
@@ -254,8 +289,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
-            return delegate.getPartitionStamp(expectedPartitionIds);
+        public PartitionStamp getPartitionStamp() {
+            return delegate.getPartitionStamp();
         }
 
         @Override

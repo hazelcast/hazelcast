@@ -22,7 +22,6 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
@@ -35,8 +34,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,6 +51,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     private ReliableTopicProxy<String> topic;
     private HazelcastInstance local;
+    private HazelcastInstance[] instances;
 
     @Before
     public void setup() {
@@ -61,7 +64,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         config.addReliableTopicConfig(topicConfig);
         config.addRingBufferConfig(ringbufferConfig);
 
-        HazelcastInstance[] instances = newInstances(config);
+        instances = newInstances(config);
         local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
 
@@ -92,12 +95,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         topic.publish("1");
 
         // it should not receive any events
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, listener.objects.size());
-            }
-        });
+        assertTrueDelayed5sec(() -> assertEquals(0, listener.objects.size()));
     }
 
     @Test
@@ -119,33 +117,23 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         topic.publish("1");
 
         // it should not receive any events
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, listener.objects.size());
-            }
-        });
+        assertTrueDelayed5sec(() -> assertEquals(0, listener.objects.size()));
     }
 
     // ============================================
 
     @Test
-    public void publishSingle() throws InterruptedException {
+    public void publishSingle() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
         final String msg = "foobar";
         topic.publish(msg);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, msg);
-            }
-        });
+        assertTrueEventually(() -> assertContains(listener.objects, msg));
     }
 
     @Test
-    public void publishMultiple() throws InterruptedException {
+    public void publishMultiple() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
@@ -158,12 +146,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             topic.publish(item);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(items, Arrays.asList(listener.objects.toArray()));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(items, Arrays.asList(listener.objects.toArray())));
     }
 
     @Test
@@ -175,20 +158,17 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         topic.publish("foo");
         final long afterPublishTime = Clock.currentTimeMillis();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, listener.messages.size());
-                Message<String> message = listener.messages.get(0);
+        assertTrueEventually(() -> {
+            assertEquals(1, listener.messages.size());
+            Message<String> message = listener.messages.get(0);
 
-                assertEquals("foo", message.getMessageObject());
-                Member localMember = local.getCluster().getLocalMember();
-                assertEquals(localMember, message.getPublishingMember());
+            assertEquals("foo", message.getMessageObject());
+            Member localMember = local.getCluster().getLocalMember();
+            assertEquals(localMember, message.getPublishingMember());
 
-                long actualPublishTime = message.getPublishTime();
-                assertTrue(actualPublishTime >= beforePublishTime);
-                assertTrue(actualPublishTime <= afterPublishTime);
-            }
+            long actualPublishTime = message.getPublishTime();
+            assertTrue(actualPublishTime >= beforePublishTime);
+            assertTrue(actualPublishTime <= afterPublishTime);
         });
     }
 
@@ -200,25 +180,17 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         topic.publish("2");
         topic.publish("3");
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(5);
-                topic.publish("4");
-                topic.publish("5");
-                topic.publish("6");
-            }
+        spawn(() -> {
+            sleepSeconds(5);
+            topic.publish("4");
+            topic.publish("5");
+            topic.publish("6");
         });
 
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray()));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray())));
     }
 
     @Test
@@ -229,46 +201,45 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         final ITopic<Object> anotherTopic = local.getReliableTopic("anotherTopic");
 
         final int messageCount = 10;
-        final LocalTopicStats localTopicStats = topic.getLocalTopicStats();
         for (int k = 0; k < messageCount; k++) {
             topic.publish("foo");
             anotherTopic.publish("foo");
         }
 
-
-        assertEquals(messageCount, localTopicStats.getPublishOperationCount());
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(messageCount, localTopicStats.getReceiveOperationCount());
-            }
+        assertTrueEventually(() -> {
+            final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(SERVICE_NAME);
+            assertEquals(2, reliableTopicService.getStats().size());
+            assertEquals(messageCount, getTotalOperationsCount(topic.getName(), LocalTopicStats::getPublishOperationCount));
+            assertEquals(messageCount, getTotalOperationsCount(topic.getName(), LocalTopicStats::getReceiveOperationCount));
+            assertEquals(messageCount, getTotalOperationsCount(anotherTopic.getName(), LocalTopicStats::getPublishOperationCount));
+            assertEquals(0, getTotalOperationsCount(anotherTopic.getName(), LocalTopicStats::getReceiveOperationCount));
         });
-
-        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
-        assertEquals(2, stats.size());
-        assertEquals(messageCount, stats.get(topic.getName()).getPublishOperationCount());
-        assertEquals(messageCount, stats.get(topic.getName()).getReceiveOperationCount());
-        assertEquals(messageCount, stats.get(anotherTopic.getName()).getPublishOperationCount());
-        assertEquals(0, stats.get(anotherTopic.getName()).getReceiveOperationCount());
     }
 
     @Test
     public void testDestroyTopicRemovesStatistics() {
         topic.publish("foobar");
 
-        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
-        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
-        assertEquals(1, stats.size());
-        assertEquals(1, stats.get(topic.getName()).getPublishOperationCount());
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(SERVICE_NAME);
+        final Map<String, LocalTopicStats> localStats = reliableTopicService.getStats();
+
+        assertTrueEventually(() -> {
+            assertEquals(1, localStats.size());
+            assertEquals(1, getTotalOperationsCount(topic.getName(), LocalTopicStats::getPublishOperationCount));
+        });
 
         topic.destroy();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(reliableTopicService.getStats().containsKey(topic.getName()));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(reliableTopicService.getStats().containsKey(topic.getName())));
+    }
+
+    private int getTotalOperationsCount(String name, Function<LocalTopicStats, Long> function) {
+        return Stream.of(instances)
+                .map(instance -> {
+                    ReliableTopicService reliableTopicService = getNode(instance).nodeEngine.getService(SERVICE_NAME);
+                    return reliableTopicService.getLocalTopicStats(name);
+                })
+                .map(function)
+                .mapToInt(Long::intValue).sum();
     }
 }

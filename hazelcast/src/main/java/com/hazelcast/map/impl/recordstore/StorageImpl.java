@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.internal.util.IterableUtil.asReadOnlyIterator;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
 
 /**
@@ -50,7 +51,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystem expirySystem,
+    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystemIf expirySystem,
                 SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
@@ -67,7 +68,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
-        return records.cachedEntrySet().iterator();
+        return asReadOnlyIterator(records.cachedEntrySet().iterator());
     }
 
     @Override
@@ -83,13 +84,14 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void updateRecordValue(Data key, R record, Object value) {
+    public R updateRecordValue(Data key, R record, Object value) {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
                 ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
+        return record;
     }
 
     @Override
@@ -164,11 +166,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
             entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
         return new MapEntriesWithCursor(entriesData, newPointers);
-    }
-
-    @Override
-    public Record extractRecordFromLazy(EntryView entryView) {
-        return ((LazyEvictableEntryView) entryView).getRecord();
     }
 
     @Override

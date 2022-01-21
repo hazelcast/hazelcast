@@ -83,8 +83,7 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
     @Override
     public Permission getRequiredPermission() {
         ProxyService proxyService = clientEngine.getProxyService();
-        Collection<String> distributedObjectNames = proxyService.getDistributedObjectNames(parameters.serviceName);
-        if (distributedObjectNames.contains(parameters.name)) {
+        if (proxyService.existsDistributedObject(parameters.serviceName, parameters.name)) {
             return null;
         }
         return ActionConstants.getPermission(parameters.name, parameters.serviceName, ActionConstants.ACTION_CREATE);

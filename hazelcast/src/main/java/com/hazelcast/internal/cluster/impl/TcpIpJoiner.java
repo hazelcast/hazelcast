@@ -26,6 +26,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.LinkedAddresses;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
@@ -40,6 +43,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -112,18 +116,20 @@ public class TcpIpJoiner extends AbstractJoiner {
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
             while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-                connection = node.getServer().getConnectionManager(MEMBER).getOrConnect(targetAddress);
+                ServerConnectionManager connectionManager = node.getServer().getConnectionManager(MEMBER);
+                connection = connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
-                    //noinspection BusyWait
-                    Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                    connectionManager.blockOnConnect(targetAddress, JOIN_RETRY_WAIT_TIME, 0);
                     continue;
                 }
                 if (logger.isFineEnabled()) {
                     logger.fine("Sending joinRequest " + targetAddress);
                 }
                 clusterJoinManager.sendJoinRequest(targetAddress);
-                //noinspection BusyWait
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+
+                if (!clusterService.isJoined()) {
+                    clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
+                }
             }
         } catch (final Exception e) {
             logger.warning(e);
@@ -143,7 +149,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (clusterService.isJoined()) {
                     return;
                 }
-
                 if (isAllBlacklisted(possibleAddresses)) {
                     logger.fine(
                             "This node will assume master role since none of the possible members accepted join request.");
@@ -199,8 +204,13 @@ public class TcpIpJoiner extends AbstractJoiner {
         OperationServiceImpl operationService = node.getNodeEngine().getOperationService();
         Collection<Future<Boolean>> futures = new LinkedList<>();
         for (Address address : possibleAddresses) {
-            if (isBlacklisted(address)) {
-                continue;
+            try {
+                if (isBlacklisted(address) || isLocalAddress(address)) {
+                    continue;
+                }
+            } catch (UnknownHostException e) {
+                logger.warning(e);
+                ignore(e);
             }
 
             Future<Boolean> future = operationService
@@ -224,6 +234,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     private boolean isThisNodeMasterCandidate(Collection<Address> addresses) {
         int thisHashCode = node.getThisAddress().hashCode();
         for (Address address : addresses) {
@@ -231,8 +242,15 @@ public class TcpIpJoiner extends AbstractJoiner {
                 continue;
             }
             if (node.getServer().getConnectionManager(MEMBER).get(address) != null) {
-                if (thisHashCode > address.hashCode()) {
-                    return false;
+                LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+                UUID memberUuid = addressRegistry.uuidOf(address);
+                if (memberUuid != null) {
+                    Address primaryAddress = addressRegistry.getPrimaryAddress(memberUuid);
+                    if (primaryAddress != null) {
+                        if (thisHashCode > primaryAddress.hashCode()) {
+                            return false;
+                        }
+                    }
                 }
             }
         }
@@ -259,8 +277,20 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
 
             if (!clusterService.isJoined()) {
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
             }
+
+            addresses.removeIf(address -> {
+                try {
+                    return isLocalAddress(address);
+                } catch (UnknownHostException e) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Error during resolving possible target address!", e);
+                    }
+                    ignore(e);
+                    return false;
+                }
+            });
         }
     }
 
@@ -389,8 +419,14 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private boolean isLocalAddress(final Address address) throws UnknownHostException {
-        final Address thisAddress = node.getThisAddress();
-        final boolean local = thisAddress.getInetSocketAddress().equals(address.getInetSocketAddress());
+        UUID memberUuid = node.getLocalAddressRegistry().uuidOf(address);
+        if (memberUuid == null) {
+            // also try to resolve this address
+            Address resolvedAddress = new Address(address.getInetSocketAddress());
+            memberUuid = node.getLocalAddressRegistry().uuidOf(resolvedAddress);
+        }
+        boolean local = memberUuid != null && memberUuid.equals(node.getThisUuid());
+
         if (logger.isFineEnabled()) {
             logger.fine(address + " is local? " + local);
         }
@@ -425,8 +461,21 @@ public class TcpIpJoiner extends AbstractJoiner {
             logger.severe(e);
             return;
         }
-        possibleAddresses.remove(node.getThisAddress());
-        possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
+        LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
+        possibleAddresses.removeAll(addressRegistry.getLocalAddresses());
+        node.getClusterService().getMembers().forEach(
+                member -> {
+                    LinkedAddresses addresses = addressRegistry.linkedAddressesOf(member.getUuid());
+                    if (addresses != null) {
+                        Set<Address> knownMemberAddresses = addresses.getAllAddresses();
+                        possibleAddresses.removeAll(knownMemberAddresses);
+                    } else {
+                        // do not expect this case in the normal conditions, except for disconnections happens
+                        // at the same time
+                        possibleAddresses.remove(member.getAddress());
+                    }
+                }
+        );
 
         if (possibleAddresses.isEmpty()) {
             return;
