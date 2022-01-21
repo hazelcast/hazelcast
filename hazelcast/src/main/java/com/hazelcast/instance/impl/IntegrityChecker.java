@@ -22,9 +22,10 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfoList;
+import io.github.classgraph.ClassInfo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
 import static java.lang.String.format;
@@ -66,15 +67,18 @@ public final class IntegrityChecker {
 
         logger.info(INTEGRITY_CHECKER_IS_ENABLED);
         final long start = System.nanoTime();
-        final ClassInfoList classes = new ClassGraph()
+        final List<String> classNames = new ClassGraph()
                 .enableClassInfo()
                 .scan()
-                .getClassesImplementing(DataSerializerHook.class);
+                .getClassesImplementing(DataSerializerHook.class)
+                .stream()
+                .map(ClassInfo::getName)
+                .collect(Collectors.toList());
 
         final long scanTime = (System.nanoTime() - start) / 1000_000L;
         logger.info(format("Integrity Check scan finished in %d milliseconds", scanTime));
 
-        checkModule(classes.getAsStrings());
+        checkModule(classNames);
 
         final long totalTime = (System.nanoTime() - start) / 1000_000L;
         logger.info(format("Integrity Check finished in %d milliseconds", totalTime));
@@ -82,14 +86,8 @@ public final class IntegrityChecker {
 
     private void checkModule(final List<String> hooks) {
         for (String className : hooks) {
-            final Class<?> hookClass;
             try {
-                hookClass = getClassLoader().loadClass(className);
-            } catch (ClassNotFoundException ignored) {
-                continue;
-            }
-
-            try {
+                final Class<?> hookClass = getClassLoader().loadClass(className);
                 final Object hook = ServiceLoader.load(
                         hookClass,
                         FACTORY_ID,
@@ -97,8 +95,12 @@ public final class IntegrityChecker {
                 );
 
                 if (hook == null) {
-                    throw new HazelcastException("Failed to instantiate DataSerializerHook class instance");
+                    throw new HazelcastException("Failed to instantiate DataSerializerHook class instance: "
+                            + className);
                 }
+            } catch (ClassNotFoundException classNotFoundException) {
+                throw new HazelcastException("Failed to verify distribution integrity, "
+                        + "unable to load DataSerializerHook class: " + className, classNotFoundException);
             } catch (Exception e) {
                 throw new HazelcastException(format("Failed to verify distribution integrity, "
                         + "unable to load DataSerializerHook: %s", className));
