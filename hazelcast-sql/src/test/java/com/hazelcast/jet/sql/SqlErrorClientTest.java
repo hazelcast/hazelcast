@@ -270,12 +270,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
                 secondRow.getObject("__key");
                 assertThatThrownBy(() -> secondRow.getObject("this"))
                         .isInstanceOf(HazelcastSerializationException.class)
-                        .hasMessageContaining("Failed to deserialize query result value")
-                        .extracting(e -> ((HazelcastSqlException) e))
-                        .satisfies(e -> {
-                            assertErrorCode(SqlErrorCode.GENERIC, e);
-                            assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
-                        });
+                        .hasMessageContaining("Failed to deserialize query result value");
             }
         } finally {
             BadValue.READ_ERROR.set(false);

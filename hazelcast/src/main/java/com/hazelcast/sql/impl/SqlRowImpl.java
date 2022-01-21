@@ -18,7 +18,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -72,8 +72,8 @@ public class SqlRowImpl implements SqlRow {
         if (deserialize) {
             try {
                 return (T) row.get(columnIndex);
-            } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, rowMetadata.);
+            } catch (HazelcastSerializationException e) {
+                throw new HazelcastSerializationException("Failed to deserialize query result value: " + e.getMessage(), e);
             }
         } else {
             return (T) row.getMaybeSerialized(columnIndex);
