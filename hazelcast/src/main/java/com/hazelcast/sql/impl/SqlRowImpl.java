@@ -18,6 +18,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -69,7 +70,11 @@ public class SqlRowImpl implements SqlRow {
     @SuppressWarnings("unchecked")
     private <T> T getObject0(int columnIndex, boolean deserialize) {
         if (deserialize) {
-            return (T) row.get(columnIndex);
+            try {
+                return (T) row.get(columnIndex);
+            } catch (Exception e) {
+                throw QueryUtils.toPublicException(e, rowMetadata.);
+            }
         } else {
             return (T) row.getMaybeSerialized(columnIndex);
         }

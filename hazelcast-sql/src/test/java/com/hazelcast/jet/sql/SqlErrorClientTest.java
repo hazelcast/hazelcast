@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -268,7 +269,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
                 SqlRow secondRow = iterator.next();
                 secondRow.getObject("__key");
                 assertThatThrownBy(() -> secondRow.getObject("this"))
-                        .isInstanceOf(HazelcastSqlException.class)
+                        .isInstanceOf(HazelcastSerializationException.class)
                         .hasMessageContaining("Failed to deserialize query result value")
                         .extracting(e -> ((HazelcastSqlException) e))
                         .satisfies(e -> {

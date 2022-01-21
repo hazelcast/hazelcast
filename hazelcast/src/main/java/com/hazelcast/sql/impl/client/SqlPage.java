@@ -299,14 +299,15 @@ public final class SqlPage {
             if (position == count) {
                 throw new NoSuchElementException();
             } else {
-                Object res = ((SqlRowImpl) rows.get(position)).getObjectRaw(columnIndex);
-
+                Object res;
                 if (convertToData) {
+                    res = ((SqlRowImpl) rows.get(position)).getObjectRaw(columnIndex);
                     res = serializationService.toData(res);
+                } else {
+                    res = rows.get(position).getObject(columnIndex);
                 }
 
                 position++;
-
                 return res;
             }
         }

@@ -69,7 +69,8 @@ final class ListCNFixedSizeCodec {
             Iterator<T> iterator = items.iterator();
 
             for (int i = 0; i < totalItemCount; i++) {
-                encodeFunction.encode(frame.content, HEADER_SIZE + i * itemSizeInBytes, iterator.next());
+                T next = iterator.next();
+                encodeFunction.encode(frame.content, HEADER_SIZE + i * itemSizeInBytes, next);
             }
         } else {
             encodeHeader(frame, TYPE_MIXED, totalItemCount);
