@@ -22,66 +22,64 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlClientResultTimeoutTest extends SqlTestSupport {
 
-    private static final String MAP_NAME = "map";
-    private static final String SQL = "SELECT * FROM " + MAP_NAME;
+    private static final String SQL = "select * from table(generate_stream(1))";
 
     @BeforeClass
     public static void setUpClass() {
         initializeWithClient(1, null, null);
     }
 
-    @Before
-    public void before() {
-        createMapping(MAP_NAME, int.class, int.class);
-        Map<Integer, Integer> map = instance().getMap(MAP_NAME);
-        for (int i = 0; i < 10_000; i++) {
-            map.put(i, i);
-        }
-    }
-
     @Test
-    // TODO: don't like that test, is there any other example of such a waiting?
-    public void testHasNextWithTimeoutFinish() {
+    public void testHasNextWithTimeout() {
         try (SqlResult result = execute(SQL)) {
-            assertEquals(2, result.getRowMetadata().getColumnCount());
-            assertEquals(-1, result.updateCount());
             assertTrue(result.isRowSet());
             ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
 
             ResultIterator.HasNextResult hasNextResult;
             int timeoutCount = 0;
-            while (true) {
-                while ((hasNextResult = iterator.hasNext(10, TimeUnit.NANOSECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
+            for (int i = 0; i < 2; i++) {
+                while ((hasNextResult = iterator.hasNext(10, TimeUnit.MILLISECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
                     timeoutCount++;
-                }
-                if (hasNextResult == ResultIterator.HasNextResult.DONE) {
-                    break;
                 }
                 iterator.next();
             }
             assertNotEquals(0, timeoutCount);
-            checkIllegalStateException(result::iterator, "Iterator can be requested only once");
         }
     }
 
-    private void checkIllegalStateException(Runnable task, String expectedMessage) {
-        IllegalStateException err = assertThrows(IllegalStateException.class, task);
-        assertEquals(expectedMessage, err.getMessage());
+    @Test
+    public void testHasNextTimeoutWakesUpInASpecifiedTime() {
+        try (SqlResult result = execute(SQL)) {
+            assertTrue(result.isRowSet());
+            ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+
+            ResultIterator.HasNextResult hasNextResult;
+            int timeoutCount = 0;
+            long fastestSleep = Long.MAX_VALUE;
+            for (int i = 0; i < 2; i++) {
+                long startNanos = System.nanoTime();
+                while ((hasNextResult = iterator.hasNext(10, TimeUnit.MILLISECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
+                    fastestSleep = Math.min(fastestSleep, System.nanoTime() - startNanos);
+                    timeoutCount++;
+                    startNanos = System.nanoTime();
+                }
+                iterator.next();
+            }
+            assertNotEquals(0, timeoutCount);
+            assertGreaterOrEquals("fastestSleep", fastestSleep, TimeUnit.MILLISECONDS.toNanos(10));
+        }
     }
 
     private SqlResult execute(String sql) {
