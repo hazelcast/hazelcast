@@ -26,7 +26,6 @@ public class IntegrityCheckerConfig {
     public IntegrityCheckerConfig() { }
 
     /**
-     *
      * Returns {true} if the integrity checker is enabled. Integrity checker
      * performs checks to verify that the executable from which
      * HazelcastInstance is launched contains all the necessary
@@ -40,7 +39,6 @@ public class IntegrityCheckerConfig {
     }
 
     /**
-     *
      * Sets the flag to enable or disable integrity checker. Integrity checker
      * performs checks to verify that Integrity checker performs checks to
      * verify that the executable from which HazelcastInstance is launched
