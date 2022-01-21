@@ -108,7 +108,7 @@
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
-        <log4j.version>1.2.17</log4j.version>
+        <log4j.version>1.2.17.redhat-3</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
         <netty.version>4.1.63.Final</netty.version>
@@ -1372,6 +1372,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
+        <repository>
+            <id>redhat-ga</id>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <dependencyManagement>
@@ -1727,6 +1738,16 @@
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>1.9.13.redhat-00007</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

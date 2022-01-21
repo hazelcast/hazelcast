@@ -53,29 +53,4 @@
             <version>${hadoop.version}</version>
         </dependency>
     </dependencies>
-
-    <!-- The following part of the POM is related to handling CVE-2019-10172 in jackson-mapper-asl version
-        1.9.13 (dependency of hadoop-azure 3.3.1) -->
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.9.13.redhat-00007</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <repositories>
-        <repository>
-            <id>redhat-ga</id>
-            <url>https://maven.repository.redhat.com/ga/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
