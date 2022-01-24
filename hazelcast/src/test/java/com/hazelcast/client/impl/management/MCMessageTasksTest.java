@@ -41,9 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
-import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
-import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
@@ -70,9 +68,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -242,7 +240,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>>> future
+        ClientDelegatingFuture<List<Entry<String, String>>> future
                 = new ClientDelegatingFuture<>(invocation.invoke(), getClientImpl().getSerializationService(),
                 MCGetSystemPropertiesCodec::decodeResponse
         );
@@ -408,13 +406,6 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRunConsoleCommandMessageTask() throws Exception {
-        ClientMessage clientMessage = MCRunConsoleCommandCodec.encodeRequest(randomString(), randomString());
-        assertFailure(clientMessage, AccessControlException.class,
-                "Using Console is not allowed on this Hazelcast member.");
-    }
-
-    @Test
     public void testRunGCMessageTask() throws Exception {
         ClientInvocation invocation = new ClientInvocation(
                 getClientImpl(),
@@ -429,13 +420,6 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         );
 
         future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-    }
-
-    @Test
-    public void testRunScriptMessageTask() throws Exception {
-        ClientMessage clientMessage = MCRunScriptCodec.encodeRequest(randomString(), randomString());
-        assertFailure(clientMessage, AccessControlException.class,
-                "Using ScriptEngine is not allowed on this Hazelcast member.");
     }
 
     @Test
