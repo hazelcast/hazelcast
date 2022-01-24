@@ -331,23 +331,24 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
 
         @Override
         public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
-            long waitNanos = timeUnit.toNanos(timeout);
-            while (currentPosition == currentRowCount) {
+            if (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
-                if (!last && waitNanos > 0) {
-                    long startNanos = System.nanoTime();
-                    SqlPage page = fetch(waitNanos);
+                if (!last) {
+                    SqlPage page = fetch(timeUnit.toNanos(timeout));
                     if (page == null) {
                         return HasNextResult.TIMEOUT;
                     }
-                    waitNanos -= (System.nanoTime() - startNanos);
                     onNextPage(page);
-                } else if (last) {
+                } else {
                     // No more pages expected, so return false.
                     return HasNextResult.DONE;
-                } else {
-                    return HasNextResult.TIMEOUT;
                 }
+            }
+
+            // We could fetch the last page
+            if (currentPosition == currentRowCount) {
+                assert last;
+                return HasNextResult.DONE;
             }
 
             return HasNextResult.YES;
