@@ -101,6 +101,7 @@
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
         <jackson.version>2.12.1</jackson.version>
+        <jackson.mapper.asl.version>1.9.13.redhat-00007</jackson.mapper.asl.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <json-surfer.version>1.0-SNAPSHOT</json-surfer.version>
@@ -108,7 +109,7 @@
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
-        <log4j.version>1.2.17</log4j.version>
+        <log4j.version>1.2.17.redhat-3</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
         <netty.version>4.1.63.Final</netty.version>
@@ -1372,6 +1373,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
+        <repository>
+            <id>redhat-ga</id>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <dependencyManagement>
@@ -1653,6 +1665,21 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-core-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
