@@ -17,15 +17,13 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelVisitor;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -39,7 +37,6 @@ public final class AggregateStreamLogicalRule extends RelRule<Config> {
                     .anyInputs()
             );
 
-
     private AggregateStreamLogicalRule() {
         super(RULE_CONFIG);
     }
@@ -49,49 +46,16 @@ public final class AggregateStreamLogicalRule extends RelRule<Config> {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        AggregateLogicalRel aggregate = call.rel(0);
+        AggregateLogicalRel aggr = call.rel(0);
 
-        SlidingWindowDetectorVisitor visitor = new SlidingWindowDetectorVisitor();
-        visitor.go(aggregate);
-        if (!visitor.windowFound) {
-            call.transformTo(
-                    new NoExecuteRel(
-                            aggregate.getCluster(),
-                            aggregate.getTraitSet(),
-                            aggregate.getRowType(),
-                            "Aggregations over non-windowed, non-ordered streaming source not supported"));
-        }
-
-        if (aggregate.getGroupSet().isEmpty()) {
-            call.transformTo(
-                    new NoExecuteRel(
-                            aggregate.getCluster(),
-                            aggregate.getTraitSet().replace(LOGICAL),
-                            aggregate.getRowType(),
-                            "Streaming aggregation must be grouped by window_start/window_end"));
-        }
-    }
-
-    static class SlidingWindowDetectorVisitor extends RelVisitor {
-        @SuppressWarnings("checkstyle:visibilitymodifier")
-        public boolean windowFound;
-
-        @Override
-        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            if (node instanceof SlidingWindow) {
-                windowFound = true;
-            }
-
-            // supposed to work with HepPlanner
-            if (node instanceof HepRelVertex) {
-                RelNode currentRel = ((HepRelVertex) node).getCurrentRel();
-                if (currentRel instanceof SlidingWindow) {
-                    windowFound = true;
-                } else {
-                    super.visit(currentRel, ordinal, parent);
-                }
-            }
-            super.visit(node, ordinal, parent);
+        // TODO besides watermark order, we can also use normal collation
+        RelNode input = aggr.getInput();
+        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
+        WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
+        if (watermarkedFields == null || watermarkedFields.findFirst(aggr.getGroupSet()) == null) {
+            // no watermarked field by which we're grouping found
+            call.transformTo(new NoExecuteRel(aggr.getCluster(), aggr.getTraitSet(), aggr.getRowType(),
+                    "Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)"));
         }
     }
 }

@@ -25,6 +25,7 @@ import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
@@ -41,6 +42,7 @@ import org.apache.calcite.util.Util;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapAsOperatorOperand;
@@ -128,10 +130,28 @@ public final class HazelcastRelMdWatermarkedFields
         return query.extractWatermarkedFields(rel.getInput());
     }
 
-
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(SlidingWindowAggregatePhysicalRel rel, RelMetadataQuery mq) {
         return rel.watermarkedFields();
+    }
+
+    @SuppressWarnings("unused")
+    public WatermarkedFields extractWatermarkedFields(Aggregate rel, RelMetadataQuery mq) {
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        WatermarkedFields inputWmFields = query.extractWatermarkedFields(rel.getInput());
+        if (rel.getGroupSets().size() != 1) {
+            throw new RuntimeException("not implemented");
+        }
+        Iterator<Integer> groupedIndexes = rel.getGroupSets().get(0).iterator();
+        Map<Integer, RexNode> outputProperties = new HashMap<>();
+        for (int outputIndex = 0; groupedIndexes.hasNext(); outputIndex++) {
+            int groupedBy = groupedIndexes.next();
+            if (inputWmFields.getPropertiesByIndex().containsKey(groupedBy)) {
+                outputProperties.put(outputIndex, rel.getCluster().getRexBuilder().makeInputRef(rel, outputIndex));
+            }
+        }
+
+        return new WatermarkedFields(outputProperties);
     }
 
     @SuppressWarnings("unused")
