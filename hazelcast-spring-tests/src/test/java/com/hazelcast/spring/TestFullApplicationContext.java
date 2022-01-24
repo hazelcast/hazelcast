@@ -36,6 +36,7 @@ import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.IntegrityCheckerConfig;
 import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -1620,7 +1621,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(2048, edgeConfig.getQueueSize());
         assertEquals(15000, edgeConfig.getPacketSizeLimit());
         assertEquals(4, edgeConfig.getReceiveWindowMultiplier());
+    }
 
-
+    @Test
+    public void testIntegrityCheckerConfig() {
+        final IntegrityCheckerConfig integrityCheckerConfig = config.getIntegrityCheckerConfig();
+        assertFalse(integrityCheckerConfig.isEnabled());
     }
 }
