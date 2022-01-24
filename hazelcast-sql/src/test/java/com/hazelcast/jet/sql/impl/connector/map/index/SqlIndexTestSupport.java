@@ -43,7 +43,6 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.SHO
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.STRING;
 
 abstract class SqlIndexTestSupport extends OptimizerTestSupport {
-
     @SuppressWarnings("rawtypes")
     protected static String toLiteral(ExpressionType type, Object value) {
         if (type == BOOLEAN) {
