@@ -294,12 +294,16 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        throw new IllegalArgumentException();
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
     }
 
     @Nullable
     @Override
     public JetServiceBackend getJetServiceBackend() {
-        return null;
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
     }
 }
