@@ -21,6 +21,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -35,7 +36,7 @@ import java.util.List;
 public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel implements PhysicalRel {
 
     private final ImmutableBitSet groupSet;
-    private final AggregateOperation<?, Object[]> aggrOp;
+    private final AggregateOperation<?, JetSqlRow> aggrOp;
     private final WindowProperties.WindowProperty windowProperty;
 
     SlidingWindowAggregateAccumulateByKeyPhysicalRel(
@@ -43,7 +44,7 @@ public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel 
             RelTraitSet traits,
             RelNode input,
             ImmutableBitSet groupSet,
-            AggregateOperation<?, Object[]> aggrOp,
+            AggregateOperation<?, JetSqlRow> aggrOp,
             WindowProperties.WindowProperty windowProperty
     ) {
         super(cluster, traits, input);
@@ -53,11 +54,11 @@ public class SlidingWindowAggregateAccumulateByKeyPhysicalRel extends SingleRel 
         this.windowProperty = windowProperty;
     }
 
-    public FunctionEx<Object[], ObjectArrayKey> groupKeyFn() {
+    public FunctionEx<JetSqlRow, ObjectArrayKey> groupKeyFn() {
         return ObjectArrayKey.projectFn(groupSet.toArray());
     }
 
-    public AggregateOperation<?, Object[]> aggrOp() {
+    public AggregateOperation<?, JetSqlRow> aggrOp() {
         return aggrOp;
     }
 

@@ -108,7 +108,7 @@ public class MapContainer {
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
-    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
+    protected final AtomicInteger invalidationListenerCounter;
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
     protected SplitBrainMergePolicy wanMergePolicy;
@@ -146,6 +146,8 @@ public class MapContainer {
                 serializationService, extractors);
         this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
+        this.invalidationListenerCounter = mapServiceContext.getEventListenerCounter()
+                .getOrCreateCounter(name);
         initWanReplication(mapServiceContext.getNodeEngine());
     }
 
@@ -430,15 +432,19 @@ public class MapContainer {
     }
 
     public boolean hasInvalidationListener() {
-        return invalidationListenerCount.get() > 0;
+        return invalidationListenerCounter.get() > 0;
     }
 
     public void increaseInvalidationListenerCount() {
-        invalidationListenerCount.incrementAndGet();
+        invalidationListenerCounter.incrementAndGet();
     }
 
     public void decreaseInvalidationListenerCount() {
-        invalidationListenerCount.decrementAndGet();
+        invalidationListenerCounter.decrementAndGet();
+    }
+
+    public AtomicInteger getInvalidationListenerCounter() {
+        return invalidationListenerCounter;
     }
 
     public InterceptorRegistry getInterceptorRegistry() {
