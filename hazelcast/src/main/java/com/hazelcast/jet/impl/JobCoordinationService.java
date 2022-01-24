@@ -89,6 +89,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -205,7 +206,13 @@ public class JobCoordinationService {
         ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = nodeEngine.getProperties();
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
-        executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
+        try {
+            executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
+            logger.info("Jet started scanning for jobs");
+        } catch (RejectedExecutionException ex) {
+            logger.info("Scan jobs task is rejected on the execution service since the executor service" +
+                    " has shutdown", ex);
+        }
     }
 
     public CompletableFuture<Void> submitJob(
