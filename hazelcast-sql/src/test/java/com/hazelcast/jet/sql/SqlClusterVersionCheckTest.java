@@ -45,18 +45,6 @@ public class SqlClusterVersionCheckTest extends SqlTestSupport {
                 () -> client().getSql().execute("SELECT 1").updateCount());
     }
 
-    @Test
-    public void when_clusterVersionIsEqualTo5_0_queryIsExecuted() {
-        setClusterVersion(Versions.V5_0);
-        Assert.assertEquals(1, client().getSql().execute("SELECT 1").getRowMetadata().getColumnCount());
-    }
-
-    @Test
-    public void when_clusterVersionIsGreaterThan5_0_queryIsExecuted() {
-        setClusterVersion(Version.of(5, 1));
-        Assert.assertEquals(1, client().getSql().execute("SELECT 1").getRowMetadata().getColumnCount());
-    }
-
     private void setClusterVersion(Version version) {
         ((ClusterServiceImpl) ((HazelcastInstanceProxy) instance())
                 .getOriginal()
