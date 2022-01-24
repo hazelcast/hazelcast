@@ -96,7 +96,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(1, null);
     }
 
     @Test
