@@ -1494,10 +1494,26 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "type": "string",
-                    "pattern": "^[1-9]([0-9]*) (B|KB|MB|GB)$",
-                    "default": "256 MB",
-                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB). For instance, capacity=\"1024 MB\" is valid, whereas capacity=\"2^10 mb\" is not."
+                    "type": "object",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most.",
+                    "properties": {
+                      "unit": {
+                        "enum": [
+                          "BYTES",
+                          "KILOBYTES",
+                          "MEGABYTES",
+                          "GIGABYTES"
+                        ],
+                        "default": "MEGABYTES",
+                        "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
+                      },
+                      "value": {
+                        "type": "number",
+                        "default": 128,
+                        "minimum": 1,
+                        "description": "Default value is 128."
+                      }
+                    }
                   }
                 }
               },

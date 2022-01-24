@@ -4830,19 +4830,12 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="capacity" minOccurs="0" default="256 MB">
+            <xs:element name="capacity" minOccurs="0" type="memory-size">
                 <xs:annotation>
                     <xs:documentation>
                         Memory tier capacity, i.e., how much main memory should this tier consume at most.
-                        The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB).
-                        For instance, capacity="1024 MB" is valid, whereas capacity="2^10 mb" is not.
                     </xs:documentation>
                 </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:pattern value="[1-9]([0-9]*) (B|KB|MB|GB)"/>
-                    </xs:restriction>
-                </xs:simpleType>
             </xs:element>
         </xs:all>
     </xs:complexType>

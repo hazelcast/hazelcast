@@ -360,7 +360,7 @@
                     The amount of memory to be reserved for the memory-tier of the tiered-store instance
                     of this map.
                 -->
-                <capacity>256 MB</capacity>
+                <capacity unit="MEGABYTES" value="256"/>
             </memory-tier>
 
             <!--

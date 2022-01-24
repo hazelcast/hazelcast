@@ -140,6 +140,7 @@ import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -172,7 +173,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -1374,13 +1374,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("capacity".equals(name)) {
-                    memoryTierConfigBuilder.addPropertyValue("capacity",
-                            parseMemorySize(getTextContent(child))
-                    );
+                    handleMemorySizeConfig(child, memoryTierConfigBuilder);
                 }
             }
 
             configBuilder.addPropertyValue("memoryTierConfig", memoryTierConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+            NamedNodeMap attributes = node.getAttributes();
+            Node value = attributes.getNamedItem("value");
+            Node unit = attributes.getNamedItem("unit");
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", memorySizeConfigBuilder.getBeanDefinition());
         }
 
         @SuppressWarnings("checkstyle:magicnumber")

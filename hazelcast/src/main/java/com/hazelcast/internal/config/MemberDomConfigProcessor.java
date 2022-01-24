@@ -237,7 +237,6 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -554,9 +553,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private MemoryTierConfig createMemoryTierConfig(Node node) {
-        String capacity = getTextContent(childElements(node).iterator().next());
-        return new MemoryTierConfig()
-                .setCapacity(parseMemorySize(capacity));
+        MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+
+            if (matches("capacity", name)) {
+                return memoryTierConfig.setCapacity(createMemorySize(n));
+            }
+        }
+        return memoryTierConfig;
     }
 
     private DiskTierConfig createDiskTierConfig(Node node) {
