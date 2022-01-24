@@ -22,6 +22,9 @@ import java.util.Properties;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 
+/**
+ * Typed authentication configuration for Kerberos tickets verification.
+ */
 public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<KerberosAuthenticationConfig> {
 
     private Boolean relaxFlagsCheck;
@@ -35,6 +38,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return relaxFlagsCheck;
     }
 
+    /**
+     * Allows disabling some of the checks on incoming token (e.g. passes authentication even if the mutual authentication is
+     * required by the token).
+     */
     public KerberosAuthenticationConfig setRelaxFlagsCheck(Boolean relaxFlagsCheck) {
         this.relaxFlagsCheck = relaxFlagsCheck;
         return this;
@@ -44,6 +51,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return securityRealm;
     }
 
+    /**
+     * Allows cutting off the Kerberos realm part from authenticated name. When set to {@code true}, the {@code '@REALM'} part
+     * is removed from the name (e.g. {@code jduke@ACME.COM} becomes {@code jduke}).
+     */
     public KerberosAuthenticationConfig setUseNameWithoutRealm(Boolean useNameWithoutRealm) {
         this.useNameWithoutRealm = useNameWithoutRealm;
         return this;
@@ -53,6 +64,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return useNameWithoutRealm;
     }
 
+    /**
+     * References Security realm name in Hazelcast configuration. The realm's authentication configuration (when defined) will
+     * be used to fill the user object with Kerberos credentials (e.g. KeyTab entry).
+     */
     public KerberosAuthenticationConfig setSecurityRealm(String securityRealm) {
         this.securityRealm = securityRealm;
         return this;
@@ -62,6 +77,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return ldapAuthenticationConfig;
     }
 
+    /**
+     * Allows specifying LDAP authentication configuration which is then used after the Kerberos authentication successfully
+     * finishes.
+     */
     public KerberosAuthenticationConfig setLdapAuthenticationConfig(LdapAuthenticationConfig ldapAuthenticationConfig) {
         this.ldapAuthenticationConfig = ldapAuthenticationConfig;
         return this;
@@ -71,6 +90,13 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return keytabFile;
     }
 
+    /**
+     * Allows (together with the {@link #setPrincipal(String)}) simplification of security realm configuration. For basic
+     * scenarios you don't need to use {@link #setSecurityRealm(String)}, but you can instead define directly kerberos principal
+     * name and keytab file path with credentials for given principal.
+     * <p>
+     * This configuration is only used when there is no {@code securityRealm} configured.
+     */
     public KerberosAuthenticationConfig setKeytabFile(String keytabFile) {
         this.keytabFile = keytabFile;
         return this;
@@ -80,6 +106,13 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return principal;
     }
 
+    /**
+     * Allows (together with the {@link #setKeytabFile(String)}) simplification of security realm configuration. For basic
+     * scenarios you don't need to use {@link #setSecurityRealm(String)}, but you can instead define directly kerberos principal
+     * name and keytab file path with credentials for given principal.
+     * <p>
+     * This configuration is only used when there is no {@code securityRealm} configured.
+     */
     public KerberosAuthenticationConfig setPrincipal(String principal) {
         this.principal = principal;
         return this;
@@ -138,20 +171,16 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return Objects.equals(ldapAuthenticationConfig, other.ldapAuthenticationConfig)
                 && Objects.equals(relaxFlagsCheck, other.relaxFlagsCheck)
                 && Objects.equals(useNameWithoutRealm, other.useNameWithoutRealm)
-                && Objects.equals(keytabFile, other.keytabFile)
-                && Objects.equals(principal, other.principal)
+                && Objects.equals(keytabFile, other.keytabFile) && Objects.equals(principal, other.principal)
                 && Objects.equals(securityRealm, other.securityRealm);
     }
 
     @Override
     public String toString() {
         return "KerberosAuthenticationConfig [relaxFlagsCheck=" + relaxFlagsCheck + ", securityRealm=" + securityRealm
-                + ", useNameWithoutRealm=" + useNameWithoutRealm
-                + ", ldapAuthenticationConfig=" + ldapAuthenticationConfig
-                + ", keytabFile=" + keytabFile
-                + ", principal=" + principal
-                + ", getSkipIdentity()=" + getSkipIdentity() + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()="
-                + getSkipRole() + "]";
+                + ", useNameWithoutRealm=" + useNameWithoutRealm + ", ldapAuthenticationConfig=" + ldapAuthenticationConfig
+                + ", keytabFile=" + keytabFile + ", principal=" + principal + ", getSkipIdentity()=" + getSkipIdentity()
+                + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()=" + getSkipRole() + "]";
     }
 
     @Override
