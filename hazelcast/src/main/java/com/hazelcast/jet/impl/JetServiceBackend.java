@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
@@ -87,7 +86,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
     private final JetConfig jetConfig;
 
-    private HazelcastInstance hazelcastInstance;
     private JetService jet;
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
@@ -109,9 +107,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     @Override
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-        this.hazelcastInstance = engine.getHazelcastInstance();
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
-        jobRepository = new JobRepository(hazelcastInstance);
+        jobRepository = new JobRepository(engine.getHazelcastInstance());
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, jetConfig.getCooperativeThreadCount(), nodeEngine.getProperties()
         );
