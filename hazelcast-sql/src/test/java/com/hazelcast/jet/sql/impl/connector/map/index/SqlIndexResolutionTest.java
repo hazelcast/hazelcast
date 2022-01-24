@@ -124,7 +124,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         map = nextMap();
         value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null);
         createMapping(map.getName(), int.class, value.getClass());
-        map.put(1, value);
+        putValues(map, value);
         checkIndex(map, f1.getFieldConverterType());
         checkIndexUsage(map, f1, f2, true, false);
         map.destroy();
@@ -134,7 +134,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
             map = nextMap();
             value = ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom());
             createMapping(map.getName(), int.class, value.getClass());
-            map.put(1, value);
+            putValues(map, value);
             checkIndex(map);
             checkIndexUsage(map, f1, f2, false, true);
             map.destroy();
@@ -143,10 +143,17 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
             map = nextMap();
             value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom());
             createMapping(map.getName(), int.class, value.getClass());
-            map.put(1, value);
+            putValues(map, value);
             checkIndex(map, f1.getFieldConverterType(), f2.getFieldConverterType());
             checkIndexUsage(map, f1, f2, true, true);
             map.destroy();
+        }
+    }
+
+    private void putValues(IMap<Integer, ExpressionBiValue> map, ExpressionBiValue value) {
+        // have enough entries to make sure that each member has at least one.
+        for (int i = 0; i < 100; i++) {
+            map.put(i, value);
         }
     }
 

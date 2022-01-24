@@ -23,24 +23,26 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-final class IndexScanMapPhysicalRule extends RelOptRule {
+final class IndexScanMapPhysicalRule extends RelRule<RelRule.Config> {
 
+    private static final Config RULE_CONFIG = Config.EMPTY
+            .withDescription(IndexScanMapPhysicalRule.class.getSimpleName())
+            .withOperandSupplier(
+                    b -> b.operand(FullScanLogicalRel.class)
+                            .trait(LOGICAL)
+                            .predicate(scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class))
+                            .noInputs());
+
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new IndexScanMapPhysicalRule();
 
     private IndexScanMapPhysicalRule() {
-        super(
-                operandJ(
-                        FullScanLogicalRel.class,
-                        LOGICAL,
-                        scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                        none()
-                ),
-                IndexScanMapPhysicalRule.class.getSimpleName()
-        );
+        super(RULE_CONFIG);
     }
 
     @Override
