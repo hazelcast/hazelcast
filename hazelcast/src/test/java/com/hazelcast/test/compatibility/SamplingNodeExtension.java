@@ -41,11 +41,13 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -292,6 +294,16 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public JetService getJet() {
-        throw new IllegalArgumentException();
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
+    }
+
+    @Nullable
+    @Override
+    public JetServiceBackend getJetServiceBackend() {
+        throw new IllegalStateException("Since we don't yet provide a compatibility guarantee between"
+                + " minor versions in the Jet classes, we don't run Jet tests to capture compatibility"
+                + " samples. Please exclude this Jet test from the sampling process.");
     }
 }
