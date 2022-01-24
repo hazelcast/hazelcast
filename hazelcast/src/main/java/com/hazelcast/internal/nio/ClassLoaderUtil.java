@@ -54,7 +54,7 @@ public final class ClassLoaderUtil {
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
 
-    private static final ClassLoader FAKE_CLASSLOADER = new URLClassLoader(new URL[0]);
+    private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0], ClassLoaderUtil.class.getClassLoader());
 
     static {
         try {
@@ -257,7 +257,7 @@ public final class ClassLoaderUtil {
         if (contextClassLoader != null) {
             return tryLoadClass(className, contextClassLoader);
         }
-        return tryLoadClass(className, FAKE_CLASSLOADER);
+        return tryLoadClass(className, NULL_FALLBACK_CLASSLOADER);
     }
 
     private static boolean belongsToHazelcastPackage(String className) {
@@ -292,7 +292,7 @@ public final class ClassLoaderUtil {
             }
         }
 
-        if (classLoader == FAKE_CLASSLOADER) {
+        if (classLoader == NULL_FALLBACK_CLASSLOADER) {
             clazz = Class.forName(className);
         } else if (className.startsWith("[")) {
             clazz = Class.forName(className, false, classLoader);
