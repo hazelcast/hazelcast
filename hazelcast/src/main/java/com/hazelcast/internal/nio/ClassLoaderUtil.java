@@ -54,7 +54,8 @@ public final class ClassLoaderUtil {
     private static final ClassLoaderWeakCache<Class> CLASS_CACHE = new ClassLoaderWeakCache<Class>();
     private static final Constructor<?> IRRESOLVABLE_CONSTRUCTOR;
 
-    private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0], ClassLoaderUtil.class.getClassLoader());
+    private static final ClassLoader NULL_FALLBACK_CLASSLOADER = new URLClassLoader(new URL[0],
+            ClassLoaderUtil.class.getClassLoader());
 
     static {
         try {
