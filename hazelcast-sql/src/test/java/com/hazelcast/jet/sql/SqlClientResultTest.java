@@ -73,13 +73,13 @@ public class SqlClientResultTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_executingInvalidQuery_then_sqlException() {
+    public void when_executingInvalidQuery_then_fail() {
         checkSqlException(() -> execute("SELECT * FROM " + MAP_NAME + "_bad"), SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void when_fetchingElementOnClosedResult_then_sqlException() {
+    public void when_fetchingElementOnClosedResult_then_fail() {
         try (SqlResult result = execute("SELECT * FROM " + MAP_NAME)) {
             assertEquals(2, result.getRowMetadata().getColumnCount());
 
