@@ -1447,7 +1447,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "SELECT window_start, window_end, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "   window_size => INTERVAL '0.002' SECOND" +
-                        "   , timeCol => DESCRIPTOR(ts)" +
+                        "   , time_col => DESCRIPTOR(ts)" +
                         "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start, window_end",

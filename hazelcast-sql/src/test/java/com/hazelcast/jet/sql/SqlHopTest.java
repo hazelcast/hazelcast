@@ -1694,7 +1694,7 @@ public class SqlHopTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, /*window_end,*/ COUNT(name) FROM " +
                         "TABLE(HOP(" +
-                        "   timeCol => DESCRIPTOR(ts)" +
+                        "   time_col => DESCRIPTOR(ts)" +
                         "   , window_size => INTERVAL '0.004' SECOND" +
                         "   , slide_size =>  INTERVAL '0.002' SECOND" +
                         "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
