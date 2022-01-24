@@ -6156,7 +6156,7 @@
                 Integrity Checker configuration.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="enabled" type="xs:boolean" default="false">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Specifies whether the Integrity Checker is enabled or not. Values can be true or false.
