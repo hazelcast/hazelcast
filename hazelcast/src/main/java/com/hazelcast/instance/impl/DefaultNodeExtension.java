@@ -151,7 +151,6 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<>();
     protected PhoneHome phoneHome;
     protected JetServiceBackend jetServiceBackend;
-    protected JetExtension jetExtension;
     protected IntegrityChecker integrityChecker;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
