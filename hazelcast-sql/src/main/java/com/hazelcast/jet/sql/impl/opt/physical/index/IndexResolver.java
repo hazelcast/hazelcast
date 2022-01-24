@@ -610,7 +610,8 @@ public final class IndexResolver {
 
     private static Expression<?> convertToExpression(RexNode operand, QueryParameterMetadata parameterMetadata) {
         try {
-            RexToExpressionVisitor visitor = new RexToExpressionVisitor(FieldTypeProvider.INSTANCE, parameterMetadata);
+            RexToExpressionVisitor visitor =
+                    new RexToExpressionVisitor(PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
 
             return operand.accept(visitor);
         } catch (Exception e) {
@@ -1378,23 +1379,5 @@ public final class IndexResolver {
         }
 
         return res;
-    }
-
-    /**
-     * Specialized field type provider that do not expect any fields.
-     */
-    // todo [viliam] replace with com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER
-    private static final class FieldTypeProvider implements PlanNodeFieldTypeProvider {
-
-        private static final FieldTypeProvider INSTANCE = new FieldTypeProvider();
-
-        private FieldTypeProvider() {
-            // No-op.
-        }
-
-        @Override
-        public QueryDataType getType(int index) {
-            throw new IllegalStateException("The operation should not be called.");
-        }
     }
 }
