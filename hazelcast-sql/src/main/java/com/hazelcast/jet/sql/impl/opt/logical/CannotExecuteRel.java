@@ -25,10 +25,17 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-public class NoExecuteRel extends AbstractRelNode implements LogicalRel {
+/**
+ * A RelNode that is used to replace another RelNode, if a rule determines that
+ * the rel it matched cannot be executed without some transformation. It is used
+ * to avoid throwing directly from the rule, where there can perhaps be another
+ * rule that can replace the same rel with a rel, that is executable. That's why
+ * this rel has infinite cost.
+ */
+public class CannotExecuteRel extends AbstractRelNode implements LogicalRel {
     private final String exceptionMessage;
 
-    public NoExecuteRel(
+    public CannotExecuteRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelDataType type,
@@ -44,6 +51,6 @@ public class NoExecuteRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeCost(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        return planner.getCostFactory().makeInfiniteCost();
     }
 }

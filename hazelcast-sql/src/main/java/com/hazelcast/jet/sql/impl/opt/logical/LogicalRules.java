@@ -55,7 +55,7 @@ public final class LogicalRules {
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
-                FunctionLogicalRules.TUMBLE_HOP_FUNCTION_INSTANCE,
+                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,

@@ -87,7 +87,7 @@ final class FunctionLogicalRules {
         }
     };
 
-    static final RelOptRule TUMBLE_HOP_FUNCTION_INSTANCE = new ConverterRule(
+    static final RelOptRule WINDOW_FUNCTION_INSTANCE = new ConverterRule(
             LogicalTableFunctionScan.class, scan -> extractWindowFunction(scan) != null,
             Convention.NONE, Convention.NONE,
             FunctionLogicalRules.class.getSimpleName() + "(Window)"

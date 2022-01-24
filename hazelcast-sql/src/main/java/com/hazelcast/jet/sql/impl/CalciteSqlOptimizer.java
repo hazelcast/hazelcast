@@ -40,9 +40,9 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateStreamLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CannotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
-import com.hazelcast.jet.sql.impl.opt.logical.NoExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -590,13 +590,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        LogicalRel validatedRel = logicalValidationPhase(context, logicalRel);
+        validationPhase(logicalRel);
 
-        if (fineLogOn) {
-            logger.fine("After validation opt:\n" + RelOptUtil.toString(validatedRel));
-        }
-
-        PhysicalRel physicalRel = optimizePhysical(context, validatedRel);
+        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -604,7 +600,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return physicalRel;
     }
 
-    private LogicalRel logicalValidationPhase(OptimizerContext context, RelNode rel) {
+    private void validationPhase(RelNode rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
         hepProgramBuilder.addRuleInstance(AggregateStreamLogicalRule.INSTANCE);
 
@@ -617,15 +613,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
 
         planner.setRoot(rel);
-        LogicalRel root = (LogicalRel) planner.findBestExp();
+        RelNode newRel = planner.findBestExp();
 
-        RelTreeValidator validator = new RelTreeValidator();
-        validator.go(root);
-        if (validator.getErrorRel() == null) {
-            return root;
-        } else {
-            throw QueryException.error(validator.getErrorRel().message());
-        }
+        // throw, if the newRel contains any CannotExecuteRel
+        new RelVisitor() {
+            @Override
+            public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+                if (node instanceof CannotExecuteRel) {
+                    throw QueryException.error(((CannotExecuteRel) node).message());
+                }
+                super.visit(node, ordinal, parent);
+            }
+        }.go(newRel);
     }
 
     /**
@@ -690,24 +689,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
         if (table.getTarget() instanceof ViewTable) {
             throw QueryException.error("DML operations not supported for views");
-        }
-    }
-
-    static class RelTreeValidator extends RelVisitor {
-        @SuppressWarnings("checkstyle:visibilitymodifier")
-        private NoExecuteRel errorRel;
-
-        @Override
-        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            if (node instanceof NoExecuteRel) {
-                errorRel = (NoExecuteRel) node;
-                return;
-            }
-            super.visit(node, ordinal, parent);
-        }
-
-        public NoExecuteRel getErrorRel() {
-            return this.errorRel;
         }
     }
 }

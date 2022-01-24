@@ -54,7 +54,7 @@ public final class AggregateStreamLogicalRule extends RelRule<Config> {
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null || watermarkedFields.findFirst(aggr.getGroupSet()) == null) {
             // no watermarked field by which we're grouping found
-            call.transformTo(new NoExecuteRel(aggr.getCluster(), aggr.getTraitSet(), aggr.getRowType(),
+            call.transformTo(new CannotExecuteRel(aggr.getCluster(), aggr.getTraitSet(), aggr.getRowType(),
                     "Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)"));
         }
     }
