@@ -42,15 +42,14 @@ public class SqlClientResultTimeoutTest extends SqlTestSupport {
     }
 
     @Test
-    public void testHasNextWithTimeout() {
+    public void when_checkingHasNextWithTimeout_then_timeoutOccurs() {
         try (SqlResult result = execute(SQL)) {
             assertTrue(result.isRowSet());
             ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
 
-            ResultIterator.HasNextResult hasNextResult;
             int timeoutCount = 0;
             for (int i = 0; i < 2; i++) {
-                while ((hasNextResult = iterator.hasNext(10, TimeUnit.MILLISECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
+                while (iterator.hasNext(10, TimeUnit.MILLISECONDS) == ResultIterator.HasNextResult.TIMEOUT) {
                     timeoutCount++;
                 }
                 iterator.next();
@@ -60,25 +59,21 @@ public class SqlClientResultTimeoutTest extends SqlTestSupport {
     }
 
     @Test
-    public void testHasNextTimeoutWakesUpInASpecifiedTime() {
+    public void when_checkingHasNextWithTimeout_then_timeoutIsLongerThanParam() {
         try (SqlResult result = execute(SQL)) {
             assertTrue(result.isRowSet());
             ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
 
-            ResultIterator.HasNextResult hasNextResult;
-            int timeoutCount = 0;
-            long fastestSleep = Long.MAX_VALUE;
+            long shortestSleep = Long.MAX_VALUE;
             for (int i = 0; i < 2; i++) {
                 long startNanos = System.nanoTime();
-                while ((hasNextResult = iterator.hasNext(10, TimeUnit.MILLISECONDS)) == ResultIterator.HasNextResult.TIMEOUT) {
-                    fastestSleep = Math.min(fastestSleep, System.nanoTime() - startNanos);
-                    timeoutCount++;
+                while (iterator.hasNext(10, TimeUnit.MILLISECONDS) == ResultIterator.HasNextResult.TIMEOUT) {
+                    shortestSleep = Math.min(shortestSleep, System.nanoTime() - startNanos);
                     startNanos = System.nanoTime();
                 }
                 iterator.next();
             }
-            assertNotEquals(0, timeoutCount);
-            assertGreaterOrEquals("fastestSleep", fastestSleep, TimeUnit.MILLISECONDS.toNanos(10));
+            assertGreaterOrEquals("shortestSleep", shortestSleep, TimeUnit.MILLISECONDS.toNanos(10));
         }
     }
 
