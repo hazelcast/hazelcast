@@ -112,7 +112,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(3, null);
     }
 
     @Before
@@ -134,8 +134,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @Test
     public void testIndexResolution() {
-        map.put(1, value);
-        map.put(2, value);
+        putValues();
 
         checkIndex(map, composite
                 ? asList(type1.getFieldConverterType(), type2.getFieldConverterType())
@@ -268,6 +267,12 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
                 );
                 assertNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getRemainderExp());
                 break;
+        }
+    }
+
+    private void putValues() {
+        for (int i = 1; i <= 100; ++i) {
+            map.put(i, value);
         }
     }
 
