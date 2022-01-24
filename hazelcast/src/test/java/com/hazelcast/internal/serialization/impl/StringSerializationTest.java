@@ -46,10 +46,17 @@ public class StringSerializationTest {
 
     private static final String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
     private static final String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
+    private static final String TEST_DATA_CHINESE_SIMPLIFIED = "穿着睡衣的病人很快就相信了胖子司机。";
+    private static final String TEST_DATA_CHINESE_TRADITIONAL = "穿著睡衣的病人很快就相信了這個胖胖的司機。";
     private static final String TEST_DATA_ASCII = "The quick brown fox jumps over the lazy dog";
     private static final String TEST_DATA_UTF_4_BYTE_EMOJIS = "loudly crying face:\uD83D\uDE2D nerd face: \uD83E\uDD13";
-    private static final String TEST_DATA_ALL =
-            TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII + TEST_DATA_UTF_4_BYTE_EMOJIS;
+    private static final String TEST_DATA_ALL = TEST_DATA_TURKISH +
+            TEST_DATA_JAPANESE +
+            TEST_DATA_CHINESE_SIMPLIFIED +
+            TEST_DATA_CHINESE_TRADITIONAL +
+            TEST_DATA_ASCII +
+            TEST_DATA_UTF_4_BYTE_EMOJIS;
+
     private static final int TEST_STR_SIZE = 1 << 20;
 
     private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(StandardCharsets.UTF_8);
