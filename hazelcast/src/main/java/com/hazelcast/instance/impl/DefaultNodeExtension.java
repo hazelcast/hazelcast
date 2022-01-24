@@ -242,7 +242,7 @@ public class DefaultNodeExtension implements NodeExtension {
     public void beforeStart() {
         if (jetServiceBackend != null) {
             systemLogger.info("Jet is enabled");
-            // Configure the internal distributed objects.,
+            // Configure the internal distributed objects.
             jetServiceBackend.configureJetInternalObjects(node);
         } else {
             systemLogger.info(JET_IS_DISABLED_MESSAGE);
