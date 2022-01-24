@@ -25,7 +25,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.createRequirement;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.Mode.EXPORT;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.Mode.OPEN;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.export;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.open;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.packages;
 
 /**
  * Helper class for simplify work with Java module system (Java 9+) in older Java versions.
@@ -33,6 +37,7 @@ import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirem
 public final class ModularJavaUtils {
 
     private static final ILogger LOGGER = Logger.getLogger(ModularJavaUtils.class);
+    private static final PackageAccessRequirement[] NO_REQUIREMENTS = new PackageAccessRequirement[0];
 
     private ModularJavaUtils() {
     }
@@ -42,15 +47,15 @@ public final class ModularJavaUtils {
             return null;
         }
         try {
-            Method methodGetModule = Class.class.getMethod("getModule");
-            Class<?> classModule = Class.forName("java.lang.Module");
-            Method methodGetName = classModule.getMethod("getName");
-            Object moduleHazelcast = methodGetModule.invoke(Hazelcast.class);
-            return (String) methodGetName.invoke(moduleHazelcast);
+            return getName(hazelcastModule());
         } catch (Exception e) {
             LOGGER.finest("Getting Hazelcast module name failed", e);
             return null;
         }
+    }
+
+    private static Class<?> moduleClass() throws ClassNotFoundException {
+        return Class.forName("java.lang.Module");
     }
 
     /**
@@ -63,25 +68,27 @@ public final class ModularJavaUtils {
             return;
         }
 
-        Map<String, PackageAccessRequirement[]> requirements = new TreeMap<String, PackageAccessRequirement[]>();
-        requirements.put("java.base",
-                new PackageAccessRequirement[] {
-                        createRequirement(false, "jdk.internal.ref"),
-                        createRequirement(true, "java.lang"),
-                        createRequirement(true, "java.nio"),
-                        createRequirement(true, "sun.nio.ch")
-                        });
-        requirements.put("jdk.management", getJdkManagementRequirements());
-        requirements.put("java.management", new PackageAccessRequirement[] { createRequirement(true, "sun.management") });
-        checkPackageRequirements(logger, requirements);
+        Map<String, PackageAccessRequirement[]> moduleRequirements = new TreeMap<>();
+        moduleRequirements.put("java.base",
+                packages(
+                        export("jdk.internal.ref"),
+                        open("java.lang"),
+                        open("sun.nio.ch")
+                )
+        );
+        moduleRequirements.put("jdk.management", getJdkManagementRequirements());
+        moduleRequirements.put("java.management", packages(open("sun.management")));
+        checkPackageRequirements(logger, moduleRequirements);
     }
 
     private static PackageAccessRequirement[] getJdkManagementRequirements() {
         if (JavaVm.CURRENT_VM == JavaVm.OPENJ9) {
-            return new PackageAccessRequirement[] {createRequirement(true, "com.sun.management.internal"),
-                                                   createRequirement(true, "com.ibm.lang.management.internal")};
+            return packages(
+                    open("com.sun.management.internal"),
+                    open("com.ibm.lang.management.internal")
+            );
         }
-        return new PackageAccessRequirement[] {createRequirement(true, "com.sun.management.internal")};
+        return packages(open("com.sun.management.internal"));
     }
 
     static void checkPackageRequirements(ILogger logger, Map<String, PackageAccessRequirement[]> requirements) {
@@ -100,27 +107,13 @@ public final class ModularJavaUtils {
 
     private static boolean hasHazelcastPackageAccess(Map<String, PackageAccessRequirement[]> requirements) {
         try {
-            Class<?> classModuleLayer = Class.forName("java.lang.ModuleLayer");
-            Class<?> classModule = Class.forName("java.lang.Module");
-            Method methodGetModule = Class.class.getMethod("getModule");
-            Method methodBoot = classModuleLayer.getMethod("boot");
-            Method methodModules = classModuleLayer.getMethod("modules");
+            for (Object module : modules()) {
+                PackageAccessRequirement[] packageRequirements = requirements.getOrDefault(getName(module), NO_REQUIREMENTS);
 
-            Method methodGetName = classModule.getMethod("getName");
-            Method methodIsOpen = classModule.getMethod("isOpen", String.class, classModule);
-            Method methodIsExported = classModule.getMethod("isExported", String.class, classModule);
-
-            Object moduleHazelcast = methodGetModule.invoke(Hazelcast.class);
-            Object moduleLayerBoot = methodBoot.invoke(null);
-            Set<?> moduleSet = (Set<?>) methodModules.invoke(moduleLayerBoot);
-            for (Object m : moduleSet) {
-                PackageAccessRequirement[] reqArray = requirements.get(methodGetName.invoke(m));
-                if (reqArray == null) {
-                    continue;
-                }
-                for (PackageAccessRequirement req : reqArray) {
-                    Method methodToCheck = req.isForReflection() ? methodIsOpen : methodIsExported;
-                    boolean hasAccess = (Boolean) methodToCheck.invoke(m, req.getPackageName(), moduleHazelcast);
+                for (PackageAccessRequirement req : packageRequirements) {
+                    boolean hasAccess = req.isForReflection()
+                            ? isOpen(module, req.getPackageName())
+                            : isExported(module, req.getPackageName());
                     if (!hasAccess) {
                         return false;
                     }
@@ -133,12 +126,40 @@ public final class ModularJavaUtils {
         return true;
     }
 
+    private static String getName(Object module) throws ReflectiveOperationException {
+        Method methodGetName = moduleClass().getMethod("getName");
+        return (String) methodGetName.invoke(module);
+    }
+
+    private static boolean isExported(Object module, String packageName) throws ReflectiveOperationException {
+        Method methodIsExported = moduleClass().getMethod("isExported", String.class, moduleClass());
+        return (boolean) methodIsExported.invoke(module, packageName, hazelcastModule());
+    }
+
+    private static boolean isOpen(Object module, String packageName) throws ReflectiveOperationException {
+        Method methodIsOpen = moduleClass().getMethod("isOpen", String.class, moduleClass());
+        return (boolean) methodIsOpen.invoke(module, packageName, hazelcastModule());
+    }
+
+    private static Object hazelcastModule() throws ReflectiveOperationException {
+        Method methodGetModule = Class.class.getMethod("getModule");
+        return methodGetModule.invoke(Hazelcast.class);
+    }
+
+    private static Set<?> modules() throws ReflectiveOperationException {
+        Class<?> classModuleLayer = Class.forName("java.lang.ModuleLayer");
+        Method methodBoot = classModuleLayer.getMethod("boot");
+        Method methodModules = classModuleLayer.getMethod("modules");
+        Object moduleLayerBoot = methodBoot.invoke(null);
+        return (Set<?>) methodModules.invoke(moduleLayerBoot);
+    }
+
     private static String createOpenPackageJavaArguments(String hzModuleName,
-            Map<String, PackageAccessRequirement[]> requirements) {
+                                                         Map<String, PackageAccessRequirement[]> requirements) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, PackageAccessRequirement[]> moduleEntry : requirements.entrySet()) {
             for (PackageAccessRequirement requirement : moduleEntry.getValue()) {
-                sb.append(requirement.forReflection ? " --add-opens " : " --add-exports ").append(moduleEntry.getKey())
+                sb.append(requirement.isForReflection() ? " --add-opens " : " --add-exports ").append(moduleEntry.getKey())
                         .append("/").append(requirement.packageName).append("=").append(hzModuleName);
             }
         }
@@ -147,15 +168,31 @@ public final class ModularJavaUtils {
 
     static final class PackageAccessRequirement {
         private final String packageName;
-        private final boolean forReflection;
+        private final Mode mode;
 
-        private PackageAccessRequirement(boolean forReflection, String packageName) {
+        private PackageAccessRequirement(Mode mode, String packageName) {
             this.packageName = packageName;
-            this.forReflection = forReflection;
+            this.mode = mode;
         }
 
-        static PackageAccessRequirement createRequirement(boolean forReflection, String packageName) {
-            return new PackageAccessRequirement(forReflection, packageName);
+        static PackageAccessRequirement[] packages(PackageAccessRequirement... requirements) {
+            return requirements;
+        }
+
+        static PackageAccessRequirement open(String packageName) {
+            return new PackageAccessRequirement(OPEN, packageName);
+        }
+
+        static PackageAccessRequirement export(String packageName) {
+            return new PackageAccessRequirement(EXPORT, packageName);
+        }
+
+        @Override
+        public String toString() {
+            return "PackageAccessRequirement{"
+                    + "packageName='" + packageName + '\''
+                    + ", mode=" + mode
+                    + '}';
         }
 
         String getPackageName() {
@@ -163,7 +200,12 @@ public final class ModularJavaUtils {
         }
 
         boolean isForReflection() {
-            return forReflection;
+            return mode == OPEN;
+        }
+
+        enum Mode {
+            OPEN, EXPORT
         }
     }
+
 }
