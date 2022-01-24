@@ -210,7 +210,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
     /**
      * Fetches the next page.
      */
-    private SqlPage fetch(long timeout, TimeUnit timeUnit) {
+    private SqlPage fetch(long timeoutNanos) {
         synchronized (mux) {
             if (fetch != null) {
                 if (fetch.getError() != null) {
@@ -224,11 +224,11 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
             }
 
             // Await the response.
-            long waitNanos = timeUnit.toNanos(timeout);
+            long waitNanos = timeoutNanos;
             while (fetch.isPending() && waitNanos > 0) {
                 try {
                     long startNanos = System.nanoTime();
-                    TimeUnit.NANOSECONDS.timedWait(mux, timeUnit.toNanos(waitNanos));
+                    TimeUnit.NANOSECONDS.timedWait(mux, waitNanos);
                     waitNanos -= (System.nanoTime() - startNanos);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -336,7 +336,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last && waitNanos > 0) {
                     long startNanos = System.nanoTime();
-                    SqlPage page = fetch(waitNanos, NANOSECONDS);
+                    SqlPage page = fetch(waitNanos);
                     if (page == null) {
                         return HasNextResult.TIMEOUT;
                     }
