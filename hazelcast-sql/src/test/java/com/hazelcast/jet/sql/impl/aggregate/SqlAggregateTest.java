@@ -1008,13 +1008,13 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
-                .hasMessageContaining("Aggregations over non-windowed, non-ordered streaming source not supported");
+                .hasMessageContaining("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
     }
 
     @Test
     public void test_aggregatingNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
-                .hasMessageContaining("Aggregations over non-windowed, non-ordered streaming source not supported");
+                .hasMessageContaining("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
     }
 
     @Test
@@ -1023,13 +1023,13 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                   .hasRootCauseMessage("Aggregations over non-windowed, non-ordered streaming source not supported");
+                   .hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
     }
 
     @Test
     public void test_distinctNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
-                .hasMessageContaining("Aggregations over non-windowed, non-ordered streaming source not supported");
+                .hasMessageContaining("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
     }
 
     @Test
