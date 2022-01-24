@@ -140,8 +140,12 @@ public final class HazelcastRelMdWatermarkedFields
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         WatermarkedFields inputWmFields = query.extractWatermarkedFields(rel.getInput());
         if (rel.getGroupSets().size() != 1) {
-            throw new RuntimeException("not implemented");
+            // not implemented
+            return null;
         }
+
+        // The fields, by which the aggregation groups, and which are aggregated on input, are watermarked
+        // also on the output.
         Iterator<Integer> groupedIndexes = rel.getGroupSets().get(0).iterator();
         Map<Integer, RexNode> outputProperties = new HashMap<>();
         for (int outputIndex = 0; groupedIndexes.hasNext(); outputIndex++) {
