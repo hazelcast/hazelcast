@@ -54,9 +54,7 @@ public class DynamicConfigXmlGeneratorTest extends AbstractDynamicConfigGenerato
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMajor())
-                .append('.')
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMinor())
+                .append(Versions.CURRENT_CLUSTER_VERSION.toString())
                 .append(".xsd\">");
         licenseKeyXmlGenerator(gen, config);
         xmlBuilder.append("</hazelcast>");
