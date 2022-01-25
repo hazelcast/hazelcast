@@ -156,7 +156,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
                 .map(conn -> (NioChannel) ((TcpServerConnection) conn).getChannel())
                 .flatMap(channel -> Stream.of(channel.inboundPipeline(), channel.outboundPipeline()))
                 .collect(Collectors.groupingBy(MigratablePipeline::owner,
-                        Collectors.toMap(Function.identity(), MigratablePipeline::load)));
+                        Collectors.toMap(Function.<MigratablePipeline>identity(), MigratablePipeline::load)));
     }
 
     private StringBuilder debug(HazelcastInstance hz,
