@@ -91,6 +91,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         supportedSchemes.add("file");
         supportedSchemes.add("http");
         supportedSchemes.add("https");
+        supportedSchemes.add("jar");
         SUPPORTED_SCHEMES = unmodifiableSet(supportedSchemes);
     }
 
@@ -265,7 +266,7 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         URL configURL;
         if ("classpath".equals(scheme)) {
             configURL = classLoader.getResource(location.getRawSchemeSpecificPart());
-        } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme)) {
+        } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme) || "jar".equals(scheme)) {
             configURL = location.toURL();
         } else {
             throw new URISyntaxException(location.toString(), "Unsupported protocol in configuration location URL");
