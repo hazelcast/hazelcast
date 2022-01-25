@@ -411,7 +411,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
                         "GROUP BY window_start + INTERVAL '0.001' SECOND"))
-                .hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+                .hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used directly, " +
+                        "without any transformation");
     }
 
     @Test
@@ -1392,7 +1393,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "  , INTERVAL '0.004' SECOND" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) GROUP BY window_start"))
-                .hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1714,7 +1716,8 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1724,7 +1727,8 @@ public class SqlHopTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1733,7 +1737,8 @@ public class SqlHopTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(HOP(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND, INTERVAL '0.002' SECOND))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1747,7 +1752,8 @@ public class SqlHopTest extends SqlTestSupport {
                 "  , INTERVAL '0.004' SECOND" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test

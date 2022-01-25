@@ -1465,7 +1465,8 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1475,7 +1476,8 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1484,7 +1486,8 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1497,7 +1500,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1511,7 +1515,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , INTERVAL '0.002' SECOND" +
                 ")) " +
                 "GROUP BY window_start + INTERVAL '0.001' SECOND")
-        ).hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+        ).hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used directly, " +
+                "without any transformation");
     }
 
     @Test
@@ -1608,7 +1613,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))"))
-                .hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                        " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1616,9 +1622,12 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable(
                 row(timestampTz(0), "Alice", 1));
 
-        sqlService.execute("SELECT COUNT(name) " +
-                "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
-                "GROUP BY ts");
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT COUNT(name) " +
+                        "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "GROUP BY ts"))
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                        " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     private static Object[] row(Object... values) {

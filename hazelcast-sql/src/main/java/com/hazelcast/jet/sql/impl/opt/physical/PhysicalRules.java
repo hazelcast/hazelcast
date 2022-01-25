@@ -46,6 +46,7 @@ public final class PhysicalRules {
                 AggregateBatchPhysicalRule.INSTANCE,
                 AggregateSlidingWindowPhysicalRule.PROJECT_INSTANCE,
                 AggregateSlidingWindowPhysicalRule.NO_PROJECT_INSTANCE,
+                StreamAggregateCannotExecuteRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,

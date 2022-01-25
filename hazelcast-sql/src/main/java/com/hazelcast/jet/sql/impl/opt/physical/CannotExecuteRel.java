@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -32,7 +40,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * rule that can replace the same rel with a rel, that is executable. That's why
  * this rel has infinite cost.
  */
-public class CannotExecuteRel extends AbstractRelNode implements LogicalRel {
+public class CannotExecuteRel extends AbstractRelNode implements PhysicalRel {
     private final String exceptionMessage;
 
     public CannotExecuteRel(
@@ -51,6 +59,22 @@ public class CannotExecuteRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeInfiniteCost();
+        return planner.getCostFactory().makeHugeCost();
+    }
+
+    @Override
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        return OptUtils.schema(getRowType());
+    }
+
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        throw QueryException.error(SqlErrorCode.GENERIC, message());
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("error", StringUtil.shorten(message(), 30));
     }
 }

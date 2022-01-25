@@ -14,52 +14,50 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
+import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
- * A rule that replaces a streaming aggregation without grouping on a
- * watermarked field with {@link CannotExecuteRel}.
+ * A rule that replaces any streaming aggregation with {@link CannotExecuteRel}.
+ * This is to handle cases when the aggregation isn't implemented by replacing
+ * it with {@link CannotExecuteRel}, which has infinity cost. If no other rule
+ * replaces the aggregation with something that can be executed, the error will
+ * be thrown to the user.
+ * <p>
+ * Currently, there's only {@link AggregateSlidingWindowPhysicalRule} that
+ * handles some streaming aggregation cases.
  */
-public final class StreamAggregateValidationRule extends RelRule<Config> {
+public final class StreamAggregateCannotExecuteRule extends RelRule<Config> {
 
     private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(StreamAggregateValidationRule.class.getSimpleName())
+            .withDescription(StreamAggregateCannotExecuteRule.class.getSimpleName())
             .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
                     .predicate(OptUtils::isUnbounded)
                     .anyInputs()
             );
 
-    private StreamAggregateValidationRule() {
+    private StreamAggregateCannotExecuteRule() {
         super(RULE_CONFIG);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new StreamAggregateValidationRule();
+    public static final RelOptRule INSTANCE = new StreamAggregateCannotExecuteRule();
 
     @Override
     public void onMatch(RelOptRuleCall call) {
         AggregateLogicalRel aggr = call.rel(0);
-
-        // TODO besides watermark order, we can also use normal collation
-        RelNode input = aggr.getInput();
-        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
-        WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
-        if (watermarkedFields == null || watermarkedFields.findFirst(aggr.getGroupSet()) == null) {
-            // no watermarked field by which we're grouping found
-            call.transformTo(new CannotExecuteRel(aggr.getCluster(), aggr.getTraitSet(), aggr.getRowType(),
-                    "Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)"));
-        }
+        call.transformTo(
+                new CannotExecuteRel(aggr.getCluster(), OptUtils.toPhysicalConvention(aggr.getTraitSet()), aggr.getRowType(),
+                        "Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                                "(see TUMBLE/HOP and IMPOSE_ORDER functions)"));
     }
 }

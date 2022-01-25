@@ -162,7 +162,9 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
 
             RelNode transformedRel = transform(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
-            call.transformTo(transformedRel);
+            if (transformedRel != null) {
+                call.transformTo(transformedRel);
+            }
         }
     }
 
@@ -174,11 +176,8 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
     ) {
         Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
-
         if (watermarkedField == null) {
-            // Note: this check should be moved to validation and here should only be an assert,
-            // but I'm not sure if that's possible
-            throw QueryException.error(SqlErrorCode.GENERIC, "Can't find watermarked field for window function");
+            return null;
         }
 
         RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
