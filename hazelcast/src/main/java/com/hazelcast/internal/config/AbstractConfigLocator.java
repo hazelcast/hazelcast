@@ -31,8 +31,6 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
-import static com.hazelcast.internal.config.XmlConfigLocator.DEFAULT_CONFIG_FILE_NAME_XML;
-import static com.hazelcast.internal.config.YamlConfigLocator.DEFAULT_CONFIG_FILE_NAME_YAML;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.util.Objects.requireNonNull;
 
@@ -114,11 +112,6 @@ public abstract class AbstractConfigLocator {
      *                            default configuration file
      */
     public abstract boolean locateDefault();
-
-    public static boolean isDefaultConfigFile(File file) {
-        return file.getName().equals(DEFAULT_CONFIG_FILE_NAME_XML)
-                || file.getName().equals(DEFAULT_CONFIG_FILE_NAME_YAML);
-    }
 
     public boolean locateEverywhere() {
         return locateFromSystemPropertyOrFailOnUnacceptedSuffix()
