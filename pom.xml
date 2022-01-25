@@ -1264,6 +1264,13 @@
         </profile>
 
         <profile>
+            <id>modulepath-tests</id>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
+        </profile>
+
+        <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
