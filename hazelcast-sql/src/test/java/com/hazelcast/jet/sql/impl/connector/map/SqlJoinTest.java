@@ -57,7 +57,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_when_streamToStreamJoin_throws() {
+        public void when_streamToStreamJoin_then_fail() {
             String stream1 = "stream1";
             String stream2 = "stream2";
             TestStreamSqlConnector.create(sqlService, stream1, singletonList("a"), singletonList(INTEGER));
@@ -71,7 +71,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_when_commaJoinToStream_throws() {
+        public void when_commaJoinToStream_then_fail() {
             String batchName = randomName();
             String streamName = randomName();
             TestBatchSqlConnector.create(sqlService, batchName, 3);
@@ -86,7 +86,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_when_crossJoinToStream_throws() {
+        public void when_crossJoinToStream_then_fail() {
             String batchName = "batch";
             String streamName = "streamm";
             TestBatchSqlConnector.create(sqlService, batchName, 3);
