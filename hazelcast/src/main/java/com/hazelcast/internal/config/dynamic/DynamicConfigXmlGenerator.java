@@ -503,7 +503,8 @@ public final class DynamicConfigXmlGenerator {
     private static void appendMemoryTierConfig(ConfigXmlGenerator.XmlGenerator gen, MemoryTierConfig memoryTierConfig) {
         MemorySize capacity = memoryTierConfig.getCapacity();
         gen.open("memory-tier")
-                .node("capacity", (capacity.getValue() + " " + capacity.getUnit().abbreviation()))
+                .node("capacity", null,
+                        "unit", capacity.getUnit(), "value", capacity.getValue())
                 .close();
     }
 
