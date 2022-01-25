@@ -73,6 +73,7 @@ public class CannotExecuteRel extends AbstractRelNode implements PhysicalRel {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MagicNumber")
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
                 .item("error", StringUtil.shorten(message(), 30));
