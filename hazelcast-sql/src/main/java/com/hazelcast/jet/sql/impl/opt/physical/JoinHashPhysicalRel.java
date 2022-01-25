@@ -20,18 +20,20 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+public class JoinHashPhysicalRel extends JoinPhysicalRel {
 
-public class JoinHashPhysicalRel extends Join implements PhysicalRel {
+    private static final double COST_FACTOR = 1.1;
 
     JoinHashPhysicalRel(
             RelOptCluster cluster,
@@ -41,7 +43,7 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
             RexNode condition,
             JoinRelType joinType
     ) {
-        super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
+        super(cluster, traitSet, left, right, condition, joinType);
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
@@ -60,13 +62,6 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
     }
 
     @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
-        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
-        return PlanNodeSchema.combine(leftSchema, rightSchema);
-    }
-
-    @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onHashJoin(this);
     }
@@ -81,5 +76,12 @@ public class JoinHashPhysicalRel extends Join implements PhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinHashPhysicalRel(getCluster(), traitSet, left, right, conditionExpr, joinType);
+    }
+
+    @Override
+    @Nullable
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        return super.computeSelfCost(planner, mq)
+                .multiplyBy(COST_FACTOR);
     }
 }

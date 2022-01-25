@@ -155,6 +155,36 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_join() {
+        assertRowsAnyOrder(
+                "SELECT table_name, column_name " +
+                        "FROM information_schema.mappings " +
+                        "JOIN information_schema.columns USING (table_catalog, table_schema, table_name)",
+                rows(2,
+                        mappingName, "__key",
+                        mappingName, "__value")
+        );
+    }
+
+    @Test
+    public void test_joinAndUnion() {
+        assertRowsAnyOrder(
+                "SELECT table_name, column_name " +
+                        "FROM (" +
+                        "    SELECT table_catalog, table_schema, table_name FROM information_schema.mappings " +
+                        "    UNION ALL" +
+                        "    SELECT table_catalog, table_schema, table_name FROM information_schema.views " +
+                        ") " +
+                        "JOIN information_schema.columns USING (table_catalog, table_schema, table_name)",
+                rows(2,
+                        mappingName, "__key",
+                        mappingName, "__value",
+                        viewName, "__key",
+                        viewName, "__value")
+        );
+    }
+
+    @Test
     public void test_planCache_mappings() {
         assertRowsAnyOrder(
                 "SELECT table_name FROM information_schema.mappings",

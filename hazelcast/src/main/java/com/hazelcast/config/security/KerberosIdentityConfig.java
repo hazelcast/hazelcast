@@ -24,6 +24,10 @@ import com.hazelcast.security.ICredentialsFactory;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+/**
+ * This class configures the Kerberos identity. Based on this configuration, service tickets are retrieved from Kerberos KDC
+ * (Key Distribution Center).
+ */
 public class KerberosIdentityConfig implements IdentityConfig {
 
     private final CredentialsFactoryConfig factoryConfig = new CredentialsFactoryConfig(
@@ -33,6 +37,10 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("spn");
     }
 
+    /**
+     * Allows to configure static service principal name (SPN). It's meant for usecases where all members share a single
+     * Kerberos identity.
+     */
     public KerberosIdentityConfig setSpn(String spn) {
         factoryConfig.getProperties().setProperty("spn", spn);
         return this;
@@ -42,6 +50,11 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("serviceNamePrefix");
     }
 
+    /**
+     * Defines prefix of the Service Principal name. It's default value is {@code "hz/"}. By default the member's principal name
+     * (for which this credentials factory asks the service ticket) is in form "[servicePrefix][memberIpAddress]@[REALM]" (e.g.
+     * "hz/192.168.1.1@ACME.COM").
+     */
     public KerberosIdentityConfig setServiceNamePrefix(String serviceNamePrefix) {
         factoryConfig.getProperties().setProperty("serviceNamePrefix", serviceNamePrefix);
         return this;
@@ -51,6 +64,9 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("realm");
     }
 
+    /**
+     * Defines Kerberos realm name (e.g. "ACME.COM").
+     */
     public KerberosIdentityConfig setRealm(String realm) {
         factoryConfig.getProperties().setProperty("realm", realm);
         return this;
@@ -60,6 +76,13 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("keytabFile");
     }
 
+    /**
+     * Allows (together with the {@link #setPrincipal(String)}) simplification of security realm configuration. For basic
+     * scenarios you don't need to use {@link #setSecurityRealm(String)}, but you can instead define directly kerberos principal
+     * name and keytab file path with credentials for given principal.
+     * <p>
+     * This configuration is only used when there is no {@code securityRealm} configured.
+     */
     public KerberosIdentityConfig setKeytabFile(String keytabFile) {
         factoryConfig.getProperties().setProperty("keytabFile", keytabFile);
         return this;
@@ -69,6 +92,13 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("principal");
     }
 
+    /**
+     * Allows (together with the {@link #setKeytabFile(String)}) simplification of security realm configuration. For basic
+     * scenarios you don't need to use {@link #setSecurityRealm(String)}, but you can instead define directly kerberos principal
+     * name and keytab file path with credentials for given principal.
+     * <p>
+     * This configuration is only used when there is no {@code securityRealm} configured.
+     */
     public KerberosIdentityConfig setPrincipal(String principal) {
         factoryConfig.getProperties().setProperty("principal", principal);
         return this;
@@ -78,6 +108,10 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return factoryConfig.getProperties().getProperty("securityRealm");
     }
 
+    /**
+     * Configures a reference to Security realm name in Hazelcast configuration. The realm's authentication configuration (when
+     * defined) is used to populate the user object with Kerberos credentials (e.g. TGT).
+     */
     public KerberosIdentityConfig setSecurityRealm(String securityRealm) {
         factoryConfig.getProperties().setProperty("securityRealm", securityRealm);
         return this;
@@ -89,6 +123,12 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return strVal != null ? Boolean.parseBoolean(strVal) : null;
     }
 
+    /**
+     * Allows using fully qualified domain name instead of IP address when the SPN is constructed from a prefix and realm name.
+     * For instance, when set {@code true}, the SPN {@code "hz/192.168.1.1@ACME.COM"} could become
+     * {@code "hz/member1.acme.com@ACME.COM"} (given the reverse DNS lookup for 192.168.1.1 returns the "member1.acme.com"
+     * hostname).
+     */
     public KerberosIdentityConfig setUseCanonicalHostname(Boolean useCanonicalHostname) {
         Properties props = factoryConfig.getProperties();
         if (useCanonicalHostname != null) {
@@ -132,13 +172,9 @@ public class KerberosIdentityConfig implements IdentityConfig {
 
     @Override
     public String toString() {
-        return "KerberosIdentityConfig [spn=" + getSpn() + ", serviceNamePrefix=" + getServiceNamePrefix()
-                + ", realm=" + getRealm()
-                + ", securityRealm=" + getSecurityRealm()
-                + ", principal=" + getPrincipal()
-                + ", keytabFile=" + getKeytabFile()
-                + ", useCanonicalHostname=" + getUseCanonicalHostname()
-                + "]";
+        return "KerberosIdentityConfig [spn=" + getSpn() + ", serviceNamePrefix=" + getServiceNamePrefix() + ", realm="
+                + getRealm() + ", securityRealm=" + getSecurityRealm() + ", principal=" + getPrincipal() + ", keytabFile="
+                + getKeytabFile() + ", useCanonicalHostname=" + getUseCanonicalHostname() + "]";
     }
 
 }

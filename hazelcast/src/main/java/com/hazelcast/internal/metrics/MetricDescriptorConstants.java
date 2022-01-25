@@ -199,6 +199,7 @@ public final class MetricDescriptorConstants {
     public static final String MAP_PREFIX_NEARCACHE = "map.nearcache";
     public static final String MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR = "map.entry.processor.offloadable.executor";
     public static final String MAP_DISCRIMINATOR_NAME = "name";
+    public static final String MAP_TAG_PARTITION = "partition";
     public static final String MAP_TAG_INDEX = "index";
     public static final String MAP_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
     public static final String MAP_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
@@ -571,6 +572,41 @@ public final class MetricDescriptorConstants {
     public static final String THREAD_FULL_METRIC_DAEMON_THREAD_COUNT = "thread.daemonThreadCount";
     public static final String THREAD_FULL_METRIC_TOTAL_STARTED_THREAD_COUNT = "thread.totalStartedThreadCount";
     // ===[/THREAD]=====================================================
+
+    // ===[TSTORE]======================================================
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
+    public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_AVG = "tstore.hlog.readRecordDuration.avg";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_MIN = "tstore.hlog.readRecordDuration.min";
+    public static final String TSTORE_HLOG_READ_RECORD_DURATION_MAX = "tstore.hlog.readRecordDuration.max";
+    public static final String TSTORE_HLOG_READ_RECORD_HITS = "tstore.hlog.readRecord.hits";
+    public static final String TSTORE_HLOG_READ_RECORD_MISSES = "tstore.hlog.readRecord.misses";
+    public static final String TSTORE_HLOG_READ_RECORD_HIT_PERCENT = "tstore.hlog.readRecord.hit.percent";
+    public static final String TSTORE_HLOG_READ_RECORD_MISS_PERCENT = "tstore.hlog.readRecord.miss.percent";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_AVG = "tstore.hlog.allocation.stall.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_MIN = "tstore.hlog.allocation.stall.min";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_MAX = "tstore.hlog.allocation.stall.max";
+    public static final String TSTORE_HLOG_ALLOCATION_STALL_TOTAL = "tstore.hlog.allocation.stall.total";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_AVG = "tstore.hlog.allocation.size.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_MIN = "tstore.hlog.allocation.size.min";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_MAX = "tstore.hlog.allocation.size.max";
+    public static final String TSTORE_HLOG_ALLOCATION_SIZE_TOTAL = "tstore.hlog.allocation.size.total";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_AVG = "tstore.hlog.waste.alignment.avg";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_MIN = "tstore.hlog.waste.alignment.min";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_MAX = "tstore.hlog.waste.alignment.max";
+    public static final String TSTORE_HLOG_WASTE_ALIGNMENT_TOTAL = "tstore.hlog.waste.alignment.total";
+    public static final String TSTORE_HLOG_WASTE_PAGING_AVG = "tstore.hlog.waste.paging.avg";
+    public static final String TSTORE_HLOG_WASTE_PAGING_MIN = "tstore.hlog.waste.paging.min";
+    public static final String TSTORE_HLOG_WASTE_PAGING_MAX = "tstore.hlog.waste.paging.max";
+    public static final String TSTORE_HLOG_WASTE_PAGING_TOTAL = "tstore.hlog.waste.paging.total";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_AVG = "tstore.hlog.allocation.per.page.avg";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_MIN = "tstore.hlog.allocation.per.page.min";
+    public static final String TSTORE_HLOG_ALLOCATION_PER_PAGE_MAX = "tstore.hlog.allocation.per.page.max";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
+    public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
+    // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
     public static final String WAN_PREFIX = "wan";
