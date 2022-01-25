@@ -1494,26 +1494,8 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "type": "object",
-                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes.",
-                    "properties": {
-                      "unit": {
-                        "enum": [
-                          "BYTES",
-                          "KILOBYTES",
-                          "MEGABYTES",
-                          "GIGABYTES"
-                        ],
-                        "default": "MEGABYTES",
-                        "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
-                      },
-                      "value": {
-                        "type": "number",
-                        "default": 256,
-                        "minimum": 1,
-                        "description": "Default value is 256."
-                      }
-                    }
+                    "$ref": "#/definitions/MemorySize",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
               },
@@ -2955,6 +2937,27 @@
         "migration"
       ]
     },
+    "MemorySize": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "enum": [
+            "BYTES",
+            "KILOBYTES",
+            "MEGABYTES",
+            "GIGABYTES"
+          ],
+          "default": "MEGABYTES",
+          "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
+        },
+        "value": {
+          "type": "number",
+          "default": 128,
+          "minimum": 1,
+          "description": "Default value is 128."
+        }
+      }
+    },
     "NativeMemory": {
       "description": "This feature is available only in Hazelcast Enterprise HD.",
       "properties": {
@@ -2972,25 +2975,7 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "type": "object",
-          "properties": {
-            "unit": {
-              "enum": [
-                "BYTES",
-                "KILOBYTES",
-                "MEGABYTES",
-                "GIGABYTES"
-              ],
-              "default": "MEGABYTES",
-              "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
-            },
-            "value": {
-              "type": "number",
-              "default": 128,
-              "minimum": 1,
-              "description": "Default value is 128."
-            }
-          }
+          "$ref": "#/definitions/MemorySize"
         },
         "min-block-size": {
           "type": "integer",
