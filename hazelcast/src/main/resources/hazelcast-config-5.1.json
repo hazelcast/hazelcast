@@ -1495,7 +1495,7 @@
                 "properties": {
                   "capacity": {
                     "type": "object",
-                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most.",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes.",
                     "properties": {
                       "unit": {
                         "enum": [
@@ -1509,9 +1509,9 @@
                       },
                       "value": {
                         "type": "number",
-                        "default": 128,
+                        "default": 256,
                         "minimum": 1,
-                        "description": "Default value is 128."
+                        "description": "Default value is 256."
                       }
                     }
                   }
