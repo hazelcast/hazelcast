@@ -27,22 +27,26 @@ import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-public final class AggregateStreamLogicalRule extends RelRule<Config> {
+/**
+ * A rule that replaces a streaming aggregation without grouping on a
+ * watermarked field with {@link CannotExecuteRel}.
+ */
+public final class StreamAggregateValidationRule extends RelRule<Config> {
 
     private static final Config RULE_CONFIG = Config.EMPTY
-            .withDescription(AggregateStreamLogicalRule.class.getSimpleName())
+            .withDescription(StreamAggregateValidationRule.class.getSimpleName())
             .withOperandSupplier(b0 -> b0.operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
                     .predicate(OptUtils::isUnbounded)
                     .anyInputs()
             );
 
-    private AggregateStreamLogicalRule() {
+    private StreamAggregateValidationRule() {
         super(RULE_CONFIG);
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new AggregateStreamLogicalRule();
+    public static final RelOptRule INSTANCE = new StreamAggregateValidationRule();
 
     @Override
     public void onMatch(RelOptRuleCall call) {

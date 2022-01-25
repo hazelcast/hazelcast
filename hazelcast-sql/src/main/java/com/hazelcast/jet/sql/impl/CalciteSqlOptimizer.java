@@ -39,10 +39,10 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.AggregateStreamLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.CannotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.StreamAggregateValidationRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -602,7 +602,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private void validationPhase(RelNode rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
-        hepProgramBuilder.addRuleInstance(AggregateStreamLogicalRule.INSTANCE);
+        hepProgramBuilder.addRuleInstance(StreamAggregateValidationRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),

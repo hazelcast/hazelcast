@@ -1611,6 +1611,16 @@ public class SqlTumbleTest extends SqlTestSupport {
                 .hasRootCauseMessage("Streaming aggregation must be grouped by field with watermark order (IMPOSE_ORDER function)");
     }
 
+    @Test
+    public void test_streamAggregationWithoutWindowFunction() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1));
+
+        sqlService.execute("SELECT COUNT(name) " +
+                "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                "GROUP BY ts");
+    }
+
     private static Object[] row(Object... values) {
         return values;
     }
