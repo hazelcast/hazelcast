@@ -20,6 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,17 +31,16 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlClientResultTest extends SqlTestSupport {
-
     private static final String MAP_NAME = "map";
-    private static final String SQL_GOOD = "SELECT * FROM " + MAP_NAME;
-    private static final String SQL_BAD = "SELECT * FROM " + MAP_NAME + "_bad";
 
     @BeforeClass
     public static void setUpClass() {
@@ -56,8 +56,8 @@ public class SqlClientResultTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQuery() {
-        try (SqlResult result = execute(SQL_GOOD)) {
+    public void when_executingValidQuery() {
+        try (SqlResult result = execute("SELECT * FROM " + MAP_NAME)) {
             assertEquals(2, result.getRowMetadata().getColumnCount());
 
             assertEquals(-1, result.updateCount());
@@ -73,14 +73,14 @@ public class SqlClientResultTest extends SqlTestSupport {
     }
 
     @Test
-    public void testBadQuery() {
-        checkSqlException(() -> execute(SQL_BAD), SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
+    public void when_executingInvalidQuery_then_fail() {
+        checkSqlException(() -> execute("SELECT * FROM " + MAP_NAME + "_bad"), SqlErrorCode.OBJECT_NOT_FOUND, "Object 'map_bad' not found");
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void testCloseBetweenFetches() {
-        try (SqlResult result = execute(SQL_GOOD)) {
+    public void when_fetchingElementOnClosedResult_then_fail() {
+        try (SqlResult result = execute("SELECT * FROM " + MAP_NAME)) {
             assertEquals(2, result.getRowMetadata().getColumnCount());
 
             assertEquals(-1, result.updateCount());
@@ -93,6 +93,42 @@ public class SqlClientResultTest extends SqlTestSupport {
 
             checkSqlException(iterator::hasNext, SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by the user");
             checkSqlException(iterator::next, SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by the user");
+        }
+    }
+
+    @Test
+    public void when_checkingHasNextWithTimeout_then_timeoutOccurs() {
+        try (SqlResult result = execute("select * from table(generate_stream(1))")) {
+            assertTrue(result.isRowSet());
+            ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+
+            int timeoutCount = 0;
+            for (int i = 0; i < 2; i++) {
+                while (iterator.hasNext(10, TimeUnit.MILLISECONDS) == ResultIterator.HasNextResult.TIMEOUT) {
+                    timeoutCount++;
+                }
+                iterator.next();
+            }
+            assertNotEquals(0, timeoutCount);
+        }
+    }
+
+    @Test
+    public void when_checkingHasNextWithTimeout_then_timeoutIsLongerThanParam() {
+        try (SqlResult result = execute("select * from table(generate_stream(1))")) {
+            assertTrue(result.isRowSet());
+            ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+
+            long shortestSleep = Long.MAX_VALUE;
+            for (int i = 0; i < 2; i++) {
+                long startNanos = System.nanoTime();
+                while (iterator.hasNext(10, TimeUnit.MILLISECONDS) == ResultIterator.HasNextResult.TIMEOUT) {
+                    shortestSleep = Math.min(shortestSleep, System.nanoTime() - startNanos);
+                    startNanos = System.nanoTime();
+                }
+                iterator.next();
+            }
+            assertGreaterOrEquals("shortestSleep", shortestSleep, TimeUnit.MILLISECONDS.toNanos(10));
         }
     }
 
