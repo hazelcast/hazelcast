@@ -42,8 +42,6 @@ import java.util.Set;
 
 public class MapChunkContext {
 
-    protected Iterator<Map.Entry<Data, Record>> iterator;
-
     private final int partitionId;
     private final String mapName;
     private final SerializationService ss;
@@ -53,6 +51,7 @@ public class MapChunkContext {
     private final LocalMapStatsImpl mapStats;
 
     private ServiceNamespace serviceNamespace;
+    private Iterator<Map.Entry<Data, Record>> iterator;
 
     public MapChunkContext(MapServiceContext mapServiceContext,
                            int partitionId, ServiceNamespace namespaces) {
@@ -64,6 +63,7 @@ public class MapChunkContext {
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
         this.mapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(mapName);
+        setIterator(recordStore.iterator());
     }
 
     public ILogger getLogger(String className) {
@@ -74,7 +74,6 @@ public class MapChunkContext {
     private RecordStore getRecordStore(String mapName) {
         return mapServiceContext.getRecordStore(partitionId, mapName, true);
     }
-
     public boolean hasMoreChunks() {
         beforeOperation();
         try {
@@ -93,6 +92,10 @@ public class MapChunkContext {
             iterator = recordStore.iterator();
         }
         return iterator;
+    }
+
+    protected void setIterator(Iterator<Map.Entry<Data, Record>> iterator) {
+        this.iterator = iterator;
     }
 
     public RecordStore getRecordStore() {
