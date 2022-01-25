@@ -207,10 +207,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void updateLicense(String licenseKey) {
-        // NOP
-
-        // Maybe we can throw exception here in the future. For now, I'm
-        // inheriting existing behaviour from DefaultNodeExtension#setLicense()
+        throw new UnsupportedOperationException("Updating the license requires Hazelcast Enterprise");
     }
 
     @Override
