@@ -35,4 +35,12 @@
        <packageUrl regex="true">^pkg:maven/org\.apache\.calcite\.avatica/avatica\-core@.*$</packageUrl>
        <cpe>cpe:/a:apache:calcite</cpe>
     </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive. The Hazelcast fork of JsonSurfer is based on top of original JsonSurfer version v1.6.3.
+       See https://github.com/hazelcast/JsonSurfer/
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jsurfer/.*$</packageUrl>
+       <cve>CVE-2016-10750</cve>
+    </suppress>
 </suppressions>

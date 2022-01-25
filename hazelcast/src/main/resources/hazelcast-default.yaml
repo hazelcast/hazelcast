@@ -856,3 +856,6 @@ hazelcast:
   # https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties
 #  properties:
 #    property.name: value
+  ##
+  integrity-checker:
+    enabled: false

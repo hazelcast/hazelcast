@@ -181,7 +181,7 @@ public final class ReflectionUtils {
         return getFieldValueReflectively(defaultAnswer, "delegate");
     }
 
-    private static Object getDelegateFromProxyClass(Object arg) {
+    public static Object getDelegateFromProxyClass(Object arg) {
         if (isProxyClass(arg.getClass())) {
             InvocationHandler invocationHandler = getInvocationHandler(arg);
             if (invocationHandler instanceof ProxyInvocationHandler) {
@@ -190,5 +190,9 @@ public final class ReflectionUtils {
             }
         }
         return arg;
+    }
+
+    public static Object callNoArgMethod(Object obj, String methodName) throws ReflectiveOperationException {
+        return getMethod(obj.getClass(), methodName).invoke(obj);
     }
 }

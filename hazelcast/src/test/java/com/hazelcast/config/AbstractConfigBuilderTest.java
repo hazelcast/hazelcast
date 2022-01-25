@@ -674,6 +674,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1, map1.getAttributeConfigs().size());
     }
 
+    @Test
+    public abstract void testIntegrityCheckerConfig();
+
     protected abstract Config buildAuditlogConfig();
 
     /** Build a config with overlapping wildcard configs map* & mapBackup2* */

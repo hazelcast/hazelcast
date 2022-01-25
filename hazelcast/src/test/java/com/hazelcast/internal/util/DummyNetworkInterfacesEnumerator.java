@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.instance.impl;
+package com.hazelcast.internal.util;
 
 import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 
-class DummyNetworkInterfacesEnumerator implements DefaultAddressPicker.NetworkInterfacesEnumerator {
+public class DummyNetworkInterfacesEnumerator implements NetworkInterfacesEnumerator {
 
-    private final List<DefaultAddressPicker.NetworkInterfaceInfo> networkInterfaceInfos;
+    private final List<NetworkInterfaceInfo> networkInterfaceInfos;
 
-    DummyNetworkInterfacesEnumerator(DefaultAddressPicker.NetworkInterfaceInfo... networkInterfaceInfos) {
+    public DummyNetworkInterfacesEnumerator(NetworkInterfaceInfo... networkInterfaceInfos) {
         this.networkInterfaceInfos = Arrays.asList(networkInterfaceInfos);
     }
 
     @Override
-    public List<DefaultAddressPicker.NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
+    public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
         return networkInterfaceInfos;
     }
 }
