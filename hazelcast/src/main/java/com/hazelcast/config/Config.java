@@ -210,6 +210,9 @@ public class Config {
 
     private DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig();
 
+    // @since 5.1
+    private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
+
     public Config() {
     }
 
@@ -3043,6 +3046,25 @@ public class Config {
     }
 
     /**
+     * Returns the IntegrityChecker config
+     * @since 5.1
+     */
+    @Nonnull
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        return integrityCheckerConfig;
+    }
+
+    /**
+     * Sets the Integrity Checker config
+     * @since 5.1
+     */
+    @Nonnull
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig integrityCheckerConfig) {
+        this.integrityCheckerConfig = integrityCheckerConfig;
+        return this;
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3104,6 +3126,7 @@ public class Config {
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
+                + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + '}';
     }
 }

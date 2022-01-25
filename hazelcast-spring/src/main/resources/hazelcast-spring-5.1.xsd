@@ -1380,6 +1380,7 @@
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -6148,4 +6149,19 @@
             <xs:minInclusive value="0"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="integrity-checker">
+        <xs:annotation>
+            <xs:documentation>
+                Integrity Checker configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the Integrity Checker is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

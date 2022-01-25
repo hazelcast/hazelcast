@@ -151,6 +151,8 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<>();
     protected PhoneHome phoneHome;
     protected JetServiceBackend jetServiceBackend;
+    protected IntegrityChecker integrityChecker;
+
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
     public DefaultNodeExtension(Node node) {
@@ -167,6 +169,8 @@ public class DefaultNodeExtension implements NodeExtension {
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetServiceBackend = createService(JetServiceBackend.class);
         }
+
+        integrityChecker = new IntegrityChecker(node.getConfig().getIntegrityCheckerConfig(), this.systemLogger);
     }
 
     private void checkPersistenceAllowed() {
@@ -240,6 +244,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeStart() {
+        integrityChecker.checkIntegrity();
+
         if (jetServiceBackend != null) {
             systemLogger.info("Jet is enabled");
             // Configure the internal distributed objects.

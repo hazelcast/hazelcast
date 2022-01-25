@@ -182,6 +182,7 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -376,6 +377,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleLocalDevice(node);
         } else if (matches(DYNAMIC_CONFIGURATION.getName(), nodeName)) {
             handleDynamicConfiguration(node);
+        } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
+            handleIntegrityChecker(node);
         } else {
             return true;
         }
@@ -3401,6 +3404,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 fillProperties(child, credentialsFactoryConfig.getProperties());
             }
         }
+    }
+
+    private void handleIntegrityChecker(final Node node) {
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {

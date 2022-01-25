@@ -144,6 +144,9 @@
         },
         "dynamic-configuration": {
           "$ref": "#/definitions/DynamicConfiguration"
+        },
+        "integrity-checker": {
+          "$ref": "#/definitions/IntegrityChecker"
         }
       }
     },
@@ -4875,6 +4878,19 @@
           "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
         }
       }
+    },
+    "IntegrityChecker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     }
   }
 }
