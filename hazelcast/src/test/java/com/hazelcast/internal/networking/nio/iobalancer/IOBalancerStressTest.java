@@ -44,15 +44,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.test.Accessors.getConnectionManager;
 import static com.hazelcast.test.Accessors.getNode;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -72,7 +71,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     public void testEachConnectionUseDifferentOwnerEventually() {
         Config config = new Config()
                 .setProperty(ClusterProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "2");
+                // for 3 members cluster, it is possible to be maximum of 4 connections per instance with duplicates
+                // IOBalancer should rebalance them equally between threads
+                .setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "4");
 
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -81,85 +82,112 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         instance2.shutdown();
         instance2 = Hazelcast.newHazelcastInstance(config);
 
+        // prerecord pipelines load, grouped by the owner-thread, before start the load
+        Map<NioThread, Map<MigratablePipeline, Long>>
+                pipelinesLoadPerOwnerBeforeLoad1 = getPipelinesLoadPerOwner(instance1);
+        Map<NioThread, Map<MigratablePipeline, Long>>
+                pipelinesLoadPerOwnerBeforeLoad2 = getPipelinesLoadPerOwner(instance2);
+        Map<NioThread, Map<MigratablePipeline, Long>>
+                pipelinesLoadPerOwnerBeforeLoad3 = getPipelinesLoadPerOwner(instance3);
+
         IMap<Integer, Integer> map = instance1.getMap(randomMapName());
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
 
-        assertBalanced(instance1);
-        assertBalanced(instance2);
-        assertBalanced(instance3);
+        assertBalanced(pipelinesLoadPerOwnerBeforeLoad1, instance1);
+        assertBalanced(pipelinesLoadPerOwnerBeforeLoad2, instance2);
+        assertBalanced(pipelinesLoadPerOwnerBeforeLoad3, instance3);
     }
 
-    private void assertBalanced(HazelcastInstance hz) {
-        ServerConnectionManager cm = getConnectionManager(hz);
-
-        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(cm);
+    /**
+     * An owner thread is balanced if it has no more than one "active" pipeline
+     * and several non-active pipelines
+     */
+    private void assertBalanced(
+            Map<NioThread, Map<MigratablePipeline, Long>> pipelinesLoadPerOwnerBeforeLoad,
+            HazelcastInstance hz) {
+        // get pipelines load, grouped by the owner-thread, after the load
+        Map<NioThread, Map<MigratablePipeline, Long>> pipelinesLoadPerOwnerAfterLoad = getPipelinesLoadPerOwner(hz);
+        Map<MigratablePipeline, Long> pipelinesLoadBeforeLoad = getPipelinesLoad(pipelinesLoadPerOwnerBeforeLoad);
 
         try {
-            for (Map.Entry<NioThread, Set<MigratablePipeline>> entry : pipelinesPerOwner.entrySet()) {
+            for (Map.Entry<NioThread, Map<MigratablePipeline, Long>>
+                    entry : pipelinesLoadPerOwnerAfterLoad.entrySet()) {
                 NioThread owner = entry.getKey();
-                Set<MigratablePipeline> pipelines = entry.getValue();
-                assertBalanced(owner, pipelines);
+                Map<MigratablePipeline, Long> pipelinesLoad = entry.getValue();
+
+                // IOBalancer rebalance only "active" pipelines that have some additional load between checks
+                // In a case of a pipeline with no new load, it will be skipped by IOBalancer
+                if (pipelinesLoad.size() > 1) {
+                    int activePipelines = 0;
+                    for (Map.Entry<MigratablePipeline, Long> pipelineEntry : pipelinesLoad.entrySet()) {
+                        long loadAfterLoad = pipelineEntry.getValue();
+                        long loadBeforeLoad = pipelinesLoadBeforeLoad.get(pipelineEntry.getKey());
+
+                        // If the load value for the same pipeline has changed before and after the load, we count it
+                        // as an active pipeline, if the load value hasn't changed - we skip it
+                        if (loadBeforeLoad < loadAfterLoad) {
+                            activePipelines++;
+                        }
+                    }
+                    // Selector threads should have no more than one "active" pipeline
+                    assertTrue("The number of active pipelines for the owner " + owner + " is: " + activePipelines,
+                            activePipelines <= 1);
+                }
             }
         } catch (AssertionError e) {
             // if something fails, we want to see the debug output
-            System.out.println(debug(hz));
+            System.out.println(debug(hz, pipelinesLoadPerOwnerBeforeLoad));
             throw e;
         }
     }
 
-    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(ServerConnectionManager cm) {
-        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = new HashMap<NioThread, Set<MigratablePipeline>>();
-        for (ServerConnection connection : cm.getConnections()) {
-            NioChannel channel = (NioChannel) ((TcpServerConnection) connection).getChannel();
-            add(pipelinesPerOwner, channel.inboundPipeline());
-            add(pipelinesPerOwner, channel.outboundPipeline());
-        }
-        return pipelinesPerOwner;
+    private Map<MigratablePipeline, Long> getPipelinesLoad(
+            Map<NioThread, Map<MigratablePipeline, Long>> pipelinesLoadPerOwnerBeforeLoad) {
+        return pipelinesLoadPerOwnerBeforeLoad.values().stream()
+                .flatMap(v -> v.entrySet().stream())
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private void add(Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner, MigratablePipeline pipeline) {
-        NioThread pipelineOwner = pipeline.owner();
-        Set<MigratablePipeline> pipelines = pipelinesPerOwner.get(pipelineOwner);
-        if (pipelines == null) {
-            pipelines = new HashSet<>();
-            pipelinesPerOwner.put(pipelineOwner, pipelines);
-        }
-        pipelines.add(pipeline);
+    private Map<NioThread, Map<MigratablePipeline, Long>> getPipelinesLoadPerOwner(HazelcastInstance hz) {
+        ServerConnectionManager cm = getConnectionManager(hz);
+        return cm.getConnections().stream()
+                .map(conn -> (NioChannel) ((TcpServerConnection) conn).getChannel())
+                .flatMap(channel -> Stream.of(channel.inboundPipeline(), channel.outboundPipeline()))
+                .collect(Collectors.groupingBy(MigratablePipeline::owner,
+                        Collectors.toMap(Function.<MigratablePipeline>identity(), MigratablePipeline::load)));
     }
 
-    /**
-     * A owner is balanced if:
-     * <ul>
-     * <li>it has 1 active handler (so a high event count)</li>
-     * <li>potentially several dead handlers (duplicate connection), on which event counts should be low</li>
-     * </ul>
-     */
-    private void assertBalanced(NioThread owner, Set<MigratablePipeline> pipelines) {
-        assertTrue("no pipelines were found for owner:" + owner, pipelines.size() > 0);
+    private StringBuilder debug(HazelcastInstance hz,
+                                Map<NioThread, Map<MigratablePipeline, Long>> pipelinesLoadPerOwnerBeforeLoad) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("--- Before load:\n");
+        sb.append(debug(pipelinesLoadPerOwnerBeforeLoad));
+        sb.append("\n");
+        sb.append("--- After load:\n");
+        sb.append(debug(hz));
+        return sb;
+    }
 
-        MigratablePipeline[] pipelinesArr = pipelines.toArray(new MigratablePipeline[0]);
-        Arrays.sort(pipelinesArr, new PipelineLoadComparator());
-
-        MigratablePipeline activePipeline = pipelinesArr[pipelinesArr.length - 1];
-        assertTrue("at least 1000 events should have been received by the active pipeline but was:"
-                + activePipeline.load(), activePipeline.load() > 1000);
-
-        if (pipelinesArr.length > 1) {
-            // owning thread has some dead pipelines
-            for (int i = 0; i < pipelinesArr.length - 1; i++) {
-                MigratablePipeline deadPipeline = pipelinesArr[i];
-
-                // the maximum number of events seen on a dead connection is 3.
-                // we assert that there are less than 10 just to be on the safe side
-                assertTrue("a dead pipeline at most 10 event should have been received, number of events received:"
-                        + deadPipeline.load(), deadPipeline.load() < 10);
+    private StringBuilder debug(Map<NioThread, Map<MigratablePipeline, Long>> pipelinesLoadPerOwnerBeforeLoad) {
+        StringBuilder sbIn = new StringBuilder();
+        sbIn.append("in owners\n");
+        StringBuilder sbOut = new StringBuilder();
+        sbOut.append("out owners\n");
+        for (Map.Entry<NioThread, Map<MigratablePipeline, Long>> entry : pipelinesLoadPerOwnerBeforeLoad.entrySet()) {
+            NioThread nioThread = entry.getKey();
+            StringBuilder sb = nioThread.getName().contains("thread-in") ? sbIn : sbOut;
+            sb.append(entry.getKey()).append("\n");
+            for (Map.Entry<MigratablePipeline, Long> pipelineEntry : entry.getValue().entrySet()) {
+                MigratablePipeline pipeline = pipelineEntry.getKey();
+                sb.append("\t").append(pipeline).append(" load: ").append(pipelineEntry.getValue()).append("\n");
             }
         }
+        return sbIn.append(sbOut);
     }
 
-    private String debug(HazelcastInstance hz) {
+    private StringBuilder debug(HazelcastInstance hz) {
         TcpServer networkingService = (TcpServer) getNode(hz).getServer();
         NioNetworking networking = (NioNetworking) networkingService.getNetworking();
         ServerConnectionManager cm = getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
@@ -173,7 +201,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
                 TcpServerConnection tcpConnection = (TcpServerConnection) connection;
                 NioInboundPipeline inboundPipeline = ((NioChannel) tcpConnection.getChannel()).inboundPipeline();
                 if (inboundPipeline.owner() == in) {
-                    sb.append("\t").append(inboundPipeline).append(" load:").append(inboundPipeline.load()).append("\n");
+                    sb.append("\t").append(inboundPipeline).append(" load: ").append(inboundPipeline.load()).append("\n");
                 }
             }
         }
@@ -189,16 +217,6 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
                 }
             }
         }
-
-        return sb.toString();
-    }
-
-    private static class PipelineLoadComparator implements Comparator<MigratablePipeline> {
-        @Override
-        public int compare(MigratablePipeline pipeline1, MigratablePipeline pipeline2) {
-            final long l1 = pipeline1.load();
-            final long l2 = pipeline2.load();
-            return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
-        }
+        return sb;
     }
 }

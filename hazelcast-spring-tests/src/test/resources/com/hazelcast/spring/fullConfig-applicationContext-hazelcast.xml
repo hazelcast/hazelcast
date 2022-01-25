@@ -1095,6 +1095,7 @@
                     <hz:property name="port">514</hz:property>
                 </hz:properties>
             </hz:auditlog>
+            <hz:integrity-checker enabled="false"/>
         </hz:config>
     </hz:hazelcast>
 
