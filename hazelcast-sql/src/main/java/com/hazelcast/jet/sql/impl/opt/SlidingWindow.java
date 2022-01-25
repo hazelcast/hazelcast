@@ -65,10 +65,6 @@ public abstract class SlidingWindow extends TableFunctionScan {
         );
     }
 
-    public final boolean isTumble() {
-        return operator() == HazelcastSqlOperatorTable.TUMBLE;
-    }
-
     public final int orderingFieldIndex() {
         return ((RexInputRef) ((RexCall) operand(1)).getOperands().get(0)).getIndex();
     }

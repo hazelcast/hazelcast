@@ -150,7 +150,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Execute a query and wait for the results to contain all the {@code
-     * expectedRows}. Suitable for streaming queries that don't terminate.
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
      *
      * @param sql          The query
      * @param arguments    The query arguments

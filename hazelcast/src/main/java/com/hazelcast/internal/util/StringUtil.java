@@ -516,8 +516,9 @@ public final class StringUtil {
     }
 
     /**
-     * Ensures that the returned string is at most {@code maxLength} long.
-     * Returns {@code null} for null input.
+     * Ensures that the returned string is at most {@code maxLength} long. If
+     * it's longer, trims it to one char less (not taking word boundaries into
+     * account), and appends an ellipsis. Returns {@code null} for null input.
      *
      * @param s The string to shorten
      * @param maxLength Maximum length the returned string must have

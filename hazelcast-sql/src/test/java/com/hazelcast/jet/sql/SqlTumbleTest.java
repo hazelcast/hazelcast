@@ -1617,19 +1617,6 @@ public class SqlTumbleTest extends SqlTestSupport {
                         " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
-    @Test
-    public void test_streamAggregationWithoutWindowFunction() {
-        String name = createTable(
-                row(timestampTz(0), "Alice", 1));
-
-        assertThatThrownBy(() ->
-                sqlService.execute("SELECT COUNT(name) " +
-                        "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
-                        "GROUP BY ts"))
-                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
-                        " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
-    }
-
     private static Object[] row(Object... values) {
         return values;
     }

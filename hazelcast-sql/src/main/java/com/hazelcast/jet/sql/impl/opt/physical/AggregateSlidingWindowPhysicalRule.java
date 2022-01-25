@@ -53,7 +53,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
-                    .predicate(OptUtils::isUnbounded)  // Claims input as streaming source.
+                    .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
                     .inputs(b1 -> b1
                             .operand(ProjectLogicalRel.class)
                             .inputs(b2 -> b2

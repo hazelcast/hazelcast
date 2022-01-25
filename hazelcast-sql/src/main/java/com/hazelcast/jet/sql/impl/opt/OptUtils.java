@@ -55,7 +55,6 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
@@ -262,8 +261,7 @@ public final class OptUtils {
     }
 
     public static boolean isUnbounded(RelNode rel) {
-        boolean res = metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
-        return res;
+        return metadataQuery(rel).extractBoundedness(rel) == Boundedness.UNBOUNDED;
     }
 
     public static HazelcastRelMetadataQuery metadataQuery(RelNode rel) {
@@ -452,34 +450,20 @@ public final class OptUtils {
     }
 
     /**
-     * Return true if there's any reference to input field with index in
-     * `indexes` in the `expression`.
+     * Return true if the `expression` contains any input reference to a field
+     * with index in `indexes`.
      */
     public static boolean hasInputRef(RexNode expression, int... indexes) {
-        return expression.accept(new RexVisitorImpl<Boolean>(true) {
+        boolean[] res = {false};
+        expression.accept(new RexVisitorImpl<Void>(true) {
             @Override
-            public Boolean visitInputRef(RexInputRef inputRef) {
-                return arrayIndexOf(inputRef.getIndex(), indexes) >= 0;
-            }
-
-            @Override
-            public Boolean visitCall(RexCall call) {
-                if (!deep) {
-                    return null;
+            public Void visitInputRef(RexInputRef inputRef) {
+                if (arrayIndexOf(inputRef.getIndex(), indexes) >= 0) {
+                    res[0] = true;
                 }
-
-                for (RexNode operand : call.operands) {
-                    if (operand.accept(this)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean visitLiteral(RexLiteral literal) {
-                return false;
+                return null;
             }
         });
+        return res[0];
     }
 }
