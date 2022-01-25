@@ -373,16 +373,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             case FULL:
                 throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
             case INNER:
-                // Batch-to-stream INNER join, swap sides to convert it to stream-to-batch join, which is supported.
-                break;
             case COMMA:
-                if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "COMMA"));
-                }
-                break;
             case CROSS:
                 if (rightInputIsStream) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "CROSS"));
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide(
+                            "right", join.getJoinType().name().toUpperCase()
+                    ));
                 }
                 break;
             default:
