@@ -332,30 +332,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return taskletExecutionService;
     }
 
-    public void configureJetInternalObjects(Node node) {
-        Config config = node.config.getStaticConfig();
-        JetConfig jetConfig = config.getJetConfig();
-
-        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getBackupCount())
-                // we query creationTime of resources maps
-                .setStatisticsEnabled(true);
-
-        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
-
-        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_RESULTS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_METRICS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        config.addMapConfig(internalMapConfig)
-                .addMapConfig(resultsMapConfig)
-                .addMapConfig(metricsMapConfig);
-    }
-
     public void beforeClusterStateChange(ClusterState requestedState) {
         if (requestedState == PASSIVE) {
             try {
