@@ -70,6 +70,11 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
 
+/**
+ * Represents a chunk of migrated data per map.
+ * <p>
+ * @see #writeChunk
+ */
 @SuppressWarnings("checkstyle:MethodCount")
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
@@ -79,17 +84,17 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     protected transient MapChunkContext context;
     protected transient BooleanSupplier isEndOfChunk;
     protected transient String mapName;
-    private transient LinkedList keyRecordExpiry;
 
     private transient boolean loaded;
-    private transient MapIndexInfo mapIndexInfo;
-    private transient LocalRecordStoreStatsImpl stats;
+    private transient long currentSequence;
     private transient boolean hasWriteBehindState;
-    private transient List<DelayedEntry> delayedEntriesList;
     private transient Queue sequences;
     private transient Map counterByTxnId;
     private transient UUID partitionUuid;
-    private transient long currentSequence;
+    private transient MapIndexInfo mapIndexInfo;
+    private transient LinkedList keyRecordExpiry;
+    private transient LocalRecordStoreStatsImpl stats;
+    private transient List<DelayedEntry> delayedEntriesList;
 
     private boolean firstChunk;
     private boolean lastChunk;
@@ -97,7 +102,8 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     public MapChunk() {
     }
 
-    public MapChunk(MapChunkContext context, int chunkNumber, BooleanSupplier isEndOfChunk) {
+    public MapChunk(MapChunkContext context, int chunkNumber,
+                    BooleanSupplier isEndOfChunk) {
         this.context = context;
         this.isEndOfChunk = isEndOfChunk;
         this.firstChunk = (chunkNumber == 1);
@@ -391,7 +397,10 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         try {
             writeChunk(out, context);
 
-            lastChunk = !context.getIterator().hasNext();
+            Iterator<Map.Entry<Data, Record>> iterator = context.getIterator();
+            lastChunk = !iterator.hasNext();
+            // make it visible to other threads
+            context.setIterator(iterator);
         } finally {
             context.afterOperation();
         }
@@ -485,6 +494,13 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * This method writes a map's main data, which is key-value
+     * pairs, to output stream.
+     * <p>
+     * If number of written bytes exceeds chunk limit, it stops writing.
+     * Next key-values pairs are written in subsequent chunks later.
+     */
     protected void writeChunk(ObjectDataOutput out, MapChunkContext context) throws IOException {
         SerializationService ss = context.getSerializationService();
         long recordCount = 0;
