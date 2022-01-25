@@ -93,7 +93,7 @@ do
   fi
 done
 
-HZ_CMD="${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} com.hazelcast.commandline.HazelcastServerCommandLine"
+HZ_CMD="exec ${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} com.hazelcast.commandline.HazelcastServerCommandLine"
 
 echo "########################################"
 echo "# JAVA=$JAVA"
