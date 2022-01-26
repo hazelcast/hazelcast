@@ -157,8 +157,6 @@ public interface Job {
      * Returns the configuration this job was submitted with. Changes made to
      * the returned config object will not have any effect. Not supported for
      * light jobs.
-     *
-     * @throws UnsupportedOperationException if called for a light job
      */
     @Nonnull
     JobConfig getConfig();

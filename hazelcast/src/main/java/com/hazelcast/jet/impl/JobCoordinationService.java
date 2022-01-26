@@ -358,6 +358,14 @@ public class JobCoordinationService {
         return jobSubmitted.get();
     }
 
+    public JobConfig getLightJobConfig(long jobId) {
+        Object mc = lightMasterContexts.get(jobId);
+        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+            throw new JobNotFoundException(jobId);
+        }
+        return ((LightMasterContext) mc).getJobConfig();
+    }
+
     private void checkPermissions(Subject subject, DAG dag) {
         SecurityContext securityContext = nodeEngine.getNode().securityContext;
         if (securityContext == null || subject == null) {

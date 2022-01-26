@@ -39,7 +39,8 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<Long, Dat
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobConfigOperation(parameters);
+        // TODO
+        return new GetJobConfigOperation(parameters, false);
     }
 
     @Override

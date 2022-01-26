@@ -19,23 +19,28 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
+import java.io.IOException;
 
+public class GetJobConfigOperation extends AbstractJobOperation implements AllowedDuringPassiveState {
+    private boolean isLightJob;
     private JobConfig response;
 
     public GetJobConfigOperation() {
     }
 
-    public GetJobConfigOperation(long jobId) {
+    public GetJobConfigOperation(long jobId, boolean isLightJob) {
         super(jobId);
+        this.isLightJob = isLightJob;
     }
 
     @Override
     public void run() {
         JetServiceBackend service = getJetServiceBackend();
-        response = service.getJobConfig(jobId());
+        response = service.getJobConfig(jobId(), isLightJob);
     }
 
     @Override
@@ -48,4 +53,15 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
         return JetInitDataSerializerHook.GET_JOB_CONFIG_OP;
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(isLightJob);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        isLightJob = in.readBoolean();
+    }
 }

@@ -281,8 +281,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames(),
                     context,
                     parseResult.isInfiniteRows(),
-                    false
-            );
+                    false,
+                    task.getSql());
         }
     }
 
@@ -341,8 +341,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getFieldNames(),
                 context,
                 dmlParseResult.isInfiniteRows(),
-                true
-        );
+                true,
+                null);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -427,8 +427,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             List<String> fieldNames,
             OptimizerContext context,
             boolean isInfiniteRows,
-            boolean isCreateJob
-    ) {
+            boolean isCreateJob,
+            String query) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
         List<Permission> permissions = extractPermissions(physicalRel);
@@ -525,6 +525,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
+                    query,
                     isInfiniteRows,
                     rowMetadata,
                     planExecutor,

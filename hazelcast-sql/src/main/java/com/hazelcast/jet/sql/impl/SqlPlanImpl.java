@@ -767,6 +767,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
+        private final String query;
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
@@ -777,6 +778,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
+                String query,
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
@@ -787,6 +789,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.objectKeys = objectKeys;
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
+            this.query = query;
             this.isStreaming = isStreaming;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
@@ -807,6 +810,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         SqlRowMetadata getRowMetadata() {
             return rowMetadata;
+        }
+
+        public String getQuery() {
+            return query;
         }
 
         @Override
