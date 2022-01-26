@@ -70,6 +70,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.newAddedDelayedEntry;
 
+@SuppressWarnings("checkstyle:MethodCount")
 public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
     private static final int DISPOSE_AT_COUNT = 1024;
@@ -132,6 +133,18 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         if (lastChunk) {
             applyIndexStateAfter(recordStore);
         }
+    }
+
+    @Override
+    public void beforeRun() {
+        RecordStore recordStore = getRecordStore(mapName);
+        recordStore.beforeOperation();
+    }
+
+    @Override
+    public void afterRunFinal() {
+        RecordStore recordStore = getRecordStore(mapName);
+        recordStore.afterOperation();
     }
 
     protected void incrementReplicationCount() {
@@ -374,9 +387,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         if (firstChunk) {
             writeMetadata(out);
         }
-        writeChunk(out, context);
+        context.beforeOperation();
+        try {
+            writeChunk(out, context);
 
-        lastChunk = !context.getIterator().hasNext();
+            lastChunk = !context.getIterator().hasNext();
+        } finally {
+            context.afterOperation();
+        }
         out.writeBoolean(lastChunk);
     }
 

@@ -292,7 +292,6 @@ class MapMigrationAwareService
     @Override
     public void onBeforeRun(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        System.err.println("!!!!!!!! map.size() " + container.getMaps().size());
         for (RecordStore recordStore : container.getMaps().values()) {
             recordStore.beforeOperation();
         }
@@ -300,13 +299,6 @@ class MapMigrationAwareService
 
     @Override
     public void onAfterRunFinal(PartitionMigrationEvent event) {
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
-            recordStore.afterOperation();
-        }
-    }
-
-    private void onAfterRecordStoreOperation(PartitionMigrationEvent event) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             recordStore.afterOperation();

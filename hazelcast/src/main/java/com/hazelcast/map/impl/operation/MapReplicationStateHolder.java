@@ -134,8 +134,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
             statsByMapName.put(mapName,
-                mapContainer.getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(mapName).getReplicationStats());
+                    mapContainer.getMapServiceContext().getLocalMapStatsProvider()
+                            .getLocalMapStatsImpl(mapName).getReplicationStats());
 
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
@@ -162,7 +162,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength",
-        "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
+            "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
 
@@ -178,7 +178,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
                 MapContainer mapContainer = recordStore.getMapContainer();
                 PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
-                    .getPartitionContainer(operation.getPartitionId());
+                        .getPartitionContainer(operation.getPartitionId());
                 for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                     Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                     indexes.addOrGetIndex(indexDefinition.getValue());
@@ -198,7 +198,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
                 long nowInMillis = Clock.currentTimeMillis();
                 forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
-                    populateIndexes, nowInMillis);
+                        populateIndexes, nowInMillis);
 
 
                 if (populateIndexes) {
@@ -224,7 +224,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
         EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
         boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
-            && evictionConfig.getMaxSizePolicy() == PER_NODE;
+                && evictionConfig.getMaxSizePolicy() == PER_NODE;
         for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
             Data dataKey = (Data) keyRecordExpiry.get(i);
             Record record = (Record) keyRecordExpiry.get(i + 1);
@@ -264,7 +264,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         int replicaIndex = operation.getReplicaIndex();
         long owned = 0;
         if (mapContainer.getEvictor() != Evictor.NULL_EVICTOR
-            && PER_NODE == mapContainer.getMapConfig().getEvictionConfig().getMaxSizePolicy()) {
+                && PER_NODE == mapContainer.getMapConfig().getEvictionConfig().getMaxSizePolicy()) {
 
             MapService mapService = operation.getService();
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -273,7 +273,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 if (replicaIndex == 0 ? partitionService.isPartitionOwner(partitionId)
-                    : !partitionService.isPartitionOwner(partitionId)) {
+                        : !partitionService.isPartitionOwner(partitionId)) {
                     RecordStore store = mapServiceContext.getExistingRecordStore(partitionId, mapContainer.getName());
                     if (store != null) {
                         owned += store.size();
@@ -343,7 +343,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     private void writeRecordStore(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
-        throws IOException {
+            throws IOException {
         if (merkleTreeDiffByMapName.containsKey(mapName)) {
             out.writeBoolean(true);
             writeDifferentialData(mapName, recordStore, out);
@@ -359,7 +359,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     private void writeRecordStoreData(RecordStore<Record> recordStore, ObjectDataOutput out)
-        throws IOException {
+            throws IOException {
         SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
@@ -385,7 +385,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     protected static SerializationService getSerializationService(MapContainer mapContainer) {
         return mapContainer.getMapServiceContext()
-            .getNodeEngine().getSerializationService();
+                .getNodeEngine().getSerializationService();
     }
 
     @Override
@@ -421,14 +421,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     protected void readDifferentialData(String mapName, ObjectDataInput in)
-        throws IOException {
+            throws IOException {
         int[] diffNodeOrder = in.readIntArray();
         merkleTreeDiffByMapName.put(mapName, diffNodeOrder);
         readRecordStoreData(mapName, in);
     }
 
     protected void readRecordStoreData(String mapName, ObjectDataInput in)
-        throws IOException {
+            throws IOException {
         int numOfRecords = in.readInt();
         List keyRecord = new ArrayList<>(numOfRecords * 3);
         for (int j = 0; j < numOfRecords; j++) {

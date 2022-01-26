@@ -26,6 +26,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.NotifiableIterator;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -60,7 +61,6 @@ public class MapChunkContext {
         this.serviceNamespace = namespaces;
         this.mapName = ((ObjectNamespace) serviceNamespace).getObjectName();
         this.recordStore = getRecordStore(mapName);
-        this.iterator = recordStore.iterator();
         this.expirySystem = recordStore.getExpirySystem();
         this.ss = mapServiceContext.getNodeEngine().getSerializationService();
         this.mapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(mapName);
@@ -76,7 +76,12 @@ public class MapChunkContext {
     }
 
     public boolean hasMoreChunks() {
-        return iterator != null && iterator.hasNext();
+        beforeOperation();
+        try {
+            return getIterator().hasNext();
+        } finally {
+            afterOperation();
+        }
     }
 
     public ServiceNamespace getServiceNamespace() {
@@ -84,6 +89,9 @@ public class MapChunkContext {
     }
 
     public Iterator<Map.Entry<Data, Record>> getIterator() {
+        if (iterator == null) {
+            iterator = recordStore.iterator();
+        }
         return iterator;
     }
 
@@ -145,5 +153,16 @@ public class MapChunkContext {
         }
         return new MapIndexInfo(mapName)
                 .addIndexCofigs(indexConfigs);
+    }
+
+    public void beforeOperation() {
+        recordStore.beforeOperation();
+        if (getIterator() instanceof NotifiableIterator) {
+            ((NotifiableIterator) getIterator()).onBeforeIteration();
+        }
+    }
+
+    public void afterOperation() {
+        recordStore.afterOperation();
     }
 }

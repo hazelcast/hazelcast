@@ -35,7 +35,7 @@ import java.util.Collection;
  * Replicates all IMap-states of this partition to a replica partition.
  */
 public class MapReplicationOperation extends Operation
-    implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable {
 
     protected MapReplicationStateHolder mapReplicationStateHolder;
     protected WriteBehindStateHolder writeBehindStateHolder;
@@ -118,7 +118,7 @@ public class MapReplicationOperation extends Operation
                 return;
             }
             for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
-                recordStore.beforeOperation();
+                recordStore.afterOperation();
             }
         } finally {
             super.afterRunFinal();

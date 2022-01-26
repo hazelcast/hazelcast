@@ -94,9 +94,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
         try {
             checkActiveMigration();
             doRun();
-        } catch (AssertionError ae) {
-            System.err.println("Do Run Exc " + hashCode());
-            throw ae;
         } catch (Throwable t) {
             logMigrationFailure(t);
             failureReason = t;
@@ -130,7 +127,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     @Override
     public void beforeRun() {
-        System.err.println("Before run " + hashCode());
         try {
             PartitionMigrationEvent event = getMigrationEvent();
 
@@ -154,8 +150,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     @Override
     public void afterRunFinal() {
-        System.err.println("After run " + hashCode());
-
         try {
             PartitionMigrationEvent event = getMigrationEvent();
 
