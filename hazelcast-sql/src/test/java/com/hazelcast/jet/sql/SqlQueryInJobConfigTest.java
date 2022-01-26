@@ -18,7 +18,11 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,11 +32,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.sql.JobConfigAttributes.SQL_QUERY_KEY_NAME;
 import static com.hazelcast.sql.JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlQueryInJobConfigTest extends SqlTestSupport {
@@ -50,6 +56,24 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
             JobConfig config = jobs.get(0).getConfig();
             assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
             assertEquals(Boolean.TRUE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
+        }
+    }
+
+    @Test
+    public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromJobSummary() throws ExecutionException, InterruptedException {
+        String sql = "SELECT * FROM table(generate_stream(1))";
+        try (SqlResult result = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
+            InvocationFuture<Object> future = getNode(instance()).getNodeEngine().getOperationService().invokeOnTarget(
+                    JetServiceBackend.SERVICE_NAME, new GetJobSummaryListOperation(), getAddress(instance())
+            );
+
+            List<JobSummary> jobSummaries = (List<JobSummary>) future.get();
+            assertEquals(1, jobSummaries.size());
+
+            JobSummary jobSummary = jobSummaries.get(0);
+            assertNotNull(jobSummary.getSqlSummary());
+            assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+            assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
         }
     }
 

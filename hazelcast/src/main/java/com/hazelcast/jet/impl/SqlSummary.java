@@ -19,6 +19,14 @@ public class SqlSummary implements IdentifiedDataSerializable {
         this.unbounded = unbounded;
     }
 
+    public String getQuery() {
+        return query;
+    }
+
+    public boolean isUnbounded() {
+        return unbounded;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(query);
@@ -39,5 +47,13 @@ public class SqlSummary implements IdentifiedDataSerializable {
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.JOB_SUMMARY;
+    }
+
+    @Override
+    public String toString() {
+        return "SqlSummary{" +
+                "query='" + query + '\'' +
+                ", unbounded=" + unbounded +
+                '}';
     }
 }

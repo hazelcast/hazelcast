@@ -149,6 +149,10 @@ public class JobSummary implements IdentifiedDataSerializable {
         return completionTime;
     }
 
+    public SqlSummary getSqlSummary() {
+        return sqlSummary;
+    }
+
     /**
      * Returns null if job is not yet completed.
      */
@@ -203,6 +207,7 @@ public class JobSummary implements IdentifiedDataSerializable {
                 ", submissionTime=" + toLocalTime(submissionTime) +
                 ", completionTime=" + toLocalTime(completionTime) +
                 ", failureText=" + failureText +
+                ", sqlSummary=" + sqlSummary +
                 '}';
     }
 }

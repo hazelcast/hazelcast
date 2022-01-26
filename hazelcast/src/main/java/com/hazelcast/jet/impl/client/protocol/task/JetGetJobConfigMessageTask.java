@@ -39,7 +39,7 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<Long, Dat
 
     @Override
     protected Operation prepareOperation() {
-        // TODO
+        // TODO should this work for light jobs?
         return new GetJobConfigOperation(parameters, false);
     }
 
