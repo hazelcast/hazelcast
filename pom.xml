@@ -1374,6 +1374,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>hazelcast-security</id>
+            <name>Thirdparty security fixes</name>
+            <url>https://repository.hazelcast.com/security-maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
         <repository>
             <id>redhat-ga</id>
@@ -1585,6 +1596,11 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.htrace</groupId>
+                <artifactId>htrace-core4</artifactId>
+                <version>4.2.0-incubating.hazelcast-2</version>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
