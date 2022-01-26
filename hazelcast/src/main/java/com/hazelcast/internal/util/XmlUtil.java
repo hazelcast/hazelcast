@@ -111,7 +111,19 @@ public final class XmlUtil {
      * Returns {@link XMLInputFactory} with XXE protection enabled.
      */
     public static XMLInputFactory getXMLInputFactory() {
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        return getProtectedFactory(XMLInputFactory.newInstance());
+    }
+
+    /**
+     * Returns {@link XMLInputFactory} with XXE protection enabled.
+     *
+     * @param factoryId name of the system property to look for factory implementation
+     */
+    public static XMLInputFactory getXMLInputFactory(String factoryId) {
+        return getProtectedFactory(XMLInputFactory.newFactory(factoryId, null));
+    }
+
+    private static XMLInputFactory getProtectedFactory(XMLInputFactory xmlInputFactory) {
         setProperty(xmlInputFactory, XMLInputFactory.SUPPORT_DTD, false);
         return xmlInputFactory;
     }
