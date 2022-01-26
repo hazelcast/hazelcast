@@ -40,8 +40,11 @@ public interface ValidatorResource {
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
 
-    @BaseMessage("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source")
-    ExInst<SqlValidatorException> streamingSourceOnWrongSide();
+    @BaseMessage("The {0} side of a {1} JOIN cannot be a streaming source")
+    ExInst<SqlValidatorException> streamingSourceOnWrongSide(String side, String joinType);
+
+    @BaseMessage("Stream to stream JOIN operation is not supported")
+    ExInst<SqlValidatorException> streamToStreamJoinNotSupported();
 
     @BaseMessage("Multiple ordering functions are not supported")
     ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();

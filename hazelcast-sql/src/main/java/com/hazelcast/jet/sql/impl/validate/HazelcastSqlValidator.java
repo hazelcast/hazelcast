@@ -352,22 +352,35 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
+        boolean leftInputIsStream = containsStreamingSource(join.getLeft());
+        boolean rightInputIsStream = containsStreamingSource(join.getRight());
+
+        if (leftInputIsStream && rightInputIsStream) {
+            throw newValidationError(join, RESOURCE.streamToStreamJoinNotSupported());
+        }
+
         switch (join.getJoinType()) {
-            case INNER:
-            case COMMA:
-            case CROSS:
             case LEFT:
-                if (containsStreamingSource(join.getRight())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                if (rightInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("right", "LEFT"));
                 }
                 break;
             case RIGHT:
-                if (containsStreamingSource(join.getLeft())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide());
+                if (leftInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide("left", "RIGHT"));
                 }
                 break;
             case FULL:
                 throw QueryException.error(SqlErrorCode.PARSING, "FULL join not supported");
+            case INNER:
+            case COMMA:
+            case CROSS:
+                if (rightInputIsStream) {
+                    throw newValidationError(join, RESOURCE.streamingSourceOnWrongSide(
+                            "right", join.getJoinType().name().toUpperCase()
+                    ));
+                }
+                break;
             default:
                 throw QueryException.error(SqlErrorCode.PARSING, "Unexpected join type: " + join.getJoinType());
         }
