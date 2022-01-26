@@ -25,4 +25,4 @@ findScriptDir
 
 echo Warning: "$0" is deprecated. Please use "hz start" instead.
 
-"$SCRIPT_DIR"/hz start "$@"
+exec "$SCRIPT_DIR"/hz start "$@"
