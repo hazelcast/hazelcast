@@ -68,6 +68,43 @@
                     </artifactSet>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <configuration>
+                            <includedLicenses combine.children="append">
+                                <includedLicense>Elastic License 2.0</includedLicense>
+                            </includedLicenses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-license-readme</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>.</directory>
+                                    <includes>
+                                        <include>ELASTIC-LICENSE-README.md</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -75,7 +112,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.10.0</version>
+            <version>7.16.3</version>
         </dependency>
 
         <!-- TEST -->
@@ -96,7 +133,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
