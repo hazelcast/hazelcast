@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
