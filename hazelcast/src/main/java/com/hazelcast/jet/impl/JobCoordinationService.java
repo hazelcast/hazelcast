@@ -66,7 +66,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.sql.JobConfigAttributes;
 import com.hazelcast.version.Version;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -728,7 +727,6 @@ public class JobCoordinationService {
         });
     }
 
-    @NotNull
     private JobSummary getJobSummary(LightMasterContext lmc) {
         String query = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_QUERY_KEY_NAME);
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME);
