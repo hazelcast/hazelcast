@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +29,9 @@ import org.junit.experimental.categories.Category;
 
 import java.util.List;
 
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.sql.JobConfigAttributes.SQL_QUERY_KEY_NAME;
+import static com.hazelcast.sql.JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME;
 import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -38,18 +42,30 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_runningTheQuery_then_queryAndIsStreamingCanBeFetchFromConfig() {
-        String sql = "select * from table(generate_stream(1))";
-        try (SqlResult result = execute(sql)) {
+    public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromConfig() {
+        String sql = "SELECT * FROM table(generate_stream(1))";
+        try (SqlResult result = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
             List<Job> jobs = instance().getJet().getJobs();
             assertEquals(1, jobs.size());
             JobConfig config = jobs.get(0).getConfig();
-            assertEquals(sql, config.getArgument("__sql.query"));
-            assertEquals(Boolean.TRUE, config.getArgument("__sql.isStreaming"));
+            assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
+            assertEquals(Boolean.TRUE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
         }
     }
 
-    private SqlResult execute(String sql) {
-        return client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1));
+    @Test
+    public void when_creatingJob_then_queryAndUnboundedFlagCanBeFetchFromConfig() {
+        TestBatchSqlConnector.create(instance().getSql(), "src", 3);
+        createMapping("dest", Integer.class, String.class);
+
+        String sql = "CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2";
+        instance().getSql().execute(sql);
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        List<Job> jobs = instance().getJet().getJobs();
+        assertEquals(1, jobs.size());
+        JobConfig config = jobs.get(0).getConfig();
+        assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
+        assertEquals(Boolean.FALSE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
     }
 }

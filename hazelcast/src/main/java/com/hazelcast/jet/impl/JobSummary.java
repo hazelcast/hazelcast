@@ -39,6 +39,7 @@ public class JobSummary implements IdentifiedDataSerializable {
     private long submissionTime;
     private long completionTime;
     private String failureText;
+    private SqlSummary sqlSummary;
 
     public JobSummary() {
     }
@@ -60,6 +61,24 @@ public class JobSummary implements IdentifiedDataSerializable {
         this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;
+    }
+
+    public JobSummary(
+            boolean isLightJob,
+            long jobId,
+            long executionId,
+            @Nonnull String nameOrId,
+            @Nonnull JobStatus status,
+            long submissionTime,
+            SqlSummary sqlSummary
+    ) {
+        this.isLightJob = isLightJob;
+        this.jobId = jobId;
+        this.executionId = executionId;
+        this.nameOrId = nameOrId;
+        this.status = status;
+        this.submissionTime = submissionTime;
+        this.sqlSummary = sqlSummary;
     }
 
     /**
@@ -158,6 +177,7 @@ public class JobSummary implements IdentifiedDataSerializable {
         out.writeLong(submissionTime);
         out.writeLong(completionTime);
         out.writeString(failureText);
+        out.writeObject(sqlSummary);
     }
 
     @Override
@@ -170,6 +190,7 @@ public class JobSummary implements IdentifiedDataSerializable {
         submissionTime = in.readLong();
         completionTime = in.readLong();
         failureText = in.readString();
+        sqlSummary = in.readObject();
     }
 
     @Override
