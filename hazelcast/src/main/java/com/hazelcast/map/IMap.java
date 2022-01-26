@@ -2245,6 +2245,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     /**
      * Returns the {@code EntryView} for the specified key.
      * <p>
+     * <b>Not to misuse this method, please know these points:</b>
+     * <lu>
+     *  <li>This method cannot be used as a replacement for {@link IMap#get}.</li>
+     *  <li>This method only looks up entries already in memory and
+     *  does not load missing ones from {@link MapStore}.</li>
+     *  <li>Calling this method does not update entry or map level statistics.</li>
+     *  <li>Calling this method is not counted as an access,
+     *  so it doesn't have any effect on eviction and expiration.</li>
+     * </lu>
+     * <p>
+     * <p>
      * <b>Warning 1:</b>
      * <p>
      * This method returns a clone of original mapping, modifying the returned value does not change
