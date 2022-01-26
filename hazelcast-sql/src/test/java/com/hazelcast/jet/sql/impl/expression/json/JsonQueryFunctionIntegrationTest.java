@@ -50,7 +50,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
         createMapping("test", Long.class, String.class);
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[*]?(@ > 1)' WITH ARRAY WRAPPER) FROM test",
                 rows(1, json("[2,3]")));
     }
 
@@ -59,7 +59,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, json("[1,2,3]"));
         createMapping("test", "bigint", "json");
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[*]?(@ > 1)' WITH ARRAY WRAPPER) FROM test",
                 rows(1, json("[2,3]")));
     }
 
@@ -193,7 +193,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
         createMapping("test", Long.class, String.class);
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, 'lax $[?(@ > 1)]' WITH ARRAY WRAPPER) FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, 'lax $[*]?(@ > 1)' WITH ARRAY WRAPPER) FROM test",
             rows(1, json("[2,3]")));
     }
 
@@ -217,7 +217,7 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
         createMapping("test", Long.class, String.class);
         assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[0 to 2]' WITH ARRAY WRAPPER) FROM test",
             rows(1, json("[1,2,3]")));
-        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[0:2]' WITH ARRAY WRAPPER) FROM test",
+        assertRowsAnyOrder("SELECT JSON_QUERY(this, '$[0 to 1]' WITH ARRAY WRAPPER) FROM test",
             rows(1, json("[1,2]")));
     }
 
@@ -311,19 +311,19 @@ public class JsonQueryFunctionIntegrationTest extends SqlJsonTestSupport {
             + "]"));
 
         assertEquals(json("[\"alpha\",\"alpha1\"]"),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"alpha\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"alpha\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("\"alpha\""),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"(alpha)$\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"(alpha)$\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("[\"beta\",\"BETA\"]"),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"(?i)beta\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"(?i)beta\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("[\"alpha1\",1,22]"),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\\d\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"\\\\d\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("22"),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\\d{2}\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"\\\\d{2}\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("[\"alpha\",\"alpha1\",\"beta\",\"BETA\",1,22,\"foo\",\"\\\"quoted \\\"\"]"),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"\")' WITH CONDITIONAL WRAPPER) FROM test"));
         assertEquals(json("\"\\\"quoted \\\"\""),
-            querySingleValue("SELECT JSON_QUERY(this, '$[?(@ like_regex \"\\\"quoted\\\\s\\\"\")]' WITH CONDITIONAL WRAPPER) FROM test"));
+            querySingleValue("SELECT JSON_QUERY(this, '$[*]?(@ like_regex \"\\\"quoted\\\\s\\\"\")' WITH CONDITIONAL WRAPPER) FROM test"));
     }
 
     protected void initComplexObject() {
