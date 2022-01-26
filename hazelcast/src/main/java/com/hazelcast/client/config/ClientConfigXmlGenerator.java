@@ -436,6 +436,7 @@ public final class ClientConfigXmlGenerator {
                         .node("coalesce", queryCache.isCoalesce())
                         .node("delay-seconds", queryCache.getDelaySeconds())
                         .node("batch-size", queryCache.getBatchSize())
+                        .node("serialize-keys", queryCache.isSerializeKeys())
                         .node("buffer-size", queryCache.getBufferSize())
                         .node("eviction", null, "size", evictionConfig.getSize(),
                                 "max-size-policy", evictionConfig.getMaxSizePolicy(),

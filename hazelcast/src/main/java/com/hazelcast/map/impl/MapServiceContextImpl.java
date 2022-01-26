@@ -149,6 +149,8 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
+    private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
+
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
@@ -427,6 +429,8 @@ class MapServiceContextImpl implements MapServiceContext {
         // Statistics are destroyed after container to prevent their leak.
         destroyPartitionsAndMapContainer(mapContainer);
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
+        getEventListenerCounter()
+                .removeCounter(mapName, mapContainer.getInvalidationListenerCounter());
     }
 
     /**
@@ -901,5 +905,10 @@ class MapServiceContextImpl implements MapServiceContext {
     // used only for testing purposes
     PartitioningStrategyFactory getPartitioningStrategyFactory() {
         return partitioningStrategyFactory;
+    }
+
+    @Override
+    public EventListenerCounter getEventListenerCounter() {
+        return eventListenerCounter;
     }
 }

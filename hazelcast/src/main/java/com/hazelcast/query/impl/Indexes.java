@@ -432,7 +432,7 @@ public class Indexes {
     public Iterable<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
-        if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
+        if (!canQueryOverIndex(predicate)) {
             return null;
         }
 
@@ -453,6 +453,10 @@ public class Indexes {
         } else {
             return result;
         }
+    }
+
+    public boolean canQueryOverIndex(Predicate predicate) {
+        return haveAtLeastOneIndex() && predicate instanceof IndexAwarePredicate;
     }
 
     /**
@@ -656,8 +660,8 @@ public class Indexes {
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors,
-                indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                inMemoryFormat, partitionCount, resultFilterFactory);
+                    indexProvider, usesCachedQueryableEntries, statsEnabled, global,
+                    inMemoryFormat, partitionCount, resultFilterFactory);
         }
     }
 }

@@ -1328,6 +1328,7 @@
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0"/>
                         <xs:element name="persistence" type="persistence" minOccurs="0"/>
+                        <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                         <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"/>
                         <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0"/>
                         <xs:element name="pn-counter" minOccurs="0" maxOccurs="unbounded">
@@ -1379,6 +1380,7 @@
                         <xs:element name="auditlog" type="auditlog" minOccurs="0"/>
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -3417,6 +3419,7 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
             <xs:element name="populate" type="parameterized-boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" default="false"/>
+            <xs:element name="serialize-keys" type="parameterized-boolean" default="false"/>
             <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" default="0"/>
             <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" default="1"/>
             <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" default="16"/>
@@ -3455,6 +3458,7 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
             <xs:element name="populate" type="parameterized-boolean" minOccurs="0" default="true"/>
             <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" default="false"/>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false"/>
             <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" default="0"/>
             <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" default="1"/>
             <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" default="16"/>
@@ -4712,6 +4716,54 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="dynamic-configuration">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration settings related to dynamic configuration feature.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="persistence-enabled" type="parameterized-boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if dynamic configuration persistence is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persistence-file" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Path for dynamic configuration persistence file. Dynamic changes will be
+                        persisted into this file. If not set, configuration file that was used to
+                        start Hazelcast (root configuration) will be used. If set, this file (the
+                        file specified in the persistence-file path) will be used for persisting
+                        dynamic changes instead of root configuration file. User should also do
+                        the following two: Create an XML or YAML file specified in this path and
+                        import this XML or YAML file to the root configuration. Path can be an
+                        absolute or relative path to the node startup directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-dir" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Directory for dynamic configuration persistence file backups.
+                        Each new backup will be created inside this directory.
+                        Can be an absolute or relative path to the node startup directory.
+                        If not set, new folder will be created where dynamic configuration file exists.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
     <xs:complexType name="local-device">
         <xs:annotation>
             <xs:documentation>
@@ -4779,19 +4831,13 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="capacity" minOccurs="0" default="256 MB">
+            <xs:element name="capacity" minOccurs="0" type="memory-size">
                 <xs:annotation>
                     <xs:documentation>
                         Memory tier capacity, i.e., how much main memory should this tier consume at most.
-                        The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB).
-                        For instance, capacity="1024 MB" is valid, whereas capacity="2^10 mb" is not.
+                        The default is 256 megabytes.
                     </xs:documentation>
                 </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:pattern value="[1-9]([0-9]*) (B|KB|MB|GB)"/>
-                    </xs:restriction>
-                </xs:simpleType>
             </xs:element>
         </xs:all>
     </xs:complexType>
@@ -6097,4 +6143,19 @@
             <xs:minInclusive value="0"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="integrity-checker">
+        <xs:annotation>
+            <xs:documentation>
+                Integrity Checker configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the Integrity Checker is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

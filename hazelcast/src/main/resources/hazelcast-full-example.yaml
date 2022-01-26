@@ -1404,6 +1404,9 @@ hazelcast:
       #     Set to true if you want to enable the initial population of your query cache. Its default value is true.
       # * "coalesce":
       #     Set to true if you want to enable the coalescing of your query cache. Its default value is false.
+      # * "serialize-keys":
+      #     Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable
+      #     and need to be cloned via serialization. Default value is false.
       # * "delay-seconds":
       #     Minimum time in seconds that an event waits in the member's buffer. Its default value is 0.
       # * "batch-size":
@@ -1426,6 +1429,7 @@ hazelcast:
           in-memory-format: BINARY
           populate: true
           coalesce: false
+          serialize-keys: false
           delay-seconds: 3
           batch-size: 2
           buffer-size: 32
@@ -2640,6 +2644,36 @@ hazelcast:
   #           trustStorePassword: changeit
   #           trustStoreType: JKS
 
+  # ===== HAZELCAST DYNAMIC CONFIGURATION CONFIGURATION =====
+  #
+  # Configuration settings related to dynamic configuration feature.
+  #
+  # It has the following sub-elements:
+  # * "persistence-enabled":
+  #     True if dynamic configuration persistence is enabled.
+  # * "persistence-file":
+  #     Path for dynamic configuration persistence file. Dynamic changes will be
+  #     persisted into this file. If not set, configuration file that was used to
+  #     start Hazelcast (root configuration) will be used. If set, this file (the
+  #     file specified in the persistence-file path) will be used for persisting
+  #     dynamic changes instead of root configuration file. User should also do
+  #     the following two: Create an XML or YAML file specified in this path and
+  #     import this XML or YAML file to the root configuration. Path can be an
+  #     absolute or relative path to the node startup directory.
+  # * "backup-dir":
+  #     Directory for dynamic configuration persistence file backups.
+  #     Each new backup will be created inside this directory.
+  #     Can be an absolute or relative path to the node startup directory.
+  #     If not set, new folder will be created where dynamic configuration file exists.
+  # * "backup-count":
+  #     How many backups will be kept. Default is 5. You can set this to zero to disable backups.
+
+  dynamic-configuration:
+    persistence-enabled: true
+    persistence-file: /mnt/dynamic/persistence-file.xml
+    backup-dir: /mnt/dynamic/backup-dir
+    backup-count: 7
+
   #
   # ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
   #
@@ -3684,3 +3718,12 @@ hazelcast:
       packet-size-limit: 16384
       # receive window size multiplier, only applies to distributed edges
       receive-window-multiplier: 3
+  #  ===== HAZELCAST INTEGRITY CHECKER CONFIGURATION =====
+  #
+  # Configuration element's name is "integrity-checker". When you want to enable Integrity Checker,
+  # set this element's "enabled" attribute to true in that member's configuration. Integrity Checker is a
+  # component that verifies that the executable contains all the required META-INF/services files, it is a costly
+  # operation, it can be disabled to improve startup time.
+  # Integrity Checker is disabled by default.
+  integrity-checker:
+    enabled: false

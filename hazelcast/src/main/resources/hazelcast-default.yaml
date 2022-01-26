@@ -322,7 +322,9 @@ hazelcast:
         enabled: false
         memory-tier:
           # The amount of memory to be reserved for the memory-tier of the tiered-store instance of this map.
-          capacity: "256 MB"
+          capacity:
+            unit: MEGABYTES
+            value: 256
         # Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
         # of the tiered-store instance of this map.
         disk-tier:
@@ -856,3 +858,6 @@ hazelcast:
   # https://docs.hazelcast.org/docs/latest/manual/html-single/#system-properties
 #  properties:
 #    property.name: value
+  ##
+  integrity-checker:
+    enabled: false

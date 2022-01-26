@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,10 +31,6 @@ import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import java.io.IOException;
 
 public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
-    private static final Gson SERIALIZER = new GsonBuilder()
-            .serializeNulls()
-            .create();
-
     private SqlJsonConstructorNullClause nullClause;
 
     public JsonObjectFunction() { }
@@ -80,13 +74,9 @@ public class JsonObjectFunction extends VariExpression<HazelcastJsonValue> imple
                 sb.append(',');
             }
             assert key instanceof String;
-            sb.append(SERIALIZER.toJson(key));
+            sb.append(JsonCreationUtil.serializeString((String) key));
             sb.append(':');
-            if (value instanceof HazelcastJsonValue) {
-                sb.append(value);
-            } else {
-                sb.append(SERIALIZER.toJson(value));
-            }
+            sb.append(JsonCreationUtil.serializeValue(value));
         }
         sb.append('}');
 

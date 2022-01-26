@@ -16,15 +16,18 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -61,6 +64,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +95,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
+    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     @After
     public void tearDown() {
@@ -428,6 +433,35 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
     }
 
+    /**
+     * Create an IMap index with given {@code name}, {@code type} and {@code attributes}.
+     */
+    public static void createIndex(String name, String mapName, IndexType type, String... attributes) {
+        createIndex(instance(), name, mapName, type, attributes);
+    }
+
+    static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
+        SqlService sqlService = instance.getSql();
+
+        StringBuilder sb = new StringBuilder("CREATE INDEX IF NOT EXISTS ");
+        sb.append(name);
+        sb.append(" ON ");
+        sb.append(mapName);
+        sb.append(" ( ");
+        for (int i = 0; i < attributes.length; ++i) {
+            if (attributes.length - i - 1 == 0) {
+                sb.append(attributes[i]);
+            } else {
+                sb.append(attributes[i]).append(", ");
+            }
+        }
+        sb.append(" ) ");
+        sb.append(" TYPE ");
+        sb.append(type.name());
+
+        sqlService.execute(sb.toString());
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
@@ -444,9 +478,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         for (int i = 0; i < expected.size(); i++) {
-            Object[] expectedItem = (Object[]) expected.get(i);
-            Object[] actualItem = (Object[]) actual.get(i);
-            if (!Arrays.equals(expectedItem, actualItem)) {
+            JetSqlRow expectedItem = (JetSqlRow) expected.get(i);
+            JetSqlRow actualItem = (JetSqlRow) actual.get(i);
+            if (!Objects.equals(expectedItem, actualItem)) {
                 return false;
             }
         }
@@ -476,7 +510,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return Accessors.getNodeEngineImpl(instance);
     }
 
-    public List<Row> rows(final int rowLength, final Object ...values) {
+    public List<Row> rows(final int rowLength, final Object... values) {
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }
@@ -513,6 +547,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         return new ExpressionEvalContext(Arrays.asList(args), new DefaultSerializationServiceBuilder().build());
+    }
+
+    public static JetSqlRow jetRow(Object... values) {
+        return new JetSqlRow(TEST_SS, values);
     }
 
     /**

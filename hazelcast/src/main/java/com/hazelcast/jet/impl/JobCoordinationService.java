@@ -89,6 +89,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -205,7 +206,13 @@ public class JobCoordinationService {
         ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = nodeEngine.getProperties();
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
-        executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
+        try {
+            executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
+            logger.info("Jet started scanning for jobs");
+        } catch (RejectedExecutionException ex) {
+            logger.info("Scan jobs task is rejected on the execution service since the executor service" +
+                    " has shutdown", ex);
+        }
     }
 
     public CompletableFuture<Void> submitJob(
@@ -1173,6 +1180,7 @@ public class JobCoordinationService {
 
     // runs periodically to restart jobs on coordinator failure and perform GC
     private void scanJobs() {
+        long scanStart = System.currentTimeMillis();
         long nextScanDelay = maxJobScanPeriodInMillis;
         try {
             // explicit check for master because we don't want to use shorter delay on non-master nodes
@@ -1190,6 +1198,11 @@ public class JobCoordinationService {
         } catch (Throwable e) {
             logger.severe("Scanning jobs failed", e);
         }
+
+        // Adjust the delay by the time taken by the scan to avoid accumulating more and more job results with each scan
+        long scanTime = System.currentTimeMillis() - scanStart;
+        nextScanDelay = Math.max(0, nextScanDelay - scanTime);
+
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.schedule(this::scanJobs, nextScanDelay, MILLISECONDS);
     }

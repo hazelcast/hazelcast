@@ -21,6 +21,8 @@ import com.hazelcast.test.starter.HazelcastStarterConstructor;
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
+import static com.hazelcast.test.starter.ReflectionUtils.callNoArgMethod;
+import static com.hazelcast.test.starter.ReflectionUtils.getDelegateFromProxyClass;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
 @HazelcastStarterConstructor(classNames = {"com.hazelcast.map.MapEvent"})
@@ -35,11 +37,11 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.cluster.Member");
         Constructor<?> constructor = targetClass.getConstructor(Object.class, memberClass, Integer.TYPE, Integer.TYPE);
-
-        Object source = getFieldValueReflectively(delegate, "source");
+        Object originalDelegate = getDelegateFromProxyClass(delegate);
+        Object source = callNoArgMethod(originalDelegate, "getSource");
         Object member = getFieldValueReflectively(delegate, "member");
         Object entryEventType = getFieldValueReflectively(delegate, "entryEventType");
-        Integer eventTypeId = (Integer) entryEventType.getClass().getMethod("getType").invoke(entryEventType);
+        Integer eventTypeId = (Integer) callNoArgMethod(entryEventType, "getType");
         Object numberOfKeysAffected = getFieldValueReflectively(delegate, "numberOfEntriesAffected");
 
         Object[] args = new Object[]{source, member, eventTypeId, numberOfKeysAffected};
@@ -47,4 +49,5 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
         return constructor.newInstance(proxiedArgs);
     }
+
 }

@@ -199,7 +199,7 @@ class TcpServerConnector {
 
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
-                    connection = connectionManager.newConnection(channel, remoteAddress);
+                    connection = connectionManager.newConnection(channel, remoteAddress, false);
                     new SendMemberHandshakeTask(logger, serverContext, connection,
                             remoteAddress, true, planeIndex, planeCount).run();
                 } catch (Exception e) {

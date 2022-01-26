@@ -27,8 +27,8 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -353,7 +353,7 @@ public class MembershipManager {
         }
 
         for (MemberImpl member : removedMembers) {
-            closeConnection(member.getAddress(), "Member left event received from master");
+            closeConnections(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }
 
@@ -695,7 +695,7 @@ public class MembershipManager {
         }
 
         if (shouldCloseConn) {
-            closeConnection(address, reason);
+            closeConnections(address, reason);
         }
         return true;
     }
@@ -712,7 +712,7 @@ public class MembershipManager {
 
             Address address = member.getAddress();
             if (shouldCloseConn) {
-                closeConnection(address, reason);
+                closeConnections(address, reason);
             }
 
             MemberMap currentMembers = memberMapRef.get();
@@ -751,11 +751,9 @@ public class MembershipManager {
         }
     }
 
-    private void closeConnection(Address address, String reason) {
-        Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
-        if (conn != null) {
-            conn.close(reason, null);
-        }
+    private void closeConnections(Address address, String reason) {
+        List<ServerConnection> connections = node.getServer().getConnectionManager(MEMBER).getAllConnections(address);
+        connections.forEach(conn -> conn.close(reason, null));
     }
 
     private void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {

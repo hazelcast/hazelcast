@@ -208,6 +208,11 @@ public class Config {
 
     private JetConfig jetConfig = new JetConfig();
 
+    private DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig();
+
+    // @since 5.1
+    private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
+
     public Config() {
     }
 
@@ -235,7 +240,22 @@ public class Config {
         cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
         PersistenceAndHotRestartPersistenceMerger
                 .merge(cfg.getHotRestartPersistenceConfig(), cfg.getPersistenceConfig());
+        setConfigurationFileFromUrl(cfg);
         return cfg;
+    }
+
+    // configurationFile must be set correctly because dynamic
+    // configuration persistence depends on this field. If this is
+    // absent, hazelcast instance may fail to find a file to persist.
+    private static void setConfigurationFileFromUrl(Config cfg) {
+        if (cfg.getConfigurationFile() == null && cfg.getConfigurationUrl() != null) {
+            File configFile = new File(cfg.getConfigurationUrl().getPath());
+
+            // Only set configurationFile if the config actually exist on the filesystem.
+            if (configFile.exists()) {
+                cfg.setConfigurationFile(configFile);
+            }
+        }
     }
 
     private static Config loadFromFile(Properties properties) {
@@ -3011,6 +3031,40 @@ public class Config {
     }
 
     /**
+     * Returns the dynamic configuration config.
+     */
+    public DynamicConfigurationConfig getDynamicConfigurationConfig() {
+        return dynamicConfigurationConfig;
+    }
+
+    /**
+     * Sets the dynamic configuration config.
+     */
+    public Config setDynamicConfigurationConfig(DynamicConfigurationConfig dynamicConfigurationConfig) {
+        this.dynamicConfigurationConfig = dynamicConfigurationConfig;
+        return this;
+    }
+
+    /**
+     * Returns the IntegrityChecker config
+     * @since 5.1
+     */
+    @Nonnull
+    public IntegrityCheckerConfig getIntegrityCheckerConfig() {
+        return integrityCheckerConfig;
+    }
+
+    /**
+     * Sets the Integrity Checker config
+     * @since 5.1
+     */
+    @Nonnull
+    public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig integrityCheckerConfig) {
+        this.integrityCheckerConfig = integrityCheckerConfig;
+        return this;
+    }
+
+    /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
      *
@@ -3072,6 +3126,7 @@ public class Config {
                 + ", auditlogConfig=" + auditlogConfig
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
+                + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + '}';
     }
 }

@@ -382,6 +382,7 @@ hazelcast:
           in-memory-format: BINARY
           coalesce: false
           populate: true
+          serialize-keys: false
           eviction:
             eviction-policy: LRU
             max-size-policy: ENTRY_COUNT
@@ -395,7 +396,9 @@ hazelcast:
       tiered-store:
         enabled: true
         memory-tier:
-          capacity: "1 GB"
+          capacity:
+            unit: MEGABYTES
+            value: 256
         disk-tier:
           enabled: true
           device-name: my-local-device
@@ -933,6 +936,12 @@ hazelcast:
     parallelism: 3
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
+
+  dynamic-configuration:
+    persistence-enabled: true
+    persistence-file: /mnt/persistence-file
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
 
   local-device:
     my-local-device:

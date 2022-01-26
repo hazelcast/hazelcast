@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEANS;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -362,7 +362,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 Class<?> componentType = type.getComponentType();
                 if (Boolean.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN)) {
+                        if (fieldExists(schema, name, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN)) {
                             field.set(o, reader.readArrayOfBoolean(name));
                         }
                     };
@@ -411,7 +411,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     writers[index] = (w, o) -> w.writeArrayOfFloat64(name, (double[]) field.get(o));
                 } else if (Boolean.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
-                        if (fieldExists(schema, name, ARRAY_OF_BOOLEANS, ARRAY_OF_NULLABLE_BOOLEAN)) {
+                        if (fieldExists(schema, name, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN)) {
                             field.set(o, reader.readArrayOfNullableBoolean(name));
                         }
                     };
@@ -489,14 +489,14 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (LocalDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_TIMESTAMP)) {
-                            field.set(o, reader.readArrayOfTimetamp(name));
+                            field.set(o, reader.readArrayOfTimestamp(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfTimestamp(name, (LocalDateTime[]) field.get(o));
                 } else if (OffsetDateTime.class.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)) {
-                            field.set(o, reader.readArrayOfTimetampWithTimezone(name));
+                            field.set(o, reader.readArrayOfTimestampWithTimezone(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfTimestampWithTimezone(name, (OffsetDateTime[]) field.get(o));

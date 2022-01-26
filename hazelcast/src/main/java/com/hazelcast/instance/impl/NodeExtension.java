@@ -25,7 +25,6 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -39,11 +38,13 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -211,10 +212,11 @@ public interface NodeExtension {
      * Creates a service which is an implementation of given type parameter.
      *
      * @param type type of service
+     * @param params additional parameter to create the service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
-    <T> T createService(Class<T> type);
+    <T> T createService(Class<T> type, Object... params);
 
     /**
      * Creates additional extension services, which will be registered by
@@ -357,13 +359,6 @@ public interface NodeExtension {
     TextCommandService createTextCommandService();
 
     /**
-     * Creates a listener for changes in dynamic data structure configurations
-     *
-     * @return Listener to be notfied about changes in data structure configurations
-     */
-    DynamicConfigListener createDynamicConfigListener();
-
-    /**
      * Register the node extension specific diagnostics plugins on the provided
      * {@code diagnostics}.
      *
@@ -390,4 +385,8 @@ public interface NodeExtension {
      * Returns a JetService.
      */
     JetService getJet();
+
+    /** Returns the internal jet service backend */
+    @Nullable
+    JetServiceBackend getJetServiceBackend();
 }

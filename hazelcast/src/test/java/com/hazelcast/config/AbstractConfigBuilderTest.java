@@ -409,6 +409,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testPersistence();
 
     @Test
+    public abstract void testDynamicConfig();
+
+    @Test
     public abstract void testLocalDevice();
 
     @Test
@@ -670,6 +673,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, mapWith2Backups.getBackupCount());
         assertEquals(1, map1.getAttributeConfigs().size());
     }
+
+    @Test
+    public abstract void testIntegrityCheckerConfig();
 
     protected abstract Config buildAuditlogConfig();
 

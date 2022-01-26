@@ -44,6 +44,8 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -97,22 +99,35 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
+        public boolean register(
+                Address remoteAddress,
+                Address targetAddress,
+                Collection<Address> remoteAddressAliases,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
             return false;
         }
 
         @Override
-        public ServerConnection get(Address address, int streamId) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             return null;
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address , int streamId) {
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public ServerConnection getOrConnect(@Nonnull Address address , int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
+        public ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 

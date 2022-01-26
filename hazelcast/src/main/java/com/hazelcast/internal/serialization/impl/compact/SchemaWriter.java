@@ -36,17 +36,17 @@ import java.util.TreeMap;
 public final class SchemaWriter implements CompactWriter {
 
     private final TreeMap<String, FieldDescriptor> fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
-    private final String className;
+    private final String typeName;
 
-    public SchemaWriter(String className) {
-        this.className = className;
+    public SchemaWriter(String typeName) {
+        this.typeName = typeName;
     }
 
     /**
      * Builds the schema from the written fields and returns it.
      */
     public Schema build() {
-        return new Schema(className, fieldDefinitionMap);
+        return new Schema(typeName, fieldDefinitionMap);
     }
 
     /**
@@ -133,7 +133,7 @@ public final class SchemaWriter implements CompactWriter {
 
     @Override
     public void writeArrayOfBoolean(@Nonnull String fieldName, @Nullable boolean[] values) {
-        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_BOOLEANS));
+        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_BOOLEAN));
     }
 
     @Override

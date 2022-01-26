@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ConfigRecognizer;
 import com.hazelcast.config.ConfigStream;
+import com.hazelcast.internal.util.XmlUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.xml.sax.Attributes;
@@ -54,7 +55,7 @@ public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
 
     public AbstractXmlConfigRootTagRecognizer(String expectedRootNode) throws Exception {
         this.expectedRootNode = expectedRootNode;
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParserFactory factory = XmlUtil.getSAXParserFactory();
         saxParser = factory.newSAXParser();
     }
 

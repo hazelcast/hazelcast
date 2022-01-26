@@ -30,10 +30,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -55,6 +56,7 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -62,6 +64,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
@@ -108,8 +111,6 @@ import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.DiskTierConfig;
-import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
@@ -181,8 +182,9 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
+import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
@@ -194,6 +196,7 @@ import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
 import static com.hazelcast.internal.config.ConfigSections.LITE_MEMBER;
+import static com.hazelcast.internal.config.ConfigSections.LOCAL_DEVICE;
 import static com.hazelcast.internal.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.config.ConfigSections.MAP;
 import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
@@ -235,7 +238,6 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static com.hazelcast.memory.MemorySize.parseMemorySize;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -372,6 +374,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleJet(node);
         } else if (matches(LOCAL_DEVICE.getName(), nodeName)) {
             handleLocalDevice(node);
+        } else if (matches(DYNAMIC_CONFIGURATION.getName(), nodeName)) {
+            handleDynamicConfiguration(node);
+        } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
+            handleIntegrityChecker(node);
         } else {
             return true;
         }
@@ -486,6 +492,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.setPersistenceConfig(prConfig);
     }
 
+    private void handleDynamicConfiguration(Node node) {
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (matches("persistence-enabled", name)) {
+                dynamicConfigurationConfig.setPersistenceEnabled(parseBoolean(getTextContent(n)));
+            } else if (matches("persistence-file", name)) {
+                dynamicConfigurationConfig.setPersistenceFile(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches("backup-dir", name)) {
+                dynamicConfigurationConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (matches("backup-count", name)) {
+                dynamicConfigurationConfig.setBackupCount(parseInt(getTextContent(n)));
+            }
+        }
+    }
+
     protected void handleLocalDevice(Node parentNode) {
         String name = getAttribute(parentNode, "name");
         LocalDeviceConfig localDeviceConfig =
@@ -534,9 +556,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private MemoryTierConfig createMemoryTierConfig(Node node) {
-        String capacity = getTextContent(childElements(node).iterator().next());
-        return new MemoryTierConfig()
-                .setCapacity(parseMemorySize(capacity));
+        MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
+
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+
+            if (matches("capacity", name)) {
+                return memoryTierConfig.setCapacity(createMemorySize(n));
+            }
+        }
+        return memoryTierConfig;
     }
 
     private DiskTierConfig createDiskTierConfig(Node node) {
@@ -2345,6 +2374,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if (matches("populate", nodeName)) {
                     boolean populate = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setPopulate(populate);
+                } else if (matches("serialize-keys", nodeName)) {
+                    boolean serializeKeys = getBooleanValue(getTextContent(childNode));
+                    queryCacheConfig.setSerializeKeys(serializeKeys);
                 } else if (matches("indexes", nodeName)) {
                     queryCacheIndexesHandle(childNode, queryCacheConfig);
                 } else if (matches("predicate", nodeName)) {
@@ -3137,21 +3169,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("cooperative-thread-count", nodeName)) {
                 instanceConfig.setCooperativeThreadCount(
-                                getIntegerValue("cooperative-thread-count", getTextContent(child)));
+                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
             } else if (matches("flow-control-period", nodeName)) {
                 instanceConfig.setFlowControlPeriodMs(
-                                getIntegerValue("flow-control-period", getTextContent(child)));
+                        getIntegerValue("flow-control-period", getTextContent(child)));
             } else if (matches("backup-count", nodeName)) {
                 instanceConfig.setBackupCount(
-                                getIntegerValue("backup-count", getTextContent(child)));
+                        getIntegerValue("backup-count", getTextContent(child)));
             } else if (matches("scale-up-delay-millis", nodeName)) {
                 instanceConfig.setScaleUpDelayMillis(
-                                getLongValue("scale-up-delay-millis", getTextContent(child)));
+                        getLongValue("scale-up-delay-millis", getTextContent(child)));
             } else if (matches("lossless-restart-enabled", nodeName)) {
                 instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
             } else if (matches("max-processor-accumulated-records", nodeName)) {
                 instanceConfig.setMaxProcessorAccumulatedRecords(
-                                getLongValue("max-processor-accumulated-records", getTextContent(child)));
+                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }
     }
@@ -3378,6 +3410,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 fillProperties(child, credentialsFactoryConfig.getProperties());
             }
         }
+    }
+
+    private void handleIntegrityChecker(final Node node) {
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {

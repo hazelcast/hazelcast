@@ -184,6 +184,7 @@ public class ConfigXmlGenerator {
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
+        dynamicConfigurationXmlGenerator(gen, config);
         localDeviceConfigXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
@@ -196,6 +197,7 @@ public class ConfigXmlGenerator {
         jetConfig(gen, config);
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
+        integrityCheckerXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -890,6 +892,24 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
+    private void dynamicConfigurationXmlGenerator(XmlGenerator gen, Config config) {
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        gen.open("dynamic-configuration")
+                .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
+
+        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
+            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
+        }
+
+        if (dynamicConfigurationConfig.getBackupDir() != null) {
+            gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        }
+
+        gen.node("backup-count", dynamicConfigurationConfig.getBackupCount());
+        gen.close();
+    }
+
     private void encryptionAtRestXmlGenerator(XmlGenerator gen, EncryptionAtRestConfig encryptionAtRestConfig) {
         if (encryptionAtRestConfig == null) {
             gen.node("encryption-at-rest", "enabled", "false");
@@ -1223,6 +1243,15 @@ public class ConfigXmlGenerator {
                 gen.node("class", registeredClassName);
             }
         }
+    }
+
+    private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
+        gen.node(
+                "integrity-checker",
+                null,
+                "enabled",
+                config.getIntegrityCheckerConfig().isEnabled()
+        );
     }
 
     /**

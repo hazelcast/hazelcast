@@ -28,13 +28,16 @@ import javax.annotation.Nonnull;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -51,13 +54,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class FirewallingServer
         implements Server, Consumer<Packet> {
 
+    public final Server delegate;
     private final ScheduledExecutorService scheduledExecutor
             = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
     private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<>());
 
-    private final Server delegate;
     private final Consumer<Packet> packetConsumer;
-    private AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<ServerConnectionManager>(null);
+    private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
 
     @SuppressWarnings("unchecked")
     public FirewallingServer(Server delegate, Set<Address> initiallyBlockedAddresses) {
@@ -268,9 +271,16 @@ public class FirewallingServer
             return delegate.getConnections();
         }
 
+
         @Override
-        public ServerConnection get(Address address, int streamId) {
+        public ServerConnection get(@Nonnull Address address, int streamId) {
             return wrap(delegate.get(address, streamId));
+        }
+
+        @Override
+        @Nonnull
+        public List<ServerConnection> getAllConnections(@Nonnull Address address) {
+            return delegate.getAllConnections(address).stream().map(this::wrap).collect(Collectors.toList());
         }
 
         private ServerConnection wrap(ServerConnection c) {
@@ -278,18 +288,25 @@ public class FirewallingServer
         }
 
         @Override
-        public synchronized ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, boolean silent, int streamId) {
             return wrap(delegate.getOrConnect(address, streamId));
         }
 
         @Override
-        public synchronized ServerConnection getOrConnect(Address address, int streamId) {
+        public synchronized ServerConnection getOrConnect(@Nonnull Address address, int streamId) {
             return wrap(delegate.getOrConnect(address, streamId));
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
-            return delegate.register(remoteAddress, connection, streamId);
+        public boolean register(
+                Address remoteAddress,
+                Address targetAddress,
+                Collection<Address> remoteAddressAliases,
+                UUID remoteUuid,
+                ServerConnection connection,
+                int streamId
+        ) {
+            return delegate.register(remoteAddress, targetAddress, remoteAddressAliases, remoteUuid, connection, streamId);
         }
 
         @Override
@@ -360,6 +377,16 @@ public class FirewallingServer
         @Override
         public void setRemoteAddress(Address remoteAddress) {
             delegate.setRemoteAddress(remoteAddress);
+        }
+
+        @Override
+        public UUID getRemoteUuid() {
+            return delegate.getRemoteUuid();
+        }
+
+        @Override
+        public void setRemoteUuid(UUID remoteUuid) {
+            delegate.setRemoteUuid(remoteUuid);
         }
 
         @Override

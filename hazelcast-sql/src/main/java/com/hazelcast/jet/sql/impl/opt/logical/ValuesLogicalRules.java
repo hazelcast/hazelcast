@@ -40,7 +40,6 @@ import static java.util.Collections.singletonList;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.some;
-import static org.apache.calcite.plan.RelOptRule.unordered;
 
 final class ValuesLogicalRules {
 
@@ -146,7 +145,7 @@ final class ValuesLogicalRules {
 
     static final RelOptRule UNION_INSTANCE =
             new RelOptRule(
-                    operand(UnionLogicalRel.class, unordered(VALUES_CHILD_OPERAND)),
+                    operand(UnionLogicalRel.class, RelOptRule.unordered(VALUES_CHILD_OPERAND)),
                     ValuesLogicalRules.class.getSimpleName() + "(Union)"
             ) {
                 @Override

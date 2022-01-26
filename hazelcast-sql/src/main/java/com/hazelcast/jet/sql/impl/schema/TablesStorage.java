@@ -108,6 +108,14 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
+    Collection<String> viewNames() {
+        return storage().values()
+                .stream()
+                .filter(v -> v instanceof View)
+                .map(v -> ((View) v).name())
+                .collect(Collectors.toList());
+    }
+
     void registerListener(EntryListener<String, Object> listener) {
         // do not try to implicitly create ReplicatedMap
         // TODO: perform this check in a single place i.e. SqlService ?

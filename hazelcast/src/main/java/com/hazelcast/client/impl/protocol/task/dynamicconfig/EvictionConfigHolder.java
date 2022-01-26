@@ -63,7 +63,7 @@ public class EvictionConfigHolder {
         return comparator;
     }
 
-    public EvictionConfig asEvictionConfg(SerializationService serializationService) {
+    public EvictionConfig asEvictionConfig(SerializationService serializationService) {
         EvictionConfig config = new EvictionConfig();
         config.setSize(size)
                 .setMaxSizePolicy(MaxSizePolicy.valueOf(maxSizePolicy))

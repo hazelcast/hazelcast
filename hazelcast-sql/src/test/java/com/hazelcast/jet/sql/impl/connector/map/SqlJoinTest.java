@@ -56,7 +56,7 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_innerJoin() {
+        public void test_innerJoin_mapOnRight() {
             String leftName = randomName();
             TestBatchSqlConnector.create(sqlService, leftName, 3);
 
@@ -70,6 +70,28 @@ public class SqlJoinTest {
                     "SELECT l.v, m.this " +
                             "FROM " + leftName + " l " +
                             "INNER JOIN " + mapName + " m ON l.v = m.__key",
+                    asList(
+                            new Row(1, "value-1"),
+                            new Row(2, "value-2")
+                    )
+            );
+        }
+
+        @Test
+        public void test_innerJoin_mapOnLeft() {
+            String leftName = randomName();
+            TestBatchSqlConnector.create(sqlService, leftName, 3);
+
+            String mapName = randomName();
+            createMapping(mapName, int.class, String.class);
+            instance().getMap(mapName).put(1, "value-1");
+            instance().getMap(mapName).put(2, "value-2");
+            instance().getMap(mapName).put(3, "value-3");
+
+            assertRowsAnyOrder(
+                    "SELECT l.v, m.this " +
+                            "FROM " + mapName + " m " +
+                            "INNER JOIN " + leftName + " l ON l.v = m.__key",
                     asList(
                             new Row(1, "value-1"),
                             new Row(2, "value-2")
@@ -457,7 +479,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.name, m.id " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.id",
@@ -482,7 +504,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v1, l.v2, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v1 = m.id AND l.v2 = m.name",
@@ -507,7 +529,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
             instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v1, l.v2, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v1 = m.id OR l.v2 = m.name",
@@ -535,7 +557,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(new PersonId(2), new Person(0, "value-2"));
             instance().getMap(mapName).put(new PersonId(3), new Person(0, "value-3"));
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.id " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.name",
@@ -557,7 +579,7 @@ public class SqlJoinTest {
             instance().getMap(mapName).put(2, new Person(2, "value-2"));
             instance().getMap(mapName).put(3, new Person(0, "value-3"));
 
-            assertRowsEventuallyInAnyOrder(
+            assertRowsAnyOrder(
                     "SELECT l.v, m.id, m.name " +
                             "FROM " + leftName + " l " +
                             "JOIN " + mapName + " m ON l.v = m.__key AND l.v = m.id",

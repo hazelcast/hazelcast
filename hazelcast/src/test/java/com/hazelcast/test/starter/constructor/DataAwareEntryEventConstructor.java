@@ -21,6 +21,8 @@ import com.hazelcast.test.starter.HazelcastStarterConstructor;
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
+import static com.hazelcast.test.starter.ReflectionUtils.callNoArgMethod;
+import static com.hazelcast.test.starter.ReflectionUtils.getDelegateFromProxyClass;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
 @HazelcastStarterConstructor(classNames = {"com.hazelcast.map.impl.DataAwareEntryEvent"})
@@ -39,12 +41,12 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
         Class<?> serServiceClass = starterClassLoader.loadClass("com.hazelcast.internal.serialization.SerializationService");
         Constructor<?> constructor = targetClass.getConstructor(memberClass, Integer.TYPE, String.class, dataClass,
                 dataClass, dataClass, dataClass, serServiceClass);
-
+        Object unproxiedDelegate = getDelegateFromProxyClass(delegate);
         Object serializationService = getFieldValueReflectively(delegate, "serializationService");
-        Object source = getFieldValueReflectively(delegate, "source");
+        Object source = callNoArgMethod(unproxiedDelegate, "getSource");
         Object member = getFieldValueReflectively(delegate, "member");
         Object entryEventType = getFieldValueReflectively(delegate, "entryEventType");
-        Integer eventTypeId = (Integer) entryEventType.getClass().getMethod("getType").invoke(entryEventType);
+        Integer eventTypeId = (Integer) callNoArgMethod(entryEventType, "getType");
         Object dataKey = getFieldValueReflectively(delegate, "dataKey");
         Object dataNewValue = getFieldValueReflectively(delegate, "dataNewValue");
         Object dataOldValue = getFieldValueReflectively(delegate, "dataOldValue");

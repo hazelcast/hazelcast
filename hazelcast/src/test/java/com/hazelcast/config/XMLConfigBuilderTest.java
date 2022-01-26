@@ -63,6 +63,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
+import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
@@ -2697,6 +2699,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<in-memory-format>BINARY</in-memory-format>"
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
+                + "<serialize-keys>true</serialize-keys>"
                 + "<indexes>"
                 + "<index type=\"HASH\"><attributes><attribute>name</attribute></attributes></index>"
                 + "</indexes>"
@@ -2724,6 +2727,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
+        assertTrue(queryCacheConfig.isSerializeKeys());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
@@ -3137,6 +3141,46 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testDynamicConfig() {
+        boolean persistenceEnabled = true;
+        String persistenceFile = "/mnt/dynamic-configuration/persistence-file";
+        String backupDir = "/mnt/dynamic-configuration/backup-dir";
+        int backupCount = 7;
+
+        String xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "    <persistence-file>" + persistenceFile + "</persistence-file>"
+                + "    <backup-dir>" + backupDir + "</backup-dir>"
+                + "    <backup-count>" + backupCount + "</backup-count>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        DynamicConfigurationConfig dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertEquals(new File(persistenceFile).getAbsolutePath(), dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
+        assertEquals(new File(backupDir).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(backupCount, dynamicConfigurationConfig.getBackupCount());
+
+        xml = HAZELCAST_START_TAG
+                + "<dynamic-configuration>"
+                + "    <persistence-enabled>" + persistenceEnabled + "</persistence-enabled>"
+                + "</dynamic-configuration>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        dynamicConfigurationConfig = config.getDynamicConfigurationConfig();
+
+        assertEquals(persistenceEnabled, dynamicConfigurationConfig.isPersistenceEnabled());
+        assertNull(dynamicConfigurationConfig.getPersistenceFile());
+        assertEquals(new File(DEFAULT_BACKUP_DIR).getAbsolutePath(), dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
+        assertEquals(DEFAULT_BACKUP_COUNT, dynamicConfigurationConfig.getBackupCount());
+    }
+
+    @Override
+    @Test
     public void testLocalDevice() {
         String baseDir = "base-directory";
         int blockSize = 2048;
@@ -3226,7 +3270,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"map0\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
-                + "            <capacity>1024 MB</capacity>"
+                + "            <capacity value=\"1024\" unit=\"MEGABYTES\"/>"
                 + "        </memory-tier>"
                 + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
                 + "    </tiered-store>"
@@ -3239,7 +3283,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"map2\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
-                + "            <capacity>1 GB</capacity>"
+                + "            <capacity value=\"1\" unit=\"GIGABYTES\"/>"
                 + "        </memory-tier>"
                 + "    </tiered-store>"
                 + "</map>\n"
@@ -4271,6 +4315,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <integrity-checker enabled=\"false\"/>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 
     @Override

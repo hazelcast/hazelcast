@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultLimitReachedException;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.NoSuchElementException;
@@ -99,7 +98,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
-        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
+        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow()); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;

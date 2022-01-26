@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management.events;
+package com.hazelcast.config;
 
-import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.test.HazelcastTestSupport;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.junit.Test;
 
-import java.util.UUID;
-
-abstract class AbstractWanEvent extends AbstractEventBase {
-    private final UUID uuid;
-
-    protected AbstractWanEvent(UUID uuid) {
-        assert uuid != null : "UUID must not be null";
-        this.uuid = uuid;
-    }
-
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("uuid", uuid != null ? uuid.toString() : "null");
-        return json;
+public class DynamicConfigurationConfigTest extends HazelcastTestSupport {
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(DynamicConfigurationConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

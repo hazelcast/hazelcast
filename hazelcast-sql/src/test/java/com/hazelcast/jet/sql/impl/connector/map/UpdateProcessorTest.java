@@ -139,7 +139,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, arguments))
                 .executeBeforeEachRun(() -> map.put(1, initialValue))
-                .input(singletonList(new Object[]{inputValue}))
+                .input(singletonList(jetRow(inputValue)))
                 .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()

@@ -24,11 +24,9 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
@@ -50,6 +48,7 @@ import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -148,8 +147,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.eventService = new EventServiceImpl(this);
             this.operationParker = new OperationParkerImpl(this);
             UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
-            DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
-            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            this.configurationService = node.getNodeExtension().createService(ClusterWideConfigurationService.class, this);
             ClassLoader configClassLoader = node.getConfigClassLoader();
             if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
                 ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
@@ -163,7 +161,7 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    getJetPacketConsumer(node.getNodeExtension())
+                    getJetPacketConsumer()
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -454,6 +452,10 @@ public class NodeEngineImpl implements NodeEngine {
         return serviceManager.getServiceInfos(serviceClass);
     }
 
+    public void forEachMatchingService(Class serviceClass, Consumer<ServiceInfo> consumer) {
+        serviceManager.forEachMatchingService(serviceClass, consumer);
+    }
+
     public Node getNode() {
         return node;
     }
@@ -565,20 +567,15 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    // has to be public, it's used by Jet
-    public interface JetPacketConsumer extends Consumer<Packet> {
-    }
-
     @Nonnull
-    private Consumer<Packet> getJetPacketConsumer(NodeExtension nodeExtension) {
-        if (nodeExtension instanceof JetPacketConsumer) {
-            return (JetPacketConsumer) nodeExtension;
+    private Consumer<Packet> getJetPacketConsumer() {
+        // Here, JetServiceBackend is not registered to service manager yet
+        JetServiceBackend jetServiceBackend = node.getNodeExtension().getJetServiceBackend();
+        if (jetServiceBackend != null) {
+            return jetServiceBackend;
         } else {
-            return new JetPacketConsumer() {
-                @Override
-                public void accept(Packet packet) {
-                    throw new UnsupportedOperationException("Jet is not registered on this node");
-                }
+            return packet -> {
+                throw new UnsupportedOperationException("Jet is not enabled on this node");
             };
         }
     }

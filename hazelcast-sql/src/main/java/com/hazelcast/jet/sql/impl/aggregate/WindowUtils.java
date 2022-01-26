@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.core.SlidingWindowPolicy;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -52,45 +53,38 @@ public final class WindowUtils {
     /**
      * Returns a row with two added fields: the window_start and window_end.
      */
-    public static Object[] addWindowBounds(Object[] row, int index, SlidingWindowPolicy windowPolicy) {
-        Object value = row[index];
+    public static JetSqlRow addWindowBounds(JetSqlRow row, int index, SlidingWindowPolicy windowPolicy) {
+        Object value = row.get(index);
         long millis = extractMillis(value);
         long windowStartMillis = windowPolicy.floorFrameTs(millis);
         long windowEndMillis = windowPolicy.higherFrameTs(millis);
-        Object[] result = Arrays.copyOf(row, row.length + 2);
+        Object[] result = Arrays.copyOf(row.getValues(), row.getFieldCount() + 2);
         if (value instanceof Byte) {
             result[result.length - 2] = (byte) windowStartMillis;
             result[result.length - 1] = (byte) windowEndMillis;
-            return result;
         } else if (value instanceof Short) {
             result[result.length - 2] = (short) windowStartMillis;
             result[result.length - 1] = (short) windowEndMillis;
-            return result;
         } else if (value instanceof Integer) {
             result[result.length - 2] = (int) windowStartMillis;
             result[result.length - 1] = (int) windowEndMillis;
-            return result;
         } else if (value instanceof Long) {
             result[result.length - 2] = windowStartMillis;
             result[result.length - 1] = windowEndMillis;
-            return result;
         } else if (value instanceof LocalTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalTime();
-            return result;
         } else if (value instanceof LocalDate) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDate();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDate();
-            return result;
         } else if (value instanceof LocalDateTime) {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE).toLocalDateTime();
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE).toLocalDateTime();
-            return result;
         } else {
             result[result.length - 2] = asTimestampWithTimezone(windowStartMillis, DEFAULT_ZONE);
             result[result.length - 1] = asTimestampWithTimezone(windowEndMillis, DEFAULT_ZONE);
-            return result;
         }
+        return new JetSqlRow(row.getSerializationService(), result);
     }
 
     public static long extractMillis(Object value) {

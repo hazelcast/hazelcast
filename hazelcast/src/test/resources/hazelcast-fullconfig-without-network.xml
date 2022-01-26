@@ -430,7 +430,7 @@
         </query-caches>
         <tiered-store enabled="true">
             <memory-tier>
-                <capacity>1 GB</capacity>
+                <capacity unit="MEGABYTES" value="256"/>
             </memory-tier>
             <disk-tier enabled="true" device-name="my-local-device"/>
         </tiered-store>
@@ -994,6 +994,13 @@
         <validation-timeout-seconds>10</validation-timeout-seconds>
         <rebalance-delay-seconds>240</rebalance-delay-seconds>
     </persistence>
+
+    <dynamic-configuration>
+        <persistence-enabled>true</persistence-enabled>
+        <persistence-file>/mnt/persistence-file</persistence-file>
+        <backup-dir>/mnt/backup-dir</backup-dir>
+        <backup-count>7</backup-count>
+    </dynamic-configuration>
 
     <local-device name="my-local-device">
         <base-dir>base-dir</base-dir>

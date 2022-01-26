@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
@@ -31,24 +33,35 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.partition.ChunkSerDeHelper.readChunkedOperations;
+
 /**
- * Contains fragment namespaces along with their partition versions and migration data operations
+ * Contains fragment namespaces along with their
+ * partition versions and migration data operations
  *
  * @since 3.9
  */
-public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable, TargetAware {
+public class ReplicaFragmentMigrationState
+        implements IdentifiedDataSerializable, TargetAware, Versioned {
 
     private Map<ServiceNamespace, long[]> namespaces;
-
     private Collection<Operation> migrationOperations;
+
+    private transient ChunkSerDeHelper chunkSerDeHelper;
 
     public ReplicaFragmentMigrationState() {
     }
 
     public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
-            Collection<Operation> migrationOperations) {
+                                         Collection<Operation> migrationOperations,
+                                         Collection<ChunkSupplier> chunkSuppliers,
+                                         boolean chunkedMigrationEnabled,
+                                         int maxTotalChunkedDataInBytes, ILogger logger,
+                                         int partitionId) {
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
+        this.chunkSerDeHelper = new ChunkSerDeHelper(logger, partitionId,
+                chunkSuppliers, chunkedMigrationEnabled, maxTotalChunkedDataInBytes);
     }
 
     public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
@@ -76,10 +89,13 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             out.writeObject(e.getKey());
             out.writeLongArray(e.getValue());
         }
+
         out.writeInt(migrationOperations.size());
         for (Operation operation : migrationOperations) {
             out.writeObject(operation);
         }
+
+        chunkSerDeHelper.writeChunkedOperations(out);
     }
 
     @Override
@@ -97,6 +113,8 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
             Operation migrationOperation = in.readObject();
             migrationOperations.add(migrationOperation);
         }
+
+        migrationOperations = readChunkedOperations(in, migrationOperations);
     }
 
     @Override
