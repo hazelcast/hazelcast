@@ -29,8 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.awaitSingleRunningJob;
-import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -42,7 +40,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout() {
-        checkTimeout(false, DEFAULT_CURSOR_BUFFER_SIZE);
+        checkTimeout(false);
     }
 
     @Test
