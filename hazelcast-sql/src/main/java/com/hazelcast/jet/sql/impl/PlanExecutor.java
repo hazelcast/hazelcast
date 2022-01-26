@@ -104,6 +104,7 @@ public class PlanExecutor {
     private static final String DEFAULT_UNIQUE_KEY = "__key";
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
     private static final String SQL_QUERY_KEY_NAME = "__sql.query";
+    private static final String SQL_IS_STREAMING_KEY_NAME = "__sql.isStreaming";
 
     private final TableResolverImpl catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -342,6 +343,7 @@ public class PlanExecutor {
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(SQL_QUERY_KEY_NAME, plan.getQuery())
+                .setArgument(SQL_IS_STREAMING_KEY_NAME, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());

@@ -38,13 +38,14 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_runningTheQuery_then_queryCanBeFetchFromConfig() {
+    public void when_runningTheQuery_then_queryAndIsStreamingCanBeFetchFromConfig() {
         String sql = "select * from table(generate_stream(1))";
         try (SqlResult result = execute(sql)) {
             List<Job> jobs = instance().getJet().getJobs();
             assertEquals(1, jobs.size());
             JobConfig config = jobs.get(0).getConfig();
             assertEquals(sql, config.getArgument("__sql.query"));
+            assertEquals(Boolean.TRUE, config.getArgument("__sql.isStreaming"));
         }
     }
 
