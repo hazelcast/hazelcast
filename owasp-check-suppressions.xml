@@ -156,7 +156,7 @@
     </suppress>
     <suppress>
        <notes><![CDATA[
-       False positive. The flaws are relatated to the MySQL version and not the MySQL Binary Log connector.
+       False positive. The flaws are relatated to the MySQL version and not the MySQL Debezium connector.
        ]]></notes>
        <packageUrl regex="true">^pkg:maven/io\.debezium/debezium\-connector\-mysql@.*$</packageUrl>
        <vulnerabilityName>CVE-2007-1420</vulnerabilityName>

@@ -1717,7 +1717,8 @@
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
               <version>2.0.48.Final</version>
-            </dependency>            <!--
+            </dependency>
+            <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
             -->
