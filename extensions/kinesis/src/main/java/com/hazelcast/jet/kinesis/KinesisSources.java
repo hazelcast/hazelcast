@@ -327,6 +327,9 @@ public final class KinesisSources {
     }
 
     private static class DefaultProjection<T> implements BiFunctionEx<Record, Shard, T> {
+
+        private static final long serialVersionUID = 1L;
+
         @Override
         public T applyEx(Record record, Shard shard) {
             return (T) entry(record.getPartitionKey(), toArray(record));
