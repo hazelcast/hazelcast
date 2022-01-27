@@ -77,6 +77,7 @@
                 <xs:element name="jet" type="jet" minOccurs="0"/>
                 <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
+                <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -4293,19 +4294,13 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="capacity" minOccurs="0" default="256 MB">
+            <xs:element name="capacity" minOccurs="0" type="memory-size">
                 <xs:annotation>
                     <xs:documentation>
                         Memory tier capacity, i.e., how much main memory should this tier consume at most.
-                        The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB).
-                        For instance, capacity="1024 MB" is valid, whereas capacity="2^10 mb" is not.
+                        The default is 256 megabytes.
                     </xs:documentation>
                 </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:pattern value="[1-9]([0-9]*) (B|KB|MB|GB)"/>
-                    </xs:restriction>
-                </xs:simpleType>
             </xs:element>
         </xs:all>
     </xs:complexType>
@@ -5986,4 +5981,14 @@
             <xs:minInclusive value="0"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="integrity-checker">
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable integrity checker, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

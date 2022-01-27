@@ -743,9 +743,6 @@ hazelcast:
     # 'hazelcast.metrics.collection.frequency' system property.
     collection-frequency-seconds: 5
 
-  instance-tracking:
-    enabled: false
-
   sql:
     # Sets the timeout in milliseconds that is applied to SQL statements
     # without an explicit timeout. It is possible to set a timeout through the

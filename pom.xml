@@ -95,23 +95,24 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.120</aws.sdk.version>
+        <aws.sdk.version>1.12.148</aws.sdk.version>
         <classgraph.version>4.8.138</classgraph.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
         <jackson.version>2.12.1</jackson.version>
+        <jackson.mapper.asl.version>1.9.13.redhat-00007</jackson.mapper.asl.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>1.0-SNAPSHOT</json-surfer.version>
+        <json-surfer.version>0.10</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
-        <log4j.version>1.2.17</log4j.version>
+        <log4j.version>1.2.17.redhat-3</log4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.63.Final</netty.version>
+        <netty.version>4.1.73.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.0</parquet.version>
@@ -119,7 +120,7 @@
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.2</protobuf.version>
         <scala.version>2.12</scala.version>
-        <slf4j.version>1.7.32</slf4j.version>
+        <slf4j.version>1.7.35</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.30</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
@@ -146,7 +147,7 @@
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <archunit.version>0.22.0</archunit.version>
-        <errorprone.version>2.10.0</errorprone.version>
+        <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
@@ -164,6 +165,7 @@
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
+        <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
         <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
@@ -1250,13 +1252,13 @@
                    export java.xml/jdk.xml.internal
                 -->
                 <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
-                    --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens java.base/java.lang=ALL-UNNAMED
-                    --add-opens java.management/sun.management=ALL-UNNAMED
-                    --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
-                    --illegal-access=warn
+                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+                    --add-opens java.base/java.lang=${hazelcast.module.name}
+                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
+                    --illegal-access=deny
                 </javaModuleArgs>
             </properties>
             <modules>
@@ -1370,6 +1372,28 @@
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>hazelcast-security</id>
+            <name>Thirdparty security fixes</name>
+            <url>https://repository.hazelcast.com/security-maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
+        <repository>
+            <id>redhat-ga</id>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -1561,7 +1585,7 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.7.2</version>
+                <version>1.1.8.4</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
@@ -1572,6 +1596,11 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.htrace</groupId>
+                <artifactId>htrace-core4</artifactId>
+                <version>4.2.0-incubating.hazelcast-2</version>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
@@ -1653,6 +1682,41 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-core-asl</artifactId>
+                <version>${jackson.mapper.asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.7</version>
+            </dependency>
+            <dependency>
+              <groupId>org.wildfly.openssl</groupId>
+              <artifactId>wildfly-openssl</artifactId>
+              <version>1.0.12.Final</version>
+            </dependency>
+            <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-tcnative-classes</artifactId>
+              <version>2.0.48.Final</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.

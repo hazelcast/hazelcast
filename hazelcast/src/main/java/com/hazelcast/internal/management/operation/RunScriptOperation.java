@@ -62,7 +62,8 @@ public class RunScriptOperation extends AbstractLocalOperation {
                     ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
                     ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(engine);
                     if (scriptEngine == null) {
-                        throw new IllegalArgumentException("Could not find ScriptEngine named '" + engine + "'.");
+                        throw new IllegalArgumentException("Could not find ScriptEngine named '" + engine + "'."
+                                + " Please add the corresponding ScriptEngine to the classpath of this Hazelcast member");
                     }
                     scriptEngine.put("hazelcast", getNodeEngine().getHazelcastInstance());
                     try {

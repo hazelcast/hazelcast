@@ -25,6 +25,8 @@ import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.NetworkInterfaceInfo;
+import com.hazelcast.internal.util.NetworkInterfacesEnumerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -33,7 +35,6 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
@@ -86,7 +87,7 @@ class DefaultAddressPicker
     private Address publicAddress;
     private Address bindAddress;
     private ServerSocketChannel serverSocketChannel;
-    private NetworkInterfacesEnumerator networkInterfacesEnumerator = new DefaultNetworkInterfacesEnumerator();
+    private NetworkInterfacesEnumerator networkInterfacesEnumerator = NetworkInterfacesEnumerator.defaultEnumerator();
 
     DefaultAddressPicker(Config config, ILogger logger) {
         this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
@@ -547,129 +548,6 @@ class DefaultAddressPicker
         }
     }
 
-    @FunctionalInterface
-    interface NetworkInterfacesEnumerator {
-        List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException;
-    }
-
-    static class NetworkInterfaceInfo {
-        private final boolean up;
-        private final boolean virtual;
-        private final boolean loopback;
-        private final String name;
-        private final List<InetAddress> inetAddresses;
-
-        /**
-         * Used externally only for testing
-         */
-        NetworkInterfaceInfo(String name, boolean up, boolean virtual, boolean loopback, List<InetAddress> inetAddresses) {
-            this.up = up;
-            this.virtual = virtual;
-            this.loopback = loopback;
-            this.name = name;
-            this.inetAddresses = inetAddresses;
-        }
-
-        NetworkInterfaceInfo(NetworkInterface networkInterface) throws SocketException {
-            this(networkInterface.getName(), networkInterface.isUp(), networkInterface.isVirtual(), networkInterface.isLoopback(),
-                    Collections.list(networkInterface.getInetAddresses()));
-        }
-
-        boolean isUp() {
-            return up;
-        }
-
-        boolean isVirtual() {
-            return virtual;
-        }
-
-        boolean isLoopback() {
-            return loopback;
-        }
-
-        String getName() {
-            return name;
-        }
-
-        List<InetAddress> getInetAddresses() {
-            return inetAddresses;
-        }
-
-        /**
-         * Creates builder to build {@link NetworkInterfaceInfo}, used for testing.
-         *
-         * @return created builder
-         */
-        public static Builder builder(String name) {
-            return new Builder(name);
-        }
-
-        /**
-         * Builder to build {@link NetworkInterfaceInfo}.
-         */
-        @SuppressWarnings("SameParameterValue")
-        static final class Builder {
-
-            private String name;
-            private boolean up = true;
-            private boolean loopback;
-            private boolean virtual;
-            private String[] addresses = {};
-
-            private Builder(String name) {
-                this.name = name;
-            }
-
-            Builder withUp(boolean up) {
-                this.up = up;
-                return this;
-            }
-
-            Builder withLoopback(boolean loopback) {
-                this.loopback = loopback;
-                return this;
-            }
-
-            Builder withVirtual(boolean virtual) {
-                this.virtual = virtual;
-                return this;
-            }
-
-            Builder withAddresses(String... addresses) {
-                this.addresses = addresses;
-                return this;
-            }
-
-            private static List<InetAddress> createInetAddresses(String... addresses) {
-                List<InetAddress> inetAddresses = new ArrayList<>();
-                for (String address : addresses) {
-                    try {
-                        inetAddresses.add(InetAddress.getByName(address));
-                    } catch (UnknownHostException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                return inetAddresses;
-            }
-
-            NetworkInterfaceInfo build() {
-                return new NetworkInterfaceInfo(name, up, virtual, loopback, createInetAddresses(addresses));
-            }
-        }
-    }
-
-    private static class DefaultNetworkInterfacesEnumerator implements NetworkInterfacesEnumerator {
-
-        @Override
-        public List<NetworkInterfaceInfo> getNetworkInterfaces() throws SocketException {
-            List<NetworkInterfaceInfo> infos = new ArrayList<>();
-            for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                NetworkInterfaceInfo networkInterfaceInfo = new NetworkInterfaceInfo(networkInterface);
-                infos.add(networkInterfaceInfo);
-            }
-            return infos;
-        }
-    }
 
     @FunctionalInterface
     interface HostnameResolver {

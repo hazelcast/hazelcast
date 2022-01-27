@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness.BoundednessMetadata;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties.WindowPropertiesMetadata;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.WatermarkedFieldsMetadata;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
@@ -25,11 +25,11 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
 
     private BoundednessMetadata.Handler boundednessHandler;
-    private WindowPropertiesMetadata.Handler windowPropertiesHandler;
+    private WatermarkedFieldsMetadata.Handler watermarkedFieldsHandler;
 
     private HazelcastRelMetadataQuery() {
         this.boundednessHandler = initialHandler(BoundednessMetadata.Handler.class);
-        this.windowPropertiesHandler = initialHandler(WindowPropertiesMetadata.Handler.class);
+        this.watermarkedFieldsHandler = initialHandler(WatermarkedFieldsMetadata.Handler.class);
     }
 
     public static HazelcastRelMetadataQuery reuseOrCreate(RelMetadataQuery mq) {
@@ -50,12 +50,12 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
         }
     }
 
-    public WindowProperties extractWindowProperties(RelNode rel) {
+    public WatermarkedFields extractWatermarkedFields(RelNode rel) {
         for (; ; ) {
             try {
-                return windowPropertiesHandler.extractWindowProperties(rel, this);
+                return watermarkedFieldsHandler.extractWatermarkedFields(rel, this);
             } catch (JaninoRelMetadataProvider.NoHandler e) {
-                windowPropertiesHandler = revise(e.relClass, WindowPropertiesMetadata.DEF);
+                watermarkedFieldsHandler = revise(e.relClass, WatermarkedFieldsMetadata.DEF);
             }
         }
     }

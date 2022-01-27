@@ -63,6 +63,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.memory.MemorySize;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
@@ -824,12 +825,20 @@ public class DynamicConfigYamlGenerator {
         }
         Map<String, Object> memoryTierConfigAsMap = new LinkedHashMap<>();
 
-        addNonNullToMap(memoryTierConfigAsMap, "capacity",
-                memoryTierConfig.getCapacity().getValue()
-                        + " "
-                        + memoryTierConfig.getCapacity().getUnit().abbreviation());
+        addNonNullToMap(memoryTierConfigAsMap, "capacity", getCapacityAsMap(memoryTierConfig.getCapacity()));
 
         return memoryTierConfigAsMap;
+    }
+
+    private static Map<String, Object> getCapacityAsMap(MemorySize capacity) {
+        if (capacity == null) {
+            return null;
+        }
+        Map<String, Object> capacityAsMap = new LinkedHashMap<>();
+        addNonNullToMap(capacityAsMap, "unit", capacity.getUnit().toString());
+        addNonNullToMap(capacityAsMap, "value", "" + capacity.getValue());
+
+        return capacityAsMap;
     }
 
     private static Map<String, Object> getDiskTierConfigAsMap(DiskTierConfig diskTierConfig) {

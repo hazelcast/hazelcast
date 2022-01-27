@@ -197,6 +197,7 @@ public class ConfigXmlGenerator {
         jetConfig(gen, config);
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
+        integrityCheckerXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1242,6 +1243,15 @@ public class ConfigXmlGenerator {
                 gen.node("class", registeredClassName);
             }
         }
+    }
+
+    private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
+        gen.node(
+                "integrity-checker",
+                null,
+                "enabled",
+                config.getIntegrityCheckerConfig().isEnabled()
+        );
     }
 
     /**

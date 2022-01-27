@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -23,7 +24,6 @@ import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
@@ -152,5 +152,15 @@ public class CountingMigrationAwareService
             return null;
         }
         return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
+    }
+
+    @Override
+    public void onBeforeRun(PartitionMigrationEvent event) {
+        migrationAwareService.onBeforeRun(event);
+    }
+
+    @Override
+    public void onAfterRunFinal(PartitionMigrationEvent event) {
+        migrationAwareService.onAfterRunFinal(event);
     }
 }

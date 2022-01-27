@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -171,9 +170,7 @@ public abstract class OperationRunner {
             operation.afterRun();
         } finally {
             operation.popThreadContext();
-            if (operation instanceof MapOperation) {
-                ((MapOperation) operation).afterRunFinal();
-            }
+            operation.afterRunFinal();
         }
     }
 }

@@ -88,12 +88,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout_execute() {
-        checkTimeout(true, DEFAULT_CURSOR_BUFFER_SIZE);
-    }
-
-    @Test
-    public void testTimeout_fetch() {
-        checkTimeout(true, DEFAULT_CURSOR_BUFFER_SIZE * 4);
+        checkTimeout(true);
     }
 
     @Test

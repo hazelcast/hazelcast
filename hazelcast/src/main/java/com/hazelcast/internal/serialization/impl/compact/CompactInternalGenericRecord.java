@@ -91,7 +91,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final OffsetReader offsetReader;
     private final Schema schema;
     private final BufferObjectDataInput in;
-    private final int finalPosition;
     private final int dataStartPosition;
     private final int variableOffsetsPosition;
     private final CompactStreamSerializer serializer;
@@ -107,6 +106,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         this.associatedClass = associatedClass;
         this.schemaIncludedInBinary = schemaIncludedInBinary;
         try {
+            int finalPosition;
             int numberOfVariableLengthFields = schema.getNumberOfVariableSizeFields();
             if (numberOfVariableLengthFields != 0) {
                 int dataLength = in.readInt();

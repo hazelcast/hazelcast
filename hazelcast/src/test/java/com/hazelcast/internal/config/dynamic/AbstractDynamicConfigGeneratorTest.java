@@ -81,6 +81,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
 import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -1096,7 +1097,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
     private static TieredStoreConfig tieredStoreConfig() {
         MemoryTierConfig memTierConfig = new MemoryTierConfig()
-                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
+                .setCapacity(new MemorySize(13401L, MemoryUnit.MEGABYTES));
 
         DiskTierConfig diskTierConfig = new DiskTierConfig()
                 .setEnabled(true)
