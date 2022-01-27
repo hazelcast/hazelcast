@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,6 +28,7 @@ import java.io.IOException;
 public class UpdateConfigOperation extends AbstractManagementOperation {
 
     private String configXml;
+    private ConfigUpdateResult result;
 
     public UpdateConfigOperation() {
     }
@@ -44,7 +46,12 @@ public class UpdateConfigOperation extends AbstractManagementOperation {
     public void run()
             throws Exception {
         ConfigurationService configService = getService();
-        configService.update(Config.loadFromString(configXml));
+        result = configService.update(Config.loadFromString(configXml));
+    }
+
+    @Override
+    public Object getResponse() {
+        return result;
     }
 
     @Override
