@@ -61,7 +61,7 @@ public class SqlSummary implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.JOB_SUMMARY;
+        return JetInitDataSerializerHook.SQL_SUMMARY;
     }
 
     @Override
