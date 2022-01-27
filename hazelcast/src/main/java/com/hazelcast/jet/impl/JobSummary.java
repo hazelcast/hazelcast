@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +31,7 @@ import java.io.IOException;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
-public class JobSummary implements IdentifiedDataSerializable {
+public class JobSummary implements IdentifiedDataSerializable, Versioned {
 
     private boolean isLightJob;
     private long jobId;
