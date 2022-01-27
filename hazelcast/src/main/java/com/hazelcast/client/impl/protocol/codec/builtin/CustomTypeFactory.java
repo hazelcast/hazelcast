@@ -32,6 +32,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.config.ConfigNamespace;
+import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
@@ -44,7 +47,9 @@ import com.hazelcast.sql.SqlColumnType;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +57,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import static java.lang.String.format;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public final class CustomTypeFactory {
@@ -240,5 +246,18 @@ public final class CustomTypeFactory {
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
         return new HazelcastJsonValue(value);
+    }
+
+    public static ConfigUpdateResult createConfigUpdateResult(List<ConfigNamespace> addedConfigs,
+                                                              List<ConfigNamespace> ignoredConfigs) {
+        return new ConfigUpdateResult(new HashSet<>(addedConfigs), new HashSet<>(ignoredConfigs));
+    }
+
+    public static ConfigNamespace createConfigNamespace(String configSection, String configName) {
+        ConfigSections section = Arrays.stream(ConfigSections.values())
+                .filter(candidate -> candidate.getName().equals(configSection))
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException(format("config section '%s' does not exist", configSection)));
+        return new ConfigNamespace(section, configName);
     }
 }

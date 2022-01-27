@@ -51,6 +51,9 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.config.ConfigNamespace;
+import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.partition.MigrationStateImpl;
@@ -85,6 +88,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
+
+import static java.util.Collections.singleton;
 
 public class ReferenceObjects {
 
@@ -823,4 +828,8 @@ public class ReferenceObjects {
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static ConfigUpdateResult aConfigUpdateResult = new ConfigUpdateResult(
+            singleton(new ConfigNamespace(ConfigSections.CACHE, "added-cache")),
+            singleton(new ConfigNamespace(ConfigSections.CACHE, "ignored-cache"))
+    );
 }
