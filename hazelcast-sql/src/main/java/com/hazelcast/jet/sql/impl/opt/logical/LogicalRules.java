@@ -89,13 +89,11 @@ public final class LogicalRules {
                 UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
-                // imap-by-key access optimization rules
-                SelectByKeyMapLogicalRules.INSTANCE,
-                SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
-                InsertMapLogicalRule.INSTANCE,
-                SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                // DML rules
+                InsertLogicalRule.INSTANCE,
+                SinkLogicalRule.INSTANCE,
+                UpdateLogicalRules.INSTANCE,
+                UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE
         );
     }
