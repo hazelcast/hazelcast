@@ -16,9 +16,20 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.open;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.packages;
 import static com.hazelcast.internal.util.ModularJavaUtils.checkJavaInternalAccess;
 import static com.hazelcast.internal.util.ModularJavaUtils.checkPackageRequirements;
-import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.createRequirement;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,17 +38,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Tests that {@link ModularJavaUtils} correctly logs warnings about missing package access on Java 9+.
@@ -68,8 +68,8 @@ public class ModularJavaUtilsTest {
 
         ILogger logger = mock(ILogger.class);
 
-        Map<String, PackageAccessRequirement[]> requirements = new HashMap<String, PackageAccessRequirement[]>();
-        requirements.put("java.base", new PackageAccessRequirement[] { createRequirement(true, "jdk.internal.misc") });
+        Map<String, PackageAccessRequirement[]> requirements = new HashMap<>();
+        requirements.put("java.base", packages(open("jdk.internal.misc")));
         checkPackageRequirements(logger, requirements);
 
         verify(logger, times(1)).warning(contains("--add-opens java.base/jdk.internal.misc=ALL-UNNAMED"));

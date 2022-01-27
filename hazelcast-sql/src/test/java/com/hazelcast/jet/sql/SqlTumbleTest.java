@@ -21,8 +21,13 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -46,6 +51,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlTumbleTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -189,6 +196,52 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), " + windowSize + "))")
         ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + windowSizeType + ") do not match");
+    }
+
+    @Test
+    public void test_windowBounds() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1),
+                row(timestampTz(5), "Alice", 1)
+        );
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT window_start, window_end FROM " +
+                        "TABLE(TUMBLE(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  , DESCRIPTOR(ts)" +
+                        "  , INTERVAL '0.002' SECOND" +
+                        "))",
+                asList(
+                        new Row(timestampTz(0L), timestampTz(2L)),
+                        new Row(timestampTz(4L), timestampTz(6L))
+                )
+        );
+    }
+
+    @Test
+    public void test_filterWindowBounds() {
+        String name = createTable(
+                row(timestampTz(1000L), "Alice", 1),
+                row(timestampTz(2000L), null, null)
+        );
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT 1 " +
+                        "FROM TABLE(TUMBLE(" +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
+                        "WHERE window_start != window_end " +
+                        "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't apply filter criteria to window bounds");
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT 1 " +
+                        "FROM TABLE(TUMBLE(" +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
+                        "WHERE EXTRACT(DAY FROM window_start) != EXTRACT(DAY FROM window_end) " +
+                        "GROUP BY window_start")
+        ).hasRootCauseMessage("Can't apply filter criteria to window bounds");
     }
 
     @Test
@@ -1109,7 +1162,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "GROUP BY name, window_start HAVING a > 1",
+                        "GROUP BY name, window_start " +
+                        "HAVING a > 1",
                 asList(
                         new Row(timestampTz(2L), "Bob", new BigDecimal(2)),
                         new Row(timestampTz(4L), "Joey", new BigDecimal(2))
@@ -1319,24 +1373,25 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start_inner, name, COUNT(*) FROM " +
+                "SELECT window_end, window_end_inner, name, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "   (SELECT name, window_start window_start_inner FROM " +
+                        "   (SELECT name, window_end AS window_end_inner FROM " +
                         "       TABLE(TUMBLE(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
-                        "           , INTERVAL '0.002' SECOND" +
-                        "       )) GROUP BY name, window_start_inner" +
+                        "           , INTERVAL '0.001' SECOND" +
+                        "       )) GROUP BY name, window_end_inner" +
                         "   )" +
-                        "   , DESCRIPTOR(window_start_inner)" +
-                        "   , INTERVAL '0.003' SECOND" +
+                        "   , DESCRIPTOR(window_end_inner)" +
+                        "   , INTERVAL '0.002' SECOND" +
                         ")) " +
-                        "GROUP BY window_start_inner, name",
+                        "GROUP BY window_end, window_end_inner, name",
                 asList(
-                        new Row(timestampTz(0L), "Alice", 1L),
-                        new Row(timestampTz(0L), "Bob", 1L),
-                        new Row(timestampTz(2L), "Alice", 1L),
-                        new Row(timestampTz(4L), "Bob", 1L)
+                        new Row(timestampTz(2L), timestampTz(1L), "Alice", 1L),
+                        new Row(timestampTz(4L), timestampTz(2L), "Bob", 1L),
+                        new Row(timestampTz(4L), timestampTz(3L), "Alice", 1L),
+                        new Row(timestampTz(6L), timestampTz(4L), "Alice", 1L),
+                        new Row(timestampTz(8L), timestampTz(6L), "Bob", 1L)
                 )
         );
     }
@@ -1392,7 +1447,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "SELECT window_start, window_end, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
                         "   window_size => INTERVAL '0.002' SECOND" +
-                        "   , timeCol => DESCRIPTOR(ts)" +
+                        "   , time_col => DESCRIPTOR(ts)" +
                         "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start, window_end",
@@ -1410,7 +1465,8 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1418,8 +1474,20 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
+                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
+                "GROUP BY window_start")
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
+    }
+
+    @Test
+    public void test_aggregationWithoutOrderingAndGrouping() {
+        String name = createTable();
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
-        ).hasMessageContaining("Grouping/aggregations over non-windowed, non-ordered streaming source not supported");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1432,11 +1500,12 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
-    public void test_groupByNonWindowBound() {
+    public void test_groupByNonWindowBoundWithExpression() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
@@ -1446,7 +1515,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "  , INTERVAL '0.002' SECOND" +
                 ")) " +
                 "GROUP BY window_start + INTERVAL '0.001' SECOND")
-        ).hasMessageContaining("Streaming aggregation must be grouped by window_start/window_end");
+        ).hasRootCauseMessage("In window aggregation, the window_start and window_end fields must be used directly, " +
+                "without any transformation");
     }
 
     @Test
@@ -1530,6 +1600,21 @@ public class SqlTumbleTest extends SqlTestSupport {
                         new Row(timestampTz(3L))
                 )
         );
+    }
+
+    @Test
+    public void test_emptyGroup() {
+        String name = createTable(
+                row(timestampTz(0), "Alice", 1));
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(name) FROM " +
+                "TABLE(TUMBLE(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  , DESCRIPTOR(ts)" +
+                "  , INTERVAL '0.002' SECOND" +
+                "))"))
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                        " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     private static Object[] row(Object... values) {

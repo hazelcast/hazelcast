@@ -37,6 +37,7 @@ public final class LogicalRules {
                 CoreRules.FILTER_AGGREGATE_TRANSPOSE,
                 CoreRules.FILTER_INTO_JOIN,
                 CoreRules.FILTER_REDUCE_EXPRESSIONS,
+                SlidingWindowFilterTransposeRule.STREAMING_FILTER_TRANSPOSE,
 
                 // Project rules
                 PruneEmptyRules.PROJECT_INSTANCE,
@@ -54,7 +55,7 @@ public final class LogicalRules {
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
-                FunctionLogicalRules.TUMBLE_WINDOW_FUNCTION_INSTANCE,
+                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -66,6 +67,7 @@ public final class LogicalRules {
                 JoinLogicalRule.INSTANCE,
                 CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
+//                STREAMING_JOIN_TRANSPOSE,
 
                 // Union rules
                 PruneEmptyRules.UNION_INSTANCE,
@@ -87,6 +89,7 @@ public final class LogicalRules {
                 UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
+                // imap-by-key access optimization rules
                 SelectByKeyMapLogicalRules.INSTANCE,
                 SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
                 InsertMapLogicalRule.INSTANCE,

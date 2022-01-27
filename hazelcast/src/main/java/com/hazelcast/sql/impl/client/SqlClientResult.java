@@ -21,19 +21,22 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.LazyDeserializer;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A wrapper around the normal client result that tracks the first response, and manages close requests.
@@ -129,7 +132,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nonnull
     @Override
-    public Iterator<SqlRow> iterator() {
+    public ResultIterator<SqlRow> iterator() {
         State state = awaitState();
 
         ClientIterator iterator = state.iterator;
@@ -207,40 +210,42 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
     /**
      * Fetches the next page.
      */
-    private SqlPage fetch() {
+    private SqlPage fetch(long timeoutNanos) {
         synchronized (mux) {
-            // Re-throw previously logged error on successive fetch attempts.
             if (fetch != null) {
-                assert fetch.getError() != null;
-
-                throw wrap(fetch.getError());
+                if (fetch.getError() != null) {
+                    // Re-throw previously logged error on successive fetch attempts.
+                    throw wrap(fetch.getError());
+                }
+            } else {
+                // Initiate the fetch.
+                fetch = new SqlFetchResult();
+                service.fetchAsync(connection, queryId, cursorBufferSize, this);
             }
 
-            // Initiate the fetch.
-            fetch = new SqlFetchResult();
-
-            service.fetchAsync(connection, queryId, cursorBufferSize, this);
-
             // Await the response.
-            while (fetch.isPending()) {
+            long waitNanos = timeoutNanos;
+            while (fetch.isPending() && waitNanos > 0) {
                 try {
-                    mux.wait();
+                    long startNanos = System.nanoTime();
+                    TimeUnit.NANOSECONDS.timedWait(mux, waitNanos);
+                    waitNanos -= (System.nanoTime() - startNanos);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-
                     throw wrap(QueryException.error("Interrupted while waiting for the response from the server.", e));
                 }
+            }
+
+            if (fetch.isPending()) {
+                return null;
             }
 
             if (fetch.getError() != null) {
                 throw wrap(fetch.getError());
             } else {
                 SqlPage page = fetch.getPage();
-
                 assert page != null;
-
                 fetch = null;
-
                 return page;
             }
         }
@@ -284,7 +289,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
                     Thread.currentThread().interrupt();
 
                     QueryException error =
-                        QueryException.error("Interrupted while waiting for the response from the server.", e);
+                            QueryException.error("Interrupted while waiting for the response from the server.", e);
 
                     return new State(null, -1, error);
                 }
@@ -311,8 +316,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
         }
     }
 
-    private final class ClientIterator implements Iterator<SqlRow> {
-
+    private final class ClientIterator implements ResultIterator<SqlRow> {
         private final SqlRowMetadata rowMetadata;
         private SqlPage currentPage;
         private int currentRowCount;
@@ -326,20 +330,33 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
         }
 
         @Override
-        public boolean hasNext() {
-            while (currentPosition == currentRowCount) {
+        public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
+            if (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
-                    SqlPage page = fetch();
-
+                    SqlPage page = fetch(timeUnit.toNanos(timeout));
+                    if (page == null) {
+                        return HasNextResult.TIMEOUT;
+                    }
                     onNextPage(page);
                 } else {
                     // No more pages expected, so return false.
-                    return false;
+                    return HasNextResult.DONE;
                 }
             }
 
-            return true;
+            // We could fetch the last page
+            if (currentPosition == currentRowCount) {
+                assert last;
+                return HasNextResult.DONE;
+            }
+
+            return HasNextResult.YES;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasNext(Long.MAX_VALUE, NANOSECONDS) == HasNextResult.YES;
         }
 
         @Override

@@ -200,6 +200,14 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     /**
+     * Is executed after {@link #run()} even if the operation failed.
+     *
+     * Runs after backups, before wait-notify.
+     */
+    public void afterRunFinal() {
+    }
+
+    /**
      * Method is intended to be overridden. If it returns {@code true},
      * {@link #getResponse()} will be called right after {@link #run()} method.
      * If it returns {@code false}, {@link #sendResponse(Object)} must be

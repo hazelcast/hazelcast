@@ -30,22 +30,35 @@ import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastResources.RESOURCES;
-import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName;
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
-    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {
+    private final int[] operandIndexes;
+
+    /**
+     * @param operandIndexes Indexes of operands that contain INTERVAL values that need to match
+     *                       the timestamp column type.
+     */
+    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] operandIndexes) {
         super(parameters);
+        this.operandIndexes = operandIndexes;
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        SqlNode input = binding.operand(0);
-        SqlNode column = unwrapFunctionOperand(binding.operand(1));
-        SqlNode lag = binding.operand(2);
+        boolean result = true;
+        for (int columnIndex : operandIndexes) {
+            result &= checkOperandTypes(binding, throwOnFailure, columnIndex);
+        }
+        assert result || !throwOnFailure;
+        return result;
+    }
+
+    private boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure, int columnIndex) {
+        SqlNode lag = binding.operand(columnIndex);
         HazelcastSqlValidator validator = binding.getValidator();
-        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
+        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1).getSqlTypeName();
         boolean result;
         SqlTypeName lagType = ((SqlValidator) validator).getValidatedNodeType(lag).getSqlTypeName();
         if (SqlTypeName.INT_TYPES.contains(orderingColumnType)) {
@@ -64,5 +77,4 @@ final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
         }
         return result;
     }
-
 }
