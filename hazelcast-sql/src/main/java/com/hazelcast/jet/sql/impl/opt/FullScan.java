@@ -14,38 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.core.TableScan;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
-public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
+import static java.util.Collections.emptyList;
+
+public abstract class FullScan extends TableScan {
 
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private final int watermarkedColumnIndex;
 
-    WatermarkLogicalRel(
+    protected FullScan(
             RelOptCluster cluster,
-            RelTraitSet traits,
-            RelNode input,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            RelTraitSet traitSet,
+            RelOptTable table,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
-        super(cluster, traits, input);
+        super(cluster, traitSet, emptyList(), table);
+        assert watermarkedColumnIndex < 0 ^ eventTimePolicyProvider != null;
 
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
+    @Nullable
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
@@ -57,12 +61,7 @@ public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("eventTimePolicyProvider", eventTimePolicyProvider)
-                .item("watermarkedColumnIndex", watermarkedColumnIndex);
-    }
-
-    @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new WatermarkLogicalRel(getCluster(), traitSet, sole(inputs), eventTimePolicyProvider, watermarkedColumnIndex);
+                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null)
+                .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }

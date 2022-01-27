@@ -22,6 +22,8 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -30,6 +32,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -40,7 +43,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.metadata.WindowProperties;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -67,15 +69,21 @@ import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
+
+    // TODO https://github.com/hazelcast/hazelcast/issues/20383
+    private static final ExpressionEvalContext MOCK_EEC =
+            new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
     private static final int LOW_PRIORITY = 10;
     private static final int HIGH_PRIORITY = 1;
@@ -303,82 +311,69 @@ public class CreateDagVisitor {
         int orderingFieldIndex = rel.orderingFieldIndex();
         FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicySupplier = rel.windowPolicyProvider();
 
+        // this vertex is used only if there's no aggregation by a window bound
         Vertex vertex = dag.newUniqueVertex(
                 "Sliding-Window",
-                mapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
+                flatMapUsingServiceP(ServiceFactories.nonSharedService(ctx -> {
                             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
                             SlidingWindowPolicy windowPolicy = windowPolicySupplier.apply(evalContext);
                             return row -> WindowUtils.addWindowBounds(row, orderingFieldIndex, windowPolicy);
                         }),
-                        (BiFunctionEx<Function<JetSqlRow, JetSqlRow>, JetSqlRow, JetSqlRow>) Function::apply
+                        (BiFunctionEx<Function<JetSqlRow, Traverser<JetSqlRow>>, JetSqlRow, Traverser<JetSqlRow>>) Function::apply
                 )
         );
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
 
-    public Vertex onSlidingWindowAggregateByKey(SlidingWindowAggregateByKeyPhysicalRel rel) {
+    public Vertex onSlidingWindowAggregate(SlidingWindowAggregatePhysicalRel rel) {
         FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
         AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
 
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+        Expression<?> timestampExpression = rel.timestampExpression();
+        ToLongFunctionEx<JetSqlRow> timestampFn = row ->
+                WindowUtils.extractMillis(timestampExpression.eval(row.getRow(), MOCK_EEC));
+        SlidingWindowPolicy windowPolicy = rel.windowPolicyProvider().apply(MOCK_EEC);
 
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-AggregateByKey",
-                Processors.aggregateToSlidingWindowP(
-                        singletonList(groupKeyFn),
-                        singletonList(timestampFn),
-                        TimestampKind.EVENT,
-                        windowPolicy,
-                        0,
-                        aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> result
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
-        return vertex;
-    }
+        KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> resultMapping =
+                rel.outputValueMapping();
 
-    public Vertex onSlidingWindowAccumulateByKey(SlidingWindowAggregateAccumulateByKeyPhysicalRel rel) {
-        FunctionEx<JetSqlRow, ?> groupKeyFn = rel.groupKeyFn();
-        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
+        if (rel.numStages() == 1) {
+            Vertex vertex = dag.newUniqueVertex(
+                    "Sliding-Window-AggregateByKey",
+                    Processors.aggregateToSlidingWindowP(
+                            singletonList(groupKeyFn),
+                            singletonList(timestampFn),
+                            TimestampKind.EVENT,
+                            windowPolicy,
+                            0,
+                            aggregateOperation,
+                            resultMapping));
+            connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+            return vertex;
+        } else {
+            assert rel.numStages() == 2;
 
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        ToLongFunctionEx<JetSqlRow> timestampFn = windowProperty.orderingFn(null);
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
+            Vertex vertex1 = dag.newUniqueVertex(
+                    "Sliding-Window-AccumulateByKey",
+                    Processors.accumulateByFrameP(
+                            singletonList(groupKeyFn),
+                            singletonList(timestampFn),
+                            TimestampKind.EVENT,
+                            windowPolicy,
+                            aggregateOperation));
 
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-AccumulateByKey",
-                Processors.accumulateByFrameP(
-                        singletonList(groupKeyFn),
-                        singletonList(timestampFn),
-                        TimestampKind.EVENT,
-                        windowPolicy,
-                        aggregateOperation
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
-        return vertex;
-    }
+            Vertex vertex2 = dag.newUniqueVertex(
+                    "Sliding-Window-CombineByKey",
+                    Processors.combineToSlidingWindowP(
+                            windowPolicy,
+                            aggregateOperation,
+                            resultMapping));
 
-    public Vertex onSlidingWindowCombineByKey(SlidingWindowAggregateCombineByKeyPhysicalRel rel) {
-        AggregateOperation<?, JetSqlRow> aggregateOperation = rel.aggrOp();
-
-        WindowProperties.WindowProperty windowProperty = rel.windowProperty();
-        SlidingWindowPolicy windowPolicy = windowProperty.windowPolicy(null);
-
-        Vertex vertex = dag.newUniqueVertex(
-                "Sliding-Window-CombineByKey",
-                Processors.combineToSlidingWindowP(
-                        windowPolicy,
-                        aggregateOperation,
-                        (start, end, ignoredKey, result, isEarly) -> result
-                )
-        );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
-        return vertex;
+            connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
+            dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
+            return vertex2;
+        }
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {

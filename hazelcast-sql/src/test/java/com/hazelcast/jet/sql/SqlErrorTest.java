@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Semaphore;
 
-import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -46,7 +45,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout() {
-        checkTimeout(false, DEFAULT_CURSOR_BUFFER_SIZE);
+        checkTimeout(false);
     }
 
     @Test

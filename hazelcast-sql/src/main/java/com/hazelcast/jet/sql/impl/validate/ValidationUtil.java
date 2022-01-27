@@ -55,10 +55,9 @@ public final class ValidationUtil {
      * If the operand is an AS call, returns its target. Otherwise
      * return the operand.
      */
-    public static RexNode unwrapFunctionOperand(RexNode operand) {
+    public static RexNode unwrapAsOperatorOperand(RexNode operand) {
         return operand.getKind() == AS ? ((RexCall) operand).getOperands().get(0) : operand;
     }
-
 
     /**
      * Returns true if the view name is in a valid schema,

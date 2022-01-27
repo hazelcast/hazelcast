@@ -56,6 +56,8 @@ class InvocationBuilderImpl extends InvocationBuilder {
                     callTimeout, resultDeserialized, connectionManager);
         }
 
-        return invocation.invoke();
+        return async
+                ? invocation.invokeAsync()
+                : invocation.invoke();
     }
 }
