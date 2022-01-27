@@ -260,10 +260,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      */
     public JobConfig getJobConfig(long jobId) {
         Job job = jet.getJob(jobId);
-        if (job != null) {
-            if (job.isLightJob()) {
-                return jobCoordinationService.getLightJobConfig(jobId);
-            }
+        if (job != null && job.isLightJob()) {
+            return jobCoordinationService.getLightJobConfig(jobId);
         }
 
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
