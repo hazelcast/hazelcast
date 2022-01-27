@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;

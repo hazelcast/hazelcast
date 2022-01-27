@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
