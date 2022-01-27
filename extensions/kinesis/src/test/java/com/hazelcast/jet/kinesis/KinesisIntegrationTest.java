@@ -69,10 +69,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
-    @ClassRule
-    public static final LocalStackContainer LOCALSTACK = new LocalStackContainer(parse("localstack/localstack")
-            .withTag("0.12.3"))
-            .withServices(Service.KINESIS);
+    public static LocalStackContainer localStack;
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
@@ -90,6 +87,11 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @BeforeClass
     public static void beforeClass() {
+        localStack = new LocalStackContainer(parse("localstack/localstack")
+                .withTag("0.12.3"))
+                .withServices(Service.KINESIS);
+        localStack.start();
+
         // To run with real kinesis AWS credentials need be available
         // to be loaded by DefaultAWSCredentialsProviderChain.
         // Keep in mind the real Kinesis is paid service and once you
@@ -106,9 +108,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .withRegion("us-east-1");
         } else {
             AWS_CONFIG = new AwsConfig()
-                    .withEndpoint("http://" + LOCALSTACK.getHost() + ":" + LOCALSTACK.getMappedPort(4566))
-                    .withRegion(LOCALSTACK.getRegion())
-                    .withCredentials(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey());
+                    .withEndpoint("http://" + localStack.getHost() + ":" + localStack.getMappedPort(4566))
+                    .withRegion(localStack.getRegion())
+                    .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         }
         KINESIS = AWS_CONFIG.buildClient();
         HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
@@ -117,6 +119,10 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @AfterClass
     public static void afterClass() {
         KINESIS.shutdown();
+
+        if (localStack != null) {
+            localStack.stop();
+        }
     }
 
     @Test
