@@ -17,22 +17,23 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCReloadConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
-import com.hazelcast.internal.management.operation.ReloadConfigOperation;
+import com.hazelcast.internal.management.operation.UpdateConfigOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class ReloadConfigMessageTask
-        extends AbstractInvocationMessageTask<Void> {
-    public ReloadConfigMessageTask(ClientMessage clientMessage, Node node,
-                                      Connection connection) {
+public class UpdateConfigMessageTask
+        extends AbstractInvocationMessageTask<String> {
+
+    public UpdateConfigMessageTask(ClientMessage clientMessage, Node node,
+                                   Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -49,17 +50,17 @@ public class ReloadConfigMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ReloadConfigOperation();
+        return new UpdateConfigOperation(parameters);
     }
 
     @Override
-    protected Void decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+    protected String decodeClientMessage(ClientMessage clientMessage) {
+        return MCUpdateConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCReloadConfigCodec.encodeResponse((ConfigUpdateResult) response);
+        return MCUpdateConfigCodec.encodeResponse((ConfigUpdateResult) response);
     }
 
     @Override
@@ -74,12 +75,12 @@ public class ReloadConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "reloadConfig";
+        return "updateConfig";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters};
     }
 
     @Override
