@@ -164,7 +164,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     @Override
     protected JobConfig doGetJobConfig() {
         try {
-            return this.<JobConfig>invokeOp(new GetJobConfigOperation(getId(), isLightJob())).get();
+            return this.<JobConfig>invokeOp(new GetJobConfigOperation(getId())).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
