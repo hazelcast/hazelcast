@@ -49,11 +49,12 @@ public class LicenseKey {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MagicNumber")
     public String toString() {
         // last 8 characters are visible
         String maskedLicense = MASK_FOR_SENSITIVE_DATA + licenseKey.substring(licenseKey.length() - 8);
-        return "LicenseKey{" +
-                "licenseKey='" + maskedLicense + '\'' +
-                '}';
+        return "LicenseKey{"
+                + "licenseKey='" + maskedLicense + '\''
+                + '}';
     }
 }
