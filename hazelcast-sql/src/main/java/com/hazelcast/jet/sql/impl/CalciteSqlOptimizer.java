@@ -342,7 +342,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 context,
                 dmlParseResult.isInfiniteRows(),
                 true,
-                null);
+                query);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(

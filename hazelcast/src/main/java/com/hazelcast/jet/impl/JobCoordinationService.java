@@ -249,8 +249,7 @@ public class JobCoordinationService {
                 if (jobDefinition instanceof PipelineImpl) {
                     int coopThreadCount = config.getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                        @Override
-                        public int defaultLocalParallelism() {
+                        @Override public int defaultLocalParallelism() {
                             return coopThreadCount;
                         }
                     });
@@ -300,7 +299,7 @@ public class JobCoordinationService {
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 jetServiceBackend.getJobClassLoaderService()
-                        .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
 
                 res.completeExceptionally(e);
                 throw e;
@@ -325,8 +324,7 @@ public class JobCoordinationService {
         } else {
             int coopThreadCount = config.getCooperativeThreadCount();
             dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                @Override
-                public int defaultLocalParallelism() {
+                @Override public int defaultLocalParallelism() {
                     return coopThreadCount;
                 }
             });
@@ -389,8 +387,7 @@ public class JobCoordinationService {
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess")
-        // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -405,8 +402,8 @@ public class JobCoordinationService {
         }
 
         return masterContexts.values()
-                .stream()
-                .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
+                             .stream()
+                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -578,12 +575,12 @@ public class JobCoordinationService {
                     }
 
                     jobs.entrySet().stream()
-                            .sorted(
-                                    comparing(Entry<Long, Long>::getValue)
-                                            .thenComparing(Entry::getKey)
-                                            .reversed()
-                            )
-                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                        .sorted(
+                                comparing(Entry<Long, Long>::getValue)
+                                        .thenComparing(Entry::getKey)
+                                        .reversed()
+                        )
+                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));
@@ -767,11 +764,11 @@ public class JobCoordinationService {
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                .toArray(CompletableFuture[]::new);
+                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
+                                                    .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
-                .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
+                         .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
 
@@ -1265,8 +1262,7 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused")
-        // used in jet-enterprise
+    @SuppressWarnings("unused") // used in jet-enterprise
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }
