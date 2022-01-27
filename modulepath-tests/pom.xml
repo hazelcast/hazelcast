@@ -36,17 +36,7 @@
         <maven.compiler.source>9</maven.compiler.source>
         <maven.compiler.target>9</maven.compiler.target>
 
-        <javaModuleArgs>
-            --add-exports java.base/jdk.internal.ref=com.hazelcast.core
-            --add-opens java.base/java.nio=com.hazelcast.core
-            --add-opens java.base/sun.nio.ch=com.hazelcast.core
-            --add-opens java.base/java.lang=com.hazelcast.core
-            --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core
-            --add-opens java.management/sun.management=com.hazelcast.core
-            --add-exports java.xml/jdk.xml.internal=com.hazelcast.core
-            --illegal-access=warn
-        </javaModuleArgs>
-
+        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>

@@ -144,6 +144,9 @@
         },
         "dynamic-configuration": {
           "$ref": "#/definitions/DynamicConfiguration"
+        },
+        "integrity-checker": {
+          "$ref": "#/definitions/IntegrityChecker"
         }
       }
     },
@@ -1494,10 +1497,8 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "type": "string",
-                    "pattern": "^[1-9]([0-9]*) (B|KB|MB|GB)$",
-                    "default": "256 MB",
-                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB). For instance, capacity=\"1024 MB\" is valid, whereas capacity=\"2^10 mb\" is not."
+                    "$ref": "#/definitions/MemorySize",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
               },
@@ -2939,6 +2940,27 @@
         "migration"
       ]
     },
+    "MemorySize": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "enum": [
+            "BYTES",
+            "KILOBYTES",
+            "MEGABYTES",
+            "GIGABYTES"
+          ],
+          "default": "MEGABYTES",
+          "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
+        },
+        "value": {
+          "type": "number",
+          "default": 128,
+          "minimum": 1,
+          "description": "Default value is 128."
+        }
+      }
+    },
     "NativeMemory": {
       "description": "This feature is available only in Hazelcast Enterprise HD.",
       "properties": {
@@ -2956,25 +2978,7 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "type": "object",
-          "properties": {
-            "unit": {
-              "enum": [
-                "BYTES",
-                "KILOBYTES",
-                "MEGABYTES",
-                "GIGABYTES"
-              ],
-              "default": "MEGABYTES",
-              "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
-            },
-            "value": {
-              "type": "number",
-              "default": 128,
-              "minimum": 1,
-              "description": "Default value is 128."
-            }
-          }
+          "$ref": "#/definitions/MemorySize"
         },
         "min-block-size": {
           "type": "integer",
@@ -4875,6 +4879,19 @@
           "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
         }
       }
+    },
+    "IntegrityChecker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     }
   }
 }

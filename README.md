@@ -337,8 +337,8 @@ trigger the build using special comments. These are the phrases you may
 see used in the comments on your PR:
 
 * `run-lab-run` - run the default PR builder
-* `run-windows` - run the tests on a Windows machine (HighFive is not
-  supported here)
+* `run-windows` - run the tests on a Windows machine (HighFive is not supported here)
+* `run-with-jdk17` - run the tests with JDK 17
 * `run-with-ibm-jdk-8` - run the tests with IBM JDK 8
 * `run-cdc-debezium-tests` - run all tests in the
   `extensions/cdc-debezium` module

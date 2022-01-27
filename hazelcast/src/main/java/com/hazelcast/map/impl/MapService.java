@@ -282,7 +282,12 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
         // we have no use for the return value, invoked just for the side-effects
-        recordStore.getRecordOrNull(key);
+        recordStore.beforeOperation();
+        try {
+            recordStore.getRecordOrNull(key);
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     public static ObjectNamespace getObjectNamespace(String mapName) {

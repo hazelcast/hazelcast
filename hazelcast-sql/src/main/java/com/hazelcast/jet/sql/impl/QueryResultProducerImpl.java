@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.NoSuchElementException;
@@ -198,14 +199,6 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
             // it's better if it has no stack trace then.
             super("Done normally", null, false, false);
-        }
-    }
-
-    private static class ResultLimitReachedException extends Exception {
-        ResultLimitReachedException() {
-            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
-            // it's better if it has no stack trace then.
-            super("Done by reaching the item number in SQL LIMIT clause", null, false, false);
         }
     }
 }

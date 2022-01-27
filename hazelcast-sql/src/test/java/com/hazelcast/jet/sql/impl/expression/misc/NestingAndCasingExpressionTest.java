@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.expression.misc;
 
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -87,6 +87,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("DESCRIPTOR")
                     || field.getName().equals("IMPOSE_ORDER")
                     || field.getName().equals("TUMBLE")
+                    || field.getName().equals("HOP")
             ) {
                 continue;
             }

@@ -91,6 +91,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
+import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -99,21 +100,32 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+    public static final String CONFIG_CHANGE_TEMPLATE =
+            "  - Change member config using Java API: %s;\n" +
+                    "  - Change XML/YAML configuration property: Set %s\n" +
+                    "  - Add system property: %s\n" +
+                    "  - Add environment variable: %s";
 
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
             "To enable the Jet engine on the members, please do one of the following:\n" +
-            "  - Change member config using Java API: config.getJetConfig().setEnabled(true);\n" +
-            "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
-            "  - Add system property: -Dhz.jet.enabled=true\n" +
-            "  - Add environment variable: HZ_JET_ENABLED=true";
+            format(CONFIG_CHANGE_TEMPLATE,
+                    "config.getJetConfig().setEnabled(true);",
+                    "Set hazelcast.jet.enabled to true",
+                    "-Dhz.jet.enabled=true",
+                    "HZ_JET_ENABLED=true"
+            );
 
     public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "A job is trying to upload resources to the " +
             "cluster, but this feature is disabled. Either remove the resources from the JobConfig object or enable " +
             "resource upload on the members, using one of the following:\n" +
-            "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
-            "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
-            "  - Add system property: -Dhz.jet.resource-upload-enabled=true\n" +
-            "  - Add environment variable: HZ_JET_RESOURCEUPLOADENABLED=true";
+            format(CONFIG_CHANGE_TEMPLATE,
+                    "config.getJetConfig().setResourceUploadEnabled(true);",
+                    "Set hazelcast.jet.resource-upload-enabled to true",
+                    "-Dhz.jet.resource-upload-enabled=true",
+                    "HZ_JET_RESOURCEUPLOADENABLED=true"
+            );
+
+
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -392,12 +404,12 @@ public final class Util {
         if (item instanceof JetEvent) {
             JetEvent event = (JetEvent) item;
             logger.info(
-                    String.format("Event dropped, late by %d ms. currentWatermark=%s, eventTime=%s, event=%s",
+                    format("Event dropped, late by %d ms. currentWatermark=%s, eventTime=%s, event=%s",
                             currentWm - event.timestamp(), toLocalTime(currentWm), toLocalTime(event.timestamp()),
                             event.payload()
                     ));
         } else {
-            logger.info(String.format(
+            logger.info(format(
                     "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
             ));
         }
@@ -616,7 +628,7 @@ public final class Util {
         durationMs /= 60;
         long hours = durationMs % 24;
         durationMs /= 24;
-        String textUpToHours = String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
+        String textUpToHours = format("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
         return sign + (durationMs > 0 ? durationMs + "d " : "") + textUpToHours;
     }
 

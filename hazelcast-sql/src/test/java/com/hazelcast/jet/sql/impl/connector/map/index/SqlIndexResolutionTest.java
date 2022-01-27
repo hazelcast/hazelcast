@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
-import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -34,10 +31,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -46,6 +41,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,12 +51,15 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.createBiClass;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.createBiValue;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -68,12 +67,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+@SuppressWarnings("FieldCanBeLocal")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexResolutionTest extends SqlIndexTestSupport {
+    private NodeEngine nodeEngine;
+    private TableResolver resolver;
 
-    private static final String INDEX_NAME = "index";
+    private String mapName;
+    private String indexName;
+
+    private IMap<Integer, ? super ExpressionBiValue> map;
+    private Class<? extends ExpressionBiValue> valueClass;
+    private ExpressionBiValue value;
 
     @Parameterized.Parameter
     public IndexType indexType;
@@ -81,13 +88,22 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     @Parameterized.Parameter(1)
     public boolean composite;
 
-    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}")
+    @Parameterized.Parameter(2)
+    public ExpressionType<?> type1;
+
+    @Parameterized.Parameter(3)
+    public ExpressionType<?> type2;
+
+    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, type1:{2}, type2:{3}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
-
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                res.add(new Object[]{indexType, composite});
+                for (ExpressionType<?> t1 : baseTypes()) {
+                    for (ExpressionType<?> t2 : baseTypes()) {
+                        res.add(new Object[]{indexType, composite, t1, t2});
+                    }
+                }
             }
         }
 
@@ -96,134 +112,74 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(3, null);
+    }
+
+    @Before
+    public void before() throws Exception {
+        nodeEngine = getNodeEngine(instance());
+        resolver = new TableResolverImpl(nodeEngine, new TablesStorage(nodeEngine), new SqlConnectorCache(nodeEngine));
+
+        mapName = randomName();
+        indexName = randomName();
+        String[] indexAttributes = composite ? new String[]{"field1", "field2"} : new String[]{"field1"};
+
+        valueClass = createBiClass(type1, type2);
+        value = createBiValue(valueClass, 1, type1.valueFrom(), composite ? type2.valueFrom() : null);
+
+        map = instance().getMap(mapName);
+        createMapping(mapName, int.class, value.getClass());
+        createIndex(indexName, mapName, indexType, indexAttributes);
     }
 
     @Test
     public void testIndexResolution() {
-        for (ExpressionType<?> f1 : allTypes()) {
-            for (ExpressionType<?> f2 : allTypes()) {
-                checkIndexResolution(f1, f2);
-            }
-        }
+        putValues();
+
+        checkIndex(map, composite
+                ? asList(type1.getFieldConverterType(), type2.getFieldConverterType())
+                : singletonList(type1.getFieldConverterType())
+        );
+
+        checkIndexUsage(map, true, composite);
     }
 
-    public void checkIndexResolution(ExpressionType<?> f1, ExpressionType<?> f2) {
-        Class<? extends ExpressionBiValue> valueClass = ExpressionBiValue.createBiClass(f1, f2);
-
-        // Check empty map
-        IMap<Integer, ExpressionBiValue> map = nextMap();
-        ExpressionBiValue value = ExpressionBiValue.createBiValue(valueClass, 1, null, null);
-        createMapping(map.getName(), int.class, value.getClass());
-        map.put(1, value);
-        checkIndex(map);
-        checkIndexUsage(map, f1, f2, false, false);
-        map.destroy();
-
-        // Check first component with known type
-        map = nextMap();
-        value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null);
-        createMapping(map.getName(), int.class, value.getClass());
-        map.put(1, value);
-        checkIndex(map, f1.getFieldConverterType());
-        checkIndexUsage(map, f1, f2, true, false);
-        map.destroy();
-
-        if (composite) {
-            // Check second component with known type
-            map = nextMap();
-            value = ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom());
-            createMapping(map.getName(), int.class, value.getClass());
-            map.put(1, value);
-            checkIndex(map);
-            checkIndexUsage(map, f1, f2, false, true);
-            map.destroy();
-
-            // Check both components known
-            map = nextMap();
-            value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom());
-            createMapping(map.getName(), int.class, value.getClass());
-            map.put(1, value);
-            checkIndex(map, f1.getFieldConverterType(), f2.getFieldConverterType());
-            checkIndexUsage(map, f1, f2, true, true);
-            map.destroy();
-        }
-    }
-
-    private IMap<Integer, ExpressionBiValue> nextMap() {
-        String mapName = SqlTestSupport.randomName();
-
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.addIndexConfig(getIndexConfig());
-
-        instance().getConfig().addMapConfig(mapConfig);
-
-        return instance().getMap(mapName);
-    }
-
-    protected IndexConfig getIndexConfig() {
-        IndexConfig config = new IndexConfig().setName(INDEX_NAME).setType(indexType);
-
-        config.addAttribute("field1");
-
-        if (composite) {
-            config.addAttribute("field2");
-        }
-
-        return config;
-    }
-
-    private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
+    private void checkIndex(IMap<?, ?> map, List<QueryDataType> expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        NodeEngine nodeEngine = getNodeEngine(instance());
-        TablesStorage tablesStorage = new TablesStorage(nodeEngine);
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        TableResolver resolver = new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
+        List<PartitionedMapTable> tables = resolver.getTables()
+                .stream()
+                .filter(t -> t instanceof PartitionedMapTable)
+                .map(t -> (PartitionedMapTable) t)
+                .filter(t -> t.getMapName().equals(mapName))
+                .collect(Collectors.toList());
+        assertEquals(1, tables.size());
 
-        for (Table table : resolver.getTables()) {
-            if (table instanceof AbstractMapTable && ((AbstractMapTable) table).getMapName().equals(mapName)) {
-                PartitionedMapTable table0 = (PartitionedMapTable) table;
+        PartitionedMapTable table = tables.get(0);
+        assertEquals(1, table.getIndexes().size());
 
-                int field1Ordinal = findFieldOrdinal(table0, "field1");
-                int field2Ordinal = findFieldOrdinal(table0, "field2");
+        MapTableIndex index = table.getIndexes().get(0);
+        assertEquals(indexName, index.getName());
+        assertEquals(indexType, index.getType());
 
-                assertEquals(1, table0.getIndexes().size());
+        // Components count depends on the index attribute count
+        assertEquals(composite ? 2 : 1, index.getComponentsCount());
 
-                MapTableIndex index = table0.getIndexes().get(0);
+        int field1Ordinal = findFieldOrdinal(table, "field1");
+        int field2Ordinal = findFieldOrdinal(table, "field2");
 
-                assertEquals(INDEX_NAME, index.getName());
-                assertEquals(indexType, index.getType());
+        // Check resolved field converter types. We do not test more than two components.
+        assertTrue(expectedFieldConverterTypes.size() <= 2);
+        assertEquals(expectedFieldConverterTypes, index.getFieldConverterTypes());
 
-                // Components count depends on the index attribute count
-                if (composite) {
-                    assertEquals(2, index.getComponentsCount());
-                } else {
-                    assertEquals(1, index.getComponentsCount());
-                }
-
-                // Check resolved field converter types. We do not test more than two components.
-                List<QueryDataType> expectedFieldConverterTypes0 = expectedFieldConverterTypes == null
-                        ? Collections.emptyList() : Arrays.asList(expectedFieldConverterTypes);
-
-                assertTrue(expectedFieldConverterTypes0.size() <= 2);
-
-                assertEquals(expectedFieldConverterTypes0, index.getFieldConverterTypes());
-
-                // Resolved field ordinals depend on the number of resolved converter types
-                if (expectedFieldConverterTypes0.isEmpty()) {
-                    assertTrue(index.getFieldOrdinals().isEmpty());
-                } else if (expectedFieldConverterTypes0.size() == 1) {
-                    assertEquals(Collections.singletonList(field1Ordinal), index.getFieldOrdinals());
-                } else {
-                    assertEquals(Arrays.asList(field1Ordinal, field2Ordinal), index.getFieldOrdinals());
-                }
-
-                return;
-            }
+        // Resolved field ordinals depend on the number of resolved converter types
+        if (expectedFieldConverterTypes.isEmpty()) {
+            assertTrue(index.getFieldOrdinals().isEmpty());
+        } else if (expectedFieldConverterTypes.size() == 1) {
+            assertEquals(singletonList(field1Ordinal), index.getFieldOrdinals());
+        } else {
+            assertEquals(Arrays.asList(field1Ordinal, field2Ordinal), index.getFieldOrdinals());
         }
-
-        fail("Cannot find table for map: " + mapName);
     }
 
     private static int findFieldOrdinal(PartitionedMapTable table, String fieldName) {
@@ -236,19 +192,12 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         }
 
         fail("Failed to find the field \"" + fieldName + "\"");
-
         return -1;
     }
 
-    private void checkIndexUsage(
-            IMap<?, ?> map,
-            ExpressionType<?> f1,
-            ExpressionType<?> f2,
-            boolean firstResolved,
-            boolean secondResolved
-    ) {
-        String field1Literal = toLiteral(f1, f1.valueFrom());
-        String field2Literal = toLiteral(f2, f2.valueFrom());
+    private void checkIndexUsage(IMap<?, ?> map, boolean firstResolved, boolean secondResolved) {
+        String field1Literal = toLiteral(type1, type1.valueFrom());
+        String field2Literal = toLiteral(type2, type2.valueFrom());
 
         // The second component could be used if both components are resolved.
         Usage expectedUsage;
@@ -272,17 +221,18 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
             expectedUsage = Usage.NONE;
         }
 
-        SqlStatement sql = new SqlStatement("SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal);
-
-        checkIndexUsage(sql, f1, f2, map.getName(), expectedUsage);
+        SqlStatement sql = new SqlStatement(
+                "SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal
+        );
+        checkIndexUsage(sql, map.getName(), expectedUsage);
     }
 
-    private void checkIndexUsage(SqlStatement statement, ExpressionType<?> f1, ExpressionType<?> f2, String mapName, Usage expectedIndexUsage) {
+    private void checkIndexUsage(SqlStatement statement, String mapName, Usage expectedIndexUsage) {
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.OBJECT, QueryDataType.INT);
         List<TableField> mapTableFields = asList(
                 new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
-                new MapTableField("field1", f1.getFieldConverterType(), false, new QueryPath("field1", false)),
-                new MapTableField("field2", f2.getFieldConverterType(), false, new QueryPath("field2", false))
+                new MapTableField("field1", type1.getFieldConverterType(), false, new QueryPath("field1", false)),
+                new MapTableField("field2", type2.getFieldConverterType(), false, new QueryPath("field2", false))
         );
         HazelcastTable table = partitionedTable(
                 mapName,
@@ -317,6 +267,12 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
                 );
                 assertNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getRemainderExp());
                 break;
+        }
+    }
+
+    private void putValues() {
+        for (int i = 1; i <= 100; ++i) {
+            map.put(i, value);
         }
     }
 

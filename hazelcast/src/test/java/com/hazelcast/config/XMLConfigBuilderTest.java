@@ -3270,7 +3270,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"map0\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
-                + "            <capacity>1024 MB</capacity>"
+                + "            <capacity value=\"1024\" unit=\"MEGABYTES\"/>"
                 + "        </memory-tier>"
                 + "        <disk-tier enabled=\"true\" device-name=\"local-device\"/>"
                 + "    </tiered-store>"
@@ -3283,7 +3283,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"map2\">"
                 + "    <tiered-store enabled=\"true\">"
                 + "        <memory-tier>"
-                + "            <capacity>1 GB</capacity>"
+                + "            <capacity value=\"1\" unit=\"GIGABYTES\"/>"
                 + "        </memory-tier>"
                 + "    </tiered-store>"
                 + "</map>\n"
@@ -4315,6 +4315,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <integrity-checker enabled=\"false\"/>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 
     @Override

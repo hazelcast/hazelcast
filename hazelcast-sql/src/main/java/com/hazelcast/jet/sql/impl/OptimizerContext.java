@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWindowProperties;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -63,7 +63,7 @@ public final class OptimizerContext {
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
             HazelcastRelMdRowCount.SOURCE,
             HazelcastRelMdBoundedness.SOURCE,
-            HazelcastRelMdWindowProperties.SOURCE,
+            HazelcastRelMdWatermarkedFields.SOURCE,
             DefaultRelMetadataProvider.INSTANCE
     ));
 

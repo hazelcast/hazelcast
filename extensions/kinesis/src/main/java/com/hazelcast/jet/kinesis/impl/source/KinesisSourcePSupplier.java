@@ -37,7 +37,7 @@ import static java.util.stream.Collectors.toList;
 
 public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     @Nonnull
     private final AwsConfig awsConfig;
