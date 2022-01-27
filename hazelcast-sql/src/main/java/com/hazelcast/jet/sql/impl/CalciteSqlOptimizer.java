@@ -39,6 +39,7 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
@@ -97,6 +98,9 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -651,17 +655,41 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return visitor;
     }
 
+    // Note: intended to be reworked later, to support late items drop.
     private void detectLonelyImposeOrder(RelNode rel) {
         HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
         WatermarkedFields wm = mq.extractWatermarkedFields(rel);
-        if (wm == null) {
-            return;
-        }
-        if (!wm.isEmpty()) {
-            boolean detectSlidingWindow = mq.detectSlidingWindow(rel);
-            if (!detectSlidingWindow) {
+        if (wm != null && !wm.isEmpty()) {
+            StreamingAggregationDetector detector = new StreamingAggregationDetector();
+            detector.go(rel);
+            if (!detector.found) {
                 throw QueryException.error("IMPOSE_ORDER is allowed to be used only with window aggregations");
             }
+        }
+    }
+
+    private static class StreamingAggregationDetector extends RelVisitor {
+        @SuppressWarnings("checkstyle:VisibilityModifier")
+        public boolean found;
+
+        @Override
+        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+            if (node instanceof Aggregate) {
+                RelNode input = ((Aggregate) node).getInput();
+                if (input instanceof SlidingWindow) {
+                    found = true;
+                    return;
+                }
+
+                if (input instanceof Project) {
+                    RelNode projectInput = ((Project) input).getInput();
+                    if (projectInput instanceof SlidingWindow) {
+                        found = true;
+                        return;
+                    }
+                }
+            }
+            super.visit(node, ordinal, parent);
         }
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -103,6 +104,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         };
     }
 
+    @Ignore("Implement late items drop: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     @Parameters(method = "validArguments")
     public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
@@ -179,6 +181,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         ).hasMessageContaining("You must specify single ordering column");
     }
 
+    @Ignore("Implement late items drop: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredInput() {
         String name = createTable(
@@ -198,6 +201,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items drop: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_projectedInput() {
         String name = createTable(
@@ -221,6 +225,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items drop: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredAndProjectedInput() {
         String name = createTable(
@@ -254,8 +259,9 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         )).hasMessageContaining("Ordering function cannot be applied to input table");
     }
 
+    @Ignore("Implement late items drop: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
-    public void test_namedParameters() {
+    public void test_namedParameters()  {
         String name = createTable(
                 row(timestampTz(0), "Alice"),
                 row(timestampTz(1), null),
@@ -288,6 +294,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 row(timestampTz(5), "Zedd")
         );
 
+        // Temporal state
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
         )).hasMessageContaining("IMPOSE_ORDER is allowed to be used only with window aggregations");
