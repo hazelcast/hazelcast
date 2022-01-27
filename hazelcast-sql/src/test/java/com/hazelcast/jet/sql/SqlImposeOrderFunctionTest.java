@@ -267,7 +267,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE(" + name + "))" +
-                        "  , timeCol => DESCRIPTOR(ts)" +
+                        "  , time_col => DESCRIPTOR(ts)" +
                         "))",
                 asList(
                         new Row(timestampTz(0), "Alice"),
