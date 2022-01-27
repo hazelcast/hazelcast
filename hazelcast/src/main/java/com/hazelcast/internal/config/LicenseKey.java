@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.config;
 
+import java.util.Objects;
+
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+
 public class LicenseKey {
     private final String licenseKey;
 
@@ -25,5 +29,31 @@ public class LicenseKey {
 
     public String getLicenseKey() {
         return licenseKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        LicenseKey that = (LicenseKey) o;
+        return Objects.equals(licenseKey, that.licenseKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return licenseKey.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        // last 8 characters are visible
+        String maskedLicense = MASK_FOR_SENSITIVE_DATA + licenseKey.substring(licenseKey.length() - 8);
+        return "LicenseKey{" +
+                "licenseKey='" + maskedLicense + '\'' +
+                '}';
     }
 }
