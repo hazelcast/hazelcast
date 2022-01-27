@@ -31,30 +31,38 @@ import java.util.List;
 public class WatermarkLogicalRel extends SingleRel implements LogicalRel {
 
     private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private final int watermarkedColumnIndex;
 
     WatermarkLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
     ) {
         super(cluster, traits, input);
 
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
     public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
 
+    public int watermarkedColumnIndex() {
+        return watermarkedColumnIndex;
+    }
+
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("eventTimePolicyProvider", eventTimePolicyProvider);
+                .item("eventTimePolicyProvider", eventTimePolicyProvider)
+                .item("watermarkedColumnIndex", watermarkedColumnIndex);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new WatermarkLogicalRel(getCluster(), traitSet, sole(inputs), eventTimePolicyProvider);
+        return new WatermarkLogicalRel(getCluster(), traitSet, sole(inputs), eventTimePolicyProvider, watermarkedColumnIndex);
     }
 }

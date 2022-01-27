@@ -39,6 +39,9 @@ class ProcessExecutor {
         processBuilder.environment().putAll(environment);
         Process process = processBuilder.start();
         if (!daemon) {
+            // Register shutdown hook so when something kills us we destroy the Hazelcast process
+            Runtime.getRuntime().addShutdownHook(new Thread(process::destroy));
+
             process.waitFor();
         }
     }
