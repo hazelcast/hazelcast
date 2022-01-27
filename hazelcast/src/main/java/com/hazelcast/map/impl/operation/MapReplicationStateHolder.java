@@ -171,7 +171,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                final boolean isDifferentialReplication = merkleTreeDiffByMapName.containsKey(mapName);
                 List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 initializeRecordStore(mapName, recordStore);
@@ -364,16 +363,21 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         SerializationService ss = getSerializationService(recordStore.getMapContainer());
         out.writeInt(recordStore.size());
         // No expiration should be done in forEach, since we have serialized size before.
-        recordStore.forEach((dataKey, record) -> {
-            try {
-                IOUtil.writeData(out, dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()));
-                Records.writeExpiry(out, recordStore.getExpirySystem()
+        recordStore.beforeOperation();
+        try {
+            recordStore.forEach((dataKey, record) -> {
+                try {
+                    IOUtil.writeData(out, dataKey);
+                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    Records.writeExpiry(out, recordStore.getExpirySystem()
                         .getExpiryMetadata(dataKey));
-            } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }, operation.getReplicaIndex() != 0, true);
+                } catch (IOException e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }, operation.getReplicaIndex() != 0, true);
+        } finally {
+            recordStore.afterOperation();
+        }
         LocalReplicationStatsImpl replicationStats = statsByMapName.get(recordStore.getName());
         replicationStats.incrementFullPartitionReplicationCount();
         replicationStats.incrementFullPartitionReplicationRecordsCount(recordStore.size());

@@ -58,6 +58,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -71,6 +72,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
@@ -438,5 +440,23 @@ public final class OptUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Return true if the `expression` contains any input reference to a field
+     * with index in `indexes`.
+     */
+    public static boolean hasInputRef(RexNode expression, int... indexes) {
+        boolean[] res = {false};
+        expression.accept(new RexVisitorImpl<Void>(true) {
+            @Override
+            public Void visitInputRef(RexInputRef inputRef) {
+                if (arrayIndexOf(inputRef.getIndex(), indexes) >= 0) {
+                    res[0] = true;
+                }
+                return null;
+            }
+        });
+        return res[0];
     }
 }

@@ -26,15 +26,16 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-public class HazelcastTumbleTableFunction extends HazelcastWindowTableFunction {
+public class HazelcastHopTableFunction extends HazelcastWindowTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
             new HazelcastTableFunctionParameter(1, "time_col", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
-            new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
+            new HazelcastTableFunctionParameter(2, "window_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE),
+            new HazelcastTableFunctionParameter(3, "slide_size", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
-    public HazelcastTumbleTableFunction() {
-        super(SqlKind.TUMBLE, new WindowOperandMetadata(PARAMETERS, new int[]{2}), 1);
+    public HazelcastHopTableFunction() {
+        super(SqlKind.HOP, new WindowOperandMetadata(PARAMETERS, new int[]{2, 3}), 1);
     }
 }

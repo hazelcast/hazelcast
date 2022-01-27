@@ -19,9 +19,14 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
@@ -29,6 +34,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlKafkaAggregateTest extends SqlTestSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 1;
@@ -52,7 +59,7 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    public void test() {
+    public void test_tumble() {
         String name = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -63,9 +70,14 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
-        sqlService.execute("INSERT INTO " + name + " VALUES(0, 'value-0'), (1, 'value-1'), (2, 'value-2'), (10, 'value-10')");
+        sqlService.execute("INSERT INTO " + name + " VALUES" +
+                "(0, 'value-0')" +
+                ", (1, 'value-1')" +
+                ", (2, 'value-2')" +
+                ", (10, 'value-10')"
+        );
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT window_start, window_end, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2)))" +
@@ -74,8 +86,41 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
                         ")) " +
                         "GROUP BY window_start, window_end",
                 asList(
-                        new Row(0, 2, 2L),
-                        new Row(2, 4, 1L)
+                        new Row(timestampTz(0L), timestampTz(2L), 2L),
+                        new Row(timestampTz(2L), timestampTz(4L), 1L)
+                )
+        );
+    }
+
+    @Test
+    public void test_hop() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+        sqlService.execute("INSERT INTO " + name + " VALUES" +
+                "(0, 'value-0')" +
+                ", (1, 'value-1')" +
+                ", (2, 'value-2')" +
+                ", (10, 'value-10')"
+        );
+
+        assertTipOfStream(
+                "SELECT window_start, window_end, SUM(__key) FROM " +
+                        "TABLE(HOP(" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(__key), 2))), " +
+                        "DESCRIPTOR(__key), 4, 2)) " +
+                        "GROUP BY window_start, window_end",
+                asList(
+                        new Row(timestampTz(-2L), timestampTz(2L), 1L),
+                        new Row(timestampTz(0L), timestampTz(4L), 3L),
+                        new Row(timestampTz(2L), timestampTz(6L), 2L)
                 )
         );
     }

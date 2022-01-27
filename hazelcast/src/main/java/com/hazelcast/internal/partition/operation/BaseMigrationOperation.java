@@ -85,7 +85,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
      *
      */
     @Override
-    public final void beforeRun() {
+    public void beforeRun() {
         try {
             onMigrationStart();
             verifyNodeStarted();
