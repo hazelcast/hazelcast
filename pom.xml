@@ -104,7 +104,7 @@
         <jackson.mapper.asl.version>1.9.13.redhat-00007</jackson.mapper.asl.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>1.0-SNAPSHOT</json-surfer.version>
+        <json-surfer.version>0.10</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.2.2</kafka.version>
@@ -120,7 +120,7 @@
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.2</protobuf.version>
         <scala.version>2.12</scala.version>
-        <slf4j.version>1.7.32</slf4j.version>
+        <slf4j.version>1.7.35</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.30</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
@@ -1374,6 +1374,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>hazelcast-security</id>
+            <name>Thirdparty security fixes</name>
+            <url>https://repository.hazelcast.com/security-maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <!-- Red Hat Maven repository provides patches for several vulnerable libraries (dependencies) which are not patched in the Maven Central repository. -->
         <repository>
             <id>redhat-ga</id>
@@ -1586,6 +1597,11 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.htrace</groupId>
+                <artifactId>htrace-core4</artifactId>
+                <version>4.2.0-incubating.hazelcast-2</version>
+            </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -1755,6 +1771,11 @@
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+               <version>1.8.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
