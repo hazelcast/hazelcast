@@ -18,11 +18,9 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -63,11 +61,7 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
     public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromJobSummary() throws ExecutionException, InterruptedException {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult result = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            InvocationFuture<Object> future = getNode(instance()).getNodeEngine().getOperationService().invokeOnTarget(
-                    JetServiceBackend.SERVICE_NAME, new GetJobSummaryListOperation(), getAddress(instance())
-            );
-
-            List<JobSummary> jobSummaries = (List<JobSummary>) future.get();
+            List<JobSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobSummaryList();
             assertEquals(1, jobSummaries.size());
 
             JobSummary jobSummary = jobSummaries.get(0);

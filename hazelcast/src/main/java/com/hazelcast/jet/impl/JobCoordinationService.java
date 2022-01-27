@@ -730,11 +730,18 @@ public class JobCoordinationService {
     private JobSummary getJobSummary(LightMasterContext lmc) {
         String query = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_QUERY_KEY_NAME);
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME);
-        SqlSummary sqlSummary = new SqlSummary(query, Boolean.TRUE.equals(unbounded));
-        return new JobSummary(
-                true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), sqlSummary
-        );
+        if (query != null && unbounded != null) {
+            SqlSummary sqlSummary = new SqlSummary(query, Boolean.TRUE.equals(unbounded));
+            return new JobSummary(
+                    true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
+                    RUNNING, lmc.getStartTime(), sqlSummary
+            );
+        } else {
+            return new JobSummary(
+                    true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
+                    RUNNING, lmc.getStartTime()
+            );
+        }
     }
 
     /**

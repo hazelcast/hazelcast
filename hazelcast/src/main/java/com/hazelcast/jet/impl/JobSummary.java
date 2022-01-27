@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -181,7 +182,13 @@ public class JobSummary implements IdentifiedDataSerializable {
         out.writeLong(submissionTime);
         out.writeLong(completionTime);
         out.writeString(failureText);
-        out.writeObject(sqlSummary);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            boolean serializeSqlSummary = sqlSummary != null;
+            out.writeBoolean(serializeSqlSummary);
+            if (serializeSqlSummary) {
+                sqlSummary.writeData(out);
+            }
+        }
     }
 
     @Override
@@ -194,7 +201,10 @@ public class JobSummary implements IdentifiedDataSerializable {
         submissionTime = in.readLong();
         completionTime = in.readLong();
         failureText = in.readString();
-        sqlSummary = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1) && in.readBoolean()) {
+            sqlSummary = new SqlSummary();
+            sqlSummary.readData(in);
+        }
     }
 
     @Override
