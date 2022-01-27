@@ -405,6 +405,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
+                .setCapacity(new MemorySize(6522, MemoryUnit.MEGABYTES))
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
@@ -412,6 +413,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
+                .setCapacity(new MemorySize(198719826236L, MemoryUnit.KILOBYTES))
                 .setBlockSize(1024)
                 .setReadIOThreadCount(200)
                 .setWriteIOThreadCount(200);

@@ -223,10 +223,10 @@ hazelcast:
 
   local-device:
     # Configuration for a device, which a tiered-store can reference and use for its disk-tier.
-    default:
+    default-tiered-store-device:
       base-dir: "tiered-store"
       block-size: 4096
-      read-io-thread-count: 16
+      read-io-thread-count: 4
       write-io-thread-count: 4
 
   map:
@@ -329,7 +329,7 @@ hazelcast:
         # of the tiered-store instance of this map.
         disk-tier:
           enabled: false
-          device-name: "default"
+          device-name: "default-tiered-store-device"
 
 
   queue:
