@@ -335,6 +335,7 @@ public class Config {
         checkTrue(resource != null, "resource can't be null");
         checkTrue(properties != null, "properties can't be null");
 
+        // Below try catch is inlined Classloader#getResourceAsStream() to access URL.
         InputStream stream;
         URL url = classLoader.getResource(resource);
         try {
