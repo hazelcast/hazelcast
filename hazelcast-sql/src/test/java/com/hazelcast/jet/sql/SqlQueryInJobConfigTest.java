@@ -86,4 +86,20 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
         assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
         assertEquals(Boolean.FALSE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
     }
+
+//    @Test
+//    public void when_dml_then_queryAndUnboundedFlagCanBeFetchFromConfig() {
+//        TestBatchSqlConnector.create(instance().getSql(), "src", 300);
+//        createMapping("dest", Integer.class, String.class);
+//
+//        String sql = "INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 200";
+//        try (SqlResult execute = instance().getSql().execute(sql)) {
+//            List<Job> jobs = instance().getJet().getJobs();
+//            assertEquals(1, jobs.size());
+//            JobConfig config = jobs.get(0).getConfig();
+//            assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
+//            assertEquals(Boolean.FALSE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
+//        }
+//    }
+
 }

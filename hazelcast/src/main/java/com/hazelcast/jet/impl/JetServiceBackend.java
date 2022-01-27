@@ -32,7 +32,6 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.jet.JetService;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
@@ -258,9 +257,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Returns the job config or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public JobConfig getJobConfig(long jobId) {
-        Job job = jet.getJob(jobId);
-        if (job != null && job.isLightJob()) {
+    public JobConfig getJobConfig(long jobId, boolean isLightJob) {
+        if (isLightJob) {
             return jobCoordinationService.getLightJobConfig(jobId);
         }
 
