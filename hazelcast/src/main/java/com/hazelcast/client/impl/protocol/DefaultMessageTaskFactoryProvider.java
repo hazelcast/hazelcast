@@ -189,6 +189,7 @@ import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -1479,10 +1480,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapPutIfAbsentWithMaxIdleMessageTask(cm, node, con));
         factories.put(MapPutTransientWithMaxIdleCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapPutTransientWithMaxIdleMessageTask(cm, node, con));
-        factories.put(MCReloadConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
-        factories.put(MCUpdateMapConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
     }
 
     private void initializeGeneralTaskFactories() {
@@ -1842,6 +1839,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
         factories.put(MCResetQueueAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
+        factories.put(MCReloadConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
+        factories.put(MCUpdateConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {
