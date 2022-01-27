@@ -1600,7 +1600,7 @@
             <dependency>
                 <groupId>org.apache.htrace</groupId>
                 <artifactId>htrace-core4</artifactId>
-                <version>4.2.0-incubating.hazelcast-2</version>
+                <version>4.2.0-incubating</version>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
