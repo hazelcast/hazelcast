@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness.BoundednessMetadata;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdSlidingWindowDetector.SlidingWindowDetectorMetadata;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.WatermarkedFieldsMetadata;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
@@ -26,10 +27,12 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
 
     private BoundednessMetadata.Handler boundednessHandler;
     private WatermarkedFieldsMetadata.Handler watermarkedFieldsHandler;
+    private SlidingWindowDetectorMetadata.Handler windowDetectorHandler;
 
     private HazelcastRelMetadataQuery() {
         this.boundednessHandler = initialHandler(BoundednessMetadata.Handler.class);
         this.watermarkedFieldsHandler = initialHandler(WatermarkedFieldsMetadata.Handler.class);
+        this.windowDetectorHandler = initialHandler(SlidingWindowDetectorMetadata.Handler.class);
     }
 
     public static HazelcastRelMetadataQuery reuseOrCreate(RelMetadataQuery mq) {
@@ -56,6 +59,16 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
                 return watermarkedFieldsHandler.extractWatermarkedFields(rel, this);
             } catch (JaninoRelMetadataProvider.NoHandler e) {
                 watermarkedFieldsHandler = revise(e.relClass, WatermarkedFieldsMetadata.DEF);
+            }
+        }
+    }
+
+    public Boolean detectSlidingWindow(RelNode rel) {
+        for (; ; ) {
+            try {
+                return windowDetectorHandler.detectSlidingWindow(rel, this);
+            } catch (JaninoRelMetadataProvider.NoHandler e) {
+                windowDetectorHandler = revise(e.relClass, SlidingWindowDetectorMetadata.DEF);
             }
         }
     }

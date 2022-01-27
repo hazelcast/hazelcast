@@ -41,6 +41,8 @@ import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -581,6 +583,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
+
+        detectLonelyImposeOrder(logicalRel);
+
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -644,6 +649,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return visitor;
+    }
+
+    private void detectLonelyImposeOrder(RelNode rel) {
+        HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
+        WatermarkedFields wm = mq.extractWatermarkedFields(rel);
+        if (wm == null) {
+            return;
+        }
+        if (!wm.isEmpty()) {
+            boolean detectSlidingWindow = mq.detectSlidingWindow(rel);
+            if (!detectSlidingWindow) {
+                throw QueryException.error("IMPOSE_ORDER is allowed to be used only with window aggregations");
+            }
+        }
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
