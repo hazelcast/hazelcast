@@ -80,7 +80,7 @@ fi
 JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
-"-Dlog4j.configurationFile=$LOG4J2_CONFIG" \
+"-Dlog4j.configurationFile=$LOGGING_CONFIG" \
 "-Dhazelcast.config=$HAZELCAST_CONFIG" \
 "-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
 $PROMETHEUS \
