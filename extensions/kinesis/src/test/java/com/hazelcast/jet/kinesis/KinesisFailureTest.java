@@ -74,12 +74,9 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     }
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
-
-    @BeforeClass
     public static void beforeClass() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
                 .withNetwork(NETWORK)
@@ -107,7 +104,9 @@ public class KinesisFailureTest extends AbstractKinesisTest {
 
     @AfterClass
     public static void afterClass() {
-        KINESIS.shutdown();
+        if (KINESIS != null) {
+            KINESIS.shutdown();
+        }
 
         if (toxiProxy != null) {
             toxiProxy.stop();

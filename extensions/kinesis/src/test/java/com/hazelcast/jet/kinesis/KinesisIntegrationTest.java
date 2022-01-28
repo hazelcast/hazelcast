@@ -80,12 +80,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     }
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
-
-    @BeforeClass
     public static void beforeClass() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
                 .withServices(Service.KINESIS);
@@ -117,7 +114,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @AfterClass
     public static void afterClass() {
-        KINESIS.shutdown();
+        if (KINESIS != null) {
+            KINESIS.shutdown();
+        }
 
         if (localStack != null) {
             localStack.stop();
