@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b06f4c4481257447bf1a54bd9e5ab85d")
+@Generated("c34d5c9f9132e0725e28061bb5adbb07")
 public final class ConfigNamespaceCodec {
 
     private ConfigNamespaceCodec() {
@@ -34,7 +34,7 @@ public final class ConfigNamespaceCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         StringCodec.encode(clientMessage, configNamespace.getConfigSectionName());
-        StringCodec.encode(clientMessage, configNamespace.getConfigName());
+        CodecUtil.encodeNullable(clientMessage, configNamespace.getConfigName(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -44,7 +44,7 @@ public final class ConfigNamespaceCodec {
         iterator.next();
 
         java.lang.String configSectionName = StringCodec.decode(iterator);
-        java.lang.String configName = StringCodec.decode(iterator);
+        java.lang.String configName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

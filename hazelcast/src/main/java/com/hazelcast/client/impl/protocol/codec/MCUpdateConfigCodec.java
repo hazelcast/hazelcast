@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Reloads the configuration on the member from its config file, applies (merges) the new config to the current config
+ * Updates the configuration on the member with the passed configuration, applies (merges) the passed config to the current config
  */
-@Generated("6c62fc5a66d4b13f1e59c0b4fd134b72")
+@Generated("e1ca53f89443765aeb7ff30aa745114a")
 public final class MCUpdateConfigCodec {
     //hex: 0x202300
     public static final int REQUEST_MESSAGE_TYPE = 2106112;
@@ -48,7 +48,7 @@ public final class MCUpdateConfigCodec {
     private MCUpdateConfigCodec() {
     }
 
-    public static ClientMessage encodeRequest(java.lang.String configXml) {
+    public static ClientMessage encodeRequest(java.lang.String configuration) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.UpdateConfig");
@@ -56,12 +56,12 @@ public final class MCUpdateConfigCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, configXml);
+        StringCodec.encode(clientMessage, configuration);
         return clientMessage;
     }
 
     /**
-     * the new configuration XML to be applied to the current configuration
+     * the new configuration (XML or YAML string) to be applied to the current configuration
      */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
