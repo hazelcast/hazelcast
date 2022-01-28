@@ -18,9 +18,10 @@ package com.hazelcast.internal.config;
 
 import java.util.Objects;
 
-import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
-
 public class LicenseKey {
+
+    private static final int LICENSE_KEY_VISIBLE_CHAR_COUNT = 5;
+
     private final String licenseKey;
 
     public LicenseKey(String licenseKey) {
@@ -29,6 +30,21 @@ public class LicenseKey {
 
     public String getLicenseKey() {
         return licenseKey;
+    }
+
+    public String getMaskedLicense() {
+        return maskLicense(licenseKey);
+    }
+
+    public static String maskLicense(String licenseKey) {
+        if (licenseKey.length() > LICENSE_KEY_VISIBLE_CHAR_COUNT) {
+            String[] licenceKeyParts = licenseKey.split("#");
+            String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
+            return originalKeyPart.substring(0, LICENSE_KEY_VISIBLE_CHAR_COUNT) + "*********"
+                    + originalKeyPart.substring(originalKeyPart.length() - LICENSE_KEY_VISIBLE_CHAR_COUNT);
+        } else {
+            return licenseKey;
+        }
     }
 
     @Override
@@ -51,10 +67,8 @@ public class LicenseKey {
     @Override
     @SuppressWarnings("checkstyle:MagicNumber")
     public String toString() {
-        // last 8 characters are visible
-        String maskedLicense = MASK_FOR_SENSITIVE_DATA + licenseKey.substring(licenseKey.length() - 8);
         return "LicenseKey{"
-                + "licenseKey='" + maskedLicense + '\''
+                + "licenseKey='" + getMaskedLicense() + '\''
                 + '}';
     }
 }
