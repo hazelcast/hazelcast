@@ -62,7 +62,7 @@ public class MapReplicationOperation extends Operation
 
         this.mapNearCacheStateHolder = new MapNearCacheStateHolder();
         this.mapNearCacheStateHolder.setMapReplicationOperation(this);
-        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces);
     }
 
     @Override
@@ -74,7 +74,8 @@ public class MapReplicationOperation extends Operation
                 mapNearCacheStateHolder.applyState();
             }
         } catch (Throwable e) {
-            getLogger().severe("map replication operation failed for partitionId=" + getPartitionId(), e);
+            getLogger().severe("map replication operation failed for partitionId="
+                    + getPartitionId(), e);
 
             disposePartition();
 
