@@ -60,17 +60,9 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     @ClassRule
     public static final Network NETWORK = Network.newNetwork();
 
-    @ClassRule
-    public static final LocalStackContainer LOCALSTACK = new LocalStackContainer(parse("localstack/localstack")
-            .withTag("0.12.3"))
-            .withNetwork(NETWORK)
-            .withServices(Service.KINESIS);
+    public static LocalStackContainer localStack;
 
-    @ClassRule
-    public static final ToxiproxyContainer TOXIPROXY = new ToxiproxyContainer(parse("shopify/toxiproxy")
-            .withTag("2.1.0"))
-            .withNetwork(NETWORK)
-            .withNetworkAliases("toxiproxy");
+    public static ToxiproxyContainer toxiProxy;
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
@@ -82,29 +74,46 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     }
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
-
-    @BeforeClass
     public static void beforeClass() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+
+        localStack = new LocalStackContainer(parse("localstack/localstack")
+                .withTag("0.12.3"))
+                .withNetwork(NETWORK)
+                .withServices(Service.KINESIS);
+        localStack.start();
+        toxiProxy = new ToxiproxyContainer(parse("shopify/toxiproxy")
+                .withTag("2.1.0"))
+                .withNetwork(NETWORK)
+                .withNetworkAliases("toxiproxy");
+        toxiProxy.start();
+
         System.setProperty(SDKGlobalConfiguration.AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "true");
         // with the jackson versions we use (2.11.x) Localstack doesn't without disabling CBOR
         // https://github.com/localstack/localstack/issues/3208
 
-        PROXY = TOXIPROXY.getProxy(LOCALSTACK, 4566);
+        PROXY = toxiProxy.getProxy(localStack, 4566);
 
         AWS_CONFIG = new AwsConfig()
                 .withEndpoint("http://" + PROXY.getContainerIpAddress() + ":" + PROXY.getProxyPort())
-                .withRegion(LOCALSTACK.getRegion())
-                .withCredentials(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey());
+                .withRegion(localStack.getRegion())
+                .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         KINESIS = AWS_CONFIG.buildClient();
         HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
     }
 
     @AfterClass
     public static void afterClass() {
-        KINESIS.shutdown();
+        if (KINESIS != null) {
+            KINESIS.shutdown();
+        }
+
+        if (toxiProxy != null) {
+            toxiProxy.stop();
+        }
+        if (localStack != null) {
+            localStack.stop();
+        }
     }
 
     @Test
