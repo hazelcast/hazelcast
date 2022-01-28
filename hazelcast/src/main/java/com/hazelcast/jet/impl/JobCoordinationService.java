@@ -36,6 +36,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
@@ -64,7 +65,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.sql.JobConfigAttributes;
 import com.hazelcast.version.Version;
 
 import javax.annotation.CheckReturnValue;
@@ -725,8 +725,8 @@ public class JobCoordinationService {
     }
 
     private JobSummary getJobSummary(LightMasterContext lmc) {
-        String query = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_QUERY_KEY_NAME);
-        Object unbounded = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME);
+        String query = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_QUERY_TEXT);
+        Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
 
@@ -1246,7 +1246,7 @@ public class JobCoordinationService {
     }
 
     @SuppressWarnings("WeakerAccess")
-        // used by jet-enterprise
+    // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());

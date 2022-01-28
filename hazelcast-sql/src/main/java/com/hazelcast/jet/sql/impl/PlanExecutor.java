@@ -91,12 +91,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
-import static com.hazelcast.sql.JobConfigAttributes.SQL_QUERY_KEY_NAME;
-import static com.hazelcast.sql.JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
@@ -177,8 +177,8 @@ public class PlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = plan.getJobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
-                .setArgument(SQL_QUERY_KEY_NAME, plan.getQuery())
-                .setArgument(SQL_UNBOUNDED_KEY_NAME, plan.isInfiniteRows());
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows());
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -345,8 +345,8 @@ public class PlanExecutor {
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
-                .setArgument(SQL_QUERY_KEY_NAME, plan.getQuery())
-                .setArgument(SQL_UNBOUNDED_KEY_NAME, plan.isStreaming())
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
@@ -381,8 +381,8 @@ public class PlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
-                .setArgument(SQL_QUERY_KEY_NAME, plan.getQuery())
-                .setArgument(SQL_UNBOUNDED_KEY_NAME, plan.isInfiniteRows())
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);

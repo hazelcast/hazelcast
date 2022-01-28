@@ -27,8 +27,11 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.stream;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A test batch-data connector. It emits rows of provided types and values.
@@ -43,20 +46,28 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
      * The rows contain the sequence {@code 0 .. itemCount}.
      */
     public static void create(SqlService sqlService, String tableName, int itemCount) {
-        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, itemCount);
+        create(sqlService, tableName, itemCount, false);
     }
 
-    public static void create(
-            SqlService sqlService,
-            String tableName,
-            List<String> names,
-            List<QueryDataTypeFamily> types,
-            Object[]... values
-    ) {
-        List<String[]> stringValues = stream(values)
+    /**
+     * Creates a table with single column named "v" with INT type.
+     * The rows contain the sequence {@code 0 .. itemCount}.
+     *
+     * @param behaveLikeAStream If true, the source will emit the rows, but then it will not complete, which
+     *                          will give stream-like behavior.
+     */
+    public static void create(SqlService sqlService, String tableName, int itemCount, boolean behaveLikeAStream) {
+        List<String[]> values = IntStream.range(0, itemCount)
+                .mapToObj(i -> new String[]{String.valueOf(i)})
+                .collect(toList());
+        create(sqlService, TYPE_NAME, tableName, singletonList("v"), singletonList(QueryDataTypeFamily.INTEGER), values,
+                behaveLikeAStream);
+    }
+
+    public static List<String[]> valuesToString(Object[]... values) {
+        return stream(values)
                 .map(row -> stream(row).map(value -> value == null ? null : value.toString()).toArray(String[]::new))
                 .collect(Collectors.toList());
-        create(sqlService, tableName, names, types, stringValues);
     }
 
     public static void create(
@@ -66,7 +77,7 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
             List<QueryDataTypeFamily> types,
             List<String[]> values
     ) {
-        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, values);
+        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, values, false);
     }
 
     @Override

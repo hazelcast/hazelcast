@@ -46,9 +46,6 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
     public JobSummary() {
     }
 
-    /**
-     * Unified constructor for running and finished jobs.
-     */
     public JobSummary(
             boolean isLightJob,
             long jobId,
@@ -58,7 +55,8 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
             long submissionTime,
             long completionTime,
             String failureText,
-            SqlSummary sqlSummary) {
+            SqlSummary sqlSummary
+    ) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
@@ -119,6 +117,13 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
         return completionTime;
     }
 
+    /**
+     * Returns additional information for jobs backing an SQL query. Returns null if either:<ul>
+     *      <li>the job doesn't back an SQL query
+     *      <li>the user doesn't have the permission to access this information (TODO)
+     * </ul>
+     */
+    @Nullable
     public SqlSummary getSqlSummary() {
         return sqlSummary;
     }

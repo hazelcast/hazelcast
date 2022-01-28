@@ -430,7 +430,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             OptimizerContext context,
             boolean isInfiniteRows,
             boolean isCreateJob,
-            String query) {
+            String query
+    ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
         List<Permission> permissions = extractPermissions(physicalRel);

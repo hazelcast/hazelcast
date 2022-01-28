@@ -30,47 +30,47 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
-import static com.hazelcast.sql.JobConfigAttributes.SQL_QUERY_KEY_NAME;
-import static com.hazelcast.sql.JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlQueryInJobConfigTest extends SqlTestSupport {
+public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
         initializeWithClient(1, null, null);
     }
 
     @Test
-    public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromConfig() {
+    public void test_selectMetadata_member() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
             List<Job> jobs = instance().getJet().getJobs();
             assertEquals(1, jobs.size());
             JobConfig config = jobs.get(0).getConfig();
-            assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
-            assertEquals(Boolean.TRUE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
+            assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
+            assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
     }
 
     @Test
-    public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromConfigThroughClient() {
+    public void test_selectMetadata_client() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
             List<Job> jobs = client().getJet().getJobs();
             assertEquals(1, jobs.size());
             JobConfig config = jobs.get(0).getConfig();
-            assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
-            assertEquals(Boolean.TRUE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
+            assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
+            assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
     }
 
     @Test
-    public void when_runningTheSelectQuery_then_queryAndUnboundedFlagCanBeFetchFromJobSummary() throws ExecutionException, InterruptedException {
+    public void test_selectMetadata_clientJobSummary() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
             List<JobSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobSummaryList();
@@ -84,7 +84,7 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_creatingJob_then_queryAndUnboundedFlagCanBeFetchFromConfig() {
+    public void test_createJobMetadata() {
         TestBatchSqlConnector.create(instance().getSql(), "src", 3);
         createMapping("dest", Integer.class, String.class);
 
@@ -92,10 +92,27 @@ public class SqlQueryInJobConfigTest extends SqlTestSupport {
         instance().getSql().execute(sql);
         assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
 
-        List<Job> jobs = instance().getJet().getJobs();
+        List<Job> jobs = client().getJet().getJobs();
         assertEquals(1, jobs.size());
         JobConfig config = jobs.get(0).getConfig();
-        assertEquals(sql, config.getArgument(SQL_QUERY_KEY_NAME));
-        assertEquals(Boolean.FALSE, config.getArgument(SQL_UNBOUNDED_KEY_NAME));
+        assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
+        assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
+    }
+
+    @Test
+    public void test_dmlMetadata() {
+        createMapping("dest", Integer.class, Integer.class);
+        TestBatchSqlConnector.create(instance().getSql(), "src", 1, true);
+
+        String sql = "INSERT INTO dest SELECT v, v FROM src";
+        Future<SqlResult> f = spawn(() ->
+                instance().getSql().execute(sql));
+        awaitSingleRunningJob(instance());
+
+        List<Job> jobs = client().getJet().getJobs();
+        assertEquals(1, jobs.size());
+        JobConfig config = jobs.get(0).getConfig();
+        assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
+        assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
     }
 }
