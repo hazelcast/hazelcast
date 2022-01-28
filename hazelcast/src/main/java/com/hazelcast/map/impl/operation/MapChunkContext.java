@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.NotifiableIterator;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
@@ -48,7 +48,7 @@ public class MapChunkContext {
     private final int partitionId;
     private final String mapName;
     private final SerializationService ss;
-    private final ExpirySystemIf expirySystem;
+    private final ExpirySystem expirySystem;
     private final MapServiceContext mapServiceContext;
     private final RecordStore recordStore;
     private final LocalMapStatsImpl mapStats;
