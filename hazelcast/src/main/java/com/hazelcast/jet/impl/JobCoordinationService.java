@@ -708,8 +708,8 @@ public class JobCoordinationService {
                 // completed jobs
                 jobRepository.getJobResults().stream()
                         .map(r -> new JobSummary(
-                                r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText()))
+                                false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                r.getCompletionTime(), r.getFailureText(), null))
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -727,18 +727,12 @@ public class JobCoordinationService {
     private JobSummary getJobSummary(LightMasterContext lmc) {
         String query = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_QUERY_KEY_NAME);
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigAttributes.SQL_UNBOUNDED_KEY_NAME);
-        if (query != null && unbounded != null) {
-            SqlSummary sqlSummary = new SqlSummary(query, Boolean.TRUE.equals(unbounded));
-            return new JobSummary(
-                    true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                    RUNNING, lmc.getStartTime(), sqlSummary
-            );
-        } else {
-            return new JobSummary(
-                    true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                    RUNNING, lmc.getStartTime()
-            );
-        }
+        SqlSummary sqlSummary = query != null && unbounded != null ?
+                new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+
+        return new JobSummary(
+                true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
     }
 
     /**
@@ -1194,7 +1188,8 @@ public class JobCoordinationService {
         } else {
             status = ctx.jobStatus();
         }
-        return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
+        return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
+                record.getCreationTime(), 0, null, null);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {

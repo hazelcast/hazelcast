@@ -47,59 +47,27 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
     }
 
     /**
-     * Constructor for a running job
+     * Unified constructor for running and finished jobs.
      */
     public JobSummary(
             boolean isLightJob,
             long jobId,
             long executionId,
-            @Nonnull String nameOrId,
-            @Nonnull JobStatus status,
-            long submissionTime
-    ) {
-        this.isLightJob = isLightJob;
-        this.jobId = jobId;
-        this.executionId = executionId;
-        this.nameOrId = nameOrId;
-        this.status = status;
-        this.submissionTime = submissionTime;
-    }
-
-    public JobSummary(
-            boolean isLightJob,
-            long jobId,
-            long executionId,
-            @Nonnull String nameOrId,
-            @Nonnull JobStatus status,
-            long submissionTime,
-            SqlSummary sqlSummary
-    ) {
-        this.isLightJob = isLightJob;
-        this.jobId = jobId;
-        this.executionId = executionId;
-        this.nameOrId = nameOrId;
-        this.status = status;
-        this.submissionTime = submissionTime;
-        this.sqlSummary = sqlSummary;
-    }
-
-    /**
-     * Constructor for a completed job
-     */
-    public JobSummary(
-            long jobId,
             @Nonnull String nameOrId,
             @Nonnull JobStatus status,
             long submissionTime,
             long completionTime,
-            @Nullable String failureText
-    ) {
+            String failureText,
+            SqlSummary sqlSummary) {
+        this.isLightJob = isLightJob;
         this.jobId = jobId;
+        this.executionId = executionId;
         this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;
         this.completionTime = completionTime;
         this.failureText = failureText;
+        this.sqlSummary = sqlSummary;
     }
 
     public boolean isLightJob() {
