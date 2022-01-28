@@ -46,7 +46,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, IgnoredForCoverage.class, ParallelJVMTest.class})
+@Category({SlowTest.class, IgnoredForCoverage.class})
 public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     private static final int DURATION_SECS = 10;
