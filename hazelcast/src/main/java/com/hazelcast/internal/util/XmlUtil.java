@@ -115,14 +115,12 @@ public final class XmlUtil {
     }
 
     /**
-     * Returns {@link XMLInputFactory} with XXE protection enabled. If the
-     * classLoader argument is null, then the ContextClassLoader is used.
+     * Returns {@link XMLInputFactory} with XXE protection enabled.
      *
-     * @param factoryId   name of the system property to look for factory implementation
-     * @param classLoader classLoader to use
+     * @param factoryId name of the system property to look for factory implementation
      */
-    public static XMLInputFactory getXMLInputFactory(String factoryId, ClassLoader classLoader) {
-        return getProtectedFactory(XMLInputFactory.newFactory(factoryId, classLoader));
+    public static XMLInputFactory getXMLInputFactory(String factoryId) {
+        return getProtectedFactory(XMLInputFactory.newFactory(factoryId, null));
     }
 
     private static XMLInputFactory getProtectedFactory(XMLInputFactory xmlInputFactory) {
