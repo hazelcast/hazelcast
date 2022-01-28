@@ -62,7 +62,7 @@ public class MapReplicationOperation extends Operation
 
         this.mapNearCacheStateHolder = new MapNearCacheStateHolder();
         this.mapNearCacheStateHolder.setMapReplicationOperation(this);
-        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces);
     }
 
     @Override
@@ -74,7 +74,8 @@ public class MapReplicationOperation extends Operation
                 mapNearCacheStateHolder.applyState();
             }
         } catch (Throwable e) {
-            getLogger().severe("map replication operation failed for partitionId=" + getPartitionId(), e);
+            getLogger().severe("map replication operation failed for partitionId="
+                    + getPartitionId(), e);
 
             disposePartition();
 
@@ -85,13 +86,44 @@ public class MapReplicationOperation extends Operation
     }
 
     @Override
-    public void afterRun() throws Exception {
-        disposePartition();
-
-        if (oome != null) {
-            getLogger().warning(oome.getMessage());
+    public void beforeRun() throws Exception {
+        try {
+            if (mapReplicationStateHolder.storesByMapName == null) {
+                return;
+            }
+            for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
+                recordStore.beforeOperation();
+            }
+        } finally {
+            super.beforeRun();
         }
+    }
 
+    @Override
+    public void afterRun() throws Exception {
+        try {
+            disposePartition();
+
+            if (oome != null) {
+                getLogger().warning(oome.getMessage());
+            }
+        } finally {
+            super.afterRun();
+        }
+    }
+
+    @Override
+    public void afterRunFinal() {
+        try {
+            if (mapReplicationStateHolder.storesByMapName == null) {
+                return;
+            }
+            for (RecordStore recordStore : mapReplicationStateHolder.storesByMapName.values()) {
+                recordStore.afterOperation();
+            }
+        } finally {
+            super.afterRunFinal();
+        }
     }
 
     private void disposePartition() {

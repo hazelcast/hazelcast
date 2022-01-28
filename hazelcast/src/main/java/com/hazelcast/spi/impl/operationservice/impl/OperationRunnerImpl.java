@@ -40,7 +40,6 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -253,9 +252,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
-            if (op instanceof MapOperation) {
-                ((MapOperation) op).afterRunFinal();
-            }
+            op.afterRunFinal();
             if (publishCurrentTask) {
                 currentTask = null;
             }

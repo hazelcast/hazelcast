@@ -31,6 +31,9 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -1008,15 +1011,15 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
     public void test_aggregatingNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1025,15 +1028,15 @@ public class SqlAggregateTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("v"), singletonList(QueryDataTypeFamily.BIGINT));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                   .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                           "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
     public void test_distinctNonOrderedStreamingFunction() {
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("not supported");
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order " +
+                        "(see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     @Test
@@ -1061,6 +1064,24 @@ public class SqlAggregateTest extends SqlTestSupport {
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY GROUPING SETS ((name), (distance))"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Function 'GROUPING SETS' does not exist");
+    }
+
+    @Test
+    public void test_streamAggregationWithoutWindowFunction() {
+        String name = randomName();
+        TestStreamSqlConnector.create(
+                sqlService,
+                name,
+                asList("ts", "name", "distance"),
+                asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR, INTEGER),
+                new Object[]{timestampTz(0), "Alice", 1});
+
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT COUNT(name) " +
+                        "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "GROUP BY ts"))
+                .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
+                        " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
 
     private static String createTable(String[]... values) {

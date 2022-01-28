@@ -73,6 +73,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.lang.Boolean.TRUE;
@@ -81,6 +82,10 @@ import static java.lang.Boolean.TRUE;
 public final class DynamicConfigXmlGenerator {
     private DynamicConfigXmlGenerator() {
         // not called
+    }
+
+    public static void licenseKeyXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        gen.node(LICENSE_KEY.getName(), config.getLicenseKey());
     }
 
     public static void mapXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
