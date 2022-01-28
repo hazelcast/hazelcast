@@ -28,8 +28,8 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -52,7 +52,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
-    protected final ExpirySystemIf expirySystem;
+    protected final ExpirySystem expirySystem;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -64,13 +64,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public ExpirySystemIf getExpirySystem() {
+    public ExpirySystem getExpirySystem() {
         return expirySystem;
     }
 
     @Nonnull
-    protected ExpirySystemIf createExpirySystem(MapContainer mapContainer) {
-        return new ExpirySystem(this, mapContainer, mapServiceContext);
+    protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
+        return new ExpirySystemImpl(this, mapContainer, mapServiceContext);
     }
 
     @Override

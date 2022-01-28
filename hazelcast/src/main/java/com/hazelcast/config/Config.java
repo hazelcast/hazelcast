@@ -65,6 +65,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.net.URL;
@@ -337,17 +338,24 @@ public class Config {
         checkTrue(resource != null, "resource can't be null");
         checkTrue(properties != null, "properties can't be null");
 
-        InputStream stream = classLoader.getResourceAsStream(resource);
+        // Below try catch is inlined Classloader#getResourceAsStream() to access URL.
+        InputStream stream;
+        URL url = classLoader.getResource(resource);
+        try {
+            stream = url != null ? url.openStream() : null;
+        } catch (IOException e) {
+            stream = null;
+        }
         checkTrue(stream != null, "Specified resource '" + resource + "' could not be found!");
 
         if (resource.endsWith(".xml")) {
             return applyEnvAndSystemVariableOverrides(
-                    new XmlConfigBuilder(stream).setProperties(properties).build()
+                    new XmlConfigBuilder(stream).setProperties(properties).build().setConfigurationUrl(url)
             );
         }
         if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
             return applyEnvAndSystemVariableOverrides(
-                    new YamlConfigBuilder(stream).setProperties(properties).build()
+                    new YamlConfigBuilder(stream).setProperties(properties).build().setConfigurationUrl(url)
             );
         }
 
@@ -385,12 +393,12 @@ public class Config {
         InputStream stream = new FileInputStream(configFile);
         if (path.endsWith(".xml")) {
             return applyEnvAndSystemVariableOverrides(
-                    new XmlConfigBuilder(stream).setProperties(properties).build()
+                    new XmlConfigBuilder(stream).setProperties(properties).build().setConfigurationFile(configFile)
             );
         }
         if (path.endsWith(".yaml") || path.endsWith(".yml")) {
             return applyEnvAndSystemVariableOverrides(
-                    new YamlConfigBuilder(stream).setProperties(properties).build()
+                    new YamlConfigBuilder(stream).setProperties(properties).build().setConfigurationFile(configFile)
             );
         }
 

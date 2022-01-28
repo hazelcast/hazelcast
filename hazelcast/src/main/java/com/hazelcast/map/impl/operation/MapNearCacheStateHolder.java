@@ -60,7 +60,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 
-    void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+    void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces) {
         MapService mapService = container.getMapService();
 
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(mapService);
