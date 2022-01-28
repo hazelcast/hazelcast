@@ -117,13 +117,9 @@ public final class XmlUtil {
     /**
      * Returns {@link XMLInputFactory} with XXE protection enabled.
      *
-     * @param factoryId name of the system property to look for factory implementation
+     * @param xmlInputFactory {@link XMLInputFactory} to protect
      */
-    public static XMLInputFactory getXMLInputFactory(String factoryId) {
-        return getProtectedFactory(XMLInputFactory.newFactory(factoryId, null));
-    }
-
-    private static XMLInputFactory getProtectedFactory(XMLInputFactory xmlInputFactory) {
+    public static XMLInputFactory getProtectedFactory(XMLInputFactory xmlInputFactory) {
         setProperty(xmlInputFactory, XMLInputFactory.SUPPORT_DTD, false);
         return xmlInputFactory;
     }
