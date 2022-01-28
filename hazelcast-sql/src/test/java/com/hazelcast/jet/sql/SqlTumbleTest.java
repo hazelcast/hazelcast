@@ -206,15 +206,15 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT window_start, window_end FROM " +
-                        "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "SELECT window_start, window_end, name FROM " +
+                "TABLE(TUMBLE(" +
+                        "  TABLE(" + name + ")" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))",
                 asList(
-                        new Row(timestampTz(0L), timestampTz(2L)),
-                        new Row(timestampTz(4L), timestampTz(6L))
+                        new Row(timestampTz(0L), timestampTz(2L), "Alice"),
+                        new Row(timestampTz(4L), timestampTz(6L), "Alice")
                 )
         );
     }
