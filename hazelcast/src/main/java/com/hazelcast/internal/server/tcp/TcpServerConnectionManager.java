@@ -38,7 +38,6 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -130,9 +129,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Nonnull
     public List<ServerConnection> getAllConnections(@Nonnull Address address) {
         UUID uuid = addressRegistry.uuidOf(address);
+        // Because duplicate connections can be established on the planes and
+        // we don't keep all duplicates on the planes, we need to iterate over
+        // connections set which stores all active connections.
         return uuid != null
-                ? Arrays.stream(planes).map(plane -> plane.getConnection(uuid)).filter(x -> x != null)
-                .collect(Collectors.toList())
+                ? connections.stream().filter(connection -> connection.getRemoteUuid().equals(uuid))
+                                      .collect(Collectors.toList())
                 : Collections.emptyList();
     }
 
