@@ -59,6 +59,13 @@ public interface ConfigurationService {
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
+     * Update the license for the cluster.
+     *
+     * @param licenseKey new license key to set
+     */
+    void updateLicense(String licenseKey);
+
+    /**
      * Persists any dynamically changeable sub configuration to this member's
      * declarative configuration. Preserves file format of the existing dynamic
      * configuration persistence file. Also note that this method is
@@ -66,7 +73,7 @@ public interface ConfigurationService {
      *
      * @param subConfig configuration to persist
      */
-    void persist(IdentifiedDataSerializable subConfig);
+    void persist(Object subConfig);
 
     /**
      * Updates the configuration with the given configuration. Updating means

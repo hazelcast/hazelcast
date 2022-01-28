@@ -211,7 +211,7 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public void persist(IdentifiedDataSerializable subConfig) {
+    public void persist(Object subConfig) {
         // Code shouldn't come here. broadcastConfig() will throw an exception
         // before here.
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
@@ -225,5 +225,10 @@ class EmptyConfigurationService implements ConfigurationService {
     @Override
     public ConfigUpdateResult update(Config newConfig) {
         throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
+    }
+
+    @Override
+    public void updateLicense(String licenseKey) {
+        throw new IllegalStateException("Cannot update license while Hazelcast is starting.");
     }
 }

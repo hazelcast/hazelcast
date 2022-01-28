@@ -17,7 +17,9 @@
 package com.hazelcast.internal.config.dynamic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryYamlConfig;
+import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.InMemoryXmlConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -27,13 +29,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.licenseKeyXmlGenerator;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
+public class DynamicConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
-    private static final ILogger LOGGER = Logger.getLogger(DynamicConfigYamlGeneratorTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(DynamicConfigXmlGeneratorTest.class);
 
     // LICENSE KEY
 
@@ -42,17 +45,35 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         String licenseKey = randomString();
         Config config = new Config().setLicenseKey(licenseKey);
 
-        Config decConfig = getNewConfigViaGenerator(config);
+        StringBuilder xmlBuilder = new StringBuilder();
+        ConfigXmlGenerator.XmlGenerator gen = new ConfigXmlGenerator.XmlGenerator(xmlBuilder);
 
+        // generate string
+        xmlBuilder.append("<hazelcast ")
+                .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
+                .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
+                .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
+                .append(Versions.CURRENT_CLUSTER_VERSION.toString())
+                .append(".xsd\">");
+        licenseKeyXmlGenerator(gen, config);
+        xmlBuilder.append("</hazelcast>");
+
+        // recreate the config object
+        String xmlString = xmlBuilder.toString();
+        Config decConfig = new InMemoryXmlConfig(xmlString);
+
+        // test
         String actualLicenseKey = decConfig.getLicenseKey();
         assertEquals(config.getLicenseKey(), actualLicenseKey);
     }
 
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
-        DynamicConfigYamlGenerator dynamicConfigYamlGenerator = new DynamicConfigYamlGenerator();
-        String yaml = dynamicConfigYamlGenerator.generate(config);
-        LOGGER.fine("\n" + yaml);
-        return new InMemoryYamlConfig(yaml);
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, true);
+        String xml = configXmlGenerator.generate(config);
+        LOGGER.fine("\n" + xml);
+        return new InMemoryXmlConfig(xml);
+
     }
 }
