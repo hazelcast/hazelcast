@@ -16,22 +16,21 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -101,52 +100,6 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         partitionStateManager.clearMigratingFlag(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
-        }
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        try {
-            PartitionMigrationEvent event = getPartitionMigrationEvent();
-
-            Throwable t = null;
-            for (MigrationAwareService service : getMigrationAwareServices()) {
-                // we need to make sure all beforeMigration() methods are executed
-                try {
-                    service.onBeforeRun(event);
-                } catch (Throwable e) {
-                    getLogger().warning("Error while executing beforeRun()", e);
-                    t = e;
-                }
-            }
-            if (t != null) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        } finally {
-            super.beforeRun();
-        }
-    }
-
-    @Override
-    public void afterRunFinal() {
-        PartitionMigrationEvent event = getPartitionMigrationEvent();
-        try {
-
-            Throwable t = null;
-            for (MigrationAwareService service : getMigrationAwareServices()) {
-                // we need to make sure all beforeMigration() methods are executed
-                try {
-                    service.onAfterRunFinal(event);
-                } catch (Throwable e) {
-                    getLogger().warning("Error while executing afterRunFinal()", e);
-                    t = e;
-                }
-            }
-            if (t != null) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        } finally {
-            super.afterRunFinal();
         }
     }
 
