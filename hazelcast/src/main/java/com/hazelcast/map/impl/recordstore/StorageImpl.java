@@ -43,8 +43,8 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
  * @param <R> the value type to be put in this storage.
  */
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
+    private static final int ADDITIONAL_ENTRIES_CAPACITY = 20;
 
-    public static final int ADDITIONAL_ENTRIES_CAPACITY = 20;
     private final StorageSCHM<R> records;
     private final SerializationService serializationService;
     private final InMemoryFormat inMemoryFormat;
