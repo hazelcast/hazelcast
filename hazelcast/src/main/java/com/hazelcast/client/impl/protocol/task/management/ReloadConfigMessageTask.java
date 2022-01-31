@@ -59,7 +59,7 @@ public class ReloadConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCReloadConfigCodec.encodeResponse((ConfigUpdateResult) response);
+        return MCReloadConfigCodec.encodeResponse();
     }
 
     @Override

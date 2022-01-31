@@ -6620,8 +6620,6 @@ public class ClientCompatibilityNullTest_2_4 {
     @Test
     public void test_MCReloadConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 844;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aConfigUpdateResult, MCReloadConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6635,8 +6633,6 @@ public class ClientCompatibilityNullTest_2_4 {
     @Test
     public void test_MCUpdateConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 846;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aConfigUpdateResult, MCUpdateConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test

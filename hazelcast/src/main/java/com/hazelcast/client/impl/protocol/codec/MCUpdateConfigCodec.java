@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the configuration on the member with the passed configuration, applies (merges) the passed config to the current config
  */
-@Generated("e1ca53f89443765aeb7ff30aa745114a")
+@Generated("85a65ba8e1a04d88edc78157300c4f46")
 public final class MCUpdateConfigCodec {
     //hex: 0x202300
     public static final int REQUEST_MESSAGE_TYPE = 2106112;
@@ -61,7 +61,7 @@ public final class MCUpdateConfigCodec {
     }
 
     /**
-     * the new configuration (XML or YAML string) to be applied to the current configuration
+     * the config patch (XML or YAML string) to be applied to the current configuration
      */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
@@ -70,23 +70,12 @@ public final class MCUpdateConfigCodec {
         return StringCodec.decode(iterator);
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.internal.dynamicconfig.ConfigUpdateResult configUpdateResult) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ConfigUpdateResultCodec.encode(clientMessage, configUpdateResult);
         return clientMessage;
-    }
-
-    /**
-     * the result of the configuration update
-     */
-    public static com.hazelcast.internal.dynamicconfig.ConfigUpdateResult decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        //empty initial frame
-        iterator.next();
-        return ConfigUpdateResultCodec.decode(iterator);
     }
 }

@@ -7486,7 +7486,7 @@ public class MemberCompatibilityNullTest_2_4 {
     @Test
     public void test_MCReloadConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 844;
-        ClientMessage encoded = MCReloadConfigCodec.encodeResponse(aConfigUpdateResult);
+        ClientMessage encoded = MCReloadConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7501,7 +7501,7 @@ public class MemberCompatibilityNullTest_2_4 {
     @Test
     public void test_MCUpdateConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 846;
-        ClientMessage encoded = MCUpdateConfigCodec.encodeResponse(aConfigUpdateResult);
+        ClientMessage encoded = MCUpdateConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

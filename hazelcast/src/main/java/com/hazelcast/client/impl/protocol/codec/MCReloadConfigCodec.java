@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Reloads the configuration on the member from its config file, applies (merges) the new config to the current config
  */
-@Generated("2d086bf88cb9559bedf4cf7ba4e247e9")
+@Generated("a2dc83d1b82a35e2d36132582d255361")
 public final class MCReloadConfigCodec {
     //hex: 0x202200
     public static final int REQUEST_MESSAGE_TYPE = 2105856;
@@ -59,23 +59,12 @@ public final class MCReloadConfigCodec {
         return clientMessage;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.internal.dynamicconfig.ConfigUpdateResult configUpdateResult) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        ConfigUpdateResultCodec.encode(clientMessage, configUpdateResult);
         return clientMessage;
-    }
-
-    /**
-     * the result of the configuration update
-     */
-    public static com.hazelcast.internal.dynamicconfig.ConfigUpdateResult decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        //empty initial frame
-        iterator.next();
-        return ConfigUpdateResultCodec.decode(iterator);
     }
 }

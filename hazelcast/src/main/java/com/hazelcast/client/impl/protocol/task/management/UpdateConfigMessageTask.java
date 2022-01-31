@@ -60,7 +60,7 @@ public class UpdateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCUpdateConfigCodec.encodeResponse((ConfigUpdateResult) response);
+        return MCUpdateConfigCodec.encodeResponse();
     }
 
     @Override
