@@ -44,6 +44,7 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
  */
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
+    public static final int ADDITIONAL_ENTRIES_CAPACITY = 20;
     private final StorageSCHM<R> records;
     private final SerializationService serializationService;
     private final InMemoryFormat inMemoryFormat;
@@ -157,7 +158,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
-        List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
+        List<Map.Entry<Data, R>> entries = new ArrayList<>(size + ADDITIONAL_ENTRIES_CAPACITY);
         IterationPointer[] newPointers = records.fetchEntries(pointers, size, entries);
         List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
