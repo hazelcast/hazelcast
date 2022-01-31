@@ -1331,7 +1331,7 @@ hazelcast:
         enabled: false
         fsync: false
       tiered-store:
-        enabled: true
+        enabled: false
         memory-tier:
           capacity:
             unit: MEGABYTES
