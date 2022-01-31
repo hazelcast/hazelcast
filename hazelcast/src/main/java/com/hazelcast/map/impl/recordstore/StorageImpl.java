@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystemIf expirySystem,
+    StorageImpl(InMemoryFormat inMemoryFormat, ExpirySystem expirySystem,
                 SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
