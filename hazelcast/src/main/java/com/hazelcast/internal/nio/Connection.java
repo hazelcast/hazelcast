@@ -106,7 +106,7 @@ public interface Connection {
      * If the other side of connection is not Hazelcast member or
      * native client (when the other side of connection is MEMCACHED
      * or REST client), this method always returns null.
-     * @return the uuid of the remote endpoint of the connection.
+     * @return null or the uuid of the remote endpoint of the connection.
      */
     @Nullable
     UUID getRemoteUuid();
