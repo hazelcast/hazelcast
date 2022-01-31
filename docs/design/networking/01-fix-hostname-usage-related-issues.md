@@ -15,16 +15,15 @@
 
 
 |||
-|---|---|
-|Related Jira|https://hazelcast.atlassian.net/browse/HZ-528|
-|Related Github issues|https://github.com/hazelcast/hazelcast/issues/16651|
-|Document Status / Completeness|DRAFT / IN PROGRESS / DESIGN REVIEW / DONE|
-|Requirement owner|_Requirement owner_|
-|Developer(s)|_Ufuk Yılmaz_|
-|Quality Engineer|_Viacheslav Sytnyk_|
-|Support Engineer|_Support Engineer_|
-|Technical Reviewers|_Vassilis Bekiaris_ _Josef Cacek_|
-|Simulator or Soak Test PR(s) |_Link to Simulator or Soak test PR_|
+|---|------------------- https://hazelcast.atlassian.net/browse/HZ-528       Jira| https://hazelcast.atlassian.net/browse/HZ-528       |
+|Related Github issues| https://github.com/hazelcast/hazelcast/issues/16651 |
+|Document Status / Completeness| DRAFT / IN PROGRESS / DESIGN REVIEW / DONE          |
+|Requirement owner| _Requirement owner_                                 |
+|Developer(s)| _Ufuk Yılmaz_                                       |
+|Quality Engineer| _Viacheslav Sytnyk_                                 |
+|Support Engineer| _Support Engineer_                                  |
+|Technical Reviewers| _Vassilis Bekiaris_, _Josef Cacek_                  |
+|Simulator or Soak Test PR(s) | _Link to Simulator or Soak test PR_                 |
 
 ### Background
 
@@ -32,53 +31,37 @@
 
 Several problems can arise when using hostnames in Hazelcast's network
 and WAN configurations. With this effort, we aim to provide a seamless
-usage of hostnames in the Hazelcast configurations by fixing related
-hostname usage issues. In the source of the problems, the members have
-multiple addresses if the hostname used in the related configs, and we
-don't manage them properly because significant part of the code base is
-written assuming a member will only have one network address. There is
-indeed one public address of the member, but it is not easy to understand
-that different representations of this address are the same address. For
-example, if multiple hostname/domain names refer to the same member, we
-cannot understand that these two addresses refer to the same place
-without doing hostname resolution and the parts of the code that use the
-address is not enforced to perform this IP resolution while using it (it
-is a bit complicated process if it's not managed in a single place).
+usage of hostnames in the Hazelcast configurations by fixing issues
+related to hostname usage. The source of the problems is the fact that
+multiple network addresses can point to the same member, and we ignore
+this fact while dealing with network addresses in our codebase. A
+significant part of our codebase is written assuming a member will only
+have one network address, but this assumption fails, so we encounter
+errors/wrong behavior in the different processes of the Hazelcast.
 
-What we propose as a solution to these issues is that we identify/refer
-to other members and their belongings such as connections and other
-stuffs based on member UUIDs instead of the network addresses in the
-connection manager. We will  try to manage these multiple network addresses
-at Hazelcast networking level, and we will avoid dealing with multiple
-addresses in the high level places by only exposing single representation
-of these addresses to the higher levels. We'll call this single exposed
-address the primary address of member. We will select this primary address
-as follows:
-- For the member protocol connections and for other connections using unified
-connection manager, we select the public address of the member protocol which 
-corresponds to `com.hazelcast.instance.ProtocolType#MEMBER` as the primary 
-address.  
-- For the other protocol connections (this is possible when advanced networking
-is enabled.), we select the public address of corresponding protocol as the
-primary address. e.g. we select the public address corresponds to 
-`com.hazelcast.instance.ProtocolType#WAN` for the incoming connections to the
-connection manager which manages only the wan connections.
+When using hostnames in the network configuration of the members, we
+directly encounter the situation of having multiple addresses for the
+members as a consequence of using hostnames. Because when we use
+hostnames, the members know both the IP address of the member by
+resolving the hostname and the raw hostname address for this member.
+Then, issues arise because members don't properly manage these multiple
+addresses.
 
-After exposing only the primary address to the those high level places and
-after making sure its singularity, we only need to manage multiple addresses
-in the connection manager layer. In this connection manager, we will manage
-these multiple addresses with member uuid based mechanism.
+In this effort, we will try to manage properly these multiple network
+addresses of the members and this will resolve the hostname usage
+related issues.
 
 #### Motivation
-We want to provide seamless hostname usage experience to our users.
-Until now, many of our users and customers have had problems in this
+
+We want to provide a seamless hostname usage experience to our users.
+Until now, many of our users and customers have had problems with this
 regard as shown in the known issues. Although the hostname usages can be
 replaced with IP based addressing in simple networking setups, it is a
 necessary functionality for maintaining complex network setups where IPs
 are dynamically assigned to the machines that Hazelcast members will
 work on. This is specifically important for cloud-based deployments that
 could be the subject of more complex networking setups compared to on
-premise deployments that may include members whose IP are assigned
+premise deployments that may include members whose IPs are assigned
 dynamically and these addresses identified by DNS based hostname
 resolution mechanism.
 
@@ -88,11 +71,11 @@ resolution mechanism.
 - Support the hostname-based addressing in relevant discovery plugins
   (e.g. discovery in AWS, Azure, GCP, Kubernetes)
 
-In summary, we want Hazelcast to work when using hostname based address
-used instead of the IP address in any Hazelcast cluster configuration that
-works when IP address is used as configuration element. In short, we
-want any cluster setup that works properly when ip addresses are used,
-to operate when hostnames are used.
+In summary, we want Hazelcast to work when a hostname address used
+instead of an IP address in any Hazelcast cluster configuration that
+works when an IP address is used in the configuration element. In short,
+we want any cluster setup that works properly when IP addresses are
+used, to operate when hostnames are used.
 
 #### Terminology
 
@@ -129,57 +112,114 @@ There will be no functional changes.
 If users have previously used member addresses in their custom codes for
 member identification purposes, they will still encounter address
 management problems when their configurations include hostnames. We need
-to provide them a way to manage member addresses. So, for solving this
-kind of problems, we should expose our managed `UUID-Set<Address>` and
-its reverse mappings to our users. Franta pointed out the jet connectors
-as a users of Hazelcast member APIs uses some `Address` dependent logic
-inside. e.g. In Elasticsearch connector, we use member addresses to
-check if in case the Hazelcast cluster runs on the same machines as
-Elastic it uses the addresses to plan the job in a way the reading from
-the local shard that belongs to same machine and doesn't go over the
-network. This is also same for the hadoop connectors. This logic may go
-wrong when Hazelcast members have multiple addresses.
+to provide them with a way to manage member addresses. So, for solving
+this kind of problem, we should expose our managed `UUID-Set<Address>`
+and its reverse mappings to our users. The jet connectors as a user of
+Hazelcast member APIs uses some `Address` dependent logic inside. e.g.
+In Elasticsearch connector, we use member addresses to check if in case
+the Hazelcast cluster runs on the same machines as Elastic it uses the
+addresses to plan the job in a way the reading from the local shard that
+belongs to same machine and doesn't go over the network. This is also
+same for the hadoop connectors. This logic may go wrong when Hazelcast
+members have multiple addresses.
 
-Up until now, our users mainly use picked public address of the members
-for member identification purposes in the member logs. We should not
-make any big change in the member logs so as not to confuse our users.
-We should store the address configured by the user as the primary
+Up until now, our users mainly use the picked public address of the
+members for member identification purposes in the member logs. We should
+not make any big changes in the member logs so as not to confuse our
+users. We should store the address configured by the user as the primary
 address and continue to print it in the member logs. Even if we do the
 member identification with a UUID-based logic, we should keep the member
-address in related places in order to show it in the logs.
+address in related places to show it in the logs.
 
 ### Technical Design
 
-To manage the address aliases, we will create `UUID -> Set<Address>` and
-`Address'es -> UUID` mappings inside `TcpServerConnectionManager`. Since
-we can access the UUIDs of the members after getting MemberHandshake
+What we propose as a solution to these issues is that we will try to
+manage this multiple network addresses at the Hazelcast networking
+level, and we will avoid dealing with multiple addresses in high-level
+places by only exposing single representation of these addresses to the
+higher levels. We'll call this single exposed address the primary
+address of the member. We select this primary address as follows:
+- For the member protocol connections and for other connections using unified
+  connection manager, we select the public address of the member protocol which
+  corresponds to `com.hazelcast.instance.ProtocolType#MEMBER` as the primary
+  address.
+- For the other protocol connections (this is possible when advanced networking
+  is enabled.), we select the public address of the corresponding protocol as the
+  primary address. e.g. we select the public address that corresponds to
+  `com.hazelcast.instance.ProtocolType#WAN` for the incoming connections to the
+  connection manager which manages only the wan connections.
+
+After exposing only the primary address to those high-level places and
+after making sure its singularity, we only need to manage multiple
+addresses in the network/connection manager layer. In the connection
+manager, we will manage with multiple member addresses and their
+connections using the members' unique UUIDs.
+
+Although there is only one selected public address of the member
+corresponds to each EndpointQualifier of this member, it is possible to
+reach these endpoints using addresses other than this defined public
+addresses. It is impossible to understand that these different addresses
+point to the same member just only looking at the content of these
+address objects. Even if we only use the IP addresses, multiple
+different IP addresses can refer to the same host machine. Hazelcast
+server socket can bind different network interfaces of the host machine
+which can have multiple private and public addresses etc.; or consider
+that adding network proxies to the front of the member, the addresses of
+these proxies behave as the addresses of the member on the viewpoint of
+connection initiator. These public/private addresses or proxy addresses
+are completely different in their contents. Also, multiple hostnames can
+be defined in DNS to refer to the same machine (we may understand these
+hostnames point to the same member if they resolve to the same IP
+address, but how to decide when to do this resolution, and they don't
+always have to resolve to the same IPs .), and so we don't have a chance
+to understand these addresses referring to the same member just only
+looking at their contents. To understand this, we need to connect the
+remote member and process the `MemberHandshake` of this remote member.
+In the member handshake, a member receive the member UUID of the remote
+member, and after that, we can understand the connected address belongs
+to which member. We are registering this connected address as the
+address of the corresponding member UUID during this `MemberHandshake`
+processing. In this `MemberHandshake`, the remote member also shares its
+public addresses, and we also register the public addresses of this
+member under the member's unique UUID together with the connected
+address as aliases of each other.
+
+
+To manage the address aliases, we create an Address registry to store
+`UUID -> Set<Address>` and `Address'es -> UUID` mappings. Since we can
+access the UUIDs of the members after getting the MemberHandshake
 response, the entries of these maps will be created on connection
-registration which is performed in the handshake processing. We will
-remove these entries when the connections are terminated. In this
-address removal, hot restart with same UUID case must be considered. If
-we try to extend the lifetime of these map entries a little longer, this
-may cause problems with Hot Restart with the same UUID. Since we cannot
-manage the connections which are in the in progress state with a UUID
-based logic, we need to manage these addresses only with address aliases
-sets. I plan to use Zoltan's linked address implementation for it. See:
-https://github.com/hazelcast/hazelcast/pull/19684
+registration which is performed during the handshake processing. We
+decide to remove the address registry entries when all connections to
+the members are closed. While determining the address removal timing, we
+especially considered the cases such as hot restart on a different
+machine with the same UUID, member restarts, and split-brain merge;
+these actions may cause the address registry entries to become stale. If
+we tried to extend the lifetime of these map entries a little longer,
+this would cause problems with Hot Restart with the same UUID that's why
+we chose to stick the lifetime of registrations to the lifetime of
+connections. While trying to create this design, we considered removing
+all the `Address` usages from the codebase. But, this change was quite
+intrusive since we use the addresses in lots of different places, and in
+some places, it was not possible to remove them without breaking
+backward compatibility. Also, we had a strict dependency on Address
+usage in socket bind and socket connect operations by the nature; and we
+cannot remove the addresses from these places. Since our retry
+mechanisms in the operation service also try to reconnect the socket
+channel if it's not available, an operation can trigger reconnect action
+if we don't have an active connection to the address. For most of the
+operations, we can have already established connection but for the join,
+wan, and some cluster (heartbeat) operations, we depend on `connect`
+semantics. But even the fact that few of the operations mentioned above
+are dependent on connect semantics prevents us from easily removing the
+Address usage from our operation invocation services. Also. in some
+cluster service methods, lexicographic address comparisons are performed
+between member addresses to determine some order among the members (when
+deciding on a member to perform some task such as claiming mastership).
+We don't have a chance to remove addresses from these places without
+breaking backward compatibility.
 
-While trying to create this design, I tried to purify the methods of
-TcpServerConnectionManager from `Address` in order to prevent the use of
-`Address` at the upper levels. But, we had a strict dependency to
-Address usage in socket bind and connect operations by nature and some
-operation must trigger these bind/connect ops.   
-For the most of the operations we can have already established
-connection but for the join, wan, and some cluster (heartbeat)
-operations, we depend on `connect` semantics. But even the fact that few
-of the operations mentioned above dependent on connect semantics
-prevents us from easily removing the Address usage from our operation
-invocation services.
-
-In some places, lexicographic comparison is performed between member addresses
-in order to determine the order among the members (when deciding on a member
-to perform some task such as claiming mastership). We do not have a chance to
-remove addresses from these places without breaking backward compatibility.
+Code examples that we cannot remove the addresses: 
 
 ```java
 // When deciding on a member that will claim mastership after the first join
@@ -241,55 +281,36 @@ private boolean shouldMergeTo(Address thisAddress, Address targetAddress) {
    `Set<Address>` in our mappings, but I couldn't provide a good
    abstraction yet.
 
-<!--
-TODO: Answer the questions
 - Questions about the change:
     - How does this work in an on-prem deployment? How about on AWS and Kubernetes?
     - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
+    In this effort, we avoid the changes that would break backward compatibility, so we
+    don't expect any backward compatibility issue with respect to this change.
     - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document? (Provide examples if relevant.)
     - Is there other ongoing or recent work that is related? (Cross-reference the relevant design documents.)
+    There is a previously reverted PR: https://github.com/hazelcast/hazelcast/pull/18591 (the related TDD is available in this PR changes), https://github.com/hazelcast/hazelcast/pull/19684
     - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled? Provide examples.
-    - What are the effect of possible mistakes by other Hazelcast team members trying to use the feature in their own code? How does the change impact how they will troubleshoot things?
     - Mention alternatives, risks and assumptions. Why is this design the best in the space of possible designs? What other designs have been considered and what is the rationale for not choosing them?
     - Add links to any similar functionalities by other vendors, similarities and differentiators
+
 
 - Questions about performance:
     - Does the change impact performance? How?
     - How is resource usage affected for “large” loads? For example, what do we expect to happen when there are 100000 items/entries? 100000 data structures? 1000000 concurrent operations?
     - Also investigate the consequences of the proposed change on performance. Pay especially attention to the risk that introducing a possible performance improvement in one area can slow down another area in an unexpected way. Examine all the current "consumers" of the code path you are proposing to change and consider whether the performance of any of them may be negatively impacted by the proposed change. List all these consequences as possible drawbacks.
+        Since we did not perform a lookup from the concurrent
+        `UUID-Set<Address>` and its reverse map in the hot paths, we didn't
+        expect any performance degradation with this change. We perform a simple
+        benchmark on this change and don't see any performance difference with
+        the version before the change. See the benchmark for it:
+        https://hazelcast.atlassian.net/wiki/spaces/PERF/pages/3949068293/Performance+Tests+for+5.1+Hostname+Fix
+     
 
 - Stability questions:
     - Can this new functionality affect the stability of a node or the entire cluster? How does the behavior of a node or a cluster degrade if there is an error in the implementation?
     - Can the new functionality be disabled? Can a user opt out? How?
     - Can the new functionality affect clusters which are not explicitly using it?
     - What testing and safe guards are being put in place to protect against unexpected problems?
-
-- Security questions:
-    - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant security-minded reviewer as reviewer to the design document.
-    - Does the change create a new way to communicate data over the network?  What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
-    - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
-
-- Observability and usage questions:
-    - Is the change affecting asynchronous / background subsystems?
-        - If so, how can users and our team observe the run-time state via tracing?
-        - Which other inspection APIs exist?
-          (In general, think about how your coworkers and users will gain access to the internals of the change after it has happened to either gain understanding during execution or troubleshoot problems.)
-
-    - Are there new APIs, or API changes (either internal or external)?
-        - How would you document the new APIs? Include example usage.
-        - What are the other components or teams that need to know about the new APIs and changes?
-        - Which principles did you apply to ensure the APIs are consistent with other related features / APIs? (Cross-reference other APIs that are similar or related, for comparison.)
-
-    - Is the change visible to users of Hazelcast or operators who run Hazelcast clusters?
-        - Are there any user experience (UX) changes needed as a result of this change?
-        - Are the UX changes necessary or clearly beneficial? (Cross-reference the motivation section.)
-        - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
-        - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
-    - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
-
-The section should return to the user stories in the motivations section, and explain more fully how the detailed proposal makes those stories work.
-
--->
 
 ### Testing Criteria
 
@@ -304,17 +325,21 @@ Unit and integration tests should:
 - Verify TLS remains working (when host validation is enabled);
 - Verify the performance doesn't significantly drop in different environments (On premise, Kubernetes, GKE, AWS deployments etc.)
 - Verify cluster is correctly being formed, Persistence and WAN is working when `setPublicAdress` is applied
+- Verify that the client from external network can connect to the cluster
 
 It would definitely be better to test these scenarios also with hazelcast test containers as well.
 
 #### Stress test
-In the case where Hazelcast persistence is enabled, a new member can be
-started to replace a crashed member. And, it can use the same UUID as
-the crashing member but different network addresses. In this case, we
-must manage the lifecycle of our UUID-Set<Address> mapping properly so
-that there are no stale entries in it. This hot restart with same uuid
-but different addresses case should be created repeatedly and tested to
-see if there is any mistake.
+
+Stress tests must validate the Hazelcast work when:
+
+- A member in the cluster gracefully shutdown
+- A member forcefully shutdown
+- Split-brain happens and resolves
+- Cluster-wide crash happens on some cluster B when WAN replication is set between cluster A and B
+
+The above scenarios must also be tested when Hazelcast persistence is
+enabled.
 
 #### Cloud tests
 This fix must be tested on different cloud environments since they are
