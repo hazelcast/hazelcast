@@ -464,6 +464,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(n);
                 if ("base-dir".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("baseDir", getTextContent(n));
+                } else if ("capacity".equals(name)) {
+                    handleCapacity(n, deviceConfigBuilder);
                 } else if ("block-size".equals(name)) {
                     deviceConfigBuilder.addPropertyValue("blockSize",
                             getIntegerValue("block-size", getTextContent(n)));
@@ -1377,14 +1379,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("capacity".equals(name)) {
-                    handleMemorySizeConfig(child, memoryTierConfigBuilder);
+                    handleCapacity(child, memoryTierConfigBuilder);
                 }
             }
 
             configBuilder.addPropertyValue("memoryTierConfig", memoryTierConfigBuilder.getBeanDefinition());
         }
 
-        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+        private void handleCapacity(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
             BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
