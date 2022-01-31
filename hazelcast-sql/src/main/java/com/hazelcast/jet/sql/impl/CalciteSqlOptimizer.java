@@ -588,7 +588,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        detectLonelyImposeOrder(logicalRel);
+        detectStandaloneImposeOrder(logicalRel);
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
@@ -656,7 +656,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     // Note: intended to be reworked later, to support late items drop.
-    private void detectLonelyImposeOrder(RelNode rel) {
+    private void detectStandaloneImposeOrder(RelNode rel) {
         HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
         WatermarkedFields wm = mq.extractWatermarkedFields(rel);
         if (wm != null && !wm.isEmpty()) {
