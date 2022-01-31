@@ -1163,7 +1163,7 @@
                 You can give the size using its "value" attribute and the unit using its "unit" attribute.
                 Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 megabytes.
         - <disk-tier>:
-            Defines configuration for the disk tier of the tiered store. It has the following attributes and sub-elements:
+            Defines configuration for the disk tier of the tiered store. It has the following attributes:
             - enabled:
                 Specifies whether (local) disk should be used as the second memory tier.
             - device-name:
