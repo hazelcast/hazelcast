@@ -401,7 +401,7 @@ hazelcast:
             value: 256
         disk-tier:
           enabled: true
-          device-name: my-local-device
+          device-name: default-tiered-store-device
 
   multimap:
     default:
@@ -944,7 +944,7 @@ hazelcast:
     backup-count: 7
 
   local-device:
-    my-local-device:
+    default-tiered-store-device:
       base-dir: base-dir
       block-size: 4096
       read-io-thread-count: 4
