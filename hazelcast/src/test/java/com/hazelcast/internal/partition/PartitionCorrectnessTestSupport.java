@@ -83,6 +83,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     @Before
     public void setup() {
         factory = createHazelcastInstanceFactory(10);
+        metricsRule.disable();
     }
 
     void fillData(HazelcastInstance hz) {

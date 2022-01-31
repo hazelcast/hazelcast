@@ -514,7 +514,7 @@ public final class ClusterProperty {
      * this reduces latency when new members join clusters one-by-one
      */
     public static final HazelcastProperty WAIT_SECONDS_BEFORE_JOIN_ASYNC
-            = new HazelcastProperty("hazelcast.wait.seconds.before.join.async", true);
+            = new HazelcastProperty("hazelcast.wait.seconds.before.join.async", false);
 
     /**
      * Join timeout, maximum time to try to join before giving up.
