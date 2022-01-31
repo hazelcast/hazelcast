@@ -36,13 +36,7 @@ public interface InputOutputFactory {
                                       InternalSerializationService service,
                                       boolean isCompatibility);
 
-    BufferObjectDataInput createInput(byte[] buffer,
-                                      InternalSerializationService service,
-                                      boolean isCompatibility, ByteOrder byteOrder);
-
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
-
-    BufferObjectDataOutput createOutput(int size, InternalSerializationService service, ByteOrder byteOrder);
 
     ByteOrder getByteOrder();
 }
