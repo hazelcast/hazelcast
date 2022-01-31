@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -133,10 +134,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         // we don't keep all duplicates on the planes, we need to iterate over
         // connections set which stores all active connections.
         return instanceUuid != null
-                ? connections.stream().filter(connection -> {
-                    UUID remoteUuid = connection.getRemoteUuid();
-                    return remoteUuid != null && remoteUuid.equals(instanceUuid);
-                }).collect(Collectors.toList())
+                ? connections.stream().filter(connection -> Objects.equals(instanceUuid, connection.getRemoteUuid()))
+                                      .collect(Collectors.toList())
                 : Collections.emptyList();
     }
 
