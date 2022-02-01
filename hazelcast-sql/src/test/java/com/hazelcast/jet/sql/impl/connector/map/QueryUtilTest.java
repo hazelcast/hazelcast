@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.toPredicate;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +37,7 @@ public class QueryUtilTest {
     @Test
     public void when_leftValueIsNull_then_returnsNull() {
         Predicate<Object, Object> predicate =
-                toPredicate(new JetSqlRow(null, new Object[1]), new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
+                toPredicate(new JetSqlRow(TEST_SS, new Object[1]), new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
 
         assertThat(predicate).isNull();
     }

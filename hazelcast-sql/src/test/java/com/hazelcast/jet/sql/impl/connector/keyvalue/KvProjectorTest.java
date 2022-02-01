@@ -21,9 +21,9 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nullable;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -52,7 +53,7 @@ public class KvProjectorTest {
                 false
         );
 
-        Entry<Object, Object> entry = projector.project(new JetSqlRow(null, new Object[]{1, 2}));
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(TEST_SS, new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isEqualTo(2);
         assertThat(entry.getValue()).isEqualTo(4);
@@ -68,7 +69,7 @@ public class KvProjectorTest {
                 false
         );
 
-        Entry<Object, Object> entry = projector.project(new JetSqlRow(null, new Object[]{1, 2}));
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(TEST_SS, new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isNull();
         assertThat(entry.getValue()).isNull();
@@ -84,7 +85,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new JetSqlRow(null, new Object[]{1, 2})))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(TEST_SS, new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to '__key' field");
     }
@@ -99,7 +100,7 @@ public class KvProjectorTest {
                 true
         );
 
-        assertThatThrownBy(() -> projector.project(new JetSqlRow(null, new Object[]{1, 2})))
+        assertThatThrownBy(() -> projector.project(new JetSqlRow(TEST_SS, new Object[]{1, 2})))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot write NULL to 'this' field");
     }

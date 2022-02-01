@@ -20,7 +20,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
@@ -203,11 +203,11 @@ public final class ExpressionUtil {
         return new JetSqlRow(context.getSerializationService(), result);
     }
 
-    public static <T> T evaluate(
-            @Nonnull Expression<T> expression,
+    public static Object evaluate(
+            @Nonnull Expression<?> expression,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
-        return expression.eval(row, context);
+        return expression.evalTop(row, context);
     }
 }

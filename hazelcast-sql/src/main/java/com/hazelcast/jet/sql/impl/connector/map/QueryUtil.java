@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

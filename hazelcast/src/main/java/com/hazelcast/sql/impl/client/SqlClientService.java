@@ -37,7 +37,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -227,27 +226,11 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Object deserializeRowValue(Object value) {
-        try {
-            return getSerializationService().toObject(value);
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
-    Object deserializeRowValue(LazyTarget value) {
-        try {
-            return value.deserialize(getSerializationService());
-        } catch (Exception e) {
-            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
-        }
-    }
-
     public UUID getClientId() {
         return client.getLocalEndpoint().getUuid();
     }
 
-    private InternalSerializationService getSerializationService() {
+    InternalSerializationService getSerializationService() {
         return client.getSerializationService();
     }
 

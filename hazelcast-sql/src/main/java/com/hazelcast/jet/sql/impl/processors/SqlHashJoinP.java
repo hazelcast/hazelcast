@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

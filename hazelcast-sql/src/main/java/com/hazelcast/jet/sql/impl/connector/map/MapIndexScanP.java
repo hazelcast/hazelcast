@@ -29,7 +29,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
