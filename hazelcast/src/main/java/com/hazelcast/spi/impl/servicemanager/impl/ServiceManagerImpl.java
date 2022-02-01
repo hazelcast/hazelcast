@@ -35,7 +35,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
-import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.metrics.impl.MetricsService;
