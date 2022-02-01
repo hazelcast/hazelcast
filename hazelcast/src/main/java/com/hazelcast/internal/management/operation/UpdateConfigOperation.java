@@ -17,18 +17,20 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 public class UpdateConfigOperation
-        extends AbstractManagementOperation {
+        extends AbstractDynamicConfigOperation {
+
+    @Override
+    public int getClassId() {
+        return ManagementDataSerializerHook.UPDATE_CONFIG_OPERATION;
+    }
 
     private String configPatch;
 
@@ -40,40 +42,10 @@ public class UpdateConfigOperation
     }
 
     @Override
-    public int getClassId() {
-        return ManagementDataSerializerHook.UPDATE_CONFIG_OPERATION;
-    }
-
-    @Override
-    public void run()
-            throws Exception {
+    void doRun() {
         ConfigurationService configService = getService();
         Config configPatchObject = Config.loadFromString(configPatch);
-        ExecutionService executionService = getNodeEngine().getExecutionService();
-        Future<ConfigUpdateResult> future = executionService.submit(
-                ExecutionService.MC_EXECUTOR,
-                () ->  configService.update(configPatchObject)
-        );
-        // returning immediately, the actual response will be submitted back to MC
-        // as a ConfigUpdateFinishedEvent or ConfigUpdateFailedEvent
-        sendResponse(null);
-        executionService.asCompletableFuture(future).whenCompleteAsync(
-                (result, throwable) -> {
-                    if (throwable != null) {
-                        getLogger().severe("dynamic configuration update failed", throwable);
-                    }
-                }
-        );
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public String getServiceName() {
-        return ConfigurationService.SERVICE_NAME;
+        configService.update(configPatchObject);
     }
 
     @Override
@@ -86,10 +58,5 @@ public class UpdateConfigOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         configPatch = in.readString();
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
     }
 }
