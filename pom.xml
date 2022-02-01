@@ -50,10 +50,7 @@
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
 
-        <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
-        <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-        <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
-        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.9.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
@@ -310,6 +307,11 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <!-- Exclude package-info.java from compiler's scope to avoid recompiling all classes every time. -->
+                    <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
+                    <excludes>
+                        <exclude>**/package-info.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 
