@@ -39,7 +39,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -720,7 +720,7 @@ public class ConfigXmlGenerator {
                 .filter(DeviceConfig::isLocal)
                 .forEach(deviceConfig -> {
                     LocalDeviceConfig localDeviceConfig = (LocalDeviceConfig) deviceConfig;
-                    MemorySize capacity = localDeviceConfig.getCapacity();
+                    Capacity capacity = localDeviceConfig.getCapacity();
                     gen.open("local-device", "name", localDeviceConfig.getName())
                             .node("base-dir", localDeviceConfig.getBaseDir().getAbsolutePath())
                             .node("capacity", null,

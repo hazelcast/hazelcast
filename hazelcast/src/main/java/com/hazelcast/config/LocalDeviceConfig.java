@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 
 import javax.annotation.Nonnull;
@@ -60,11 +60,11 @@ public final class LocalDeviceConfig implements DeviceConfig {
     /**
      * Default device capacity. It is 256 GB.
      */
-    public static final MemorySize DEFAULT_CAPACITY = new MemorySize(256, MemoryUnit.GIGABYTES);
+    public static final Capacity DEFAULT_CAPACITY = Capacity.of(256, MemoryUnit.GIGABYTES);
 
     private String name = DEFAULT_DEVICE_NAME;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
-    private MemorySize capacity = DEFAULT_CAPACITY;
+    private Capacity capacity = DEFAULT_CAPACITY;
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
     private int readIOThreadCount = DEFAULT_READ_IO_THREAD_COUNT;
     private int writeIOThreadCount = DEFAULT_WRITE_IO_THREAD_COUNT;
@@ -127,7 +127,7 @@ public final class LocalDeviceConfig implements DeviceConfig {
      * @return device capacity.
      */
     @Override
-    public MemorySize getCapacity() {
+    public Capacity getCapacity() {
         return capacity;
     }
 
@@ -137,7 +137,7 @@ public final class LocalDeviceConfig implements DeviceConfig {
      * @param capacity capacity.
      * @return this LocalDeviceConfig
      */
-    public LocalDeviceConfig setCapacity(MemorySize capacity) {
+    public LocalDeviceConfig setCapacity(Capacity capacity) {
         this.capacity = capacity;
         return this;
     }

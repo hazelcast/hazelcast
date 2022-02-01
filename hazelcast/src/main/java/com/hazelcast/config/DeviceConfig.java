@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 
 /**
  * Device configuration for the Tiered-Store
@@ -33,5 +33,5 @@ public interface DeviceConfig extends NamedConfig {
     /**
      * Returns the device capacity.
      */
-    MemorySize getCapacity();
+    Capacity getCapacity();
 }

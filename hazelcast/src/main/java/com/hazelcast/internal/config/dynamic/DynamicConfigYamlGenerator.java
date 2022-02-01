@@ -63,7 +63,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import org.snakeyaml.engine.v2.api.Dump;
 import org.snakeyaml.engine.v2.api.DumpSettings;
 import org.snakeyaml.engine.v2.common.FlowStyle;
@@ -836,7 +836,7 @@ public class DynamicConfigYamlGenerator {
         return memoryTierConfigAsMap;
     }
 
-    private static Map<String, Object> getCapacityAsMap(MemorySize capacity) {
+    private static Map<String, Object> getCapacityAsMap(Capacity capacity) {
         if (capacity == null) {
             return null;
         }

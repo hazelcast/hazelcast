@@ -39,6 +39,7 @@ import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
@@ -406,7 +407,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
-                .setCapacity(new MemorySize(6522, MemoryUnit.MEGABYTES))
+                .setCapacity(Capacity.of(6522, MemoryUnit.MEGABYTES))
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
@@ -414,7 +415,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
-                .setCapacity(new MemorySize(198719826236L, MemoryUnit.KILOBYTES))
+                .setCapacity(Capacity.of(198719826236L, MemoryUnit.KILOBYTES))
                 .setBlockSize(1024)
                 .setReadIOThreadCount(200)
                 .setWriteIOThreadCount(200);
