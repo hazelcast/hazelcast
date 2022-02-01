@@ -24,10 +24,8 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-public class MCUpdateConfigOperationTest extends AbstractClientMapTest {
+public class MCUpdateConfigOperationTest
+        extends AbstractClientMapTest {
 
     @Test
     public void test()
@@ -36,17 +34,12 @@ public class MCUpdateConfigOperationTest extends AbstractClientMapTest {
                 ((HazelcastClientProxy) client).client,
                 MCUpdateConfigCodec.encodeRequest(
                         "hazelcast:\n"
-                        + "  map:\n"
-                        + "    added-map:\n"
-                        + "      backup-count: 3\n"
+                                + "  map:\n"
+                                + "    added-map:\n"
+                                + "      backup-count: 3\n"
                 ),
                 null
         );
-//        try {
-            inv.invoke().get();
-//            fail("did not throw exception");
-//        } catch (ExecutionException e) {
-//            assertEquals("Configuration Reload requires Hazelcast Enterprise Edition", e.getCause().getMessage());
-//        }
+        inv.invoke().get();
     }
 }
