@@ -17,24 +17,24 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
 
-public class UpdateConfigOperation extends AbstractManagementOperation {
+public class UpdateConfigOperation
+        extends AbstractManagementOperation {
 
-    private String configXml;
-    private ConfigUpdateResult result;
+    private String configPatch;
 
     public UpdateConfigOperation() {
     }
 
-    public UpdateConfigOperation(String configXml) {
-        this.configXml = configXml;
+    public UpdateConfigOperation(String configPatch) {
+        this.configPatch = configPatch;
     }
 
     @Override
@@ -46,12 +46,16 @@ public class UpdateConfigOperation extends AbstractManagementOperation {
     public void run()
             throws Exception {
         ConfigurationService configService = getService();
-        result = configService.update(Config.loadFromString(configXml));
+        Config configPatchObject = Config.loadFromString(configPatch);
+        getNodeEngine().getExecutionService().submit(
+                ExecutionService.MC_EXECUTOR,
+                () -> configService.update(configPatchObject)
+        );
     }
 
     @Override
     public Object getResponse() {
-        return result;
+        return null;
     }
 
     @Override
@@ -59,15 +63,20 @@ public class UpdateConfigOperation extends AbstractManagementOperation {
         return ConfigurationService.SERVICE_NAME;
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeString(configXml);
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
+        out.writeString(configPatch);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        configXml = in.readString();
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
+        configPatch = in.readString();
     }
 
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
 }

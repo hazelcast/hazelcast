@@ -18,6 +18,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 public class ReloadConfigOperation extends AbstractManagementOperation {
     @Override
@@ -29,11 +30,19 @@ public class ReloadConfigOperation extends AbstractManagementOperation {
     public void run()
             throws Exception {
         ConfigurationService configService = getService();
-        configService.update();
+        getNodeEngine().getExecutionService().submit(
+                ExecutionService.MC_EXECUTOR,
+                () -> configService.update()
+        );
     }
 
     @Override
     public String getServiceName() {
         return ConfigurationService.SERVICE_NAME;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 }
