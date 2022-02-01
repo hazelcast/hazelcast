@@ -6711,7 +6711,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_JetGetJobConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 855;
-        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong);
+        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
