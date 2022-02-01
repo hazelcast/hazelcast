@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
@@ -31,10 +32,12 @@ import org.junit.experimental.categories.Category;
 
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -49,9 +52,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_member() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            List<Job> jobs = instance().getJet().getJobs();
-            assertEquals(1, jobs.size());
-            JobConfig config = jobs.get(0).getConfig();
+            List<Job> runningJobs = getJobsByStatus(RUNNING);
+            assertEquals(1, runningJobs.size());
+            JobConfig config = runningJobs.get(0).getConfig();
             assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
             assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
@@ -61,9 +64,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_client() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            List<Job> jobs = client().getJet().getJobs();
-            assertEquals(1, jobs.size());
-            JobConfig config = jobs.get(0).getConfig();
+            List<Job> runningJobs = getJobsByStatus(RUNNING);
+            assertEquals(1, runningJobs.size());
+            JobConfig config = runningJobs.get(0).getConfig();
             assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
             assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
@@ -73,7 +76,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_clientJobSummary() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            List<JobSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobSummaryList();
+            List<JobSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobSummaryList().stream()
+                    .filter(jobSummary -> jobSummary.getStatus() == RUNNING)
+                    .collect(Collectors.toList());
             assertEquals(1, jobSummaries.size());
 
             JobSummary jobSummary = jobSummaries.get(0);
@@ -92,9 +97,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         instance().getSql().execute(sql);
         assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
 
-        List<Job> jobs = client().getJet().getJobs();
-        assertEquals(1, jobs.size());
-        JobConfig config = jobs.get(0).getConfig();
+        List<Job> completedJobs = getJobsByStatus(COMPLETED);
+        assertEquals(1, completedJobs.size());
+        JobConfig config = completedJobs.get(0).getConfig();
         assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
         assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
     }
@@ -109,10 +114,16 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
                 instance().getSql().execute(sql));
         awaitSingleRunningJob(instance());
 
-        List<Job> jobs = client().getJet().getJobs();
-        assertEquals(1, jobs.size());
-        JobConfig config = jobs.get(0).getConfig();
+        List<Job> runningJobs = getJobsByStatus(RUNNING);
+        assertEquals(1, runningJobs.size());
+        JobConfig config = runningJobs.get(0).getConfig();
         assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
         assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
+    }
+
+    private List<Job> getJobsByStatus(JobStatus status) {
+        return instance().getJet().getJobs().stream()
+                .filter(job -> job.getStatus() == status)
+                .collect(Collectors.toList());
     }
 }
