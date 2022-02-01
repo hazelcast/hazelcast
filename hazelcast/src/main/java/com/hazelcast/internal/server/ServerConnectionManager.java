@@ -134,12 +134,15 @@ public interface ServerConnectionManager
     ServerConnection get(@Nonnull Address address, int streamId);
 
     /**
-     * Gets all the connections for a given address on all planes. If
-     * there is no connection exist on any plane, it returns an
-     * empty list.
+     * Returns all the registered connections that belong to the given address.
+     * Note that this method doesn't return the member connections whose
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake} aren't
+     * processed yet and the client connections whose authentications aren't
+     * yet completed. If there is no registered connection exists for the given
+     * address, it returns an empty list.
      *
      * @param address the address of connections
-     * @return the list of connections to the given address or an
+     * @return the list of connections that belong to the given address or an
      * empty list if one doesn't exist
      */
     @Nonnull
