@@ -655,7 +655,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return visitor;
     }
 
-    // Note: intended to be reworked later, to support late items drop.
+    // The IMPOSE_ORDER function must also drop late items. We don't have this implemented,
+    // therefore we detect if, besides IMPOSE_ORDER, there's also streaming window aggregation.
+    // If not, we throw an error. But we don't cover all cases...
     private void detectStandaloneImposeOrder(RelNode rel) {
         HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
         WatermarkedFields wm = mq.extractWatermarkedFields(rel);
@@ -663,7 +665,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             StreamingAggregationDetector detector = new StreamingAggregationDetector();
             detector.go(rel);
             if (!detector.found) {
-                throw QueryException.error("IMPOSE_ORDER is allowed to be used only with window aggregations");
+                throw QueryException.error("Currently, IMPOSE_ORDER can only be used with window aggregation");
             }
         }
     }
