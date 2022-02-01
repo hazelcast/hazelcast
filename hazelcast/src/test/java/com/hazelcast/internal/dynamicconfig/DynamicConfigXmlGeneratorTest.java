@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.dynamic;
+package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
@@ -29,9 +29,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.licenseKeyXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.licenseKeyXmlGenerator;
 import static org.junit.Assert.assertEquals;
 
+// Please also take a look at the ConfigXmlGeneratorTest.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
