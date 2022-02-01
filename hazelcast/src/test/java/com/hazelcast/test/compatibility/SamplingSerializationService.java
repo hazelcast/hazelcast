@@ -155,11 +155,6 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder) {
-        return delegate.createObjectDataInput(data, byteOrder);
-    }
-
-    @Override
     public BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
         return delegate.createObjectDataInput(data, offset);
     }
@@ -172,11 +167,6 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public BufferObjectDataOutput createObjectDataOutput(int size) {
         return delegate.createObjectDataOutput(size);
-    }
-
-    @Override
-    public BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder) {
-        return createObjectDataOutput(byteOrder);
     }
 
     @Override

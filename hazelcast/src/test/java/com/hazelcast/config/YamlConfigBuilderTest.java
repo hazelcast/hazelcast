@@ -3275,7 +3275,9 @@ public class YamlConfigBuilderTest
                 + "      tiered-store:\n"
                 + "        enabled: true\n"
                 + "        memory-tier:\n"
-                + "          capacity: 1024 MB\n"
+                + "          capacity:\n"
+                + "            unit: MEGABYTES\n"
+                + "            value: 1024\n"
                 + "        disk-tier:\n"
                 + "          enabled: true\n"
                 + "          device-name: local-device\n"
@@ -3288,7 +3290,9 @@ public class YamlConfigBuilderTest
                 + "      tiered-store:\n"
                 + "        enabled: true\n"
                 + "        memory-tier:\n"
-                + "          capacity: 1 GB\n"
+                + "          capacity:\n"
+                + "            unit: GIGABYTES\n"
+                + "            value: 1\n"
                 + "    map3:\n"
                 + "      tiered-store:\n"
                 + "        enabled: true\n";
@@ -4370,5 +4374,18 @@ public class YamlConfigBuilderTest
                 + "          extractor-class-name: usercodedeployment.CapitalizingFirstNameExtractor\n";
 
         return new InMemoryYamlConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testIntegrityCheckerConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  integrity-checker:\n"
+                + "    enabled: false\n";
+
+        Config config = buildConfig(yaml);
+
+        assertFalse(config.getIntegrityCheckerConfig().isEnabled());
     }
 }

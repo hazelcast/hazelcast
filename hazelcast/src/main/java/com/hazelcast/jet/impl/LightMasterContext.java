@@ -75,6 +75,7 @@ public class LightMasterContext {
 
     private final ILogger logger;
     private final String jobIdString;
+    private final JobConfig jobConfig;
     private final long startTime = System.currentTimeMillis();
 
     private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
@@ -89,6 +90,7 @@ public class LightMasterContext {
     ) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
+        this.jobConfig = config;
 
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
@@ -283,5 +285,9 @@ public class LightMasterContext {
 
     public CompletableFuture<Void> getCompletionFuture() {
         return jobCompletionFuture;
+    }
+
+    public JobConfig getJobConfig() {
+        return jobConfig;
     }
 }

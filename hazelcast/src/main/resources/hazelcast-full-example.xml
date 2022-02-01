@@ -3811,4 +3811,14 @@
         </edge-defaults>
     </jet>
 
+    <!--
+    ===== HAZELCAST INTEGRITY CHECKER CONFIGURATION =====
+
+    Configuration element's name is <integrity-checker>. When you want to enable Integrity Checker,
+    set this element's "enabled" attribute to true in that member's XML configuration. Integrity Checker is a component
+    that verifies that the executable contains all the required META-INF/services files, it is a costly operation,
+    it can be disabled to improve startup time. Integrity Checker is disabled by default.
+    -->
+    <integrity-checker enabled="false"/>
+
 </hazelcast>

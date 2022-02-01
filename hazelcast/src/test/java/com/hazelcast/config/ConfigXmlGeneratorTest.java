@@ -35,7 +35,6 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.config.dynamic.AbstractDynamicConfigGeneratorTest;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -50,6 +49,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
@@ -86,9 +86,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+// Please also take a look at the DynamicConfigXmlGeneratorTest.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
+public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGeneratorTest.class);
 
@@ -107,7 +108,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         cfg.setLicenseKey("HazelcastLicenseKey");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
         assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
@@ -173,7 +174,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
                 .setClassName("ClassName");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
         assertEquals(expected, actual);
@@ -185,7 +186,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
                 .setImplementation(new TestMemberAddressProvider());
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
         ConfigCompatibilityChecker.checkMemberAddressProviderConfig(expected, actual);
@@ -227,7 +228,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.getNetworkConfig().setIcmpFailureDetectorConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getIcmpFailureDetectorConfig();
 
         assertFailureDetectorConfigEquals(expected, actual);
@@ -237,7 +238,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
     public void testNetworkAutoDetectionJoinConfig() {
         Config cfg = new Config();
         cfg.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
-        Config actualConfig = getNewConfigViaGenerator(cfg);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
         assertFalse(actualConfig.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
@@ -249,7 +250,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.getNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
 
-        MulticastConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getJoin().getMulticastConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -263,7 +264,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
 
-        TcpIpConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getJoin().getTcpIpConfig();
+        TcpIpConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getJoin().getTcpIpConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -277,7 +278,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addOutboundPortDefinition("4242-4244")
                 .addOutboundPortDefinition("5252;5254");
 
-        NetworkConfig actualNetworkConfig = getNewConfigViaGenerator(cfg).getNetworkConfig();
+        NetworkConfig actualNetworkConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig();
 
         assertEquals(expectedNetworkConfig.getOutboundPortDefinitions(), actualNetworkConfig.getOutboundPortDefinitions());
         assertEquals(expectedNetworkConfig.getOutboundPorts(), actualNetworkConfig.getOutboundPorts());
@@ -292,7 +293,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addInterface("127.0.0.*")
                 .setEnabled(true);
 
-        NetworkConfig actualNetworkConfig = getNewConfigViaGenerator(cfg).getNetworkConfig();
+        NetworkConfig actualNetworkConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig();
 
         assertEquals(expectedNetworkConfig.getInterfaces(), actualNetworkConfig.getInterfaces());
     }
@@ -312,7 +313,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
-        SocketInterceptorConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -326,7 +327,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
-        SocketInterceptorConfig actualConfig = getNewConfigViaGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSocketInterceptorConfig();
 
         ConfigCompatibilityChecker.checkSocketInterceptorConfig(expectedConfig, actualConfig);
     }
@@ -347,7 +348,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         expectedConfig.setListenerConfigs(singletonList(new ListenerConfig("Listener")));
 
-        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
         assertEquals(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
@@ -358,7 +359,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         expectedConfig.setListenerConfigs(singletonList(new ListenerConfig(new TestEventListener())));
 
-        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
         ConfigCompatibilityChecker.checkListenerConfigs(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
@@ -395,7 +396,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         Config config = new Config().setDynamicConfigurationConfig(dynamicConfigurationConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ConfigCompatibilityChecker.checkDynamicConfigurationConfig(dynamicConfigurationConfig, xmlConfig.getDynamicConfigurationConfig());
     }
@@ -420,7 +421,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addDeviceConfig(localDeviceConfig0)
                 .addDeviceConfig(localDeviceConfig1);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig0, xmlConfig.getDeviceConfig("null-device"));
         ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig1, xmlConfig.getDeviceConfig("local-device"));
@@ -480,7 +481,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         configurePersistence(cfg);
 
-        PersistenceConfig hrConfig = getNewConfigViaGenerator(cfg).getPersistenceConfig();
+        PersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
 
         EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
@@ -512,7 +513,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
 
-        PersistenceConfig persistenceConfig = getNewConfigViaGenerator(cfg).getPersistenceConfig();
+        PersistenceConfig persistenceConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
 
         EncryptionAtRestConfig actualConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
@@ -644,7 +645,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -675,7 +676,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("kerberosRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -688,7 +689,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("tlsRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -702,7 +703,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
-        SecurityConfig actualConfig = getNewConfigViaGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -756,7 +757,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.setSerializationConfig(expectedConfig);
 
-        SerializationConfig actualConfig = getNewConfigViaGenerator(cfg).getSerializationConfig();
+        SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
 
         assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
         assertEquals(expectedConfig.isAllowOverrideDefaultSerializers(), actualConfig.isAllowOverrideDefaultSerializers());
@@ -807,7 +808,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.setSerializationConfig(expectedConfig);
 
-        SerializationConfig actualConfig = getNewConfigViaGenerator(cfg).getSerializationConfig();
+        SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
 
         assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
         assertEquals(expectedConfig.getPortableVersion(), actualConfig.getPortableVersion());
@@ -834,7 +835,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         config.getSerializationConfig().setCompactSerializationConfig(expected);
 
-        CompactSerializationConfig actual = getNewConfigViaGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
         assertEquals(expected.isEnabled(), actual.isEnabled());
 
         // Since we don't have APIs of the form register(String) or register(String, String, String) in the
@@ -893,7 +894,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         cfg.setPartitionGroupConfig(expectedConfig);
 
-        PartitionGroupConfig actualConfig = getNewConfigViaGenerator(cfg).getPartitionGroupConfig();
+        PartitionGroupConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getPartitionGroupConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -909,7 +910,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         Config config = new Config()
                 .setManagementCenterConfig(managementCenterConfig);
 
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
@@ -930,7 +931,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -958,7 +959,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -994,7 +995,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
-        Config xmlConfig = getNewConfigViaGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
@@ -1016,7 +1017,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setMaxConcurrentReplicationTargets(10)
                 .setReplicationPeriodMillis(2000);
         final Config config = new Config().setCRDTReplicationConfig(replicationConfig);
-        final Config xmlConfig = getNewConfigViaGenerator(config);
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
         final CRDTReplicationConfig xmlReplicationConfig = xmlConfig.getCRDTReplicationConfig();
 
         assertNotNull(xmlReplicationConfig);
@@ -1032,7 +1033,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setFunctionClassName("com.hazelcast.SplitBrainProtectionFunction");
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).
                 getSplitBrainProtectionConfig("test-splitBrainProtection");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
@@ -1047,7 +1048,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).getSplitBrainProtectionConfig("recently-active");
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("recently-active");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
@@ -1066,7 +1067,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addListenerConfig(new SplitBrainProtectionListenerConfig("com.hazelcast.SplitBrainProtectionListener"));
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        SplitBrainProtectionConfig generatedConfig = getNewConfigViaGenerator(config).getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
+        SplitBrainProtectionConfig generatedConfig = getNewConfigViaXMLGenerator(config).getSplitBrainProtectionConfig("probabilistic-split-brain-protection");
         assertTrue(generatedConfig.toString() + " should be compatible with " + splitBrainProtectionConfig.toString(),
                 new SplitBrainProtectionConfigChecker().check(splitBrainProtectionConfig, generatedConfig));
     }
@@ -1104,7 +1105,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .addLockConfig(new FencedLockConfig("lock1", 2));
 
 
-        CPSubsystemConfig generatedConfig = getNewConfigViaGenerator(config).getCPSubsystemConfig();
+        CPSubsystemConfig generatedConfig = getNewConfigViaXMLGenerator(config).getCPSubsystemConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getCPSubsystemConfig(),
                 new CPSubsystemConfigChecker().check(config.getCPSubsystemConfig(), generatedConfig));
     }
@@ -1124,7 +1125,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         config.getMetricsConfig().getJmxConfig()
                 .setEnabled(false);
 
-        MetricsConfig generatedConfig = getNewConfigViaGenerator(config).getMetricsConfig();
+        MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
                 new MetricsConfigChecker().check(config.getMetricsConfig(), generatedConfig));
     }
@@ -1138,7 +1139,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setFileName("/dummy/file")
                 .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
 
-        InstanceTrackingConfig generatedConfig = getNewConfigViaGenerator(config).getInstanceTrackingConfig();
+        InstanceTrackingConfig generatedConfig = getNewConfigViaXMLGenerator(config).getInstanceTrackingConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getInstanceTrackingConfig(),
                 new InstanceTrackingConfigChecker().check(config.getInstanceTrackingConfig(), generatedConfig));
     }
@@ -1149,7 +1150,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
 
         confiig.getSqlConfig().setStatementTimeoutMillis(30L);
 
-        SqlConfig generatedConfig = getNewConfigViaGenerator(confiig).getSqlConfig();
+        SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
 
         assertEquals(confiig.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
     }
@@ -1159,7 +1160,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig().setEnabled(true);
         Config config = new Config();
         config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
-        MemcacheProtocolConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getMemcacheProtocolConfig();
+        MemcacheProtocolConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getMemcacheProtocolConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + memcacheProtocolConfig.toString(),
                 new ConfigCompatibilityChecker.MemcacheProtocolConfigChecker().check(memcacheProtocolConfig, generatedConfig));
     }
@@ -1169,7 +1170,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         RestApiConfig restApiConfig = new RestApiConfig();
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1180,7 +1181,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         restApiConfig.setEnabled(true).enableAllGroups();
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1194,7 +1195,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1208,7 +1209,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1222,7 +1223,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
-        RestApiConfig generatedConfig = getNewConfigViaGenerator(config).getNetworkConfig().getRestApiConfig();
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
@@ -1231,7 +1232,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
     public void testAdvancedNetworkAutoDetectionJoinConfig() {
         Config cfg = new Config();
         cfg.getAdvancedNetworkConfig().setEnabled(true).getJoin().getAutoDetectionConfig().setEnabled(false);
-        Config actualConfig = getNewConfigViaGenerator(cfg);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
         assertFalse(actualConfig.getAdvancedNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
@@ -1244,7 +1245,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getAdvancedNetworkConfig().getJoin().setMulticastConfig(expectedConfig);
         cfg.getAdvancedNetworkConfig().setEnabled(true);
 
-        MulticastConfig actualConfig = getNewConfigViaGenerator(cfg)
+        MulticastConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
                 .getAdvancedNetworkConfig().getJoin().getMulticastConfig();
 
         assertEquals(expectedConfig, actualConfig);
@@ -1259,7 +1260,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getAdvancedNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getAdvancedNetworkConfig().getJoin().setTcpIpConfig(expectedConfig);
 
-        TcpIpConfig actualConfig = getNewConfigViaGenerator(cfg)
+        TcpIpConfig actualConfig = getNewConfigViaXMLGenerator(cfg)
                 .getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
 
         assertEquals(expectedConfig, actualConfig);
@@ -1280,7 +1281,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().setIcmpFailureDetectorConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getIcmpFailureDetectorConfig();
 
         assertFailureDetectorConfigEquals(expected, actual);
@@ -1297,7 +1298,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setClassName("ClassName");
         expected.getProperties().setProperty("p1", "v1");
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(cfg);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getAdvancedNetworkConfig().getMemberAddressProviderConfig();
 
         assertEquals(expected, actual);
@@ -1336,7 +1337,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
 
-        EndpointConfig actual = getNewConfigViaGenerator(cfg)
+        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
@@ -1352,7 +1353,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().setMemberEndpointConfig(expected);
 
-        EndpointConfig actual = getNewConfigViaGenerator(cfg)
+        EndpointConfig actual = getNewConfigViaXMLGenerator(cfg)
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
@@ -1367,7 +1368,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setFactoryClassName("com.acme.AuditlogToSyslog")
                 .setProperty("host", "syslogserver.acme.com")
                 .setProperty("port", "514");
-        AuditlogConfig generatedConfig = getNewConfigViaGenerator(config).getAuditlogConfig();
+        AuditlogConfig generatedConfig = getNewConfigViaXMLGenerator(config).getAuditlogConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getAuditlogConfig(),
                 new ConfigCompatibilityChecker.AuditlogConfigChecker().check(config.getAuditlogConfig(), generatedConfig));
     }
@@ -1388,7 +1389,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setPacketSizeLimit(123)
                 .setQueueSize(123);
 
-        Config newConfig = getNewConfigViaGenerator(config);
+        Config newConfig = getNewConfigViaXMLGenerator(config);
         assertEquals(jetConfig, newConfig.getJetConfig());
     }
 
@@ -1405,7 +1406,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
                 .setProviderMode(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES);
         config.setUserCodeDeploymentConfig(expected);
 
-        Config newConfigViaXMLGenerator = getNewConfigViaGenerator(config);
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(config);
         UserCodeDeploymentConfig actual = newConfigViaXMLGenerator.getUserCodeDeploymentConfig();
 
         assertEquals(expected.isEnabled(), actual.isEnabled());
@@ -1426,7 +1427,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getCacheConfig("test")
                 .setMerkleTreeConfig(actual);
 
-        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("test").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
@@ -1438,7 +1439,7 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         MerkleTreeConfig actual = cfg.getCacheConfig("testCacheWithoutMerkleTreeConfig")
                 .getMerkleTreeConfig();
 
-        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("testCacheWithoutMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
@@ -1454,13 +1455,13 @@ public class ConfigXmlGeneratorTest extends AbstractDynamicConfigGeneratorTest {
         cfg.getCacheConfig("testCacheWithDisabledMerkleTreeConfig")
                 .setMerkleTreeConfig(actual);
 
-        MerkleTreeConfig expected = getNewConfigViaGenerator(cfg)
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
     }
 
-    protected Config getNewConfigViaGenerator(Config config) {
+    private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
 

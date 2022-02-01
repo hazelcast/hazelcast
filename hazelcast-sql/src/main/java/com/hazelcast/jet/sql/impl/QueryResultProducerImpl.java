@@ -20,11 +20,11 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Inbox;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +45,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     private final boolean blockForNextItem;
 
-    private final OneToOneConcurrentArrayQueue<Row> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
+    private final OneToOneConcurrentArrayQueue<JetSqlRow> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
     private final AtomicReference<Exception> done = new AtomicReference<>();
 
     private InternalIterator iterator;
@@ -69,7 +69,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
     }
 
     @Override
-    public ResultIterator<Row> iterator() {
+    public ResultIterator<JetSqlRow> iterator() {
         if (iterator != null) {
             throw new IllegalStateException("Iterator can be requested only once");
         }
@@ -98,7 +98,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
-        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow()); ) {
+        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
@@ -117,12 +117,12 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         }
     }
 
-    private class InternalIterator implements ResultIterator<Row> {
+    private class InternalIterator implements ResultIterator<JetSqlRow> {
 
         private final IdleStrategy idler =
                 new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(50), MILLISECONDS.toNanos(1));
 
-        private Row nextRow;
+        private JetSqlRow nextRow;
 
         @Override
         public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
@@ -141,7 +141,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         }
 
         @Override
-        public Row next() {
+        public JetSqlRow next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -198,14 +198,6 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
             // it's better if it has no stack trace then.
             super("Done normally", null, false, false);
-        }
-    }
-
-    private static class ResultLimitReachedException extends Exception {
-        ResultLimitReachedException() {
-            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
-            // it's better if it has no stack trace then.
-            super("Done by reaching the item number in SQL LIMIT clause", null, false, false);
         }
     }
 }

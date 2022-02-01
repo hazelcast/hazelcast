@@ -68,7 +68,8 @@ public enum ConfigSections {
     SQL("sql", false),
     JET("jet", false),
     LOCAL_DEVICE("local-device", true),
-    DYNAMIC_CONFIGURATION("dynamic-configuration", false);
+    DYNAMIC_CONFIGURATION("dynamic-configuration", false),
+    INTEGRITY_CHECKER("integrity-checker", false);
 
     final boolean multipleOccurrence;
     private final String name;

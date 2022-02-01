@@ -22,7 +22,7 @@ import com.hazelcast.sql.SqlRow;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class AbstractSqlResult implements SqlResult, LazyDeserializer {
+public abstract class AbstractSqlResult implements SqlResult {
 
     public abstract QueryId getQueryId();
 

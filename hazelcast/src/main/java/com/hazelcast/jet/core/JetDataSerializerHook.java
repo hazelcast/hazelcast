@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY;
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
@@ -42,6 +43,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int APPLY_FN_ENTRY_PROCESSOR = 3;
     public static final int APPLY_VALUE_ENTRY_PROCESSOR = 4;
     public static final int TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN = 5;
+    public static final int JET_SQL_ROW = 6;
 
     /**
      * Factory ID
@@ -74,6 +76,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ApplyValuesEntryProcessor<>();
                 case TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN:
                     return new ItemsDistributedFillBufferFn<>();
+                case JET_SQL_ROW:
+                    return new JetSqlRow();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

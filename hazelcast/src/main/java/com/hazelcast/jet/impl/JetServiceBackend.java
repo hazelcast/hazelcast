@@ -60,7 +60,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
@@ -258,7 +257,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Returns the job config or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public JobConfig getJobConfig(long jobId) {
+    public JobConfig getJobConfig(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            return jobCoordinationService.getLightJobConfig(jobId);
+        }
+
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return jobRecord.getConfig();
@@ -330,30 +333,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     public TaskletExecutionService getTaskletExecutionService() {
         return taskletExecutionService;
-    }
-
-    public void configureJetInternalObjects(Node node) {
-        Config config = node.config.getStaticConfig();
-        JetConfig jetConfig = config.getJetConfig();
-
-        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getBackupCount())
-                // we query creationTime of resources maps
-                .setStatisticsEnabled(true);
-
-        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
-
-        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_RESULTS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_METRICS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        config.addMapConfig(internalMapConfig)
-                .addMapConfig(resultsMapConfig)
-                .addMapConfig(metricsMapConfig);
     }
 
     public void beforeClusterStateChange(ClusterState requestedState) {

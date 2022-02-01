@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -175,10 +174,6 @@ public class SqlServiceImpl implements SqlService {
         }
 
         try {
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
-                throw QueryException.error("SQL queries cannot be executed until the cluster fully updates to 5.0");
-            }
-
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }

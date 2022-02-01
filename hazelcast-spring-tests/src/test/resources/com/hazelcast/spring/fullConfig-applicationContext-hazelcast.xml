@@ -472,7 +472,7 @@
             <hz:map name="testMap5">
                 <hz:tiered-store enabled="true">
                     <hz:memory-tier>
-                        <hz:capacity>128 MB</hz:capacity>
+                        <hz:capacity unit="MEGABYTES" value="128"/>
                     </hz:memory-tier>
                     <hz:disk-tier enabled="true" device-name="the-local0751"/>
                 </hz:tiered-store>
@@ -1095,6 +1095,7 @@
                     <hz:property name="port">514</hz:property>
                 </hz:properties>
             </hz:auditlog>
+            <hz:integrity-checker enabled="false"/>
         </hz:config>
     </hz:hazelcast>
 

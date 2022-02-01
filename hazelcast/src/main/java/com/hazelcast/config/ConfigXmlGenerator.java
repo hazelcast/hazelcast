@@ -57,26 +57,26 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.aliasedDiscoveryConfigsGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.cacheXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.cardinalityEstimatorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.classNameOrImplClass;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.discoveryStrategyConfigXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.durableExecutorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.executorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.flakeIdGeneratorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.listXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.mapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.multiMapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.pnCounterXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.queueXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.reliableTopicXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.replicatedMapXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.ringbufferXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.setXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.topicXmlGenerator;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.aliasedDiscoveryConfigsGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cacheXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.cardinalityEstimatorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.discoveryStrategyConfigXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.durableExecutorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.executorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.flakeIdGeneratorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.listXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.mapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.multiMapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.pnCounterXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.queueXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.reliableTopicXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.replicatedMapXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.ringbufferXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.setXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -149,9 +149,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMajor())
-                .append('.')
-                .append(Versions.CURRENT_CLUSTER_VERSION.getMinor())
+                .append(Versions.CURRENT_CLUSTER_VERSION.toString())
                 .append(".xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
@@ -197,6 +195,7 @@ public class ConfigXmlGenerator {
         jetConfig(gen, config);
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
+        integrityCheckerXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1242,6 +1241,15 @@ public class ConfigXmlGenerator {
                 gen.node("class", registeredClassName);
             }
         }
+    }
+
+    private static void integrityCheckerXmlGenerator(final XmlGenerator gen, final Config config) {
+        gen.node(
+                "integrity-checker",
+                null,
+                "enabled",
+                config.getIntegrityCheckerConfig().isEnabled()
+        );
     }
 
     /**

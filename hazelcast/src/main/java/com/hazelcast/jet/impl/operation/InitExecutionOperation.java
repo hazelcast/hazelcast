@@ -141,7 +141,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
             return getNodeEngine().getSerializationService().toObject(planBlob);
         } else {
             JetServiceBackend service = getJetServiceBackend();
-            JobConfig jobConfig = service.getJobConfig(jobId());
+            JobConfig jobConfig = service.getJobConfig(jobId(), isLightJob);
             JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
 
             ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);

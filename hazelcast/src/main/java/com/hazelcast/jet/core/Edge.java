@@ -665,8 +665,8 @@ public class Edge implements IdentifiedDataSerializable {
          */
         UNICAST,
         /**
-         * This policy sets up isolated parallel data paths between two vertices,
-         * as much as it can given the level of mismatch between the local
+         * This policy sets up isolated parallel data paths between two vertices
+         * as much as it can, given the level of mismatch between the local
          * parallelism (LP) of the upstream vs. the downstream vertices.
          * Specifically:
          * <ul><li>

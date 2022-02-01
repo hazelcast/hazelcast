@@ -18,56 +18,31 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.core.TableScan;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-
-public class FullScanLogicalRel extends TableScan implements LogicalRel {
-
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-
-    FullScanLogicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traitSet,
-            RelOptTable table
-    ) {
-        this(cluster, traitSet, table, null);
-    }
+public class FullScanLogicalRel extends FullScan implements LogicalRel {
 
     FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            int watermarkedColumnIndex
     ) {
-        super(cluster, traitSet, emptyList(), table);
-
-        this.eventTimePolicyProvider = eventTimePolicyProvider;
-    }
-
-    @Nullable
-    public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
-        return eventTimePolicyProvider;
-    }
-
-    @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null);
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
     @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanLogicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider);
+        return new FullScanLogicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(), watermarkedColumnIndex());
     }
 }

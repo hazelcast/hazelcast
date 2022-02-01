@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 
@@ -58,7 +59,10 @@ public abstract class SlidingWindow extends TableFunctionScan {
         super(cluster, traitSet, inputs, rexCall, elementType, rowType, columnMappings);
 
         SqlOperator operator = operator();
-        checkTrue(operator == HazelcastSqlOperatorTable.TUMBLE, "Unsupported operator: " + operator);
+        checkTrue(
+                operator == HazelcastSqlOperatorTable.TUMBLE || operator == HazelcastSqlOperatorTable.HOP,
+                "Unsupported operator: " + operator
+        );
     }
 
     public final int orderingFieldIndex() {
@@ -71,9 +75,30 @@ public abstract class SlidingWindow extends TableFunctionScan {
         if (operator() == HazelcastSqlOperatorTable.TUMBLE) {
             Expression<?> windowSizeExpression = operand(2).accept(visitor);
             return context -> tumblingWinPolicy(WindowUtils.extractMillis(windowSizeExpression, context));
+        } else if (operator() == HazelcastSqlOperatorTable.HOP) {
+            Expression<?> windowSizeExpression = operand(2).accept(visitor);
+            Expression<?> slideSizeExpression = operand(3).accept(visitor);
+            return context -> slidingWinPolicy(
+                    WindowUtils.extractMillis(windowSizeExpression, context),
+                    WindowUtils.extractMillis(slideSizeExpression, context)
+            );
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    /**
+     * Return the index of `window_start` field on the output of this rel.
+     */
+    public int windowStartIndex() {
+        return getRowType().getFieldCount() - 2;
+    }
+
+    /**
+     * Return the index of `window_end` field on the output of this rel.
+     */
+    public int windowEndIndex() {
+        return getRowType().getFieldCount() - 1;
     }
 
     private SqlOperator operator() {

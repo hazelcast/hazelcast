@@ -28,45 +28,24 @@ import com.hazelcast.jet.sql.impl.aggregate.SqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptRuleOperand;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Aggregate.Group;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-abstract class AggregateAbstractPhysicalRule extends RelOptRule {
+abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
-    protected AggregateAbstractPhysicalRule(RelOptRuleOperand operand, String description) {
-        super(operand, description);
+    protected AggregateAbstractPhysicalRule(Config config) {
+        super(config);
     }
-
-    @Override
-    public final void onMatch(RelOptRuleCall call) {
-        AggregateLogicalRel logicalAggregate = call.rel(0);
-        RelNode input = logicalAggregate.getInput();
-
-        assert logicalAggregate.getGroupType() == Group.SIMPLE;
-
-        RelNode convertedInput = OptUtils.toPhysicalInput(input);
-        Collection<RelNode> transformedInputs = OptUtils.extractPhysicalRelsFromSubset(convertedInput);
-        for (RelNode transformedInput : transformedInputs) {
-            call.transformTo(optimize(logicalAggregate, transformedInput));
-        }
-    }
-
-    protected abstract RelNode optimize(AggregateLogicalRel logicalAggregate, RelNode physicalInput);
 
     protected static AggregateOperation<?, JetSqlRow> aggregateOperation(
             RelDataType inputType,

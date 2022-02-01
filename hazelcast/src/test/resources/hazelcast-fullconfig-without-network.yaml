@@ -396,7 +396,9 @@ hazelcast:
       tiered-store:
         enabled: true
         memory-tier:
-          capacity: "1 GB"
+          capacity:
+            unit: MEGABYTES
+            value: 256
         disk-tier:
           enabled: true
           device-name: my-local-device

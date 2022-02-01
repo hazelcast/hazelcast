@@ -205,6 +205,11 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public void updateLicense(String licenseKey) {
+        throw new UnsupportedOperationException("Updating the license requires Hazelcast Enterprise");
+    }
+
+    @Override
     public ConfigUpdateResult update() {
         return update(null);
     }
@@ -351,7 +356,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public void persist(IdentifiedDataSerializable subConfig) {
+    public void persist(Object subConfig) {
         if (nodeEngine.getConfig().getDynamicConfigurationConfig().isPersistenceEnabled()) {
             // Code should never come here. We should fast fail in
             // DefaultNodeExtension#checkDynamicConfigurationPersistenceAllowed()

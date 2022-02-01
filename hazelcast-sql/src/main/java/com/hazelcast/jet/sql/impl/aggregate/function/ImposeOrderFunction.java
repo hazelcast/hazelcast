@@ -32,7 +32,7 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
 
     private static final List<HazelcastTableFunctionParameter> PARAMETERS = asList(
             new HazelcastTableFunctionParameter(0, "input", SqlTypeName.ROW, false, TypedOperandChecker.ROW),
-            new HazelcastTableFunctionParameter(1, "timeCol", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
+            new HazelcastTableFunctionParameter(1, "time_col", SqlTypeName.COLUMN_LIST, false, TypedOperandChecker.COLUMN_LIST),
             new HazelcastTableFunctionParameter(2, "lag", SqlTypeName.ANY, false, AnyOperandChecker.INSTANCE)
     );
 
@@ -42,7 +42,7 @@ public class ImposeOrderFunction extends HazelcastTableFunction {
     };
 
     public ImposeOrderFunction() {
-        super("IMPOSE_ORDER", new WindowOperandMetadata(PARAMETERS), RETURN_TYPE_INFERENCE);
+        super("IMPOSE_ORDER", new WindowOperandMetadata(PARAMETERS, new int[]{2}), RETURN_TYPE_INFERENCE);
     }
 
     @Override

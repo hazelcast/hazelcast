@@ -47,7 +47,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -68,7 +67,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -91,6 +90,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
@@ -173,7 +174,10 @@ public class PlanExecutor {
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = plan.getJobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+        JobConfig jobConfig = plan.getJobConfig()
+                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows());
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
@@ -309,10 +313,10 @@ public class PlanExecutor {
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new StaticQueryResultProducerImpl(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                new StaticQueryResultProducerImpl(
+                        rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
                 metadata,
-                false,
-                serializationService
+                false
         );
     }
 
@@ -328,18 +332,19 @@ public class PlanExecutor {
         planRows = Arrays.stream(plan.getRel().explain().split(LE));
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
-                new StaticQueryResultProducerImpl(planRows.map(rel -> new HeapRow(new Object[]{rel})).iterator()),
+                new StaticQueryResultProducerImpl(
+                        planRows.map(rel -> new JetSqlRow(serializationService, new Object[]{rel})).iterator()),
                 metadata,
-                false,
-                serializationService
+                false
         );
     }
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
@@ -365,8 +370,7 @@ public class PlanExecutor {
                 queryId,
                 queryResultProducer,
                 plan.getRowMetadata(),
-                plan.isStreaming(),
-                serializationService
+                plan.isStreaming()
         );
     }
 
@@ -374,6 +378,8 @@ public class PlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
+                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
@@ -398,8 +404,7 @@ public class PlanExecutor {
                 queryId,
                 new StaticQueryResultProducerImpl(row),
                 plan.rowMetadata(),
-                false,
-                serializationService
+                false
         );
     }
 

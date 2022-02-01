@@ -25,7 +25,7 @@ import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -47,6 +47,11 @@ import static org.apache.calcite.plan.RelOptRule.operand;
 
 final class WatermarkRules {
 
+    /**
+     * This rule converts IMPOSE_ORDER function call into
+     * WatermarkLogicalRel. This rel is later pushed down into scan in
+     * {@link #WATERMARK_INTO_SCAN_INSTANCE}.
+     */
     @SuppressWarnings("AnonInnerLength")
     static final RelOptRule IMPOSE_ORDER_INSTANCE = new ConverterRule(
             LogicalTableFunctionScan.class, scan -> extractImposeOrderFunction(scan) != null,
@@ -61,8 +66,8 @@ final class WatermarkRules {
                     function.getCluster(),
                     OptUtils.toLogicalConvention(function.getTraitSet()),
                     Iterables.getOnlyElement(Util.toList(function.getInputs(), OptUtils::toLogicalInput)),
-                    toEventTimePolicyProvider(function)
-            );
+                    toEventTimePolicyProvider(function),
+                    orderingColumnFieldIndex(function));
         }
 
         private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
@@ -71,6 +76,7 @@ final class WatermarkRules {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
             return context -> {
+                // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
                         row -> WindowUtils.extractMillis(row.get(orderingColumnFieldIndex)),
@@ -78,8 +84,7 @@ final class WatermarkRules {
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,
                         0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT
-                );
+                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
             };
         }
 
@@ -94,6 +99,10 @@ final class WatermarkRules {
         }
     };
 
+    /**
+     * Push down {@link WatermarkLogicalRel} into {@link
+     * FullScanLogicalRel}, if one is its input.
+     */
     static final RelOptRule WATERMARK_INTO_SCAN_INSTANCE = new RelOptRule(
             operand(WatermarkLogicalRel.class, operand(FullScanLogicalRel.class, none())),
             WatermarkRules.class.getSimpleName() + "(Watermark Into Scan)"
@@ -107,7 +116,8 @@ final class WatermarkRules {
                     logicalWatermark.getCluster(),
                     logicalWatermark.getTraitSet(),
                     logicalScan.getTable(),
-                    logicalWatermark.eventTimePolicyProvider()
+                    logicalWatermark.eventTimePolicyProvider(),
+                    logicalWatermark.watermarkedColumnIndex()
             );
             call.transformTo(rel);
         }

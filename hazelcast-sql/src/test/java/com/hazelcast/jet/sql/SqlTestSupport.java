@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -38,10 +37,12 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -83,6 +84,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -94,7 +96,6 @@ import static org.junit.Assert.assertTrue;
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
-    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     @After
     public void tearDown() {
@@ -148,8 +149,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Execute a query and wait for the results to contain all the {@code
-     * expectedRows}. If there are more rows in the result, they are ignored.
-     * Suitable for streaming queries that don't terminate.
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
      *
      * @param sql          The query
      * @param arguments    The query arguments
@@ -164,6 +168,55 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             SqlStatement statement = new SqlStatement(sql);
             arguments.forEach(statement::addParameter);
 
+            try (SqlResult result = sqlService.execute(statement)) {
+                ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
+                for (
+                        int i = 0;
+                        i < expectedRows.size() && iterator.hasNext()
+                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i++
+                ) {
+                    rows.add(new Row(iterator.next()));
+                }
+                future.complete(null);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+
+        thread.start();
+
+        try {
+            try {
+                future.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                thread.interrupt();
+                thread.join();
+            }
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+
+        List<Row> actualRows = new ArrayList<>(rows);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    /**
+     * Execute the given `sql` and assert that the first rows it returns are those in
+     * `expectedRows`. Ignores the rest of rows.
+     * <p>
+     * This is useful for asserting initial output of streaming queries where
+     * the output arrives in a stable order.
+     */
+    public static void assertTipOfStream(String sql, Collection<Row> expectedRows) {
+        assert !expectedRows.isEmpty() : "no point in asserting a zero-length tip of a stream";
+        SqlService sqlService = instance().getSql();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Deque<Row> rows = new ArrayDeque<>();
+
+        Thread thread = new Thread(() -> {
+            SqlStatement statement = new SqlStatement(sql);
             try (SqlResult result = sqlService.execute(statement)) {
                 Iterator<SqlRow> iterator = result.iterator();
                 for (int i = 0; i < expectedRows.size() && iterator.hasNext(); i++) {
@@ -190,7 +243,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
 
         List<Row> actualRows = new ArrayList<>(rows);
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 
     /**
@@ -432,6 +485,35 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         }
     }
 
+    /**
+     * Create an IMap index with given {@code name}, {@code type} and {@code attributes}.
+     */
+    public static void createIndex(String name, String mapName, IndexType type, String... attributes) {
+        createIndex(instance(), name, mapName, type, attributes);
+    }
+
+    static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
+        SqlService sqlService = instance.getSql();
+
+        StringBuilder sb = new StringBuilder("CREATE INDEX IF NOT EXISTS ");
+        sb.append(name);
+        sb.append(" ON ");
+        sb.append(mapName);
+        sb.append(" ( ");
+        for (int i = 0; i < attributes.length; ++i) {
+            if (attributes.length - i - 1 == 0) {
+                sb.append(attributes[i]);
+            } else {
+                sb.append(attributes[i]).append(", ");
+            }
+        }
+        sb.append(" ) ");
+        sb.append(" TYPE ");
+        sb.append(type.name());
+
+        sqlService.execute(sb.toString());
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
@@ -480,7 +562,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return Accessors.getNodeEngineImpl(instance);
     }
 
-    public List<Row> rows(final int rowLength, final Object ...values) {
+    public List<Row> rows(final int rowLength, final Object... values) {
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }

@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemIf;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
 /**
  * An extended {@link SampleableConcurrentHashMap} with {@link IMap} specifics.
@@ -36,9 +36,9 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
     private static final int DEFAULT_INITIAL_CAPACITY = 256;
 
     private final transient SerializationService serializationService;
-    private final transient ExpirySystemIf expirySystem;
+    private final transient ExpirySystem expirySystem;
 
-    public StorageSCHM(SerializationService serializationService, ExpirySystemIf expirySystem) {
+    public StorageSCHM(SerializationService serializationService, ExpirySystem expirySystem) {
         super(DEFAULT_INITIAL_CAPACITY);
 
         this.serializationService = serializationService;
