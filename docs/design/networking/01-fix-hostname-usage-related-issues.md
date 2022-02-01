@@ -15,15 +15,16 @@
 
 
 |||
-|---|------------------- https://hazelcast.atlassian.net/browse/HZ-528       Jira| https://hazelcast.atlassian.net/browse/HZ-528       |
-|Related Github issues| https://github.com/hazelcast/hazelcast/issues/16651 |
-|Document Status / Completeness| DRAFT / IN PROGRESS / DESIGN REVIEW / DONE          |
-|Requirement owner| _Requirement owner_                                 |
-|Developer(s)| _Ufuk Yılmaz_                                       |
-|Quality Engineer| _Viacheslav Sytnyk_                                 |
-|Support Engineer| _Support Engineer_                                  |
-|Technical Reviewers| _Vassilis Bekiaris_, _Josef Cacek_                  |
-|Simulator or Soak Test PR(s) | _Link to Simulator or Soak test PR_                 |
+|---|---|
+|Related Jira| https://hazelcast.atlassian.net/browse/HZ-528       |
+|Related Github issues          | https://github.com/hazelcast/hazelcast/issues/15722, https://github.com/hazelcast/hazelcast/issues/16651, https://github.com/hazelcast/hazelcast-enterprise/issues/3627, https://github.com/hazelcast/hazelcast-enterprise/issues/4342 |
+|Document Status / Completeness | DESIGN REVIEW|
+|Requirement owner              | _Requirement owner_                                 |
+|Developer(s)                   | _Ufuk Yılmaz_                                       |
+|Quality Engineer               | _Viacheslav Sytnyk_                                 |
+|Support Engineer               | _Support Engineer_                                  |
+|Technical Reviewers            | _Vassilis Bekiaris_, _Josef Cacek_                  |
+|Simulator or Soak Test PR(s)   | _Link to Simulator or Soak test PR_                 |
 
 ### Background
 
