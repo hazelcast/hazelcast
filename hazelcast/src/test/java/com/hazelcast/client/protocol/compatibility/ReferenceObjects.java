@@ -51,9 +51,6 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.config.ConfigNamespace;
-import com.hazelcast.internal.config.ConfigSections;
-import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.partition.MigrationStateImpl;
@@ -88,8 +85,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
-
-import static java.util.Collections.singleton;
 
 public class ReferenceObjects {
 
