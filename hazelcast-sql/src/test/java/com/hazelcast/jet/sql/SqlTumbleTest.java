@@ -1527,11 +1527,11 @@ public class SqlTumbleTest extends SqlTestSupport {
                 name,
                 asList("ts", "name"),
                 asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
-                row(timestampTz(0), "Alice"),
-                row(timestampTz(1), null),
-                row(timestampTz(2), "Alice"),
-                row(timestampTz(3), "Bob")
-        );
+                TestBatchSqlConnector.valuesToString(
+                        row(timestampTz(0), "Alice"),
+                        row(timestampTz(1), null),
+                        row(timestampTz(2), "Alice"),
+                        row(timestampTz(3), "Bob")));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, COUNT(name) FROM " +
@@ -1556,11 +1556,11 @@ public class SqlTumbleTest extends SqlTestSupport {
                 name,
                 asList("ts", "name"),
                 asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
-                row(timestampTz(0), "Alice"),
-                row(timestampTz(1), null),
-                row(timestampTz(2), "Alice"),
-                row(timestampTz(3), "Bob")
-        );
+                TestBatchSqlConnector.valuesToString(
+                        row(timestampTz(0), "Alice"),
+                        row(timestampTz(1), null),
+                        row(timestampTz(2), "Alice"),
+                        row(timestampTz(3), "Bob")));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT COUNT(name) FROM " +
@@ -1581,11 +1581,11 @@ public class SqlTumbleTest extends SqlTestSupport {
                 name,
                 asList("ts", "name"),
                 asList(TIMESTAMP_WITH_TIME_ZONE, VARCHAR),
-                row(timestampTz(0), "Alice"),
-                row(timestampTz(1), null),
-                row(timestampTz(2), "Alice"),
-                row(timestampTz(3), "Bob")
-        );
+                TestBatchSqlConnector.valuesToString(
+                        row(timestampTz(0), "Alice"),
+                        row(timestampTz(1), null),
+                        row(timestampTz(2), "Alice"),
+                        row(timestampTz(3), "Bob")));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start + INTERVAL '0.001' SECOND FROM " +

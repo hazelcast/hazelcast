@@ -131,6 +131,8 @@ public class PlanExecutorTest {
                 QueryParameterMetadata.EMPTY,
                 emptySet(),
                 dag,
+                null,
+                false,
                 planExecutor,
                 Collections.emptyList()
         );

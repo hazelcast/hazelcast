@@ -126,8 +126,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     @Nonnull @Override
     public JobConfig getConfig() {
-        checkNotLightJob("config");
-
         // The common path will use a single volatile load
         JobConfig loadResult = jobConfig;
         if (loadResult != null) {

@@ -321,6 +321,8 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final DmlPlan dmlPlan;
+        private final String query;
+        private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
 
         CreateJobPlan(
@@ -328,6 +330,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 DmlPlan dmlPlan,
+                String query,
+                boolean infiniteRows,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
@@ -336,7 +340,17 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.jobConfig = jobConfig;
             this.ifNotExists = ifNotExists;
             this.dmlPlan = dmlPlan;
+            this.query = query;
+            this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
+        }
+
+        public boolean isInfiniteRows() {
+            return infiniteRows;
+        }
+
+        public String getQuery() {
+            return query;
         }
 
         JobConfig getJobConfig() {
@@ -767,6 +781,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
+        private final String query;
         private final boolean isStreaming;
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
@@ -777,6 +792,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
+                String query,
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
@@ -787,6 +803,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.objectKeys = objectKeys;
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
+            this.query = query;
             this.isStreaming = isStreaming;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
@@ -807,6 +824,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         SqlRowMetadata getRowMetadata() {
             return rowMetadata;
+        }
+
+        public String getQuery() {
+            return query;
         }
 
         @Override
@@ -841,15 +862,19 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
+        private final String query;
+        private final boolean infiniteRows;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
 
         DmlPlan(
-                TableModify.Operation operation,
+                Operation operation,
                 PlanKey planKey,
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
+                String query,
+                boolean infiniteRows,
                 PlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
@@ -859,6 +884,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.objectKeys = objectKeys;
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
+            this.query = query;
+            this.infiniteRows = infiniteRows;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
         }
@@ -873,6 +900,14 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         DAG getDag() {
             return dag;
+        }
+
+        public String getQuery() {
+            return query;
+        }
+
+        public boolean isInfiniteRows() {
+            return infiniteRows;
         }
 
         @Override
