@@ -259,6 +259,7 @@
     -->
     <local-device name="default-tiered-store-device">
         <base-dir>tiered-store</base-dir>
+        <capacity unit="GIGABYTES" value="256"/>
         <block-size>4096</block-size>
         <read-io-thread-count>4</read-io-thread-count>
         <write-io-thread-count>4</write-io-thread-count>

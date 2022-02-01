@@ -225,6 +225,9 @@ hazelcast:
     # Configuration for a device, which a tiered-store can reference and use for its disk-tier.
     default-tiered-store-device:
       base-dir: "tiered-store"
+      capacity:
+        unit: GIGABYTES
+        value: 256
       block-size: 4096
       read-io-thread-count: 4
       write-io-thread-count: 4
