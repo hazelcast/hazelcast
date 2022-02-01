@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.config.dynamic.reload;
 
-import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,7 +48,7 @@ public class ReloadWithoutEnterpriseTest extends HazelcastTestSupport {
         Files.write(configFile.toPath(), configAsString.getBytes());
         System.setProperty(SYSPROP_MEMBER_CONFIG, configFile.getAbsolutePath());
 
-        ConfigurationService configurationService = getService(createHazelcastInstance(), ClusterWideConfigurationService.SERVICE_NAME);
+        ConfigurationService configurationService = getService(createHazelcastInstance(), ConfigurationService.SERVICE_NAME);
         configurationService.update();
     }
 }
