@@ -182,7 +182,10 @@ public class DataSerializableImplementsVersionedTest {
 
     // overridden in EE
     protected ObjectDataInput getObjectDataInput() {
-        return mock(ObjectDataInput.class,
-                withSettings().extraInterfaces(DataReader.class));
+        ObjectDataInput input = mock(ObjectDataInput.class,
+                withSettings().extraInterfaces(SerializationServiceSupport.class, DataReader.class));
+        when(((SerializationServiceSupport) input).getSerializationService())
+                .thenReturn(serializationService);
+        return input;
     }
 }

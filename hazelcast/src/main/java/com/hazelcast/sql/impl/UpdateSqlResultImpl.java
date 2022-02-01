@@ -67,14 +67,4 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     @Override
     public void close(@Nullable QueryException error) {
     }
-
-    @Override
-    public Object deserialize(Object value) {
-        throw new IllegalStateException("This result contains only update count");
-    }
-
-    @Override
-    public Object deserialize(LazyTarget value) {
-        throw new IllegalStateException("This result contains only update count");
-    }
 }

@@ -25,7 +25,7 @@ import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.aggregate.function.ImposeOrderFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;

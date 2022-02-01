@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;

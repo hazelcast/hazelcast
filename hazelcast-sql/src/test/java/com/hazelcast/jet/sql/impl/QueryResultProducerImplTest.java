@@ -21,7 +21,7 @@ import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class QueryResultProducerImplTest extends JetTestSupport {
 
     private QueryResultProducerImpl producer;
-    private ResultIterator<Row> iterator;
+    private ResultIterator<JetSqlRow> iterator;
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     private void initProducer(boolean blockForNextItem) {
@@ -65,7 +65,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(TIMEOUT);
                 semaphore.release();
                 assertThat(iterator.hasNext()).isTrue();
-                assertInstanceOf(Row.class, iterator.next());
+                assertInstanceOf(JetSqlRow.class, iterator.next());
                 semaphore.release();
                 assertThat(iterator.hasNext()).isFalse();
                 assertThatThrownBy(iterator::next)
@@ -111,7 +111,7 @@ public class QueryResultProducerImplTest extends JetTestSupport {
             try {
                 semaphore.release();
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(YES);
-                assertThat(iterator.next().getColumnCount()).isEqualTo(0);
+                assertThat(iterator.next().getFieldCount()).isEqualTo(0);
                 semaphore.release();
                 assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(DONE);
                 semaphore.release();

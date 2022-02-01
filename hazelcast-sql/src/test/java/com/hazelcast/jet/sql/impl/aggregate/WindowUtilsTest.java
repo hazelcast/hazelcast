@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
@@ -93,7 +94,7 @@ public class WindowUtilsTest {
         //noinspection SimplifiableAssertion
         assertTrue(outputWindows.length % 2 == 0);
         Traverser<JetSqlRow> traverser = WindowUtils.addWindowBounds(
-                new JetSqlRow(null, new Object[] {timestamp}), 0, slidingWinPolicy(windowSize, slideBy));
+                new JetSqlRow(TEST_SS, new Object[] {timestamp}), 0, slidingWinPolicy(windowSize, slideBy));
         for (int i = 0; i < outputWindows.length; i += 2) {
             Object[] expected = new Object[]{timestamp, outputWindows[i], outputWindows[i + 1]};
             assertArrayEquals(expected, traverser.next().getValues());
