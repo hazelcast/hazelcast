@@ -27,11 +27,6 @@ import java.io.IOException;
 public class UpdateConfigOperation
         extends AbstractDynamicConfigOperation {
 
-    @Override
-    public int getClassId() {
-        return ManagementDataSerializerHook.UPDATE_CONFIG_OPERATION;
-    }
-
     private String configPatch;
 
     public UpdateConfigOperation() {
@@ -39,6 +34,11 @@ public class UpdateConfigOperation
 
     public UpdateConfigOperation(String configPatch) {
         this.configPatch = configPatch;
+    }
+
+    @Override
+    public int getClassId() {
+        return ManagementDataSerializerHook.UPDATE_CONFIG_OPERATION;
     }
 
     @Override
