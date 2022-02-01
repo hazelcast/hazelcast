@@ -247,17 +247,4 @@ public final class CustomTypeFactory {
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
         return new HazelcastJsonValue(value);
     }
-
-    public static ConfigUpdateResult createConfigUpdateResult(List<ConfigNamespace> addedConfigs,
-                                                              List<ConfigNamespace> ignoredConfigs) {
-        return new ConfigUpdateResult(new HashSet<>(addedConfigs), new HashSet<>(ignoredConfigs));
-    }
-
-    public static ConfigNamespace createConfigNamespace(String configSection, String configName) {
-        ConfigSections section = Arrays.stream(ConfigSections.values())
-                .filter(candidate -> candidate.getName().equals(configSection))
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(format("config section '%s' does not exist", configSection)));
-        return new ConfigNamespace(section, configName);
-    }
 }

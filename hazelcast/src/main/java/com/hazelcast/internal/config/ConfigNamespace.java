@@ -66,8 +66,4 @@ public class ConfigNamespace {
     public int hashCode() {
         return Objects.hash(configSection, configName);
     }
-
-    public String getConfigSectionName() {
-        return configSection.getName();
-    }
 }

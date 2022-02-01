@@ -828,8 +828,4 @@ public class ReferenceObjects {
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
-    public static ConfigUpdateResult aConfigUpdateResult = new ConfigUpdateResult(
-            singleton(new ConfigNamespace(ConfigSections.CACHE, "added-cache")),
-            singleton(new ConfigNamespace(ConfigSections.CACHE, "ignored-cache"))
-    );
 }
