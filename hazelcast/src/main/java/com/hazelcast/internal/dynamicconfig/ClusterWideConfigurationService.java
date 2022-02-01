@@ -84,7 +84,7 @@ public class ClusterWideConfigurationService implements
         ConfigurationService,
         SplitBrainHandlerService {
 
-    public static final String SERVICE_NAME = "configuration-service";
+    public static final String SERVICE_NAME = ConfigurationService.SERVICE_NAME;
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
 
     // RU_COMPAT
