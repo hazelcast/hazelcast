@@ -160,7 +160,7 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
             boolean serializeSqlSummary = sqlSummary != null;
             out.writeBoolean(serializeSqlSummary);
             if (serializeSqlSummary) {
-                sqlSummary.writeData(out);
+                out.writeObject(sqlSummary);
             }
         }
     }
@@ -176,8 +176,7 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
         completionTime = in.readLong();
         failureText = in.readString();
         if (in.getVersion().isGreaterOrEqual(Versions.V5_1) && in.readBoolean()) {
-            sqlSummary = new SqlSummary();
-            sqlSummary.readData(in);
+            sqlSummary = in.readObject();
         }
     }
 
