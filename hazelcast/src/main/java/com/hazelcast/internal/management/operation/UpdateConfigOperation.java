@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 public class UpdateConfigOperation
         extends AbstractManagementOperation {
@@ -47,9 +49,20 @@ public class UpdateConfigOperation
             throws Exception {
         ConfigurationService configService = getService();
         Config configPatchObject = Config.loadFromString(configPatch);
-        getNodeEngine().getExecutionService().submit(
+        ExecutionService executionService = getNodeEngine().getExecutionService();
+        Future<ConfigUpdateResult> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
-                () -> configService.update(configPatchObject)
+                () ->  configService.update(configPatchObject)
+        );
+        // returning immediately, the actual response will be submitted back to MC
+        // as a ConfigUpdateFinishedEvent or ConfigUpdateFailedEvent
+        sendResponse(null);
+        executionService.asCompletableFuture(future).whenCompleteAsync(
+                (result, throwable) -> {
+                    if (throwable != null) {
+                        getLogger().severe("dynamic configuration update failed", throwable);
+                    }
+                }
         );
     }
 

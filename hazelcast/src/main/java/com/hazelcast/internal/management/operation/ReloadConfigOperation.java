@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.internal.dynamicconfig.ConfigUpdateResult;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+
+import java.util.concurrent.Future;
 
 public class ReloadConfigOperation extends AbstractManagementOperation {
     @Override
@@ -30,9 +33,20 @@ public class ReloadConfigOperation extends AbstractManagementOperation {
     public void run()
             throws Exception {
         ConfigurationService configService = getService();
-        getNodeEngine().getExecutionService().submit(
+        ExecutionService executionService = getNodeEngine().getExecutionService();
+        Future<ConfigUpdateResult> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> configService.update()
+        );
+        // returning immediately, the actual response will be submitted back to MC
+        // as a ConfigUpdateFinishedEvent or ConfigUpdateFailedEvent
+        sendResponse(null);
+        executionService.asCompletableFuture(future).whenCompleteAsync(
+                (result, throwable) -> {
+                    if (throwable != null) {
+                        getLogger().severe("dynamic configuration update failed", throwable);
+                    }
+                }
         );
     }
 
