@@ -316,6 +316,42 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertNoMoreItems(processor, outbox);
     }
 
+    @Test
+    public void when_duplicateTopicsProvide_then_uniqueTopicsSubscribed() {
+        HazelcastInstance[] instances = instances();
+        assertClusterSizeEventually(2, instances);
+
+        // need new topic because we want 2 partitions only
+        String topic = randomString();
+        kafkaTestSupport.createTopic(topic, 2);
+
+        Pipeline p = Pipeline.create();
+        // Pass the same topic twice
+        p.readFrom(KafkaSources.kafka(properties(), topic, topic))
+         .withoutTimestamps()
+         .setLocalParallelism(1)
+         .writeTo(Sinks.list("sink"));
+
+        JobConfig config = new JobConfig();
+        Job job = instances[0].getJet().newJob(p, config);
+
+        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
+
+        int messageCount = 1000;
+        for (int i = 0; i < messageCount; i++) {
+            kafkaTestSupport.produce(topic, i, Integer.toString(i));
+        }
+
+        IList<Object> list = instances[0].getList("sink");
+        try {
+            assertTrueEventually(() -> assertThat(list).hasSize(messageCount), 15);
+            sleepSeconds(1);
+            assertThat(list).hasSize(messageCount);
+        } finally {
+            job.cancel();
+        }
+    }
+
     private <T> StreamKafkaP<Integer, String, T> createProcessor(
             Properties properties,
             int numTopics,
