@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.dynamic;
+package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
@@ -76,7 +76,7 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
-import static com.hazelcast.internal.config.dynamic.DynamicConfigXmlGenerator.classNameOrImplClass;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.TRUE;
 

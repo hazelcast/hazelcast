@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config.dynamic.reload;
+package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
-import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,7 +35,7 @@ import static com.hazelcast.test.Accessors.getService;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ReloadWithoutEnterpriseTest extends HazelcastTestSupport {
+public class ConfigUpdateWithoutEnterpriseTest extends HazelcastTestSupport {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();

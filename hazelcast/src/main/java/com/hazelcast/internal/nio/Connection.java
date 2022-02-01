@@ -97,9 +97,16 @@ public interface Connection {
 
     /**
      * Gets the {@link UUID} of the other side of this connection.
-     * It can be null if the other side of connection is not hz
-     * member or client (e.g. REST client)
-     * @return the uuid of the remote endpoint of the connection.
+     * The remote UUID of the connection set is not immediately
+     * available after the connection is created.
+     * For the member connections, it's set during the
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake} processing
+     * For the client connections, it's set after client
+     * authentication is performed.
+     * If the other side of connection is not Hazelcast member or
+     * native client (when the other side of connection is MEMCACHED
+     * or REST client), this method always returns null.
+     * @return null or the uuid of the remote endpoint of the connection.
      */
     @Nullable
     UUID getRemoteUuid();
