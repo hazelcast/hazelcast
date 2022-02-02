@@ -254,7 +254,8 @@ public final class HazelcastReaders {
         public LocalMapQueryReaderFunction() {
         }
 
-        public LocalMapQueryReaderFunction(String mapName, Predicate<? super K, ? super V> predicate, Projection<? super Entry<K, V>, ? extends T> projection) {
+        public LocalMapQueryReaderFunction(String mapName, Predicate<? super K, ? super V> predicate,
+                                           Projection<? super Entry<K, V>, ? extends T> projection) {
             this.mapName = mapName;
             this.predicate = predicate;
             this.projection = projection;
@@ -313,7 +314,8 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters, Entry<Data, Data>> applyEx(HazelcastInstance hzInstance) throws Exception {
+        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchEntriesCodec.ResponseParameters,
+                Entry<Data, Data>> applyEx(HazelcastInstance hzInstance) throws Exception {
             return new RemoteMapReader(hzInstance, mapName);
         }
 
