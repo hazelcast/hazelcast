@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
