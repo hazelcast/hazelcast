@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.jsr.JsrTestUtil;
@@ -31,6 +32,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.JarUtil;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -51,6 +53,7 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,6 +68,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -354,6 +359,23 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         Cache<Integer, String> testCache = cacheManager.getCache("testCache", Integer.class, String.class);
         assertNotNull(testCache);
+    }
+
+    @Test
+    public void cacheCacheManagerByLocationJarFileTest() throws Exception {
+        File jcacheConfigFile = File.createTempFile("jcache_config_", ".jar");
+        JarUtil.createJarFile(
+                "src/test/resources/",
+                newArrayList("test-hazelcast-jcache.xml"),
+                jcacheConfigFile.getAbsolutePath()
+        );
+
+        URI uri = new URI("jar:file:" + jcacheConfigFile.getAbsolutePath() + "!/test-hazelcast-jcache.xml");
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, new Properties());
+        assertThat(cacheManager).isNotNull();
+
+        HazelcastServerCacheManager serverCacheManager = cacheManager.unwrap(HazelcastServerCacheManager.class);
+        assertThat(serverCacheManager.getHazelcastInstance().getName()).isEqualTo("test-hazelcast-jcache");
     }
 
     @Test
