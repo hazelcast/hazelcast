@@ -50,7 +50,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int MAP_INDEX_SCAN_METADATA = 5;
     public static final int ROW_PROJECTOR_PROCESSOR_SUPPLIER = 6;
     public static final int KV_ROW_PROJECTOR_SUPPLIER = 7;
-    public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = ;
+    public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 8;
 
     public static final int LEN = ROOT_RESULT_CONSUMER_SINK_SUPPLIER + 1;
 
