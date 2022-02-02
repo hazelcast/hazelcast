@@ -862,7 +862,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return staticConfig.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
