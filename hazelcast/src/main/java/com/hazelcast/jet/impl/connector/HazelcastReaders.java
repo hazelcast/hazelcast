@@ -73,6 +73,7 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
+//        new LocalCacheReader(hzInstance, serializationService, cacheName)
         return new LocalProcessorMetaSupplier<
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
                 new LocalCacheReaderFunction(cacheName)
@@ -120,7 +121,7 @@ public final class HazelcastReaders {
 
         @Override
         public int getClassId() {
-            return JetDataSerializerHook.LOCAL_MAP_READER_FUNCTION;
+            return JetDataSerializerHook.LOCAL_CACHE_READER_FUNCTION;
         }
     }
 
@@ -168,7 +169,7 @@ public final class HazelcastReaders {
 
         @Override
         public int getClassId() {
-            return JetDataSerializerHook.LOCAL_MAP_READER_FUNCTION;
+            return JetDataSerializerHook.REMOTE_CACHE_READER_FUNCTION;
         }
     }
 
@@ -336,7 +337,7 @@ public final class HazelcastReaders {
 
         @Override
         public int getClassId() {
-            return JetDataSerializerHook.LOCAL_MAP_QUERY_READER_FUNCTION;
+            return JetDataSerializerHook.REMOTE_MAP_READER_FUNCTION;
         }
     }
 
