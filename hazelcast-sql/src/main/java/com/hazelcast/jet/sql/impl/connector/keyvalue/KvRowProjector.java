@@ -17,10 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -140,7 +142,7 @@ public class KvRowProjector implements Row {
         return new Supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
     }
 
-    public static class Supplier implements DataSerializable {
+    public static class Supplier implements DataSerializable, IdentifiedDataSerializable {
 
         private QueryPath[] paths;
         private QueryDataType[] types;
@@ -152,7 +154,7 @@ public class KvRowProjector implements Row {
         private List<Expression<?>> projections;
 
         @SuppressWarnings("unused")
-        private Supplier() {
+        public Supplier() {
         }
 
         Supplier(
@@ -221,6 +223,16 @@ public class KvRowProjector implements Row {
             valueDescriptor = in.readObject();
             predicate = in.readObject();
             projections = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.KV_ROW_PROJECTOR_SUPPLIER;
         }
     }
 }

@@ -17,19 +17,25 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.QueryResultProducerImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
@@ -128,7 +134,47 @@ public final class RootResultConsumerSink implements Processor {
             Expression<?> limitExpression,
             Expression<?> offsetExpression
     ) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink(limitExpression, offsetExpression));
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(new Supplier(limitExpression, offsetExpression));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
+    }
+
+    public static class Supplier implements SupplierEx<Processor>, IdentifiedDataSerializable {
+        private Expression<?> limitExpression;
+        private Expression<?> offsetExpression;
+
+        public Supplier(Expression<?> limitExpression, Expression<?> offsetExpression) {
+            this.limitExpression = limitExpression;
+            this.offsetExpression = offsetExpression;
+        }
+
+        public Supplier() {
+        }
+
+        @Override
+        public Processor getEx() throws Exception {
+            return new RootResultConsumerSink(limitExpression, offsetExpression);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(limitExpression);
+            out.writeObject(offsetExpression);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            limitExpression = in.readObject();
+            offsetExpression = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.ROOT_RESULT_CONSUMER_SINK_SUPPLIER;
+        }
     }
 }
