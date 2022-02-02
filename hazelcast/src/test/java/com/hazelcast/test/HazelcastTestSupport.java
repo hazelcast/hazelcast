@@ -1174,13 +1174,16 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
-        for (int i = 0; i < durationSeconds; i++) {
+        for (int i = 0; i <= durationSeconds; i++) {
             try {
                 task.run();
             } catch (Exception e) {
                 throw rethrow(e);
             }
-            sleepSeconds(1);
+            // Don't wait if there is not next iteration
+            if ((i + 1) <= durationSeconds) {
+                sleepSeconds(1);
+            }
         }
     }
 
