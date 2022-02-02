@@ -36,7 +36,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1334,9 +1333,9 @@ public class ConfigCompatibilityChecker {
         boolean check(Collection<String> portDefinitions1, Collection<String> portDefinitions2) {
             String[] defaultValues = {"0", "*"};
             boolean defaultDefinition1 = CollectionUtil.isEmpty(portDefinitions1)
-                    || (portDefinitions1.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions1.iterator().next()));
+                    || (portDefinitions1.size() == 1 && contains(defaultValues, portDefinitions1.iterator().next()));
             boolean defaultDefinition2 = CollectionUtil.isEmpty(portDefinitions2)
-                    || (portDefinitions2.size() == 1 && ArrayUtils.contains(defaultValues, portDefinitions2.iterator().next()));
+                    || (portDefinitions2.size() == 1 && contains(defaultValues, portDefinitions2.iterator().next()));
             return (defaultDefinition1 && defaultDefinition2) || nullSafeEqual(portDefinitions1, portDefinitions2);
         }
     }
@@ -1903,5 +1902,17 @@ public class ConfigCompatibilityChecker {
             }
             return (c1.isEnabled() == c2.isEnabled());
         }
+    }
+
+    private static boolean contains(Object[] values, Object toFind) {
+        if (values == null || values.length == 0) {
+            return false;
+        }
+        for (int i = 0; i < values.length; i++) {
+            if (toFind == values[i] || (toFind != null && toFind.equals(values[i]))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

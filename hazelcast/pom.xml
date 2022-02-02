@@ -713,13 +713,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>apache-artemis</artifactId>
             <version>${activemq-artemis.version}</version>
