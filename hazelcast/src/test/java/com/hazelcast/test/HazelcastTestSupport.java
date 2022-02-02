@@ -188,9 +188,12 @@ public abstract class HazelcastTestSupport {
     // ###################################
 
     public static Config smallInstanceConfig() {
+        return shrinkInstanceConfig(new Config());
+    }
+
+    public static Config shrinkInstanceConfig(Config config) {
         // make the test instances consume less resources per default
-        Config config = new Config()
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
