@@ -297,7 +297,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         // Temporal state
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
-        )).hasMessageContaining("IMPOSE_ORDER is allowed to be used only with window aggregations");
+        )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
 
         // TODO[sasha]: support dropping late items in 5.2
 //        assertRowsEventuallyInAnyOrder(
