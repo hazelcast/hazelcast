@@ -344,9 +344,10 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         IList<Object> list = instances[0].getList("sink");
         try {
+            // Wait for all messages
             assertTrueEventually(() -> assertThat(list).hasSize(messageCount), 15);
-            sleepSeconds(1);
-            assertThat(list).hasSize(messageCount);
+            // Check there are no more messages (duplicates..)
+            assertTrueAllTheTime(() -> assertThat(list).hasSize(messageCount), 1);
         } finally {
             job.cancel();
         }
