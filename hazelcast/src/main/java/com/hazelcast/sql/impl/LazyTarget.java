@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,7 +50,7 @@ public class LazyTarget implements IdentifiedDataSerializable {
         this.deserialized = deserialized;
     }
 
-    public Object deserialize(InternalSerializationService serializationService) {
+    public Object deserialize(SerializationService serializationService) {
         try {
             if (deserialized == null) {
                 deserialized = serializationService.toObject(serialized);

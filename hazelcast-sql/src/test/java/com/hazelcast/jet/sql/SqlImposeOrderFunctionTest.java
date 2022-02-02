@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -103,6 +104,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         };
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     @Parameters(method = "validArguments")
     public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
@@ -179,6 +181,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         ).hasMessageContaining("You must specify single ordering column");
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredInput() {
         String name = createTable(
@@ -198,6 +201,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_projectedInput() {
         String name = createTable(
@@ -221,6 +225,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredAndProjectedInput() {
         String name = createTable(
@@ -254,6 +259,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         )).hasMessageContaining("Ordering function cannot be applied to input table");
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_namedParameters() {
         String name = createTable(
@@ -275,6 +281,36 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         new Row(timestampTz(2), "Bob")
                 )
         );
+    }
+
+    @Test
+    public void test_lateItemsDropping() {
+        String name = createTable(
+                row(timestampTz(28), "Alice"),
+                row(timestampTz(29), "Bob"),
+                row(timestampTz(30), "Caitlyn"),
+                row(timestampTz(30), "Dorian"),
+                row(timestampTz(31), "Elijah"),
+                row(timestampTz(5), "Zedd")
+        );
+
+        // Temporal state
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
+        )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
+
+        // TODO[sasha]: support dropping late items in 5.2
+//        assertRowsEventuallyInAnyOrder(
+//                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
+//                asList(
+//                        new Row(timestampTz(28), "Alice"),
+//                        new Row(timestampTz(29), "Bob"),
+//                        new Row(timestampTz(30), "Caitlyn"),
+//                        new Row(timestampTz(30), "Dorian"),
+//                        new Row(timestampTz(31), "Elijah")
+//                        // Zedd is dropped because ti's late
+//                )
+//        );
     }
 
     private static Object[] row(Object... values) {

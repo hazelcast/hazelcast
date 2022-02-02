@@ -60,7 +60,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
@@ -258,7 +257,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Returns the job config or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public JobConfig getJobConfig(long jobId) {
+    public JobConfig getJobConfig(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            return jobCoordinationService.getLightJobConfig(jobId);
+        }
+
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return jobRecord.getConfig();

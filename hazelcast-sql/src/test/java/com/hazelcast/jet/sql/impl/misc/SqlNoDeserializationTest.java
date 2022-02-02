@@ -25,16 +25,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,7 +41,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,7 +112,6 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testMember() {
         try (SqlResult res = instance().getSql().execute(SQL)) {
             for (SqlRow row : res) {
@@ -130,7 +127,6 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testClient() {
         int pageSize = KEY_COUNT / 2;
 
@@ -189,8 +185,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             row.getObject(index);
 
             fail();
-        } catch (HazelcastSqlException e) {
-            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        } catch (HazelcastSerializationException e) {
             assertTrue(e.getMessage().contains(expectedMessage));
         }
     }
@@ -203,6 +198,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         instance().getMap(MAP_NAME).putAll(localMap);
+        createMapping(MAP_NAME, PORTABLE_FACTORY_ID, PORTABLE_KEY_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_ID, 0);
     }
 
     public static class PersonKey implements Portable {

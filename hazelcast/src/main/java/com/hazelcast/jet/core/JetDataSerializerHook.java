@@ -27,6 +27,7 @@ import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY;
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
@@ -53,6 +54,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int LOCAL_MAP_QUERY_READER_FUNCTION = 11;
     public static final int REMOTE_MAP_READER_FUNCTION = 12;
     public static final int REMOTE_MAP_QUERY_READER_FUNCTION = 13;
+    public static final int JET_SQL_ROW = 14;
 
     /**
      * Factory ID
@@ -101,6 +103,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new HazelcastReaders.RemoteMapReaderFunction();
                 case REMOTE_MAP_QUERY_READER_FUNCTION:
                     return new HazelcastReaders.RemoteMapQueryReaderFunction<>();
+                case JET_SQL_ROW:
+                    return new JetSqlRow();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

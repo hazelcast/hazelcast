@@ -18,10 +18,11 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,13 +35,11 @@ import java.util.StringJoiner;
 public class SqlRowImpl implements SqlRow {
 
     private final SqlRowMetadata rowMetadata;
-    private final Row row;
-    private final LazyDeserializer lazyDeserializer;
+    private final JetSqlRow row;
 
-    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row, LazyDeserializer lazyDeserializer) {
+    public SqlRowImpl(SqlRowMetadata rowMetadata, JetSqlRow row) {
         this.rowMetadata = rowMetadata;
         this.row = row;
-        this.lazyDeserializer = lazyDeserializer;
     }
 
     @Nullable
@@ -70,25 +69,15 @@ public class SqlRowImpl implements SqlRow {
 
     @SuppressWarnings("unchecked")
     private <T> T getObject0(int columnIndex, boolean deserialize) {
-        Object res = row.get(columnIndex);
-
-        if (res instanceof LazyTarget) {
-            LazyTarget res0 = (LazyTarget) res;
-
-            if (deserialize) {
-                res = lazyDeserializer.deserialize(res0);
-            } else {
-                res = res0.getSerialized();
-
-                if (res == null) {
-                    res = res0.getDeserialized();
-                }
+        if (deserialize) {
+            try {
+                return (T) row.get(columnIndex);
+            } catch (HazelcastSerializationException e) {
+                throw new HazelcastSerializationException("Failed to deserialize query result value: " + e.getMessage(), e);
             }
-        } else if (deserialize) {
-            res = lazyDeserializer.deserialize(res);
+        } else {
+            return (T) row.getMaybeSerialized(columnIndex);
         }
-
-        return (T) res;
     }
 
     private int resolveIndex(String columnName) {
@@ -119,7 +108,8 @@ public class SqlRowImpl implements SqlRow {
 
         for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
-            Object columnValue = row.get(i);
+            // toString() is often called by the debugger, it must not mutate the state by serializing or deserializing.
+            Object columnValue = row.getMaybeSerialized(i);
 
             joiner.add(columnMetadata.getName() + ' ' + columnMetadata.getType() + '=' + columnValue);
         }

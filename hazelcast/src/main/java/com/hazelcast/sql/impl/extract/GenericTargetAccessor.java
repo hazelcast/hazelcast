@@ -26,7 +26,7 @@ public interface GenericTargetAccessor {
     /**
      * Gets the target in the form suitable for field access.
      * <p>
-     * For normal objects, the target is deserialized. For Portable and JSON objects, it is returned as {@code Data}.
+     * For normal objects, the target is deserialized. For Portable and Compact objects, it is returned as {@code Data}.
      *
      * @return target in the form suitable for field access
      */

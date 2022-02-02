@@ -975,7 +975,6 @@ public class JobTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newLightJob(streamingDag);
 
         // Then
-        assertThatThrownBy(job::getConfig).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(job::getSuspensionCause).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(job::getMetrics).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(job::restart).isInstanceOf(UnsupportedOperationException.class);

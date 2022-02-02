@@ -27,7 +27,6 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
-import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -48,11 +47,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int JSON_VALUE = 2;
     public static final int JSON_OBJECT = 3;
     public static final int JSON_ARRAY = 4;
-    public static final int JET_SQL_ROW = 5;
-    public static final int MAP_INDEX_SCAN_METADATA = 6;
-    public static final int ROW_PROJECTOR_PROCESSOR_SUPPLIER = 7;
-    public static final int KV_ROW_PROJECTOR_SUPPLIER = 8;
-    public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 9;
+    public static final int MAP_INDEX_SCAN_METADATA = 5;
+    public static final int ROW_PROJECTOR_PROCESSOR_SUPPLIER = 6;
+    public static final int KV_ROW_PROJECTOR_SUPPLIER = 7;
+    public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = ;
 
     public static final int LEN = ROOT_RESULT_CONSUMER_SINK_SUPPLIER + 1;
 
@@ -71,7 +69,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[JSON_VALUE] = arg -> new JsonValueFunction<>();
         constructors[JSON_OBJECT] = arg -> new JsonObjectFunction();
         constructors[JSON_ARRAY] = arg -> new JsonArrayFunction();
-        constructors[JET_SQL_ROW] = arg -> new JetSqlRow();
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
         constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = arg -> new RowProjectorProcessorSupplier();
         constructors[KV_ROW_PROJECTOR_SUPPLIER] = arg -> new KvRowProjector.Supplier();
