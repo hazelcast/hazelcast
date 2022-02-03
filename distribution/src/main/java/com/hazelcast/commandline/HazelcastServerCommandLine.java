@@ -206,6 +206,8 @@ public class HazelcastServerCommandLine {
             commandList.add("java.se");
             commandList.add("--add-exports");
             commandList.add("java.base/jdk.internal.ref=ALL-UNNAMED");
+            commandList.add("--add-exports");
+            commandList.add("jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED");
             commandList.add("--add-opens");
             commandList.add("java.base/java.lang=ALL-UNNAMED");
             commandList.add("--add-opens");
