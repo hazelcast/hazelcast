@@ -47,6 +47,19 @@ public class LicenseKey {
         }
     }
 
+    public static String licenseChangeMessage(boolean persistenceEnabled) {
+        String message = "License updated at run time. ";
+        if (persistenceEnabled) {
+            message += "Dynamic Configuration Persistence is enabled. License will be persisted. "
+                    + "Please create new members with the updated license.";
+        } else {
+            message += "Please make sure to update the license in the persistent configuration "
+                    + "to avoid losing the changes on restart. "
+                    + "You can also enable Dynamic Configuration Persistence for persisting dynamic changes.";
+        }
+        return message;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
