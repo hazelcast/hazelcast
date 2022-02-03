@@ -18,14 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
@@ -192,21 +192,19 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     }
 
     public Collection<ServiceNamespace> getNamespaces(Predicate<CacheConfig> predicate, int replicaIndex) {
-        if (recordStores.isEmpty()) {
-            return Collections.emptyList();
-        }
+        return NameSpaceUtil.getAllNamespaces(recordStores,
+                new NameSpaceUtil.ServiceQuestioner<ICacheRecordStore>() {
+                    @Override
+                    public boolean test(ICacheRecordStore recordStore) {
+                        CacheConfig cacheConfig = recordStore.getConfig();
+                        return recordStore.getConfig().getTotalBackupCount() < replicaIndex
+                                || !predicate.test(cacheConfig);
+                    }
 
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (ICacheRecordStore recordStore : recordStores.values()) {
-            CacheConfig cacheConfig = recordStore.getConfig();
-            if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex
-                && predicate.test(cacheConfig)) {
-                if (namespaces == Collections.EMPTY_LIST) {
-                    namespaces = new LinkedList<>();
-                }
-                namespaces.add(recordStore.getObjectNamespace());
-            }
-        }
-        return namespaces;
+                    @Override
+                    public ObjectNamespace apply(ICacheRecordStore recordStore) {
+                        return recordStore.getObjectNamespace();
+                    }
+                });
     }
 }

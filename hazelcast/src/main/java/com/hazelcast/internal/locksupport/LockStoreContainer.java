@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.locksupport;
 
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -29,7 +30,6 @@ import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -106,23 +106,17 @@ public final class LockStoreContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        if (lockStores.isEmpty()) {
-            return Collections.EMPTY_LIST;
-        }
+        return NameSpaceUtil.getAllNamespaces(lockStores,
+                new NameSpaceUtil.ServiceQuestioner<LockStoreImpl>() {
+                    @Override
+                    public boolean test(LockStoreImpl lockStore) {
+                        return lockStore.getTotalBackupCount() < replicaIndex;
+                    }
 
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (LockStoreImpl lockStore : lockStores.values()) {
-            if (lockStore.getTotalBackupCount() < replicaIndex) {
-                continue;
-            }
-
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
-            }
-
-            namespaces.add(lockStore.getNamespace());
-        }
-
-        return namespaces;
+                    @Override
+                    public ObjectNamespace apply(LockStoreImpl lockStore) {
+                        return lockStore.getNamespace();
+                    }
+                });
     }
 }

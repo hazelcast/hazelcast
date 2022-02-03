@@ -16,17 +16,16 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
@@ -82,23 +81,18 @@ public class MultiMapPartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        if (containerMap.isEmpty()) {
-            return Collections.EMPTY_LIST;
-        }
-
-        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
-        for (MultiMapContainer container : containerMap.values()) {
-            MultiMapConfig config = container.getConfig();
-            if (config.getTotalBackupCount() < replicaIndex) {
-                continue;
+        return NameSpaceUtil.getAllNamespaces(containerMap,
+                new NameSpaceUtil.ServiceQuestioner<MultiMapContainer>() {
+            @Override
+            public boolean test(MultiMapContainer container) {
+                return container.getConfig().getTotalBackupCount() < replicaIndex;
             }
 
-            if (namespaces == Collections.EMPTY_LIST) {
-                namespaces = new LinkedList<>();
+            @Override
+            public ObjectNamespace apply(MultiMapContainer container) {
+                return container.getObjectNamespace();
             }
-            namespaces.add(container.getObjectNamespace());
-        }
-        return namespaces;
+        });
     }
 
     void destroyMultiMap(String name) {
