@@ -69,6 +69,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_
 import static com.hazelcast.spi.properties.ClusterProperty.PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
@@ -361,10 +362,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         // To make sure that there is not pending/remaining heartbeat operations left in slave2
         // and slave3, we're sending new urgent operations to these members that will be processed
         // after those remaining heartbeats and then waiting for them to be processed.
-        OperationService masterOperationService = getNode(master).getNodeEngine().getOperationService();
+        OperationService masterOperationService = getOperationService(master);
         masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
         masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
-        OperationService slave1OperationService = getNode(slave1).getNodeEngine().getOperationService();
+        OperationService slave1OperationService = getOperationService(slave1);
         slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
         slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
 
