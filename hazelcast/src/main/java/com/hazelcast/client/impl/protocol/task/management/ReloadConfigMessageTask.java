@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.operation.ReloadConfigOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -30,6 +31,9 @@ import java.security.Permission;
 
 public class ReloadConfigMessageTask
         extends AbstractInvocationMessageTask<Void> {
+
+    private static final ManagementPermission REQUIRED_PERMISSION = new ManagementPermission("config.reload");
+
     public ReloadConfigMessageTask(ClientMessage clientMessage, Node node,
                                       Connection connection) {
         super(clientMessage, node, connection);
@@ -37,7 +41,7 @@ public class ReloadConfigMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

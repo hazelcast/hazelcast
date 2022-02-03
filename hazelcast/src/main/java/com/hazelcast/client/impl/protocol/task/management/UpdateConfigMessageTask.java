@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.operation.UpdateConfigOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -31,6 +32,8 @@ import java.security.Permission;
 public class UpdateConfigMessageTask
         extends AbstractInvocationMessageTask<String> {
 
+    private static final ManagementPermission REQUIRED_PERMISSION = new ManagementPermission("config.update");
+
     public UpdateConfigMessageTask(ClientMessage clientMessage, Node node,
                                    Connection connection) {
         super(clientMessage, node, connection);
@@ -38,7 +41,7 @@ public class UpdateConfigMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override
