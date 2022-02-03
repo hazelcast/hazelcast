@@ -264,6 +264,40 @@ public class ConfigTest extends HazelcastTestSupport {
         config.setProperty("test", null);
     }
 
+    @Test
+    public void testGetDeviceConfig() {
+        String deviceName = randomName();
+        DeviceConfig deviceConfig = new LocalDeviceConfig().setName(deviceName);
+        config.addDeviceConfig(deviceConfig);
+
+        assertNull(config.getDeviceConfig(randomName()));
+        assertEquals(deviceConfig, config.getDeviceConfig(deviceName));
+        assertEquals(deviceConfig, config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+
+        deviceConfig = new DeviceConfig() {
+            @Override
+            public boolean isLocal() {
+                return false;
+            }
+
+            @Override
+            public NamedConfig setName(String name) {
+                return this;
+            }
+
+            @Override
+            public String getName() {
+                return deviceName;
+            }
+        };
+
+        config.addDeviceConfig(deviceConfig);
+        assertEquals(deviceConfig, config.getDeviceConfig(deviceName));
+        assertEquals(deviceConfig, config.getDeviceConfig(DeviceConfig.class, deviceName));
+
+        assertThrows(ClassCastException.class, () -> config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+    }
+
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("provide one or more tag and value pairs");

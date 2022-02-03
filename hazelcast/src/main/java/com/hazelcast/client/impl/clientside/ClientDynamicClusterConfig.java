@@ -871,6 +871,11 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public Map<String, DeviceConfig> getDeviceConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
