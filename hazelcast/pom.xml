@@ -689,13 +689,6 @@
             <version>2.1.12</version>
             <scope>test</scope>
         </dependency>
-        <!-- Bitmap index benchmarking -->
-        <dependency>
-            <groupId>org.roaringbitmap</groupId>
-            <artifactId>RoaringBitmap</artifactId>
-            <version>0.9.3</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>
