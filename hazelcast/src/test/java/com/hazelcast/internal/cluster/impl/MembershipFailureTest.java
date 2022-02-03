@@ -342,8 +342,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)
                 .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
-        CountDownLatch latchSlave2 = new CountDownLatch(1);
-        CountDownLatch latchSlave3 = new CountDownLatch(1);
+        CountDownLatch latchSlave2 = new CountDownLatch(2);
+        CountDownLatch latchSlave3 = new CountDownLatch(2);
 
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
@@ -361,9 +361,13 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         // To make sure that there is not pending/remaining heartbeat operations left in slave2
         // and slave3, we're sending new urgent operations to these members that will be processed
         // after those remaining heartbeats and then waiting for them to be processed.
-        OperationService operationService = getNode(master).getNodeEngine().getOperationService();
-        operationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
-        operationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
+        OperationService masterOperationService = getNode(master).getNodeEngine().getOperationService();
+        masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
+        masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
+        OperationService slave1OperationService = getNode(slave1).getNodeEngine().getOperationService();
+        slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
+        slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
+
         latchSlave2.await();
         latchSlave3.await();
 
@@ -938,7 +942,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse(){
+        public boolean returnsResponse() {
             return false;
         }
     }
