@@ -1366,6 +1366,21 @@
 
     <repositories>
         <repository>
+            <!--
+            This is the same as central in the super pom.
+            Putting it here changes the order in which the repositories are queried.
+            Most artefacts are stored in central so this provides best build times when a mirror is not used.
+            Repository order reference:
+            https://maven.apache.org/guides/mini/guide-multiple-repositories.html#repository-order
+            -->
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -1374,6 +1389,13 @@
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+            <snapshots>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
