@@ -202,6 +202,7 @@ public final class Address implements IdentifiedDataSerializable {
         Address address = new Address();
         address.host = host;
         address.port = port;
+        address.type = IPV4;
         return address;
     }
 }
