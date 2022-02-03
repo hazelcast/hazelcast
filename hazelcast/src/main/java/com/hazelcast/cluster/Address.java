@@ -162,7 +162,7 @@ public final class Address implements IdentifiedDataSerializable {
             return false;
         }
         final Address address = (Address) o;
-        return port == address.port && this.type == address.type && this.host.equals(address.host);
+        return port == address.port && this.host.equals(address.host);
     }
 
     @Override
@@ -202,7 +202,6 @@ public final class Address implements IdentifiedDataSerializable {
         Address address = new Address();
         address.host = host;
         address.port = port;
-        address.type = IPV4;
         return address;
     }
 }
