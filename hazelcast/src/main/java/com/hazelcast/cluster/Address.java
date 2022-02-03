@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -183,6 +184,24 @@ public final class Address implements IdentifiedDataSerializable {
         if (address == null) {
             throw new IllegalArgumentException("Can't resolve address: " + inetSocketAddress);
         }
+        return address;
+    }
+
+
+    /**
+     * Creates an unresolved address. This API is used by the client for the case where the hostname can not be resolved.
+     * Members achieve the same thing via Serialization where we don't resolve the hostname when Address comes as Data
+     * from another member.
+     *
+     * @param host hostname or IP
+     * @param port port
+     * @return an unresolved address
+     */
+    @PrivateApi
+    public static Address createUnresolvedAddress(String host, int port) {
+        Address address = new Address();
+        address.host = host;
+        address.port = port;
         return address;
     }
 }
