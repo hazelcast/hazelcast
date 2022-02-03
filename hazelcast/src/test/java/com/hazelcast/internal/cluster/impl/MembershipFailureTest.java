@@ -359,6 +359,13 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         dropOperationsFrom(slave2, F_ID, singletonList(HEARTBEAT));
         dropOperationsFrom(slave3, F_ID, singletonList(HEARTBEAT));
 
+        // Wait until the max possible retries of send task completes:
+        // Properties of packet send task are as follows:
+        // MAX_RETRY_COUNT = 5 and DELAY_FACTOR = 100; so we need to wait
+        // for 1500 ms (100 + 200 + 300 + 400 + 500) to make sure that
+        // there are no unfiltered packets that are trying to be sent
+        // remaining.
+        sleepMillis(1500);
         // To make sure that there is not pending/remaining heartbeat operations left in slave2
         // and slave3, we're sending new urgent operations to these members that will be processed
         // after those remaining heartbeats and then waiting for them to be processed.
@@ -951,6 +958,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     private Config getConfigWithLatchService(CountDownLatch latch) {
         String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)
+                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0")
                 .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         LatchService latchService = new LatchService(latch);
         ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
