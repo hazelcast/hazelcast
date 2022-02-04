@@ -6063,6 +6063,7 @@ public class ClientCompatibilityTest_2_1 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.evictionPolicy));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertFalse(parameters.isGlobalIndexesExists);
     }
 
     @Test

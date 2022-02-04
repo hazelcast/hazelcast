@@ -75,7 +75,8 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Strin
                 maxSizePolicyId,
                 config.isReadBackupData(),
                 evictionPolicyId,
-                mergePolicy);
+                mergePolicy,
+                config.getIndexConfigs());
     }
 
     @Override

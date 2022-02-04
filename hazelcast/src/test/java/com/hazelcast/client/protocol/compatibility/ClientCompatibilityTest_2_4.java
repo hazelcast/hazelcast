@@ -6181,6 +6181,8 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.evictionPolicy));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(parameters.isGlobalIndexesExists);
+        assertTrue(isEqual(aListOfIndexConfigs, parameters.globalIndexes));
     }
 
     @Test
