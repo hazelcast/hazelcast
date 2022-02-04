@@ -107,6 +107,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         List<String> uniqueTopics = topics.stream().distinct().collect(Collectors.toList());
         if (uniqueTopics.size() != topics.size()) {
+            List<String> topics = new ArrayList<>(this.topics);
+            for (String t : uniqueTopics) {
+                topics.remove(t); // removes only first element
+            }
             getLogger().warning("Duplicate topics found in topic list: " + topics);
         }
         topics = uniqueTopics;
