@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.dynamicconfig;
+package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
 
-public abstract class AbstractDynamicConfigOperation extends Operation implements IdentifiedDataSerializable {
-
+public class ReloadConfigOperation
+        extends AbstractDynamicConfigOperation {
     @Override
-    public int getFactoryId() {
-        return ConfigDataSerializerHook.F_ID;
+    public int getClassId() {
+        return ManagementDataSerializerHook.RELOAD_CONFIG_OPERATION;
     }
 
     @Override
-    public String getServiceName() {
-        return ConfigurationService.SERVICE_NAME;
+    void doRun() {
+        ConfigurationService service = getService();
+        service.update();
     }
 }

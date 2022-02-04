@@ -177,6 +177,7 @@ import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReloadConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
@@ -188,6 +189,7 @@ import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -554,6 +556,7 @@ import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTas
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.QueueResetAgeStatisticsMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ReloadConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RemoveCPMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ResetCPSubsystemMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunConsoleCommandMessageTask;
@@ -561,6 +564,7 @@ import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunScriptMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownClusterMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.UpdateConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.WanSyncMapMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask;
@@ -1835,6 +1839,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
         factories.put(MCResetQueueAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
+        factories.put(MCReloadConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ReloadConfigMessageTask(cm, node, con));
+        factories.put(MCUpdateConfigCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new UpdateConfigMessageTask(cm, node, con));
     }
 
     private void initializeSqlTaskFactories() {
