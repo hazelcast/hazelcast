@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -51,8 +52,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int ROW_PROJECTOR_PROCESSOR_SUPPLIER = 6;
     public static final int KV_ROW_PROJECTOR_SUPPLIER = 7;
     public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 8;
+    public static final int SQL_ROW_COMPARATOR_EX = 9;
+    public static final int FIELD_COLLATION = 10;
 
-    public static final int LEN = ROOT_RESULT_CONSUMER_SINK_SUPPLIER + 1;
+    public static final int LEN = FIELD_COLLATION + 1;
 
     @Override
     public int getFactoryId() {
@@ -73,6 +76,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = arg -> new RowProjectorProcessorSupplier();
         constructors[KV_ROW_PROJECTOR_SUPPLIER] = arg -> new KvRowProjector.Supplier();
         constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = arg -> new RootResultConsumerSink.Supplier();
+        constructors[SQL_ROW_COMPARATOR_EX] = arg -> new ExpressionUtil.SqlRowComparatorEx();
+        constructors[FIELD_COLLATION] = arg -> new FieldCollation();
 
         return new ArrayDataSerializableFactory(constructors);
     }
