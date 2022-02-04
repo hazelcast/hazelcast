@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.connector.AbstractUpdateMapP.ApplyValuesEntryProcessor;
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
@@ -55,6 +56,9 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int REMOTE_MAP_READER_FUNCTION = 12;
     public static final int REMOTE_MAP_QUERY_READER_FUNCTION = 13;
     public static final int JET_SQL_ROW = 14;
+    public static final int PROCESSOR_MAP_P_SUPPLIER = 15;
+    public static final int AGGREGATE_COMBINING_ACCUMULATE = 16;
+    public static final int PROCESSORS_ACCUMULATE_P_SUPPLIER = 17;
 
     /**
      * Factory ID
@@ -105,6 +109,12 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new HazelcastReaders.RemoteMapQueryReaderFunction<>();
                 case JET_SQL_ROW:
                     return new JetSqlRow();
+                case PROCESSOR_MAP_P_SUPPLIER:
+                    return new Processors.ProcessorMapPSupplier<>();
+                case AGGREGATE_COMBINING_ACCUMULATE:
+                    return new AggregateOperation.AggregateCombiningAccumulate<>();
+                case PROCESSORS_ACCUMULATE_P_SUPPLIER:
+                    return new Processors.AccumulatePSupplier<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

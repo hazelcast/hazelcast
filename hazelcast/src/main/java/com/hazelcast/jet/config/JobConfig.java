@@ -1377,7 +1377,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeObject(processingGuarantee);
+        out.writeString(processingGuarantee == null ? null : processingGuarantee.name());
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
         out.writeBoolean(suspendOnFailure);
@@ -1397,7 +1397,9 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        processingGuarantee = in.readObject();
+        String processingGuarantee = in.readString();
+        this.processingGuarantee = processingGuarantee == null ? null :
+                ProcessingGuarantee.valueOf(processingGuarantee);
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
         suspendOnFailure = in.readBoolean();

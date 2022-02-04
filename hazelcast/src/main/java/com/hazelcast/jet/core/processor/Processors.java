@@ -266,8 +266,45 @@ public final class Processors {
      */
     @Nonnull
     public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return () -> new AggregateP<>(aggrOp.withIdentityFinish());
+        return new AccumulatePSupplier<>(aggrOp);
     }
+
+    public static class AccumulatePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
+        private AggregateOperation<A, R> aggrOp;
+
+        public AccumulatePSupplier() {
+        }
+
+        public AccumulatePSupplier(AggregateOperation<A, R> aggrOp) {
+            this.aggrOp = aggrOp;
+        }
+
+        @Override
+        public Processor getEx() throws Exception {
+            return new AggregateP<>(aggrOp.withIdentityFinish());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(aggrOp);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            aggrOp = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.PROCESSORS_ACCUMULATE_P_SUPPLIER;
+        }
+    }
+
 
     /**
      * Returns a supplier of processors for a vertex that performs the
@@ -730,13 +767,47 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> SupplierEx<Processor> mapP(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
-        return () -> {
+        return new ProcessorMapPSupplier<>(mapFn);
+    }
+
+    public static class ProcessorMapPSupplier<T, R> implements IdentifiedDataSerializable, SupplierEx<Processor> {
+        private FunctionEx<? super T, ? extends R> mapFn;
+
+        public ProcessorMapPSupplier() {
+        }
+
+        public ProcessorMapPSupplier(FunctionEx<? super T, ? extends R> mapFn) {
+            this.mapFn = mapFn;
+        }
+
+        @Override
+        public Processor getEx() throws Exception {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, R>(item -> {
                 trav.accept(mapFn.apply(item));
                 return trav;
             });
-        };
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(mapFn);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            mapFn = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.PROCESSOR_MAP_P_SUPPLIER;
+        }
     }
 
     /**

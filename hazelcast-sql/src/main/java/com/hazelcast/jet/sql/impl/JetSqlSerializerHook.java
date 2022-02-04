@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -54,8 +55,20 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 8;
     public static final int SQL_ROW_COMPARATOR_EX = 9;
     public static final int FIELD_COLLATION = 10;
+    public static final int MAYBE_SERIALIZED_FUNCTION = 11;
+    public static final int NULL_FUNCTION = 12;
+    public static final int GET_FUNCTION = 13;
+    public static final int AGGREGATE_CREATE_SUPPLIER = 14;
+    public static final int AGGREGATE_ACCUMULATE_FUNCTION = 15;
+    public static final int AGGREGATE_COMBINE_FUNCTION = 16;
+    public static final int AGGREGATE_EXPORT_FINISH_FUNCTION = 17;
+    public static final int AGGREGATE_COUNT_TT_SUPPLIER = 18;
+    public static final int AGGREGATE_COUNT_FF_SUPPLIER = 19;
+    public static final int AGGREGATE_COUNT_TF_SUPPLIER = 20;
+    public static final int AGGREGATE_SUM_SUPPLIER = 21;
+    public static final int AGGREGATE_AVG_SUPPLIER = 22;
 
-    public static final int LEN = FIELD_COLLATION + 1;
+    public static final int LEN = AGGREGATE_AVG_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -78,6 +91,24 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = arg -> new RootResultConsumerSink.Supplier();
         constructors[SQL_ROW_COMPARATOR_EX] = arg -> new ExpressionUtil.SqlRowComparatorEx();
         constructors[FIELD_COLLATION] = arg -> new FieldCollation();
+        constructors[MAYBE_SERIALIZED_FUNCTION] = arg -> new AggregateAbstractPhysicalRule.MaybeSerializedFunction();
+        constructors[NULL_FUNCTION] = arg -> AggregateAbstractPhysicalRule.NullFunction.INSTANCE;
+        constructors[GET_FUNCTION] = arg -> new AggregateAbstractPhysicalRule.GetFunction();
+        constructors[AGGREGATE_CREATE_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCreateSupplier();
+        constructors[AGGREGATE_ACCUMULATE_FUNCTION] =
+                arg -> new AggregateAbstractPhysicalRule.AggregateAccumulateFunction();
+        constructors[AGGREGATE_COMBINE_FUNCTION] =
+                arg -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
+        constructors[AGGREGATE_EXPORT_FINISH_FUNCTION] =
+                arg -> AggregateAbstractPhysicalRule.AggregateExportFinishFunction.INSTANCE;
+        constructors[AGGREGATE_COUNT_TT_SUPPLIER] =
+                arg -> AggregateAbstractPhysicalRule.AggregateCountTTSupplier.INSTANCE;
+        constructors[AGGREGATE_COUNT_FF_SUPPLIER] =
+                arg -> AggregateAbstractPhysicalRule.AggregateCountFFSupplier.INSTANCE;
+        constructors[AGGREGATE_COUNT_TF_SUPPLIER] =
+                arg -> AggregateAbstractPhysicalRule.AggregateCountTFSupplier.INSTANCE;
+        constructors[AGGREGATE_SUM_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateSumSupplier();
+        constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
 
         return new ArrayDataSerializableFactory(constructors);
     }
