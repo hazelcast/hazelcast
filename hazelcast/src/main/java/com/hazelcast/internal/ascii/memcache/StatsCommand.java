@@ -22,6 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class StatsCommand extends AbstractTextCommand {
@@ -78,7 +79,7 @@ public class StatsCommand extends AbstractTextCommand {
         putLong(DECR_HITS, stats.getDecrHits());
         putLong(DECR_MISSES, stats.getDecrMisses());
         response.put(TextCommandConstants.END);
-        response.flip();
+        upcast(response).flip();
     }
 
     private void putInt(byte[] name, int value) {

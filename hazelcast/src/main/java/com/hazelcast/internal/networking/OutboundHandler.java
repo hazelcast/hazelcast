@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 /**
  * The {@link OutboundHandler} is a {@link ChannelHandler} for outbound
@@ -119,7 +120,7 @@ public abstract class OutboundHandler<S, D> extends ChannelHandler<OutboundHandl
         if (bytes != null) {
             buffer.put(bytes);
         }
-        buffer.flip();
+        upcast(buffer).flip();
         dst = (D) buffer;
     }
 }

@@ -29,6 +29,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 
 /**
@@ -95,7 +96,7 @@ public class SingleProtocolDecoder
 
     @Override
     public HandlerStatus onRead() {
-        src.flip();
+        upcast(src).flip();
 
         try {
             if (src.remaining() < PROTOCOL_LENGTH) {
@@ -113,7 +114,7 @@ public class SingleProtocolDecoder
                     // previous handler may get stuck in a DIRTY loop even if the
                     // channel closes. We observed this behavior in TLSDecoder
                     // before.
-                    src.position(src.limit());
+                    upcast(src).position(src.limit());
                 }
                 return CLEAN;
             }
