@@ -18,6 +18,7 @@
 |---|---|
 |Related Jira| https://hazelcast.atlassian.net/browse/HZ-528       |
 |Related Github issues          | https://github.com/hazelcast/hazelcast/issues/15722, https://github.com/hazelcast/hazelcast/issues/16651, https://github.com/hazelcast/hazelcast-enterprise/issues/3627, https://github.com/hazelcast/hazelcast-enterprise/issues/4342 |
+|Implementation PR|https://github.com/hazelcast/hazelcast/pull/20014|
 |Document Status / Completeness | DESIGN REVIEW|
 |Requirement owner              | _Requirement owner_                                 |
 |Developer(s)                   | _Ufuk Yılmaz_                                       |
@@ -256,6 +257,21 @@ private boolean shouldMergeTo(Address thisAddress, Address targetAddress) {
 }
 ```
 
+In the implementation, we defined a separate abstraction named
+`LocalAddressRegistry` to manage the instance uuid's and corresponding
+addresses. This registry keeps the registration count for the
+registrations made on same uuid and using this registration count
+mechanism, it removes this registry entry only when all connections to
+an instance are closed. For the implementation details see:
+
+ - [LocalAddressRegistry](https://github.com/hazelcast/hazelcast/blob/5.1-BETA-1/hazelcast/src/main/java/com/hazelcast/internal/server/tcp/LocalAddressRegistry.java)
+
+- The new connection registration where we register uuid-address mapping entries: https://github.com/hazelcast/hazelcast/blob/5.1-BETA-1/hazelcast/src/main/java/com/hazelcast/internal/server/tcp/TcpServerConnectionManager.java#L197
+
+- Connection close event callback where address registry entry deregistrations takes place for the member connections: 
+https://github.com/hazelcast/hazelcast/blob/4a73cc5f9b4ebef09c5a8e0067da464b5ef629be/hazelcast/src/main/java/com/hazelcast/internal/server/tcp/TcpServerConnectionManagerBase.java#L284
+
+- For the client connections: https://github.com/hazelcast/hazelcast/blob/4a73cc5f9b4ebef09c5a8e0067da464b5ef629be/hazelcast/src/main/java/com/hazelcast/client/impl/ClientEngineImpl.java#L443
 #### Notes/Questions/Issues
 1) Which address should take precedence while getting from
    `UUID-Set<Address>` map - IP or hostname? It seems like depending on
