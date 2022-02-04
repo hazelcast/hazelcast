@@ -308,7 +308,7 @@ public interface AggregateOperation<A, R> extends Serializable {
                 Objects.requireNonNull(combineFn(), "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
-                new AggregateCombiningAccumulate<>(getAccFn, combineFn), 
+                new AggregateCombiningAccumulate<>(getAccFn, combineFn),
                 combineFn,
                 deductFn(),
                 exportFn(),
@@ -365,8 +365,8 @@ public interface AggregateOperation<A, R> extends Serializable {
      * The given function must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param thenFn the function to apply to the results of {@code export} and {@code finish}
-     *               primitives
+     * @param thenFn  the function to apply to the results of {@code export} and {@code finish}
+     *                primitives
      * @param <R_NEW> the type of the returned aggregate operation's result
      */
     @Nonnull
@@ -403,7 +403,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * @param createFn the {@code create} primitive
      * @param <A>      the type of the accumulator
      * @return the builder object whose static type represents the fact that it
-     *         has just the {@code create} primitive defined
+     * has just the {@code create} primitive defined
      */
     @Nonnull
     static <A> AggregateOperationBuilder<A> withCreate(@Nonnull SupplierEx<A> createFn) {

@@ -23,6 +23,10 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.BASIC_FUNCTIONS_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.BASIC_FUNCTIONS_DS_FACTORY_ID;
 
+/**
+ * Serialization hook for functions
+ */
+@SuppressWarnings("checkstyle:javadocvariable")
 public class FunctionsSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(BASIC_FUNCTIONS_DS_FACTORY, BASIC_FUNCTIONS_DS_FACTORY_ID);
 

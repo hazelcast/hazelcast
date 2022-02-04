@@ -204,7 +204,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateCountTFSupplier implements IdentifiedDataSerializable,
+    public static final class AggregateCountTFSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
         public static final AggregateCountTFSupplier INSTANCE = new AggregateCountTFSupplier();
 
@@ -235,7 +235,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateCountFFSupplier implements IdentifiedDataSerializable,
+    public static final class AggregateCountFFSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
         public static final AggregateCountFFSupplier INSTANCE = new AggregateCountFFSupplier();
 
@@ -266,7 +266,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateCountTTSupplier implements IdentifiedDataSerializable,
+    public static final class AggregateCountTTSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
         public static final AggregateCountTTSupplier INSTANCE = new AggregateCountTTSupplier();
 
@@ -297,7 +297,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateExportFinishFunction implements IdentifiedDataSerializable,
+    public static final class AggregateExportFinishFunction implements IdentifiedDataSerializable,
             FunctionEx<List<SqlAggregation>, JetSqlRow> {
         public static final AggregateExportFinishFunction INSTANCE = new AggregateExportFinishFunction();
 
@@ -332,7 +332,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateCombineFunction implements IdentifiedDataSerializable,
+    public static final class AggregateCombineFunction implements IdentifiedDataSerializable,
             BiConsumerEx<List<SqlAggregation>, List<SqlAggregation>> {
         public static final AggregateCombineFunction INSTANCE = new AggregateCombineFunction();
 
@@ -532,7 +532,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class NullFunction implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+    public static final class NullFunction implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
         public static final NullFunction INSTANCE = new NullFunction();
 
         private NullFunction() {
