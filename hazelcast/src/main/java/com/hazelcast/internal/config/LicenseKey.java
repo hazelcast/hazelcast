@@ -51,7 +51,7 @@ public class LicenseKey {
         String message = "License updated at run time. ";
         if (persistenceEnabled) {
             message += "Dynamic Configuration Persistence is enabled. License will be persisted. "
-                    + "Please create new members with the updated license.";
+                    + "Please ensure new members use the updated license.";
         } else {
             message += "Please make sure to update the license in the persistent configuration "
                     + "to avoid losing the changes on restart. "
