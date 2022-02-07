@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.DistributedObject;
@@ -31,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,6 +45,7 @@ public class ClientProxyDestroyTest {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
+    private HazelcastInstance client2;
 
     @After
     public void tearDown() {
@@ -52,6 +56,7 @@ public class ClientProxyDestroyTest {
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
+        client2 = hazelcastFactory.newHazelcastClient();
     }
 
 
@@ -81,5 +86,17 @@ public class ClientProxyDestroyTest {
         assertFalse(client.getDistributedObjects().contains(clientMap));
         clientMap.put(1, 1);
         assertEquals(1, clientMap.get(1));
+    }
+
+    @Test
+    public void testRemoteProxyDeletionDelegatesToClientEventually() {
+        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        client.getMap("map");
+        assertEquals(1, clientInstanceImpl.getProxyManager().getDistributedObjects().size());
+
+        client2.getMap("map").destroy();
+        assertEquals(0, client2.getDistributedObjects().size());
+
+        assertTrueEventually(() -> assertEquals(0, clientInstanceImpl.getProxyManager().getDistributedObjects().size()));
     }
 }
