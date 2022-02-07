@@ -165,7 +165,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return schema.getField(fieldName).getKind();
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+        }
+        return field.getKind();
     }
 
     @Override
