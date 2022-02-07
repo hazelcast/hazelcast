@@ -230,13 +230,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public byte[] readArrayOInt(@Nonnull String fieldName) {
+    public byte[] readArrayOfInt8(@Nonnull String fieldName) {
         return getArrayOfInt8(fieldName);
     }
 
     @Nullable
     @Override
-    public byte[] readArrayOInt(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
+    public byte[] readArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_INT8) ? getArrayOfInt8(fieldName) : defaultValue;
     }
 
