@@ -75,6 +75,10 @@ public final class MapTableUtils {
     public static List<MapTableIndex> getPartitionedMapIndexes(MapContainer mapContainer, List<TableField> fields) {
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
+        if (mapContainer.getIndexes() == null) {
+            return Collections.emptyList();
+        }
+
         InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
