@@ -482,7 +482,7 @@ public class CompactStreamSerializerTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, "employee", new CompactSerializer<EmployeeDTO>() {
+                .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
                     public EmployeeDTO read(@Nonnull CompactReader in) {
@@ -497,7 +497,10 @@ public class CompactStreamSerializerTest {
                     }
                 });
 
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setConfig(serializationConfig)
+                .setSchemaService(schemaService)
+                .build();
 
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);
