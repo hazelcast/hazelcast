@@ -1240,6 +1240,7 @@
                 <!--
                 Allow access to Operating system metrics:
                    open jdk.management/com.sun.management.internal
+                   export jdk.management/com.ibm.lang.management.internal
 
                 Avoid warnings caused by reflection in
                 SelectorOptimizer:
@@ -1259,6 +1260,7 @@
                     --add-opens java.base/java.lang=${hazelcast.module.name}
                     --add-opens java.management/sun.management=${hazelcast.module.name}
                     --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
+                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
                     --illegal-access=deny
                 </javaModuleArgs>
             </properties>
