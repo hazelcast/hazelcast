@@ -66,7 +66,6 @@ public class MetadataResolver implements IMapResolver {
     private Metadata resolveFromHd(MapContainer container) {
         if (container.getIndexes() == null) {
             return null;
-
         }
 
         InternalIndex[] indexes = container.getIndexes().getIndexes();
