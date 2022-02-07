@@ -32,7 +32,7 @@ final class YamlOrderedMappingImpl implements YamlOrderedMapping {
     private YamlOrderedMappingImpl(YamlMapping wrappedMapping) {
         this.wrappedMapping = wrappedMapping;
 
-        randomAccessChildren = new ArrayList<YamlNode>(wrappedMapping.childCount());
+        randomAccessChildren = new ArrayList<>(wrappedMapping.childCount());
         copyChildren();
     }
 

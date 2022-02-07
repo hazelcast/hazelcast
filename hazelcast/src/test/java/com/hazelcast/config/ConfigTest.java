@@ -138,6 +138,29 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEquals(instanceName, cfg.getInstanceName());
     }
 
+
+    @Test
+    public void testLoadEmptyXmlFromStream(){
+        InputStream emptyXmlFromStream = new ByteArrayInputStream(getSimpleXmlConfigStr().getBytes());
+        String randomPropertyName = randomName();
+        System.setProperty("hz.properties." + randomPropertyName, "123");
+        Config cfg = Config.loadFromStream(emptyXmlFromStream);
+        assertEquals("123", cfg.getProperty(randomPropertyName));
+        assertEquals(new Config().getMapConfig("default").getAsyncBackupCount(),
+                cfg.getMapConfig("default").getAsyncBackupCount());
+    }
+
+    @Test
+    public void testLoadEmptyYamlFromStream(){
+        InputStream emptyYamlStream = new ByteArrayInputStream(getSimpleYamlConfigStr().getBytes());
+        String randomPropertyName = randomName();
+        System.setProperty("hz.properties." + randomPropertyName, "123");
+        Config cfg = Config.loadFromStream(emptyYamlStream);
+        assertEquals("123", cfg.getProperty(randomPropertyName));
+        assertEquals(new Config().getMapConfig("default").getAsyncBackupCount(),
+                cfg.getMapConfig("default").getAsyncBackupCount());
+    }
+
     @Test
     public void testLoadFromStream() {
         InputStream xmlStream = new ByteArrayInputStream(
@@ -299,10 +322,6 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
-        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
-            throw new IllegalArgumentException("provide one or more tag and value pairs");
-        }
-
         StringBuilder sb = new StringBuilder();
         sb.append(HAZELCAST_START_TAG);
 
@@ -314,9 +333,6 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     private static String getSimpleYamlConfigStr(String ...tagAndVal) {
-        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
-            throw new IllegalArgumentException("provide one or more tag and value pairs");
-        }
         StringBuilder sb = new StringBuilder();
         sb.append("hazelcast:\n");
 

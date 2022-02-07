@@ -243,7 +243,8 @@ public final class DomConfigHelper {
                 next = null;
                 for (; index < maximum; index++) {
                     final Node item = wrapped.item(index);
-                    if ((nodeType == 0 || item.getNodeType() == nodeType) && (nodeName == null || nameMatches(item))) {
+                    if ((nodeType == 0 || (item != null && item.getNodeType() == nodeType))
+                            && (nodeName == null || nameMatches(item))) {
                         next = item;
                         return true;
                     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.yaml;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -40,14 +41,13 @@ public final class YamlDomBuilder {
             throw new YamlException("The provided document is not a Map, and rootName is defined.");
         }
 
-        final Object rootNode;
+        Object rootNode;
         if (rootName != null) {
-            rootNode = ((Map) document).get(rootName);
-
-            if (rootNode == null) {
+            if (!((Map) document).containsKey(rootName)) {
                 throw new YamlException("The required " + rootName
                         + " root node couldn't be found in the document root");
             }
+            rootNode = ((Map) document).get(rootName);
         } else {
             rootNode = document;
         }

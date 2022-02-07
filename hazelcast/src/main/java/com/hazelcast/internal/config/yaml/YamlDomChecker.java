@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config.yaml;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNameNodePair;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -43,12 +44,13 @@ public final class YamlDomChecker {
             for (YamlNameNodePair nodePair : ((YamlMapping) node).childrenPairs()) {
                 YamlNode child = nodePair.childNode();
                 if (child == null) {
+                    if (nodePair.nodeName().equals(ConfigSections.HAZELCAST.getName())) {
+                        return;
+                    }
                     String path = YamlUtil.constructPath(node, nodePair.nodeName());
                     reportNullEntryOnConcretePath(path);
                 }
-
-                check(nodePair.childNode());
-
+                check(child);
             }
         } else if (node instanceof YamlSequence) {
             for (YamlNode child : ((YamlSequence) node).children()) {
@@ -57,7 +59,6 @@ public final class YamlDomChecker {
                             + ". Please check if the provided YAML configuration is well-indented and no blocks started without "
                             + "sub-nodes.");
                 }
-
                 check(child);
             }
         } else {
