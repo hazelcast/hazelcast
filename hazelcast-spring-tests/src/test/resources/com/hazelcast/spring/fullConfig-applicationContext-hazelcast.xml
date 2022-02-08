@@ -1071,6 +1071,7 @@
             </hz:jet>
             <hz:local-device name="device0">
                 <hz:base-dir>/dev/devices/tiered_store_device0</hz:base-dir>
+                <hz:capacity unit="MEGABYTES" value="9321"/>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>8</hz:write-io-thread-count>

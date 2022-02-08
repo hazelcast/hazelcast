@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -37,7 +38,11 @@ public class MapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIter
     @Before
     public void init() {
         factory = new TestHazelcastFactory();
-        instanceProxy = factory.newHazelcastInstance(smallInstanceConfig());
+        instanceProxy = factory.newHazelcastInstance(getConfig());
+    }
+
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     @Override

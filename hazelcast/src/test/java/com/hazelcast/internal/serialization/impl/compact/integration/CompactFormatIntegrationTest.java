@@ -199,9 +199,10 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
         restartCluster();
 
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
-        map2.put(1, employeeDTO);
-        assertEquals(employeeDTO, map2.get(1));
+        map.put(1, employeeDTO);
+        assertEquals(employeeDTO, map.get(1));
+        // Perform a query to make sure that the schema is available on the cluster
+        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
     }
 
     protected abstract void restartCluster();

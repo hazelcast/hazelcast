@@ -43,16 +43,6 @@
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>confluent</id>
-            <url>https://packages.confluent.io/maven/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <build>
         <resources>
             <resource>

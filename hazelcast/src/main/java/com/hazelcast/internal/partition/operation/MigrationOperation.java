@@ -28,7 +28,6 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParti
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -122,52 +121,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             getLogger().severe("Error while executing replication operations " + migrationInfo, e);
         } finally {
             afterMigrate();
-        }
-    }
-
-    @Override
-    public void beforeRun() {
-        try {
-            PartitionMigrationEvent event = getMigrationEvent();
-
-            Throwable t = null;
-            for (MigrationAwareService service : getMigrationAwareServices()) {
-                // we need to make sure all beforeMigration() methods are executed
-                try {
-                    service.onBeforeRun(event);
-                } catch (Throwable e) {
-                    getLogger().warning("Error while executing beforeRun()", e);
-                    t = e;
-                }
-            }
-            if (t != null) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        } finally {
-            super.beforeRun();
-        }
-    }
-
-    @Override
-    public void afterRunFinal() {
-        try {
-            PartitionMigrationEvent event = getMigrationEvent();
-
-            Throwable t = null;
-            for (MigrationAwareService service : getMigrationAwareServices()) {
-                // we need to make sure all beforeMigration() methods are executed
-                try {
-                    service.onAfterRunFinal(event);
-                } catch (Throwable e) {
-                    getLogger().warning("Error while executing afterRunFinal()", e);
-                    t = e;
-                }
-            }
-            if (t != null) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        } finally {
-            super.afterRunFinal();
         }
     }
 

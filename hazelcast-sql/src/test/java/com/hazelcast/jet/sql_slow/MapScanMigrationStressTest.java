@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -53,9 +54,10 @@ public class MapScanMigrationStressTest extends JetTestSupport {
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
+    private MutatorThread mutator;
 
     @Before
-    public void before() {
+    public void before() throws InterruptedException {
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[4];
         for (int i = 0; i < instances.length - 1; i++) {
@@ -67,8 +69,18 @@ public class MapScanMigrationStressTest extends JetTestSupport {
     }
 
     @After
-    public void after() {
+    public void after() throws Exception {
+        if (mutator != null) {
+            mutator.terminate();
+            try {
+                mutator.join(10_000);
+            } catch (Throwable e) {
+                fail("Failed to stop the MutatorThread, unrelated tests might be affected");
+            }
+            mutator = null;
+        }
         factory.shutdownAll();
+        factory = null;
     }
 
     @Test(timeout = 600_000)
@@ -81,7 +93,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         }
         map.putAll(temp);
 
-        MutatorThread mutator = new MutatorThread(1000L);
+        mutator = new MutatorThread(1000L);
 
         assertRowsAnyOrder("SELECT __key, Concat_WS('-', __key, this) FROM " + MAP_NAME , expected, mutator);
 
@@ -103,7 +115,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread(2000L);
 
         // Awful performance of such a query, but still a good load for test.
         assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected, mutator);
@@ -126,7 +138,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread(2000L);
         assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected, mutator);
 
         mutator.terminate();

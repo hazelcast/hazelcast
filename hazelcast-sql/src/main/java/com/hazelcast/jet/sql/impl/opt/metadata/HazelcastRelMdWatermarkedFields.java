@@ -139,7 +139,7 @@ public final class HazelcastRelMdWatermarkedFields
     public WatermarkedFields extractWatermarkedFields(Aggregate rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         WatermarkedFields inputWmFields = query.extractWatermarkedFields(rel.getInput());
-        if (rel.getGroupSets().size() != 1) {
+        if (inputWmFields == null || rel.getGroupSets().size() != 1) {
             // not implemented
             return null;
         }
@@ -163,7 +163,7 @@ public final class HazelcastRelMdWatermarkedFields
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         // We currently support only nested-loop join and hash join that iterate the left side and forward
         // WM in it. WM on the right side isn't forwarded.
-        // When we implement stream-to-stream join, we need to revisit this.
+        // TODO: When we implement stream-to-stream join, we need to revisit this.
         return query.extractWatermarkedFields(rel.getLeft());
     }
 

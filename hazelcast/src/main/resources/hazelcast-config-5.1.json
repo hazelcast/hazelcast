@@ -3748,6 +3748,10 @@
             "default": "tiered-store",
             "description": "Device base directory that will be used for tiered-store."
           },
+          "capacity": {
+            "$ref": "#/definitions/MemorySize",
+            "description": "Device capacity, i.e., what is the soft upper bound capacity of the device. The default is 256 gigabytes."
+          },
           "block-size": {
             "type": "integer",
             "minimum": 512,

@@ -43,7 +43,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
 import javax.annotation.Nonnull;
-import java.net.UnknownHostException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
@@ -60,11 +59,7 @@ public final class CustomTypeFactory {
     }
 
     public static Address createAddress(String host, int port) {
-        try {
-            return new Address(host, port);
-        } catch (UnknownHostException e) {
-            throw new HazelcastException(e);
-        }
+        return Address.createUnresolvedAddress(host, port);
     }
 
     public static CacheEventDataImpl createCacheEventData(String name, int cacheEventType, Data dataKey,
