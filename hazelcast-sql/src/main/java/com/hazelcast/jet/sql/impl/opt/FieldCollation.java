@@ -25,12 +25,11 @@ import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 /**
  * Serializable equivalent of {@link RelFieldCollation}.
  */
-public class FieldCollation implements Serializable, IdentifiedDataSerializable {
+public class FieldCollation implements IdentifiedDataSerializable {
     private int index;
     private Direction direction;
     private NullDirection nullDirection;

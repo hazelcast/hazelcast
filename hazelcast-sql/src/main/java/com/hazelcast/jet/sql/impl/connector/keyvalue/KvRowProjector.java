@@ -18,10 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -31,6 +29,7 @@ import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -142,7 +141,7 @@ public class KvRowProjector implements Row {
         return new Supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
     }
 
-    public static class Supplier implements DataSerializable, IdentifiedDataSerializable {
+    public static class Supplier implements IdentifiedDataSerializable {
 
         private QueryPath[] paths;
         private QueryDataType[] types;

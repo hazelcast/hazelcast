@@ -57,16 +57,16 @@ public final class ExpressionUtil {
     public static ComparatorEx<JetSqlRow> comparisonFn(
             @Nonnull List<FieldCollation> fieldCollationList
     ) {
-        return new SqlRowComparatorEx(fieldCollationList);
+        return new SqlRowComparator(fieldCollationList);
     }
 
-    public static class SqlRowComparatorEx implements IdentifiedDataSerializable, ComparatorEx<JetSqlRow> {
+    public static class SqlRowComparator implements IdentifiedDataSerializable, ComparatorEx<JetSqlRow> {
         private List<FieldCollation> fieldCollationList;
 
-        public SqlRowComparatorEx() {
+        public SqlRowComparator() {
         }
 
-        public SqlRowComparatorEx(List<FieldCollation> fieldCollationList) {
+        public SqlRowComparator(List<FieldCollation> fieldCollationList) {
             this.fieldCollationList = fieldCollationList;
         }
 
@@ -145,7 +145,7 @@ public final class ExpressionUtil {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.SQL_ROW_COMPARATOR_EX;
+            return JetSqlSerializerHook.SQL_ROW_COMPARATOR;
         }
     }
 

@@ -53,7 +53,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int ROW_PROJECTOR_PROCESSOR_SUPPLIER = 6;
     public static final int KV_ROW_PROJECTOR_SUPPLIER = 7;
     public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 8;
-    public static final int SQL_ROW_COMPARATOR_EX = 9;
+    public static final int SQL_ROW_COMPARATOR = 9;
     public static final int FIELD_COLLATION = 10;
     public static final int MAYBE_SERIALIZED_FUNCTION = 11;
     public static final int NULL_FUNCTION = 12;
@@ -89,7 +89,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[ROW_PROJECTOR_PROCESSOR_SUPPLIER] = arg -> new RowProjectorProcessorSupplier();
         constructors[KV_ROW_PROJECTOR_SUPPLIER] = arg -> new KvRowProjector.Supplier();
         constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = arg -> new RootResultConsumerSink.Supplier();
-        constructors[SQL_ROW_COMPARATOR_EX] = arg -> new ExpressionUtil.SqlRowComparatorEx();
+        constructors[SQL_ROW_COMPARATOR] = arg -> new ExpressionUtil.SqlRowComparator();
         constructors[FIELD_COLLATION] = arg -> new FieldCollation();
         constructors[MAYBE_SERIALIZED_FUNCTION] = arg -> new AggregateAbstractPhysicalRule.MaybeSerializedFunction();
         constructors[NULL_FUNCTION] = arg -> AggregateAbstractPhysicalRule.NullFunction.INSTANCE;
