@@ -36,7 +36,6 @@ import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -50,11 +49,7 @@ public final class CustomTypeFactory {
     }
 
     public static Address createAddress(String host, int port) {
-        try {
-            return new Address(host, port);
-        } catch (UnknownHostException e) {
-            throw new HazelcastException(e);
-        }
+        return Address.createUnresolvedAddress(host, port);
     }
 
     public static CacheEventDataImpl createCacheEventData(String name, int cacheEventType, Data dataKey,
