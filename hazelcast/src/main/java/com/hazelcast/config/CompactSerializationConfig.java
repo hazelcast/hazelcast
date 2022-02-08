@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;

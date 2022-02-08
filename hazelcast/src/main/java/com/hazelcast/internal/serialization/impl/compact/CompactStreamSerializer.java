@@ -289,7 +289,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             String typeName = registration.element2;
             CompactSerializer serializer = registration.element3;
             serializer = serializer == null ? reflectiveSerializer : serializer;
-            CompactSerializableRegistration serializableRegistration = new CompactSerializableRegistration(clazz, typeName, serializer);
+            CompactSerializableRegistration serializableRegistration
+                    = new CompactSerializableRegistration(clazz, typeName, serializer);
             classToRegistrationMap.put(clazz, serializableRegistration);
             typeNameToRegistrationMap.put(typeName, serializableRegistration);
         }
