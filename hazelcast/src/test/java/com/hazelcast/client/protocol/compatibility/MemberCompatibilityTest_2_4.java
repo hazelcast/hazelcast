@@ -7501,7 +7501,7 @@ public class MemberCompatibilityTest_2_4 {
     @Test
     public void test_MCUpdateConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 846;
-        ClientMessage encoded = MCUpdateConfigCodec.encodeResponse();
+        ClientMessage encoded = MCUpdateConfigCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
