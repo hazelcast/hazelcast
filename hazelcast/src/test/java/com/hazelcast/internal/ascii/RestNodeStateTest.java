@@ -43,6 +43,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.net.ServerSocketFactory;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -78,7 +82,8 @@ public class RestNodeStateTest {
         Config config = smallInstanceConfig().setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setPort(5000).setPortAutoIncrement(false);
+        int port = findUnusedPort();
+        networkConfig.setPort(port).setPortAutoIncrement(false);
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);
         networkConfig.setRestApiConfig(restApiConfig);
         StrategyFactory discoveryStrategyFactory = new StrategyFactory();
@@ -86,16 +91,24 @@ public class RestNodeStateTest {
                 .addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(discoveryStrategyFactory));
         HazelcastTestSupport.spawn(() -> Hazelcast.newHazelcastInstance(config));
         discoveryStrategyFactory.getNodeStartingLatch().await();
-        HTTPCommunicator communicator = new HTTPCommunicator(5000);
+        HTTPCommunicator communicator = new HTTPCommunicator(port);
         assertEquals("\"STARTING\"", communicator.getClusterHealth("/node-state"));
         discoveryStrategyFactory.getTestDoneLatch().countDown();
     }
 
+    private static int findUnusedPort() {
+        try (ServerSocket socket = ServerSocketFactory.getDefault().createServerSocket(0, 1, InetAddress.getByName("localhost"))) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test(timeout = 30000)
     public void testNodeStateAvailable_whenOtherMemberUnavailable() throws Exception {
-        Config config1 = config(5000);
-        Config config2 = config(5001);
+        int port = findUnusedPort();
+        Config config1 = config(findUnusedPort());
+        Config config2 = config(port);
         HazelcastInstance member1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance member2 = Hazelcast.newHazelcastInstance(config2);
         // make member1 fail operations with HazelcastInstanceNotActiveException
@@ -103,7 +116,7 @@ public class RestNodeStateTest {
         setFieldValueReflectively(node1, "state", NodeState.SHUT_DOWN);
         // query member2 about its node state
         // member shouldn't execute any cluster operation and respond immediately
-        HTTPCommunicator communicator = new HTTPCommunicator(5001);
+        HTTPCommunicator communicator = new HTTPCommunicator(port);
         assertEquals("\"ACTIVE\"", communicator.getClusterHealth("/node-state"));
     }
 
