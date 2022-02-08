@@ -96,7 +96,7 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapWithoutPReconfiguredIndexes_addedIndex() throws Exception {
+    public void testMapWithoutPreconfiguredIndexes_addedIndex() throws Exception {
         client.getMap("map-without-indexes").addIndex(new IndexConfig(IndexType.HASH, "second"));
         MCGetMapConfigCodec.ResponseParameters actual = runCommand(client, hz, "map-without-indexes").get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertThat(actual.globalIndexes)
