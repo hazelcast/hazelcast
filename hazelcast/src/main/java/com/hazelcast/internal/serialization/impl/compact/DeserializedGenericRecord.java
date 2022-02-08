@@ -593,11 +593,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
-        char[] array = getArrayOfChar(fieldName);
-        if (array == null || array.length <= index) {
-            return null;
-        }
-        return array[index];
+        throw new UnsupportedOperationException("Compact format does not support reading a char field");
     }
 
     @Nullable

@@ -31,7 +31,8 @@ import java.time.OffsetDateTime;
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
  * @see GenericRecordQueryReader
- * InternalGenericRecord should be constructed in a deserialized manner to gain maximum performance on Query
+ * InternalGenericRecord implementations should not deserialize the passed content completely in their constructor when
+ * they are created to be used in query.
  * @see com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord
  * @see com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord
  * <p>
@@ -45,7 +46,7 @@ public interface InternalGenericRecord extends GenericRecord {
      * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName);
@@ -54,7 +55,7 @@ public interface InternalGenericRecord extends GenericRecord {
      * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
-     *                                         the type of the field does not match the one in the class definition.
+     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName);

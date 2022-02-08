@@ -30,7 +30,9 @@ public interface FieldKindBasedOperations {
 
     int VARIABLE_SIZE = -1;
 
-    Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName);
+    default Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+        return readGenericRecordOrPrimitive(genericRecord, fieldName);
+    }
 
     /**
      * For primitives this will return boxed object.
