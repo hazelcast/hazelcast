@@ -22,6 +22,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeDataSupport;
 import java.lang.management.ManagementFactory;
+import java.nio.Buffer;
 
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
@@ -110,6 +111,19 @@ public final class JVMUtil {
         } while (totalBegin != totalEnd);
 
         return used;
+    }
+
+    /**
+     * Explicit cast to {@link Buffer} parent buffer type. It resolves issues the covariant return types in Java 9+ for
+     * {@link java.nio.ByteBuffer} and {@link java.nio.CharBuffer}. Explicit casting resolves the NoSuchMethodErrors (e.g
+     * java.lang.NoSuchMethodError: java.nio.ByteBuffer.limit(I)Ljava/nio/ByteBuffer) when the project is compiled with newer
+     * Java version and run on Java 8.
+     *
+     * @param buf buffer to cast to the abstract {@link Buffer} parent type
+     * @return the provided buffer
+     */
+    public static Buffer useBuffer(Buffer buf) {
+        return buf;
     }
 
     // not private for testing
