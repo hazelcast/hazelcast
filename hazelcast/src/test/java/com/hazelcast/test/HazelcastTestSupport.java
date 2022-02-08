@@ -1611,7 +1611,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(OsHelper.isWindows());
+        assumeFalse("Skipping on Windows", OsHelper.isWindows());
     }
 
     public static void assumeThatLinuxOS() {
