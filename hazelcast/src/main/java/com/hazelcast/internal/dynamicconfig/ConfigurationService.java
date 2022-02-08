@@ -37,6 +37,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dynamic configurations.
@@ -87,12 +88,27 @@ public interface ConfigurationService {
     ConfigUpdateResult update(Config newConfig);
 
     /**
+     * Starts a configuration process asynchronously. Updates the configuration with the given configuration. Updating means
+     * dynamically changing all the differences dynamically changeable.
+     *
+     * @param configPatch string representation of the config patch, to find any new dynamically changeable sub configs
+     * @return update result which includes added and ignored configurations
+     */
+    UUID updateAsync(String configPatch);
+
+    default UUID updateAsync() {
+        return updateAsync(null);
+    }
+
+    /**
      * Updates the configuration with the declarative configuration. Updating
      * means dynamically changing all the differences dynamically changeable.
      *
      * @return update result which includes added and ignored configurations
      */
-    ConfigUpdateResult update();
+    default ConfigUpdateResult update() {
+        return update(null);
+    }
 
     /**
      * Finds existing Multimap config.
