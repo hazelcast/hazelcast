@@ -143,6 +143,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.SocketInterceptor;
@@ -1428,6 +1429,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount0, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(new MemorySize(9321, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig(deviceName1);
         assertEquals(deviceName1, localDeviceConfig.getName());
@@ -1435,6 +1437,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount1, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
     }
 
     @Test

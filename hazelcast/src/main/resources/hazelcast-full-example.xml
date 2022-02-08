@@ -1150,6 +1150,24 @@
         sub-element.
         - <fsync>:
             Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <tiered-store>:
+        Used to enable Hazelcast's Tiered-Store feature for the map. It is available only in Hazelcast
+        Enterprise. Set its "enabled" to true to enable the feature. By default, it is disabled.
+        It has the following attributes and sub-elements:
+        - enabled:
+            Specifies whether the tiered-store is enabled.
+        - <memory-tier>:
+            Memory-tier of the tiered-store. It has the following sub-element:
+            - <capacity>:
+                Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                You can give the size using its "value" attribute and the unit using its "unit" attribute.
+                Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 megabytes.
+        - <disk-tier>:
+            Defines configuration for the disk tier of the tiered store. It has the following attributes:
+            - enabled:
+                Specifies whether (local) disk should be used as the second memory tier.
+            - device-name:
+                Name of the device for a given disk tier. The default is "default-tiered-store-device".
         * <event-journal>:
         It has the following attributes and sub-elements:
         - enabled:
@@ -1322,6 +1340,12 @@
         <data-persistence enabled="false">
             <fsync>false</fsync>
         </data-persistence>
+        <tiered-store enabled="false">
+            <memory-tier>
+                <capacity unit="MEGABYTES" value="1024"/>
+            </memory-tier>
+            <disk-tier enabled="true" device-name="tiered-store-local-device"/>
+        </tiered-store>
         <event-journal enabled="false">
             <capacity>10000</capacity>
             <time-to-live-seconds>0</time-to-live-seconds>
@@ -2711,6 +2735,37 @@
             </secure-store>
         </encryption-at-rest>
     </persistence>
+
+    <!--
+        ===== HAZELCAST LOCAL-DEVICE CONFIGURATION =====
+
+        Tiered-Store device configuration. Currently, only local disk is supported as a device.
+        Multiple devices can be configured, and a map with enabled tiered-store can reference
+        a given device from its disk-tier. It has the following attributes and sub-elements:
+        - name:
+            Name of the device. The default is "default-tiered-store-device".
+        * <base-dir>:
+            Specifies the directory where the Tiered-Store data will be stored. Its default value is
+            "tiered-store". You can use the default value, or you can specify another folder.
+            This directory will be created automatically if it does not exist.
+        * <capacity>:
+            Device capacity, i.e., what is the soft upper bound capacity of the device.
+            You can give the size using its "value" attribute and the unit using its "unit" attribute.
+            Unit can be bytes, kilobytes, megabytes and gigabytes. The default is 256 gigabytes.
+        * <block-size>:
+            Device block/sector size in bytes. The default is 4096. The minimum is 512.
+        * <read-io-thread-count>:
+            Read IO thread count. The default is 4.
+        * <write-io-thread-count>:
+            Write IO thread count. The default is 4.
+    -->
+    <local-device name="tiered-store-local-device">
+        <base-dir>/mnt/tiered-store</base-dir>
+        <capacity unit="GIGABYTES" value="512"/>
+        <block-size>4096</block-size>
+        <read-io-thread-count>4</read-io-thread-count>
+        <write-io-thread-count>4</write-io-thread-count>
+    </local-device>
 
     <!--
         ===== HAZELCAST DYNAMIC CONFIGURATION CONFIGURATION =====
