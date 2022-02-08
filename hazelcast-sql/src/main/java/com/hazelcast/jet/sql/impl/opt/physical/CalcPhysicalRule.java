@@ -16,20 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.Calc;
-import org.apache.calcite.rel.core.Project;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 final class CalcPhysicalRule extends ConverterRule {
 
-    /** Default configuration. */
+    /**
+     * Default configuration.
+     */
     private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .withConversion(Calc.class, LOGICAL, PHYSICAL, CalcPhysicalRule.class.getSimpleName());
+            .withConversion(CalcLogicalRel.class, LOGICAL, PHYSICAL, CalcPhysicalRule.class.getSimpleName());
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule INSTANCE = new CalcPhysicalRule();
@@ -40,14 +42,13 @@ final class CalcPhysicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        Project project = (Project) rel;
+        CalcLogicalRel calc = (CalcLogicalRel) rel;
 
-        RelNode transformedInput = RelOptRule.convert(project.getInput(), project.getInput().getTraitSet().replace(PHYSICAL));
-        return new ProjectPhysicalRel(
-                project.getCluster(),
-                transformedInput.getTraitSet(),
-                transformedInput,
-                project.getProjects(),
-                project.getRowType());
+        return new CalcPhysicalRel(
+                calc.getCluster(),
+                OptUtils.toPhysicalConvention(calc.getTraitSet()),
+                OptUtils.toPhysicalInput(calc.getInput()),
+                calc.getProgram()
+        );
     }
 }

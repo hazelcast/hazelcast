@@ -31,6 +31,7 @@ public final class LogicalRules {
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
                 CalcIntoScanLogicalRule.INSTANCE,
+                CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
                 SlidingWindowFilterTransposeLogicalRule.STREAMING_FILTER_TRANSPOSE,
 

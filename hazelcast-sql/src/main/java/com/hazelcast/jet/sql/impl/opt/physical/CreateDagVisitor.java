@@ -56,6 +56,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -185,27 +186,32 @@ public class CreateDagVisitor {
                 );
     }
 
-    public Vertex onFilter(FilterPhysicalRel rel) {
-        Expression<Boolean> filter = rel.filter(parameterMetadata);
+    public Vertex onCalc(CalcPhysicalRel rel) {
+        RexProgram program = rel.getProgram();
 
-        Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
-                (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
-        connectInputPreserveCollation(rel, vertex);
-        return vertex;
-    }
+        // TODO [sasha] : program might be trivial [program.isTrivial()], we may just skip vertex creation
 
-    public Vertex onProject(ProjectPhysicalRel rel) {
         List<Expression<?>> projection = rel.projection(parameterMetadata);
 
-        Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
+        Vertex project = dag.newUniqueVertex("Project", mapUsingServiceP(
                 ServiceFactories.nonSharedService(ctx ->
                         ExpressionUtil.projectionFn(projection, ExpressionEvalContext.from(ctx))),
                 (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
         ));
-        connectInputPreserveCollation(rel, vertex);
-        return vertex;
+
+        if (program.getCondition() != null) {
+            Expression<Boolean> filterExpr = rel.filter(parameterMetadata);
+
+            Vertex filter = dag.newUniqueVertex("Filter", filterUsingServiceP(
+                    ServiceFactories.nonSharedService(ctx ->
+                            ExpressionUtil.filterFn(filterExpr, ExpressionEvalContext.from(ctx))),
+                    (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
+            dag.edge(between(filter, project));
+            connectInputPreserveCollation(rel, filter);
+        } else {
+            connectInputPreserveCollation(rel, project);
+        }
+        return project;
     }
 
     public Vertex onSort(SortPhysicalRel rel) {
@@ -437,7 +443,7 @@ public class CreateDagVisitor {
         if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
             SortPhysicalRel sortRel = input instanceof SortPhysicalRel
                     ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
+                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -554,7 +560,7 @@ public class CreateDagVisitor {
     }
 
     private boolean isProjectionWithSort(RelNode input) {
-        return input instanceof ProjectPhysicalRel &&
-                ((ProjectPhysicalRel) input).getInput() instanceof SortPhysicalRel;
+        return input instanceof CalcPhysicalRel &&
+                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }
