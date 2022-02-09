@@ -110,6 +110,8 @@ public class LightMasterContext {
             logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
                     idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
+
+        dag.lowerDownParallelism(nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
@@ -117,8 +119,6 @@ public class LightMasterContext {
                     jobIdString, dotRepresentation);
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
-
-        dag.lowerDownParallelism(nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
 
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
