@@ -4778,6 +4778,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="capacity" minOccurs="0" type="memory-size">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device capacity, i.e., what is the soft upper bound capacity of the device.
+                        The default is 256 gigabytes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="block-size" minOccurs="0" default="4096">
                 <xs:annotation>
                     <xs:documentation>

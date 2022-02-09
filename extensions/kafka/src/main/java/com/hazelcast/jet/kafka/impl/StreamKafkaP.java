@@ -65,9 +65,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
 
     private final Properties properties;
-    private final List<String> topics;
     private final FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn;
     private final EventTimeMapper<? super T> eventTimeMapper;
+    private List<String> topics;
     private int totalParallelism;
 
     private KafkaConsumer<K, V> consumer;
@@ -105,6 +105,15 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
+        List<String> uniqueTopics = topics.stream().distinct().collect(Collectors.toList());
+        if (uniqueTopics.size() != topics.size()) {
+            List<String> topics = new ArrayList<>(this.topics);
+            for (String t : uniqueTopics) {
+                topics.remove(t); // removes only first element
+            }
+            getLogger().warning("Duplicate topics found in topic list: " + topics);
+        }
+        topics = uniqueTopics;
         processorIndex = context.globalProcessorIndex();
         totalParallelism = context.totalParallelism();
         consumer = new KafkaConsumer<>(properties);

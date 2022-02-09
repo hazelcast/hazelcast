@@ -28,40 +28,43 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRING;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldKind.INT8;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.INT16;
 import static com.hazelcast.nio.serialization.FieldKind.INT32;
 import static com.hazelcast.nio.serialization.FieldKind.INT64;
-import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.INT8;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT64;
-import static com.hazelcast.nio.serialization.FieldKind.INT16;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT8;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
@@ -230,13 +233,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
-    public byte[] readArrayOInt(@Nonnull String fieldName) {
+    public byte[] readArrayOfInt8(@Nonnull String fieldName) {
         return getArrayOfInt8(fieldName);
     }
 
     @Nullable
     @Override
-    public byte[] readArrayOInt(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
+    public byte[] readArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] defaultValue) {
         return isFieldExists(fieldName, ARRAY_OF_INT8) ? getArrayOfInt8(fieldName) : defaultValue;
     }
 
@@ -394,7 +397,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Boolean readNullableBoolean(@Nonnull String fieldName, @Nullable Boolean defaultValue) {
-        return isFieldExists(fieldName, BOOLEAN) ? getNullableBoolean(fieldName) : defaultValue;
+        return isFieldExists(fieldName, NULLABLE_BOOLEAN) ? getNullableBoolean(fieldName) : defaultValue;
     }
 
     @Nullable
@@ -406,7 +409,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Nullable
     @Override
     public Byte readNullableInt8(@Nonnull String fieldName, @Nullable Byte defaultValue) {
-        return isFieldExists(fieldName, INT8) ? getNullableInt8(fieldName) : defaultValue;
+        return isFieldExists(fieldName, NULLABLE_INT8) ? getNullableInt8(fieldName) : defaultValue;
     }
 
     @Override
@@ -416,7 +419,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Override
     public Short readNullableInt16(@Nonnull String fieldName, @Nullable Short defaultValue) {
-        return isFieldExists(fieldName, INT16) ? getNullableInt16(fieldName) : defaultValue;
+        return isFieldExists(fieldName, NULLABLE_INT16) ? getNullableInt16(fieldName) : defaultValue;
     }
 
     @Nullable
