@@ -125,8 +125,6 @@ public final class Util {
                     "HZ_JET_RESOURCEUPLOADENABLED=true"
             );
 
-
-
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 

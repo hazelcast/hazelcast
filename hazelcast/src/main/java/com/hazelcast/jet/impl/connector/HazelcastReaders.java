@@ -73,7 +73,6 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
-//        new LocalCacheReader(hzInstance, serializationService, cacheName)
         return new LocalProcessorMetaSupplier<
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
                 new LocalCacheReaderFunction(cacheName)

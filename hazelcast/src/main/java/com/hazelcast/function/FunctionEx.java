@@ -60,6 +60,7 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
      * java.util.function.Function#identity()}.
      * @param <T> the type of the input and output objects to the function
      */
+    @SuppressWarnings("unchecked")
     static <T> FunctionEx<T, T> identity() {
         return Identity.INSTANCE;
     }

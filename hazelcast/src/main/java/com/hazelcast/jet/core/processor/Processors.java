@@ -624,7 +624,7 @@ public final class Processors {
      * group-by-key-and-window operation and applies the provided aggregate
      * operation on groups.
      *
-     * @param keyFns functions that extracts the grouping key from the input item
+     * @param keyFns functions that extract the grouping key from the input item
      * @param timestampFns function that extracts the timestamp from the input item
      * @param timestampKind the kind of timestamp extracted by {@code timestampFns}: either the
      *                      event timestamp or the frame timestamp

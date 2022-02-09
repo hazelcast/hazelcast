@@ -23,16 +23,15 @@ import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.impl.LazyMapEntry;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -41,8 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable,
-        IdentifiedDataSerializable {
+public final class RowProjectorProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
 
     private KvRowProjector.Supplier projectorSupplier;
 

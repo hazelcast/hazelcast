@@ -151,7 +151,7 @@ public final class RootResultConsumerSink implements Processor {
         }
 
         @Override
-        public Processor getEx() throws Exception {
+        public Processor getEx() {
             return new RootResultConsumerSink(limitExpression, offsetExpression);
         }
 

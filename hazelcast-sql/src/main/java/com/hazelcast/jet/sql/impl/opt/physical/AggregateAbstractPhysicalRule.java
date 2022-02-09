@@ -136,7 +136,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
+        public SqlAggregation getEx() {
             return AvgSqlAggregations.from(avgOperandType, distinct);
         }
 
@@ -177,7 +177,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
+        public SqlAggregation getEx() {
             return SumSqlAggregations.from(sumOperandType, distinct);
         }
 
@@ -212,7 +212,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
+        public SqlAggregation getEx() {
             return CountSqlAggregations.from(true, false);
         }
 
@@ -243,7 +243,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
+        public SqlAggregation getEx() {
             return CountSqlAggregations.from(false, false);
         }
 
@@ -274,7 +274,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
+        public SqlAggregation getEx() {
             return CountSqlAggregations.from(true, true);
         }
 
@@ -305,7 +305,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public JetSqlRow applyEx(List<SqlAggregation> aggregations) throws Exception {
+        public JetSqlRow applyEx(List<SqlAggregation> aggregations) {
             Object[] row = new Object[aggregations.size()];
             for (int i = 0; i < aggregations.size(); i++) {
                 row[i] = aggregations.get(i).collect();
@@ -340,7 +340,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public void acceptEx(List<SqlAggregation> lefts, List<SqlAggregation> rights) throws Exception {
+        public void acceptEx(List<SqlAggregation> lefts, List<SqlAggregation> rights) {
             assert lefts.size() == rights.size();
 
             for (int i = 0; i < lefts.size(); i++) {
@@ -379,7 +379,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public void acceptEx(List<SqlAggregation> aggregations, JetSqlRow row) throws Exception {
+        public void acceptEx(List<SqlAggregation> aggregations, JetSqlRow row) {
             for (int i = 0; i < aggregations.size(); i++) {
                 aggregations.get(i).accumulate(valueProviders.get(i).apply(row));
             }
@@ -424,7 +424,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public List<SqlAggregation> getEx() throws Exception {
+        public List<SqlAggregation> getEx() {
             List<SqlAggregation> aggregations = new ArrayList<>(aggregationProviders.size());
             for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
                 aggregations.add(aggregationProvider.get());
@@ -471,7 +471,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public Object applyEx(JetSqlRow row) throws Exception {
+        public Object applyEx(JetSqlRow row) {
             return row.getMaybeSerialized(groupIndex);
         }
 
@@ -507,7 +507,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public Object applyEx(JetSqlRow row) throws Exception {
+        public Object applyEx(JetSqlRow row) {
             return row.get(index);
         }
 
@@ -539,7 +539,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public Object applyEx(JetSqlRow row) throws Exception {
+        public Object applyEx(JetSqlRow row) {
             return null;
         }
 

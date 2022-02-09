@@ -71,7 +71,7 @@ public final class ExpressionUtil {
         }
 
         @Override
-        public int compareEx(JetSqlRow row1, JetSqlRow row2) throws Exception {
+        public int compareEx(JetSqlRow row1, JetSqlRow row2) {
             // Comparison of row values:
             // - Compare the rows according to field collations starting from left to right.
             // - If one of the field comparison returns the non-zero value, then return it.
