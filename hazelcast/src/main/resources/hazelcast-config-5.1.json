@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "hazelcast": {
-      "type": ["object", "null"],
+      "type": "object",
       "additionalProperties": false,
       "properties": {
         "import": {

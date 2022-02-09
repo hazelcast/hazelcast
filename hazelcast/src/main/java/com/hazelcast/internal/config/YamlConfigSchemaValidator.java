@@ -21,7 +21,6 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import org.everit.json.schema.CombinedSchema;
 import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.PrimitiveValidationStrategy;
 import org.everit.json.schema.Schema;
@@ -32,7 +31,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.StreamSupport;
@@ -100,6 +98,14 @@ public class YamlConfigSchemaValidator {
             } else if (new HazelcastProperties(System.getProperties()).getBoolean(ROOT_LEVEL_INDENTATION_CHECK_ENABLED)) {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
+            // Make the root node nullable by skipping validation when the value
+            // of root node is null. When changing the root element in the json schema
+            // to nullable, it significantly reduces the readability of the validation
+            // error messages, so we preferred this workaround.
+            if (rootNode != null && rootNode.child(definedRootNodes.get(0)) == null) {
+                return;
+            }
+
             Validator.builder()
                     .primitiveValidationStrategy(PrimitiveValidationStrategy.LENIENT)
                     .build()
@@ -114,7 +120,8 @@ public class YamlConfigSchemaValidator {
             throw new IllegalArgumentException(hzConfigRootNodeName);
         }
         ObjectSchema schema = (ObjectSchema) SCHEMA;
-        Set<String> forbiddenRootPropNames = getForbiddenRootPropNames(schema, hzConfigRootNodeName);
+        Set<String> forbiddenRootPropNames = ((ObjectSchema) schema.getPropertySchemas()
+                .get(hzConfigRootNodeName)).getPropertySchemas().keySet();
         List<String> misIndentedRootProps = new ArrayList<>();
         rootNode.children().forEach(yamlNode -> {
             if (forbiddenRootPropNames.contains(yamlNode.nodeName())) {
@@ -133,24 +140,6 @@ public class YamlConfigSchemaValidator {
                     .collect(toList());
             throw new SchemaViolationConfigurationException(withNote(causes.size() + " schema violations found"),
                     "#", "#", causes);
-        }
-    }
-
-    private Set<String> getForbiddenRootPropNames(ObjectSchema schema, String hzConfigRootNodeName) {
-        Schema rootSchema = schema.getPropertySchemas().get(hzConfigRootNodeName);
-        if (rootSchema instanceof ObjectSchema) {
-            return ((ObjectSchema) schema.getPropertySchemas()
-                    .get(hzConfigRootNodeName)).getPropertySchemas().keySet();
-        } else if (rootSchema instanceof CombinedSchema) {
-            return ((CombinedSchema) schema.getPropertySchemas()
-                    .get(hzConfigRootNodeName))
-                    .getSubschemas()
-                    .stream()
-                    .filter(subSchema -> subSchema instanceof ObjectSchema)
-                    .findFirst().map(value -> ((ObjectSchema) value).getPropertySchemas().keySet())
-                    .orElse(Collections.emptySet());
-        } else {
-            return Collections.emptySet();
         }
     }
 
