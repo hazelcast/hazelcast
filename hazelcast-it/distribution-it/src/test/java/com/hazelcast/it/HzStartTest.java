@@ -49,7 +49,7 @@ public class HzStartTest extends HazelcastTestSupport {
         // Use custom cluster name to isolate concurrently running tests
         clusterName = this.getClass().getSimpleName() + "_" + UUID.randomUUID();
 
-        ProcessBuilder builder = new ProcessBuilder("bin/hz start")
+        ProcessBuilder builder = new ProcessBuilder("bin/hz", "start")
                 .directory(new File("./target/hazelcast"))
                 .inheritIO();
         builder.environment().put("HZ_CLUSTERNAME", clusterName);
