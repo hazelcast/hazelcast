@@ -30,15 +30,16 @@ import java.util.function.Function;
  * there are a lot of readers and few writers.
  */
 public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K, V> {
-    private final Map<K, V> cache = new ConcurrentHashMap<>();
-    private final Deque<K> keyQueue = new ConcurrentLinkedDeque<>();
+    // Package-private scope for tests
+    final Map<K, V> cache = new ConcurrentHashMap<>();
+    final Deque<K> keyQueue = new ConcurrentLinkedDeque<>();
 
     // This is the main part why this implementation is better than Guava cache. Guava uses ReentrantLock, this
     // implementation uses ReentrantReadWriteLock which allows multiple readers.
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private final int maxCapacity;
-    private final int fastTrackMaxCapacity;
+    private final int fastPathMaxCapacity;
 
     // Need to be volatile - it is used without any other guard
     private volatile int size;
@@ -48,13 +49,13 @@ public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K
     }
 
     /**
-     * @param fastTrackMaxCapacity to which size of the cache we should get values from cache without updating
+     * @param fastPathMaxCapacity to which size of the cache we should get values from cache without updating
      *                             the key queue.
      */
-    public ConcurrentHashMapLruCache(int maxCapacity, int fastTrackMaxCapacity) {
+    public ConcurrentHashMapLruCache(int maxCapacity, int fastPathMaxCapacity) {
         assert maxCapacity > 0;
-        assert fastTrackMaxCapacity < maxCapacity;
-        this.fastTrackMaxCapacity = fastTrackMaxCapacity;
+        assert fastPathMaxCapacity < maxCapacity;
+        this.fastPathMaxCapacity = fastPathMaxCapacity;
         this.maxCapacity = maxCapacity;
     }
 
@@ -63,7 +64,7 @@ public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K
         V valueFromCache = cache.get(key);
 
         if (valueFromCache != null) {
-            if (size <= fastTrackMaxCapacity) { // No need to manipulate Deque
+            if (size <= fastPathMaxCapacity) { // No need to manipulate Deque
                 return valueFromCache;
             }
 
