@@ -92,7 +92,8 @@ public interface ConfigurationService {
      * dynamically changing all the differences dynamically changeable.
      *
      * @param configPatch string representation of the config patch, to find any new dynamically changeable sub configs
-     * @return update result which includes added and ignored configurations
+     * @return the unique identifier of the config update process. The MC Events emitted during the process will have the same
+     * {@link com.hazelcast.internal.management.events.AbstractConfigUpdateEvent#getConfigUpdateProcessId()}.
      */
     UUID updateAsync(String configPatch);
 
