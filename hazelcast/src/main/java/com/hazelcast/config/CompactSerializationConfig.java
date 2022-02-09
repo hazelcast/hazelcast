@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,25 +57,25 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class CompactSerializationConfig {
 
     // Package-private to access those via CompactSerializationConfigAccessor
-    final Map<String, TriTuple<String, String, String>> typeNameToNamedRegistryMap;
-    final Map<String, TriTuple<String, String, String>> classNameToNamedRegistryMap;
+    final Map<String, TriTuple<String, String, String>> typeNameToNamedRegistration;
+    final Map<String, TriTuple<String, String, String>> classNameToNamedRegistration;
+    final Map<String, TriTuple<Class, String, CompactSerializer>> typeNameToRegistration;
+    final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistration;
 
-    private final Map<String, TriTuple<Class, String, CompactSerializer>> typeNameToRegistryMap;
-    private final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistryMap;
     private boolean enabled;
 
     public CompactSerializationConfig() {
-        this.typeNameToRegistryMap = new ConcurrentHashMap<>();
-        this.classToRegistryMap = new ConcurrentHashMap<>();
-        this.typeNameToNamedRegistryMap = new ConcurrentHashMap<>();
-        this.classNameToNamedRegistryMap = new ConcurrentHashMap<>();
+        this.typeNameToRegistration = new ConcurrentHashMap<>();
+        this.classToRegistration = new ConcurrentHashMap<>();
+        this.typeNameToNamedRegistration = new ConcurrentHashMap<>();
+        this.classNameToNamedRegistration = new ConcurrentHashMap<>();
     }
 
     public CompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
-        this.typeNameToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToRegistryMap);
-        this.classToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classToRegistryMap);
-        this.typeNameToNamedRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToNamedRegistryMap);
-        this.classNameToNamedRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classNameToNamedRegistryMap);
+        this.typeNameToRegistration = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToRegistration);
+        this.classToRegistration = new ConcurrentHashMap<>(compactSerializationConfig.classToRegistration);
+        this.typeNameToNamedRegistration = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToNamedRegistration);
+        this.classNameToNamedRegistration = new ConcurrentHashMap<>(compactSerializationConfig.classNameToNamedRegistration);
         this.enabled = compactSerializationConfig.enabled;
     }
 
@@ -118,38 +117,15 @@ public class CompactSerializationConfig {
         return this;
     }
 
-    @Nonnull
-    public Map<String, TriTuple<Class, String, CompactSerializer>> getRegistries() {
-        return Collections.unmodifiableMap(typeNameToRegistryMap);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CompactSerializationConfig that = (CompactSerializationConfig) o;
-        return Objects.equals(typeNameToRegistryMap, that.typeNameToRegistryMap)
-                && Objects.equals(classToRegistryMap, that.classToRegistryMap);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(typeNameToRegistryMap, classToRegistryMap);
-    }
-
     private <T> void register0(Class<T> clazz, String typeName, CompactSerializer<T> explicitSerializer) {
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, explicitSerializer);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = typeNameToRegistryMap.putIfAbsent(typeName, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for the type name " + typeName);
+        TriTuple<Class, String, CompactSerializer> registration = TriTuple.of(clazz, typeName, explicitSerializer);
+        TriTuple<Class, String, CompactSerializer> oldRegistration = typeNameToRegistration.putIfAbsent(typeName, registration);
+        if (oldRegistration != null) {
+            throw new InvalidConfigurationException("Already have a registration for the type name " + typeName);
         }
-        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
+        oldRegistration = classToRegistration.putIfAbsent(clazz, registration);
+        if (oldRegistration != null) {
+            throw new InvalidConfigurationException("Already have a registration for class " + clazz);
         }
     }
 
@@ -176,5 +152,27 @@ public class CompactSerializationConfig {
     public CompactSerializationConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompactSerializationConfig that = (CompactSerializationConfig) o;
+        return enabled == that.enabled
+                && Objects.equals(typeNameToRegistration, that.typeNameToRegistration)
+                && Objects.equals(classToRegistration, that.classToRegistration)
+                && Objects.equals(typeNameToNamedRegistration, that.typeNameToNamedRegistration)
+                && Objects.equals(classNameToNamedRegistration, that.classNameToNamedRegistration);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled, typeNameToRegistration, classToRegistration,
+                typeNameToNamedRegistration, classNameToNamedRegistration);
     }
 }
