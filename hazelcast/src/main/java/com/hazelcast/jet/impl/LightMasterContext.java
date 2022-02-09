@@ -118,6 +118,8 @@ public class LightMasterContext {
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 
+        dag.lowerDownParallelism(nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
+
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;

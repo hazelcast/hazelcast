@@ -435,6 +435,13 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returning if the edge is local.
+     */
+    public boolean isLocal() {
+        return distributedTo == null;
+    }
+
+    /**
      * Declares that the edge is distributed. A non-distributed edge only
      * transfers data within the same member. If the data source running on
      * local member is distributed (produces only a slice of all the data on

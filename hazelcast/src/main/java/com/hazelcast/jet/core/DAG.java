@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -41,9 +42,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
-import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.Collections.emptyList;
@@ -523,6 +524,38 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return builder.toString();
     }
 
+    /**
+     * Setting local parallelism to max(2, sqrt(defaultParallelism)) for vertices with defaultParallelism that are
+     * connected with an edge. It prevents creation of sqr(defaultParallelism) of
+     * {@link com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue} in
+     * JET. Edges that are connecting such a vertices are marked as isolated.
+     */
+    public void lowerDownParallelism(int defaultParallelism) {
+        if (defaultParallelism == 1) {
+            return;
+        }
+
+        Set<Vertex> verticesToChangeParallelism = new HashSet<>();
+        for (Edge edge : edges) {
+            if (shouldChangeLocalParallelism(edge) && edge.isLocal()) {
+                verticesToChangeParallelism.add(edge.getSource());
+                verticesToChangeParallelism.add(edge.getDestination());
+                edge.isolated();
+            }
+        }
+
+        int newParallelism = (int) Math.max(2, Math.sqrt(defaultParallelism));
+        verticesToChangeParallelism.forEach(vertex -> vertex.localParallelism(newParallelism));
+    }
+
+    private boolean shouldChangeLocalParallelism(Edge edge) {
+        if (edge.getDestination() == null) {
+            return false;
+        }
+        return edge.getSource().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT &&
+                edge.getDestination().getLocalParallelism() == LOCAL_PARALLELISM_USE_DEFAULT;
+    }
+
     private String getEdgeLabel(Edge e) {
         List<String> labels = new ArrayList<>();
         if (DISTRIBUTE_TO_ALL.equals(e.getDistributedTo())) {
@@ -564,6 +597,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             Vertex value = in.readObject();
             nameToVertex.put(key, value);
         }
+
 
         int edgeCount = in.readInt();
 
