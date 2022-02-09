@@ -41,7 +41,10 @@
     </properties>
 
     <dependencies>
-
+        <!--
+        Keep empty - don't force any dependencies on each test module.
+        Some test dependencies, like junit and assertj are already inherited from the parent.
+        -->
     </dependencies>
 
     <build>
