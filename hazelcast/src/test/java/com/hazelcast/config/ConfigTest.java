@@ -141,7 +141,7 @@ public class ConfigTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testLoadEmptyXmlFromStream(){
+    public void testLoadEmptyXmlFromStream() {
         InputStream emptyXmlFromStream = new ByteArrayInputStream(getSimpleXmlConfigStr().getBytes());
         String randomPropertyName = randomName();
         System.setProperty("hz.properties." + randomPropertyName, "123");
@@ -152,7 +152,7 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLoadEmptyYamlFromStream(){
+    public void testLoadEmptyYamlFromStream() {
         InputStream emptyYamlStream = new ByteArrayInputStream(getSimpleYamlConfigStr().getBytes());
         String randomPropertyName = randomName();
         System.setProperty("hz.properties." + randomPropertyName, "123");
