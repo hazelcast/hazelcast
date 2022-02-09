@@ -16,15 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.google.common.cache.Cache;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.cache.ConcurrentHashMapLruCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpressionWithType;
@@ -44,7 +45,9 @@ import java.util.Objects;
 
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
     private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
-    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+
+    private ConcurrentHashMapLruCache<String, JsonPath> pathCache;
+    private JsonPath constantPathCache;
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
@@ -61,6 +64,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super(operands, resultType);
         this.onEmpty = onEmpty;
         this.onError = onError;
+        prepareCache();
     }
 
     public static JsonValueFunction<?> create(
@@ -113,7 +117,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
         final JsonPath jsonPath;
         try {
-            jsonPath = pathCache.asMap().computeIfAbsent(path, JsonPathUtil::compile);
+            jsonPath = constantPathCache != null ? constantPathCache :
+                    pathCache.computeIfAbsent(path, JsonPathUtil::compile);
         } catch (JsonPathCompilerException e) {
             // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
             // serializable, they can contain references to parser context and other objects, which are not.
@@ -214,6 +219,15 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
     }
 
+    private void prepareCache() {
+        if (this.operands[1] instanceof ConstantExpression<?>) {
+            String path = (String) this.operands[1].eval(null, null);
+            this.constantPathCache = JsonPathUtil.compile(path);
+        } else {
+            this.pathCache = JsonPathUtil.makePathCache();
+        }
+    }
+
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         super.writeData(out);
@@ -226,6 +240,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         super.readData(in);
         this.onEmpty = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
         this.onError = SqlJsonValueEmptyOrErrorBehavior.valueOf(in.readString());
+        prepareCache();
     }
 
     @Override

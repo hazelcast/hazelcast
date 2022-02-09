@@ -17,8 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.hazelcast.jet.sql.impl.cache.ConcurrentHashMapLruCache;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -36,7 +35,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public final class JsonPathUtil {
-    private static final long CACHE_SIZE = 50L;
+    private static final int CACHE_SIZE = 50;
     private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
         @Override
         public void handleParsingException(Exception e) {
@@ -53,10 +52,8 @@ public final class JsonPathUtil {
 
     private JsonPathUtil() { }
 
-    public static Cache<String, JsonPath> makePathCache() {
-        return CacheBuilder.newBuilder()
-                .maximumSize(CACHE_SIZE)
-                .build();
+    public static ConcurrentHashMapLruCache<String, JsonPath> makePathCache() {
+        return new ConcurrentHashMapLruCache<>(CACHE_SIZE);
     }
 
     public static JsonPath compile(String path) {
