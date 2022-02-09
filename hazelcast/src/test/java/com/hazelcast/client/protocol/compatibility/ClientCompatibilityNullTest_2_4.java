@@ -6622,6 +6622,8 @@ public class ClientCompatibilityNullTest_2_4 {
     @Test
     public void test_MCReloadConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 844;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, MCReloadConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
