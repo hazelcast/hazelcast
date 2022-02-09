@@ -102,7 +102,8 @@ public class YamlConfigSchemaValidator {
             // of root node is null. When changing the root element in the json schema
             // to nullable, it significantly reduces the readability of the validation
             // error messages, so we preferred this workaround.
-            if (rootNode != null && rootNode.child(definedRootNodes.get(0)) == null) {
+            if (rootNode != null && definedRootNodes.get(0).equals(ConfigSections.HAZELCAST.getName())
+                    && rootNode.child(definedRootNodes.get(0)) == null) {
                 return;
             }
 

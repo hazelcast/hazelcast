@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -153,7 +154,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
             root = yamlRootNode;
         }
 
-        YamlDomChecker.check(root);
+        YamlDomChecker.check(root, Collections.singleton(ConfigSections.HAZELCAST.getName()));
 
         Node w3cRootNode = asW3cNode(root);
         replaceVariables(w3cRootNode);

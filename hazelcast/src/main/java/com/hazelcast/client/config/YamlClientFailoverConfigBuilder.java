@@ -38,6 +38,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -159,7 +160,7 @@ public class YamlClientFailoverConfigBuilder
             clientFailoverRoot = yamlRootNode;
         }
 
-        YamlDomChecker.check(clientFailoverRoot);
+        YamlDomChecker.check(clientFailoverRoot, Collections.emptySet());
 
         Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);

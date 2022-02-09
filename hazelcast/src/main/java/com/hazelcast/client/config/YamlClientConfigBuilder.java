@@ -37,6 +37,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
@@ -149,8 +150,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         if (clientRoot == null) {
             clientRoot = yamlRootNode;
         }
-
-        YamlDomChecker.check(clientRoot);
+        YamlDomChecker.check(clientRoot, Collections.emptySet());
 
         Node w3cRootNode = asW3cNode(clientRoot);
         replaceVariables(w3cRootNode);

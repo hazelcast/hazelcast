@@ -329,8 +329,8 @@ public class ConfigTest extends HazelcastTestSupport {
 
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
-            throw new IllegalArgumentException("The number of tags and values parameters is odd." +
-                    " Please provide these tags and values as pairs.");
+            throw new IllegalArgumentException("The number of tags and values parameters is odd."
+                    + " Please provide these tags and values as pairs.");
         }
         StringBuilder sb = new StringBuilder();
         sb.append(HAZELCAST_START_TAG);
@@ -344,8 +344,8 @@ public class ConfigTest extends HazelcastTestSupport {
 
     private static String getSimpleYamlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length % 2 != 0) {
-            throw new IllegalArgumentException("The number of tags and values parameters is odd." +
-                    " Please provide these tags and values as pairs.");
+            throw new IllegalArgumentException("The number of tags and values parameters is odd."
+                    + " Please provide these tags and values as pairs.");
         }
         StringBuilder sb = new StringBuilder();
         sb.append("hazelcast:\n");
