@@ -1078,7 +1078,7 @@ public class SqlAggregateTest extends SqlTestSupport {
 
         assertThatThrownBy(() ->
                 sqlService.execute("SELECT COUNT(name) " +
-                        "FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY ts"))
                 .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                         " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
