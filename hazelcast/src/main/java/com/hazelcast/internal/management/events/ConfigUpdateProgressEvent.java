@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigUpdateProgressEvent extends AbstractIdentifiedEvent {
+public class ConfigUpdateProgressEvent extends AbstractConfigUpdateEvent {
 
     // total number of dynamic changes to be applied to this cluster during this reload
     private final int totalChangeCount;

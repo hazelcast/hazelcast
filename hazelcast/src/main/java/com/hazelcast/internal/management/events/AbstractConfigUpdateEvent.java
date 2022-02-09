@@ -21,21 +21,22 @@ import com.hazelcast.internal.json.JsonObject;
 import java.util.Objects;
 import java.util.UUID;
 
-abstract class AbstractIdentifiedEvent extends AbstractEventBase {
-    private final UUID uuid;
+abstract class AbstractConfigUpdateEvent
+        extends AbstractEventBase {
+    private final UUID configUpdateProcessId;
 
-    protected AbstractIdentifiedEvent(UUID uuid) {
-        this.uuid = Objects.requireNonNull(uuid, "UUID must not be null");
+    protected AbstractConfigUpdateEvent(UUID configUpdateProcessId) {
+        this.configUpdateProcessId = Objects.requireNonNull(configUpdateProcessId, "UUID must not be null");
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public UUID getConfigUpdateProcessId() {
+        return configUpdateProcessId;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.add("uuid", uuid.toString());
+        json.add("configUpdateProcessId", configUpdateProcessId.toString());
         return json;
     }
 }

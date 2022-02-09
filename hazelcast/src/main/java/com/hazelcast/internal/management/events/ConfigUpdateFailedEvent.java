@@ -22,7 +22,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
+public class ConfigUpdateFailedEvent extends AbstractConfigUpdateEvent {
     private final Exception exception;
     private final ConfigNamespace namespace;
     private final ConfigUpdateResult configUpdateResult;

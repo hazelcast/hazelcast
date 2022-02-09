@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigUpdateFinishedEvent extends AbstractIdentifiedEvent {
+public class ConfigUpdateFinishedEvent extends AbstractConfigUpdateEvent {
 
     private final ConfigUpdateResult configUpdateResult;
 
