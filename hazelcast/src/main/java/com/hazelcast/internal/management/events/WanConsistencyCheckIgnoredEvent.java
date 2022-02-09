@@ -30,9 +30,9 @@ public class WanConsistencyCheckIgnoredEvent extends AbstractWanAntiEntropyEvent
         this(UuidUtil.newUnsecureUUID(), wanReplicationName, wanPublisherId, mapName, reason);
     }
 
-    public WanConsistencyCheckIgnoredEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName,
-                                           String reason) {
-        super(uuid, wanReplicationName, wanPublisherId, mapName);
+    public WanConsistencyCheckIgnoredEvent(UUID configUpdateProcessId, String wanReplicationName, String wanPublisherId,
+                                           String mapName, String reason) {
+        super(configUpdateProcessId, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
     }
 

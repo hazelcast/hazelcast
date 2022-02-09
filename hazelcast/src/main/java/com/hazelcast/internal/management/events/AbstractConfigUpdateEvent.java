@@ -26,7 +26,7 @@ abstract class AbstractConfigUpdateEvent
     private final UUID configUpdateProcessId;
 
     protected AbstractConfigUpdateEvent(UUID configUpdateProcessId) {
-        this.configUpdateProcessId = Objects.requireNonNull(configUpdateProcessId, "UUID must not be null");
+        this.configUpdateProcessId = Objects.requireNonNull(configUpdateProcessId, "configUpdateProcessId must not be null");
     }
 
     public UUID getConfigUpdateProcessId() {

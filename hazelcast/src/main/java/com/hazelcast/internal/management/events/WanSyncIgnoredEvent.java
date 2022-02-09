@@ -27,12 +27,12 @@ import static com.hazelcast.internal.management.events.EventMetadata.EventType.W
 public final class WanSyncIgnoredEvent extends AbstractWanAntiEntropyEventBase {
     private final String reason;
 
-    public WanSyncIgnoredEvent(UUID uuid,
+    public WanSyncIgnoredEvent(UUID configUpdateProcessId,
                                String wanReplicationName,
                                String wanPublisherId,
                                String mapName,
                                String reason) {
-        super(uuid, wanReplicationName, wanPublisherId, mapName);
+        super(configUpdateProcessId, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
     }
 

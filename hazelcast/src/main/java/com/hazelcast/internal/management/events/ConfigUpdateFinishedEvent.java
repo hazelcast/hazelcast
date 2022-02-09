@@ -25,8 +25,8 @@ public class ConfigUpdateFinishedEvent extends AbstractConfigUpdateEvent {
 
     private final ConfigUpdateResult configUpdateResult;
 
-    public ConfigUpdateFinishedEvent(UUID uuid, ConfigUpdateResult configUpdateResult) {
-        super(uuid);
+    public ConfigUpdateFinishedEvent(UUID configUpdateProcessId, ConfigUpdateResult configUpdateResult) {
+        super(configUpdateProcessId);
         this.configUpdateResult = configUpdateResult;
     }
 

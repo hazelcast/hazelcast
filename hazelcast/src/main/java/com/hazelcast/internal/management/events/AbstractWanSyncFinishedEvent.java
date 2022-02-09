@@ -25,9 +25,9 @@ abstract class AbstractWanSyncFinishedEvent extends AbstractWanAntiEntropyEventB
     private final long recordsSynced;
     private final long durationSecs;
 
-    AbstractWanSyncFinishedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName, long durationSecs,
-                                 long recordsSynced, int partitionsSynced) {
-        super(uuid, wanReplicationName, wanPublisherId, mapName);
+    AbstractWanSyncFinishedEvent(UUID configUpdateProcessId, String wanReplicationName, String wanPublisherId, String mapName,
+                                 long durationSecs, long recordsSynced, int partitionsSynced) {
+        super(configUpdateProcessId, wanReplicationName, wanPublisherId, mapName);
         this.durationSecs = durationSecs;
         this.recordsSynced = recordsSynced;
         this.partitionsSynced = partitionsSynced;

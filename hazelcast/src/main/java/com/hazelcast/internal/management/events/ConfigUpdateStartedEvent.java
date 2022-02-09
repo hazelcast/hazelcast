@@ -19,8 +19,8 @@ package com.hazelcast.internal.management.events;
 import java.util.UUID;
 
 public class ConfigUpdateStartedEvent extends AbstractConfigUpdateEvent {
-    public ConfigUpdateStartedEvent(UUID uuid) {
-        super(uuid);
+    public ConfigUpdateStartedEvent(UUID configUpdateProcessId) {
+        super(configUpdateProcessId);
     }
 
     @Override

@@ -23,8 +23,8 @@ import java.util.UUID;
 public abstract class AbstractWanConfigurationEventBase extends AbstractConfigUpdateEvent {
     private final String wanConfigName;
 
-    protected AbstractWanConfigurationEventBase(UUID uuid, String wanConfigName) {
-        super(uuid);
+    protected AbstractWanConfigurationEventBase(UUID configUpdateProcessId, String wanConfigName) {
+        super(configUpdateProcessId);
         this.wanConfigName = wanConfigName;
     }
 

@@ -31,8 +31,9 @@ public class ConfigUpdateProgressEvent extends AbstractConfigUpdateEvent {
 
     private final ConfigNamespace namespace;
 
-    public ConfigUpdateProgressEvent(UUID uuid, int totalChangeCount, int appliedChangeCount, ConfigNamespace namespace) {
-        super(uuid);
+    public ConfigUpdateProgressEvent(UUID configUpdateProcessId, int totalChangeCount, int appliedChangeCount,
+                                     ConfigNamespace namespace) {
+        super(configUpdateProcessId);
         this.totalChangeCount = totalChangeCount;
         this.appliedChangeCount = appliedChangeCount;
         this.namespace = namespace;
