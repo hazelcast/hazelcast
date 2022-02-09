@@ -85,7 +85,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanConsistencyCheckIgnoredEvent);
         WanConsistencyCheckIgnoredEvent checkIgnoredEvent = (WanConsistencyCheckIgnoredEvent) event;
-        assertNotNull(checkIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(checkIgnoredEvent.getUuid());
         assertEquals(MAP_NAME, checkIgnoredEvent.getMapName());
     }
 
@@ -114,7 +114,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanConsistencyCheckIgnoredEvent);
         WanConsistencyCheckIgnoredEvent checkIgnoredEvent = (WanConsistencyCheckIgnoredEvent) event;
-        assertNotNull(checkIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(checkIgnoredEvent.getUuid());
         assertNull(result.getString("uuid", null));
         assertEquals(MAP_NAME, checkIgnoredEvent.getMapName());
         assertEquals(WAN_CONSISTENCY_CHECK_IGNORED, checkIgnoredEvent.getType());
@@ -142,7 +142,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanSyncIgnoredEvent);
         WanSyncIgnoredEvent syncIgnoredEvent = (WanSyncIgnoredEvent) event;
-        assertNotNull(syncIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(syncIgnoredEvent.getUuid());
         assertEquals(MAP_NAME, syncIgnoredEvent.getMapName());
     }
 
@@ -171,7 +171,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanSyncIgnoredEvent);
         WanSyncIgnoredEvent syncIgnoredEvent = (WanSyncIgnoredEvent) event;
-        assertNotNull(syncIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(syncIgnoredEvent.getUuid());
         assertNull(result.getString("uuid", null));
         assertEquals(MAP_NAME, syncIgnoredEvent.getMapName());
         assertEquals(WAN_SYNC_IGNORED, syncIgnoredEvent.getType());
@@ -199,7 +199,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanSyncIgnoredEvent);
         WanSyncIgnoredEvent syncIgnoredEvent = (WanSyncIgnoredEvent) event;
-        assertNotNull(syncIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(syncIgnoredEvent.getUuid());
         assertNull(syncIgnoredEvent.getMapName());
     }
 
@@ -228,7 +228,7 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         Event event = events.get(0);
         assertTrue(event instanceof WanSyncIgnoredEvent);
         WanSyncIgnoredEvent syncIgnoredEvent = (WanSyncIgnoredEvent) event;
-        assertNotNull(syncIgnoredEvent.getConfigUpdateProcessId());
+        assertNotNull(syncIgnoredEvent.getUuid());
         assertNull(result.getString("uuid", null));
         assertNull(syncIgnoredEvent.getMapName());
         assertEquals(WAN_SYNC_IGNORED, syncIgnoredEvent.getType());
