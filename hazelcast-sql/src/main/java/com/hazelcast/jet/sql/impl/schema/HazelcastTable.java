@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rel.RelCollation;
@@ -32,12 +33,14 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -84,8 +87,8 @@ public class HazelcastTable extends AbstractTable {
 
     private final Table target;
     private final Statistic statistic;
-    private final List<Integer> projects;
     private final RexNode filter;
+    private List<RexNode> projects;
 
     private RelDataType rowType;
     private Set<String> hiddenFieldNames;
@@ -94,15 +97,25 @@ public class HazelcastTable extends AbstractTable {
         this(target, statistic, null, null);
     }
 
-    private HazelcastTable(Table target, Statistic statistic, List<Integer> projects, RexNode filter) {
+    private HazelcastTable(Table target, Statistic statistic, @Nullable List<RexNode> projects, @Nullable RexNode filter) {
         this.target = target;
         this.statistic = statistic;
         this.projects = projects;
         this.filter = filter;
     }
 
-    public HazelcastTable withProject(List<Integer> projects) {
-        return new HazelcastTable(target, statistic, projects, filter);
+    private HazelcastTable(
+            Table target,
+            Statistic statistic,
+            @Nonnull List<RexNode> projects,
+            RelDataType relDataType,
+            @Nullable RexNode filter) {
+        this(target, statistic, projects, filter);
+        rowType = relDataType;
+    }
+
+    public HazelcastTable withProject(List<RexNode> projects, RelDataType relDataType) {
+        return new HazelcastTable(target, statistic, projects, relDataType, filter);
     }
 
     public HazelcastTable withFilter(RexNode filter) {
@@ -110,19 +123,18 @@ public class HazelcastTable extends AbstractTable {
     }
 
     @Nonnull
-    public List<Integer> getProjects() {
+    public List<RexNode> getProjects() {
+        // produce default projects and row type
         if (projects == null) {
             int fieldCount = target.getFieldCount();
-
-            List<Integer> res = new ArrayList<>(fieldCount);
-
+            projects = new ArrayList<>(fieldCount);
             for (int i = 0; i < fieldCount; i++) {
-                res.add(i);
+                TableField field = target.getField(i);
+                RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                projects.add(new RexInputRef(i, type));
             }
-
-            return res;
+            rowType = computeDefaultRowType(projects);
         }
-
         return projects;
     }
 
@@ -141,29 +153,31 @@ public class HazelcastTable extends AbstractTable {
             return rowType;
         }
 
+        List<RexNode> projects = getProjects();
+
+        // default row type was computed, the projection references only table fields
+        if (rowType != null) {
+            return rowType;
+        }
+
+        // projection contains expressions, need to compute
         hiddenFieldNames = new HashSet<>();
-
-        List<Integer> projects = getProjects();
-
         List<RelDataTypeField> convertedFields = new ArrayList<>(projects.size());
 
-        for (Integer project : projects) {
-            TableField field = target.getField(project);
-
-            String fieldName = field.getName();
-
-            RelDataType relType = OptUtils.convert(field, typeFactory);
-
-            RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), relType);
-            convertedFields.add(convertedField);
-
-            if (field.isHidden()) {
-                hiddenFieldNames.add(fieldName);
+        int idx = 0;
+        for (RexNode project : projects) {
+            RelDataTypeField convertedField;
+            if (project instanceof RexInputRef) {
+                TableField field = target.getField(((RexInputRef) project).getIndex());
+                convertedField = new RelDataTypeFieldImpl(field.getName(), idx, project.getType());
+            } else {
+                convertedField = new RelDataTypeFieldImpl("$" + idx, idx, project.getType());
             }
+            convertedFields.add(convertedField);
+            ++idx;
         }
 
         rowType = new RelRecordType(StructKind.PEEK_FIELDS, convertedFields, false);
-
         return rowType;
     }
 
@@ -173,9 +187,7 @@ public class HazelcastTable extends AbstractTable {
             return statistic;
         } else {
             Double selectivity = RelMdUtil.guessSelectivity(filter);
-
             Double rowCount = CostUtils.adjustFilteredRowCount(statistic.getRowCount(), selectivity);
-
             return new AdjustedStatistic(rowCount);
         }
     }
@@ -213,6 +225,21 @@ public class HazelcastTable extends AbstractTable {
         }
 
         return res.toString();
+    }
+
+    private RelDataType computeDefaultRowType(List<RexNode> projects) {
+        hiddenFieldNames = new HashSet<>();
+        int fieldCount = target.getFieldCount();
+        List<RelDataTypeField> typeFields = new ArrayList<>(fieldCount);
+        for (int i = 0; i < fieldCount; i++) {
+            TableField field = target.getField(i);
+            RelDataTypeField fieldType = new RelDataTypeFieldImpl(field.getName(), i, projects.get(i).getType());
+            typeFields.add(fieldType);
+            if (field.isHidden()) {
+                hiddenFieldNames.add(field.getName());
+            }
+        }
+        return new RelRecordType(StructKind.PEEK_FIELDS, typeFields, false);
     }
 
     /**

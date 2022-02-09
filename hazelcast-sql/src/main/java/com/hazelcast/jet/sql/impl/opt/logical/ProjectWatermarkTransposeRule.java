@@ -21,6 +21,7 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.rules.TransformationRule;
+import org.apache.calcite.tools.RelBuilder;
 
 import java.util.Collections;
 
@@ -47,20 +48,18 @@ public class ProjectWatermarkTransposeRule extends RelRule<Config> implements Tr
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        final WatermarkLogicalRel wm = call.rel(0);
+        final WatermarkLogicalRel wmRel = call.rel(0);
         final ProjectLogicalRel project = call.rel(1);
 
-        final WatermarkLogicalRel newWatermarkRel = (WatermarkLogicalRel) wm.copy(
-                wm.getTraitSet(),
+        final WatermarkLogicalRel newWatermarkRel = (WatermarkLogicalRel) wmRel.copy(
+                wmRel.getTraitSet(),
                 Collections.singletonList(project.getInput())
         );
 
-        final ProjectLogicalRel newProject = (ProjectLogicalRel) project.copy(
-                project.getTraitSet(),
-                newWatermarkRel,
-                project.getProjects(),
-                project.getRowType()
-        );
-        call.transformTo(newProject);
+        final RelBuilder relBuilder = call.builder();
+
+        relBuilder.push(newWatermarkRel).project(project.getProjects(), project.getRowType().getFieldNames());
+
+        call.transformTo(relBuilder.build());
     }
 }

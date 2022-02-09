@@ -117,7 +117,7 @@ final class SelectByKeyMapLogicalRules {
 
     /**
      * Inline the projection from {@code table} into the projection given in {@code projects}.
-     *
+     * <p>
      * For example, the table's projection is {@code [4, 5]} (meaning
      * the table outputs fifth and sixth fields from the underlying
      * table), and {@code projects} is {@code [$1 + 5]} (meaning 5 added
@@ -129,11 +129,12 @@ final class SelectByKeyMapLogicalRules {
         assert hzTable != null;
         List<RelDataTypeField> fieldList = input.getRowType().getFieldList();
 
-        RexShuttle shuttle =  new RexShuttle() {
+        RexShuttle shuttle = new RexShuttle() {
             @Override
             public RexNode visitInputRef(RexInputRef ref) {
                 int index = ref.getIndex();
-                return new RexInputRef(hzTable.getProjects().get(index), fieldList.get(index).getType());
+                int newIndex = ((RexInputRef) hzTable.getProjects().get(index)).getIndex();
+                return new RexInputRef(newIndex, fieldList.get(index).getType());
             }
         };
 

@@ -26,8 +26,10 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -86,7 +88,12 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
     private int[] getKeysFromRightScan() {
         HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
-        List<Integer> projects = table.getProjects();
+        // TODO: naive approach, double check it.
+        List<Integer> projects = new ArrayList<>();
+        for (RexNode project : table.getProjects()) {
+            assert project instanceof RexInputRef;
+            projects.add(((RexInputRef) project).getIndex());
+        }
         int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
         return rightKeys;
     }

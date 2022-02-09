@@ -56,7 +56,8 @@ public final class LogicalRules {
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
-                ProjectWatermarkTransposeRule.WATERMARK_PROJECT_TRANSPOSE,
+//                WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE_OVER_PROJECT,
+//                ProjectWatermarkTransposeRule.WATERMARK_PROJECT_TRANSPOSE,
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules

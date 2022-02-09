@@ -47,13 +47,12 @@ public class ProjectWatermarkTransposeRuleTest extends SqlTestSupport {
                 + ", 'valueFormat'='json'"
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ")");
-        sqlService.execute("CREATE VIEW IF NOT EXISTS v AS " +
-                "SELECT JSON_VALUE(this, '$.timestamp' RETURNING BIGINT) AS ts FROM trades");
 
         final String sql = "SELECT window_start, window_end, SUM(ts) FROM " +
                 "TABLE(HOP(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(v), DESCRIPTOR(ts), 2))), " +
-                "DESCRIPTOR(ts), 4, 2)) " +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(" +
+                "    (SELECT JSON_VALUE(this, '$.timestamp' RETURNING BIGINT) AS ts FROM trades), DESCRIPTOR(ts), 2)" +
+                ")), DESCRIPTOR(ts), 4, 2)) " +
                 "GROUP BY window_start, window_end";
 
 

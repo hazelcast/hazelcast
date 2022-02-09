@@ -36,6 +36,7 @@ import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.Util;
@@ -111,17 +112,36 @@ public final class HazelcastRelMdWatermarkedFields
         for (int i = 0; i < rel.getProjects().size(); i++) {
             RexNode project = rel.getProjects().get(i);
             RexNode project2 = unwrapAsOperatorOperand(project);
-            // TODO [viliam] we currently handle only direct input references. We should handle also monotonic
-            //  transformations of input references.
-            if (project2 instanceof RexInputRef) {
-                int index = ((RexInputRef) project2).getIndex();
-                if (inputWmFields.getPropertiesByIndex().containsKey(index)) {
-                    outputWmFields.put(i, project);
-                }
-            }
+            // TODO [viliam] we currently handle only direct input references.
+            //  We should handle also monotonic transformations of input references.
+            extractIndices(project, project2, i, inputWmFields, outputWmFields);
         }
 
         return new WatermarkedFields(outputWmFields);
+    }
+
+    private void extractIndices(
+            RexNode project,
+            RexNode unwrapped,
+            final int idx,
+            WatermarkedFields inputWmFields,
+            Map<Integer, RexNode> outputWmFields) {
+        if (unwrapped instanceof RexCall) {
+            RexCall call = (RexCall) unwrapped;
+            int i = 0;
+            for (RexNode operand : call.getOperands()) {
+                if (inputWmFields.getPropertiesByIndex().containsKey(i)) {
+                    outputWmFields.put(i, operand);
+                }
+                ++i;
+//                extractIndices(project, operand, idx, inputWmFields, outputWmFields);
+            }
+        } else if (unwrapped instanceof RexInputRef) {
+            int index = ((RexInputRef) unwrapped).getIndex();
+            if (inputWmFields.getPropertiesByIndex().containsKey(index)) {
+                outputWmFields.put(idx, project);
+            }
+        }
     }
 
     @SuppressWarnings("unused")

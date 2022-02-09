@@ -25,6 +25,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.mapping.Mapping;
@@ -115,9 +116,17 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
      * @return New condition that is going to be pushed down to a {@code TableScan}.
      */
     private static RexNode remapCondition(HazelcastTable originalHazelcastTable, RexNode originalFilterCondition) {
-        List<Integer> projects = originalHazelcastTable.getProjects();
+        List<RexNode> projects = originalHazelcastTable.getProjects();
+        List<Integer> numericProjects = new ArrayList<>(projects.size());
+        for (RexNode project : projects) {
+            if (project instanceof RexInputRef) {
+                numericProjects.add(((RexInputRef) project).getIndex());
+            }
+        }
 
-        Mapping mapping = Mappings.source(projects, originalHazelcastTable.getOriginalFieldCount());
+        Mapping mapping = Mappings.source(numericProjects, originalHazelcastTable.getOriginalFieldCount());
+
+        System.err.println(mapping);
 
         return RexUtil.apply(mapping, originalFilterCondition);
     }
