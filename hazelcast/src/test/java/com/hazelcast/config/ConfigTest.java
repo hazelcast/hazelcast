@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -301,6 +302,11 @@ public class ConfigTest extends HazelcastTestSupport {
             @Override
             public boolean isLocal() {
                 return false;
+            }
+
+            @Override
+            public Capacity getCapacity() {
+                return LocalDeviceConfig.DEFAULT_CAPACITY;
             }
 
             @Override

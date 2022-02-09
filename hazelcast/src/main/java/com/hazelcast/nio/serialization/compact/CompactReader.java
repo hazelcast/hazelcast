@@ -414,7 +414,7 @@ public interface CompactReader {
      *                                         with the one defined in the schema.
      */
     @Nullable
-    byte[] readArrayOInt(@Nonnull String fieldName);
+    byte[] readArrayOfInt8(@Nonnull String fieldName);
 
     /**
      * Reads an array of 8-bit two's complement signed integers or returns the default value.
@@ -426,7 +426,7 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     @Nullable
-    byte[] readArrayOInt(@Nonnull String fieldName, @Nullable byte[] defaultValue);
+    byte[] readArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] defaultValue);
 
     /**
      * Reads an array of 16-bit two's complement signed integers.

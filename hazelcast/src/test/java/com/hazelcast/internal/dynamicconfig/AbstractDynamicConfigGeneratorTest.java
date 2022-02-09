@@ -80,7 +80,7 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
@@ -1097,7 +1097,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
     private static TieredStoreConfig tieredStoreConfig() {
         MemoryTierConfig memTierConfig = new MemoryTierConfig()
-                .setCapacity(new MemorySize(13401L, MemoryUnit.MEGABYTES));
+                .setCapacity(Capacity.of(13401L, MemoryUnit.MEGABYTES));
 
         DiskTierConfig diskTierConfig = new DiskTierConfig()
                 .setEnabled(true)

@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,9 +36,9 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
     /**
      * Default capacity. It is 256 MB.
      */
-    public static final MemorySize DEFAULT_CAPACITY = new MemorySize(256, MemoryUnit.MEGABYTES);
+    public static final Capacity DEFAULT_CAPACITY = Capacity.of(256, MemoryUnit.MEGABYTES);
 
-    private MemorySize capacity = DEFAULT_CAPACITY;
+    private Capacity capacity = DEFAULT_CAPACITY;
 
     public MemoryTierConfig() {
 
@@ -53,7 +53,7 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
      *
      * @return memory tier capacity.
      */
-    public MemorySize getCapacity() {
+    public Capacity getCapacity() {
         return capacity;
     }
 
@@ -63,7 +63,7 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
      * @param capacity capacity.
      * @return this MemoryTierConfig
      */
-    public MemoryTierConfig setCapacity(MemorySize capacity) {
+    public MemoryTierConfig setCapacity(Capacity capacity) {
         this.capacity = capacity;
         return this;
     }
@@ -102,7 +102,7 @@ public class MemoryTierConfig implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        capacity = new MemorySize(in.readLong(), MemoryUnit.valueOf(in.readString()));
+        capacity = Capacity.of(in.readLong(), MemoryUnit.valueOf(in.readString()));
     }
 
     @Override
