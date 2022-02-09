@@ -20,18 +20,18 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class ExpressionUtil {
@@ -39,20 +39,20 @@ public final class ExpressionUtil {
     private ExpressionUtil() {
     }
 
-    public static PredicateEx<Object[]> filterFn(
+    public static PredicateEx<JetSqlRow> filterFn(
             @Nonnull Expression<Boolean> predicate,
             @Nonnull ExpressionEvalContext context
     ) {
-        return values -> {
-            Row row = new HeapRow(values);
+        return row0 -> {
+            Row row = row0.getRow();
             return Boolean.TRUE.equals(evaluate(predicate, row, context));
         };
     }
 
-    public static ComparatorEx<Object[]> comparisonFn(
+    public static ComparatorEx<JetSqlRow> comparisonFn(
             @Nonnull List<FieldCollation> fieldCollationList
     ) {
-        return (Object[] row1, Object[] row2) -> {
+        return (JetSqlRow row1, JetSqlRow row2) -> {
             // Comparison of row values:
             // - Compare the rows according to field collations starting from left to right.
             // - If one of the field comparison returns the non-zero value, then return it.
@@ -70,8 +70,8 @@ public final class ExpressionUtil {
                 //   Return the reverted result if DESCENDING
                 int index = fieldCollation.getIndex();
 
-                Comparable o1 = (Comparable) row1[index];
-                Object o2 = row2[index];
+                Comparable o1 = (Comparable) row1.get(index);
+                Object o2 = row2.get(index);
 
                 Direction direction = fieldCollation.getDirection();
 
@@ -103,17 +103,17 @@ public final class ExpressionUtil {
         };
     }
 
-    public static FunctionEx<Object[], Object[]> projectionFn(
+    public static FunctionEx<JetSqlRow, JetSqlRow> projectionFn(
             @Nonnull List<Expression<?>> projections,
             @Nonnull ExpressionEvalContext context
     ) {
-        return values -> {
-            Row row = new HeapRow(values);
+        return row0 -> {
+            Row row = row0.getRow();
             Object[] result = new Object[projections.size()];
             for (int i = 0; i < projections.size(); i++) {
                 result[i] = evaluate(projections.get(i), row, context);
             }
-            return result;
+            return new JetSqlRow(context.getSerializationService(), result);
         };
     }
 
@@ -123,52 +123,34 @@ public final class ExpressionUtil {
      * joined row; returns {@code null} if the predicate didn't pass.
      */
     @Nullable
-    public static Object[] join(
-            @Nonnull Object[] leftRow,
-            @Nonnull Object[] rightRow,
+    public static JetSqlRow join(
+            @Nonnull JetSqlRow leftRow,
+            @Nonnull JetSqlRow rightRow,
             @Nonnull Expression<Boolean> predicate,
             @Nonnull ExpressionEvalContext context
     ) {
-        Object[] joined = Arrays.copyOf(leftRow, leftRow.length + rightRow.length);
-        System.arraycopy(rightRow, 0, joined, leftRow.length, rightRow.length);
+        Object[] joined = Arrays.copyOf(leftRow.getValues(), leftRow.getFieldCount() + rightRow.getFieldCount());
+        System.arraycopy(rightRow.getValues(), 0, joined, leftRow.getFieldCount(), rightRow.getFieldCount());
 
-        Row row = new HeapRow(joined);
-        return Boolean.TRUE.equals(evaluate(predicate, row, context)) ? joined : null;
+        JetSqlRow result = new JetSqlRow(context.getSerializationService(), joined);
+        Row row = result.getRow();
+        return Boolean.TRUE.equals(evaluate(predicate, row, context)) ? result : null;
     }
 
     /**
      * Evaluate projection&predicate for multiple rows.
      */
     @Nonnull
-    public static List<Object[]> evaluate(
+    public static List<JetSqlRow> evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nullable List<Expression<?>> projection,
-            @Nonnull List<Object[]> rows,
-            @Nonnull ExpressionEvalContext context
-    ) {
-        List<Object[]> evaluatedRows = new ArrayList<>();
-        for (Object[] values : rows) {
-            Object[] transformed = evaluate(predicate, projection, values, context);
-            if (transformed != null) {
-                evaluatedRows.add(transformed);
-            }
-        }
-        return evaluatedRows;
-    }
-
-    /**
-     * Evaluate projection&predicate for multiple rows.
-     */
-    @Nonnull
-    public static Stream<Object[]> evaluate(
-            @Nullable Expression<Boolean> predicate,
-            @Nullable List<Expression<?>> projection,
-            @Nonnull Stream<Object[]> rows,
+            @Nonnull Stream<JetSqlRow> rows,
             @Nonnull ExpressionEvalContext context
     ) {
         return rows
                 .map(row -> evaluate(predicate, projection, row, context))
-                .filter(Objects::nonNull);
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -176,13 +158,13 @@ public final class ExpressionUtil {
      * the row is rejected by the predicate.
      */
     @Nullable
-    public static Object[] evaluate(
+    public static JetSqlRow evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nullable List<Expression<?>> projection,
-            @Nonnull Object[] values,
+            @Nonnull JetSqlRow values,
             @Nonnull ExpressionEvalContext context
     ) {
-        Row row = new HeapRow(values);
+        Row row = values.getRow();
 
         if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
             return null;
@@ -196,7 +178,7 @@ public final class ExpressionUtil {
         for (int i = 0; i < projection.size(); i++) {
             result[i] = evaluate(projection.get(i), row, context);
         }
-        return result;
+        return new JetSqlRow(context.getSerializationService(), result);
     }
 
     /**
@@ -204,7 +186,7 @@ public final class ExpressionUtil {
      * the row is rejected by the predicate.
      */
     @Nullable
-    public static Object[] evaluate(
+    public static JetSqlRow evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nonnull Row row,
@@ -218,14 +200,14 @@ public final class ExpressionUtil {
         for (int i = 0; i < projection.size(); i++) {
             result[i] = evaluate(projection.get(i), row, context);
         }
-        return result;
+        return new JetSqlRow(context.getSerializationService(), result);
     }
 
-    public static <T> T evaluate(
-            @Nonnull Expression<T> expression,
+    public static Object evaluate(
+            @Nonnull Expression<?> expression,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
-        return expression.eval(row, context);
+        return expression.evalTop(row, context);
     }
 }

@@ -26,12 +26,12 @@ public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
     @Nonnull
     @Override
     public EmployeeDTO read(@Nonnull CompactReader in) {
-        return new EmployeeDTO(in.readInt("age"), in.readLong("id"));
+        return new EmployeeDTO(in.readInt32("age"), in.readInt64("id"));
     }
 
     @Override
     public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-        out.writeInt("age", object.getAge());
-        out.writeLong("id", object.getId());
+        out.writeInt32("age", object.getAge());
+        out.writeInt64("id", object.getId());
     }
 }

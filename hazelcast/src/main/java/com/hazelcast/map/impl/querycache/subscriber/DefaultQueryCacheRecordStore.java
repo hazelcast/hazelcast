@@ -53,25 +53,27 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private final QueryCacheRecordHashMap cache;
     private final EvictionOperator evictionOperator;
     private final QueryCacheRecordFactory recordFactory;
-    private final InternalSerializationService serializationService;
+    private final InternalSerializationService ss;
     private final Extractors extractors;
     private final int maxCapacity;
+    private final boolean serializeKeys;
 
-    DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
+    DefaultQueryCacheRecordStore(InternalSerializationService ss,
                                  Indexes indexes,
                                  QueryCacheConfig config, EvictionListener listener,
                                  Extractors extractors) {
-        this.cache = new QueryCacheRecordHashMap(serializationService, DEFAULT_CACHE_CAPACITY);
-        this.serializationService = serializationService;
+        this.cache = new QueryCacheRecordHashMap(ss, DEFAULT_CACHE_CAPACITY);
+        this.ss = ss;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());
         this.indexes = indexes;
-        this.evictionOperator = new EvictionOperator(cache, config, listener, serializationService.getClassLoader());
+        this.evictionOperator = new EvictionOperator(cache, config, listener, ss.getClassLoader());
         this.extractors = extractors;
         EvictionConfig evictionConfig = config.getEvictionConfig();
         MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
         this.maxCapacity = maximumSizePolicy == MaxSizePolicy.ENTRY_COUNT
                 ? evictionConfig.getSize()
                 : Integer.MAX_VALUE;
+        this.serializeKeys = config.isSerializeKeys();
     }
 
     private QueryCacheRecord accessRecord(QueryCacheRecord record) {
@@ -86,26 +88,26 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private QueryCacheRecordFactory getRecordFactory(InMemoryFormat inMemoryFormat) {
         switch (inMemoryFormat) {
             case BINARY:
-                return new DataQueryCacheRecordFactory(serializationService);
+                return new DataQueryCacheRecordFactory(ss);
             case OBJECT:
-                return new ObjectQueryCacheRecordFactory(serializationService);
+                return new ObjectQueryCacheRecordFactory(ss);
             default:
                 throw new IllegalArgumentException("Not a known format [" + inMemoryFormat + "]");
         }
     }
 
     @Override
-    public QueryCacheRecord add(Data keyData, Data valueData) {
+    public QueryCacheRecord add(Object queryCacheKey, Data valueData) {
         evictionOperator.evictIfRequired();
 
-        return addWithoutEvictionCheck(keyData, valueData);
+        return addWithoutEvictionCheck(queryCacheKey, valueData);
     }
 
     @Override
-    public QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData) {
+    public QueryCacheRecord addWithoutEvictionCheck(Object queryCacheKey, Data valueData) {
         QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
-        QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
-        saveIndex(keyData, newRecord, oldRecord);
+        QueryCacheRecord oldRecord = cache.put(queryCacheKey, newRecord);
+        saveIndex(queryCacheKey, newRecord, oldRecord);
 
         return oldRecord;
     }
@@ -113,8 +115,8 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     @Override
     public void addBatch(Iterator<Map.Entry<Data, Data>> entryIterator,
                          BiConsumer<Map.Entry<Data, Data>, QueryCacheRecord> postProcessor) {
-        CachedQueryEntry newEntry = new CachedQueryEntry(serializationService, extractors);
-        CachedQueryEntry oldEntry = new CachedQueryEntry(serializationService, extractors);
+        CachedQueryEntry newEntry = new CachedQueryEntry(ss, extractors);
+        CachedQueryEntry oldEntry = new CachedQueryEntry(ss, extractors);
         while (entryIterator.hasNext()) {
             if (cache.size() == maxCapacity) {
                 break;
@@ -126,21 +128,25 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     /**
-     * Similar to {@link #addWithoutEvictionCheck(Data, Data)} with explicit
+     * Similar to {@link #addWithoutEvictionCheck} with explicit
      * {@link CachedQueryEntry} arguments, to be reused when saving to index.
      * Suitable for usage with {@link #addBatch(Iterator, BiConsumer)}.
      */
     public QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData,
                                                     CachedQueryEntry newEntry, CachedQueryEntry oldEntry) {
         QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
-        QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
+        QueryCacheRecord oldRecord = cache.put(toQueryCacheKey(keyData), newRecord);
         saveIndex(keyData, newRecord, oldRecord, newEntry, oldEntry);
 
         return oldRecord;
     }
 
+    public Object toQueryCacheKey(Object key) {
+        return serializeKeys ? ss.toData(key) : ss.toObject(key);
+    }
+
     /**
-     * Same as {@link #saveIndex(Data, QueryCacheRecord, QueryCacheRecord)}
+     * Same as {@link #saveIndex}
      * with explicit {@link CachedQueryEntry} arguments for reuse, to avoid
      * excessive litter when adding several entries in batch.
      */
@@ -148,7 +154,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
                            CachedQueryEntry newEntry, CachedQueryEntry oldEntry) {
         if (indexes.haveAtLeastOneIndex()) {
             Object currentValue = currentRecord.getValue();
-            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
+            QueryEntry queryEntry = new QueryEntry(ss, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
             newEntry.init(keyData, currentValue);
             oldEntry.init(keyData, oldValue);
@@ -156,41 +162,42 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
         }
     }
 
-    private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
+    private void saveIndex(Object queryCacheKey, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
         if (indexes.haveAtLeastOneIndex()) {
+            Data keyData = ss.toData(queryCacheKey);
             Object currentValue = currentRecord.getValue();
-            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
+            QueryEntry queryEntry = new QueryEntry(ss, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            CachedQueryEntry newEntry = new CachedQueryEntry(serializationService, keyData, currentValue, extractors);
-            CachedQueryEntry oldEntry = new CachedQueryEntry(serializationService, keyData, oldValue, extractors);
+            CachedQueryEntry newEntry = new CachedQueryEntry(ss, keyData, currentValue, extractors);
+            CachedQueryEntry oldEntry = new CachedQueryEntry(ss, keyData, oldValue, extractors);
             indexes.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
         }
     }
 
     @Override
-    public QueryCacheRecord get(Data keyData) {
-        QueryCacheRecord record = cache.get(keyData);
+    public QueryCacheRecord get(Object queryCacheKey) {
+        QueryCacheRecord record = cache.get(queryCacheKey);
         return accessRecord(record);
     }
 
     @Override
-    public QueryCacheRecord remove(Data keyData) {
-        QueryCacheRecord oldRecord = cache.remove(keyData);
+    public QueryCacheRecord remove(Object queryCacheKey) {
+        QueryCacheRecord oldRecord = cache.remove(queryCacheKey);
         if (oldRecord != null) {
-            removeIndex(keyData, oldRecord.getValue());
+            removeIndex(queryCacheKey, oldRecord.getValue());
         }
         return oldRecord;
     }
 
-    private void removeIndex(Data keyData, Object value) {
+    private void removeIndex(Object queryCacheKey, Object value) {
         if (indexes.haveAtLeastOneIndex()) {
-            indexes.removeEntry(keyData, value, Index.OperationSource.USER);
+            indexes.removeEntry(ss.toData(queryCacheKey), value, Index.OperationSource.USER);
         }
     }
 
     @Override
-    public boolean containsKey(Data keyData) {
-        QueryCacheRecord record = get(keyData);
+    public boolean containsKey(Object queryCacheKey) {
+        QueryCacheRecord record = get(queryCacheKey);
         return record != null;
     }
 
@@ -208,12 +215,12 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     @Override
-    public Set<Data> keySet() {
+    public Set keySet() {
         return cache.keySet();
     }
 
     @Override
-    public Set<Map.Entry<Data, QueryCacheRecord>> entrySet() {
+    public Set<Map.Entry<Object, QueryCacheRecord>> entrySet() {
         return cache.entrySet();
     }
 

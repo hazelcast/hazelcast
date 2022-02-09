@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,6 +34,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
@@ -102,6 +104,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         };
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     @Parameters(method = "validArguments")
     public void test_validArguments(QueryDataTypeFamily orderingColumnType, String maxLag, Object[]... values) {
@@ -118,32 +121,32 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     @SuppressWarnings("unused")
     private Object[] invalidArguments() {
         return new Object[]{
-                new Object[]{TINYINT, "INTERVAL '0.001' SECOND"},
-                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND"},
-                new Object[]{INTEGER, "INTERVAL '0.003' SECOND"},
-                new Object[]{BIGINT, "INTERVAL '0.004' SECOND"},
-                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND"},
-                new Object[]{DECIMAL, "6"},
-                new Object[]{REAL, "INTERVAL '0.007' SECOND"},
-                new Object[]{REAL, "8"},
-                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND"},
-                new Object[]{DOUBLE, "10"},
-                new Object[]{TIME, "11"},
-                new Object[]{DATE, "12"},
-                new Object[]{TIMESTAMP, "13"},
-                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14"},
+                new Object[]{TINYINT, "INTERVAL '0.001' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{SMALLINT, "INTERVAL '0.002' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{INTEGER, "INTERVAL '0.003' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{BIGINT, "INTERVAL '0.004' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DECIMAL, "INTERVAL '0.005' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DECIMAL, "6", TINYINT},
+                new Object[]{REAL, "INTERVAL '0.007' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{REAL, "8", TINYINT},
+                new Object[]{DOUBLE, "INTERVAL '0.009' SECOND", INTERVAL_DAY_SECOND},
+                new Object[]{DOUBLE, "10", TINYINT},
+                new Object[]{TIME, "11", TINYINT},
+                new Object[]{DATE, "12", TINYINT},
+                new Object[]{TIMESTAMP, "13", TINYINT},
+                new Object[]{TIMESTAMP_WITH_TIME_ZONE, "14", TINYINT},
         };
     }
 
     @Test
     @Parameters(method = "invalidArguments")
-    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag) {
+    public void test_invalidArguments(QueryDataTypeFamily orderingColumnType, String maxLag, QueryDataTypeFamily lagType) {
         String name = randomName();
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
                 "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
-        ).hasMessageContaining("Cannot apply 'IMPOSE_ORDER' function to [ROW, COLUMN_LIST");
+        ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + lagType + ") do not match");
     }
 
     @Test
@@ -178,6 +181,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         ).hasMessageContaining("You must specify single ordering column");
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredInput() {
         String name = createTable(
@@ -197,6 +201,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_projectedInput() {
         String name = createTable(
@@ -220,6 +225,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_filteredAndProjectedInput() {
         String name = createTable(
@@ -253,6 +259,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         )).hasMessageContaining("Ordering function cannot be applied to input table");
     }
 
+    @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_namedParameters() {
         String name = createTable(
@@ -266,7 +273,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
                         "  , input => (TABLE(" + name + "))" +
-                        "  , timeCol => DESCRIPTOR(ts)" +
+                        "  , time_col => DESCRIPTOR(ts)" +
                         "))",
                 asList(
                         new Row(timestampTz(0), "Alice"),
@@ -274,6 +281,36 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         new Row(timestampTz(2), "Bob")
                 )
         );
+    }
+
+    @Test
+    public void test_lateItemsDropping() {
+        String name = createTable(
+                row(timestampTz(28), "Alice"),
+                row(timestampTz(29), "Bob"),
+                row(timestampTz(30), "Caitlyn"),
+                row(timestampTz(30), "Dorian"),
+                row(timestampTz(31), "Elijah"),
+                row(timestampTz(5), "Zedd")
+        );
+
+        // Temporal state
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
+        )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
+
+        // TODO[sasha]: support dropping late items in 5.2
+//        assertRowsEventuallyInAnyOrder(
+//                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
+//                asList(
+//                        new Row(timestampTz(28), "Alice"),
+//                        new Row(timestampTz(29), "Bob"),
+//                        new Row(timestampTz(30), "Caitlyn"),
+//                        new Row(timestampTz(30), "Dorian"),
+//                        new Row(timestampTz(31), "Elijah")
+//                        // Zedd is dropped because ti's late
+//                )
+//        );
     }
 
     private static Object[] row(Object... values) {

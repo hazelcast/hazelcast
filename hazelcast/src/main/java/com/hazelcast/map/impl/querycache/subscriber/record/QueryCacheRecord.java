@@ -29,6 +29,11 @@ public interface QueryCacheRecord<V> extends Evictable {
     V getValue();
 
     /**
+     * @return stored value without any conversion
+     */
+    Object getRawValue();
+
+    /**
      * Sets the access time of this {@link Evictable} in milliseconds.
      *
      * @param time the latest access time of this {@link Evictable} in milliseconds

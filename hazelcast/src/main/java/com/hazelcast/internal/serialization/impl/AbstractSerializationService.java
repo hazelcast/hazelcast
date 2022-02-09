@@ -123,9 +123,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
         compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
-                managedContext, builder.schemaService, classLoader,
-                bytes -> createObjectDataInput(bytes, ByteOrder.LITTLE_ENDIAN),
-                () -> createObjectDataOutput(ByteOrder.LITTLE_ENDIAN));
+                managedContext, builder.schemaService, classLoader, this::createObjectDataInput, this::createObjectDataOutput);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
     }
@@ -389,11 +387,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public final BufferObjectDataInput createObjectDataInput(byte[] data, ByteOrder byteOrder) {
-        return inputOutputFactory.createInput(data, this, isCompatibility, byteOrder);
-    }
-
-    @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
         return inputOutputFactory.createInput(data, offset, this, isCompatibility);
     }
@@ -406,11 +399,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
     @Override
     public final BufferObjectDataOutput createObjectDataOutput(int size) {
         return inputOutputFactory.createOutput(size, this);
-    }
-
-    @Override
-    public final BufferObjectDataOutput createObjectDataOutput(ByteOrder byteOrder) {
-        return inputOutputFactory.createOutput(outputBufferSize, this, byteOrder);
     }
 
     @Override

@@ -43,16 +43,6 @@
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>confluent</id>
-            <url>https://packages.confluent.io/maven/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <build>
         <resources>
             <resource>
@@ -69,7 +59,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.28</version>
+                        <version>2.3.31</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -176,8 +166,10 @@
                                     <include>org.apache.calcite:calcite-linq4j</include>
                                     <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.checkerframework:checker-qual</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-core</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
-                                    <include>net.minidev:json-smart</include>
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
@@ -221,10 +213,6 @@
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>net.minidev</pattern>
-                                    <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>org.apache.commons</pattern>
                                     <shadedPattern>${relocation.root}.org.apache.commons</shadedPattern>
                                 </relocation>
@@ -243,6 +231,14 @@
                                 <relocation>
                                     <pattern>org.slf4</pattern>
                                     <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jsfr</pattern>
+                                    <shadedPattern>${relocation.root}.org.jsfr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -289,13 +285,31 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>net.minidev:json-smart</artifact>
+                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.antlr:antlr4-runtime</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -471,9 +485,14 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>${json-path.version}</version>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-core</artifactId>
+            <version>${json-surfer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jsurfer</groupId>
+            <artifactId>jsurfer-jackson-jr</artifactId>
+            <version>${json-surfer.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

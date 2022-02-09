@@ -29,6 +29,7 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
@@ -59,10 +60,12 @@ import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -85,6 +88,8 @@ public class TcpServerControlTest {
     private static final Address SERVER_CLIENT_ADDRESS;
     private static final Address SERVER_WAN_ADDRESS;
 
+    // The uuid of member
+    private static final UUID MEMBER_UUID;
     static {
         try {
             INITIATOR_MEMBER_ADDRESS = new Address("127.0.0.1", 5702);
@@ -94,6 +99,7 @@ public class TcpServerControlTest {
             SERVER_MEMBER_ADDRESS = new Address("127.0.0.1", 5701);
             SERVER_CLIENT_ADDRESS = new Address("127.0.0.1", 6000);
             SERVER_WAN_ADDRESS = new Address("127.0.0.1", 10000);
+            MEMBER_UUID = UuidUtil.newUnsecureUUID();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -106,7 +112,7 @@ public class TcpServerControlTest {
     @Parameter(1)
     public String protocolIdentifier;
 
-    // connection type of TcpIpConnection for which MemberHandshake is processed
+    // connection type of TcpServerConnection for which MemberHandshake is processed
     @Parameter(2)
     public String connectionType;
 
@@ -119,15 +125,17 @@ public class TcpServerControlTest {
     @Parameter(4)
     public boolean reply;
 
-    // addresses on which the TcpIpConnection is expected to be registered in the connectionsMap
+    // addresses on which the TcpServerConnection is expected to be registered in the address registry
     @Parameter(5)
     public List<Address> expectedAddresses;
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
-    private final UUID uuid = UUID.randomUUID();
 
     private InternalSerializationService serializationService;
     private TcpServerControl tcpServerControl;
+    private LocalAddressRegistry addressRegistry;
+    private ConnectionLifecycleListener<TcpServerConnection> lifecycleListener;
+    private TcpServerConnection connection;
 
     // mocks
     private Channel channel;
@@ -144,7 +152,7 @@ public class TcpServerControlTest {
                 new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberWan(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
                 // when protocol type not supported by BindHandler, nothing is registered
-                new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, emptyList()},
+                new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 // when protocol type is WAN, initiator address is always registered
                 new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
@@ -164,10 +172,11 @@ public class TcpServerControlTest {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfig());
         serializationService = getSerializationService(hz);
         Node node = getNode(hz);
-        connectionManager = TcpServerConnectionManager.class.cast(
-                node.getServer().getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier)));
+        connectionManager = (TcpServerConnectionManager) node.getServer()
+                .getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier));
         tcpServerControl = getFieldValueReflectively(connectionManager, "serverControl");
-
+        lifecycleListener = getFieldValueReflectively(connectionManager, "connectionLifecycleListener");
+        addressRegistry = node.getLocalAddressRegistry();
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
         when(socket.getRemoteSocketAddress()).thenReturn(CLIENT_SOCKET_ADDRESS);
@@ -188,35 +197,70 @@ public class TcpServerControlTest {
     public void process() {
         tcpServerControl.process(memberHandshakeMessage());
         assertExpectedAddressesRegistered();
+        assertMemberConnectionRegistered();
+        assertTrueEventually(() ->
+                assertEquals(
+                        0,
+                        connectionManager.getConnections().size()
+                ), 5);
+        connection.close("close connection", null);
+        assertAddressesCleanedUp();
+    }
+
+    private void assertMemberConnectionRegistered() {
+        TcpServerConnectionManager.Plane[] planes = connectionManager.planes;
+        try {
+            // check connection is found for this member uuid
+            boolean found = false;
+            for (TcpServerConnectionManager.Plane plane : planes) {
+                if (plane.getConnection(MEMBER_UUID) != null) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue("Connection for the member uuid=" + MEMBER_UUID + " not found", found);
+        } catch (AssertionError error) {
+            // dump complete connections map
+            System.err.println("Connection for member uuid=" + MEMBER_UUID + " is expected to be registered "
+                    + "but connections map only contains: " + connectionManager.connections);
+            throw error;
+        }
+
+    }
+    private void assertAddressesCleanedUp() {
+        assertNull(addressRegistry.linkedAddressesOf(MEMBER_UUID));
+        for (Address address : expectedAddresses) {
+            UUID memberUuid = addressRegistry.uuidOf(address);
+            assertNull(memberUuid);
+        }
     }
 
     private void assertExpectedAddressesRegistered() {
-        TcpServerConnectionManager.Plane[] planes = connectionManager.planes;
         try {
             for (Address address : expectedAddresses) {
-                boolean found = false;
-                for (TcpServerConnectionManager.Plane plane : planes) {
-                    if (plane.getConnection((address)) != null) {
-                        found = true;
-                        break;
-                    }
-                }
-
-                assertTrue("Address " + address + " not found", found);
+                UUID memberUuid = addressRegistry.uuidOf(address);
+                assertEquals(MEMBER_UUID,  memberUuid);
             }
         } catch (AssertionError error) {
-            // dump complete connections map
-
-            System.err.println("Expected " + expectedAddresses + " but connections map contained: " + connectionManager.connections);
+            LinkedAddresses linkedAddresses = addressRegistry.linkedAddressesOf(MEMBER_UUID);
+            if (linkedAddresses != null) {
+                // dump complete address registry
+                System.err.println("Expected " + expectedAddresses + " for the member uuid=" + MEMBER_UUID
+                        + ", but the addresses registered in the address registry as belonging to this member uuid: "
+                        + linkedAddresses.getAllAddresses());
+            } else {
+                System.err.println("We cannot find any addresses registered for the given member UUID: " + MEMBER_UUID
+                                + " See the dump of address registry:" + addressRegistry);
+            }
             throw error;
         }
     }
 
     private Packet memberHandshakeMessage() {
-        MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
+        MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, MEMBER_UUID);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
-        TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel);
+        connection = new TcpServerConnection(connectionManager, lifecycleListener, 1, channel, false);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }
@@ -260,5 +304,9 @@ public class TcpServerControlTest {
                 .setClientEndpointConfig(clientServerSocketConfig)
                 .addWanEndpointConfig(wanServerSocketConfig);
         return config;
+    }
+
+    public void assertEmpty(Map<?, ?> map) {
+        assertEquals("expecting an empty map, but the map is:" + map, 0, map.size());
     }
 }

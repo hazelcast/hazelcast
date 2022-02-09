@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "device": {
+      "local-device": {
         "tiered-store-device-name": {
           "base-dir": "tiered_store_base_dir",
           "block-size": 8192,
@@ -25,7 +25,10 @@
           "tiered-store": {
             "enabled": true,
             "memory-tier": {
-              "capacity": "2 GB"
+              "capacity": {
+                "unit": "GIGABYTES",
+                "value": 2
+              }
             }
           }
         },
@@ -42,7 +45,10 @@
           "tiered-store": {
             "enabled": true,
             "memory-tier": {
-              "capacity": "8192 KB"
+              "capacity": {
+                "unit": "KILOBYTES",
+                "value": 8192
+              }
             },
             "disk-tier": {
               "enabled": true,

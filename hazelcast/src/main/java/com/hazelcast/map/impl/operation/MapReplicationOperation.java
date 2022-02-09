@@ -49,7 +49,8 @@ public class MapReplicationOperation extends Operation
     public MapReplicationOperation(PartitionContainer container,
                                    Collection<ServiceNamespace> namespaces, int partitionId, int replicaIndex) {
 
-        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex);
 
         this.mapReplicationStateHolder = new MapReplicationStateHolder();
         this.mapReplicationStateHolder.setOperation(this);
@@ -61,7 +62,7 @@ public class MapReplicationOperation extends Operation
 
         this.mapNearCacheStateHolder = new MapNearCacheStateHolder();
         this.mapNearCacheStateHolder.setMapReplicationOperation(this);
-        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces);
     }
 
     @Override
@@ -73,7 +74,8 @@ public class MapReplicationOperation extends Operation
                 mapNearCacheStateHolder.applyState();
             }
         } catch (Throwable e) {
-            getLogger().severe("map replication operation failed for partitionId=" + getPartitionId(), e);
+            getLogger().severe("map replication operation failed for partitionId="
+                    + getPartitionId(), e);
 
             disposePartition();
 
@@ -85,12 +87,15 @@ public class MapReplicationOperation extends Operation
 
     @Override
     public void afterRun() throws Exception {
-        disposePartition();
+        try {
+            disposePartition();
 
-        if (oome != null) {
-            getLogger().warning(oome.getMessage());
+            if (oome != null) {
+                getLogger().warning(oome.getMessage());
+            }
+        } finally {
+            super.afterRun();
         }
-
     }
 
     private void disposePartition() {

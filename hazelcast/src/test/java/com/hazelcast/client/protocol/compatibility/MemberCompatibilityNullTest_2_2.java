@@ -6954,7 +6954,7 @@ public class MemberCompatibilityNullTest_2_2 {
     @Test
     public void test_MCGetMapConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 774;
-        ClientMessage encoded = MCGetMapConfigCodec.encodeResponse(anInt, anInt, anInt, anInt, anInt, anInt, anInt, aBoolean, anInt, aString);
+        ClientMessage encoded = MCGetMapConfigCodec.encodeResponse(anInt, anInt, anInt, anInt, anInt, anInt, anInt, aBoolean, anInt, aString, aListOfIndexConfigs);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7674,7 +7674,9 @@ public class MemberCompatibilityNullTest_2_2 {
     public void test_JetGetJobConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 865;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aLong, JetGetJobConfigCodec.decodeRequest(fromFile)));
+        JetGetJobConfigCodec.RequestParameters parameters = JetGetJobConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertFalse(parameters.isLightJobCoordinatorExists);
     }
 
     @Test

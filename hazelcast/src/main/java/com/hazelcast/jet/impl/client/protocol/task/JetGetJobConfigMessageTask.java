@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -27,8 +28,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.util.UUID;
 
-public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<Long, Data>
+public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<RequestParameters, Data>
         implements BlockingMessageTask {
 
     protected JetGetJobConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -38,8 +40,13 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<Long, Dat
     }
 
     @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
     protected Operation prepareOperation() {
-        return new GetJobConfigOperation(parameters);
+        return new GetJobConfigOperation(parameters.jobId, parameters.lightJobCoordinator != null);
     }
 
     @Override

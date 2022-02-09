@@ -256,6 +256,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
+        assertFalse(queryCacheClassPredicateConfig.isSerializeKeys());
         for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
             assertFalse(indexConfig.getType() == IndexType.SORTED);
@@ -516,4 +517,20 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
+
+    @Test
+    public abstract void testCompactSerialization();
+
+    @Test
+    public abstract void testCompactSerialization_explicitSerializationRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustTypeName();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCompactSerialization_registrationWithJustSerializer();
+
 }

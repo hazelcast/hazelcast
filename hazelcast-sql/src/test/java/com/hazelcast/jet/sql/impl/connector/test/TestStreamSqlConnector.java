@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -48,24 +47,11 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
         List<String[]> stringValues = stream(values)
                 .map(row -> stream(row).map(value -> value == null ? null : value.toString()).toArray(String[]::new))
                 .collect(Collectors.toList());
-        create(sqlService, tableName, names, types, stringValues);
-    }
-
-    public static void create(
-            SqlService sqlService,
-            String tableName,
-            List<String> names,
-            List<QueryDataTypeFamily> types,
-            List<String[]> values
-    ) {
-        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, values);
+        TestAbstractSqlConnector.create(sqlService, TYPE_NAME, tableName, names, types, stringValues, true);
     }
 
     @Override
-    protected ProcessorMetaSupplier createProcessorSupplier(
-            FunctionEx<Context, TestDataGenerator> createContextFn,
-            EventTimePolicy<Object[]> eventTimePolicy
-    ) {
+    protected ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn) {
         StreamSource<Object> source = SourceBuilder
                 .stream("stream", createContextFn)
                 .fillBufferFn(TestDataGenerator::fillBuffer)

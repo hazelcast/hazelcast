@@ -16,8 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import example.serialization.EmployeeDTO;
+import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
@@ -30,6 +36,9 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public final class CompactTestUtil {
 
@@ -45,33 +54,33 @@ public final class CompactTestUtil {
         for (NamedDTO named : inner.nn) {
             GenericRecord namedRecord = GenericRecordBuilder.compact("named")
                     .setString("name", named.name)
-                    .setInt("myint", named.myint).build();
+                    .setInt32("myint", named.myint).build();
             namedRecords[i++] = namedRecord;
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.compact("inner")
-                .setArrayOfBytes("b", inner.bb)
-                .setArrayOfShorts("s", inner.ss)
-                .setArrayOfInts("i", inner.ii)
-                .setArrayOfLongs("l", inner.ll)
-                .setArrayOfFloats("f", inner.ff)
-                .setArrayOfDoubles("d", inner.dd)
-                .setArrayOfGenericRecords("nn", namedRecords)
-                .setArrayOfDecimals("bigDecimals", inner.bigDecimals)
-                .setArrayOfTimes("localTimes", inner.localTimes)
-                .setArrayOfDates("localDates", inner.localDates)
-                .setArrayOfTimestamps("localDateTimes", inner.localDateTimes)
-                .setArrayOfTimestampWithTimezones("offsetDateTimes", inner.offsetDateTimes)
+                .setArrayOfInt8("b", inner.bb)
+                .setArrayOfInt16("s", inner.ss)
+                .setArrayOfInt32("i", inner.ii)
+                .setArrayOfInt64("l", inner.ll)
+                .setArrayOfFloat32("f", inner.ff)
+                .setArrayOfFloat64("d", inner.dd)
+                .setArrayOfGenericRecord("nn", namedRecords)
+                .setArrayOfDecimal("bigDecimals", inner.bigDecimals)
+                .setArrayOfTime("localTimes", inner.localTimes)
+                .setArrayOfDate("localDates", inner.localDates)
+                .setArrayOfTimestamp("localDateTimes", inner.localDateTimes)
+                .setArrayOfTimestampWithTimezone("offsetDateTimes", inner.offsetDateTimes)
                 .build();
 
         return GenericRecordBuilder.compact("main")
-                .setByte("b", mainDTO.b)
+                .setInt8("b", mainDTO.b)
                 .setBoolean("bool", mainDTO.bool)
-                .setShort("s", mainDTO.s)
-                .setInt("i", mainDTO.i)
-                .setLong("l", mainDTO.l)
-                .setFloat("f", mainDTO.f)
-                .setDouble("d", mainDTO.d)
+                .setInt16("s", mainDTO.s)
+                .setInt32("i", mainDTO.i)
+                .setInt64("l", mainDTO.l)
+                .setFloat32("f", mainDTO.f)
+                .setFloat64("d", mainDTO.d)
                 .setString("str", mainDTO.str)
                 .setDecimal("bigDecimal", mainDTO.bigDecimal)
                 .setGenericRecord("p", innerRecord)
@@ -79,13 +88,13 @@ public final class CompactTestUtil {
                 .setDate("localDate", mainDTO.localDate)
                 .setTimestamp("localDateTime", mainDTO.localDateTime)
                 .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
-                .setNullableByte("nullable_b", mainDTO.b)
+                .setNullableInt8("nullable_b", mainDTO.b)
                 .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableShort("nullable_s", mainDTO.s)
-                .setNullableInt("nullable_i", mainDTO.i)
-                .setNullableLong("nullable_l", mainDTO.l)
-                .setNullableFloat("nullable_f", mainDTO.f)
-                .setNullableDouble("nullable_d", mainDTO.d)
+                .setNullableint16("nullable_s", mainDTO.s)
+                .setNullableInt32("nullable_i", mainDTO.i)
+                .setNullableInt64("nullable_l", mainDTO.l)
+                .setNullableFloat32("nullable_f", mainDTO.f)
+                .setNullableFloat64("nullable_d", mainDTO.d)
                 .build();
     }
 
@@ -143,5 +152,32 @@ public final class CompactTestUtil {
                 put(schema);
             }
         };
+    }
+
+    public static void verifyReflectiveSerializerIsUsed(SerializationConfig serializationConfig) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+
+        ExternalizableEmployeeDTO object = new ExternalizableEmployeeDTO();
+        Data data = serializationService.toData(object);
+        assertFalse(object.usedExternalizableSerialization());
+
+        ExternalizableEmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertFalse(deserializedObject.usedExternalizableSerialization());
+    }
+
+    public static void verifyExplicitSerializerIsUsed(SerializationConfig serializationConfig) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+
+        EmployeeDTO object = new EmployeeDTO(1, 1);
+        Data data = serializationService.toData(object);
+
+        EmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertEquals(object, deserializedObject);
     }
 }

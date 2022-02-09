@@ -20,9 +20,9 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -56,7 +56,7 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, D
 
     @Override
     public void init(@Nonnull Context context) {
-        evalContext = SimpleExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -65,9 +65,9 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, D
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            ResettableSingletonTraverser<Object[]> traverser = new ResettableSingletonTraverser<>();
+            ResettableSingletonTraverser<JetSqlRow> traverser = new ResettableSingletonTraverser<>();
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
-            Processor processor = new TransformP<LazyMapEntry<Object, Object>, Object[]>(entry -> {
+            Processor processor = new TransformP<LazyMapEntry<Object, Object>, JetSqlRow>(entry -> {
                 traverser.accept(projector.project(entry.getKeyData(), entry.getValueData()));
                 return traverser;
             });

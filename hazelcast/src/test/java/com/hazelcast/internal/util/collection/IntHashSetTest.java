@@ -282,7 +282,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void toArrayReturnsArrayOfAllElements() {
+    public void toArrayReturnsArrayOfAllElement() {
         final IntHashSet initial = new IntHashSet(100, -1);
         initial.add(1);
         initial.add(13);
@@ -292,7 +292,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void intoArrayReturnsArrayOfAllElements() {
+    public void intoArrayReturnsArrayOfAllElement() {
         final IntHashSet initial = new IntHashSet(100, -1);
         initial.add(1);
         initial.add(13);

@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 
-import static com.hazelcast.config.DeviceConfig.DEFAULT_DEVICE_NAME;
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**

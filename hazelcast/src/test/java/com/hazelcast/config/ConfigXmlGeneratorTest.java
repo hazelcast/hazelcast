@@ -16,11 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.collection.QueueStore;
-import com.hazelcast.collection.QueueStoreFactory;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
@@ -28,7 +23,6 @@ import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfi
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
-import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -41,54 +35,44 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.MapStore;
-import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.ringbuffer.RingbufferStore;
-import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.spi.MemberAddressProvider;
-import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.DiscoveryStrategy;
-import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.HigherHitsMergePolicy;
-import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.wan.WanPublisherState;
+import example.serialization.EmployeeDTO;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.EmployerDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EventListener;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
@@ -97,15 +81,18 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+// Please also take a look at the DynamicConfigXmlGeneratorTest.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
+
+    private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGeneratorTest.class);
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
@@ -401,29 +388,46 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDynamicConfigurationConfig() {
+        DynamicConfigurationConfig dynamicConfigurationConfig = new DynamicConfigurationConfig()
+                .setPersistenceEnabled(true)
+                .setPersistenceFile(new File("persistence-file").getAbsoluteFile())
+                .setBackupDir(new File("backup-dir").getAbsoluteFile())
+                .setBackupCount(7);
+
+        Config config = new Config().setDynamicConfigurationConfig(dynamicConfigurationConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ConfigCompatibilityChecker.checkDynamicConfigurationConfig(dynamicConfigurationConfig, xmlConfig.getDynamicConfigurationConfig());
+    }
+
+    @Test
     public void testDeviceConfig() {
-        DeviceConfig deviceConfig0 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
+                .setCapacity(Capacity.of(6522, MemoryUnit.MEGABYTES))
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
 
-        DeviceConfig deviceConfig1 = new DeviceConfig()
+        LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
+                .setCapacity(Capacity.of(198719826236L, MemoryUnit.KILOBYTES))
                 .setBlockSize(1024)
                 .setReadIOThreadCount(200)
                 .setWriteIOThreadCount(200);
 
         Config config = new Config()
-                .addDeviceConfig(deviceConfig0)
-                .addDeviceConfig(deviceConfig1);
+                .addDeviceConfig(localDeviceConfig0)
+                .addDeviceConfig(localDeviceConfig1);
 
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig0, xmlConfig.getDeviceConfig("null-device"));
-        ConfigCompatibilityChecker.checkDeviceConfig(deviceConfig1, xmlConfig.getDeviceConfig("local-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig0, xmlConfig.getDeviceConfig("null-device"));
+        ConfigCompatibilityChecker.checkDeviceConfig(localDeviceConfig1, xmlConfig.getDeviceConfig("local-device"));
     }
 
     @Test
@@ -559,32 +563,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         dummyprops.put("a", "b");
 
         RealmConfig memberRealm = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
-                Arrays.asList(
-                        new LoginModuleConfig()
-                                .setClassName("member.f.o.o")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                        new LoginModuleConfig()
-                                .setClassName("member.b.a.r")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                        new LoginModuleConfig()
-                                .setClassName("member.l.o.l")
-                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                        Arrays.asList(
+                                new LoginModuleConfig()
+                                        .setClassName("member.f.o.o")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                new LoginModuleConfig()
+                                        .setClassName("member.b.a.r")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                new LoginModuleConfig()
+                                        .setClassName("member.l.o.l")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                 .setCredentialsFactoryConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops));
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
                 .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
                 .setClientBlockUnmappedActions(false)
                 .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
-                        Arrays.asList(
-                                new LoginModuleConfig()
-                                        .setClassName("f.o.o")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                                new LoginModuleConfig()
-                                        .setClassName("b.a.r")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                                new LoginModuleConfig()
-                                        .setClassName("l.o.l")
-                                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                                Arrays.asList(
+                                        new LoginModuleConfig()
+                                                .setClassName("f.o.o")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                        new LoginModuleConfig()
+                                                .setClassName("b.a.r")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                        new LoginModuleConfig()
+                                                .setClassName("l.o.l")
+                                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                         .setUsernamePasswordIdentityConfig("username", "password"))
                 .setMemberRealmConfig("mr", memberRealm)
                 .setClientPermissionConfigs(new HashSet<>(asList(
@@ -699,7 +703,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRoleSeparator(":")
                 .addUser("test", "1234", "monitor", "hazelcast")
                 .addUser("dev", "secret", "root")
-                );
+        );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
@@ -823,6 +827,42 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
+    @Test
+    public void testCompactSerialization() {
+        Config config = new Config();
+
+        CompactSerializationConfig expected = new CompactSerializationConfig();
+        expected.setEnabled(true);
+        expected.register(EmployerDTO.class);
+        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+
+        config.getSerializationConfig().setCompactSerializationConfig(expected);
+
+        CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+
+        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
+        // compact serialization config, when we read the config from XML/YAML, we store registered classes
+        // in a different map.
+        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+            String key = entry.getKey();
+            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
+            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
+
+            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
+            assertEquals(expectedRegistration.element2, actualRegistration.element2);
+
+            CompactSerializer serializer = expectedRegistration.element3;
+            if (serializer != null) {
+                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+            } else {
+                assertNull(actualRegistration.element3);
+            }
+        }
+    }
+
     private static class TypeClass {
     }
 
@@ -880,512 +920,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(managementCenterConfig.isConsoleEnabled(), xmlMCConfig.isConsoleEnabled());
         assertEquals(managementCenterConfig.isDataAccessEnabled(), xmlMCConfig.isDataAccessEnabled());
         assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
-    }
-
-    @Test
-    public void testReplicatedMapConfigGenerator() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy("PassThroughMergePolicy")
-                .setBatchSize(1234);
-
-        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
-                .setName("replicated-map-name")
-                .setStatisticsEnabled(false)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
-
-        replicatedMapConfig.setAsyncFillup(true);
-
-        Config config = new Config()
-                .addReplicatedMapConfig(replicatedMapConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
-        MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
-        assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
-        assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
-        assertEquals("splitBrainProtection", xmlReplicatedMapConfig.getSplitBrainProtectionName());
-        assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
-        assertTrue(xmlReplicatedMapConfig.isAsyncFillup());
-        assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
-        assertEquals(1234, actualMergePolicyConfig.getBatchSize());
-        assertEquals(replicatedMapConfig, xmlReplicatedMapConfig);
-    }
-
-    @Test
-    public void testFlakeIdGeneratorConfigGenerator() {
-        FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
-                .setPrefetchCount(3)
-                .setPrefetchValidityMillis(10L)
-                .setEpochStart(1000000L)
-                .setNodeIdOffset(30L)
-                .setBitsSequence(2)
-                .setBitsNodeId(3)
-                .setAllowedFutureMillis(123L)
-                .setStatisticsEnabled(false);
-
-        Config config = new Config()
-                .addFlakeIdGeneratorConfig(figConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
-        assertEquals(figConfig, xmlReplicatedConfig);
-    }
-
-    @Test
-    public void testCacheAttributes() {
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setEvictionConfig(evictionConfig())
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setCacheLoader("cacheLoader")
-                .setCacheWriter("cacheWriter")
-                .setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig("expiryPolicyFactory"))
-                .setManagementEnabled(true)
-                .setStatisticsEnabled(true)
-                .setKeyType("keyType")
-                .setValueType("valueType")
-                .setReadThrough(true)
-                .setDataPersistenceConfig(dataPersistenceConfig())
-                .setEventJournalConfig(eventJournalConfig())
-                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
-                .setWriteThrough(true)
-                .setPartitionLostListenerConfigs(singletonList(
-                        new CachePartitionLostListenerConfig("partitionLostListener")))
-                .setSplitBrainProtectionName("testSplitBrainProtection");
-
-        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
-        expectedConfig.setDisablePerEntryInvalidationEvents(true);
-        expectedConfig.setWanReplicationRef(wanReplicationRef());
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testCacheFactoryAttributes() {
-        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig = new TimedExpiryPolicyFactoryConfig(ACCESSED,
-                new DurationConfig(10, SECONDS));
-
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setCacheLoaderFactory("cacheLoaderFactory")
-                .setCacheWriterFactory("cacheWriterFactory")
-                .setExpiryPolicyFactory("expiryPolicyFactory")
-                .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
-                .setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig(timedExpiryPolicyFactoryConfig))
-                .setPartitionLostListenerConfigs(singletonList(
-                        new CachePartitionLostListenerConfig("partitionLostListener")));
-
-        expectedConfig.getMergePolicyConfig().setPolicy("mergePolicy");
-        expectedConfig.setDisablePerEntryInvalidationEvents(true);
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    private static CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig() {
-        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
-        entryListenerConfig.setCacheEntryListenerFactory("entryListenerFactory");
-        entryListenerConfig.setSynchronous(true);
-        entryListenerConfig.setOldValueRequired(true);
-        entryListenerConfig.setCacheEntryEventFilterFactory("entryEventFilterFactory");
-        return entryListenerConfig;
-    }
-
-    @Test
-    public void testCacheSplitBrainProtectionRef() {
-        CacheSimpleConfig expectedConfig = new CacheSimpleConfig()
-                .setName("testCache")
-                .setSplitBrainProtectionName("testSplitBrainProtection");
-
-        Config config = new Config()
-                .addCacheConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CacheSimpleConfig actualConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals("testSplitBrainProtection", actualConfig.getSplitBrainProtectionName());
-    }
-
-    @Test
-    public void testRingbufferWithStoreClass() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setClassName("ClassName")
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    @Test
-    public void testRingbufferWithStoreImplementation() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setStoreImplementation(new TestRingbufferStore())
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    private static class TestRingbufferStore implements RingbufferStore {
-        @Override
-        public void store(long sequence, Object data) {
-        }
-
-        @Override
-        public void storeAll(long firstItemSequence, Object[] items) {
-        }
-
-        @Override
-        public Object load(long sequence) {
-            return null;
-        }
-
-        @Override
-        public long getLargestSequence() {
-            return 0;
-        }
-    }
-
-    @Test
-    public void testRingbufferWithStoreFactory() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryClassName("FactoryClassName")
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    @Test
-    public void testRingbufferWithStoreFactoryImplementation() {
-        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-                .setEnabled(true)
-                .setFactoryImplementation(new TestRingbufferStoreFactory())
-                .setProperty("p1", "v1")
-                .setProperty("p2", "v2")
-                .setProperty("p3", "v3");
-
-        testRingbuffer(ringbufferStoreConfig);
-    }
-
-    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory {
-        @Override
-        public RingbufferStore newRingbufferStore(String name, Properties properties) {
-            return null;
-        }
-    }
-
-    private void testRingbuffer(RingbufferStoreConfig ringbufferStoreConfig) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy("PassThroughMergePolicy")
-                .setBatchSize(1234);
-        RingbufferConfig expectedConfig = new RingbufferConfig("testRbConfig")
-                .setBackupCount(1)
-                .setAsyncBackupCount(2)
-                .setCapacity(3)
-                .setTimeToLiveSeconds(4)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setRingbufferStoreConfig(ringbufferStoreConfig)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig);
-
-        Config config = new Config().addRingBufferConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        RingbufferConfig actualConfig = xmlConfig.getRingbufferConfig(expectedConfig.getName());
-        ConfigCompatibilityChecker.checkRingbufferConfig(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testExecutor() {
-        ExecutorConfig expectedConfig = new ExecutorConfig()
-                .setName("testExecutor")
-                .setStatisticsEnabled(true)
-                .setPoolSize(10)
-                .setQueueCapacity(100)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addExecutorConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ExecutorConfig actualConfig = xmlConfig.getExecutorConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testDurableExecutor() {
-        DurableExecutorConfig expectedConfig = new DurableExecutorConfig()
-                .setName("testDurableExecutor")
-                .setPoolSize(10)
-                .setCapacity(100)
-                .setDurability(2)
-                .setStatisticsEnabled(false)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addDurableExecutorConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testScheduledExecutor() {
-        Config cfg = new Config();
-
-        ScheduledExecutorConfig scheduledExecutorConfig =
-                new ScheduledExecutorConfig()
-                        .setCapacity(1)
-                        .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
-                        .setDurability(2)
-                        .setName("Existing")
-                        .setPoolSize(3)
-                        .setSplitBrainProtectionName("splitBrainProtection")
-                        .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23))
-                        .setStatisticsEnabled(false);
-
-        cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
-
-        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
-        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
-
-        ScheduledExecutorConfig existing = getNewConfigViaXMLGenerator(cfg).getScheduledExecutorConfig("Existing");
-        assertEquals(scheduledExecutorConfig, existing);
-
-        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
-                .getScheduledExecutorConfig("NotExisting/Default");
-        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
-        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
-        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
-        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
-        assertEquals(defaultSchedExecConfig.isStatisticsEnabled(), fallsbackToDefault.isStatisticsEnabled());
-    }
-
-
-    @Test
-    public void testPNCounter() {
-        PNCounterConfig expectedConfig = new PNCounterConfig()
-                .setName("testPNCounter")
-                .setReplicaCount(100)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config().addPNCounterConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        PNCounterConfig actualConfig = xmlConfig.getPNCounterConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMultiMap() {
-        MultiMapConfig expectedConfig = new MultiMapConfig()
-                .setName("testMultiMap")
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
-                .setBinary(true)
-                .setStatisticsEnabled(true)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setEntryListenerConfigs(singletonList(new EntryListenerConfig("java.Listener", true, true)));
-
-        Config config = new Config()
-                .addMultiMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        MultiMapConfig actualConfig = xmlConfig.getMultiMapConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testList() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(HigherHitsMergePolicy.class.getName())
-                .setBatchSize(1234);
-
-        ListConfig expectedConfig = new ListConfig("testList")
-                .setMaxSize(10)
-                .setStatisticsEnabled(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
-
-        Config config = new Config()
-                .addListConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ListConfig actualConfig = xmlConfig.getListConfig("testList");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testSet() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(LatestUpdateMergePolicy.class.getName())
-                .setBatchSize(1234);
-
-        SetConfig expectedConfig = new SetConfig("testSet")
-                .setMaxSize(10)
-                .setStatisticsEnabled(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
-
-        Config config = new Config()
-                .addSetConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testQueueWithStoreClass() {
-        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
-                .setClassName("className")
-                .setEnabled(true)
-                .setProperty("key", "value");
-
-        testQueue(queueStoreConfig);
-    }
-
-    @Test
-    public void testQueueWithStoreImplementation() {
-        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
-                .setStoreImplementation(new TestQueueStore())
-                .setEnabled(true)
-                .setProperty("key", "value");
-
-        testQueue(queueStoreConfig);
-    }
-
-    private static class TestQueueStore implements QueueStore {
-        @Override
-        public void store(Long key, Object value) {
-        }
-
-        @Override
-        public void storeAll(Map map) {
-        }
-
-        @Override
-        public void delete(Long key) {
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-        }
-
-        @Override
-        public Object load(Long key) {
-            return null;
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            return null;
-        }
-
-        @Override
-        public Set<Long> loadAllKeys() {
-            return null;
-        }
-    }
-
-    @Test
-    public void testQueueWithStoreFactory() {
-        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
-                .setFactoryClassName("factoryClassName")
-                .setEnabled(true)
-                .setProperty("key", "value");
-
-        testQueue(queueStoreConfig);
-    }
-
-    @Test
-    public void testQueueWithStoreFactoryImplementation() {
-        QueueStoreConfig queueStoreConfig = new QueueStoreConfig()
-                .setFactoryImplementation(new TestQueueStoreFactory())
-                .setEnabled(true)
-                .setProperty("key", "value");
-
-        testQueue(queueStoreConfig);
-    }
-
-    private static class TestQueueStoreFactory implements QueueStoreFactory {
-        @Override
-        public QueueStore newQueueStore(String name, Properties properties) {
-            return null;
-        }
-    }
-
-    private void testQueue(QueueStoreConfig queueStoreConfig) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(DiscardMergePolicy.class.getSimpleName())
-                .setBatchSize(1234);
-
-        QueueConfig expectedConfig = new QueueConfig()
-                .setName("testQueue")
-                .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator")
-                .setMaxSize(10)
-                .setStatisticsEnabled(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setEmptyQueueTtl(1000)
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setQueueStoreConfig(queueStoreConfig)
-                .setItemListenerConfigs(singletonList(new ItemListenerConfig("java.Listener", true)));
-
-        Config config = new Config()
-                .addQueueConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        QueueConfig actualConfig = xmlConfig.getQueueConfig("testQueue");
-        assertEquals("testQueue", actualConfig.getName());
-
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-        ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
 
 
@@ -1481,67 +1015,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAttributesConfigWithStoreClass() {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setEnabled(true)
-                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-                .setWriteDelaySeconds(10)
-                .setClassName("className")
-                .setWriteCoalescing(true)
-                .setWriteBatchSize(500)
-                .setProperty("key", "value");
-
-        testMap(mapStoreConfig);
-    }
-
-    @Test
-    public void testAttributesConfigWithStoreImplementation() {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setEnabled(true)
-                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-                .setWriteDelaySeconds(10)
-                .setImplementation(new TestMapStore())
-                .setWriteCoalescing(true)
-                .setWriteBatchSize(500)
-                .setProperty("key", "value");
-
-        testMap(mapStoreConfig);
-    }
-
-    private static class TestMapStore implements MapStore {
-        @Override
-        public void store(Object key, Object value) {
-        }
-
-        @Override
-        public void storeAll(Map map) {
-        }
-
-        @Override
-        public void delete(Object key) {
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-        }
-
-        @Override
-        public Object load(Object key) {
-            return null;
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            return null;
-        }
-
-        @Override
-        public Iterable loadAllKeys() {
-            return null;
-        }
-    }
-
-    @Test
     public void testCRDTReplication() {
         final CRDTReplicationConfig replicationConfig = new CRDTReplicationConfig()
                 .setMaxConcurrentReplicationTargets(10)
@@ -1553,366 +1026,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertNotNull(xmlReplicationConfig);
         assertEquals(10, xmlReplicationConfig.getMaxConcurrentReplicationTargets());
         assertEquals(2000, xmlReplicationConfig.getReplicationPeriodMillis());
-    }
-
-    @Test
-    public void testAttributesConfigWithStoreFactory() {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setEnabled(true)
-                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-                .setWriteDelaySeconds(10)
-                .setWriteCoalescing(true)
-                .setWriteBatchSize(500)
-                .setFactoryClassName("factoryClassName")
-                .setProperty("key", "value");
-
-        testMap(mapStoreConfig);
-    }
-
-    @Test
-    public void testAttributesConfigWithStoreFactoryImplementation() {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setEnabled(true)
-                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-                .setWriteDelaySeconds(10)
-                .setWriteCoalescing(true)
-                .setWriteBatchSize(500)
-                .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
-                .setProperty("key", "value");
-
-        testMap(mapStoreConfig);
-    }
-
-    private void testMap(MapStoreConfig mapStoreConfig) {
-        AttributeConfig attrConfig = new AttributeConfig()
-                .setName("power")
-                .setExtractorClassName("com.car.PowerExtractor");
-
-        EvictionConfig evictionConfig1 = new EvictionConfig()
-                .setSize(10)
-                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
-
-        IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
-
-        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
-
-        EvictionConfig evictionConfig2 = new EvictionConfig()
-                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE)
-                .setSize(100)
-                .setComparatorClassName("comparatorClassName")
-                .setEvictionPolicy(EvictionPolicy.LRU);
-
-        PredicateConfig predicateConfig1 = new PredicateConfig();
-        predicateConfig1.setClassName("className");
-
-        PredicateConfig predicateConfig2 = new PredicateConfig();
-        predicateConfig2.setSql("sqlQuery");
-
-        QueryCacheConfig queryCacheConfig1 = new QueryCacheConfig()
-                .setName("queryCache1")
-                .setPredicateConfig(predicateConfig1)
-                .addEntryListenerConfig(listenerConfig)
-                .setBatchSize(230)
-                .setDelaySeconds(20)
-                .setPopulate(false)
-                .setBufferSize(8)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setEvictionConfig(evictionConfig2)
-                .setIncludeValue(false)
-                .setCoalesce(false)
-                .addIndexConfig(indexConfig);
-
-        QueryCacheConfig queryCacheConfig2 = new QueryCacheConfig()
-                .setName("queryCache2")
-                .setPredicateConfig(predicateConfig2)
-                .addEntryListenerConfig(listenerConfig)
-                .setBatchSize(500)
-                .setDelaySeconds(10)
-                .setPopulate(true)
-                .setBufferSize(10)
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setEvictionConfig(evictionConfig2)
-                .setIncludeValue(true)
-                .setCoalesce(true)
-                .addIndexConfig(indexConfig);
-
-        MapConfig expectedConfig = newMapConfig()
-                .setName("carMap")
-                .setEvictionConfig(evictionConfig1)
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE)
-                .setMaxIdleSeconds(100)
-                .setTimeToLiveSeconds(1000)
-                .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .setStatisticsEnabled(true)
-                .setPerEntryStatsEnabled(false)
-                .setReadBackupData(true)
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setMapStoreConfig(mapStoreConfig)
-                .setWanReplicationRef(wanReplicationRef())
-                .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
-                .setMerkleTreeConfig(merkleTreeConfig())
-                .setEventJournalConfig(eventJournalConfig())
-                .setDataPersistenceConfig(dataPersistenceConfig())
-                .addEntryListenerConfig(listenerConfig)
-                .setIndexConfigs(singletonList(indexConfig))
-                .addAttributeConfig(attrConfig)
-                .setPartitionLostListenerConfigs(singletonList(
-                        new MapPartitionLostListenerConfig("partitionLostListener"))
-                );
-
-        expectedConfig.setQueryCacheConfigs(asList(queryCacheConfig1, queryCacheConfig2));
-
-        Config config = new Config()
-                .addMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        MapConfig actualConfig = xmlConfig.getMapConfig("carMap");
-        AttributeConfig xmlAttrConfig = actualConfig.getAttributeConfigs().get(0);
-        assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
-        assertEquals(attrConfig.getExtractorClassName(), xmlAttrConfig.getExtractorClassName());
-        ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapWithoutMerkleTreeConfig() {
-        MapConfig expectedConfig = newMapConfig()
-                .setName("testMapWithoutMerkleTreeConfig");
-        Config config = new Config()
-                .addMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapWithEnabledMerkleTreeConfig() {
-        MapConfig expectedConfig = newMapConfig()
-                .setName("testMapWithEnabledMerkleTreeConfig");
-        expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
-        Config config = new Config()
-                .addMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapWithDisabledMerkleTreeConfig() {
-        MapConfig expectedConfig = newMapConfig()
-                .setName("testMapWithEnabledMerkleTreeConfig");
-        expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
-        Config config = new Config()
-                .addMapConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapNearCacheConfig() {
-        NearCacheConfig expectedConfig = new NearCacheConfig()
-                .setName("nearCache")
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setMaxIdleSeconds(42)
-                .setCacheLocalEntries(true)
-                .setInvalidateOnChange(true)
-                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.INVALIDATE)
-                .setTimeToLiveSeconds(10)
-                .setEvictionConfig(evictionConfig())
-                .setSerializeKeys(true);
-
-        MapConfig mapConfig = newMapConfig()
-                .setName("nearCacheTest")
-                .setNearCacheConfig(expectedConfig);
-
-        Config config = new Config()
-                .addMapConfig(mapConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMapNearCacheEvictionConfig() {
-        NearCacheConfig expectedConfig = new NearCacheConfig()
-                .setName("nearCache");
-        expectedConfig.getEvictionConfig().setSize(23).setEvictionPolicy(EvictionPolicy.LRU);
-
-        MapConfig mapConfig = newMapConfig()
-                .setName("nearCacheTest")
-                .setNearCacheConfig(expectedConfig);
-
-        Config config = new Config()
-                .addMapConfig(mapConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        NearCacheConfig actualConfig = xmlConfig.getMapConfig("nearCacheTest").getNearCacheConfig();
-        assertEquals(23, actualConfig.getEvictionConfig().getSize());
-        assertEquals("LRU", actualConfig.getEvictionConfig().getEvictionPolicy().name());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testMultiMapConfig() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(DiscardMergePolicy.class.getSimpleName())
-                .setBatchSize(2342);
-
-        MultiMapConfig multiMapConfig = new MultiMapConfig()
-                .setName("myMultiMap")
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setBinary(false)
-                .setMergePolicyConfig(mergePolicyConfig);
-
-        Config config = new Config().addMultiMapConfig(multiMapConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        assertEquals(multiMapConfig, xmlConfig.getMultiMapConfig("myMultiMap"));
-    }
-
-    @Test
-    public void testWanConfig() {
-        @SuppressWarnings("rawtypes")
-        HashMap<String, Comparable> props = new HashMap<>();
-        props.put("prop1", "val1");
-        props.put("prop2", "val2");
-        props.put("prop3", "val3");
-        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
-                .setName("testName")
-                .setConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
-        WanBatchPublisherConfig batchPublisher = new WanBatchPublisherConfig()
-                .setClusterName("dummyGroup")
-                .setPublisherId("dummyPublisherId")
-                .setSnapshotEnabled(false)
-                .setInitialPublisherState(WanPublisherState.STOPPED)
-                .setQueueCapacity(1000)
-                .setBatchSize(500)
-                .setBatchMaxDelayMillis(1000)
-                .setResponseTimeoutMillis(60000)
-                .setQueueFullBehavior(WanQueueFullBehavior.DISCARD_AFTER_MUTATION)
-                .setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE)
-                .setDiscoveryPeriodSeconds(20)
-                .setMaxTargetEndpoints(100)
-                .setMaxConcurrentInvocations(500)
-                .setUseEndpointPrivateAddress(true)
-                .setIdleMinParkNs(100)
-                .setIdleMaxParkNs(1000)
-                .setTargetEndpoints("a,b,c,d")
-                .setAwsConfig(getDummyAwsConfig())
-                .setDiscoveryConfig(getDummyDiscoveryConfig())
-                .setEndpoint("WAN")
-                .setProperties(props);
-
-        batchPublisher.getSyncConfig()
-                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
-
-        WanCustomPublisherConfig customPublisher = new WanCustomPublisherConfig()
-                .setPublisherId("dummyPublisherId")
-                .setClassName("className")
-                .setProperties(props);
-
-        WanConsumerConfig wanConsumerConfig = new WanConsumerConfig()
-                .setClassName("dummyClass")
-                .setProperties(props)
-                .setPersistWanReplicatedData(false);
-
-        wanReplicationConfig.setConsumerConfig(wanConsumerConfig)
-                .addBatchReplicationPublisherConfig(batchPublisher)
-                .addCustomPublisherConfig(customPublisher);
-
-        Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ConfigCompatibilityChecker.checkWanConfigs(
-                config.getWanReplicationConfigs(),
-                xmlConfig.getWanReplicationConfigs());
-    }
-
-    @Test
-    public void testCardinalityEstimator() {
-        Config cfg = new Config();
-        CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig()
-                .setBackupCount(2)
-                .setAsyncBackupCount(3)
-                .setName("Existing")
-                .setSplitBrainProtectionName("splitBrainProtection")
-                .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
-        cfg.addCardinalityEstimatorConfig(estimatorConfig);
-
-        CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();
-        cfg.addCardinalityEstimatorConfig(defaultCardinalityEstConfig);
-
-        CardinalityEstimatorConfig existing = getNewConfigViaXMLGenerator(cfg).getCardinalityEstimatorConfig("Existing");
-        assertEquals(estimatorConfig, existing);
-
-        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
-                .getCardinalityEstimatorConfig("NotExisting/Default");
-        assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
-        assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallsbackToDefault.getAsyncBackupCount());
-        assertEquals(defaultCardinalityEstConfig.getSplitBrainProtectionName(), fallsbackToDefault.getSplitBrainProtectionName());
-    }
-
-    @Test
-    public void testTopicGlobalOrdered() {
-        Config cfg = new Config();
-
-        TopicConfig expectedConfig = new TopicConfig()
-                .setName("TestTopic")
-                .setGlobalOrderingEnabled(true)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-        cfg.addTopicConfig(expectedConfig);
-
-        TopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getTopicConfig("TestTopic");
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testTopicMultiThreaded() {
-        String testTopic = "TestTopic";
-        Config cfg = new Config();
-
-        TopicConfig expectedConfig = new TopicConfig()
-                .setName(testTopic)
-                .setMultiThreadingEnabled(true)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-        cfg.addTopicConfig(expectedConfig);
-
-        TopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getTopicConfig(testTopic);
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testReliableTopic() {
-        String testTopic = "TestTopic";
-        Config cfg = new Config();
-
-        ReliableTopicConfig expectedConfig = new ReliableTopicConfig()
-                .setName(testTopic)
-                .setReadBatchSize(10)
-                .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
-                .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
-
-        cfg.addReliableTopicConfig(expectedConfig);
-
-        ReliableTopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
-
-        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -2343,7 +1456,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Config cfg = new Config();
         cfg.getCacheConfig("testCacheWithDisabledMerkleTreeConfig")
-           .setMerkleTreeConfig(actual);
+                .setMerkleTreeConfig(actual);
 
         MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
@@ -2351,115 +1464,15 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
-    private DiscoveryConfig getDummyDiscoveryConfig() {
-        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(new TestDiscoveryStrategyFactory());
-        strategyConfig.addProperty("prop1", "val1");
-        strategyConfig.addProperty("prop2", "val2");
-
-        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
-        discoveryConfig.setNodeFilter(candidate -> false);
-        assert discoveryConfig.getNodeFilterClass() == null;
-        assert discoveryConfig.getNodeFilter() != null;
-        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
-        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("dummyClass2"));
-
-        return discoveryConfig;
-    }
-
-    private static class TestDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
-        @Override
-        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
-            return null;
-        }
-
-        @Override
-        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
-            return null;
-        }
-
-        @Override
-        public Collection<PropertyDefinition> getConfigurationProperties() {
-            return null;
-        }
-    }
-
-    private AwsConfig getDummyAwsConfig() {
-        return new AwsConfig().setProperty("host-header", "dummyHost")
-                .setProperty("region", "dummyRegion")
-                .setEnabled(false)
-                .setProperty("connection-timeout-seconds", "1")
-                .setProperty("access-key", "dummyKey")
-                .setProperty("iam-role", "dummyIam")
-                .setProperty("secret-key", "dummySecretKey")
-                .setProperty("security-group-name", "dummyGroupName")
-                .setProperty("tag-key", "dummyTagKey")
-                .setProperty("tag-value", "dummyTagValue");
-    }
-
-    private static Config getNewConfigViaXMLGenerator(Config config) {
+    private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
-        System.err.println("XML: " + xml);
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        return configBuilder.build();
-    }
-
-    private static MapConfig newMapConfig() {
-        return new MapConfig().setTieredStoreConfig(tieredStoreConfig());
-    }
-
-    private static TieredStoreConfig tieredStoreConfig() {
-        MemoryTierConfig memTierConfig = new MemoryTierConfig()
-                .setCapacity(MemorySize.parseMemorySize("13401 MB"));
-
-        DiskTierConfig diskTierConfig = new DiskTierConfig()
-                .setEnabled(true)
-                .setDeviceName("devicexz04");
-
-        return new TieredStoreConfig()
-                .setEnabled(true)
-                .setMemoryTierConfig(memTierConfig)
-                .setDiskTierConfig(diskTierConfig);
-    }
-
-    private static WanReplicationRef wanReplicationRef() {
-        return new WanReplicationRef()
-                .setName("wanReplication")
-                .setMergePolicyClassName("mergePolicy")
-                .setRepublishingEnabled(true)
-                .setFilters(Arrays.asList("filter1", "filter2"));
-    }
-
-    private static DataPersistenceConfig dataPersistenceConfig() {
-        return new DataPersistenceConfig()
-                .setEnabled(true)
-                .setFsync(true);
-    }
-
-    private static MerkleTreeConfig merkleTreeConfig() {
-        return new MerkleTreeConfig()
-                .setEnabled(true)
-                .setDepth(15);
-    }
-
-    private static EventJournalConfig eventJournalConfig() {
-        return new EventJournalConfig()
-                .setEnabled(true)
-                .setCapacity(123)
-                .setTimeToLiveSeconds(321);
-    }
-
-    private static EvictionConfig evictionConfig() {
-        return new EvictionConfig()
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setComparatorClassName("comparatorClassName")
-                .setSize(10)
-                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
+        LOGGER.fine("\n" + xml);
+        return new InMemoryXmlConfig(xml);
     }
 
     private static TcpIpConfig tcpIpConfig() {

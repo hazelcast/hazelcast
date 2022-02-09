@@ -257,12 +257,13 @@
     <!--
         Configuration for a device, which a tiered-store can reference and use for its disk-tier.
     -->
-    <device name="default">
+    <local-device name="default-tiered-store-device">
         <base-dir>tiered-store</base-dir>
+        <capacity unit="GIGABYTES" value="256"/>
         <block-size>4096</block-size>
-        <read-io-thread-count>16</read-io-thread-count>
+        <read-io-thread-count>4</read-io-thread-count>
         <write-io-thread-count>4</write-io-thread-count>
-    </device>
+    </local-device>
 
     <map name="default">
         <!--
@@ -360,14 +361,14 @@
                     The amount of memory to be reserved for the memory-tier of the tiered-store instance
                     of this map.
                 -->
-                <capacity>256 MB</capacity>
+                <capacity unit="MEGABYTES" value="256"/>
             </memory-tier>
 
             <!--
                 Whether disk-tier is enabled, and the name of the device to be used for the disk-tier
                 of the tiered-store instance of this map.
             -->
-            <disk-tier enabled="false" device-name="default"/>
+            <disk-tier enabled="false" device-name="default-tiered-store-device"/>
         </tiered-store>
 
     </map>
@@ -560,4 +561,5 @@
             <receive-window-multiplier>3</receive-window-multiplier>
         </edge-defaults>
     </jet>
+    <integrity-checker enabled="false"/>
 </hazelcast>

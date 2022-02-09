@@ -189,7 +189,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected JobConfig doGetJobConfig() {
         return callAndRetryIfTargetNotFound(() -> {
-            ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
+            ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId(), lightJobCoordinator);
             ClientMessage response = invocation(request, masterId()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);

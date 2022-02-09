@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -38,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -64,9 +67,9 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1, 8);
+        JetSqlRow row = projector.project(1, 8);
 
-        assertThat(row).isEqualTo(new Object[]{2, 4});
+        assertThat(row.getValues()).isEqualTo(new Object[]{2, 4});
     }
 
     @Test
@@ -83,12 +86,12 @@ public class KvRowProjectorTest {
                         MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
                         DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
                 ),
-                mock(ExpressionEvalContext.class)
+                SqlTestSupport.createExpressionEvalContext()
         );
 
-        Object[] row = projector.project(serializationService.toData(1), serializationService.toData(8));
+        JetSqlRow row = projector.project(serializationService.toData(1), serializationService.toData(8));
 
-        assertThat(row).isEqualTo(new Object[]{2, 4});
+        assertThat(row).isEqualTo(jetRow(2, 4));
     }
 
     @Test
@@ -104,7 +107,7 @@ public class KvRowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1, 8);
+        JetSqlRow row = projector.project(1, 8);
 
         assertThat(row).isNull();
     }

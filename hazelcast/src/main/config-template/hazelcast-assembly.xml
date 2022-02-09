@@ -455,10 +455,6 @@
         <collection-frequency-seconds>5</collection-frequency-seconds>
     </metrics>
 
-    <instance-tracking enabled="false">
-
-    </instance-tracking>
-
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>

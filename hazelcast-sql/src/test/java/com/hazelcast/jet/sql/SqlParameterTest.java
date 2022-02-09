@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
@@ -39,6 +40,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -99,8 +102,6 @@ public class SqlParameterTest extends SqlTestSupport {
         OffsetDateTime valOffsetDateTime = OffsetDateTime.now();
         CustomObject valObject = new CustomObject(1);
 
-        HazelcastInstance target = useClient ? client : member;
-
         SqlStatement statement = new SqlStatement(
                 "SELECT "
                 + "CAST(? as BOOLEAN), "
@@ -136,7 +137,7 @@ public class SqlParameterTest extends SqlTestSupport {
         statement.addParameter(valObject);
         statement.addParameter(null);
 
-        try (SqlResult res = target.getSql().execute(statement)) {
+        try (SqlResult res = targetInstance().getSql().execute(statement)) {
             for (SqlRow row : res) {
                 assertEquals(valBoolean, row.getObject(0));
                 assertEquals(valByte, (byte) row.getObject(1));
@@ -155,6 +156,44 @@ public class SqlParameterTest extends SqlTestSupport {
                 assertNull(row.getObject(14));
             }
         }
+    }
+
+    @Test
+    public void test_parameterNumericConversion() {
+        createMapping(targetInstance(), "map_short", Integer.class, Short.class);
+        IMap<Integer, Short> mapShort = targetInstance().getMap("map_short");
+        mapShort.put(1, (short) 1);
+        mapShort.put(2, (short) 2);
+
+        createMapping(targetInstance(), "map_float", Integer.class, Float.class);
+        IMap<Integer, Float> mapFloat = targetInstance().getMap("map_float");
+        mapFloat.put(1, 1.6f);
+        mapFloat.put(2, 2.6f);
+
+        // conversion from integer to short - value in range
+        assertRowsAnyOrder(targetInstance(), "select this from map_short where this>?", singletonList(1), rows(1, (short) 2));
+
+        // conversion from integer to short - value out of range
+        assertThatThrownBy(() -> targetInstance().getSql().execute("select * from map_short where this>?", 100_000))
+                .hasMessageContaining("At line 1, column 36: Failed to convert parameter at position 0 from INTEGER to SMALLINT: " +
+                        "Numeric overflow while converting INTEGER to SMALLINT");
+
+        // conversion from byte to short
+        assertRowsAnyOrder(targetInstance(), "select this from map_short where this>?", singletonList((byte) 1), rows(1, (short) 2));
+
+        // float to integer (even if it can be precise)
+        assertThatThrownBy(() -> targetInstance().getSql().execute("select this from map_short where this>?", 1f))
+                .hasMessageContaining("Parameter at position 0 must be of SMALLINT type, but REAL was found (consider adding an explicit CAST)");
+
+        // integer to float (precise)
+        assertRowsAnyOrder(targetInstance(), "select this from map_float where this>?", singletonList(2), rows(1, 2.6f));
+
+        // integer to float (not precise, float mantissa is 22 bits, larger integers aren't precise)
+        assertRowsAnyOrder(targetInstance(), "select this from map_float where this>?", singletonList((1 << 24) + 1), rows(1));
+    }
+
+    private HazelcastInstance targetInstance() {
+        return useClient ? client : member;
     }
 
     public static class CustomObject implements Serializable {

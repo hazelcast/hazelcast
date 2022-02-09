@@ -154,6 +154,33 @@ public final class ProxyManager {
         }
 
         readProxyDescriptors();
+
+        this.addDistributedObjectListener(new CleanupDistObjListener(this));
+    }
+
+    /**
+     * This listener is to destroy local distributed objects when they are destroyed in the cluster.
+     * This helps to avoid memory leak. Note that member-side code uses a similar event based mechanism to
+     * create/destroy local proxies when a destroy/create occurs in the cluster. We don't create proxies in
+     * this listener because the client does not need the proxies it does not use.
+     */
+    public static class CleanupDistObjListener implements DistributedObjectListener {
+
+        private final ProxyManager proxyManager;
+
+        public CleanupDistObjListener(ProxyManager proxyManager) {
+            this.proxyManager = proxyManager;
+        }
+
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            // no op
+        }
+
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+            proxyManager.destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
+        }
     }
 
     private void readProxyDescriptors() {

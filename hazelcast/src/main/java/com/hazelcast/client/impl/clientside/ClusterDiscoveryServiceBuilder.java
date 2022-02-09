@@ -139,6 +139,8 @@ class ClusterDiscoveryServiceBuilder {
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
+            //We use the usePublic parameter as true always because on the cloud context hazelcast members and clients
+            // are never in the same network even-tough they can be in the same group/zone etc.
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));

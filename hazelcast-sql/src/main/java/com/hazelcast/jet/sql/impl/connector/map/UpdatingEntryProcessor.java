@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -73,7 +73,7 @@ public final class UpdatingEntryProcessor
         if (entry.getValue() == null) {
             return 0L;
         } else {
-            Object[] row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+            JetSqlRow row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
             Object value = valueProjectorSupplier.get(evalContext).project(row);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");
@@ -86,7 +86,7 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void setSerializationService(SerializationService serializationService) {
-        this.evalContext = new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+        this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
         this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

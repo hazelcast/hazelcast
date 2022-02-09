@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nullable;
 
+import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -53,7 +55,7 @@ public class ProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object value = projector.project(new Object[]{1});
+        Object value = projector.project(new JetSqlRow(TEST_SS, new Object[]{1}));
 
         assertThat(value).isEqualTo(2L);
     }

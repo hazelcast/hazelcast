@@ -21,6 +21,11 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import java.util.Objects;
 import java.util.Properties;
 
+/**
+ * Common configuration shared by authentication modules provided out-of-the box in Hazelcast.
+ *
+ * @param <T> self type used in the fluent API
+ */
 public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginConfig<T>> implements AuthenticationConfig {
 
     private Boolean skipIdentity;
@@ -31,6 +36,9 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipIdentity;
     }
 
+    /**
+     * Allows skipping identity (name) assignment during the authentication.
+     */
     public T setSkipIdentity(Boolean skipIdentity) {
         this.skipIdentity = skipIdentity;
         return self();
@@ -40,6 +48,9 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipEndpoint;
     }
 
+    /**
+     * Allows skipping address assignment of authenticated user/service.
+     */
     public T setSkipEndpoint(Boolean skipEndpoint) {
         this.skipEndpoint = skipEndpoint;
         return self();
@@ -49,6 +60,10 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipRole;
     }
 
+    /**
+     * Allows skipping role assignment during authentication. Setting this value to {@code true} might speed-up authentication
+     * between cluster members (member-to-member). The roles only need to be assigned in client-to-member authentications.
+     */
     public T setSkipRole(Boolean skipRole) {
         this.skipRole = skipRole;
         return self();

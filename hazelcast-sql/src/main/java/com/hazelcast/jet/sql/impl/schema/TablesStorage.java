@@ -84,6 +84,14 @@ public class TablesStorage {
         return (Mapping) storage().remove(name);
     }
 
+    View getView(String name) {
+        Object obj = storage().get(name);
+        if (obj instanceof View) {
+            return (View) obj;
+        }
+        return null;
+    }
+
     View removeView(String name) {
         return (View) storage().remove(name);
     }
@@ -97,6 +105,14 @@ public class TablesStorage {
                 .stream()
                 .filter(m -> m instanceof Mapping)
                 .map(m -> ((Mapping) m).name())
+                .collect(Collectors.toList());
+    }
+
+    Collection<String> viewNames() {
+        return storage().values()
+                .stream()
+                .filter(v -> v instanceof View)
+                .map(v -> ((View) v).name())
                 .collect(Collectors.toList());
     }
 

@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +45,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, IgnoredForCoverage.class, ParallelJVMTest.class})
+@Category({SlowTest.class, IgnoredForCoverage.class})
 public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     private static final int DURATION_SECS = 10;

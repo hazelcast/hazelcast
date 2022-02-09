@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -93,15 +94,15 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
         SeriesTable table = (SeriesTable) table0;
-        BatchSource<Object[]> source = table.items(predicate, projections);
-        ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
+        BatchSource<JetSqlRow> source = table.items(predicate, projections);
+        ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
 }

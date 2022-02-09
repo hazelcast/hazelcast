@@ -19,6 +19,8 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -327,8 +329,8 @@ public class Edge implements IdentifiedDataSerializable {
      * determined from the given {@code key}. It means that all items will be
      * directed to the same processor and other processors will be idle.
      * <p>
-     * It is equivalent to using {@code partitioned(t -> key)}, but it a
-     * has small optimization that the partition ID is not recalculated
+     * It is equivalent to using {@code partitioned(t -> key)}, but it has
+     * a small optimization that the partition ID is not recalculated
      * for each stream item.
      */
     @Nonnull
@@ -663,8 +665,8 @@ public class Edge implements IdentifiedDataSerializable {
          */
         UNICAST,
         /**
-         * This policy sets up isolated parallel data paths between two vertices,
-         * as much as it can given the level of mismatch between the local
+         * This policy sets up isolated parallel data paths between two vertices
+         * as much as it can, given the level of mismatch between the local
          * parallelism (LP) of the upstream vs. the downstream vertices.
          * Specifically:
          * <ul><li>
@@ -731,13 +733,14 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
-    private static final class KeyPartitioner<T, K> implements Partitioner<T> {
+    private static final class KeyPartitioner<T, K> implements Partitioner<T>, SerializationServiceAware {
 
         private static final long serialVersionUID = 1L;
 
         private final FunctionEx<T, K> keyExtractor;
         private final Partitioner<? super K> partitioner;
         private final String edgeDebugName;
+        private SerializationService serializationService;
 
         KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
                        String edgeDebugName) {
@@ -749,6 +752,9 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public void init(@Nonnull DefaultPartitionStrategy strategy) {
             partitioner.init(strategy);
+            if (keyExtractor instanceof SerializationServiceAware) {
+                ((SerializationServiceAware) keyExtractor).setSerializationService(serializationService);
+            }
         }
 
         @Override
@@ -758,6 +764,11 @@ public class Edge implements IdentifiedDataSerializable {
                 throw new JetException("Null key from key extractor, edge: " + edgeDebugName);
             }
             return partitioner.getPartition(key, partitionCount);
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.serializationService = serializationService;
         }
     }
 }

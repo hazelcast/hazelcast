@@ -27,9 +27,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -47,11 +47,17 @@ public final class AddressUtil {
     private static final int HEXADECIMAL_RADIX = 16;
     private static final int DECIMAL_RADIX = 10;
 
+    private static NetworkInterfacesEnumerator networkInterfacesEnumerator = NetworkInterfacesEnumerator.defaultEnumerator();
+
     private AddressUtil() {
     }
 
+    static void setNetworkInterfacesEnumerator(NetworkInterfacesEnumerator networkInterfacesEnumerator) {
+        AddressUtil.networkInterfacesEnumerator = networkInterfacesEnumerator;
+    }
+
     public static boolean matchAnyInterface(String address, Collection<String> interfaces) {
-        if (interfaces == null || interfaces.size() == 0) {
+        if (interfaces == null || interfaces.isEmpty()) {
             return false;
         }
         for (String interfaceMask : interfaces) {
@@ -73,7 +79,7 @@ public final class AddressUtil {
     }
 
     public static boolean matchAnyDomain(String name, Collection<String> patterns) {
-        if (patterns == null || patterns.size() == 0) {
+        if (patterns == null || patterns.isEmpty()) {
             return false;
         }
         for (String pattern : patterns) {
@@ -172,12 +178,10 @@ public final class AddressUtil {
 
     private static Inet6Address findRealInet6Address(Inet6Address inet6Address) throws SocketException {
         Inet6Address resultInetAddress = null;
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements()) {
-            NetworkInterface ni = interfaces.nextElement();
-            Enumeration<InetAddress> addresses = ni.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                InetAddress address = addresses.nextElement();
+        List<NetworkInterfaceInfo> interfaces = networkInterfacesEnumerator.getNetworkInterfaces();
+        for (NetworkInterfaceInfo ni : interfaces) {
+            List<InetAddress> addresses = ni.getInetAddresses();
+            for (InetAddress address : addresses) {
                 if (!isInet6Compatible(address, inet6Address)) {
                     continue;
                 }
@@ -192,7 +196,6 @@ public final class AddressUtil {
         }
         return resultInetAddress;
     }
-
 
     private static boolean isInet6Compatible(InetAddress address, Inet6Address inet6Address) {
         if (!(address instanceof Inet6Address)) {
@@ -231,11 +234,10 @@ public final class AddressUtil {
             return Collections.singleton(inet6Address);
         }
 
-        LinkedList<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
+        LinkedList<Inet6Address> possibleAddresses = new LinkedList<>();
         try {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                NetworkInterface ni = interfaces.nextElement();
+            List<NetworkInterfaceInfo> interfaces = networkInterfacesEnumerator.getNetworkInterfaces();
+            for (NetworkInterfaceInfo ni : interfaces) {
                 addPossibleAddress(inet6Address, possibleAddresses, ni);
             }
         } catch (IOException ignored) {
@@ -251,10 +253,9 @@ public final class AddressUtil {
     }
 
     private static void addPossibleAddress(Inet6Address inet6Address, Deque<Inet6Address> possibleAddresses,
-                                           NetworkInterface ni) throws UnknownHostException {
-        Enumeration<InetAddress> addresses = ni.getInetAddresses();
-        while (addresses.hasMoreElements()) {
-            InetAddress address = addresses.nextElement();
+                                           NetworkInterfaceInfo ni) throws UnknownHostException {
+        List<InetAddress> addresses = ni.getInetAddresses();
+        for (InetAddress address : addresses) {
             if (address instanceof Inet4Address) {
                 continue;
             }
@@ -267,7 +268,6 @@ public final class AddressUtil {
             }
         }
     }
-
 
     public static Collection<String> getMatchingIpv4Addresses(final AddressMatcher addressMatcher) {
         if (addressMatcher.isIPv6()) {
@@ -352,7 +352,7 @@ public final class AddressUtil {
             // means any port
             return Collections.emptySet();
         }
-        Set<Integer> selectedPorts = new HashSet<Integer>(ports);
+        Set<Integer> selectedPorts = new HashSet<>(ports);
         transformPortDefinitionsToPorts(portDefinitions, selectedPorts);
         if (selectedPorts.contains(0)) {
             // means any port
@@ -453,7 +453,7 @@ public final class AddressUtil {
     }
 
     private static Collection<String> parseIPV6parts(String[] parts, String address) {
-        final LinkedList<String> ipString = new LinkedList<String>();
+        final LinkedList<String> ipString = new LinkedList<>();
         int count = 0;
         int mark = -1;
         for (int i = 0; i < parts.length; i++) {

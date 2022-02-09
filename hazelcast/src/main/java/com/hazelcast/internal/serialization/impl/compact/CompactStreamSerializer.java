@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.nio.InstanceCreationUtil.createNewInstance;
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 
@@ -159,7 +158,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
         Class<?> aClass = o.getClass();
-        CompactSerializableRegistration registration = getOrCreateRegistration(o);
+        CompactSerializableRegistration registration = getOrCreateRegistration(aClass);
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
@@ -234,17 +233,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
     }
 
-    private CompactSerializableRegistration getOrCreateRegistration(Object object) {
-        return classToRegistrationMap.computeIfAbsent(object.getClass(), aClass -> {
-            CompactSerializer<?> serializer;
-            if (object instanceof Compactable) {
-                serializer = ((Compactable<?>) object).getCompactSerializer();
-            } else {
-                serializer = reflectiveSerializer;
-            }
-
-            return new CompactSerializableRegistration(aClass, aClass.getName(), serializer);
-        });
+    private CompactSerializableRegistration getOrCreateRegistration(Class clazz) {
+        return classToRegistrationMap.computeIfAbsent(clazz,
+                aClass -> new CompactSerializableRegistration(aClass, aClass.getName(), reflectiveSerializer));
     }
 
     private CompactSerializableRegistration getOrCreateRegistration(String typeName) {
@@ -258,8 +249,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 return null;
             }
             try {
-                Object object = createNewInstance(clazz);
-                return getOrCreateRegistration(object);
+                return getOrCreateRegistration(clazz);
             } catch (Exception e) {
                 throw new HazelcastSerializationException("Class " + clazz + " must have an empty constructor", e);
             }
@@ -332,7 +322,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
         Schema schema = classToSchemaMap.get(aClass);
         if (schema == null) {
-            CompactSerializableRegistration registration = getOrCreateRegistration(o);
+            CompactSerializableRegistration registration = getOrCreateRegistration(aClass);
             schema = buildSchema(registration, o);
             schemaService.putLocal(schema);
             classToSchemaMap.put(aClass, schema);

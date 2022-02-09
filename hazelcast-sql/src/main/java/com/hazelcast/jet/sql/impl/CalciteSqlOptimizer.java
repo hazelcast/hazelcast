@@ -39,8 +39,11 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -95,6 +98,9 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -255,7 +261,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (node instanceof SqlDropIndex) {
             return toDropIndexPlan(planKey, (SqlDropIndex) node);
         } else if (node instanceof SqlCreateJob) {
-            return toCreateJobPlan(planKey, parseResult, context);
+            return toCreateJobPlan(planKey, parseResult, context, task.getSql());
         } else if (node instanceof SqlAlterJob) {
             return toAlterJobPlan(planKey, (SqlAlterJob) node);
         } else if (node instanceof SqlDropJob) {
@@ -281,8 +287,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames(),
                     context,
                     parseResult.isInfiniteRows(),
-                    false
-            );
+                    false,
+                    task.getSql());
         }
     }
 
@@ -328,7 +334,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new DropIndexPlan(planKey, sqlDropIndex.indexName(), sqlDropIndex.ifExists(), planExecutor);
     }
 
-    private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context) {
+    private SqlPlan toCreateJobPlan(PlanKey planKey, QueryParseResult parseResult, OptimizerContext context, String query) {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
@@ -341,8 +347,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlConvertedResult.getFieldNames(),
                 context,
                 dmlParseResult.isInfiniteRows(),
-                true
-        );
+                true,
+                query);
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
@@ -350,6 +356,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.jobConfig(),
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
+                query,
+                parseResult.isInfiniteRows(),
                 planExecutor
         );
     }
@@ -427,7 +435,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             List<String> fieldNames,
             OptimizerContext context,
             boolean isInfiniteRows,
-            boolean isCreateJob
+            boolean isCreateJob,
+            String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
@@ -510,6 +519,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
+                    query,
+                    isInfiniteRows,
                     planExecutor,
                     permissions
             );
@@ -525,6 +536,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     parameterMetadata,
                     visitor.getObjectKeys(),
                     visitor.getDag(),
+                    query,
                     isInfiniteRows,
                     rowMetadata,
                     planExecutor,
@@ -581,6 +593,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
+
+        detectStandaloneImposeOrder(logicalRel);
+
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -644,6 +659,46 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return visitor;
+    }
+
+    // The IMPOSE_ORDER function must also drop late items. We don't have this implemented,
+    // therefore we detect if, besides IMPOSE_ORDER, there's also streaming window aggregation.
+    // If not, we throw an error. But we don't cover all cases...
+    private void detectStandaloneImposeOrder(RelNode rel) {
+        HazelcastRelMetadataQuery mq = HazelcastRelMetadataQuery.reuseOrCreate(rel.getCluster().getMetadataQuery());
+        WatermarkedFields wm = mq.extractWatermarkedFields(rel);
+        if (wm != null && !wm.isEmpty()) {
+            StreamingAggregationDetector detector = new StreamingAggregationDetector();
+            detector.go(rel);
+            if (!detector.found) {
+                throw QueryException.error("Currently, IMPOSE_ORDER can only be used with window aggregation");
+            }
+        }
+    }
+
+    private static class StreamingAggregationDetector extends RelVisitor {
+        @SuppressWarnings("checkstyle:VisibilityModifier")
+        public boolean found;
+
+        @Override
+        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+            if (node instanceof Aggregate) {
+                RelNode input = ((Aggregate) node).getInput();
+                if (input instanceof SlidingWindow) {
+                    found = true;
+                    return;
+                }
+
+                if (input instanceof Project) {
+                    RelNode projectInput = ((Project) input).getInput();
+                    if (projectInput instanceof SlidingWindow) {
+                        found = true;
+                        return;
+                    }
+                }
+            }
+            super.visit(node, ordinal, parent);
+        }
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {

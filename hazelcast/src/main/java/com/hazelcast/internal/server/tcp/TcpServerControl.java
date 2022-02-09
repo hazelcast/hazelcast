@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
@@ -32,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
@@ -88,7 +88,13 @@ public final class TcpServerControl {
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
-        List<Address> allAliases = new ArrayList<Address>();
+        List<Address> allAliases = new ArrayList<>();
+        // if we support member protocol in the corresponding cm, we want to give priority to member
+        // public address in address registration phase
+        if (supportedProtocolTypes.contains(ProtocolType.MEMBER)
+                && remoteAddressesPerProtocolType.containsKey(ProtocolType.MEMBER)) {
+            allAliases.addAll(remoteAddressesPerProtocolType.remove(ProtocolType.MEMBER));
+        }
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -129,73 +135,54 @@ public final class TcpServerControl {
      * without any spoofing or other validation checks.
      * When executed on the connection initiator side, the connection is registered on the remote address
      * with which it was registered in {@link TcpServerConnectionManager#planes},
-     * ignoring the {@code remoteEndpoint} argument.
+     * ignoring the {@code primaryAddress} argument.
      *
      * @param connection           the connection that send the handshake
-     * @param remoteEndpoint       the address of the remote endpoint
+     * @param remoteEndpointAddress       the address of the remote endpoint
      * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
      *                             will be registered. These are the public addresses configured on the remote.
      */
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private synchronized void process0(TcpServerConnection connection,
-                                       Address remoteEndpoint,
+                                       Address remoteEndpointAddress,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
-        final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
-            // this is the connection initiator side --> register the connection under the address that was requested
-            remoteEndpoint = remoteAddress;
-        }
-        if (remoteEndpoint == null) {
+        UUID remoteUuid = handshake.getUuid();
+        Address primaryAddress = remoteEndpointAddress;
+        if (primaryAddress == null) {
             if (remoteAddressAliases == null) {
                 throw new IllegalStateException("Remote endpoint and remote address aliases cannot be both null");
             } else {
-                // let it fail if no remoteEndpoint and no aliases are defined
-                remoteEndpoint = remoteAddressAliases.iterator().next();
+                // let it fail if no primaryAddress and no aliases are defined
+                primaryAddress = remoteAddressAliases.iterator().next();
             }
         }
-        connection.setRemoteAddress(remoteEndpoint);
-        serverContext.onSuccessfulConnection(remoteEndpoint);
+        // On the acceptor side, this target address is null, on the connector side,
+        // it may not be the same as the connected address in some conditions.
+        Address targetAddress = connection.getRemoteAddress();
+        Address connectedAddress = new Address(connection.getRemoteSocketAddress());
+        remoteAddressAliases.add(connectedAddress);
+
+        connection.setRemoteAddress(primaryAddress);
+        serverContext.onSuccessfulConnection(primaryAddress);
         if (handshake.isReply()) {
-            new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false,
+            new SendMemberHandshakeTask(logger, serverContext, connection, primaryAddress, false,
                     handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
         }
 
-        if (checkAlreadyConnected(connection, remoteEndpoint, handshake.getPlaneIndex())) {
-            return;
-        }
-
         if (logger.isLoggable(Level.FINEST)) {
-            logger.finest("Registering connection " + connection + " to address " + remoteEndpoint
+            logger.finest("Registering connection " + connection + " to address " + primaryAddress
                     + " planeIndex:" + handshake.getPlaneIndex());
         }
-        boolean registered = connectionManager.register(remoteEndpoint, connection, handshake.getPlaneIndex());
 
-        if (remoteAddressAliases != null && registered) {
-            for (Address remoteAddressAlias : remoteAddressAliases) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
-                            + " planeIndex:" + handshake.getPlaneIndex());
-                }
-                connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteAddressAlias, connection);
-            }
-        }
-    }
-
-    private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
-        if (existingConnection != null && existingConnection.isAlive()) {
-            if (existingConnection != connection) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(existingConnection + " is already bound to " + remoteEndPoint
-                            + ", new one is " + connection + " planeIndex:" + planeIndex);
-                }
-                // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
-                connectionManager.connections.add(connection);
-            }
-            return true;
-        }
-        return false;
+        connectionManager.register(
+                primaryAddress,
+                targetAddress,
+                remoteAddressAliases,
+                remoteUuid,
+                connection,
+                handshake.getPlaneIndex()
+        );
     }
 }

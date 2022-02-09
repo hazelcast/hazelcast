@@ -16,18 +16,24 @@
 
 package com.hazelcast.jet.sql;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public abstract class SqlJsonTestSupport extends SqlTestSupport {
+    private static final ObjectMapper SERIALIZER = new ObjectMapper();
+
     public static HazelcastJsonValue json(final String value) {
         return new HazelcastJsonValue(value);
     }
@@ -56,5 +62,23 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         }
 
         return results;
+    }
+
+    public static Map<Object, Object> objectMap(Object... kvPairs) {
+        final Map<Object, Object> result = new LinkedHashMap<>();
+
+        for (int i = 0; i < kvPairs.length; i += 2) {
+            result.put(kvPairs[i], kvPairs[i + 1]);
+        }
+
+        return result;
+    }
+
+    public static String jsonString(Object value) {
+        try {
+            return SERIALIZER.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new HazelcastException("Unable to serialize value: ", e);
+        }
     }
 }

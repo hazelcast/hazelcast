@@ -23,8 +23,9 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -92,7 +93,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
         return remainderExp;
     }
 
-    public ComparatorEx<Object[]> getComparator() {
+    public ComparatorEx<JetSqlRow> getComparator() {
         if (index.getType() == IndexType.SORTED) {
             RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
             List<FieldCollation> collations = relCollation.getFieldCollations().stream()

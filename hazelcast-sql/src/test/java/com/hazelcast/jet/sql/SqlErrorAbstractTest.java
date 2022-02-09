@@ -67,17 +67,16 @@ public abstract class SqlErrorAbstractTest extends SqlTestSupport {
         return smallInstanceConfig();
     }
 
-    protected void checkTimeout(boolean useClient, int dataSetSize) {
+    protected void checkTimeout(boolean useClient) {
         // Start two instances and fill them with data
         instance1 = newHazelcastInstance(false);
         instance2 = newHazelcastInstance(true);
         client = newClient();
 
-        createMapping(instance1, MAP_NAME, long.class, long.class);
-        populate(instance1, dataSetSize);
-
         // Execute query on the instance1.
-        HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query().setTimeoutMillis(1L));
+        SqlStatement query = new SqlStatement("select v from table(generate_stream(1))")
+                .setTimeoutMillis(1L);
+        HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query);
         assertTrue(error.getMessage().contains("CANCEL_FORCEFUL"));
     }
 
@@ -123,14 +122,10 @@ public abstract class SqlErrorAbstractTest extends SqlTestSupport {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        createMapping(instance1, MAP_NAME, long.class, long.class);
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-        map.put(1L, 1L);
-        map.put(2L, 2L);
-
         HazelcastInstance target = useClient ? client : instance1;
 
-        try (SqlResult res = target.getSql().execute(query().setCursorBufferSize(1))) {
+        try (SqlResult res = target.getSql().execute("select * from table(generate_stream(1))")) {
+            sleepSeconds(1);
             res.close();
 
             try {

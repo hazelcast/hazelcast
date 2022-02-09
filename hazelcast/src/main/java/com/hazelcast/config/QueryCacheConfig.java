@@ -16,14 +16,17 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
@@ -40,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  */
 
 @SuppressWarnings("checkstyle:methodcount")
-public class QueryCacheConfig implements IdentifiedDataSerializable {
+public class QueryCacheConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * By default, after reaching this minimum size, node immediately sends buffered events to {@code QueryCache}.
@@ -73,9 +76,15 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     public static final boolean DEFAULT_COALESCE = false;
 
     /**
+     * Do not serialize given keys by default.
+     */
+    public static final boolean DEFAULT_SERIALIZE_KEYS = false;
+
+    /**
      * By default, hold values of entries in {@code QueryCache} as binary.
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+
 
     /**
      * After reaching this minimum size, node immediately sends buffered events to {@code QueryCache}.
@@ -109,10 +118,13 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      */
     private boolean coalesce = DEFAULT_COALESCE;
 
+    private boolean serializeKeys = DEFAULT_SERIALIZE_KEYS;
+
     /**
      * Memory format of values of entries in {@code QueryCache}.
      */
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+
 
     /**
      * The name of {@code QueryCache}.
@@ -357,6 +369,30 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Checks if the {@link  com.hazelcast.map.QueryCache}
+     * key is stored in serialized format or by-reference.
+     *
+     * @return {@code true} if the key is stored in serialized
+     * format, {@code false} if the key is stored by-reference
+     */
+    public boolean isSerializeKeys() {
+        return serializeKeys;
+    }
+
+    /**
+     * Sets if the {@link  com.hazelcast.map.QueryCache}
+     * key is stored in serialized format or by-reference.
+     *
+     * @param serializeKeys {@code true} if the key is stored in
+     *                      serialized format, {@code false} if stored by-reference
+     * @return this {@link  QueryCacheConfig} instance
+     */
+    public QueryCacheConfig setSerializeKeys(boolean serializeKeys) {
+        this.serializeKeys = serializeKeys;
+        return this;
+    }
+
+    /**
      * Returns {@link EvictionConfig} instance for this {@code QueryCache}
      *
      * @return the {@link EvictionConfig} instance for this {@code QueryCache}
@@ -423,24 +459,6 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public String toString() {
-        return "QueryCacheConfig{"
-                + "batchSize=" + batchSize
-                + ", bufferSize=" + bufferSize
-                + ", delaySeconds=" + delaySeconds
-                + ", includeValue=" + includeValue
-                + ", populate=" + populate
-                + ", coalesce=" + coalesce
-                + ", inMemoryFormat=" + inMemoryFormat
-                + ", name='" + name + '\''
-                + ", predicateConfig=" + predicateConfig
-                + ", evictionConfig=" + evictionConfig
-                + ", entryListenerConfigs=" + entryListenerConfigs
-                + ", indexConfigs=" + indexConfigs
-                + '}';
-    }
-
-    @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
@@ -464,6 +482,10 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         out.writeObject(evictionConfig);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(indexConfigs, out);
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeBoolean(serializeKeys);
+        }
     }
 
     @Override
@@ -480,6 +502,10 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         evictionConfig = in.readObject();
         entryListenerConfigs = readNullableList(in);
         indexConfigs = readNullableList(in);
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            serializeKeys = in.readBoolean();
+        }
     }
 
     @Override
@@ -512,23 +538,25 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         if (coalesce != that.coalesce) {
             return false;
         }
+        if (serializeKeys != that.serializeKeys) {
+            return false;
+        }
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (predicateConfig != null ? !predicateConfig.equals(that.predicateConfig) : that.predicateConfig != null) {
+        if (!Objects.equals(predicateConfig, that.predicateConfig)) {
             return false;
         }
-        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+        if (!Objects.equals(evictionConfig, that.evictionConfig)) {
             return false;
         }
-        if (entryListenerConfigs != null
-                ? !entryListenerConfigs.equals(that.entryListenerConfigs) : that.entryListenerConfigs != null) {
+        if (!Objects.equals(entryListenerConfigs, that.entryListenerConfigs)) {
             return false;
         }
-        return indexConfigs != null ? indexConfigs.equals(that.indexConfigs) : that.indexConfigs == null;
+        return Objects.equals(indexConfigs, that.indexConfigs);
     }
 
     @Override
@@ -540,6 +568,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         result = 31 * result + (includeValue ? 1 : 0);
         result = 31 * result + (populate ? 1 : 0);
         result = 31 * result + (coalesce ? 1 : 0);
+        result = 31 * result + (serializeKeys ? 1 : 0);
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (predicateConfig != null ? predicateConfig.hashCode() : 0);
@@ -547,5 +576,24 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         result = 31 * result + (entryListenerConfigs != null ? entryListenerConfigs.hashCode() : 0);
         result = 31 * result + (indexConfigs != null ? indexConfigs.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "QueryCacheConfig{"
+                + "batchSize=" + batchSize
+                + ", bufferSize=" + bufferSize
+                + ", delaySeconds=" + delaySeconds
+                + ", includeValue=" + includeValue
+                + ", populate=" + populate
+                + ", coalesce=" + coalesce
+                + ", serializeKeys=" + serializeKeys
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", name='" + name + '\''
+                + ", predicateConfig=" + predicateConfig
+                + ", evictionConfig=" + evictionConfig
+                + ", entryListenerConfigs=" + entryListenerConfigs
+                + ", indexConfigs=" + indexConfigs
+                + '}';
     }
 }

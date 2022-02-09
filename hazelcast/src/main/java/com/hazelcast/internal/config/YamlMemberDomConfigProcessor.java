@@ -23,7 +23,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DeviceConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -107,8 +107,12 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static java.lang.Integer.parseInt;
 
-@SuppressWarnings({ "checkstyle:methodcount", "checkstyle:cyclomaticcomplexity", "checkstyle:classfanoutcomplexity",
-        "checkstyle:classdataabstractioncoupling" })
+@SuppressWarnings({
+        "checkstyle:methodcount",
+        "checkstyle:cyclomaticcomplexity",
+        "checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling"
+})
 public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     public YamlMemberDomConfigProcessor(boolean domLevel3, Config config) {
@@ -302,11 +306,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleDevice(Node parentNode) {
+    protected void handleLocalDevice(Node parentNode) {
         for (Node deviceNode : childElements(parentNode)) {
             String name = deviceNode.getNodeName();
-            DeviceConfig deviceConfig = ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, DeviceConfig.class);
-            handleDeviceNode(deviceNode, deviceConfig);
+            LocalDeviceConfig localDeviceConfig =
+                    (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
+            handleLocalDeviceNode(deviceNode, localDeviceConfig);
         }
     }
 

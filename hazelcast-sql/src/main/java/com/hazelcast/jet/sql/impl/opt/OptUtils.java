@@ -61,6 +61,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
@@ -203,10 +205,10 @@ public final class OptUtils {
     }
 
     /**
-     * Get possible physical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have the
+     * physical trait. Every returned input is guaranteed to have a unique trait
+     * set.
      *
-     * @param input Subset.
      * @return Physical rels.
      */
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
@@ -218,10 +220,10 @@ public final class OptUtils {
     }
 
     /**
-     * Get possible logical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
+     * Finds a set for the given RelNode, and return subsets that have the
+     * logical trait. Every returned input is guaranteed to have a unique trait
+     * set.
      *
-     * @param input Subset.
      * @return Logical rels.
      */
     public static Collection<RelNode> extractLogicalRelsFromSubset(RelNode input) {
@@ -232,13 +234,6 @@ public final class OptUtils {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.LOGICAL);
     }
 
-    /**
-     * Get possible rels from the given subset matching given predicate.
-     * Every returned input will match the given predicate.
-     *
-     * @param input Subset.
-     * @return matching rels.
-     */
     private static Collection<RelNode> extractRelsFromSubset(RelNode input, Predicate<RelNode> predicate) {
         Set<RelTraitSet> traitSets = new HashSet<>();
 
@@ -489,5 +484,23 @@ public final class OptUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Return true if the `expression` contains any input reference to a field
+     * with index in `indexes`.
+     */
+    public static boolean hasInputRef(RexNode expression, int... indexes) {
+        boolean[] res = {false};
+        expression.accept(new RexVisitorImpl<Void>(true) {
+            @Override
+            public Void visitInputRef(RexInputRef inputRef) {
+                if (arrayIndexOf(inputRef.getIndex(), indexes) >= 0) {
+                    res[0] = true;
+                }
+                return null;
+            }
+        });
+        return res[0];
     }
 }

@@ -32,10 +32,16 @@ import java.util.Objects;
  * Changes to properties do not affect the behavior of already running statements.
  */
 public final class SqlStatement {
-    /** Value for the timeout that is not set. */
+    /**
+     * Value for the timeout that is not set. The value of {@link
+     * SqlConfig#setStatementTimeoutMillis} will be used.
+     */
     public static final long TIMEOUT_NOT_SET = -1;
 
-    /** Value for the timeout that is disabled. */
+    /**
+     * Value for the timeout that is disabled, meaning there's no time limit to
+     * run a query.
+     */
     public static final long TIMEOUT_DISABLED = 0;
 
     /** Default timeout. */

@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -33,7 +34,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -72,14 +73,14 @@ public class SqlHashJoinPTest extends SqlTestSupport {
     public void test_innerJoin() {
         runTest(INNER, TRUE_PREDICATE, 2, new int[]{0}, new int[]{0},
                 asList(
-                        new Object[]{1, "left-1"},
-                        new Object[]{2, "left-2"}
+                        jetRow(1, "left-1"),
+                        jetRow(2, "left-2")
                 ),
                 asList(
-                        new Object[]{2, "right-2"},
-                        new Object[]{3, "right-3"}
+                        jetRow(2, "right-2"),
+                        jetRow(3, "right-3")
                 ),
-                singletonList(new Object[]{2, "left-2", 2, "right-2"})
+                singletonList(jetRow(2, "left-2", 2, "right-2"))
         );
     }
 
@@ -87,17 +88,17 @@ public class SqlHashJoinPTest extends SqlTestSupport {
     public void test_innerNonEquiJoin() {
         runTest(INNER, LEFT_LT_RIGHT, 2, new int[]{}, new int[]{},
                 asList(
-                        new Object[]{1, "left-1"},
-                        new Object[]{2, "left-2"}
+                        jetRow(1, "left-1"),
+                        jetRow(2, "left-2")
                 ),
                 asList(
-                        new Object[]{2, "right-2"},
-                        new Object[]{3, "right-3"}
+                        jetRow(2, "right-2"),
+                        jetRow(3, "right-3")
                 ),
                 asList(
-                        new Object[]{1, "left-1", 2, "right-2"},
-                        new Object[]{1, "left-1", 3, "right-3"},
-                        new Object[]{2, "left-2", 3, "right-3"}
+                        jetRow(1, "left-1", 2, "right-2"),
+                        jetRow(1, "left-1", 3, "right-3"),
+                        jetRow(2, "left-2", 3, "right-3")
                 )
         );
     }
@@ -106,16 +107,16 @@ public class SqlHashJoinPTest extends SqlTestSupport {
     public void test_leftEquiJoin() {
         runTest(LEFT, TRUE_PREDICATE, 2, new int[]{0}, new int[]{0},
                 asList(
-                        new Object[]{1, "left-1"},
-                        new Object[]{2, "left-2"}
+                        jetRow(1, "left-1"),
+                        jetRow(2, "left-2")
                 ),
                 asList(
-                        new Object[]{2, "right-2"},
-                        new Object[]{3, "right-3"}
+                        jetRow(2, "right-2"),
+                        jetRow(3, "right-3")
                 ),
                 asList(
-                        new Object[]{1, "left-1", null, null},
-                        new Object[]{2, "left-2", 2, "right-2"}
+                        jetRow(1, "left-1", null, null),
+                        jetRow(2, "left-2", 2, "right-2")
                 )
         );
     }
@@ -124,16 +125,16 @@ public class SqlHashJoinPTest extends SqlTestSupport {
     public void test_leftNonEquiJoin() {
         runTest(LEFT, LEFT_GT_RIGHT, 2, new int[]{}, new int[]{},
                 asList(
-                        new Object[]{1, "left-1"},
-                        new Object[]{2, "left-2"}
+                        jetRow(1, "left-1"),
+                        jetRow(2, "left-2")
                 ),
                 asList(
-                        new Object[]{2, "right-2"},
-                        new Object[]{3, "right-3"}
+                        jetRow(2, "right-2"),
+                        jetRow(3, "right-3")
                 ),
                 asList(
-                        new Object[]{1, "left-1", null, null},
-                        new Object[]{2, "left-2", null, null}
+                        jetRow(1, "left-1", null, null),
+                        jetRow(2, "left-2", null, null)
                 )
         );
     }
@@ -144,9 +145,9 @@ public class SqlHashJoinPTest extends SqlTestSupport {
             int rightInputColumnCount,
             int[] leftEquiJoinIndices,
             int[] rightEquiJoinIndices,
-            List<Object[]> leftInput,
-            List<Object[]> rightInput,
-            List<Object[]> output
+            List<JetSqlRow> leftInput,
+            List<JetSqlRow> rightInput,
+            List<JetSqlRow> output
     ) {
 
         ProcessorSupplier processor = SqlHashJoinP.supplier(

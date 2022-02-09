@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -29,9 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.awaitSingleRunningJob;
-import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
+import java.util.concurrent.Semaphore;
+
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Test for different error conditions.
@@ -42,7 +45,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout() {
-        checkTimeout(false, DEFAULT_CURSOR_BUFFER_SIZE);
+        checkTimeout(false);
     }
 
     @Test
@@ -51,19 +54,29 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(false);
         instance2 = newHazelcastInstance(true);
 
+        Semaphore semaphore = new Semaphore(0);
         Thread shutdownThread = new Thread(() -> {
-            awaitSingleRunningJob(instance1);
+            try {
+                semaphore.acquire(); // wait until at least one row is received
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             instance2.shutdown();
         });
-
         shutdownThread.start();
 
-        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(1000))");
-
         // Start query
-        HazelcastSqlException error = assertSqlException(instance1, streamingQuery);
+        assertThatThrownBy(() -> {
+            try (SqlResult res = instance1.getSql().execute("SELECT * FROM TABLE(GENERATE_STREAM(1000))")) {
+                for (SqlRow ignore : res) {
+                    semaphore.release();
+                }
+            }
+        })
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasRootCauseInstanceOf(MemberLeftException.class);
+
         shutdownThread.join();
-        assertInstanceOf(MemberLeftException.class, findRootCause(error));
     }
 
     @Test

@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import org.apache.calcite.sql.SqlCall;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -29,41 +29,52 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.getOrderingColumnType;
-import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapFunctionOperand;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastResources.RESOURCES;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastTypeFromSqlTypeName;
 
 final class WindowOperandMetadata extends HazelcastSqlOperandMetadata {
 
-    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters) {
+    private final int[] operandIndexes;
+
+    /**
+     * @param operandIndexes Indexes of operands that contain INTERVAL values that need to match
+     *                       the timestamp column type.
+     */
+    WindowOperandMetadata(List<HazelcastTableFunctionParameter> parameters, int[] operandIndexes) {
         super(parameters);
+        this.operandIndexes = operandIndexes;
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        SqlNode input = binding.operand(0);
-        SqlNode column = unwrapFunctionOperand(binding.operand(1));
-        SqlNode lag = binding.operand(2);
-        boolean result = checkColumnOperand(binding, input, (SqlCall) column, lag);
-
-        if (!result && throwOnFailure) {
-            throw binding.newValidationSignatureError();
+        boolean result = true;
+        for (int columnIndex : operandIndexes) {
+            result &= checkOperandTypes(binding, throwOnFailure, columnIndex);
         }
+        assert result || !throwOnFailure;
         return result;
     }
 
-    private static boolean checkColumnOperand(HazelcastCallBinding binding, SqlNode input, SqlCall column, SqlNode lag) {
+    private boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure, int columnIndex) {
+        SqlNode lag = binding.operand(columnIndex);
         HazelcastSqlValidator validator = binding.getValidator();
-        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1);
-        return checkColumnType(validator, orderingColumnType, lag);
-    }
-
-    private static boolean checkColumnType(SqlValidator validator, SqlTypeName orderingColumnType, SqlNode lag) {
-        SqlTypeName lagType = validator.getValidatedNodeType(lag).getSqlTypeName();
+        SqlTypeName orderingColumnType = getOrderingColumnType(binding, 1).getSqlTypeName();
+        boolean result;
+        SqlTypeName lagType = ((SqlValidator) validator).getValidatedNodeType(lag).getSqlTypeName();
         if (SqlTypeName.INT_TYPES.contains(orderingColumnType)) {
-            return SqlTypeName.INT_TYPES.contains(lagType);
+            result = SqlTypeName.INT_TYPES.contains(lagType);
         } else if (SqlTypeName.DATETIME_TYPES.contains(orderingColumnType)) {
-            return lagType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
+            result = lagType.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME;
         } else {
-            return false;
+            result = false;
         }
+
+        if (!result && throwOnFailure) {
+            QueryDataTypeFamily hzOrderingColumnType = toHazelcastTypeFromSqlTypeName(orderingColumnType).getTypeFamily();
+            QueryDataTypeFamily hzLagType = toHazelcastTypeFromSqlTypeName(lagType).getTypeFamily();
+            throw validator.newValidationError(binding.getCall(),
+                    RESOURCES.windowFunctionTypeMismatch(hzOrderingColumnType.toString(), hzLagType.toString()));
+        }
+        return result;
     }
 }

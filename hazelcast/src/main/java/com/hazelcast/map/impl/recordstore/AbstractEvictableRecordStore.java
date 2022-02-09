@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -69,7 +70,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Nonnull
     protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
-        return new ExpirySystem(this, mapContainer, mapServiceContext);
+        return new ExpirySystemImpl(this, mapContainer, mapServiceContext);
     }
 
     @Override

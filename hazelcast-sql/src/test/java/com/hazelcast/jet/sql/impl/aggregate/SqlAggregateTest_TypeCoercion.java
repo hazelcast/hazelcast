@@ -54,7 +54,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT " + allFields + " " +
                         "FROM t " +
-                        "GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14",
+                        "GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15",
                 singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));
     }
 
@@ -68,7 +68,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
                         allFields +
                         ", count(null) " +
                         "from allTypesTable",
-                Collections.singleton(new Row(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 0L, 0L)));
+                Collections.singleton(new Row(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 0L, 0L)));
     }
 
     @Test

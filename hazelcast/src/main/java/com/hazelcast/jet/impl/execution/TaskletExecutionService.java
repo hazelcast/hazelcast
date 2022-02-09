@@ -27,7 +27,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.metrics.MetricsImpl;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -273,6 +274,19 @@ public class TaskletExecutionService {
         );
     }
 
+    private void handleTaskletExecutionError(TaskletTracker t, Throwable e) {
+        if (e instanceof CancellationException) {
+            logger.fine("Job was cancelled by the user.");
+            t.executionTracker.exception(e);
+        } else if (e instanceof ResultLimitReachedException) {
+            logger.fine("SQL LIMIT reached.");
+            t.executionTracker.exception(e);
+        } else {
+            logger.info("Exception in " + t.tasklet, e);
+            t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+        }
+    }
+
     private final class BlockingWorker implements Runnable {
         private final TaskletTracker tracker;
         private final CountDownLatch startedLatch;
@@ -288,11 +302,11 @@ public class TaskletExecutionService {
             final Tasklet t = tracker.tasklet;
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
-            MetricsImpl.Container userMetricsContextContainer = MetricsImpl.container();
+            Contexts.Container contextContainer = Contexts.container();
 
             try {
                 blockingWorkerCount.inc();
-                userMetricsContextContainer.setContext(t.getMetricsContext());
+                contextContainer.setContext(t.getProcessorContext());
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -308,11 +322,10 @@ public class TaskletExecutionService {
                         && !tracker.executionTracker.executionCompletedExceptionally()
                         && !isShutdown);
             } catch (Throwable e) {
-                logger.warning("Exception in " + t, e);
-                tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
+                handleTaskletExecutionError(tracker, e);
             } finally {
                 blockingWorkerCount.inc(-1L);
-                userMetricsContextContainer.setContext(null);
+                contextContainer.setContext(null);
                 currentThread().setContextClassLoader(clBackup);
                 tracker.executionTracker.taskletDone();
             }
@@ -335,7 +348,7 @@ public class TaskletExecutionService {
 
         private boolean finestLogEnabled;
         private Thread myThread;
-        private MetricsImpl.Container userMetricsContextContainer;
+        private Contexts.Container contextContainer;
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -344,7 +357,7 @@ public class TaskletExecutionService {
         @Override
         public void run() {
             myThread = currentThread();
-            userMetricsContextContainer = MetricsImpl.container();
+            contextContainer = Contexts.container();
 
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
@@ -384,23 +397,16 @@ public class TaskletExecutionService {
             }
             try {
                 myThread.setContextClassLoader(t.jobClassLoader);
-                userMetricsContextContainer.setContext(t.tasklet.getMetricsContext());
+                contextContainer.setContext(t.tasklet.getProcessorContext());
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
                     dismissTasklet(t);
                 }
                 progressTracker.mergeWith(result);
             } catch (Throwable e) {
-                if (e instanceof CancellationException) {
-                    logger.info("Job was cancelled by the user.");
-                    CancellationException ex = (CancellationException) e;
-                    t.executionTracker.exception(ex);
-                } else {
-                    logger.warning("Exception in " + t.tasklet, e);
-                    t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
-                }
+                handleTaskletExecutionError(t, e);
             } finally {
-                userMetricsContextContainer.setContext(null);
+                contextContainer.setContext(null);
             }
             if (t.executionTracker.executionCompletedExceptionally()) {
                 dismissTasklet(t);

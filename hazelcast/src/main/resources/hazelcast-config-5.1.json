@@ -139,8 +139,14 @@
         "jet": {
           "$ref": "#/definitions/Jet"
         },
-        "device": {
-          "$ref": "#/definitions/Device"
+        "local-device": {
+          "$ref": "#/definitions/LocalDevice"
+        },
+        "dynamic-configuration": {
+          "$ref": "#/definitions/DynamicConfiguration"
+        },
+        "integrity-checker": {
+          "$ref": "#/definitions/IntegrityChecker"
         }
       }
     },
@@ -1442,6 +1448,11 @@
                   "type": "boolean",
                   "default": false
                 },
+                "serialize-keys": {
+                  "description": "Defines if the Query Cache keys should be serialized or not. Keys are better to be serialized if they are mutable and need to be cloned via serialization. Default value is false.",
+                  "type": "boolean",
+                  "default": false
+                },
                 "delay-seconds": {
                   "type": "integer",
                   "minimum": 0,
@@ -1486,10 +1497,8 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "type": "string",
-                    "pattern": "^[1-9]([0-9]*) (B|KB|MB|GB)$",
-                    "default": "256 MB",
-                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The capacity should follow the pattern [1-9]([0-9]*) (B|KB|MB|GB). For instance, capacity=\"1024 MB\" is valid, whereas capacity=\"2^10 mb\" is not."
+                    "$ref": "#/definitions/MemorySize",
+                    "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
               },
@@ -1512,6 +1521,9 @@
               }
             },
             "required": ["enabled"]
+          },
+          "partition-strategy": {
+            "type": "string"
           }
         }
       }
@@ -2928,6 +2940,27 @@
         "migration"
       ]
     },
+    "MemorySize": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "enum": [
+            "BYTES",
+            "KILOBYTES",
+            "MEGABYTES",
+            "GIGABYTES"
+          ],
+          "default": "MEGABYTES",
+          "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
+        },
+        "value": {
+          "type": "number",
+          "default": 128,
+          "minimum": 1,
+          "description": "Default value is 128."
+        }
+      }
+    },
     "NativeMemory": {
       "description": "This feature is available only in Hazelcast Enterprise HD.",
       "properties": {
@@ -2945,25 +2978,7 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "type": "object",
-          "properties": {
-            "unit": {
-              "enum": [
-                "BYTES",
-                "KILOBYTES",
-                "MEGABYTES",
-                "GIGABYTES"
-              ],
-              "default": "MEGABYTES",
-              "description": "Unit can be bytes, kilobytes, megabytes and gigabytes. Default unit is MEGABYTES."
-            },
-            "value": {
-              "type": "number",
-              "default": 128,
-              "minimum": 1,
-              "description": "Default value is 128."
-            }
-          }
+          "$ref": "#/definitions/MemorySize"
         },
         "min-block-size": {
           "type": "integer",
@@ -3191,6 +3206,40 @@
         "allow-override-default-serializers": {
           "type": "boolean",
           "default": false
+        },
+        "compact-serialization": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enables/disables the compact serialization."
+            },
+            "registered-classes": {
+              "type": "array",
+              "description": "Contains classes registered to be serialized with compact serialization.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "class": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the class to be serialized with compact serialization. If the class has an explicit serializer, it must be specified with type-name and serializer attributes. Those attributes must not be present if the class is to be serialized with reflective compact serializer. Either both or none of the attributes must be present."
+                  },
+                  "serializer": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the compact serializer to be used to serialize the class."
+                  },
+                  "type-name": {
+                    "type": "string",
+                    "description": "Type name of the class."
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3688,7 +3737,7 @@
         }
       }
     },
-    "Device": {
+    "LocalDevice": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -3698,6 +3747,10 @@
             "type": "string",
             "default": "tiered-store",
             "description": "Device base directory that will be used for tiered-store."
+          },
+          "capacity": {
+            "$ref": "#/definitions/MemorySize",
+            "description": "Device capacity, i.e., what is the soft upper bound capacity of the device. The default is 256 gigabytes."
           },
           "block-size": {
             "type": "integer",
@@ -3717,6 +3770,29 @@
             "default": 4,
             "description": "Write IO thread count. The default is 4."
           }
+        }
+      }
+    },
+    "DynamicConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "persistence-enabled": {
+          "type": "boolean",
+          "description": "True if dynamic configuration persistence is enabled."
+        },
+        "persistence-file": {
+          "type": "string",
+          "description": "Path for dynamic configuration persistence file. Dynamic changes will be persisted into this file. If not set, configuration file that was used to start Hazelcast (root configuration) will be used. If set, this file (the file specified in the persistence-file path) will be used for persisting dynamic changes instead of root configuration file. User should also do the following two: Create an XML or YAML file specified in this path and import this XML or YAML file to the root configuration. Path can be an absolute or relative path to the node startup directory."
+        },
+        "backup-dir": {
+          "type": "string",
+          "description": "Directory for dynamic configuration persistence file backups. Each new backup will be created inside this directory. Can be an absolute or relative path to the node startup directory. If not set, new folder will be created at the node startup directory."
+        },
+        "backup-count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many backups will be kept. Default is 5. You can set this to zero to disable backups."
         }
       }
     },
@@ -4001,6 +4077,9 @@
                 "target-endpoints": {
                   "type": "string",
                   "description": "Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented."
+                },
+                "endpoint": {
+                  "type": "string"
                 },
                 "sync": {
                   "type": "object",
@@ -4804,6 +4883,19 @@
           "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
         }
       }
+    },
+    "IntegrityChecker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     }
   }
 }

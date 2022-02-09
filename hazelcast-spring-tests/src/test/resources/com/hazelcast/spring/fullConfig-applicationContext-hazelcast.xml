@@ -450,6 +450,7 @@
                         <hz:buffer-size>33</hz:buffer-size>
                         <hz:coalesce>true</hz:coalesce>
                         <hz:populate>false</hz:populate>
+                        <hz:serialize-keys>true</hz:serialize-keys>
                         <hz:delay-seconds>12</hz:delay-seconds>
                         <hz:entry-listeners>
                             <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
@@ -471,7 +472,7 @@
             <hz:map name="testMap5">
                 <hz:tiered-store enabled="true">
                     <hz:memory-tier>
-                        <hz:capacity>128 MB</hz:capacity>
+                        <hz:capacity unit="MEGABYTES" value="128"/>
                     </hz:memory-tier>
                     <hz:disk-tier enabled="true" device-name="the-local0751"/>
                 </hz:tiered-store>
@@ -621,6 +622,16 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
+                <hz:compact-serialization enabled="true">
+                    <hz:registered-classes>
+                        <hz:class>
+                            com.hazelcast.spring.serialization.DummyReflectiveSerializable
+                        </hz:class>
+                        <hz:class type-name="dummy" serializer="com.hazelcast.spring.serialization.DummyCompactSerializer">
+                            com.hazelcast.spring.serialization.DummyCompactSerializable
+                        </hz:class>
+                    </hz:registered-classes>
+                </hz:compact-serialization>
             </hz:serialization>
 
             <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
@@ -1058,18 +1069,26 @@
                     <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
                 </hz:edge-defaults>
             </hz:jet>
-            <hz:device name="device0">
+            <hz:local-device name="device0">
                 <hz:base-dir>/dev/devices/tiered_store_device0</hz:base-dir>
+                <hz:capacity unit="MEGABYTES" value="9321"/>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>8</hz:write-io-thread-count>
-            </hz:device>
-            <hz:device name="device1">
+            </hz:local-device>
+            <hz:local-device name="device1">
                 <hz:base-dir>/dev/devices/tiered_store_device1</hz:base-dir>
                 <hz:block-size>8192</hz:block-size>
                 <hz:read-io-thread-count>16</hz:read-io-thread-count>
                 <hz:write-io-thread-count>16</hz:write-io-thread-count>
-            </hz:device>
+            </hz:local-device>
+
+            <hz:dynamic-configuration>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
+                <hz:persistence-file>/mnt/persistence-file</hz:persistence-file>
+                <hz:backup-dir>/mnt/backup-dir</hz:backup-dir>
+                <hz:backup-count>7</hz:backup-count>
+            </hz:dynamic-configuration>
 
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>
@@ -1077,6 +1096,7 @@
                     <hz:property name="port">514</hz:property>
                 </hz:properties>
             </hz:auditlog>
+            <hz:integrity-checker enabled="false"/>
         </hz:config>
     </hz:hazelcast>
 

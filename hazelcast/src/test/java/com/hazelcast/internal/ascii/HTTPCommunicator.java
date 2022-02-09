@@ -113,6 +113,10 @@ public class HTTPCommunicator {
     public static final String URI_LOG_LEVEL = "log-level";
     public static final String URI_LOG_LEVEL_RESET = "log-level/reset";
 
+    // Config
+    public static final String URI_CONFIG_RELOAD = "config/reload";
+    public static final String URI_CONFIG_UPDATE = "config/update";
+
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
@@ -369,6 +373,16 @@ public class HTTPCommunicator {
                                String wanRepConfigJson) throws IOException {
         String url = getUrl(URI_ADD_WAN_CONFIG);
         return doPost(url, clusterName, clusterPassword, wanRepConfigJson).response;
+    }
+
+    public ConnectionResponse configReload(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_CONFIG_RELOAD);
+        return doPost(url, clusterName, clusterPassword);
+    }
+
+    public ConnectionResponse configUpdate(String clusterName, String clusterPassword, String configAsString) throws IOException {
+        String url = getUrl(URI_CONFIG_UPDATE);
+        return doPost(url, clusterName, clusterPassword, configAsString);
     }
 
     public ConnectionResponse getCPGroupIds() throws IOException {

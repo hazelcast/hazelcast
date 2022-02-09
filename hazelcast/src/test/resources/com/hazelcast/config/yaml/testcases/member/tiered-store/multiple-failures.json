@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "device": {
+      "local-device": {
         "some-device":{
           "base-dir": 1111,
           "block-size": 511,
@@ -23,15 +23,10 @@
           "tiered-store": {
             "enabled": true,
             "memory-tier": {
-              "capacity": -1
-            }
-          }
-        },
-        "my-map-3": {
-          "tiered-store": {
-            "enabled": true,
-            "memory-tier": {
-              "capacity": "01 KB"
+              "capacity": {
+                "unit": "MEGABYTES",
+                "value": -1
+              }
             }
           }
         }
@@ -43,33 +38,33 @@
     "pointerToViolation": "#/hazelcast",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/Device/additionalProperties",
-        "pointerToViolation": "#/hazelcast/device/some-device",
+        "schemaLocation": "#/definitions/LocalDevice/additionalProperties",
+        "pointerToViolation": "#/hazelcast/local-device/some-device",
         "causingExceptions": [
           {
-            "schemaLocation": "#/definitions/Device/additionalProperties/properties/base-dir",
-            "pointerToViolation": "#/hazelcast/device/some-device/base-dir",
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/base-dir",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/base-dir",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: String, found: Integer"
           },
           {
-            "schemaLocation": "#/definitions/Device/additionalProperties/properties/block-size",
-            "pointerToViolation": "#/hazelcast/device/some-device/block-size",
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/block-size",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/block-size",
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "511 is not greater or equal to 512"
           },
           {
-            "schemaLocation": "#/definitions/Device/additionalProperties/properties/read-io-thread-count",
-            "pointerToViolation": "#/hazelcast/device/some-device/read-io-thread-count",
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/read-io-thread-count",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/read-io-thread-count",
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "0 is not greater or equal to 1"
           },
           {
-            "schemaLocation": "#/definitions/Device/additionalProperties/properties/write-io-thread-count",
-            "pointerToViolation": "#/hazelcast/device/some-device/write-io-thread-count",
+            "schemaLocation": "#/definitions/LocalDevice/additionalProperties/properties/write-io-thread-count",
+            "pointerToViolation": "#/hazelcast/local-device/some-device/write-io-thread-count",
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "0 is not greater or equal to 1"
@@ -96,23 +91,16 @@
             "message": "required key [enabled] not found"
           },
           {
-            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
-            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity",
+            "schemaLocation": "#/definitions/MemorySize/properties/value",
+            "pointerToViolation": "#/hazelcast/map/my-map-2/tiered-store/memory-tier/capacity/value",
             "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: String, found: Integer"
-          },
-          {
-            "schemaLocation": "#/definitions/Map/additionalProperties/properties/tiered-store/properties/memory-tier/properties/capacity",
-            "pointerToViolation": "#/hazelcast/map/my-map-3/tiered-store/memory-tier/capacity",
-            "causingExceptions": [],
-            "keyword": "pattern",
-            "message": "string [01 KB] does not match pattern ^[1-9]([0-9]*) (B|KB|MB|GB)$"
+            "keyword": "minimum",
+            "message": "-1 is not greater or equal to 1"
           }
         ],
-        "message": "4 schema violations found"
+        "message": "3 schema violations found"
       }
     ],
-    "message": "8 schema violations found"
+    "message": "7 schema violations found"
   }
 }

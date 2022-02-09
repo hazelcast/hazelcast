@@ -72,12 +72,17 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     protected void runInternal() {
-        verifyLock();
+        recordStore.beforeOperation();
         try {
-            operator(this).init(dataKey, oldValue, newValue, null, modificationType, null, newTtl)
+            verifyLock();
+            try {
+                operator(this).init(dataKey, oldValue, newValue, null, modificationType, null, newTtl)
                     .doPostOperateOps();
+            } finally {
+                unlockKey();
+            }
         } finally {
-            unlockKey();
+            recordStore.afterOperation();
         }
     }
 
@@ -97,6 +102,18 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
                     String.format("Unexpected error! EntryOffloadableSetUnlockOperation finished but the unlock method "
                             + "returned false for caller=%s and threadId=%d", caller, threadId));
         }
+    }
+
+    @Override
+    protected void innerBeforeRun() throws Exception {
+        // Do registration on the record store in the run
+        // to avoid nested registrations
+    }
+
+    @Override
+    public void afterRunFinal() {
+        // Do de-registration on the record store in the run
+        // to avoid nested registrations
     }
 
     @Override

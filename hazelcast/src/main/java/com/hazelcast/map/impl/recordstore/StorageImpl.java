@@ -84,13 +84,14 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void updateRecordValue(Data key, R record, Object value) {
+    public R updateRecordValue(Data key, R record, Object value) {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
         record.setValue(inMemoryFormat == BINARY
                 ? serializationService.toData(value) : serializationService.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
+        return record;
     }
 
     @Override

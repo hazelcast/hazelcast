@@ -382,6 +382,7 @@ hazelcast:
           in-memory-format: BINARY
           coalesce: false
           populate: true
+          serialize-keys: false
           eviction:
             eviction-policy: LRU
             max-size-policy: ENTRY_COUNT
@@ -395,10 +396,12 @@ hazelcast:
       tiered-store:
         enabled: true
         memory-tier:
-          capacity: "1 GB"
+          capacity:
+            unit: MEGABYTES
+            value: 256
         disk-tier:
           enabled: true
-          device-name: my-local-device
+          device-name: default-tiered-store-device
 
   multimap:
     default:
@@ -602,6 +605,13 @@ hazelcast:
           - java
           - "["
           - com.
+    compact-serialization:
+      enabled: true
+      registered-classes:
+        - class: com.hazelcast.examples.DummyType
+        - class: com.hazelcast.examples.DummyTypeWithSerializer
+          type-name: dummy
+          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -927,8 +937,14 @@ hazelcast:
     validation-timeout-seconds: 10
     rebalance-delay-seconds: 240
 
-  device:
-    my-local-device:
+  dynamic-configuration:
+    persistence-enabled: true
+    persistence-file: /mnt/persistence-file
+    backup-dir: /mnt/backup-dir
+    backup-count: 7
+
+  local-device:
+    default-tiered-store-device:
       base-dir: base-dir
       block-size: 4096
       read-io-thread-count: 4

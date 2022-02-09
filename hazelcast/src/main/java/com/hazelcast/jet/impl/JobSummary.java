@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,7 +31,7 @@ import java.io.IOException;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
-public class JobSummary implements IdentifiedDataSerializable {
+public class JobSummary implements IdentifiedDataSerializable, Versioned {
 
     private boolean isLightJob;
     private long jobId;
@@ -39,20 +41,21 @@ public class JobSummary implements IdentifiedDataSerializable {
     private long submissionTime;
     private long completionTime;
     private String failureText;
+    private SqlSummary sqlSummary;
 
     public JobSummary() {
     }
 
-    /**
-     * Constructor for a running job
-     */
     public JobSummary(
             boolean isLightJob,
             long jobId,
             long executionId,
             @Nonnull String nameOrId,
             @Nonnull JobStatus status,
-            long submissionTime
+            long submissionTime,
+            long completionTime,
+            String failureText,
+            SqlSummary sqlSummary
     ) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
@@ -60,25 +63,9 @@ public class JobSummary implements IdentifiedDataSerializable {
         this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;
-    }
-
-    /**
-     * Constructor for a completed job
-     */
-    public JobSummary(
-            long jobId,
-            @Nonnull String nameOrId,
-            @Nonnull JobStatus status,
-            long submissionTime,
-            long completionTime,
-            @Nullable String failureText
-    ) {
-        this.jobId = jobId;
-        this.nameOrId = nameOrId;
-        this.status = status;
-        this.submissionTime = submissionTime;
         this.completionTime = completionTime;
         this.failureText = failureText;
+        this.sqlSummary = sqlSummary;
     }
 
     public boolean isLightJob() {
@@ -131,6 +118,17 @@ public class JobSummary implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns additional information for jobs backing an SQL query. Returns null if either:<ul>
+     *      <li>the job doesn't back an SQL query
+     *      <li>the user doesn't have the permission to access this information (TODO)
+     * </ul>
+     */
+    @Nullable
+    public SqlSummary getSqlSummary() {
+        return sqlSummary;
+    }
+
+    /**
      * Returns null if job is not yet completed.
      */
     @Nullable
@@ -158,6 +156,13 @@ public class JobSummary implements IdentifiedDataSerializable {
         out.writeLong(submissionTime);
         out.writeLong(completionTime);
         out.writeString(failureText);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            boolean serializeSqlSummary = sqlSummary != null;
+            out.writeBoolean(serializeSqlSummary);
+            if (serializeSqlSummary) {
+                out.writeObject(sqlSummary);
+            }
+        }
     }
 
     @Override
@@ -170,6 +175,9 @@ public class JobSummary implements IdentifiedDataSerializable {
         submissionTime = in.readLong();
         completionTime = in.readLong();
         failureText = in.readString();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1) && in.readBoolean()) {
+            sqlSummary = in.readObject();
+        }
     }
 
     @Override
@@ -182,6 +190,7 @@ public class JobSummary implements IdentifiedDataSerializable {
                 ", submissionTime=" + toLocalTime(submissionTime) +
                 ", completionTime=" + toLocalTime(completionTime) +
                 ", failureText=" + failureText +
+                ", sqlSummary=" + sqlSummary +
                 '}';
     }
 }

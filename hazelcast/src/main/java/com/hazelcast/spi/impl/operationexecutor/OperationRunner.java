@@ -170,6 +170,7 @@ public abstract class OperationRunner {
             operation.afterRun();
         } finally {
             operation.popThreadContext();
+            operation.afterRunFinal();
         }
     }
 }

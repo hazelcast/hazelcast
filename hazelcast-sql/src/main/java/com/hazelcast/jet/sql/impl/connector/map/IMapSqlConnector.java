@@ -38,6 +38,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -158,7 +159,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> filter,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<Object[]>> eventTimePolicyProvider
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
@@ -197,7 +198,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> remainingFilter,
             @Nonnull List<Expression<?>> projection,
             @Nullable IndexFilter indexFilter,
-            @Nullable ComparatorEx<Object[]> comparator,
+            @Nullable ComparatorEx<JetSqlRow> comparator,
             boolean descending
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
@@ -344,9 +345,9 @@ public class IMapSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 toString(table),
                 // TODO do a simpler, specialized deleting-only processor
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
-                    assert row.length == 1;
-                    return row[0];
+                updateMapP(table.getMapName(), (FunctionEx<JetSqlRow, Object>) row -> {
+                    assert row.getFieldCount() == 1;
+                    return row.get(0);
                 }, (v, t) -> null));
     }
 

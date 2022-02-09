@@ -55,7 +55,7 @@ public final class QueryUtils {
         return instanceName + "-" + workerType;
     }
 
-    public static HazelcastSqlException toPublicException(Throwable e, UUID localMemberId) {
+    public static HazelcastSqlException toPublicException(Throwable e, @Nonnull UUID localMemberId) {
         if (e instanceof HazelcastSqlException) {
             return (HazelcastSqlException) e;
         }

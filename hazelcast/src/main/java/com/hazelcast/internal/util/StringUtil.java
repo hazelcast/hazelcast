@@ -514,4 +514,21 @@ public final class StringUtil {
     public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
         return XmlUtil.format(input, indent);
     }
+
+    /**
+     * Ensures that the returned string is at most {@code maxLength} long. If
+     * it's longer, trims it to one char less (not taking word boundaries into
+     * account), and appends an ellipsis. Returns {@code null} for null input.
+     *
+     * @param s The string to shorten
+     * @param maxLength Maximum length the returned string must have
+     * @return Shortened string
+     */
+    public static String shorten(String s, int maxLength) {
+        Preconditions.checkPositive("maxLength", maxLength);
+        if (s == null || s.length() <= maxLength) {
+            return s;
+        }
+        return s.substring(maxLength - 1) + '…';
+    }
 }

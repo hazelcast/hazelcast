@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,7 +23,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.TEST_SS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -66,9 +66,9 @@ public class ValueSqlAggregationTest {
         ValueSqlAggregation original = new ValueSqlAggregation();
         original.accumulate("v");
 
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        ValueSqlAggregation serialized = ss.toObject(ss.toData(original));
+        ValueSqlAggregation serialized = TEST_SS.toObject(TEST_SS.toData(original));
 
-        assertThat(serialized).isEqualToComparingFieldByField(original);
+        // the value inside ValueSqlAggregate is not deserialized
+        assertEquals(TEST_SS.toData("v"), serialized.collect());
     }
 }

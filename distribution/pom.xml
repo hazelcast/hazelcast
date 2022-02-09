@@ -27,7 +27,7 @@
 
     <name>hazelcast-distribution</name>
     <artifactId>hazelcast-distribution</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
@@ -48,6 +48,7 @@
                         <includedLicense>Lesser General Public License (LGPL)</includedLicense>
                         <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
                         <includedLicense>The Go license</includedLicense>
+                        <includedLicense>Elastic License 2.0</includedLicense>
                     </includedLicenses>
                 </configuration>
             </plugin>
@@ -157,6 +158,25 @@
                     </rules>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                            <excludes>
+                                <exclude>.*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -179,7 +199,6 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
@@ -226,7 +245,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate53</artifactId>
-            <version>2.1.1</version>
+            <version>2.2.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.hazelcast</groupId>
@@ -369,6 +388,11 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-3-connector-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
