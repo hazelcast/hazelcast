@@ -36,7 +36,7 @@ abstract class AbstractWanEvent extends AbstractEventBase {
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.add("uuid", uuid != null ? uuid.toString() : "null");
+        json.add("uuid", uuid.toString());
         return json;
     }
 }

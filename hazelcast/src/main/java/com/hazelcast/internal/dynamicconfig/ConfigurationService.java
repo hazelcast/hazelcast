@@ -88,8 +88,18 @@ public interface ConfigurationService {
     ConfigUpdateResult update(Config newConfig);
 
     /**
-     * Starts a configuration process asynchronously. Updates the configuration with the given configuration. Updating means
-     * dynamically changing all the differences dynamically changeable.
+     * Updates the configuration with the declarative configuration. Updating
+     * means dynamically changing all the differences dynamically changeable.
+     *
+     * @return update result which includes added and ignored configurations
+     */
+    default ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    /**
+     * Starts a configuration update process asynchronously. Updates the configuration with the given configuration. Updating
+     * means dynamically changing all the differences dynamically changeable.
      *
      * @param configPatch string representation of the config patch, to find any new dynamically changeable sub configs
      * @return the unique identifier of the config update process. The MC Events emitted during the process will have the same
@@ -99,16 +109,6 @@ public interface ConfigurationService {
 
     default UUID updateAsync() {
         return updateAsync(null);
-    }
-
-    /**
-     * Updates the configuration with the declarative configuration. Updating
-     * means dynamically changing all the differences dynamically changeable.
-     *
-     * @return update result which includes added and ignored configurations
-     */
-    default ConfigUpdateResult update() {
-        return update(null);
     }
 
     /**
