@@ -111,7 +111,6 @@ public class LightMasterContext {
                     idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
 
-        dag.lowerDownParallelism(nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
