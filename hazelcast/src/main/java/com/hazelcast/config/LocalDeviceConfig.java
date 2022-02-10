@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
+
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Objects;
@@ -54,8 +57,14 @@ public final class LocalDeviceConfig implements DeviceConfig {
      */
     public static final int DEFAULT_WRITE_IO_THREAD_COUNT = 4;
 
+    /**
+     * Default device capacity. It is 256 GB.
+     */
+    public static final Capacity DEFAULT_CAPACITY = Capacity.of(256, MemoryUnit.GIGABYTES);
+
     private String name = DEFAULT_DEVICE_NAME;
     private File baseDir = new File(DEFAULT_DEVICE_BASE_DIR).getAbsoluteFile();
+    private Capacity capacity = DEFAULT_CAPACITY;
     private int blockSize = DEFAULT_BLOCK_SIZE_IN_BYTES;
     private int readIOThreadCount = DEFAULT_READ_IO_THREAD_COUNT;
     private int writeIOThreadCount = DEFAULT_WRITE_IO_THREAD_COUNT;
@@ -67,6 +76,7 @@ public final class LocalDeviceConfig implements DeviceConfig {
     public LocalDeviceConfig(LocalDeviceConfig localDeviceConfig) {
         name = localDeviceConfig.getName();
         baseDir = localDeviceConfig.getBaseDir();
+        capacity = localDeviceConfig.getCapacity();
         blockSize = localDeviceConfig.getBlockSize();
         readIOThreadCount = localDeviceConfig.getReadIOThreadCount();
         writeIOThreadCount = localDeviceConfig.getWriteIOThreadCount();
@@ -108,6 +118,27 @@ public final class LocalDeviceConfig implements DeviceConfig {
      */
     public LocalDeviceConfig setBaseDir(@Nonnull File baseDir) {
         this.baseDir = checkNotNull(baseDir, "Base directory must not be null");
+        return this;
+    }
+
+    /**
+     * Returns the capacity of this device.
+     *
+     * @return device capacity.
+     */
+    @Override
+    public Capacity getCapacity() {
+        return capacity;
+    }
+
+    /**
+     * Sets the capacity of this device.
+     *
+     * @param capacity capacity.
+     * @return this LocalDeviceConfig
+     */
+    public LocalDeviceConfig setCapacity(Capacity capacity) {
+        this.capacity = capacity;
         return this;
     }
 
@@ -201,13 +232,17 @@ public final class LocalDeviceConfig implements DeviceConfig {
         if (!Objects.equals(name, that.name)) {
             return false;
         }
-        return Objects.equals(baseDir, that.baseDir);
+        if (!Objects.equals(baseDir, that.baseDir)) {
+            return false;
+        }
+        return Objects.equals(capacity, that.capacity);
     }
 
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (baseDir != null ? baseDir.hashCode() : 0);
+        result = 31 * result + (capacity != null ? capacity.hashCode() : 0);
         result = 31 * result + blockSize;
         result = 31 * result + readIOThreadCount;
         result = 31 * result + writeIOThreadCount;
@@ -219,6 +254,7 @@ public final class LocalDeviceConfig implements DeviceConfig {
         return "LocalDeviceConfig{"
                 + "name='" + name + '\''
                 + ", baseDir=" + baseDir
+                + ", capacity=" + capacity
                 + ", blockSize=" + blockSize
                 + ", readIOThreadCount=" + readIOThreadCount
                 + ", writeIOThreadCount=" + writeIOThreadCount

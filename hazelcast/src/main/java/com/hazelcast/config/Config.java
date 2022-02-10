@@ -2701,6 +2701,23 @@ public class Config {
     }
 
     /**
+     * Returns the device config mapped by the provided device name.
+     *
+     * @param name the device name
+     * @param clazz desired device implementation class
+     * @return device config or {@code null} if absent
+     */
+    @Nullable
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        DeviceConfig deviceConfig = deviceConfigs.get(name);
+        if (deviceConfig == null || clazz.isAssignableFrom(deviceConfig.getClass())) {
+            return (T) deviceConfig;
+        }
+        throw new ClassCastException("there is a deviceConfig with deviceName=" + name
+                + ", however, it is not an instance or a subtype of " + clazz);
+    }
+
+    /**
      * Adds the device configuration.
      *
      * @param deviceConfig device config

@@ -432,7 +432,7 @@
             <memory-tier>
                 <capacity unit="MEGABYTES" value="256"/>
             </memory-tier>
-            <disk-tier enabled="true" device-name="my-local-device"/>
+            <disk-tier enabled="true" device-name="default-tiered-store-device"/>
         </tiered-store>
     </map>
 
@@ -1002,9 +1002,10 @@
         <backup-count>7</backup-count>
     </dynamic-configuration>
 
-    <local-device name="my-local-device">
+    <local-device name="default-tiered-store-device">
         <base-dir>base-dir</base-dir>
         <block-size>4096</block-size>
+        <capacity value="256" unit="GIGABYTES"/>
         <read-io-thread-count>4</read-io-thread-count>
         <write-io-thread-count>1</write-io-thread-count>
     </local-device>

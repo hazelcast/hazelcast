@@ -66,7 +66,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.query.impl.IndexUtils;
 
 import java.util.Collection;
@@ -506,7 +506,7 @@ public final class DynamicConfigXmlGenerator {
     }
 
     private static void appendMemoryTierConfig(ConfigXmlGenerator.XmlGenerator gen, MemoryTierConfig memoryTierConfig) {
-        MemorySize capacity = memoryTierConfig.getCapacity();
+        Capacity capacity = memoryTierConfig.getCapacity();
         gen.open("memory-tier")
                 .node("capacity", null,
                         "unit", capacity.getUnit(), "value", capacity.getValue())

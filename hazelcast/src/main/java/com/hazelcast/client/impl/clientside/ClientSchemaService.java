@@ -104,6 +104,6 @@ public class ClientSchemaService implements SchemaService {
         }
         ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(schemas.values()));
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-        invocation.invoke().joinInternal();
+        invocation.invokeUrgent().joinInternal();
     }
 }

@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal;
+package com.hazelcast.internal.management.operation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
+import com.hazelcast.internal.management.ManagementDataSerializerHook;
 
-/**
- * Annotates classes and methods which depend on JDK 8 API methods for compilation.
- * Use at the most limited scope possible, as annotated elements are excluded from
- * animal-sniffer JDK 6 API checks, therefore could risk leaking usage of newer APIs
- * to code meant to run on JDK 6 or 7.
- */
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface RequiresJdk8 {
+public class ReloadConfigOperation
+        extends AbstractDynamicConfigOperation {
+    @Override
+    public int getClassId() {
+        return ManagementDataSerializerHook.RELOAD_CONFIG_OPERATION;
+    }
+
+    @Override
+    void doRun() {
+        ConfigurationService service = getService();
+        service.update();
+    }
 }

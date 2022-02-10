@@ -48,6 +48,8 @@ import java.util.Map;
 @SuppressWarnings("checkstyle:methodcount")
 public interface ConfigurationService {
 
+    String SERVICE_NAME = "hz:configurationService";
+
     /**
      * Registers a dynamic configurations to all cluster members.
      *

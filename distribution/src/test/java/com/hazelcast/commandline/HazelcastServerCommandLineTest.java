@@ -167,7 +167,9 @@ public class HazelcastServerCommandLineTest {
         hazelcastServerCommandLine.start(null, null, null, null, null, false, false, false);
         // then
         verify(processExecutor).buildAndStart((List<String>) argThat(
-                Matchers.hasItems("--add-modules", "java.se", "--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+                Matchers.hasItems("--add-modules", "java.se",
+                        "--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+                        "--add-exports", "jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED",
                         "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                         "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens",
                         "java.management/sun.management=ALL-UNNAMED", "--add-opens",

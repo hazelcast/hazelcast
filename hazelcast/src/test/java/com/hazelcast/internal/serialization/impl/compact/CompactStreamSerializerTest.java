@@ -34,7 +34,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.BitsDTO;
 import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
-import example.serialization.EmployeeWithSerializerDTO;
 import example.serialization.EmployerDTO;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.HiringStatus;
@@ -285,40 +284,6 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testWithExplicitSerializerViaCompactable() {
-        SerializationService serializationService = createSerializationService();
-
-        EmployeeWithSerializerDTO employeeDTO = new EmployeeWithSerializerDTO(30, 102310312);
-        Data data = serializationService.toData(employeeDTO);
-
-        Object object = serializationService.toObject(data);
-        EmployeeWithSerializerDTO actual = (EmployeeWithSerializerDTO) object;
-
-        assertEquals(employeeDTO, actual);
-
-        //create a second service and make sure that class can not be loaded.
-        //We are simulating a separate jvm where `EmployeeWithSerializerDTO` does not exist in the classpath.
-        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        ClassLoader parentClassLoader = ClassLoader.getSystemClassLoader().getParent();
-        try {
-            Thread.currentThread().setContextClassLoader(parentClassLoader);
-            SerializationConfig serializationConfig = new SerializationConfig();
-            serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
-            SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
-                    .setSchemaService(schemaService)
-                    .setClassLoader(parentClassLoader)
-                    .setConfig(serializationConfig)
-                    .build();
-            GenericRecord genericRecord = serializationService2.toObject(data);
-            //testing the field names introduced by the Serializer in EmployeeWithSerializerDTO, not reflection
-            assertEquals(30, genericRecord.getInt32("a"));
-            assertEquals(102310312, genericRecord.getInt64("i"));
-        } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
-        }
-    }
-
-    @Test
     public void testGenericRecordHashcode_Equals() {
         SerializationService serializationService = createSerializationService();
 
@@ -482,7 +447,7 @@ public class CompactStreamSerializerTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, "employee", new CompactSerializer<EmployeeDTO>() {
+                .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
                     public EmployeeDTO read(@Nonnull CompactReader in) {
@@ -497,7 +462,10 @@ public class CompactStreamSerializerTest {
                     }
                 });
 
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setConfig(serializationConfig)
+                .setSchemaService(schemaService)
+                .build();
 
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);

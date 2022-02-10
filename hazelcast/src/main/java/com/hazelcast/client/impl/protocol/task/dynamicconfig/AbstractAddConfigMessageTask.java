@@ -22,6 +22,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
@@ -46,7 +47,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
 
     @Override
     public String getServiceName() {
-        return ClusterWideConfigurationService.SERVICE_NAME;
+        return ConfigurationService.SERVICE_NAME;
     }
 
     @Override
@@ -68,7 +69,7 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     @Override
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
-        ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
+        ClusterWideConfigurationService service = getService(ConfigurationService.SERVICE_NAME);
         if (checkStaticConfigDoesNotExist(config)) {
             service.broadcastConfigAsync(config)
                    .whenCompleteAsync(this);
