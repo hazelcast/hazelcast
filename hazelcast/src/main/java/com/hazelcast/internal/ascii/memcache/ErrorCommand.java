@@ -27,6 +27,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.SERVER_ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
@@ -58,7 +59,7 @@ public class ErrorCommand extends AbstractTextCommand {
             response.put(msg);
         }
         response.put(TextCommandConstants.RETURN);
-        response.flip();
+        upcast(response).flip();
     }
 
     @Override

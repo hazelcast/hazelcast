@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.Math.min;
 
 public class IMapOutputStream extends OutputStream {
@@ -98,6 +99,6 @@ public class IMapOutputStream extends OutputStream {
             throw new IOException("Writing to chunked IMap failed: " + e, e);
         }
         currentChunkIndex++;
-        currentChunk.clear();
+        upcast(currentChunk).clear();
     }
 }

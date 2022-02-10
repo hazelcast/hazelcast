@@ -535,9 +535,10 @@ public class ConfigXmlGenerator {
 
         gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries
+                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
         if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
             gen.open("registered-classes");
             appendRegisteredClasses(gen, registries);
