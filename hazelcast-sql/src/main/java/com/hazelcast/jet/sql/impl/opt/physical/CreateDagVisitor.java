@@ -471,6 +471,10 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public void optimizeFinishedDag() {
+        dag.lowerDownParallelism(nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
+    }
+
     public DAG getDag() {
         return dag;
     }
