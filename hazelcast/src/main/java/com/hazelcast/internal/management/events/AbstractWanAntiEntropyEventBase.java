@@ -25,9 +25,8 @@ public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEvent {
     protected final String wanPublisherId;
     protected final String mapName;
 
-    AbstractWanAntiEntropyEventBase(UUID configUpdateProcessId, String wanReplicationName, String wanPublisherId,
-                                    String mapName) {
-        super(configUpdateProcessId);
+    AbstractWanAntiEntropyEventBase(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName) {
+        super(uuid);
         this.wanReplicationName = wanReplicationName;
         this.wanPublisherId = wanPublisherId;
         this.mapName = mapName;
