@@ -69,13 +69,14 @@ public final class WindowUtils {
             long windowStart,
             long windowEnd,
             QueryDataType descriptorType,
-            int[] mapping) {
+            int[] mapping
+    ) {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
-                insertWindowBoundDependsOnDescriptorType(result, i, windowStart, descriptorType);
+                result[i] = convertWindowBound(windowStart, descriptorType);
             } else if (mapping[i] == -2) {
-                insertWindowBoundDependsOnDescriptorType(result, i, windowEnd, descriptorType);
+                result[i] = convertWindowBound(windowEnd, descriptorType);
             } else {
                 result[i] = row.get(mapping[i]);
             }
@@ -116,29 +117,25 @@ public final class WindowUtils {
         };
     }
 
-    private static void insertWindowBoundDependsOnDescriptorType(
-            Object[] result,
-            int idx,
-            long boundary,
-            QueryDataType descriptorType) {
+    private static Object convertWindowBound(long boundary, QueryDataType descriptorType) {
         if (descriptorType.equals(QueryDataType.TINYINT)) {
-            result[idx] = (byte) boundary;
+            return (byte) boundary;
         } else if (descriptorType.equals(QueryDataType.SMALLINT)) {
-            result[idx] = (short) boundary;
+            return (short) boundary;
         } else if (descriptorType.equals(QueryDataType.INT)) {
-            result[idx] = (int) boundary;
+            return (int) boundary;
         } else if (descriptorType.equals(QueryDataType.BIGINT)) {
-            result[idx] = boundary;
+            return boundary;
         } else if (descriptorType.equals(QueryDataType.DECIMAL_BIG_INTEGER)) {
-            result[idx] = BigInteger.valueOf(boundary);
+            return BigInteger.valueOf(boundary);
         } else if (descriptorType.equals(QueryDataType.DATE)) {
-            result[idx] = asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDate();
+            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDate();
         } else if (descriptorType.equals(QueryDataType.TIME)) {
-            result[idx] = asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalTime();
+            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalTime();
         } else if (descriptorType.equals(QueryDataType.TIMESTAMP)) {
-            result[idx] = asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDateTime();
+            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDateTime();
         } else {
-            result[idx] = asTimestampWithTimezone(boundary, DEFAULT_ZONE);
+            return asTimestampWithTimezone(boundary, DEFAULT_ZONE);
         }
     }
 
