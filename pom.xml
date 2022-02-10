@@ -68,7 +68,7 @@
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.19</maven.animal.sniffer.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
@@ -556,6 +556,31 @@
                         <configuration>
                             <outputFile>${project.build.outputDirectory}/META-INF/attribution.txt</outputFile>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>${maven.animal.sniffer.plugin.version}</version>
+                <configuration>
+                    <signature>
+                        <groupId>org.codehaus.mojo.signature</groupId>
+                        <artifactId>java18</artifactId>
+                        <version>1.0</version>
+                    </signature>
+                    <ignores>
+                        <ignore>java.lang.invoke.MethodHandle</ignore>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>source-java8-check</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
