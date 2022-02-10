@@ -35,7 +35,6 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
 
-import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -118,24 +117,10 @@ public final class WindowUtils {
     }
 
     private static Object convertWindowBound(long boundary, QueryDataType descriptorType) {
-        if (descriptorType.equals(QueryDataType.TINYINT)) {
-            return (byte) boundary;
-        } else if (descriptorType.equals(QueryDataType.SMALLINT)) {
-            return (short) boundary;
-        } else if (descriptorType.equals(QueryDataType.INT)) {
-            return (int) boundary;
-        } else if (descriptorType.equals(QueryDataType.BIGINT)) {
-            return boundary;
-        } else if (descriptorType.equals(QueryDataType.DECIMAL_BIG_INTEGER)) {
-            return BigInteger.valueOf(boundary);
-        } else if (descriptorType.equals(QueryDataType.DATE)) {
-            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDate();
-        } else if (descriptorType.equals(QueryDataType.TIME)) {
-            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalTime();
-        } else if (descriptorType.equals(QueryDataType.TIMESTAMP)) {
-            return asTimestampWithTimezone(boundary, DEFAULT_ZONE).toLocalDateTime();
+        if (descriptorType.getTypeFamily().isTemporal()) {
+            return descriptorType.convert(asTimestampWithTimezone(boundary, DEFAULT_ZONE));
         } else {
-            return asTimestampWithTimezone(boundary, DEFAULT_ZONE);
+            return descriptorType.convert(boundary);
         }
     }
 
