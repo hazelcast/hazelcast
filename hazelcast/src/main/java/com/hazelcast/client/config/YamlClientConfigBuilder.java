@@ -150,14 +150,14 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         if (clientRoot == null) {
             clientRoot = yamlRootNode;
         }
-        YamlDomChecker.check(clientRoot, Collections.emptySet());
+        YamlDomChecker.check(clientRoot, Collections.singleton(ClientConfigSections.HAZELCAST_CLIENT.getName()));
 
         Node w3cRootNode = asW3cNode(clientRoot);
         replaceVariables(w3cRootNode);
         importDocuments(clientRoot);
 
         if (shouldValidateTheSchema()) {
-            new YamlConfigSchemaValidator().validate((YamlMapping) clientRoot.parent());
+            new YamlConfigSchemaValidator().validate(yamlRootNode);
         }
 
         new YamlClientDomConfigProcessor(true, config).buildConfig(w3cRootNode);
