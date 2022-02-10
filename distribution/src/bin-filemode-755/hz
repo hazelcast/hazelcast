@@ -36,7 +36,7 @@ else
     # Try file in the config directory
     LOGGING_CONFIG="file:$HAZELCAST_HOME/config/$LOGGING_CONFIG"
   else
-    echo "Could not find specified LOG4J2_CONFIG file."
+    echo "Could not find specified LOGGING_CONFIG file."
     exit 1
   fi
 fi
