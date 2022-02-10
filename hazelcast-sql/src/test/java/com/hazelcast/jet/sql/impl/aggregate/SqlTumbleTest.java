@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql;
+package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -48,7 +48,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -62,62 +61,6 @@ public class SqlTumbleTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
     }
-
-    @Test
-    public void test_validArguments_tinyInt() {
-        checkValidArguments(TINYINT, "1", row((byte) 0), row((byte) 2));
-    }
-
-    @Test
-    public void test_validArguments_smallInt() {
-        checkValidArguments(SMALLINT, "2", row((short) 0), row((short) 2));
-    }
-
-    @Test
-    public void test_validArguments_int() {
-        checkValidArguments(INTEGER, "3", row(0), row(2));
-    }
-
-    @Test
-    public void test_validArguments_bigInt() {
-        checkValidArguments(BIGINT, "4", row(0L), row(2L));
-    }
-
-    @Test
-    public void test_validArguments_time() {
-        checkValidArguments(TIME, "INTERVAL '0.005' SECOND", row(time(0)), row(time(2)));
-    }
-
-    @Test
-    public void test_validArguments_date() {
-        checkValidArguments(DATE, "INTERVAL '6' DAYS", row(date(0)), row(date(2)));
-    }
-
-    @Test
-    public void test_validArguments_timestamp() {
-        checkValidArguments(TIMESTAMP, "INTERVAL '0.007' SECOND", row(timestamp(0)), row(timestamp(2)));
-    }
-
-    @Test
-    public void test_validArguments_timestampTz() {
-        checkValidArguments(TIMESTAMP_WITH_TIME_ZONE, "INTERVAL '0.008' SECOND", row(timestampTz(0)), row(timestampTz(2)));
-    }
-
-    private static void checkValidArguments(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
-        String name = randomName();
-        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
-
-        try (SqlResult result = sqlService.execute("SELECT * FROM " +
-                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), " + windowSize + "))")
-        ) {
-            assertThat(result.getRowMetadata().findColumn("window_start")).isEqualTo(1);
-            assertThat(result.getRowMetadata().getColumn(1).getType()).isEqualTo(orderingColumnType.getPublicType());
-            assertThat(result.getRowMetadata().findColumn("window_end")).isEqualTo(2);
-            assertThat(result.getRowMetadata().getColumn(2).getType()).isEqualTo(orderingColumnType.getPublicType());
-            assertThat(result.iterator()).hasNext();
-        }
-    }
-
 
     @Test
     public void test_invalidArguments_tinyInt() {
@@ -1615,10 +1558,6 @@ public class SqlTumbleTest extends SqlTestSupport {
                 "))"))
                 .hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                         " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
-    }
-
-    private static Object[] row(Object... values) {
-        return values;
     }
 
     private static String createTable(Object[]... values) {
