@@ -23,8 +23,8 @@ import java.util.UUID;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_CONSISTENCY_CHECK_STARTED;
 
 public class WanConsistencyCheckStartedEvent extends AbstractWanAntiEntropyEventBase {
-     public WanConsistencyCheckStartedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName) {
-         super(uuid, wanReplicationName, wanPublisherId, mapName);
+    public WanConsistencyCheckStartedEvent(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName) {
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
     }
 
     @Override
