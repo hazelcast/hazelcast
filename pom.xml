@@ -1743,6 +1743,21 @@
               <artifactId>netty-tcnative-classes</artifactId>
               <version>2.0.48.Final</version>
             </dependency>
+            <dependency>
+              <groupId>com.google.http-client</groupId>
+              <artifactId>google-http-client-jackson2</artifactId>
+              <version>1.40.1</version>
+            </dependency>
+            <dependency>
+              <groupId>com.google.api-client</groupId>
+              <artifactId>google-api-client</artifactId>
+              <version>1.32.2</version>
+            </dependency>
+            <dependency>
+              <groupId>com.google.api.grpc</groupId>
+              <artifactId>proto-google-iam-v1</artifactId>
+              <version>1.1.7</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
