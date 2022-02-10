@@ -51,9 +51,6 @@ public class YamlConfigSchemaValidator {
             asList(ConfigSections.HAZELCAST.getName(), ClientConfigSections.HAZELCAST_CLIENT.getName(),
                     ClientFailoverConfigSections.CLIENT_FAILOVER.getName()));
 
-    private static final List<String> NULLABLE_ROOT_NODES = unmodifiableList(
-            asList(ConfigSections.HAZELCAST.getName(), ClientConfigSections.HAZELCAST_CLIENT.getName()));
-
     private static final Schema SCHEMA;
 
     static {
@@ -111,7 +108,6 @@ public class YamlConfigSchemaValidator {
             if (rootNode != null
                     && rootNode.childCount() == 1
                     && rootNode.child(definedRootNodes.get(0)) == null
-                    && NULLABLE_ROOT_NODES.contains(definedRootNodes.get(0))
             ) {
                 return;
             }

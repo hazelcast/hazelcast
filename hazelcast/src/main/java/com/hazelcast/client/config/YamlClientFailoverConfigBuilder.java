@@ -160,7 +160,7 @@ public class YamlClientFailoverConfigBuilder
             clientFailoverRoot = yamlRootNode;
         }
 
-        YamlDomChecker.check(clientFailoverRoot, Collections.emptySet());
+        YamlDomChecker.check(clientFailoverRoot, Collections.singleton(ClientFailoverConfigSections.CLIENT_FAILOVER.getName()));
 
         Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);
