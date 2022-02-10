@@ -20,12 +20,13 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
+import static java.util.Objects.requireNonNull;
+
 abstract class AbstractWanEvent extends AbstractEventBase {
     private final UUID uuid;
 
     protected AbstractWanEvent(UUID uuid) {
-        assert uuid != null : "UUID must not be null";
-        this.uuid = uuid;
+        this.uuid = requireNonNull(uuid, "UUID must not be null");
     }
 
     public UUID getUuid() {
