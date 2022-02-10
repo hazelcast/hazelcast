@@ -17,39 +17,26 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
-import java.util.concurrent.Future;
+import java.util.UUID;
 
 abstract class AbstractDynamicConfigOperation
         extends AbstractManagementOperation {
 
+    protected UUID uuid;
+
     @Override
     public final void run()
             throws Exception {
-        ExecutionService executionService = getNodeEngine().getExecutionService();
-        Future<?> future = executionService.submit(
-                ExecutionService.MC_EXECUTOR,
-                this::doRun
-        );
-        // returning immediately, the actual response will be submitted back to MC
-        // as a ConfigUpdateFinishedEvent or ConfigUpdateFailedEvent
-        sendResponse(null);
-        executionService.asCompletableFuture(future).whenCompleteAsync(
-                (result, throwable) -> {
-                    if (throwable != null) {
-                        getLogger().severe("dynamic configuration update failed", throwable);
-                    }
-                }
-        );
+        uuid = startUpdateProcess();
     }
 
     @Override
     public final Object getResponse() {
-        return null;
+        return uuid;
     }
 
-    abstract void doRun();
+    protected abstract UUID startUpdateProcess();
 
     @Override
     public final String getServiceName() {
@@ -58,6 +45,6 @@ abstract class AbstractDynamicConfigOperation
 
     @Override
     public final boolean returnsResponse() {
-        return false;
+        return true;
     }
 }

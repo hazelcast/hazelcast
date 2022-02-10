@@ -18,14 +18,15 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 
-import java.util.Objects;
 import java.util.UUID;
 
-abstract class AbstractIdentifiedEvent extends AbstractEventBase {
+import static java.util.Objects.requireNonNull;
+
+abstract class AbstractWanEvent extends AbstractEventBase {
     private final UUID uuid;
 
-    protected AbstractIdentifiedEvent(UUID uuid) {
-        this.uuid = Objects.requireNonNull(uuid, "UUID must not be null");
+    protected AbstractWanEvent(UUID uuid) {
+        this.uuid = requireNonNull(uuid, "UUID must not be null");
     }
 
     public UUID getUuid() {

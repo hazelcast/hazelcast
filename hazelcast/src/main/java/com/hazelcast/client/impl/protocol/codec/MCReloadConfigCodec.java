@@ -36,14 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Reloads the configuration on the member from its config file, applies (merges) the new config to the current config
  */
-@Generated("a2dc83d1b82a35e2d36132582d255361")
+@Generated("d4f92284a7fec6911537922ffbf85478")
 public final class MCReloadConfigCodec {
     //hex: 0x202200
     public static final int REQUEST_MESSAGE_TYPE = 2105856;
     //hex: 0x202201
     public static final int RESPONSE_MESSAGE_TYPE = 2105857;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_CONFIG_RELOAD_PROCESS_ID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CONFIG_RELOAD_PROCESS_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
     private MCReloadConfigCodec() {
     }
@@ -59,12 +60,22 @@ public final class MCReloadConfigCodec {
         return clientMessage;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.UUID configReloadProcessId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_CONFIG_RELOAD_PROCESS_ID_FIELD_OFFSET, configReloadProcessId);
         clientMessage.add(initialFrame);
 
         return clientMessage;
+    }
+
+    /**
+     * The unique identifier of the configuration reload process which will be included in all MCEvent instances emitted for MC during the update
+     */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.Frame initialFrame = iterator.next();
+        return decodeUUID(initialFrame.content, RESPONSE_CONFIG_RELOAD_PROCESS_ID_FIELD_OFFSET);
     }
 }

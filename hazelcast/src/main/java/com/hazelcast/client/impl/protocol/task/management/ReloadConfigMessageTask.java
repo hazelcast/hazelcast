@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class ReloadConfigMessageTask
         extends AbstractInvocationMessageTask<Void> {
@@ -62,7 +63,7 @@ public class ReloadConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCReloadConfigCodec.encodeResponse();
+        return MCReloadConfigCodec.encodeResponse((UUID) response);
     }
 
     @Override
