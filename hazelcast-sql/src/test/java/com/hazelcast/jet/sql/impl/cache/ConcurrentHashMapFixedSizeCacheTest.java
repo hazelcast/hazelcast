@@ -33,57 +33,28 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcurrentHashMapLruCacheTest {
+public class ConcurrentHashMapFixedSizeCacheTest {
     @Test
-    public void when_addingElementsToLruCacheInSingleThread_then_properSizeAndElements() {
+    public void when_addingElementsToCacheInSingleThread_then_properSizeAndElements() {
         int maxCapacity = 20;
         int elementsToAdd = 100;
-        ConcurrentHashMapLruCache<Integer, Integer> lru = new ConcurrentHashMapLruCache<>(maxCapacity);
+        ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(maxCapacity);
         for (int i = 0; i < elementsToAdd; i++) {
             lru.computeIfAbsent(i, Function.identity());
         }
 
         assertEquals(maxCapacity, lru.cache.size());
-        assertEquals(maxCapacity, lru.keyQueue.size());
-        for (int i = elementsToAdd - maxCapacity; i < elementsToAdd; i++) {
+        for (int i = 0; i < maxCapacity; i++) {
             assertTrue(lru.cache.containsKey(i));
         }
     }
 
     @Test
-    public void when_addingElementsWithinFastPath_then_queueIsNotModified() {
-        int maxCapacity = 20;
-        int elementsToAdd = 19;
-        ConcurrentHashMapLruCache<Integer, Integer> lru = new ConcurrentHashMapLruCache<>(maxCapacity, 19);
-        for (int i = 0; i < elementsToAdd; i++) {
-            lru.computeIfAbsent(i, Function.identity());
-        }
-        lru.computeIfAbsent(0, Function.identity());
-
-        assertEquals(0, lru.keyQueue.peekFirst().intValue());
-        assertEquals(elementsToAdd - 1, lru.keyQueue.peekLast().intValue());
-    }
-
-    @Test
-    public void when_addingElementsNotWithinFastPath_then_queueIsModified() {
-        int maxCapacity = 20;
-        int elementsToAdd = 19;
-        ConcurrentHashMapLruCache<Integer, Integer> lru = new ConcurrentHashMapLruCache<>(maxCapacity, 1);
-        for (int i = 0; i < elementsToAdd; i++) {
-            lru.computeIfAbsent(i, Function.identity());
-        }
-        lru.computeIfAbsent(0, Function.identity());
-
-        assertEquals(1, lru.keyQueue.peekFirst().intValue());
-        assertEquals(0, lru.keyQueue.peekLast().intValue());
-    }
-
-    @Test
-    public void when_addingElementsToLruCacheMultiThreaded_then_properSize() {
+    public void when_addingElementsToCacheMultiThreaded_then_minProperSizeAndElements() {
         int maxCapacity = 20;
         int elementsToAdd = 100;
         int threadCount = 10;
-        ConcurrentHashMapLruCache<Integer, Integer> lru = new ConcurrentHashMapLruCache<>(maxCapacity);
+        ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(maxCapacity);
         Runnable runnable = () -> {
             for (int i = 0; i < elementsToAdd; i++) {
                 lru.computeIfAbsent(i, Function.identity());
@@ -102,14 +73,16 @@ public class ConcurrentHashMapLruCacheTest {
             }
         });
 
-        assertEquals(maxCapacity, lru.cache.size());
-        assertEquals(maxCapacity, lru.keyQueue.size());
+        assertTrue(lru.cache.size() >= maxCapacity);
+        for (int i = 0; i < maxCapacity; i++) {
+            assertTrue(lru.cache.containsKey(i));
+        }
     }
 
     @Test
     public void when_creatingEmptyCache_then_fail() {
         assertThrows(IllegalArgumentException.class, () -> {
-            ConcurrentHashMapLruCache<Integer, Integer> lru = new ConcurrentHashMapLruCache<>(0);
+            ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(0);
         });
     }
 }

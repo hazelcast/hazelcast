@@ -16,7 +16,6 @@
 package com.hazelcast.jet.sql.impl.cache;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.io.Serializable;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,12 +25,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
 /**
- * Implementation of a simple LRU Cache based on {@link ConcurrentHashMap}. It is faster than Guava cache when
- * there are a lot of readers and few writers.
+ * Implementation of a simple LRU cache based on {@link ConcurrentHashMap}. It is faster than Guava cache when
+ * there are a lot of reads and few writes.
  */
-public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K, V> {
+public class ConcurrentHashMapLruCache<K, V> implements Cache<K, V> {
     // Package-private scope for tests
-    final Map<K, V> cache = new ConcurrentHashMap<>();
+    final Map<K, V> cache;
     final Deque<K> keyQueue = new ConcurrentLinkedDeque<>();
 
     // This is the main part why this implementation is better than Guava cache. Guava uses ReentrantLock, this
@@ -50,13 +49,19 @@ public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K
 
     /**
      * @param fastPathMaxCapacity to which size of the cache we should get values from cache without updating
-     *                             the key queue.
+     *                            the key queue.
      */
     public ConcurrentHashMapLruCache(int maxCapacity, int fastPathMaxCapacity) {
-        assert maxCapacity > 0;
-        assert fastPathMaxCapacity < maxCapacity;
+        if (maxCapacity <= 0) {
+            throw new IllegalArgumentException("maxCapacity <= 0");
+        }
+        if (fastPathMaxCapacity >= maxCapacity) {
+            throw new IllegalArgumentException("fastPathMaxCapacity >= maxCapacity");
+        }
+
         this.fastPathMaxCapacity = fastPathMaxCapacity;
         this.maxCapacity = maxCapacity;
+        this.cache = new ConcurrentHashMap<>(maxCapacity);
     }
 
     @Override
@@ -94,10 +99,8 @@ public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K
 
     @GuardedBy("lock") // write
     private V handleNewCacheEntry(K key, Function<K, V> valueFunction) {
-        int localSize = size;
-        while (localSize >= this.maxCapacity) {
+        if (cache.size() == this.maxCapacity) {
             removeLruKey();
-            localSize--;
         }
 
         V value = valueFunction.apply(key);
@@ -111,9 +114,7 @@ public class ConcurrentHashMapLruCache<K, V> implements Serializable, LruCache<K
     @GuardedBy("lock") // write
     private void removeLruKey() {
         K lruKey = keyQueue.poll();
-        if (lruKey != null) {
-            cache.remove(lruKey);
-        }
+        cache.remove(lruKey);
     }
 
     @GuardedBy("lock") // read or write

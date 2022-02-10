@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.cache.LruCache;
+import com.hazelcast.jet.sql.impl.cache.Cache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -47,7 +47,7 @@ import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArra
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
 
-    private final LruCache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
