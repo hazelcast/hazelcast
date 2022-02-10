@@ -32,7 +32,7 @@ public final class WanSyncIgnoredEvent extends AbstractWanAntiEntropyEventBase {
                                String wanPublisherId,
                                String mapName,
                                String reason) {
-        super(configUpdateProcessId, wanReplicationName, wanPublisherId, mapName);
+        super(uuid, wanReplicationName, wanPublisherId, mapName);
         this.reason = reason;
     }
 
