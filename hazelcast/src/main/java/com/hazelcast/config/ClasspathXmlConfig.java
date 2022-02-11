@@ -26,6 +26,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is initialized by loading an XML configuration file from the classpath.
+ * <p>
+ * Unlike {@link Config#loadFromClasspath(ClassLoader, String)} and its variants, a configuration constructed via
+ * {@code ClasspathXmlConfig} does not apply overrides found in environment variables/system properties.
  *
  * @see FileSystemXmlConfig
  */

@@ -97,6 +97,9 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
  * <p>
  * Config instances can be shared between threads, but should not be
  * modified after they are used to create HazelcastInstances.
+ * <p>
+ * Unlike {@code Config} instances obtained via {@link Config#load()} and its variants,
+ * a {@code Config} does not apply overrides found in environment variables/system properties.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class Config {

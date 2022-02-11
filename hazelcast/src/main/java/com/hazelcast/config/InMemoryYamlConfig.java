@@ -29,6 +29,9 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Creates a {@link Config} loaded from an in-memory Hazelcast YAML String.
+ * <p>
+ * Unlike {@link Config#loadFromString(String)} and its variants, a configuration constructed via
+ * {@code InMemoryYamlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class InMemoryYamlConfig extends Config {
     private static final ILogger LOGGER = Logger.getLogger(InMemoryYamlConfig.class);

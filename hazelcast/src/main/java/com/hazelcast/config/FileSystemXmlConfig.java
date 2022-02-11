@@ -30,6 +30,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 /**
  * A {@link Config} which includes functionality for loading itself from a
  * XML configuration file.
+ * <p>
+ * Unlike {@link Config#loadFromFile(File)} and its variants, a configuration constructed via
+ * {@code FileSystemXmlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class FileSystemXmlConfig extends Config {
 
