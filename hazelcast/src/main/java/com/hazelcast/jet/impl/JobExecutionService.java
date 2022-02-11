@@ -688,7 +688,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
         }
-        terminateExecution0(executionContext, mode, new JobTerminateRequestedException(mode));
+        Exception cause = mode == null ? new CancellationException() : new JobTerminateRequestedException(mode);
+        terminateExecution0(executionContext, mode, cause);
     }
 
     public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
