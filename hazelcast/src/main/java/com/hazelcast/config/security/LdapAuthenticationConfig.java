@@ -242,7 +242,11 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
         Properties props = super.initLoginModuleProperties();
         setIfConfigured(props, Context.PROVIDER_URL, url);
         setIfConfigured(props, "java.naming.ldap.factory.socket", socketFactoryClassName);
-        props.setProperty("parseDN", String.valueOf(parseDn));
+        // HZ-889 Prevent warnings logged in BasicLdapLoginModule.verifyOptions(), the parseDn is not nullable in this config
+        // class so we don't know if it was configured explicitly
+        if (LdapRoleMappingMode.ATTRIBUTE == roleMappingMode) {
+            props.setProperty("parseDN", String.valueOf(parseDn));
+        }
         setIfConfigured(props, "roleContext", roleContext);
         setIfConfigured(props, "roleFilter", roleFilter);
         setIfConfigured(props, "roleMappingAttribute", roleMappingAttribute);
