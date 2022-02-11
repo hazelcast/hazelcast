@@ -72,7 +72,7 @@ public final class UserCodeDeploymentService implements ManagedService {
     public void defineClasses(List<Map.Entry<String, byte[]>> classDefinitions) {
         if (!enabled) {
             throw new IllegalStateException("User Code Deployment is not enabled. "
-                    + "To enable User Code Deployment, please do one of the following:\n"
+                    + "To enable User Code Deployment, do one of the following:\n"
                     + format(CONFIG_CHANGE_TEMPLATE,
                         "config.getUserCodeDeploymentConfig().setEnabled(true);",
                         "hazelcast.user-code-deployment.enabled to true",

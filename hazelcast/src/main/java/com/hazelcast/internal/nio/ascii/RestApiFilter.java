@@ -51,7 +51,7 @@ public class RestApiFilter implements TextProtocolFilter {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {
                 String name = restEndpointGroup.name();
                 connection.close("REST endpoint group is not enabled - " + restEndpointGroup
-                        + ". To enable it, please do one of the following:\n"
+                        + ". To enable it, do one of the following:\n"
                         + format(CONFIG_CHANGE_TEMPLATE,
                         "config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");",
                         "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true",

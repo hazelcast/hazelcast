@@ -107,7 +107,7 @@ public class UnifiedProtocolDecoder
                 RestApiConfig restApiConfig = serverContext.getRestApiConfig();
                 if (!restApiConfig.isEnabledAndNotEmpty()) {
                     throw new IllegalStateException("REST API is not enabled. "
-                            + "To enable REST API, please do one of the following:\n"
+                            + "To enable REST API, do one of the following:\n"
                             + format(CONFIG_CHANGE_TEMPLATE,
                             "config.getNetworkConfig().getRestApiConfig().setEnabled(true);",
                             "hazelcast.network.rest-api.enabled to true",
@@ -119,7 +119,7 @@ public class UnifiedProtocolDecoder
                 MemcacheProtocolConfig memcacheProtocolConfig = serverContext.getMemcacheProtocolConfig();
                 if (!memcacheProtocolConfig.isEnabled()) {
                     throw new IllegalStateException("Memcache text protocol is not enabled. "
-                            + "To enable Memcache, please do one of the following:\n"
+                            + "To enable Memcache, do one of the following:\n"
                             + format(CONFIG_CHANGE_TEMPLATE,
                                 "config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);",
                                 "hazelcast.network.memcache-protocol.enabled to true",
