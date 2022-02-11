@@ -35,15 +35,18 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapIndexScanPMigrationStressTest extends JetTestSupport {
+public class MapScanMigrationStressTest extends JetTestSupport {
     private static final int ITEM_COUNT = 500_000;
     private static final String MAP_NAME = "map";
 
@@ -51,9 +54,10 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
+    private MutatorThread mutator;
 
     @Before
-    public void before() {
+    public void before() throws InterruptedException {
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[4];
         for (int i = 0; i < instances.length - 1; i++) {
@@ -65,22 +69,53 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @After
-    public void after() {
+    public void after() throws Exception {
+        if (mutator != null) {
+            mutator.terminate();
+            try {
+                mutator.join(10_000);
+            } catch (Throwable e) {
+                fail("Failed to stop the MutatorThread, unrelated tests might be affected");
+            }
+            mutator = null;
+        }
         factory.shutdownAll();
+        factory = null;
     }
 
     @Test(timeout = 600_000)
-    public void stressTest_hash() throws InterruptedException {
+    public void stressTest_noIndex() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
+        Map<Integer, Integer> temp = new HashMap<>();
+        for (int i = 0; i <= ITEM_COUNT / 7; i++) {
+            temp.put(i, 1);
+            expected.add(new Row(i, i + "-" + 1));
+        }
+        map.putAll(temp);
+
+        mutator = new MutatorThread(1000L);
+
+        assertRowsAnyOrder("SELECT __key, Concat_WS('-', __key, this) FROM " + MAP_NAME , expected, mutator);
+
+        mutator.terminate();
+        mutator.join();
+        assertThat(mutatorException.get()).isNull();
+    }
+
+    @Test(timeout = 600_000)
+    public void stressTest_hashIndex() throws InterruptedException {
+        List<Row> expected = new ArrayList<>();
+        Map<Integer, Integer> temp = new HashMap<>();
         for (int i = 0; i <= ITEM_COUNT / 5; i++) {
-            map.put(i, 1);
+            temp.put(i, 1);
             expected.add(new Row(i, 1));
         }
+        map.putAll(temp);
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread(2000L);
 
         // Awful performance of such a query, but still a good load for test.
         assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected, mutator);
@@ -91,17 +126,19 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test(timeout = 600_000)
-    public void stressTest_sorted() throws InterruptedException {
+    public void stressTest_sortedIndex() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
+        Map<Integer, Integer> temp = new HashMap<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
-            map.put(i, i);
+            temp.put(i, i);
             expected.add(new Row(ITEM_COUNT - i, ITEM_COUNT - i));
         }
+        map.putAll(temp);
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread(2000L);
         assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected, mutator);
 
         mutator.terminate();
