@@ -99,7 +99,11 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
             }
             HashSet<Integer> all = getAll();
             for (int i = 0; i < STABLE_ENTRY_COUNT; i++) {
-                assertTrue("Missing stable entry", all.contains(i));
+                boolean returnedByIteration = all.contains(i);
+                boolean returnedByContainsKey = map.containsKey(i);
+
+                assertTrue(String.format("No mapping [key=%d]", i), returnedByContainsKey);
+                assertTrue(String.format("Missing stable entry [key=%d]", i), returnedByIteration);
             }
 
             logger.info("Successfully finished iteration " + successfullIterations.incrementAndGet());
