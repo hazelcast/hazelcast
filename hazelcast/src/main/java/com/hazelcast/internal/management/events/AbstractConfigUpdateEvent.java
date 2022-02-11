@@ -16,15 +16,27 @@
 
 package com.hazelcast.internal.management.events;
 
+import com.hazelcast.internal.json.JsonObject;
+
+import java.util.Objects;
 import java.util.UUID;
 
-public class ConfigUpdateStartedEvent extends AbstractConfigUpdateEvent {
-    public ConfigUpdateStartedEvent(UUID configUpdateProcessId) {
-        super(configUpdateProcessId);
+abstract class AbstractConfigUpdateEvent
+        extends AbstractEventBase {
+    private final UUID configUpdateProcessId;
+
+    protected AbstractConfigUpdateEvent(UUID configUpdateProcessId) {
+        this.configUpdateProcessId = Objects.requireNonNull(configUpdateProcessId, "configUpdateProcessId must not be null");
+    }
+
+    public UUID getConfigUpdateProcessId() {
+        return configUpdateProcessId;
     }
 
     @Override
-    public EventMetadata.EventType getType() {
-        return EventMetadata.EventType.CONFIG_UPDATE_STARTED;
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.add("configUpdateProcessId", configUpdateProcessId.toString());
+        return json;
     }
 }

@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class BulkGetCommand extends AbstractTextCommand {
 
@@ -61,6 +62,6 @@ public class BulkGetCommand extends AbstractTextCommand {
             byteBuffer.put(bytes);
         }
         byteBuffer.put(TextCommandConstants.END);
-        byteBuffer.flip();
+        upcast(byteBuffer).flip();
     }
 }

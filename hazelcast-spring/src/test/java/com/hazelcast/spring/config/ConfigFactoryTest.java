@@ -133,7 +133,7 @@ public class ConfigFactoryTest {
         registrations.put("b", registration);
         CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
         assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ConfigFactoryTest {
         registrations.put("a", registration);
         CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(true, registrations);
         assertThat(config.isEnabled()).isTrue();
-        assertThat(CompactSerializationConfigAccessor.getNamedRegistries(config)).isEqualTo(registrations);
+        assertThat(CompactSerializationConfigAccessor.getNamedRegistrations(config)).isEqualTo(registrations);
     }
 
     private static void invalidEvictionConfig(boolean isNearCache, boolean isIMap) {

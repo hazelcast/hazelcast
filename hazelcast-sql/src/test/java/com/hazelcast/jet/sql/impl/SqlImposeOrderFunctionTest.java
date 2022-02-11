@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql;
+package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -311,10 +312,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 //                        // Zedd is dropped because ti's late
 //                )
 //        );
-    }
-
-    private static Object[] row(Object... values) {
-        return values;
     }
 
     private static String createTable(Object[]... values) {

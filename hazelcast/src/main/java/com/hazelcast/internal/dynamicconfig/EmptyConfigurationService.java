@@ -36,6 +36,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static java.util.Collections.emptyMap;
 
@@ -218,12 +219,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public ConfigUpdateResult update() {
-        return update(null);
+    public ConfigUpdateResult update(Config newConfig) {
+        throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
     }
 
     @Override
-    public ConfigUpdateResult update(Config newConfig) {
+    public UUID updateAsync(String configPatch) {
         throw new IllegalStateException("Cannot reload config while Hazelcast is starting.");
     }
 

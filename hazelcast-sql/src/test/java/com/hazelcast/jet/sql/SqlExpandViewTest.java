@@ -409,10 +409,6 @@ public class SqlExpandViewTest extends SqlTestSupport {
         assertRowsAnyOrder("SELECT * FROM vv WHERE __key = 1", singletonList(new Row(1)));
     }
 
-    private static Object[] row(Object... values) {
-        return values;
-    }
-
     private static String createStreamingTable(SqlService service, Object[]... values) {
         String name = randomName();
         TestStreamSqlConnector.create(
