@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -47,6 +48,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
