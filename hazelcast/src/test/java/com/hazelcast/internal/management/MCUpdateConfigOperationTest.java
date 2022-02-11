@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.fail;
+
 public class MCUpdateConfigOperationTest
         extends AbstractClientMapTest {
 
@@ -40,6 +42,11 @@ public class MCUpdateConfigOperationTest
                 ),
                 null
         );
-        inv.invoke().get();
+        try {
+            inv.invoke().get();
+            fail("did not throw exception");
+        } catch (ExecutionException e) {
+            assertInstanceOf(UnsupportedOperationException.class, e.getCause());
+        }
     }
 }

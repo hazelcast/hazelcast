@@ -844,9 +844,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         // Since we don't have APIs of the form register(String) or register(String, String, String) in the
         // compact serialization config, when we read the config from XML/YAML, we store registered classes
         // in a different map.
-        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
 
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+        Map<String, TriTuple<Class, String, CompactSerializer>> registrations
+                = CompactSerializationConfigAccessor.getRegistrations(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
             String key = entry.getKey();
             TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
             TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);

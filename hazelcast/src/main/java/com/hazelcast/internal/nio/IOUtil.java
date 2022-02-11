@@ -74,6 +74,7 @@ import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -97,7 +98,7 @@ public final class IOUtil {
         if (bb.hasRemaining()) {
             bb.compact();
         } else {
-            bb.clear();
+            upcast(bb).clear();
         }
     }
 
@@ -336,8 +337,8 @@ public final class IOUtil {
                 int srcPosition = src.position();
                 int destPosition = dst.position();
                 System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
-                src.position(srcPosition + n);
-                dst.position(destPosition + n);
+                upcast(src).position(srcPosition + n);
+                upcast(dst).position(destPosition + n);
             }
         }
         return n;

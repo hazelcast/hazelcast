@@ -605,6 +605,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return new JetSqlRow(TEST_SS, values);
     }
 
+    protected static Object[] row(Object... values) {
+        return values;
+    }
+
     /**
      * A class passed to utility methods in this class. We don't use SqlRow
      * directly because:

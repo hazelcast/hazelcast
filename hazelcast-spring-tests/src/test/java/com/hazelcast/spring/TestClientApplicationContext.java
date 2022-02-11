@@ -391,19 +391,19 @@ public class TestClientApplicationContext {
                 .getCompactSerializationConfig();
         assertTrue(compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
-        assertEquals(2, namedRegistries.size());
+        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
+        assertEquals(2, namedRegistrations.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
         TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistries.get(reflectivelySerializableClassName);
+        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
         assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
 
         String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
         String typeName = "dummy";
         TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistries.get(typeName);
+        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
         assertEquals(explicitClassRegistration, actualExplicitRegistration);
     }
 
