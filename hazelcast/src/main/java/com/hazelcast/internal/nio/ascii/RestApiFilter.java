@@ -25,6 +25,9 @@ import com.hazelcast.logging.LoggingService;
 
 import java.util.StringTokenizer;
 
+import static com.hazelcast.jet.impl.util.Util.CONFIG_CHANGE_TEMPLATE;
+import static java.lang.String.format;
+
 /**
  * This class is a policy enforcement point for HTTP REST API. It checks incoming command lines and validates if the command can
  * be processed. If the command is unknown or not allowed the connection is closed.
@@ -49,13 +52,11 @@ public class RestApiFilter implements TextProtocolFilter {
                 String name = restEndpointGroup.name();
                 connection.close("REST endpoint group is not enabled - " + restEndpointGroup
                         + ". To enable it, please do one of the following:\n"
-                        + "- Change member config using JAVA API: "
-                        + " config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");\n"
-                        + "- Change XML/YAML configuration property: "
-                        + "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true\n"
-                        + "- Add system property: "
-                        + "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true\n"
-                        + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true",
+                        + format(CONFIG_CHANGE_TEMPLATE,
+                        "config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");",
+                        "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true",
+                        "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true",
+                        "HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true"),
                         null);
             }
         } else if (!commandLine.isEmpty()) {

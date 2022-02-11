@@ -100,17 +100,20 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+    public static final String CONFIG_OVERRIDE_WARNING = "(for Hazelcast embedded, works only when " +
+            "loading config via Config.load)";
+
     public static final String CONFIG_CHANGE_TEMPLATE =
             "  - Change member config using Java API: %s;\n" +
                     "  - Change XML/YAML configuration property: Set %s\n" +
-                    "  - Add system property: %s\n" +
-                    "  - Add environment variable: %s";
+                    "  - Add system property: %s " + CONFIG_OVERRIDE_WARNING + "\n" +
+                    "  - Add environment variable: %s " + CONFIG_OVERRIDE_WARNING;
 
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
             "To enable the Jet engine on the members, please do one of the following:\n" +
             format(CONFIG_CHANGE_TEMPLATE,
                     "config.getJetConfig().setEnabled(true);",
-                    "Set hazelcast.jet.enabled to true",
+                    "hazelcast.jet.enabled to true",
                     "-Dhz.jet.enabled=true",
                     "HZ_JET_ENABLED=true"
             );
@@ -120,7 +123,7 @@ public final class Util {
             "resource upload on the members, using one of the following:\n" +
             format(CONFIG_CHANGE_TEMPLATE,
                     "config.getJetConfig().setResourceUploadEnabled(true);",
-                    "Set hazelcast.jet.resource-upload-enabled to true",
+                    "hazelcast.jet.resource-upload-enabled to true",
                     "-Dhz.jet.resource-upload-enabled=true",
                     "HZ_JET_RESOURCEUPLOADENABLED=true"
             );
