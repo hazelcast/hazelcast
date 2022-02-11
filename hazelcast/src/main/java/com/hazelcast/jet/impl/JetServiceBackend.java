@@ -286,7 +286,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        jobExecutionService.onMemberRemoved(event.getMember().getAddress());
+        jobExecutionService.onMemberRemoved(event.getMember());
         jobCoordinationService.onMemberRemoved(event.getMember().getUuid());
     }
 
