@@ -16,10 +16,12 @@
 
 package com.hazelcast.console;
 
+import java.io.Closeable;
+
 /**
  * Reads a line of input.
  */
-public interface LineReader {
+public interface LineReader extends Closeable {
 
     String readLine() throws Exception;
 }
