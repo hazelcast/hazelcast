@@ -66,6 +66,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         // Copy of org.apache.calcite.rel.core.Sort.computeSelfCost but includes our requiresSort flag.
 
