@@ -98,6 +98,30 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
     }
 
     @Test
+    public void when_selectWithTwoRanges_then_properPlanAndIndex() {
+        String sql = "SELECT * FROM  \n" + mapName +
+                " WHERE (field1 >= 100 AND field1 <= 10000) \n" +
+                " OR (field1 >= 10100 AND field1 <= 20000) \n";
+        Result optimizePhysical = optimizePhysical(sql, parameterTypes(), table());
+
+        assertPlan(
+                optimizePhysical.getLogical(),
+                plan(
+                        planRow(0, FullScanLogicalRel.class)
+                )
+        );
+        assertPlan(
+                optimizePhysical.getPhysical(),
+                plan(
+                        planRow(0, IndexScanMapPhysicalRel.class)
+                )
+        );
+
+        IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical();
+        assertEquals(F_1_INDEX, rel.getIndex().getName());
+    }
+
+    @Test
     public void when_selectWithRangeAndOrderBy_then_properPlanAndIndex() {
         String sql = "SELECT * FROM  \n" + mapName +
                 " WHERE field1 >= 100\n" +

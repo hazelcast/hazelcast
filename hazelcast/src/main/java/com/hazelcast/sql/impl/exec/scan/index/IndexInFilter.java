@@ -38,7 +38,7 @@ import java.util.TreeMap;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
- * Filter that is composed of several equality filters.
+ * Filter that is composed of equality and range filters.
  * <p>
  * It is guaranteed that every children filter will return a result set that is not intersecting with the result set of
  * any other children filter.
