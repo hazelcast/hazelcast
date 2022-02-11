@@ -497,6 +497,18 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
+    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
+        Sarg<?> sarg = literal.getValueAs(Sarg.class);
+        if (sarg == null) {
+            return null;
+        }
+
+        RelDataType literalType = literal.getType();
+        SqlTypeName sqlType = literalType.getSqlTypeName();
+        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+    }
+
+    @SuppressWarnings({"unchecked", "UnstableApiUsage"})
     private static <CI extends Comparable<CI>, CO extends Comparable<CO>> Expression<?> convertSargLiteral(
             RexLiteral literal,
             RelDataType type

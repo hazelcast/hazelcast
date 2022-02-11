@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical.index;
 
+import com.google.common.collect.BoundType;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -52,6 +57,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
@@ -385,7 +391,14 @@ public final class IndexResolver {
                         operands.element2(),
                         parameterMetadata
                 );
+            case SEARCH:
+                operands = extractComparisonOperands(exp);
 
+                return prepareSingleColumnSearchCandidateComparison(
+                        exp,
+                        operands.element1(),
+                        operands.element2()
+                );
             case OR:
                 // Handle OR/IN predicates. If OR condition refer to only a single column and all comparisons are equality
                 // comparisons, then IN filter is created. Otherwise null is returned. Examples:
@@ -606,6 +619,67 @@ public final class IndexResolver {
                 columnIndex,
                 filter
         );
+    }
+
+    @SuppressWarnings({"ConstantConditions", "UnstableApiUsage"})
+    private static IndexComponentCandidate prepareSingleColumnSearchCandidateComparison(
+            RexNode exp,
+            RexNode operand1,
+            RexNode operand2
+    ) {
+//        if (1 == 1) return null;
+        if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL ) {
+            return null;
+        }
+        int columnIndex = ((RexInputRef) operand1).getIndex();
+        RexLiteral literal = (RexLiteral) operand2;
+
+        QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(literal.getType());
+
+        IndexFilter indexFilter = null;
+
+        RangeSet<?> rangeSet = RexToExpression.extractRangeFromSearch(literal);
+        if (rangeSet == null) {
+            return null;
+        }
+
+        Set<? extends Range<?>> ranges = rangeSet.asRanges();
+
+        if (ranges.size() == 1) {
+            indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
+        } else {
+            List<IndexFilter> indexFilters = new ArrayList<>(ranges.size());
+            for (Range<?> range : ranges) {
+                indexFilters.add(createIndexFilterForSingleRange(range, hazelcastType));
+            }
+            indexFilter = new IndexInFilter(indexFilters);
+        }
+
+        return indexFilter == null ? null : new IndexComponentCandidate(
+                exp,
+                columnIndex,
+                indexFilter
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static IndexFilter createIndexFilterForSingleRange(Range<?> range, QueryDataType hazelcastType) {
+        Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
+        IndexFilterValue lowerBound0 = new IndexFilterValue(
+                singletonList(lowerBound),
+                singletonList(false)
+        );
+        if (range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0) {
+            return new IndexEqualsFilter(lowerBound0);
+        }
+
+        Expression<?> upperBound = ConstantExpression.create(range.upperEndpoint(), hazelcastType);
+        IndexFilterValue upperBound0 = new IndexFilterValue(
+                singletonList(upperBound),
+                singletonList(false)
+        );
+        return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED,
+                upperBound0, range.upperBoundType() == BoundType.CLOSED);
     }
 
     private static Expression<?> convertToExpression(RexNode operand, QueryParameterMetadata parameterMetadata) {
