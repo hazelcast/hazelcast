@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -48,6 +49,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -61,6 +63,62 @@ public class SqlTumbleTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
     }
+
+    @Test
+    public void test_validArguments_tinyInt() {
+        checkValidArguments(TINYINT, "1", row((byte) 0), row((byte) 2));
+    }
+
+    @Test
+    public void test_validArguments_smallInt() {
+        checkValidArguments(SMALLINT, "2", row((short) 0), row((short) 2));
+    }
+
+    @Test
+    public void test_validArguments_int() {
+        checkValidArguments(INTEGER, "3", row(0), row(2));
+    }
+
+    @Test
+    public void test_validArguments_bigInt() {
+        checkValidArguments(BIGINT, "4", row(0L), row(2L));
+    }
+
+    @Test
+    public void test_validArguments_time() {
+        checkValidArguments(TIME, "INTERVAL '0.005' SECOND", row(time(0)), row(time(2)));
+    }
+
+    @Test
+    public void test_validArguments_date() {
+        checkValidArguments(DATE, "INTERVAL '6' DAYS", row(date(0)), row(date(2)));
+    }
+
+    @Test
+    public void test_validArguments_timestamp() {
+        checkValidArguments(TIMESTAMP, "INTERVAL '0.007' SECOND", row(timestamp(0)), row(timestamp(2)));
+    }
+
+    @Test
+    public void test_validArguments_timestampTz() {
+        checkValidArguments(TIMESTAMP_WITH_TIME_ZONE, "INTERVAL '0.008' SECOND", row(timestampTz(0)), row(timestampTz(2)));
+    }
+
+    private static void checkValidArguments(QueryDataTypeFamily orderingColumnType, String windowSize, Object[]... values) {
+        String name = randomName();
+        TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType), values);
+
+        try (SqlResult result = sqlService.execute("SELECT * FROM " +
+                "TABLE(TUMBLE(TABLE " + name + ", DESCRIPTOR(ts), " + windowSize + "))")
+        ) {
+            assertThat(result.getRowMetadata().findColumn("window_start")).isEqualTo(1);
+            assertThat(result.getRowMetadata().getColumn(1).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.getRowMetadata().findColumn("window_end")).isEqualTo(2);
+            assertThat(result.getRowMetadata().getColumn(2).getType()).isEqualTo(orderingColumnType.getPublicType());
+            assertThat(result.iterator()).hasNext();
+        }
+    }
+
 
     @Test
     public void test_invalidArguments_tinyInt() {
@@ -137,7 +195,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), " + windowSize + "))")
+                "TABLE(TUMBLE(TABLE " + name + ", DESCRIPTOR(ts), " + windowSize + "))")
         ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + windowSizeType + ") do not match");
     }
 
@@ -151,7 +209,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
                 "TABLE(TUMBLE(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))",
@@ -171,7 +229,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT 1 " +
                         "FROM TABLE(TUMBLE(" +
-                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
                         "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
                         "WHERE window_start != window_end " +
                         "GROUP BY window_start")
@@ -180,7 +238,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT 1 " +
                         "FROM TABLE(TUMBLE(" +
-                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
+                        "    (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '1' SECOND)))," +
                         "    DESCRIPTOR(ts), INTERVAL '1' SECOND)) " +
                         "WHERE EXTRACT(DAY FROM window_start) != EXTRACT(DAY FROM window_end) " +
                         "GROUP BY window_start")
@@ -201,7 +259,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -215,7 +273,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.003' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.003' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.003' SECOND" +
                         ")) " +
@@ -242,7 +300,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -268,7 +326,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -294,7 +352,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -313,7 +371,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertEmptyResultStream("SELECT window_start FROM " +
                 "TABLE(TUMBLE(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 ")) " +
@@ -334,7 +392,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -347,7 +405,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -372,7 +430,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(DISTINCT name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -399,7 +457,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -426,7 +484,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(DISTINCT distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -454,7 +512,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(*) c FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -480,7 +538,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -501,7 +559,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -523,7 +581,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MIN(name), MIN(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -548,7 +606,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MIN(DISTINCT name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -575,7 +633,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -603,7 +661,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) m FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -628,7 +686,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MIN(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -648,7 +706,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, MIN(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -670,7 +728,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MAX(name), MAX(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -695,7 +753,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, MAX(DISTINCT name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -722,7 +780,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -750,7 +808,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) m FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -775,7 +833,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, MAX(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -795,7 +853,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, MAX(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -816,7 +874,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -841,7 +899,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(DISTINCT distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -868,7 +926,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -896,7 +954,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(DISTINCT distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -924,7 +982,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) s FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -950,7 +1008,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, SUM(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -971,7 +1029,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, SUM(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -992,7 +1050,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1017,7 +1075,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, AVG(DISTINCT distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1044,7 +1102,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1072,7 +1130,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(DISTINCT distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1101,7 +1159,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) a FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1128,7 +1186,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, name, AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1149,7 +1207,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertEmptyResultStream(
                 "SELECT window_start, AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1171,7 +1229,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, COUNT(*), MIN(name), MAX(name), SUM(distance), AVG(distance) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1231,7 +1289,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT COUNT(*) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + windowSize + ")))" +
+                        "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + windowSize + ")))" +
                         "  , DESCRIPTOR(ts)" +
                         "  , " + windowSize +
                         ")) " +
@@ -1255,7 +1313,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "TABLE(TUMBLE(" +
                         "   (SELECT ts, name, window_start window_start_inner FROM" +
                         "      TABLE(TUMBLE(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "       )) WHERE ts > '" + timestampTz(0) + "' " +
@@ -1287,7 +1345,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "TABLE(TUMBLE(" +
                         "   (SELECT ts, name, window_start window_start_inner_1, window_start window_start_inner_2 FROM" +
                         "      TABLE(TUMBLE(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "       ))" +
@@ -1320,7 +1378,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "TABLE(TUMBLE(" +
                         "   (SELECT name, window_end AS window_end_inner FROM " +
                         "       TABLE(TUMBLE(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.001' SECOND" +
                         "       )) GROUP BY name, window_end_inner" +
@@ -1360,7 +1418,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "TABLE(TUMBLE(" +
                         "   (SELECT ts, window_start window_start_inner, this FROM " +
                         "       TABLE(TUMBLE(" +
-                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "           (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         "           , DESCRIPTOR(ts)" +
                         "           , INTERVAL '0.002' SECOND" +
                         "       )) JOIN map ON ts = __key" +
@@ -1391,7 +1449,7 @@ public class SqlTumbleTest extends SqlTestSupport {
                         "TABLE(TUMBLE(" +
                         "   window_size => INTERVAL '0.002' SECOND" +
                         "   , time_col => DESCRIPTOR(ts)" +
-                        "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                        "   , input => (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                         ")) " +
                         "GROUP BY window_start, window_end",
                 asList(
@@ -1406,7 +1464,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start FROM " +
-                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
+                "TABLE(TUMBLE(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                 " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
@@ -1417,7 +1475,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
-                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
+                "TABLE(TUMBLE(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND)) " +
                 "GROUP BY window_start")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                 " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
@@ -1428,7 +1486,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
-                "TABLE(TUMBLE(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
+                "TABLE(TUMBLE(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECOND))")
         ).hasRootCauseMessage("Streaming aggregation is supported only for window aggregation, with imposed watermark order" +
                 " (see TUMBLE/HOP and IMPOSE_ORDER functions)");
     }
@@ -1439,7 +1497,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM " +
                 "TABLE(TUMBLE(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))")
@@ -1453,7 +1511,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT window_start + INTERVAL '0.001' SECOND, COUNT(name) FROM " +
                 "TABLE(TUMBLE(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 ")) " +
@@ -1479,7 +1537,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1508,7 +1566,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT COUNT(name) FROM " +
                         "TABLE(TUMBLE(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))",
@@ -1533,7 +1591,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start + INTERVAL '0.001' SECOND FROM " +
                         "TABLE(TUMBLE(" +
-                        "  TABLE(" + name + ")" +
+                        "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         ")) " +
@@ -1552,7 +1610,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(name) FROM " +
                 "TABLE(TUMBLE(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +
                 "  , DESCRIPTOR(ts)" +
                 "  , INTERVAL '0.002' SECOND" +
                 "))"))
