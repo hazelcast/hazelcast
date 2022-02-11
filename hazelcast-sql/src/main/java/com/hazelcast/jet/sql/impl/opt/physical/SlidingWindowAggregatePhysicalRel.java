@@ -25,11 +25,13 @@ import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
@@ -122,6 +124,8 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     public KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> outputValueMapping() {
         int[] windowBoundsIndexMask = new int[getRowType().getFieldCount()];
 
+        QueryDataType descriptorType = HazelcastTypeUtils.toHazelcastType(timestampExpression.getType());
+
         for (Integer index : windowStartIndexes) {
             windowBoundsIndexMask[index] = -1;
         }
@@ -136,7 +140,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         }
 
         return (start, end, ignoredKey, result, isEarly) ->
-                insertWindowBound(result, start, end, windowBoundsIndexMask);
+                insertWindowBound(result, start, end, descriptorType, windowBoundsIndexMask);
     }
 
     public WatermarkedFields watermarkedFields() {

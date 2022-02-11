@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 /**
  * The {@link InboundHandler} for member to member communication.
@@ -56,7 +57,7 @@ public class PacketDecoder extends InboundHandlerWithCounters<ByteBuffer, Consum
 
     @Override
     public HandlerStatus onRead() throws Exception {
-        src.flip();
+        upcast(src).flip();
         try {
             while (src.hasRemaining()) {
                 Packet packet = packetReader.readFrom(src);

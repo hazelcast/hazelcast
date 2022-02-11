@@ -19,6 +19,8 @@ package com.hazelcast.internal.management.operation;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 
+import java.util.UUID;
+
 public class ReloadConfigOperation
         extends AbstractDynamicConfigOperation {
     @Override
@@ -27,8 +29,8 @@ public class ReloadConfigOperation
     }
 
     @Override
-    void doRun() {
+    protected UUID startUpdateProcess() {
         ConfigurationService service = getService();
-        service.update();
+        return service.updateAsync();
     }
 }
