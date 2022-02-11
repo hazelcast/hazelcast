@@ -1402,6 +1402,10 @@
             <id>central</id>
             <name>Central Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -1420,6 +1424,10 @@
         <repository>
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -1430,6 +1438,7 @@
             <url>https://repository.hazelcast.com/security-maven/</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
@@ -1441,6 +1450,7 @@
             <url>https://maven.repository.redhat.com/ga/</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
