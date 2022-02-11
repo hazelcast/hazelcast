@@ -74,7 +74,7 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
     }
 
     @Test
-    public void testSimpleRange() {
+    public void when_selectWithRange_then_properPlanAndIndex() {
         String sql = "SELECT * FROM  \n" + mapName +
                 " WHERE field1 >= 100\n" +
                 " AND field1 <= 10000 \n";
@@ -92,10 +92,13 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
                         planRow(0, IndexScanMapPhysicalRel.class)
                 )
         );
+
+        IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical();
+        assertEquals(F_1_INDEX, rel.getIndex().getName());
     }
 
     @Test
-    public void testSimpleRangeWithOrderBy() {
+    public void when_selectWithRangeAndOrderBy_then_properPlanAndIndex() {
         String sql = "SELECT * FROM  \n" + mapName +
                 " WHERE field1 >= 100\n" +
                 " AND field1 <= 10000 \n" +
@@ -116,13 +119,13 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
                         planRow(1, IndexScanMapPhysicalRel.class)
                 )
         );
-        IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical().getInput(0);
 
+        IndexScanMapPhysicalRel rel = (IndexScanMapPhysicalRel) optimizePhysical.getPhysical().getInput(0);
         assertEquals(F_2_INDEX, rel.getIndex().getName());
     }
 
     @Test
-    public void testMultipleEquals() {
+    public void when_selectWithMultipleEquals_then_properPlan() {
         String sql = "SELECT * FROM  \n" + mapName +
                 " WHERE field1 = -1\n" +
                 " OR field1 = 1 \n" +
