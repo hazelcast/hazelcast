@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2021 Hazelcast Inc.
+  ~
+  ~ Licensed under the Hazelcast Community License (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://hazelcast.com/hazelcast-community-license
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>5.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>hazelcast-it</artifactId>
+    <name>hazelcast-it</name>
+    <packaging>pom</packaging>
+    <description>Hazelcast Integration Tests</description>
+
+    <modules>
+        <module>distribution-it</module>
+        <!-- See other modules in profiles -->
+    </modules>
+
+    <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.basedir}/../..</main.basedir>
+    </properties>
+
+    <dependencies>
+        <!--
+        Keep empty - don't force any dependencies on each test module.
+        Some test dependencies, like junit and assertj are already inherited from the parent.
+        -->
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>jdk-17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>jdk17-tests</module>
+            </modules>
+        </profile>
+    </profiles>
+</project>

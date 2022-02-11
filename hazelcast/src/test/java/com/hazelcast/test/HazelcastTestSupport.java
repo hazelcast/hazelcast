@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -88,7 +89,6 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
-import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -1611,7 +1611,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(lowerCaseInternal(System.getProperty("os.name")).contains("windows"));
+        assumeFalse("Skipping on Windows", OsHelper.isWindows());
     }
 
     public static void assumeThatLinuxOS() {

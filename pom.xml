@@ -1359,6 +1359,7 @@
             <modules>
                 <module>extensions</module>
                 <module>distribution</module>
+                <module>hazelcast-it</module>
             </modules>
         </profile>
         <profile>
