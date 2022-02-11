@@ -627,8 +627,7 @@ public final class IndexResolver {
             RexNode operand1,
             RexNode operand2
     ) {
-//        if (1 == 1) return null;
-        if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL ) {
+        if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL) {
             return null;
         }
         int columnIndex = ((RexInputRef) operand1).getIndex();
