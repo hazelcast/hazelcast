@@ -1,19 +1,30 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -25,7 +36,6 @@ import org.junit.experimental.categories.Category;
 
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.createBiClass;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue.createBiValue;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.INTEGER;
@@ -34,15 +44,7 @@ import static java.util.Arrays.asList;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
-    private NodeEngine nodeEngine;
-    private TableResolver resolver;
-
     private String mapName;
-    private String indexName;
-
-    private IMap<Integer, ? super ExpressionBiValue> map;
-    private Class<? extends ExpressionBiValue> valueClass;
-    private ExpressionBiValue value;
 
     @BeforeClass
     public static void beforeClass() {
@@ -51,16 +53,12 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
 
     @Before
     public void before() throws Exception {
-        nodeEngine = getNodeEngine(instance());
-        resolver = new TableResolverImpl(nodeEngine, new TablesStorage(nodeEngine), new SqlConnectorCache(nodeEngine));
-
         mapName = randomName();
-        indexName = randomName();
-        String[] indexAttributes = new String[]{"field1"};
 
-        valueClass = createBiClass(INTEGER, INTEGER);
-        value = createBiValue(valueClass, 1, 1, null);
-        map = instance().getMap(mapName);
+        String indexName = randomName();
+        String[] indexAttributes = new String[]{"field1"};
+        Class<? extends ExpressionBiValue> valueClass = createBiClass(INTEGER, INTEGER);
+        IMap<Integer, ? super ExpressionBiValue> map = instance().getMap(mapName);
 
         createMapping(mapName, int.class, valueClass);
         createIndex(indexName, mapName, IndexType.SORTED, indexAttributes);
@@ -107,5 +105,4 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
                 plan(planRow(0, IndexScanMapPhysicalRel.class))
         );
     }
-
 }
