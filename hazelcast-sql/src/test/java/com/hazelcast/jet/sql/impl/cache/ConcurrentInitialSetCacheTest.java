@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.cache;
 
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,31 +34,31 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcurrentHashMapFixedSizeCacheTest {
+public class ConcurrentInitialSetCacheTest {
     @Test
     public void when_addingElementsToCacheInSingleThread_then_properSizeAndElements() {
-        int maxCapacity = 20;
+        int capacity = 20;
         int elementsToAdd = 100;
-        ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(maxCapacity);
+        ConcurrentInitialSetCache<Integer, Integer> lru = new ConcurrentInitialSetCache<>(capacity);
         for (int i = 0; i < elementsToAdd; i++) {
             lru.computeIfAbsent(i, Function.identity());
         }
 
-        assertEquals(maxCapacity, lru.cache.size());
-        for (int i = 0; i < maxCapacity; i++) {
+        assertEquals(capacity, lru.cache.size());
+        for (int i = 0; i < capacity; i++) {
             assertTrue(lru.cache.containsKey(i));
         }
     }
 
     @Test
     public void when_addingElementsToCacheMultiThreaded_then_minProperSizeAndElements() {
-        int maxCapacity = 20;
+        int capacity = 20;
         int elementsToAdd = 100;
         int threadCount = 10;
-        ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(maxCapacity);
+        ConcurrentInitialSetCache<Integer, Integer> cache = new ConcurrentInitialSetCache<>(capacity);
         Runnable runnable = () -> {
             for (int i = 0; i < elementsToAdd; i++) {
-                lru.computeIfAbsent(i, Function.identity());
+                cache.computeIfAbsent(i, Function.identity());
             }
         };
 
@@ -65,24 +66,16 @@ public class ConcurrentHashMapFixedSizeCacheTest {
                 .mapToObj(value -> new Thread(runnable))
                 .collect(Collectors.toList());
         threadList.forEach(Thread::start);
-        threadList.forEach(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        threadList.forEach((ConsumerEx<Thread>) Thread::join);
 
-        assertTrue(lru.cache.size() >= maxCapacity);
-        for (int i = 0; i < maxCapacity; i++) {
-            assertTrue(lru.cache.containsKey(i));
+        assertTrue(cache.cache.size() >= capacity);
+        for (int i = 0; i < capacity; i++) {
+            assertTrue(cache.cache.containsKey(i));
         }
     }
 
     @Test
     public void when_creatingEmptyCache_then_fail() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ConcurrentHashMapFixedSizeCache<Integer, Integer> lru = new ConcurrentHashMapFixedSizeCache<>(0);
-        });
+        assertThrows(IllegalArgumentException.class, () -> new ConcurrentInitialSetCache<>(0));
     }
 }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.jet.sql.impl.cache.Cache;
-import com.hazelcast.jet.sql.impl.cache.ConcurrentHashMapFixedSizeCache;
+import com.hazelcast.jet.sql.impl.cache.ConcurrentInitialSetCache;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -54,7 +54,7 @@ public final class JsonPathUtil {
     private JsonPathUtil() { }
 
     public static Cache<String, JsonPath> makePathCache() {
-        return new ConcurrentHashMapFixedSizeCache<>(CACHE_SIZE);
+        return new ConcurrentInitialSetCache<>(CACHE_SIZE);
     }
 
     public static JsonPath compile(String path) {

@@ -65,7 +65,7 @@ public class ConcurrentHashMapLruCache<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public V computeIfAbsent(K key, Function<K, V> valueFunction) {
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> valueFunction) {
         V valueFromCache = cache.get(key);
 
         if (valueFromCache != null) {
@@ -98,7 +98,7 @@ public class ConcurrentHashMapLruCache<K, V> implements Cache<K, V> {
     }
 
     @GuardedBy("lock") // write
-    private V handleNewCacheEntry(K key, Function<K, V> valueFunction) {
+    private V handleNewCacheEntry(K key, Function<? super K, ? extends V> valueFunction) {
         if (cache.size() == this.maxCapacity) {
             removeLruKey();
         }

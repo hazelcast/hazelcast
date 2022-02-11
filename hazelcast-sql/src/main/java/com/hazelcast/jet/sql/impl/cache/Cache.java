@@ -19,5 +19,5 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 public interface Cache<K, V> extends Serializable {
-    V computeIfAbsent(K key, Function<K, V> valueFunction);
+    V computeIfAbsent(K key, Function<? super K, ? extends V> valueFunction);
 }
