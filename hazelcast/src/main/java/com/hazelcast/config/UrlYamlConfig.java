@@ -29,6 +29,9 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A {@link Config} which is loaded using some url pointing to a Hazelcast YAML file.
+ * <p>
+ * Unlike {@link Config#load()} and its variants, a configuration constructed via
+ * {@code UrlYamlConfig} does not apply overrides found in environment variables/system properties.
  */
 public class UrlYamlConfig extends Config {
 
