@@ -40,7 +40,7 @@ public final class InstanceCreationUtil {
 
     /**
      * Creates a new instance of given class, bypassing constructors using Objenesis' instantiators if the default
-     * constructor does not exists.
+     * constructor does not exist.
      * @param klass class which instance will be created
      * @param <T> type of class {@code klass}
      * @return newly created blank object
