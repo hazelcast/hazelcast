@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.boxed.CharacterCompactSerializer;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -80,6 +81,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         this.isEnabled = compactSerializationConfig.isEnabled();
         registerConfiguredSerializers(compactSerializationConfig);
         registerConfiguredNamedSerializers(compactSerializationConfig);
+        registerDefaultSerializers();
     }
 
     /**
@@ -284,6 +286,13 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             classToRegistrationMap.put(clazz, serializableRegistration);
             typeNameToRegistrationMap.put(typeName, serializableRegistration);
         }
+    }
+
+    private void registerDefaultSerializers() {
+        CompactSerializableRegistration r = new CompactSerializableRegistration(
+          Character.class, Character.class.getName(), new CharacterCompactSerializer());
+        classToRegistrationMap.put(r.getClazz(), r);
+        typeNameToRegistrationMap.put(r.getTypeName(), r);
     }
 
     private void registerConfiguredNamedSerializers(CompactSerializationConfig compactSerializationConfig) {
