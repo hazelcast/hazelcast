@@ -227,6 +227,13 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     }
                 };
                 writers[index] = (w, o) -> w.writeInt32(name, field.getInt(o));
+            } else if (Character.TYPE.equals(type)) {
+                readers[index] = (reader, schema, o) -> {
+                    if (fieldExists(schema, name, INT32, NULLABLE_INT32)) {
+                        field.setChar(o, (char) reader.readInt32(name));
+                    }
+                };
+                writers[index] = (w, o) -> w.writeInt32(name, field.getChar(o));
             } else if (Long.TYPE.equals(type)) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, INT64, NULLABLE_INT64)) {
@@ -381,6 +388,13 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfInt16(name, (short[]) field.get(o));
+                } else if (Character.TYPE.equals(componentType)) {
+                    readers[index] = (reader, schema, o) -> {
+                        if (fieldExists(schema, name, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32)) {
+                            field.set(o, intsAsCharArray(reader.readArrayOfInt32(name)));
+                        }
+                    };
+                    writers[index] = (w, o) -> w.writeArrayOfInt32(name, charsAsIntArray((char[]) field.get(o)));
                 } else if (Integer.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32)) {
@@ -534,6 +548,30 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
         writersCache.put(clazz, writers);
         readersCache.put(clazz, readers);
+    }
+
+    private int[] charsAsIntArray(char[] values) {
+        if (values == null) {
+            return null;
+        } else {
+            int[] ints = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                ints[i] = values[i];
+            }
+            return ints;
+        }
+    }
+
+    private char[] intsAsCharArray(int[] values) {
+        if (values == null) {
+            return null;
+        } else {
+            char[] chars = new char[values.length];
+            for (int i = 0; i < values.length; i++) {
+                chars[i] = (char) values[i];
+            }
+            return chars;
+        }
     }
 
     private String[] enumsAsStrings(Enum[] values) {

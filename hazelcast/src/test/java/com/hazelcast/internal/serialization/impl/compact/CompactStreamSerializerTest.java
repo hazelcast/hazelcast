@@ -31,7 +31,9 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.ArraysDTO;
 import example.serialization.BitsDTO;
+import example.serialization.BoxedPrimitivesDTO;
 import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
@@ -263,6 +265,32 @@ public class CompactStreamSerializerTest {
         Data data = serializationService.toData(employeeDTO);
         EmployeeDTO object = serializationService.toObject(data);
         assertEquals(employeeDTO, object);
+    }
+
+    @Test
+    public void testPrimitiveArraysDefaultSerialization() {
+        SerializationService serializationService = createSerializationService();
+        ArraysDTO raw = new ArraysDTO("bytes".getBytes(),
+          "chars".toCharArray(),
+          new float[] {1.2f},
+          new double[]{1.2d},
+          new boolean[] {false},
+          new long[] {1L},
+          new short[]{(short) 1},
+          new int[]{1});
+        Data data = serializationService.toData(raw);
+        ArraysDTO deserialized = serializationService.toObject(data);
+        assertEquals(raw, deserialized);
+    }
+
+    @Test
+    public void testBoxedTypesDefaultSerialization() {
+        SerializationService serializationService = createSerializationService();
+        BoxedPrimitivesDTO raw = new BoxedPrimitivesDTO(
+          Byte.valueOf("1"), 'c', 1.2f, 1.2, false, 15L, (short) 1, 2);
+        Data data = serializationService.toData(raw);
+        BoxedPrimitivesDTO deserialized = serializationService.toObject(data);
+        assertEquals(raw, deserialized);
     }
 
     @Test
