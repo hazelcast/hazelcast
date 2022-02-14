@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.cache.Cache;
+import com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.ConcurrentInitialSetCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -42,11 +42,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class JsonValueFunction<T> extends VariExpressionWithType<T> implements IdentifiedDataSerializable {
     private static final ILogger LOGGER = Logger.getLogger(JsonValueFunction.class);
+    private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private Cache<String, JsonPath> pathCache;
+    private ConcurrentInitialSetCache<String, JsonPath> pathCache;
     private JsonPath constantPathCache;
 
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
@@ -118,7 +120,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         final JsonPath jsonPath;
         try {
             jsonPath = constantPathCache != null ? constantPathCache :
-                    pathCache.computeIfAbsent(path, JsonPathUtil::compile);
+                    pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
             // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
             // serializable, they can contain references to parser context and other objects, which are not.

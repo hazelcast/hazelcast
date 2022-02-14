@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
-import com.hazelcast.jet.sql.impl.cache.Cache;
+import com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.ConcurrentInitialSetCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.serialize;
 import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArray;
@@ -46,8 +47,9 @@ import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.wrapToArra
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
+    private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private final Cache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
+    private final ConcurrentInitialSetCache<String, JsonPath> pathCache = JsonPathUtil.makePathCache();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -106,7 +108,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
         final JsonPath jsonPath;
         try {
-            jsonPath = pathCache.computeIfAbsent(path, JsonPathUtil::compile);
+            jsonPath = pathCache.computeIfAbsent(path, COMPILE_FUNCTION);
         } catch (JsonPathCompilerException e) {
             // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
             // serializable, they can contain references to parser context and other objects, which are not.

@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.sql.impl.cache;
+package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.ConcurrentInitialSetCache;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,14 +40,14 @@ public class ConcurrentInitialSetCacheTest {
     public void when_addingElementsToCacheInSingleThread_then_properSizeAndElements() {
         int capacity = 20;
         int elementsToAdd = 100;
-        ConcurrentInitialSetCache<Integer, Integer> lru = new ConcurrentInitialSetCache<>(capacity);
+        ConcurrentInitialSetCache<Integer, Integer> cache = new ConcurrentInitialSetCache<>(capacity);
         for (int i = 0; i < elementsToAdd; i++) {
-            lru.computeIfAbsent(i, Function.identity());
+            cache.computeIfAbsent(i, Function.identity());
         }
 
-        assertEquals(capacity, lru.cache.size());
+        assertEquals(capacity, cache.cache.size());
         for (int i = 0; i < capacity; i++) {
-            assertTrue(lru.cache.containsKey(i));
+            assertTrue(cache.cache.containsKey(i));
         }
     }
 

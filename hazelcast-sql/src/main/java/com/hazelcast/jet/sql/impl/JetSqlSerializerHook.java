@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -45,8 +46,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int JSON_OBJECT = 3;
     public static final int JSON_ARRAY = 4;
     public static final int MAP_INDEX_SCAN_METADATA = 5;
+    public static final int CONCURRENT_INITIAL_SET_CACHE = 6;
 
-    public static final int LEN = MAP_INDEX_SCAN_METADATA + 1;
+    public static final int LEN = CONCURRENT_INITIAL_SET_CACHE + 1;
 
     @Override
     public int getFactoryId() {
@@ -64,6 +66,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[JSON_OBJECT] = arg -> new JsonObjectFunction();
         constructors[JSON_ARRAY] = arg -> new JsonArrayFunction();
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
+        constructors[CONCURRENT_INITIAL_SET_CACHE] = arg -> new JsonPathUtil.ConcurrentInitialSetCache<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }
