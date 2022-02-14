@@ -901,10 +901,6 @@ public class ConfigXmlGenerator {
         gen.open("dynamic-configuration")
                 .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
 
-        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
-            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
-        }
-
         if (dynamicConfigurationConfig.getBackupDir() != null) {
             gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());
         }
