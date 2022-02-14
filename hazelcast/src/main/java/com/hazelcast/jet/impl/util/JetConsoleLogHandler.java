@@ -80,6 +80,9 @@ public class JetConsoleLogHandler extends StreamHandler {
         }
 
         private static String abbreviateLoggerName(String name) {
+            if (name == null) {
+                return "null";
+            }
             return name.replaceAll("\\B\\w+\\.", ".");
         }
 
