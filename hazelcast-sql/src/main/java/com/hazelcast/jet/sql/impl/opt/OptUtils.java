@@ -372,7 +372,7 @@ public final class OptUtils {
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
     }
 
-    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+    public static HazelcastTable extractHazelcastTable(RelNode rel) {
         HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
         assert table != null;
         return table;
