@@ -127,8 +127,7 @@ public class SqlJoinTest {
                             "FROM " + leftName + " l " +
                             "INNER JOIN " + mapName + " m ON l.v = m.__key + m.__key",
                     asList(
-//                            new Row(1, "value-1"),
-                            new Row(2, "value-2")
+                            new Row(2, "value-1")
                     )
             );
         }
