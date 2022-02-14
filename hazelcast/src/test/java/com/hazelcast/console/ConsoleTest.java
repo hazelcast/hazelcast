@@ -127,7 +127,7 @@ public class ConsoleTest {
                         terminated);
             }
         } finally {
-            if (pipeIn != null){
+            if (pipeIn != null) {
                 pipeIn.close();
             }
             if (pipeOut != null) {
