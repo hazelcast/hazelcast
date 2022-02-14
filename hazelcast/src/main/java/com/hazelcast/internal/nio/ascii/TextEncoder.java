@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class TextEncoder extends OutboundHandler<Supplier<TextCommand>, ByteBuffer> {
     public static final String TEXT_ENCODER = "textencoder";
@@ -96,7 +97,7 @@ public class TextEncoder extends OutboundHandler<Supplier<TextCommand>, ByteBuff
                 }
             }
         } finally {
-            dst.flip();
+            upcast(dst).flip();
         }
     }
 }

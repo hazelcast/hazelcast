@@ -93,6 +93,17 @@ public class HazelcastPropertiesTest {
     }
 
     @Test
+    public void testGet_whenValueNotString() {
+        // given a "compromised" Properties object
+        Properties props = new Properties();
+        props.put("key", 1);
+
+        // HazelcastProperties.get returns null
+        HazelcastProperties hzProperties = new HazelcastProperties(props);
+        assertNull(hzProperties.get("key"));
+    }
+
+    @Test
     public void testGet_whenFunctionAvailable_andNoOtherSettings() {
         Properties props = new Properties();
         HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {

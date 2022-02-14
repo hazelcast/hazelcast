@@ -20,7 +20,7 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlResultImplTest extends SqlTestSupport {
 

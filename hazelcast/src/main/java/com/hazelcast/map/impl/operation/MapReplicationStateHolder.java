@@ -173,36 +173,42 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 String mapName = dataEntry.getKey();
                 List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
-                initializeRecordStore(mapName, recordStore);
-                recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
+                recordStore.beforeOperation();
+                try {
+                    initializeRecordStore(mapName, recordStore);
+                    recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
 
-                MapContainer mapContainer = recordStore.getMapContainer();
-                PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
+                    MapContainer mapContainer = recordStore.getMapContainer();
+                    PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(operation.getPartitionId());
-                for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
-                    Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getValue());
-                }
+                    for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+                        Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                        indexes.addOrGetIndex(indexDefinition.getValue());
+                    }
 
-                final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
+                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                    final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
 
-                InternalIndex[] indexesSnapshot = null;
+                    InternalIndex[] indexesSnapshot = null;
 
-                if (populateIndexes) {
-                    // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
-                    indexesSnapshot = indexes.getIndexes();
-                    Indexes.beginPartitionUpdate(indexesSnapshot);
-                    indexes.clearAll();
-                }
+                    if (populateIndexes) {
+                        // defensively clear possible stale leftovers in non-global indexes from
+                        // the previous failed promotion attempt
+                        indexesSnapshot = indexes.getIndexes();
+                        Indexes.beginPartitionUpdate(indexesSnapshot);
+                        indexes.clearAll();
+                    }
 
-                long nowInMillis = Clock.currentTimeMillis();
-                forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
+                    long nowInMillis = Clock.currentTimeMillis();
+                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore,
                         populateIndexes, nowInMillis);
 
 
-                if (populateIndexes) {
-                    Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                    if (populateIndexes) {
+                        Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                    }
+                } finally {
+                    recordStore.afterOperation();
                 }
             }
         }

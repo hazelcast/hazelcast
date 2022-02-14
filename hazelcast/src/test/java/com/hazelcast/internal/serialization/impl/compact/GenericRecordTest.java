@@ -243,4 +243,22 @@ public class GenericRecordTest {
         }
         return null;
     }
+
+
+    @Test
+    public void testGetFieldKindThrowsExceptionWhenFieldDoesNotExist() throws IOException {
+        GenericRecord record = compact("test").build();
+        assertThrows(IllegalArgumentException.class, () -> {
+            record.getFieldKind("doesNotExist");
+        });
+
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+        assertThrows(IllegalArgumentException.class, () -> {
+            internalGenericRecord.getFieldKind("doesNotExist");
+        });
+    }
 }

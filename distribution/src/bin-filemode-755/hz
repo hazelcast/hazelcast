@@ -25,6 +25,22 @@ findScriptDir
 
 . "$SCRIPT_DIR"/common.sh
 
+if [ -z "$LOGGING_CONFIG" ]; then
+  # Use the default log4j2 file
+  LOGGING_CONFIG="file:$HAZELCAST_HOME/config/log4j2.properties"
+else
+  if [ -f "$LOGGING_CONFIG" ]; then
+    # Try if the file exists - either absolute or relative path
+    LOGGING_CONFIG="file:$LOGGING_CONFIG"
+  elif [ -f "$HAZELCAST_HOME/config/$LOGGING_CONFIG" ]; then
+    # Try file in the config directory
+    LOGGING_CONFIG="file:$HAZELCAST_HOME/config/$LOGGING_CONFIG"
+  else
+    echo "Could not find specified LOGGING_CONFIG file."
+    exit 1
+  fi
+fi
+
 # HAZELCAST_CONFIG holds the configuration path.
 # If the the path is relative, it is relative to the Hazelcast installation directory (HAZELCAST_HOME).
 # The path can be absolute.
@@ -64,7 +80,7 @@ fi
 JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
-"-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
+"-Dlog4j.configurationFile=$LOGGING_CONFIG" \
 "-Dhazelcast.config=$HAZELCAST_CONFIG" \
 "-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
 $PROMETHEUS \
@@ -73,14 +89,13 @@ $JVM_OPTIONS \
 $JAVA_OPTS \
 )
 
-if [ -z "$LOGGING_LEVEL" ]; then
-    export LOGGING_LEVEL="INFO"
-fi
-
-if [ "$(arch)" == "s390x" ]; then
-  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n"
-else
-  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n"
+if [ -z "$LOGGING_PATTERN" ]; then
+  if [ "$(arch)" == "s390x" ]; then
+    # Workaround for s390x architecture where the orignal pattern fails
+    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n%xEx"
+  else
+    export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n%xEx"
+  fi
 fi
 
 J_OPTS=""

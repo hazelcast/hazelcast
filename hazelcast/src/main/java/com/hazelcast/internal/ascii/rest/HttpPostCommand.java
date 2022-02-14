@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_100;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -74,7 +75,7 @@ public class HttpPostCommand extends HttpCommand {
         }
         if (complete) {
             if (data != null) {
-                data.flip();
+                upcast(data).flip();
             }
         }
         return complete;
@@ -146,7 +147,7 @@ public class HttpPostCommand extends HttpCommand {
         if (b == CARRIAGE_RETURN) {
             readLF(cb);
         } else {
-            cb.position(cb.position() - 1);
+            upcast(cb).position(cb.position() - 1);
         }
     }
 
@@ -169,7 +170,7 @@ public class HttpPostCommand extends HttpCommand {
         } else {
             result = StringUtil.bytesToString(bb.array(), 0, bb.position());
         }
-        bb.clear();
+        upcast(bb).clear();
         return result;
     }
 
@@ -223,7 +224,7 @@ public class HttpPostCommand extends HttpCommand {
         int capacity = lineBuffer.capacity() << 1;
 
         ByteBuffer newBuffer = ByteBuffer.allocate(capacity);
-        lineBuffer.flip();
+        upcast(lineBuffer).flip();
         newBuffer.put(lineBuffer);
         lineBuffer = newBuffer;
     }

@@ -64,6 +64,10 @@ public class MetadataResolver implements IMapResolver {
     @Nullable
     @SuppressWarnings("rawtypes")
     private Metadata resolveFromHd(MapContainer container) {
+        if (container.getIndexes() == null) {
+            return null;
+        }
+
         InternalIndex[] indexes = container.getIndexes().getIndexes();
         if (indexes == null || indexes.length == 0) {
             return null;

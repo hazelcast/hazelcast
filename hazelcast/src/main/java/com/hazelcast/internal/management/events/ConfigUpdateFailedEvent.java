@@ -22,15 +22,24 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
+public class ConfigUpdateFailedEvent extends AbstractConfigUpdateEvent {
+
+    public enum FailureReason {
+        PARSING_FAILURE, SCHEMA_VALIDATION_FAILURE, GENERIC_FAILURE
+    }
+
+    private final FailureReason failureReason;
     private final Exception exception;
     private final ConfigNamespace namespace;
     private final ConfigUpdateResult configUpdateResult;
 
-    public ConfigUpdateFailedEvent(UUID uuid, Exception exception,
+    public ConfigUpdateFailedEvent(UUID uuid,
+                                   FailureReason failureReason,
+                                   Exception exception,
                                    ConfigNamespace namespace,
                                    ConfigUpdateResult configUpdateResult) {
         super(uuid);
+        this.failureReason = failureReason;
         this.exception = exception;
         this.namespace = namespace;
         this.configUpdateResult = configUpdateResult;
@@ -44,6 +53,7 @@ public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
+        json.add("failureReason", failureReason.toString());
         json.add("exception", exception.getClass().getSimpleName());
         json.add("exceptionMessage", exception.getMessage());
         json.add("configUpdateResult", configUpdateResult.toJson());
@@ -64,5 +74,9 @@ public class ConfigUpdateFailedEvent extends AbstractIdentifiedEvent {
 
     public ConfigUpdateResult getConfigUpdateResult() {
         return configUpdateResult;
+    }
+
+    public FailureReason getFailureReason() {
+        return failureReason;
     }
 }

@@ -370,7 +370,7 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                 } else if (Byte.TYPE.equals(componentType)) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8)) {
-                            field.set(o, reader.readArrayOInt(name));
+                            field.set(o, reader.readArrayOfInt8(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeArrayOfInt8(name, (byte[]) field.get(o));

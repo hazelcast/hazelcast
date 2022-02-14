@@ -68,35 +68,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${maven.animal.sniffer.plugin.version}</version>
-                <configuration>
-                    <annotations>
-                        <annotation>com.hazelcast.internal.RequiresJdk8</annotation>
-                    </annotations>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java18</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                    <ignores>
-                        <ignore>java.lang.invoke.MethodHandle</ignore>
-                        <ignore>sun.misc.Unsafe</ignore>
-                    </ignores>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java8-check</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>${maven.source.plugin.version}</version>
@@ -639,7 +610,7 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.1.8</version>
+            <version>2.4.21</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -689,24 +660,10 @@
             <version>2.1.12</version>
             <scope>test</scope>
         </dependency>
-        <!-- Bitmap index benchmarking -->
-        <dependency>
-            <groupId>org.roaringbitmap</groupId>
-            <artifactId>RoaringBitmap</artifactId>
-            <version>0.9.3</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>
             <version>2.32.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -765,7 +722,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.9</version>
+            <version>42.3.2</version>
             <scope>test</scope>
         </dependency>
 

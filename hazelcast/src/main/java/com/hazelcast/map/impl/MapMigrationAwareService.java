@@ -236,22 +236,6 @@ class MapMigrationAwareService
         }
     }
 
-    @Override
-    public void onBeforeRun(PartitionMigrationEvent event) {
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
-            recordStore.beforeOperation();
-        }
-    }
-
-    @Override
-    public void onAfterRunFinal(PartitionMigrationEvent event) {
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
-            recordStore.afterOperation();
-        }
-    }
-
     private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
             mapServiceContext.removeRecordStoresFromPartitionMatchingWith(recordStore -> true, partitionId,

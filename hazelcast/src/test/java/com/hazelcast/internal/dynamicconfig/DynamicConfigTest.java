@@ -60,6 +60,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -121,6 +122,12 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     protected HazelcastInstance getDriver() {
         return members[members.length - 1];
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddWanReplicationConfigIsNotSupported() {
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
     }
 
     @Test

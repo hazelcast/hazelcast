@@ -55,7 +55,10 @@ public final class WatermarkedFields implements Serializable {
         return null;
     }
 
-    // TODO [viliam] delete unused?
+    public boolean isEmpty() {
+        return propertiesByIndex.isEmpty();
+    }
+
     public Map<Integer, RexNode> getPropertiesByIndex() {
         return propertiesByIndex;
     }

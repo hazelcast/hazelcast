@@ -194,7 +194,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         // Member list version at the time of member removal. Since version is read after member removal,
         // this is guaranteed to be greater than version in invocations whose target was left member.
         int memberListVersion = nodeEngine.getClusterService().getMemberListVersion();
-        // postpone notifying invocations since real response may arrive in the mean time.
+        // postpone notifying invocations since real response may arrive in the meantime.
         scheduler.execute(new OnMemberLeftTask(member, memberListVersion));
     }
 

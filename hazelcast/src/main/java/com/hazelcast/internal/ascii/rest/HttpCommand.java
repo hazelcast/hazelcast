@@ -34,6 +34,7 @@ import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_404;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_503;
 import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
@@ -159,7 +160,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
             }
         }
         response.put(TextCommandConstants.RETURN);
-        response.flip();
+        upcast(response).flip();
         setStatusCode(statusCode.code);
     }
 
@@ -217,7 +218,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        response.flip();
+        upcast(response).flip();
         setStatusCode(statusCode.code);
     }
 
@@ -261,7 +262,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        response.flip();
+        upcast(response).flip();
         setStatusCode(statusCode.code);
     }
 

@@ -153,14 +153,4 @@ public class CountingMigrationAwareService
         }
         return ((ChunkedMigrationAwareService) migrationAwareService).newChunkSupplier(event, namespace);
     }
-
-    @Override
-    public void onBeforeRun(PartitionMigrationEvent event) {
-        migrationAwareService.onBeforeRun(event);
-    }
-
-    @Override
-    public void onAfterRunFinal(PartitionMigrationEvent event) {
-        migrationAwareService.onAfterRunFinal(event);
-    }
 }

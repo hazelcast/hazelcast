@@ -20,7 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public abstract class AbstractWanConfigurationEventBase extends AbstractIdentifiedEvent {
+public abstract class AbstractWanConfigurationEventBase extends AbstractWanEvent {
     private final String wanConfigName;
 
     protected AbstractWanConfigurationEventBase(UUID uuid, String wanConfigName) {

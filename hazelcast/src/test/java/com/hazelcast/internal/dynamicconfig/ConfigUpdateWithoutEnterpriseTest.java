@@ -47,7 +47,7 @@ public class ConfigUpdateWithoutEnterpriseTest extends HazelcastTestSupport {
         Files.write(configFile.toPath(), configAsString.getBytes());
         System.setProperty(SYSPROP_MEMBER_CONFIG, configFile.getAbsolutePath());
 
-        ConfigurationService configurationService = getService(createHazelcastInstance(), ClusterWideConfigurationService.SERVICE_NAME);
+        ConfigurationService configurationService = getService(createHazelcastInstance(), ConfigurationService.SERVICE_NAME);
         configurationService.update();
     }
 }

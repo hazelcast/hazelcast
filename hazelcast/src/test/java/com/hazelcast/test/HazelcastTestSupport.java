@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -88,7 +89,6 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
-import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -188,9 +188,12 @@ public abstract class HazelcastTestSupport {
     // ###################################
 
     public static Config smallInstanceConfig() {
+        return shrinkInstanceConfig(new Config());
+    }
+
+    public static Config shrinkInstanceConfig(Config config) {
         // make the test instances consume less resources per default
-        Config config = new Config()
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
@@ -1174,13 +1177,16 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
-        for (int i = 0; i < durationSeconds; i++) {
+        for (int i = 0; i <= durationSeconds; i++) {
             try {
                 task.run();
             } catch (Exception e) {
                 throw rethrow(e);
             }
-            sleepSeconds(1);
+            // Don't wait if there is not next iteration
+            if ((i + 1) <= durationSeconds) {
+                sleepSeconds(1);
+            }
         }
     }
 
@@ -1605,7 +1611,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(lowerCaseInternal(System.getProperty("os.name")).contains("windows"));
+        assumeFalse("Skipping on Windows", OsHelper.isWindows());
     }
 
     public static void assumeThatLinuxOS() {

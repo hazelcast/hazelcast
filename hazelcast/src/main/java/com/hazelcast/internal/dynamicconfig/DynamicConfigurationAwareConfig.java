@@ -871,7 +871,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return staticConfig.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
@@ -1002,6 +1002,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public DeviceConfig getDeviceConfig(String name) {
         return staticConfig.getDeviceConfig(name);
+    }
+
+    @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        return staticConfig.getDeviceConfig(clazz, name);
     }
 
     @Override

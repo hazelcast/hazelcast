@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import org.apache.calcite.rel.type.RelDataType;
@@ -35,12 +35,10 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
@@ -62,18 +60,22 @@ public final class WindowUtils {
      * of -2, windowEnd will be used. Otherwise, the field from input row
      * referenced by the (non-negative) mapping value will be used.
      *
-     *  @return row with inserted bounds
+     * @return row with inserted bounds
      */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static JetSqlRow insertWindowBound(JetSqlRow row, long windowStart, long windowEnd, int[] mapping) {
+    public static JetSqlRow insertWindowBound(
+            JetSqlRow row,
+            long windowStart,
+            long windowEnd,
+            QueryDataType descriptorType,
+            int[] mapping
+    ) {
         Object[] result = new Object[mapping.length];
         for (int i = 0; i < mapping.length; i++) {
             if (mapping[i] == -1) {
-                // TODO: [viliam] could we use Instant here (QueryDataType.TIMESTAMP_WITH_TZ_INSTANT).
-                //  That conversion is much cheaper.
-                result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowStart), ZoneId.systemDefault());
+                result[i] = convertWindowBound(windowStart, descriptorType);
             } else if (mapping[i] == -2) {
-                result[i] = OffsetDateTime.ofInstant(Instant.ofEpochMilli(windowEnd), ZoneId.systemDefault());
+                result[i] = convertWindowBound(windowEnd, descriptorType);
             } else {
                 result[i] = row.get(mapping[i]);
             }
@@ -112,6 +114,14 @@ public final class WindowUtils {
                 }
             }
         };
+    }
+
+    private static Object convertWindowBound(long boundary, QueryDataType descriptorType) {
+        if (descriptorType.getTypeFamily().isTemporal()) {
+            return descriptorType.convert(asTimestampWithTimezone(boundary, DEFAULT_ZONE));
+        } else {
+            return descriptorType.convert(boundary);
+        }
     }
 
     private static JetSqlRow addWindowBoundsSingleRow(JetSqlRow row, Object timeStamp, long windowStart, long windowEnd) {

@@ -3309,7 +3309,7 @@
     </xs:complexType>
 
     <xs:complexType name="memory-size">
-        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="value" type="non-negative-long" default="128"/>
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
 
@@ -4241,6 +4241,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="capacity" minOccurs="0" type="memory-size">
+                <xs:annotation>
+                    <xs:documentation>
+                        Device capacity, i.e., what is the soft upper bound capacity of the device.
+                        The default is 256 gigabytes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="block-size" minOccurs="0" default="4096">
                 <xs:annotation>
                     <xs:documentation>
@@ -4278,7 +4286,7 @@
                 </xs:simpleType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="name" type="xs:string" use="required">
+        <xs:attribute name="name" type="xs:string" default="default-tiered-store-device">
             <xs:annotation>
                 <xs:documentation>
                     Name of the device.
