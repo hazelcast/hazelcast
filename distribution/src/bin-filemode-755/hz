@@ -58,6 +58,7 @@ fi
 readJvmOptionsFile "jvm.options"
 
 if [ "$HAZELCAST_LICENSE_KEY" ]; then
+    echo "HAZELCAST_LICENSE_KEY env variable is deprecated. Use HZ_LICENSEKEY instead."
     LICENSING_OPT="-Dhazelcast.enterprise.license.key=${HAZELCAST_LICENSE_KEY}"
 fi
 
@@ -83,27 +84,10 @@ else
   export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n"
 fi
 
-J_OPTS=""
-for arg in "${JAVA_OPTS_ARRAY[@]}"
-do
-  if [ "$J_OPTS" = "" ]; then
-    J_OPTS="$arg"
-  else
-    J_OPTS="$J_OPTS,$arg"
-  fi
-done
-
-HZ_CMD="exec ${JAVA} -cp ${CLASSPATH} ${JAVA_OPTS_ARRAY[@]} com.hazelcast.commandline.HazelcastServerCommandLine"
-
 echo "########################################"
 echo "# JAVA=$JAVA"
 echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
 echo "# CLASSPATH=$CLASSPATH"
 echo "########################################"
 
-if [ "$1" = "start" ] ; then
-
-  ${HZ_CMD} "$@" "--JAVA_OPTS=$J_OPTS"
-else
-  ${HZ_CMD} "$@"
-fi
+exec "${JAVA}" -cp "${CLASSPATH}" ${JAVA_OPTS_ARRAY[*]} com.hazelcast.commandline.HazelcastServerCommandLine "$@"
