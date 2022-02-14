@@ -347,7 +347,7 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(gen.open("ldap"), c)
                 .node("url", c.getUrl())
                 .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("parse-dn", c.getParseDn())
                 .nodeIfContents("role-context", c.getRoleContext())
                 .nodeIfContents("role-filter", c.getRoleFilter())
                 .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
