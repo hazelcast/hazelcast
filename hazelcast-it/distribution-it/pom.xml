@@ -46,7 +46,7 @@
                 <executions>
                     <execution>
                         <id>unpack</id>
-                        <phase>generate-test-resources</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
