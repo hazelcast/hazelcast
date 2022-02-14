@@ -20,10 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A {@link LineReader} implementation.
@@ -38,39 +34,11 @@ class DefaultLineReader implements LineReader {
 
     @Override
     public String readLine() throws Exception {
-        return interruptableReadLine(in);
+        return in.readLine();
     }
 
     @Override
     public void close() throws IOException {
         in.close();
-    }
-
-    private String interruptableReadLine(BufferedReader reader)
-            throws InterruptedException, IOException {
-        @SuppressWarnings("checkstyle:magicnumber")
-        final long parkDurationInMs = 100;
-        Pattern pattern = Pattern.compile("\\R");
-        boolean interrupted = false;
-        int chr;
-        StringBuilder result = new StringBuilder();
-        Matcher matcher = pattern.matcher(result.toString());
-        while (!interrupted && !matcher.find()) {
-            if (reader.ready()) {
-                chr = reader.read();
-                result.append((char) chr);
-                matcher = pattern.matcher(result.toString());
-            } else {
-                // when input buffer is not ready, wait
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(parkDurationInMs));
-            }
-            interrupted = Thread.interrupted();
-        }
-
-        if (interrupted) {
-            throw new InterruptedException();
-        }
-
-        return result.toString();
     }
 }
