@@ -173,41 +173,44 @@ class ClusterDiscoveryServiceBuilder {
                                                     boolean gcpDiscoveryEnabled, boolean azureDiscoveryEnabled,
                                                     boolean kubernetesDiscoveryEnabled, boolean eurekaDiscoveryEnabled,
                                                     boolean discoverySpiEnabled, boolean hazelcastCloudEnabled) {
+        List<String> enabledDiscoveries = new ArrayList<>();
         int count = 0;
         if (addressListProvided) {
             count++;
+            enabledDiscoveries.add("cluster members given explicitly");
         }
         if (awsDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("AWS discovery");
         }
         if (gcpDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("GCP discovery");
         }
         if (azureDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Azure discovery");
         }
         if (kubernetesDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Kubernetes discovery");
         }
         if (eurekaDiscoveryEnabled) {
             count++;
+            enabledDiscoveries.add("Eureka discovery");
         }
         if (discoverySpiEnabled) {
             count++;
+            enabledDiscoveries.add("Discovery SPI");
         }
         if (hazelcastCloudEnabled) {
             count++;
+            enabledDiscoveries.add("Hazelcast Cloud");
         }
         if (count > 1) {
             throw new IllegalStateException("Only one discovery method can be enabled at a time. "
-                    + "cluster members given explicitly : " + addressListProvided
-                    + ", aws discovery: " + awsDiscoveryEnabled
-                    + ", gcp discovery: " + gcpDiscoveryEnabled
-                    + ", azure discovery: " + azureDiscoveryEnabled
-                    + ", kubernetes discovery: " + kubernetesDiscoveryEnabled
-                    + ", eureka discovery: " + eurekaDiscoveryEnabled
-                    + ", discovery spi enabled : " + discoverySpiEnabled
-                    + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
+                    + "Keep only one of the following method enabled by removing the others from the configuration, "
+                    + "or setting enabled to 'false': " + String.join(",", enabledDiscoveries));
         }
     }
 
