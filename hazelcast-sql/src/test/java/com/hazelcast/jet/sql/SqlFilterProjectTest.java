@@ -479,7 +479,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "t", 3);
 
         assertRowsAnyOrder(
-                "SELECT v, v FROM (SELECT v, v FROM t) WHERE v >= 1",
+                "SELECT f2, f1 FROM (SELECT v f1, v + v f2 FROM t) WHERE f1 >= 1",
                 asList(
                         new Row(2L, 1),
                         new Row(4L, 2)
@@ -487,13 +487,12 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         );
     }
 
-    // SELECT v, v FROM map WHERE v > 1
     @Test
     public void test_projectFilterExpressionProjectExpression() {
         TestBatchSqlConnector.create(sqlService, "t", 3);
 
         assertRowsAnyOrder(
-                "SELECT v, f1 FROM (SELECT v f1, v + v f2 FROM t) WHERE f1 + f2 > 2",
+                "SELECT f2, f1 FROM (SELECT v f1, v + v f2 FROM t) WHERE f1 + f2 > 2",
                 asList(
                         new Row(2L, 1),
                         new Row(4L, 2)

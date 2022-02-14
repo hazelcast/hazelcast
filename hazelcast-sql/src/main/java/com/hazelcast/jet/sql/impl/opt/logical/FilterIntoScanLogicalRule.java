@@ -17,22 +17,37 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.logical.LogicalFilter;
-import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.rules.TransformationRule;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexCorrelVariable;
+import org.apache.calcite.rex.RexDynamicParam;
+import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexOver;
+import org.apache.calcite.rex.RexPatternFieldRef;
+import org.apache.calcite.rex.RexRangeRef;
+import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexUtil;
-import org.apache.calcite.util.mapping.Mapping;
-import org.apache.calcite.util.mapping.Mappings;
+import org.apache.calcite.rex.RexVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static java.util.Arrays.asList;
 
 /**
  * Logical rule that pushes down a {@link Filter} into a {@link TableScan} to allow for constrained scans.
@@ -48,86 +63,137 @@ import java.util.List;
  * LogicalScan[table[filter=exp1 AND exp2]]
  * </pre>
  */
-public final class FilterIntoScanLogicalRule extends RelOptRule {
+public final class FilterIntoScanLogicalRule extends RelRule<Config> implements TransformationRule {
 
-    public static final FilterIntoScanLogicalRule INSTANCE = new FilterIntoScanLogicalRule();
+    private static final Config CONFIG = Config.EMPTY
+            .withDescription(FilterIntoScanLogicalRule.class.getSimpleName())
+            .withOperandSupplier(b0 -> b0
+                    .operand(Filter.class)
+                    .trait(LOGICAL)
+                    .inputs(b1 -> b1
+                            .operand(FullScanLogicalRel.class).anyInputs()));
 
-    private FilterIntoScanLogicalRule() {
-        super(
-                operand(LogicalFilter.class, operand(LogicalTableScan.class, none())),
-                RelFactories.LOGICAL_BUILDER,
-                FilterIntoScanLogicalRule.class.getSimpleName()
-        );
+    public static final RelOptRule INSTANCE = new FilterIntoScanLogicalRule(CONFIG);
+
+    private FilterIntoScanLogicalRule(Config config) {
+        super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
         Filter filter = call.rel(0);
-        TableScan scan = call.rel(1);
+        FullScanLogicalRel scan = call.rel(1);
 
-        HazelcastTable originalTable = OptUtils.extractHazelcastTable(scan);
+        HazelcastTable table = OptUtils.extractHazelcastTable(scan);
 
-        // Remap the condition to the original TableScan columns.
-        RexNode newCondition = remapCondition(originalTable, filter.getCondition());
+        List<RexNode> projection = table.getProjects();
+        RexNode existingCondition = table.getFilter();
+        RexNode condition = filter.getCondition();
 
-        // Compose the conjunction with the old filter if needed.
-        RexNode originalCondition = originalTable.getFilter();
-
-        if (originalCondition != null) {
-            List<RexNode> nodes = new ArrayList<>(2);
-            nodes.add(originalCondition);
-            nodes.add(newCondition);
-
-            newCondition = RexUtil.composeConjunction(scan.getCluster().getRexBuilder(), nodes, true);
+        RexNode convertedCondition = RexUtil.apply(new ProjectFieldVisitor(projection), new RexNode[]{condition})[0];
+        if (existingCondition != null) {
+            convertedCondition = RexUtil.composeConjunction(
+                    scan.getCluster().getRexBuilder(),
+                    asList(existingCondition, convertedCondition),
+                    true
+            );
         }
 
-        // Create a scan with a new filter.
-        LogicalTableScan newScan = OptUtils.createLogicalScan(
-                scan,
-                originalTable.withFilter(newCondition)
+        RelOptTable convertedTable = OptUtils.createRelTable(
+                (HazelcastRelOptTable) scan.getTable(),
+                table.withFilter(convertedCondition),
+                scan.getCluster().getTypeFactory()
         );
 
-        call.transformTo(newScan);
+        FullScanLogicalRel rel = new FullScanLogicalRel(
+                scan.getCluster(),
+                OptUtils.toLogicalConvention(scan.getTraitSet()),
+                convertedTable,
+                scan.eventTimePolicyProvider(),
+                scan.watermarkedColumnIndex()
+        );
+        call.transformTo(rel);
     }
 
-    /**
-     * Remaps the column indexes referenced in the {@code Filter} to match the original indexed used by {@code TableScan}.
-     * <p>
-     * Consider the following query: "SELECT f1, f0 FROM t WHERE f0 > ?" for the table {@code t[f0, f1]}
-     * <p>
-     * The original tree before optimization:
-     * <pre>
-     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
-     *   LogicalProject[$1, $0]                             // f1, f0
-     *     LogicalScan[table=t[projects=[0, 1]]]            // f0, f1
-     * </pre>
-     * After project pushdown:
-     * <pre>
-     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
-     *   LogicalScan[table=t[projects=[1, 0]]]              // f1, f0
-     * </pre>
-     * After filter pushdown:
-     * <pre>
-     * LogicalScan[table=t[projects=[1, 0], filter=[$0>?]]] // f0 is referenced as $0
-     * </pre>
-     *
-     * @param originalHazelcastTable  The original table from the {@code TableScan} before the pushdown
-     * @param originalFilterCondition The original condition from the {@code Filter}.
-     * @return New condition that is going to be pushed down to a {@code TableScan}.
-     */
-    private static RexNode remapCondition(HazelcastTable originalHazelcastTable, RexNode originalFilterCondition) {
-        List<RexNode> projects = originalHazelcastTable.getProjects();
-        List<Integer> numericProjects = new ArrayList<>(projects.size());
-        for (RexNode project : projects) {
-            if (project instanceof RexInputRef) {
-                numericProjects.add(((RexInputRef) project).getIndex());
-            }
+    private static class ProjectFieldVisitor implements RexVisitor<RexNode> {
+
+        private final List<RexNode> projection;
+
+        protected ProjectFieldVisitor(List<RexNode> projection) {
+            this.projection = projection;
         }
 
-        Mapping mapping = Mappings.source(numericProjects, originalHazelcastTable.getOriginalFieldCount());
+        @Override
+        public RexNode visitInputRef(RexInputRef inputRef) {
+            return projection.get(inputRef.getIndex());
+        }
 
-        System.err.println(mapping);
+        @Override
+        public RexNode visitLocalRef(RexLocalRef localRef) {
+            return localRef;
+        }
 
-        return RexUtil.apply(mapping, originalFilterCondition);
+        @Override
+        public RexNode visitLiteral(RexLiteral literal) {
+            return literal;
+        }
+
+        @Override
+        public RexNode visitOver(RexOver over) {
+            throw new UnsupportedOperationException("OVER statement is not supported.");
+        }
+
+        @Override
+        public RexNode visitCorrelVariable(RexCorrelVariable correlVariable) {
+            return correlVariable;
+        }
+
+        @Override
+        public RexNode visitCall(RexCall call) {
+            List<RexNode> newOperands = new ArrayList<>(call.getOperands().size());
+            for (RexNode operand : call.operands) {
+                newOperands.add(operand.accept(this));
+            }
+            return call.clone(call.type, newOperands);
+        }
+
+        @Override
+        public RexNode visitDynamicParam(RexDynamicParam dynamicParam) {
+            return dynamicParam;
+        }
+
+        @Override
+        public RexNode visitRangeRef(RexRangeRef rangeRef) {
+            return rangeRef;
+        }
+
+        @Override
+        public RexNode visitFieldAccess(RexFieldAccess fieldAccess) {
+            final RexNode expr = fieldAccess.getReferenceExpr();
+            RexNode newOperand = expr.accept(this);
+            if (newOperand != fieldAccess.getReferenceExpr()) {
+                throw new RuntimeException("replacing partition key not supported");
+            }
+            return fieldAccess;
+        }
+
+        @Override
+        public RexNode visitSubQuery(RexSubQuery subQuery) {
+            List<RexNode> newOperands = new ArrayList<>(subQuery.operands.size());
+            for (RexNode operand : subQuery.operands) {
+                newOperands.add(operand.accept(this));
+            }
+            return subQuery.clone(subQuery.type, newOperands);
+        }
+
+        @Override
+        public RexNode visitTableInputRef(RexTableInputRef ref) {
+            return ref;
+        }
+
+        @Override
+        public RexNode visitPatternFieldRef(RexPatternFieldRef fieldRef) {
+            return fieldRef;
+        }
     }
 }
