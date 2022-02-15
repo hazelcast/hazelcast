@@ -39,7 +39,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     private String systemAuthentication;
 
     // BasicLdapLoginModule
-    private boolean parseDn;
+    private Boolean parseDn;
     private String roleContext;
     private String roleFilter;
     private String roleMappingAttribute;
@@ -93,11 +93,20 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
         return this;
     }
 
-    public boolean isParseDn() {
+    public Boolean getParseDn() {
         return parseDn;
     }
 
-    public LdapAuthenticationConfig setParseDn(boolean parseDn) {
+    /**
+     * Returns {@code true} iff parseDn is configured and {@code TRUE}.
+     *
+     * @deprecated Use {@link #getParseDn()}
+     */
+    public boolean isParseDn() {
+        return parseDn != null && parseDn.booleanValue();
+    }
+
+    public LdapAuthenticationConfig setParseDn(Boolean parseDn) {
         this.parseDn = parseDn;
         return this;
     }
@@ -242,7 +251,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
         Properties props = super.initLoginModuleProperties();
         setIfConfigured(props, Context.PROVIDER_URL, url);
         setIfConfigured(props, "java.naming.ldap.factory.socket", socketFactoryClassName);
-        props.setProperty("parseDN", String.valueOf(parseDn));
+        setIfConfigured(props, "parseDN", parseDn);
         setIfConfigured(props, "roleContext", roleContext);
         setIfConfigured(props, "roleFilter", roleFilter);
         setIfConfigured(props, "roleMappingAttribute", roleMappingAttribute);
