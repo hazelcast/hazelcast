@@ -75,7 +75,8 @@ public final class UserCodeDeploymentService implements ManagedService {
                     + "config.getUserCodeDeploymentConfig().setEnabled(true);\n"
                     + "- Change XML/YAML configuration property: Set hazelcast.user-code-deployment.enabled to true\n"
                     + "- Add system property: -Dhz.user-code-deployment.enabled=true\n"
-                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true");
+                    + "- Add environment variable: HZ_USERCODEDEPLOYMENT_ENABLED=true"
+                    + " (recommended when running container/docker image)");
         }
         locator.defineClassesFromClient(classDefinitions);
     }
