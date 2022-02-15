@@ -475,7 +475,7 @@ public final class OptUtils {
      * result: LOWER($0) || UPPER($1)
      * }
      */
-    @SuppressWarnings("CheckStyle")
+    @SuppressWarnings("checkstyle:AnonInnerLength")
     public static RexNode inlineExpression(List<RexNode> inlinedExpressions, RexNode expr) {
         return expr.accept(new RexShuttle() {
             @Override

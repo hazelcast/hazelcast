@@ -18,8 +18,12 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -27,7 +31,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 
-//@RunWith(JUnitParamsRunner.class)
+@RunWith(JUnitParamsRunner.class)
 public class LogicalUpdateTest extends OptimizerTestSupport {
 
     @BeforeClass
@@ -119,44 +123,44 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         );
     }
 
-//    @SuppressWarnings("unused")
-//    private Object[] literals() {
-//        return new Object[]{
-//                new Object[]{QueryDataType.BOOLEAN, "true"},
-//                new Object[]{QueryDataType.BOOLEAN, "false"},
-//                new Object[]{QueryDataType.TINYINT, '1'},
-//                new Object[]{QueryDataType.SMALLINT, '1'},
-//                new Object[]{QueryDataType.INT, '1'},
-//                new Object[]{QueryDataType.BIGINT, '1'},
-//                new Object[]{QueryDataType.DECIMAL, '1'},
-//                new Object[]{QueryDataType.REAL, '1'},
-//                new Object[]{QueryDataType.DOUBLE, '1'},
-//                new Object[]{QueryDataType.VARCHAR, "'string'"},
-//                new Object[]{QueryDataType.TIME, "'12:23:34'"},
-//                new Object[]{QueryDataType.DATE, "'2021-07-01'"},
-//                new Object[]{QueryDataType.TIMESTAMP, "'2021-07-01T12:23:34'"},
-//                new Object[]{QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, "'2021-07-01T12:23:34Z'"},
-//                new Object[]{QueryDataType.OBJECT, "CAST(1 AS OBJECT)"},
-//        };
-//    }
-//
-//    @Test
-//    @Parameters(method = "literals")
-//    public void test_updateByKeyWithLiteral(QueryDataType type, String literalValue) {
-//        HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
-//        assertPlan(
-//                optimizeLogical("UPDATE m SET this = '2' WHERE __key = " + literalValue, table),
-//                plan(
-//                        planRow(0, UpdateByKeyMapLogicalRel.class)
-//                )
-//        );
-//        assertPlan(
-//                optimizeLogical("UPDATE m SET this = '2' WHERE " + literalValue + " = __key", table),
-//                plan(
-//                        planRow(0, UpdateByKeyMapLogicalRel.class)
-//                )
-//        );
-//    }
+    @SuppressWarnings("unused")
+    private Object[] literals() {
+        return new Object[]{
+                new Object[]{QueryDataType.BOOLEAN, "true"},
+                new Object[]{QueryDataType.BOOLEAN, "false"},
+                new Object[]{QueryDataType.TINYINT, '1'},
+                new Object[]{QueryDataType.SMALLINT, '1'},
+                new Object[]{QueryDataType.INT, '1'},
+                new Object[]{QueryDataType.BIGINT, '1'},
+                new Object[]{QueryDataType.DECIMAL, '1'},
+                new Object[]{QueryDataType.REAL, '1'},
+                new Object[]{QueryDataType.DOUBLE, '1'},
+                new Object[]{QueryDataType.VARCHAR, "'string'"},
+                new Object[]{QueryDataType.TIME, "'12:23:34'"},
+                new Object[]{QueryDataType.DATE, "'2021-07-01'"},
+                new Object[]{QueryDataType.TIMESTAMP, "'2021-07-01T12:23:34'"},
+                new Object[]{QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, "'2021-07-01T12:23:34Z'"},
+                new Object[]{QueryDataType.OBJECT, "CAST(1 AS OBJECT)"},
+        };
+    }
+
+    @Test
+    @Parameters(method = "literals")
+    public void test_updateByKeyWithLiteral(QueryDataType type, String literalValue) {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
+        assertPlan(
+                optimizeLogical("UPDATE m SET this = '2' WHERE __key = " + literalValue, table),
+                plan(
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
+                )
+        );
+        assertPlan(
+                optimizeLogical("UPDATE m SET this = '2' WHERE " + literalValue + " = __key", table),
+                plan(
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
+                )
+        );
+    }
 
     @Test
     public void test_updateByKeyWithLiteralExpression() {
@@ -169,37 +173,37 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         );
     }
 
-//    @SuppressWarnings("unused")
-//    private Object[] types() {
-//        return new Object[]{
-//                new Object[]{QueryDataType.BOOLEAN},
-//                new Object[]{QueryDataType.TINYINT},
-//                new Object[]{QueryDataType.SMALLINT},
-//                new Object[]{QueryDataType.INT},
-//                new Object[]{QueryDataType.BIGINT},
-//                new Object[]{QueryDataType.DECIMAL},
-//                new Object[]{QueryDataType.REAL},
-//                new Object[]{QueryDataType.DOUBLE},
-//                new Object[]{QueryDataType.VARCHAR},
-//                new Object[]{QueryDataType.TIME},
-//                new Object[]{QueryDataType.DATE},
-//                new Object[]{QueryDataType.TIMESTAMP},
-//                new Object[]{QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME},
-//                new Object[]{QueryDataType.OBJECT},
-//        };
-//    }
-//
-//    @Test
-//    @Parameters(method = "types")
-//    public void test_updateByKeyWithDynamicParam(QueryDataType type) {
-//        HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
-//        assertPlan(
-//                optimizeLogical("UPDATE m SET this = '2' WHERE __key = ?", table),
-//                plan(
-//                        planRow(0, UpdateByKeyMapLogicalRel.class)
-//                )
-//        );
-//    }
+    @SuppressWarnings("unused")
+    private Object[] types() {
+        return new Object[]{
+                new Object[]{QueryDataType.BOOLEAN},
+                new Object[]{QueryDataType.TINYINT},
+                new Object[]{QueryDataType.SMALLINT},
+                new Object[]{QueryDataType.INT},
+                new Object[]{QueryDataType.BIGINT},
+                new Object[]{QueryDataType.DECIMAL},
+                new Object[]{QueryDataType.REAL},
+                new Object[]{QueryDataType.DOUBLE},
+                new Object[]{QueryDataType.VARCHAR},
+                new Object[]{QueryDataType.TIME},
+                new Object[]{QueryDataType.DATE},
+                new Object[]{QueryDataType.TIMESTAMP},
+                new Object[]{QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME},
+                new Object[]{QueryDataType.OBJECT},
+        };
+    }
+
+    @Test
+    @Parameters(method = "types")
+    public void test_updateByKeyWithDynamicParam(QueryDataType type) {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
+        assertPlan(
+                optimizeLogical("UPDATE m SET this = '2' WHERE __key = ?", table),
+                plan(
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
+                )
+        );
+    }
 
     @Test
     public void test_updateByKeyWithDynamicParamAndImplicitCastOnKey() {

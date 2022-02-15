@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -209,7 +208,7 @@ public class SqlTumbleTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, window_end, name FROM " +
-                "TABLE(TUMBLE(" +
+                        "TABLE(TUMBLE(" +
                         "  TABLE " + name +
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
@@ -340,7 +339,6 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
-    @Ignore("investigate later")
     @Test
     public void test_groupByHaving() {
         String name = createTable(
@@ -348,10 +346,12 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Bob", 1),
                 row(timestampTz(3), "Alice", 1),
+                row(timestampTz(4), "Alice", 1),
+                row(timestampTz(7), "Alice", 1),
                 row(timestampTz(10), null, null)
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(TUMBLE(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +

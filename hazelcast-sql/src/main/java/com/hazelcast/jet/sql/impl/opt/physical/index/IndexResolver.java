@@ -829,14 +829,20 @@ public final class IndexResolver {
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
-            int remappedIndexFieldOrdinal = table.getProjects().indexOf(indexFieldOrdinal);
-            if (remappedIndexFieldOrdinal == -1) {
-                // The field is not used in the query
-                break;
+            // TODO: it is optimizable, optimize later.
+            int idx = 0;
+            for (RexNode project : table.getProjects()) {
+                // Only direct field reference may be indexed
+                if (project instanceof RexInputRef) {
+                    RexInputRef ref = (RexInputRef) project;
+                    if (indexFieldOrdinal == ref.getIndex()) {
+                        Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
+                        RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
+                        fields.add(fieldCollation);
+                    }
+                }
+                ++idx;
             }
-            Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
-            RelFieldCollation fieldCollation = new RelFieldCollation(remappedIndexFieldOrdinal, direction);
-            fields.add(fieldCollation);
         }
 
         return RelCollations.of(fields);

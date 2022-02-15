@@ -77,7 +77,10 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
                 rightExpr = rightExpr.accept(new RexShuttle() {
                     @Override
                     public RexNode visitInputRef(RexInputRef inputRef) {
-                        return rexBuilder.makeInputRef(inputRef.getType(), inputRef.getIndex() + getLeft().getRowType().getFieldCount());
+                        return rexBuilder.makeInputRef(
+                                inputRef.getType(),
+                                inputRef.getIndex() + getLeft().getRowType().getFieldCount()
+                        );
                     }
                 });
                 additionalNonEquiConditions.add(rexBuilder.makeCall(HazelcastSqlOperatorTable.EQUALS,

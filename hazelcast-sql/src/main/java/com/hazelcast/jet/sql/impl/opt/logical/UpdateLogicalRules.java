@@ -53,7 +53,10 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
 // once joins are there we need to create complementary rule
 final class UpdateLogicalRules {
 
-    @SuppressWarnings("checkstyle:anoninnerlength")
+    private UpdateLogicalRules() {
+    }
+
+    @SuppressWarnings({"checkstyle:anoninnerlength", "checkstyle:DeclarationOrder"})
     static final RelOptRule INSTANCE =
             new RelOptRule(
                     operandJ(
@@ -120,7 +123,7 @@ final class UpdateLogicalRules {
             };
 
 
-    @SuppressWarnings("checkstyle:AnonInnerLength")
+    @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:DeclarationOrder"})
     static final RelOptRule FILTER_INSTANCE =
             new RelOptRule(
                     operandJ(
@@ -192,6 +195,7 @@ final class UpdateLogicalRules {
 
     // no-updates case, i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
+    @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule NOOP_INSTANCE =
             new RelOptRule(
                     operandJ(
@@ -233,8 +237,5 @@ final class UpdateLogicalRules {
             }
         }
         return keyProjects;
-    }
-
-    private UpdateLogicalRules() {
     }
 }
