@@ -143,6 +143,12 @@ public enum PhoneHomeMetrics {
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
 
+    // STORAGE METRICS
+    HD_MEMORY_ENABLED("hdme"),
+    MEMORY_USED_HEAP_SIZE("mhs"),
+    MEMORY_USED_NATIVE_SIZE("muns"),
+    TIERED_STORAGE_ENABLED("tse"),
+
     //CP SUBSYSTEM METRICS
     CP_SUBSYSTEM_ENABLED("cp"),
     CP_GROUPS_COUNT("cpgct"),
