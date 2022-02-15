@@ -66,7 +66,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         for (Integer groupIndex : groupSet.toList()) {
             aggregationProviders.add(ValueSqlAggregation::new);
             // getMaybeSerialized is safe for ValueAggr because it only passes the value on
-            valueProviders.add(new MaybeSerializedFunction(groupIndex));
+            valueProviders.add(new RowGetMaybeSerializedFn(groupIndex));
         }
         for (AggregateCall aggregateCall : aggregateCalls) {
             boolean distinct = aggregateCall.isDistinct();
@@ -78,11 +78,11 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(AggregateCountTTSupplier.INSTANCE);
                         // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
-                        valueProviders.add(new MaybeSerializedFunction(countIndex));
+                        valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(AggregateCountTFSupplier.INSTANCE);
-                        valueProviders.add(new MaybeSerializedFunction(countIndex));
+                        valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
                     } else {
                         aggregationProviders.add(AggregateCountFFSupplier.INSTANCE);
                         valueProviders.add(NullFunction.INSTANCE);
@@ -91,24 +91,24 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(new GetFunction(minIndex));
+                    valueProviders.add(new RowGetFn(minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(new GetFunction(maxIndex));
+                    valueProviders.add(new RowGetFn(maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(new AggregateSumSupplier(distinct, sumOperandType));
-                    valueProviders.add(new GetFunction(sumIndex));
+                    valueProviders.add(new RowGetFn(sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(new AggregateAvgSupplier(distinct, avgOperandType));
-                    valueProviders.add(new GetFunction(avgIndex));
+                    valueProviders.add(new RowGetFn(avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -297,28 +297,40 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static final class AggregateExportFinishFunction implements IdentifiedDataSerializable,
-            FunctionEx<List<SqlAggregation>, JetSqlRow> {
-        public static final AggregateExportFinishFunction INSTANCE = new AggregateExportFinishFunction();
+    public static class AggregateCreateSupplier implements IdentifiedDataSerializable, SupplierEx<List<SqlAggregation>> {
+        private List<SupplierEx<SqlAggregation>> aggregationProviders;
 
-        private AggregateExportFinishFunction() {
+        public AggregateCreateSupplier() {
+        }
+
+        public AggregateCreateSupplier(List<SupplierEx<SqlAggregation>> aggregationProviders) {
+            this.aggregationProviders = aggregationProviders;
         }
 
         @Override
-        public JetSqlRow applyEx(List<SqlAggregation> aggregations) {
-            Object[] row = new Object[aggregations.size()];
-            for (int i = 0; i < aggregations.size(); i++) {
-                row[i] = aggregations.get(i).collect();
+        public List<SqlAggregation> getEx() {
+            List<SqlAggregation> aggregations = new ArrayList<>(aggregationProviders.size());
+            for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
+                aggregations.add(aggregationProvider.get());
             }
-            return new JetSqlRow(Contexts.getCastedThreadContext().serializationService(), row);
+            return aggregations;
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(aggregationProviders.size());
+            for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
+                out.writeObject(aggregationProvider);
+            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            int aggregationProvidersSize = in.readInt();
+            aggregationProviders = new ArrayList<>(aggregationProvidersSize);
+            for (int i = 0; i < aggregationProvidersSize; i++) {
+                aggregationProviders.add(in.readObject());
+            }
         }
 
         @Override
@@ -328,42 +340,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_EXPORT_FINISH_FUNCTION;
-        }
-    }
-
-    public static final class AggregateCombineFunction implements IdentifiedDataSerializable,
-            BiConsumerEx<List<SqlAggregation>, List<SqlAggregation>> {
-        public static final AggregateCombineFunction INSTANCE = new AggregateCombineFunction();
-
-        private AggregateCombineFunction() {
-        }
-
-        @Override
-        public void acceptEx(List<SqlAggregation> lefts, List<SqlAggregation> rights) {
-            assert lefts.size() == rights.size();
-
-            for (int i = 0; i < lefts.size(); i++) {
-                lefts.get(i).combine(rights.get(i));
-            }
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_COMBINE_FUNCTION;
+            return JetSqlSerializerHook.AGGREGATE_CREATE_SUPPLIER;
         }
     }
 
@@ -413,40 +390,28 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static class AggregateCreateSupplier implements IdentifiedDataSerializable, SupplierEx<List<SqlAggregation>> {
-        private List<SupplierEx<SqlAggregation>> aggregationProviders;
+    public static final class AggregateCombineFunction implements IdentifiedDataSerializable,
+            BiConsumerEx<List<SqlAggregation>, List<SqlAggregation>> {
+        public static final AggregateCombineFunction INSTANCE = new AggregateCombineFunction();
 
-        public AggregateCreateSupplier() {
-        }
-
-        public AggregateCreateSupplier(List<SupplierEx<SqlAggregation>> aggregationProviders) {
-            this.aggregationProviders = aggregationProviders;
+        private AggregateCombineFunction() {
         }
 
         @Override
-        public List<SqlAggregation> getEx() {
-            List<SqlAggregation> aggregations = new ArrayList<>(aggregationProviders.size());
-            for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
-                aggregations.add(aggregationProvider.get());
+        public void acceptEx(List<SqlAggregation> lefts, List<SqlAggregation> rights) {
+            assert lefts.size() == rights.size();
+
+            for (int i = 0; i < lefts.size(); i++) {
+                lefts.get(i).combine(rights.get(i));
             }
-            return aggregations;
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(aggregationProviders.size());
-            for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
-                out.writeObject(aggregationProvider);
-            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            int aggregationProvidersSize = in.readInt();
-            aggregationProviders = new ArrayList<>(aggregationProvidersSize);
-            for (int i = 0; i < aggregationProvidersSize; i++) {
-                aggregationProviders.add(in.readObject());
-            }
         }
 
         @Override
@@ -456,17 +421,52 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_CREATE_SUPPLIER;
+            return JetSqlSerializerHook.AGGREGATE_COMBINE_FUNCTION;
         }
     }
 
-    public static class MaybeSerializedFunction implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
-        private Integer groupIndex;
+    public static final class AggregateExportFinishFunction implements IdentifiedDataSerializable,
+            FunctionEx<List<SqlAggregation>, JetSqlRow> {
+        public static final AggregateExportFinishFunction INSTANCE = new AggregateExportFinishFunction();
 
-        public MaybeSerializedFunction() {
+        private AggregateExportFinishFunction() {
         }
 
-        public MaybeSerializedFunction(Integer groupIndex) {
+        @Override
+        public JetSqlRow applyEx(List<SqlAggregation> aggregations) {
+            Object[] row = new Object[aggregations.size()];
+            for (int i = 0; i < aggregations.size(); i++) {
+                row[i] = aggregations.get(i).collect();
+            }
+            return new JetSqlRow(Contexts.getCastedThreadContext().serializationService(), row);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.AGGREGATE_EXPORT_FINISH_FUNCTION;
+        }
+    }
+
+    public static class RowGetMaybeSerializedFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+        private Integer groupIndex;
+
+        public RowGetMaybeSerializedFn() {
+        }
+
+        public RowGetMaybeSerializedFn(Integer groupIndex) {
             this.groupIndex = groupIndex;
         }
 
@@ -492,17 +492,17 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.MAYBE_SERIALIZED_FUNCTION;
+            return JetSqlSerializerHook.ROW_GET_MAYBE_SERIALIZED_FN;
         }
     }
 
-    public static class GetFunction implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
+    public static class RowGetFn implements IdentifiedDataSerializable, FunctionEx<JetSqlRow, Object> {
         private int index;
 
-        public GetFunction() {
+        public RowGetFn() {
         }
 
-        public GetFunction(Integer index) {
+        public RowGetFn(Integer index) {
             this.index = index;
         }
 
@@ -528,7 +528,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.GET_FUNCTION;
+            return JetSqlSerializerHook.ROW_GET_FN;
         }
     }
 

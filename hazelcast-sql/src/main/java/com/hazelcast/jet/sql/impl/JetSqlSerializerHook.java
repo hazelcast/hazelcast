@@ -55,9 +55,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int ROOT_RESULT_CONSUMER_SINK_SUPPLIER = 8;
     public static final int SQL_ROW_COMPARATOR = 9;
     public static final int FIELD_COLLATION = 10;
-    public static final int MAYBE_SERIALIZED_FUNCTION = 11;
+    public static final int ROW_GET_MAYBE_SERIALIZED_FN = 11;
     public static final int NULL_FUNCTION = 12;
-    public static final int GET_FUNCTION = 13;
+    public static final int ROW_GET_FN = 13;
     public static final int AGGREGATE_CREATE_SUPPLIER = 14;
     public static final int AGGREGATE_ACCUMULATE_FUNCTION = 15;
     public static final int AGGREGATE_COMBINE_FUNCTION = 16;
@@ -91,9 +91,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[ROOT_RESULT_CONSUMER_SINK_SUPPLIER] = arg -> new RootResultConsumerSink.Supplier();
         constructors[SQL_ROW_COMPARATOR] = arg -> new ExpressionUtil.SqlRowComparator();
         constructors[FIELD_COLLATION] = arg -> new FieldCollation();
-        constructors[MAYBE_SERIALIZED_FUNCTION] = arg -> new AggregateAbstractPhysicalRule.MaybeSerializedFunction();
+        constructors[ROW_GET_MAYBE_SERIALIZED_FN] = arg -> new AggregateAbstractPhysicalRule.RowGetMaybeSerializedFn();
         constructors[NULL_FUNCTION] = arg -> AggregateAbstractPhysicalRule.NullFunction.INSTANCE;
-        constructors[GET_FUNCTION] = arg -> new AggregateAbstractPhysicalRule.GetFunction();
+        constructors[ROW_GET_FN] = arg -> new AggregateAbstractPhysicalRule.RowGetFn();
         constructors[AGGREGATE_CREATE_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCreateSupplier();
         constructors[AGGREGATE_ACCUMULATE_FUNCTION] =
                 arg -> new AggregateAbstractPhysicalRule.AggregateAccumulateFunction();

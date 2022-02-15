@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.function;
+package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -41,7 +41,7 @@ public class FunctionsSerializerHook implements DataSerializerHook {
         return typeId -> {
             switch (typeId) {
                 case FUNCTION_IDENTITY:
-                    return FunctionEx.Identity.INSTANCE;
+                    return Util.Identity.INSTANCE;
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

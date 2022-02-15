@@ -282,8 +282,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.readerSupplier = readerSupplier;
         }
 
-        @Override
-        @Nonnull
+        @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new LocalProcessorSupplier<>(readerSupplier);
         }
@@ -324,8 +323,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
         }
 
-        @Override
-        @Nonnull
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return Arrays.stream(distributeObjects(count, memberPartitions))
                     .map(partitions ->
@@ -386,8 +384,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             }
         }
 
-        @Override
-        @Nonnull
+        @Override @Nonnull
         public List<Processor> get(int count) {
             int remotePartitionCount = client.client.getClientPartitionService().getPartitionCount();
 

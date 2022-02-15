@@ -29,7 +29,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
@@ -44,6 +43,7 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.NoopP;
+import com.hazelcast.jet.impl.processor.ProcessorSuppliers;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.SortP;
@@ -51,13 +51,9 @@ import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.processor.TransformStatefulP;
 import com.hazelcast.jet.impl.processor.TransformUsingServiceP;
 import com.hazelcast.jet.pipeline.ServiceFactory;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -266,43 +262,7 @@ public final class Processors {
      */
     @Nonnull
     public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return new AccumulatePSupplier<>(aggrOp);
-    }
-
-    public static class AccumulatePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
-        private AggregateOperation<A, R> aggrOp;
-
-        public AccumulatePSupplier() {
-        }
-
-        public AccumulatePSupplier(AggregateOperation<A, R> aggrOp) {
-            this.aggrOp = aggrOp;
-        }
-
-        @Override
-        public Processor getEx() throws Exception {
-            return new AggregateP<>(aggrOp.withIdentityFinish());
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(aggrOp);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            aggrOp = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.PROCESSORS_ACCUMULATE_P_SUPPLIER;
-        }
+        return new ProcessorSuppliers.AccumulatePSupplier<>(aggrOp);
     }
 
 
@@ -331,43 +291,7 @@ public final class Processors {
     public static <A, R> SupplierEx<Processor> combineP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return new CombinePSupplier<>(aggrOp.withCombiningAccumulateFn(identity()));
-    }
-
-    public static class CombinePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
-        private AggregateOperation1<A, A, R> aarAggregateOperation;
-
-        public CombinePSupplier() {
-        }
-
-        public CombinePSupplier(AggregateOperation1<A, A, R> aarAggregateOperation) {
-            this.aarAggregateOperation = aarAggregateOperation;
-        }
-
-        @Override
-        public Processor getEx() throws Exception {
-            return new AggregateP<>(aarAggregateOperation);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(aarAggregateOperation);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            aarAggregateOperation = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.PROCESSORS_COMBINE_P_SUPPLIER;
-        }
+        return new ProcessorSuppliers.CombinePSupplier<>(aggrOp.withCombiningAccumulateFn(identity()));
     }
 
     /**
@@ -767,47 +691,7 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> SupplierEx<Processor> mapP(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
-        return new ProcessorMapPSupplier<>(mapFn);
-    }
-
-    public static class ProcessorMapPSupplier<T, R> implements IdentifiedDataSerializable, SupplierEx<Processor> {
-        private FunctionEx<? super T, ? extends R> mapFn;
-
-        public ProcessorMapPSupplier() {
-        }
-
-        public ProcessorMapPSupplier(FunctionEx<? super T, ? extends R> mapFn) {
-            this.mapFn = mapFn;
-        }
-
-        @Override
-        public Processor getEx() throws Exception {
-            final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
-            return new TransformP<T, R>(item -> {
-                trav.accept(mapFn.apply(item));
-                return trav;
-            });
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(mapFn);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            mapFn = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.PROCESSOR_MAP_P_SUPPLIER;
-        }
+        return new ProcessorSuppliers.ProcessorMapPSupplier<>(mapFn);
     }
 
     /**

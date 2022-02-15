@@ -17,12 +17,9 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.function.Function;
 
@@ -62,34 +59,7 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
      */
     @SuppressWarnings("unchecked")
     static <T> FunctionEx<T, T> identity() {
-        return Identity.INSTANCE;
-    }
-
-    class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {
-        static final Identity INSTANCE = new Identity<>();
-
-        @Override
-        public T applyEx(T t) throws Exception {
-            return t;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public int getFactoryId() {
-            return FunctionsSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return FunctionsSerializerHook.FUNCTION_IDENTITY;
-        }
+        return Util.Identity.INSTANCE;
     }
 
     /**

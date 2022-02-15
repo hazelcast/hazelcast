@@ -19,18 +19,13 @@ package com.hazelcast.jet.aggregate;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -308,51 +303,11 @@ public interface AggregateOperation<A, R> extends Serializable {
                 Objects.requireNonNull(combineFn(), "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
-                new AggregateCombiningAccumulate<>(getAccFn, combineFn),
+                new AggregateOperation1Impl.AggregateCombiningAccumulate<>(getAccFn, combineFn),
                 combineFn,
                 deductFn(),
                 exportFn(),
                 finishFn());
-    }
-
-    class AggregateCombiningAccumulate<A, T> implements IdentifiedDataSerializable, BiConsumerEx<A, T> {
-        private FunctionEx<T, A> getAccFn;
-        private BiConsumerEx<? super A, ? super A> combineFn;
-
-        public AggregateCombiningAccumulate() {
-        }
-
-        public AggregateCombiningAccumulate(FunctionEx<T, A> getAccFn, BiConsumerEx<? super A, ? super A> combineFn) {
-            this.getAccFn = getAccFn;
-            this.combineFn = combineFn;
-        }
-
-        @Override
-        public void acceptEx(A acc, T item) throws Exception {
-            combineFn.accept(acc, getAccFn.apply(item));
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(getAccFn);
-            out.writeObject(combineFn);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            getAccFn = in.readObject();
-            combineFn = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.AGGREGATE_COMBINING_ACCUMULATE;
-        }
     }
 
     /**
