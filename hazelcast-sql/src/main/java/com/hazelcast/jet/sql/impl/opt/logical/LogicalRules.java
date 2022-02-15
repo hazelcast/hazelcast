@@ -90,6 +90,7 @@ public final class LogicalRules {
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRules.INSTANCE,
+                UpdateLogicalRules.FILTER_INSTANCE,
                 UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 

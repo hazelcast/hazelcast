@@ -21,22 +21,30 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
-import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelRecordType;
+import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.inlineExpression;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.inlineExpressions;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.operandJ;
@@ -80,30 +88,105 @@ final class UpdateLogicalRules {
                 private RelNode rewriteScan(LogicalTableScan scan, LogicalProject project) {
                     HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
                     HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
-                    RelOptCluster cluster = scan.getCluster();
 
-                    return new FullScanLogicalRel(
+                    List<RexNode> newProjects = inlineExpressions(hazelcastTable.getProjects(), project.getProjects());
+                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), newProjects);
+                    List<RelDataTypeField> fields = new ArrayList<>();
+                    int idx = 0;
+                    for (RexNode keyProject : keyProjects) {
+                        RexInputRef inputRef = (RexInputRef) keyProject;
+                        RelDataTypeField fieldType = new RelDataTypeFieldImpl(
+                                inputRef.getName(), idx, inputRef.getType()
+                        );
+                        fields.add(idx++, fieldType);
+                    }
+                    RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
+
+                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
+                            relTable,
+                            hazelcastTable.withProject(keyProjects, relDataType),
+                            scan.getCluster().getTypeFactory()
+                    );
+
+                    FullScanLogicalRel rel = new FullScanLogicalRel(
                             scan.getCluster(),
                             OptUtils.toLogicalConvention(scan.getTraitSet()),
-                            OptUtils.createRelTable(
-                                    relTable.getDelegate().getQualifiedName(),
-                                    hazelcastTable.withProject(
-                                            keyProjects(cluster, hazelcastTable.getTarget()), project.getRowType()),
-                                    scan.getCluster().getTypeFactory()),
+                            convertedTable,
                             null,
-                            -1);
+                            -1
+                    );
+                    return rel;
+                }
+            };
+
+
+    @SuppressWarnings("checkstyle:AnonInnerLength")
+    static final RelOptRule FILTER_INSTANCE =
+            new RelOptRule(
+                    operandJ(
+                            LogicalTableModify.class, null, TableModify::isUpdate,
+                            operand(
+                                    LogicalProject.class,
+                                    operand(
+                                            LogicalFilter.class,
+                                            operand(LogicalTableScan.class, none()))
+                            )
+                    ),
+                    UpdateLogicalRules.class.getSimpleName() + "_filter"
+            ) {
+                @Override
+                public void onMatch(RelOptRuleCall call) {
+                    LogicalTableModify update = call.rel(0);
+                    LogicalProject project = call.rel(1);
+                    LogicalFilter filter = call.rel(2);
+                    LogicalTableScan scan = call.rel(3);
+
+                    UpdateLogicalRel rel = new UpdateLogicalRel(
+                            update.getCluster(),
+                            OptUtils.toLogicalConvention(update.getTraitSet()),
+                            update.getTable(),
+                            update.getCatalogReader(),
+                            rewriteScan(scan, project, filter),
+                            update.getUpdateColumnList(),
+                            update.getSourceExpressionList(),
+                            update.isFlattened()
+                    );
+                    call.transformTo(rel);
                 }
 
-                private List<RexNode> keyProjects(RelOptCluster cluster, Table table) {
-                    List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
-                    List<RexNode> projects = new ArrayList<>();
+                // rewrites existing project to just primary keys project
+                private RelNode rewriteScan(LogicalTableScan scan, LogicalProject project, LogicalFilter filter) {
+                    HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
+                    HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
+
+                    List<RexNode> newProjects = inlineExpressions(hazelcastTable.getProjects(), project.getProjects());
+                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), newProjects);
+                    List<RelDataTypeField> fields = new ArrayList<>();
                     int idx = 0;
-                    for (TableField field : table.getFields()) {
-                        if (primaryKey.contains(field.getName())) {
-                            projects.add(new RexInputRef(idx++, OptUtils.convert(field, cluster.getTypeFactory())));
-                        }
+                    for (RexNode keyProject : keyProjects) {
+                        RexInputRef inputRef = (RexInputRef) keyProject;
+                        RelDataTypeField fieldType = new RelDataTypeFieldImpl(
+                                inputRef.getName(), idx, inputRef.getType()
+                        );
+                        fields.add(idx++, fieldType);
                     }
-                    return projects;
+                    RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
+                    RexNode newCondition = inlineExpression(newProjects, filter.getCondition());
+
+                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
+                            relTable,
+                            hazelcastTable.withProject(keyProjects, relDataType).withFilter(newCondition),
+                            scan.getCluster().getTypeFactory()
+                    );
+
+                    FullScanLogicalRel rel = new FullScanLogicalRel(
+                            scan.getCluster(),
+                            OptUtils.toLogicalConvention(scan.getTraitSet()),
+                            convertedTable,
+                            null,
+                            -1
+                    );
+                    return rel;
                 }
             };
 
@@ -135,6 +218,22 @@ final class UpdateLogicalRules {
                     call.transformTo(rel);
                 }
             };
+
+    private static List<RexNode> keyProjects(Table table, List<RexNode> projects) {
+        List<RexNode> keyProjects = new ArrayList<>();
+        Set<String> primaryKeys = new HashSet<>(SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table));
+        for (RexNode project : projects) {
+            // Only RexInputRef may be key project, if even exists.
+            if (project instanceof RexInputRef) {
+                RexInputRef rexInputRef = (RexInputRef) project;
+                String inputRefName = table.getField(rexInputRef.getIndex()).getName();
+                if (primaryKeys.contains(inputRefName)) {
+                    keyProjects.add(rexInputRef);
+                }
+            }
+        }
+        return keyProjects;
+    }
 
     private UpdateLogicalRules() {
     }

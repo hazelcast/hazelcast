@@ -223,7 +223,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         // (Optimized) Update by single key
         String sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1";
         assertRowsOrdered(sql, singletonList(
-                new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1], " +
+                new Row("UpdateByKeyMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0], " +
                         "filter==($0, 1)]]], keyCondition=[1], updatedColumns=[[this]], sourceExpressions=[[2]])")
         ));
 
