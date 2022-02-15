@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
@@ -34,6 +35,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -64,7 +66,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *
  * @since Jet 3.0
  */
-public class JobConfig implements IdentifiedDataSerializable {
+public class JobConfig implements IdentifiedDataSerializable, Versioned {
 
     private static final long SNAPSHOT_INTERVAL_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
@@ -1377,7 +1379,11 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeString(processingGuarantee == null ? null : processingGuarantee.name());
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            out.writeString(processingGuarantee == null ? null : processingGuarantee.name());
+        }  else {
+            out.writeObject(processingGuarantee);
+        }
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
         out.writeBoolean(suspendOnFailure);
@@ -1397,9 +1403,13 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        String processingGuarantee = in.readString();
-        this.processingGuarantee = processingGuarantee == null ? null :
-                ProcessingGuarantee.valueOf(processingGuarantee);
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
+            String processingGuarantee = in.readString();
+            this.processingGuarantee = processingGuarantee == null ? null :
+                    ProcessingGuarantee.valueOf(processingGuarantee);
+        } else {
+            this.processingGuarantee = in.readObject();
+        }
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
         suspendOnFailure = in.readBoolean();
