@@ -129,22 +129,12 @@ public class PartitionContainer {
     }
 
     public Collection<ServiceNamespace> getNamespaces(Predicate<MapConfig> predicate, int replicaIndex) {
-        return NameSpaceUtil.getAllNamespaces(maps,
-                new NameSpaceUtil.ServiceQuestioner<RecordStore>() {
-                    @Override
-                    public boolean test(RecordStore recordStore) {
-                        MapContainer mapContainer = recordStore.getMapContainer();
-                        MapConfig mapConfig = mapContainer.getMapConfig();
-
-                        return mapConfig.getTotalBackupCount() < replicaIndex
-                                || !predicate.test(mapConfig);
-                    }
-
-                    @Override
-                    public ObjectNamespace apply(RecordStore recordStore) {
-                        return recordStore.getMapContainer().getObjectNamespace();
-                    }
-                });
+        return NameSpaceUtil.getAllNamespaces(maps, recordStore -> {
+            MapContainer mapContainer = recordStore.getMapContainer();
+            MapConfig mapConfig = mapContainer.getMapConfig();
+            return mapConfig.getTotalBackupCount() < replicaIndex
+                    || !predicate.test(mapConfig);
+        }, recordStore -> recordStore.getMapContainer().getObjectNamespace());
     }
 
     public int getPartitionId() {

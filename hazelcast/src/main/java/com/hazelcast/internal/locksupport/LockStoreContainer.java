@@ -107,16 +107,7 @@ public final class LockStoreContainer {
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
         return NameSpaceUtil.getAllNamespaces(lockStores,
-                new NameSpaceUtil.ServiceQuestioner<LockStoreImpl>() {
-                    @Override
-                    public boolean test(LockStoreImpl lockStore) {
-                        return lockStore.getTotalBackupCount() < replicaIndex;
-                    }
-
-                    @Override
-                    public ObjectNamespace apply(LockStoreImpl lockStore) {
-                        return lockStore.getNamespace();
-                    }
-                });
+                lockStore -> lockStore.getTotalBackupCount() < replicaIndex,
+                LockStoreImpl::getNamespace);
     }
 }

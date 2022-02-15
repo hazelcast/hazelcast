@@ -38,18 +38,19 @@ public final class NameSpaceUtil {
     }
 
     public static <T> Collection<ServiceNamespace> getAllNamespaces(Map<?, T> containers,
-                                                                    ServiceQuestioner<T> function) {
+                                                                    Predicate<T> containerFilter,
+                                                                    Function<T, ObjectNamespace> toNamespace) {
         if (MapUtil.isNullOrEmpty(containers)) {
             return Collections.emptySet();
         }
 
         Collection<ServiceNamespace> collection = Collections.emptySet();
         for (T container : containers.values()) {
-            if (function.test(container)) {
+            if (containerFilter.test(container)) {
                 continue;
             }
 
-            ObjectNamespace namespace = function.apply(container);
+            ObjectNamespace namespace = toNamespace.apply(container);
 
             if (collection.isEmpty()) {
                 collection = singleton(namespace);
@@ -67,20 +68,5 @@ public final class NameSpaceUtil {
         }
 
         return collection;
-    }
-
-    /**
-     * Questions services with 2 questions:
-     * <p>
-     * <lu>
-     * <li>Which containers must be collected?</li>
-     * <li>What is your ObjectNamespace?</li>
-     * </lu>
-     *
-     * @param <T> type of containers
-     */
-    public interface ServiceQuestioner<T>
-            extends Predicate<T>, Function<T, ObjectNamespace> {
-
     }
 }

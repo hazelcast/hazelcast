@@ -19,7 +19,6 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.partition.impl.NameSpaceUtil;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -82,17 +81,8 @@ public class MultiMapPartitionContainer {
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
         return NameSpaceUtil.getAllNamespaces(containerMap,
-                new NameSpaceUtil.ServiceQuestioner<MultiMapContainer>() {
-            @Override
-            public boolean test(MultiMapContainer container) {
-                return container.getConfig().getTotalBackupCount() < replicaIndex;
-            }
-
-            @Override
-            public ObjectNamespace apply(MultiMapContainer container) {
-                return container.getObjectNamespace();
-            }
-        });
+                container -> container.getConfig().getTotalBackupCount() < replicaIndex,
+                MultiMapContainer::getObjectNamespace);
     }
 
     void destroyMultiMap(String name) {
