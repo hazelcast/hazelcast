@@ -1405,8 +1405,7 @@ public class JobConfig implements IdentifiedDataSerializable, Versioned {
         name = in.readString();
         if (in.getVersion().isGreaterOrEqual(Versions.V5_1)) {
             String processingGuarantee = in.readString();
-            this.processingGuarantee = processingGuarantee == null ? null :
-                    ProcessingGuarantee.valueOf(processingGuarantee);
+            this.processingGuarantee = processingGuarantee == null ? null : ProcessingGuarantee.valueOf(processingGuarantee);
         } else {
             this.processingGuarantee = in.readObject();
         }
