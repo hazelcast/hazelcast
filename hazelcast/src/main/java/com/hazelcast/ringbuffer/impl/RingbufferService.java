@@ -307,7 +307,7 @@ public class RingbufferService implements ManagedService, RemoteService, Chunked
         Map<ObjectNamespace, RingbufferContainer> partitionContainers = containers.get(partitionId);
 
         return NameSpaceUtil.getAllNamespaces(partitionContainers,
-                container -> container.getConfig().getTotalBackupCount() < event.getReplicaIndex(),
+                container -> container.getConfig().getTotalBackupCount() >= event.getReplicaIndex(),
                 RingbufferContainer::getNamespace);
     }
 

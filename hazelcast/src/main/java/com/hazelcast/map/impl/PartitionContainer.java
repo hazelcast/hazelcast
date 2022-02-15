@@ -132,8 +132,7 @@ public class PartitionContainer {
         return NameSpaceUtil.getAllNamespaces(maps, recordStore -> {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
-            return mapConfig.getTotalBackupCount() < replicaIndex
-                    || !predicate.test(mapConfig);
+            return mapConfig.getTotalBackupCount() >= replicaIndex && predicate.test(mapConfig);
         }, recordStore -> recordStore.getMapContainer().getObjectNamespace());
     }
 

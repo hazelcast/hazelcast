@@ -107,7 +107,7 @@ public final class LockStoreContainer {
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
         return NameSpaceUtil.getAllNamespaces(lockStores,
-                lockStore -> lockStore.getTotalBackupCount() < replicaIndex,
+                lockStore -> lockStore.getTotalBackupCount() >= replicaIndex,
                 LockStoreImpl::getNamespace);
     }
 }

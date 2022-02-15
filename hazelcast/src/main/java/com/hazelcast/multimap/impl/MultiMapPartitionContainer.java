@@ -81,7 +81,7 @@ public class MultiMapPartitionContainer {
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
         return NameSpaceUtil.getAllNamespaces(containerMap,
-                container -> container.getConfig().getTotalBackupCount() < replicaIndex,
+                container -> container.getConfig().getTotalBackupCount() >= replicaIndex,
                 MultiMapContainer::getObjectNamespace);
     }
 

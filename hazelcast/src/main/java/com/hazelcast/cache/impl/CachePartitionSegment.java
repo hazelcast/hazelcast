@@ -194,8 +194,8 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         return NameSpaceUtil.getAllNamespaces(recordStores,
                 recordStore -> {
                     CacheConfig cacheConfig = recordStore.getConfig();
-                    return recordStore.getConfig().getTotalBackupCount() < replicaIndex
-                            || !predicate.test(cacheConfig);
+                    return recordStore.getConfig().getTotalBackupCount() >= replicaIndex
+                            && predicate.test(cacheConfig);
                 }, ICacheRecordStore::getObjectNamespace);
     }
 }

@@ -37,6 +37,13 @@ public final class NameSpaceUtil {
     private NameSpaceUtil() {
     }
 
+    /**
+     * @param containers      collection of all containers in a partition
+     * @param containerFilter allows only matching containers
+     * @param toNamespace     returns {@link ObjectNamespace} for a container
+     *
+     * @return all service namespaces after functions are applied
+     */
     public static <T> Collection<ServiceNamespace> getAllNamespaces(Map<?, T> containers,
                                                                     Predicate<T> containerFilter,
                                                                     Function<T, ObjectNamespace> toNamespace) {
@@ -46,7 +53,7 @@ public final class NameSpaceUtil {
 
         Collection<ServiceNamespace> collection = Collections.emptySet();
         for (T container : containers.values()) {
-            if (containerFilter.test(container)) {
+            if (!containerFilter.test(container)) {
                 continue;
             }
 
