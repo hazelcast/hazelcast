@@ -96,6 +96,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         LatencyProbeImpl probe = (LatencyProbeImpl) plugin.newProbe("foo", "queue", "somemethod");
         probe.recordValue(MICROSECONDS.toNanos(100));
         probe.recordValue(MICROSECONDS.toNanos(200));
+        probe.recordValue(MICROSECONDS.toNanos(200));
         probe.recordValue(MICROSECONDS.toNanos(300));
 
         plugin.run(logWriter);
@@ -103,11 +104,22 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         assertContains("foo");
         assertContains("queue");
         assertContains("somemethod");
-        assertContains("count=3");
-        assertContains("totalTime(us)=600");
+        assertContains("count=4");
+        assertContains("totalTime(us)=800");
         assertContains("avg(us)=200");
         assertContains("max(us)=300");
         assertContains("64..127us=1");
         assertContains("128..255us=2");
+        assertContains("256..511us=1");
+    }
+
+    @Test
+    public void max_latency_goes_right_distribution_bucket() {
+        LatencyProbeImpl probe = (LatencyProbeImpl) plugin.newProbe("foo", "queue", "somemethod");
+        probe.recordValue(MICROSECONDS.toNanos(4));
+
+        plugin.run(logWriter);
+
+        assertContains("4..7us=1");
     }
 }
