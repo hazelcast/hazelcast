@@ -21,6 +21,7 @@ import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValueValidator;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
@@ -38,6 +39,22 @@ public final class MulticastProperties {
      * Property used to define zones for node filtering.
      */
     public static final PropertyDefinition GROUP = property("group", STRING);
+
+    /**
+     * Property which determines if Java Serialization is used ({@code false}) or rather the safer and portable one
+     * ({@code true}).
+     * <p/>
+     * Safe serialization format of the MulticastMemberInfo:
+     *
+     * <pre>
+     * boolean: flag if memberInfo provided (false mean memberInfo is null)
+     * UTF-8:   host
+     * int:     port
+     * </pre>
+     *
+     * @since 5.1
+     */
+    public static final PropertyDefinition SAFE_SERIALIZATION = property("safe-serialization", BOOLEAN);
 
     private MulticastProperties() {
     }
