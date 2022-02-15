@@ -16,6 +16,12 @@
 
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.instance.impl.Node;
 
 import java.util.function.BiConsumer;
@@ -25,6 +31,32 @@ public class CPSubsystemInfoCollector implements MetricsCollector {
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         int cpMemberCount = node.getNodeEngine().getConfig().getCPSubsystemConfig().getCPMemberCount();
-        metricsConsumer.accept(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED, String.valueOf(cpMemberCount != 0));
+        boolean cpSubsystemEnabled = cpMemberCount != 0;
+        metricsConsumer.accept(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED, String.valueOf(cpSubsystemEnabled));
+        if (cpSubsystemEnabled) {
+            RaftService raftService = node.getNodeEngine().getService(RaftService.SERVICE_NAME);
+            int groupsCount = raftService.getMetadataGroupManager().getGroupIds().size();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_GROUPS_COUNT, String.valueOf(groupsCount));
+
+            SemaphoreService semaphoreService = node.getNodeEngine().getService(SemaphoreService.SERVICE_NAME);
+            int semaphoresCount = semaphoreService.getTotalResourcesCount();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_SEMAPHORES_COUNT, String.valueOf(semaphoresCount));
+
+            CountDownLatchService clService = node.getNodeEngine().getService(CountDownLatchService.SERVICE_NAME);
+            int clCount = clService.getTotalResourcesCount();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_COUNTDOWN_LATCHES_COUNT, String.valueOf(clCount));
+
+            LockService lockService = node.getNodeEngine().getService(LockService.SERVICE_NAME);
+            int locksCount = lockService.getTotalResourcesCount();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_FENCED_LOCKS_COUNT, String.valueOf(locksCount));
+
+            AtomicLongService atomicLongService = node.getNodeEngine().getService(AtomicLongService.SERVICE_NAME);
+            int atomicLongsCount = atomicLongService.getAtomicValuesCount();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_ATOMIC_LONGS_COUNT, String.valueOf(atomicLongsCount));
+
+            AtomicRefService atomicRefService = node.getNodeEngine().getService(AtomicRefService.SERVICE_NAME);
+            int atomicRefsCount = atomicRefService.getAtomicValuesCount();
+            metricsConsumer.accept(PhoneHomeMetrics.CP_ATOMIC_REFS_COUNT, String.valueOf(atomicRefsCount));
+        }
     }
 }

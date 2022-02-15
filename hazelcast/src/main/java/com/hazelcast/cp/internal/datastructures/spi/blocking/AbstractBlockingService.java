@@ -272,6 +272,12 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         return Collections.unmodifiableCollection(registry.getLiveOperations());
     }
 
+    public int getTotalResourcesCount() {
+        return registries.values().stream()
+                .map(collection -> collection.resources.size())
+                .reduce(0, Integer::sum);
+    }
+
     protected final RR getOrInitRegistry(CPGroupId groupId) {
         checkNotNull(groupId);
         RR registry = registries.get(groupId);

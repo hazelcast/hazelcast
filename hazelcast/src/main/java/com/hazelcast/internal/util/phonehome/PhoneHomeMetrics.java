@@ -145,6 +145,12 @@ public enum PhoneHomeMetrics {
 
     //CP SUBSYSTEM METRICS
     CP_SUBSYSTEM_ENABLED("cp"),
+    CP_GROUPS_COUNT("cpgct"),
+    CP_SEMAPHORES_COUNT("cpsect"),
+    CP_COUNTDOWN_LATCHES_COUNT("cpclct"),
+    CP_FENCED_LOCKS_COUNT("cpflct"),
+    CP_ATOMIC_LONGS_COUNT("cpalct"),
+    CP_ATOMIC_REFS_COUNT("cparct"),
 
     // REST API metrics
     REST_ENABLED("restenabled"),
