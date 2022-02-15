@@ -265,7 +265,11 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    public <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
+    public static <T> boolean checkStaticConfigDoesNotExist(
+            Map<String, T> staticConfigurations,
+            String configName,
+            T newConfig
+    ) {
         T existingConfiguration = staticConfigurations.get(configName);
         return checkStaticConfigDoesNotExist(existingConfiguration, newConfig);
     }
