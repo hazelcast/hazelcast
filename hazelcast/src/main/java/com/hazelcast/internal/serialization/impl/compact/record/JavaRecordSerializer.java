@@ -523,7 +523,8 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             return compactReader.readArrayOfTimestampWithTimezone(name);
                         };
                         componentWriters[i] = (compactWriter, object)
-                                -> compactWriter.writeArrayOfTimestampWithTimezone(name, (OffsetDateTime[]) componentGetter.invoke(object));
+                                -> compactWriter.writeArrayOfTimestampWithTimezone(
+                                        name, (OffsetDateTime[]) componentGetter.invoke(object));
                     } else if (componentType.isEnum()) {
                         componentReaders[i] = (compactReader, schema) -> {
                             if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_STRING)) {
@@ -607,8 +608,9 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
         return field.getKind() == expectedFieldKind || field.getKind() == compatibleFieldKind;
     }
 
-    private HazelcastSerializationException throwUnsupportedFieldTypeException(String typeName) {
-        throw new HazelcastSerializationException("Compact serialization format does not support fields of type '" + typeName + "'. "
-                + "If you want to use such fields with the compact serialization format, consider adding an explicit serializer for it.");
+    private void throwUnsupportedFieldTypeException(String typeName) {
+        throw new HazelcastSerializationException("Compact serialization format does not support "
+                + "fields of type '" + typeName + "'. If you want to use such fields with the compact"
+                + " serialization format, consider adding an explicit serializer for it.");
     }
 }
