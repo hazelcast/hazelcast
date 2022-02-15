@@ -198,7 +198,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
+    public GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeNullableInt16(fieldName, value);
         return this;

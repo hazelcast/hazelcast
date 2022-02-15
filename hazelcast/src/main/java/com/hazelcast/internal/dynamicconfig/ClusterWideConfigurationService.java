@@ -331,7 +331,7 @@ public class ClusterWideConfigurationService implements
         persist(newConfig);
     }
 
-    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
+    protected void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
         if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
             return;
         }

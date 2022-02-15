@@ -252,7 +252,7 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
-    GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value);
+    GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.

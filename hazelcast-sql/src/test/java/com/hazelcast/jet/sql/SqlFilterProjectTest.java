@@ -618,6 +618,17 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explicitTable() {
+        TestBatchSqlConnector.create(sqlService, "t", 2);
+        assertRowsAnyOrder("table t",
+                rows(1, 0, 1));
+        assertRowsAnyOrder("(table t)",
+                rows(1, 0, 1));
+        assertRowsAnyOrder("select * from (table t) t",
+                rows(1, 0, 1));
+    }
+
+    @Test
     public void test_queryMetadata() {
         TestAllTypesSqlConnector.create(sqlService, "t");
 
