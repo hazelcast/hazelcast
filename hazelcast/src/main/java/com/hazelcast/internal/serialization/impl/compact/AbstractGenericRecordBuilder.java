@@ -254,7 +254,7 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
+    public GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value) {
         return write(fieldName, value, FieldKind.NULLABLE_INT16);
     }
 

@@ -248,7 +248,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
 
     @Nonnull
     @Override
-    public GenericRecordBuilder setNullableint16(@Nonnull String fieldName, @Nullable Short value) {
+    public GenericRecordBuilder setNullableInt16(@Nonnull String fieldName, @Nullable Short value) {
         checkTypeWithSchema(schema, fieldName, FieldKind.NULLABLE_INT16);
         if (fields.putIfAbsent(fieldName, () -> cw.writeNullableInt16(fieldName, value)) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
