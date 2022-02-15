@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
@@ -43,7 +43,7 @@ final class SelectByKeyMapLogicalRules {
 
     static final RelOptRule INSTANCE = new RelOptRule(
             operandJ(
-                    LogicalTableScan.class,
+                    TableScan.class,
                     null,
                     scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                     none()
@@ -52,7 +52,7 @@ final class SelectByKeyMapLogicalRules {
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
-            LogicalTableScan scan = call.rel(0);
+            TableScan scan = call.rel(0);
 
             RelOptTable table = scan.getTable();
             RexBuilder rexBuilder = scan.getCluster().getRexBuilder();

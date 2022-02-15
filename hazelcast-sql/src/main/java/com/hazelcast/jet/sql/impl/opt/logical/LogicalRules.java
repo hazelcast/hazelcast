@@ -86,6 +86,7 @@ public final class LogicalRules {
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules
+//                TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRules.INSTANCE,
