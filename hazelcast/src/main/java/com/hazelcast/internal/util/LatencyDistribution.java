@@ -25,11 +25,53 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
- * A latency distribution
+ * Contains latency distribution logic.
+ * <p>
+ * <h2>How do we calculate latency-range distribution?</h2>
+ * <p>
+ * We have an array of buckets and each bucket has a matching latency
+ * range with its index. Min latency is zero and max latency is {@link  Integer#MAX_VALUE}.
+ * Index is an integer value and its bits represent an index of {@link #BUCKET_COUNT}
+ * array. Sign bit is not used. So we have 31 bits to use.
+ * <p>
+ * Bits: 000 0000 0000 0000 0000 0000 0000 0000
+ * <p>
+ * Indexes: 0-1-2-...-16-...30
+ * <p>
+ * Each bucket has a minimum latency matching with index's power of 2:
+ * <p>
+ * 2<sup>0</sup>, 2<sup>1</sup>, 2<sup>2</sup>,...2<sup>16</sup>... 2<sup>30</sup>
+ * <p>
+ * <h3>Range boundaries calculation</h3>
+ * Min latency = 1 << bucketIndex
+ * <p>
+ * Max latency = minLatencyOfNextBucketIndex - 1
+ * <p>
+ * So we will have a range distribution like this in the end:
+ * <pre>
+ * Ranges per bucket index:
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-++
+ * | Index |   Latency Range                |
+ * +-------+--------------------------------+
+ * | 0     |   0..1us                       |
+ * +-------+--------------------------------+
+ * | 1     |   2..3us                       |
+ * +-------+--------------------------------+
+ * | 2     |   4..7us                       |
+ * +-------+--------------------------------+
+ * | ...   |   ...                          |
+ * +-------+--------------------------------+
+ * | ...   |   ...                          |
+ * +-------+--------------------------------+
+ * | 29    |   536870912..1073741823us      |
+ * +-------+--------------------------------+
+ * | 30    |   1073741824..2147483647us     |
+ * +-------+--------------------------------+
+ * </pre>
  */
 public final class LatencyDistribution {
 
-    public static final int BUCKET_COUNT = 32;
+    public static final int BUCKET_COUNT = 31;
 
     @SuppressFBWarnings("MS_MUTABLE_ARRAY")
     public static final String[] LATENCY_KEYS;
@@ -65,15 +107,15 @@ public final class LatencyDistribution {
     /**
      * The maximum value that can be placed in a bucket.
      */
-    public static long bucketMaxUs(int bucket) {
-        return bucket == 0 ? 0 : (1L << bucket) - 1;
+    static int bucketMaxUs(int bucket) {
+        return bucketMinUs(bucket + 1) - 1;
     }
 
     /**
      * The minimum value that can be placed in a bucket.
      */
-    public static long bucketMinUs(int bucket) {
-        return bucket == 0 ? 0 : bucketMaxUs(bucket - 1) + 1;
+    static int bucketMinUs(int bucket) {
+        return bucket == 0 ? 0 : 1 << bucket;
     }
 
     public long count() {
@@ -97,7 +139,8 @@ public final class LatencyDistribution {
     }
 
     public void recordNanos(long durationNanos) {
-        // nano clock is not guaranteed to be monotonic. So lets record it as zero so we can at least count.
+        // nano clock is not guaranteed to be monotonic. So
+        // lets record it as zero, so we can at least count.
         if (durationNanos < 0) {
             durationNanos = 0;
         }
@@ -126,14 +169,7 @@ public final class LatencyDistribution {
         }
     }
 
-    public static int usToBucketIndex(int us) {
-        if (us < 2) {
-            return 0;
-        }
-
-        int nextPow = BUCKET_COUNT - Integer.numberOfLeadingZeros(us);
-        int prevPow = nextPow - 1;
-        int middle = (1 << nextPow) - (1 << (prevPow - 1));
-        return us < middle ? prevPow : nextPow;
+    static int usToBucketIndex(int us) {
+        return Math.max(0, BUCKET_COUNT - Integer.numberOfLeadingZeros(us));
     }
 }
