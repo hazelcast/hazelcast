@@ -20,7 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public abstract class AbstractWanAntiEntropyEventBase extends AbstractIdentifiedEvent {
+public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEvent {
     protected final String wanReplicationName;
     protected final String wanPublisherId;
     protected final String mapName;

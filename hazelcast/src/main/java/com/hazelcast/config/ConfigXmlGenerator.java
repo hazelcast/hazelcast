@@ -39,6 +39,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -325,7 +326,7 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(gen.open("ldap"), c)
                 .node("url", c.getUrl())
                 .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("parse-dn", c.getParseDn())
                 .nodeIfContents("role-context", c.getRoleContext())
                 .nodeIfContents("role-filter", c.getRoleFilter())
                 .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
@@ -534,9 +535,10 @@ public class ConfigXmlGenerator {
 
         gen.open("compact-serialization", "enabled", compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries
+                = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
         if (!MapUtil.isNullOrEmpty(registries) || !MapUtil.isNullOrEmpty(namedRegistries)) {
             gen.open("registered-classes");
             appendRegisteredClasses(gen, registries);
@@ -719,8 +721,11 @@ public class ConfigXmlGenerator {
                 .filter(DeviceConfig::isLocal)
                 .forEach(deviceConfig -> {
                     LocalDeviceConfig localDeviceConfig = (LocalDeviceConfig) deviceConfig;
+                    Capacity capacity = localDeviceConfig.getCapacity();
                     gen.open("local-device", "name", localDeviceConfig.getName())
                             .node("base-dir", localDeviceConfig.getBaseDir().getAbsolutePath())
+                            .node("capacity", null,
+                                    "unit", capacity.getUnit(), "value", capacity.getValue())
                             .node("block-size", localDeviceConfig.getBlockSize())
                             .node("read-io-thread-count", localDeviceConfig.getReadIOThreadCount())
                             .node("write-io-thread-count", localDeviceConfig.getWriteIOThreadCount())

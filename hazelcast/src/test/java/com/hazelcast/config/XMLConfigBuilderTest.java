@@ -33,6 +33,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -3191,6 +3192,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<local-device name=\"my-device\">"
                 + "    <base-dir>" + baseDir + "</base-dir>"
                 + "    <block-size>" + blockSize + "</block-size>"
+                + "    <capacity value=\"100\" unit=\"GIGABYTES\"/>"
                 + "    <read-io-thread-count>" + readIOThreadCount + "</read-io-thread-count>"
                 + "    <write-io-thread-count>" + writeIOThreadCount + "</write-io-thread-count>"
                 + "</local-device>\n"
@@ -3203,6 +3205,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
+        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3210,6 +3213,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         int device1Multiplier = 4;
         xml = HAZELCAST_START_TAG
                 + "<local-device name=\"device0\">"
+                + "    <capacity value=\"1234567890\" unit=\"MEGABYTES\"/>"
                 + "    <block-size>" + (blockSize * device0Multiplier) + "</block-size>"
                 + "    <read-io-thread-count>" + (readIOThreadCount * device0Multiplier) + "</read-io-thread-count>"
                 + "    <write-io-thread-count>" + (writeIOThreadCount * device0Multiplier) + "</write-io-thread-count>"
@@ -3228,6 +3232,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());
@@ -3241,6 +3246,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(DEFAULT_BLOCK_SIZE_IN_BYTES, localDeviceConfig.getBlockSize());
         assertEquals(DEFAULT_READ_IO_THREAD_COUNT, localDeviceConfig.getReadIOThreadCount());
         assertEquals(DEFAULT_WRITE_IO_THREAD_COUNT, localDeviceConfig.getWriteIOThreadCount());
+        assertEquals(LocalDeviceConfig.DEFAULT_CAPACITY, localDeviceConfig.getCapacity());
 
         // override the default device config
         String newBaseDir = "/some/random/base/dir/for/tiered/store";
@@ -3324,6 +3330,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         diskTierConfig = tieredStoreConfig.getDiskTierConfig();
         assertFalse(diskTierConfig.isEnabled());
         assertEquals(DEFAULT_DEVICE_NAME, diskTierConfig.getDeviceName());
+
+        xml = HAZELCAST_START_TAG
+                + "<map name=\"some-map\">"
+                + "    <tiered-store enabled=\"true\"/>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        config = new InMemoryXmlConfig(xml);
+        assertEquals(1, config.getDeviceConfigs().size());
+        assertEquals(new LocalDeviceConfig(), config.getDeviceConfig(DEFAULT_DEVICE_NAME));
+        assertEquals(DEFAULT_DEVICE_NAME,
+                config.getMapConfig("some-map").getTieredStoreConfig().getDiskTierConfig().getDeviceName());
     }
 
     @Override

@@ -14,17 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal;
+package com.hazelcast.internal.management.events;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+import com.hazelcast.internal.json.JsonObject;
 
-/**
- * Annotates classes and methods which depend on JDK 8 API methods for compilation.
- * Use at the most limited scope possible, as annotated elements are excluded from
- * animal-sniffer JDK 6 API checks, therefore could risk leaking usage of newer APIs
- * to code meant to run on JDK 6 or 7.
- */
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface RequiresJdk8 {
+import java.util.UUID;
+
+import static java.util.Objects.requireNonNull;
+
+abstract class AbstractWanEvent extends AbstractEventBase {
+    private final UUID uuid;
+
+    protected AbstractWanEvent(UUID uuid) {
+        this.uuid = requireNonNull(uuid, "UUID must not be null");
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.add("uuid", uuid.toString());
+        return json;
+    }
 }

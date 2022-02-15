@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql;
+package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -113,7 +114,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))",
+                        "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))",
                 Arrays.stream(values).map(Row::new).collect(toList())
         );
     }
@@ -145,7 +146,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         TestStreamSqlConnector.create(sqlService, name, singletonList("ts"), singletonList(orderingColumnType));
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " + maxLag + "))")
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " + maxLag + "))")
         ).hasMessageContaining("The descriptor column type (" + orderingColumnType + ") and the interval type (" + lagType + ") do not match");
     }
 
@@ -158,7 +159,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "TABLE(IMPOSE_ORDER(" +
                         "  (SELECT * FROM" +
                         "    TABLE(IMPOSE_ORDER(" +
-                        "      TABLE(" + name + ")" +
+                        "      TABLE " + name +
                         "      , DESCRIPTOR(ts)" +
                         "      , INTERVAL '0.001' SECOND" +
                         "    ))" +
@@ -174,10 +175,10 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " +
-                "TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
+                "TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts, ts), INTERVAL '0.001' SECOND))")
         ).hasMessageContaining("You must specify single ordering column");
     }
 
@@ -258,7 +259,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                 "SELECT * FROM " +
                         "TABLE(IMPOSE_ORDER(" +
                         "  \"lag\" => INTERVAL '0.001' SECOND" +
-                        "  , input => (TABLE(" + name + "))" +
+                        "  , input => (TABLE " + name + ")" +
                         "  , time_col => DESCRIPTOR(ts)" +
                         "))",
                 asList(
@@ -282,12 +283,12 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 
         // Temporal state
         assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))"
         )).hasMessageContaining("Currently, IMPOSE_ORDER can only be used with window aggregation");
 
         // TODO[sasha]: support dropping late items in 5.2
 //        assertRowsEventuallyInAnyOrder(
-//                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE( " + name + "), DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
+//                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
 //                asList(
 //                        new Row(timestampTz(28), "Alice"),
 //                        new Row(timestampTz(29), "Bob"),
@@ -297,10 +298,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
 //                        // Zedd is dropped because ti's late
 //                )
 //        );
-    }
-
-    private static Object[] row(Object... values) {
-        return values;
     }
 
     private static String createTable(Object[]... values) {

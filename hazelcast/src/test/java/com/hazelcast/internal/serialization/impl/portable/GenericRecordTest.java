@@ -46,7 +46,7 @@ public class GenericRecordTest {
 
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableBoolean("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt8("name", null));
-        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableint16("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt16("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt32("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableInt64("name", null));
         assertThrows(UnsupportedOperationException.class, () -> builder.setNullableFloat32("name", null));

@@ -22,10 +22,14 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
+
 /**
  * Result of the config update operation.
  */
 public class ConfigUpdateResult {
+
+    public static final ConfigUpdateResult EMPTY = new ConfigUpdateResult(emptySet(), emptySet());
     /**
      * Newly added configs.
      */

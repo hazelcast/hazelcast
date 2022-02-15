@@ -6181,6 +6181,8 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.evictionPolicy));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(parameters.isGlobalIndexesExists);
+        assertTrue(isEqual(aListOfIndexConfigs, parameters.globalIndexes));
     }
 
     @Test
@@ -6620,6 +6622,8 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCReloadConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 844;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, MCReloadConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6633,6 +6637,8 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCUpdateConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 846;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, MCUpdateConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test

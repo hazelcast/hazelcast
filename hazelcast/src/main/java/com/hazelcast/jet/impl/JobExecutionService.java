@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
@@ -38,6 +39,7 @@ import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
@@ -235,7 +237,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         for (ExecutionContext exeCtx : executionContexts.values()) {
             LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
                     exeCtx.jobNameAndExecutionId(), reason);
-            terminateExecution0(exeCtx, null);
+            terminateExecution0(exeCtx, null, new CancellationException());
         }
     }
 
@@ -243,7 +245,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * Cancels executions that contain the leaving address as the coordinator or a
      * job participant
      */
-    void onMemberRemoved(Address address) {
+    void onMemberRemoved(Member member) {
+        Address address = member.getAddress();
         executionContexts.values().stream()
              // note that coordinator might not be a participant (in case it is a lite member)
              .filter(exeCtx -> exeCtx.coordinator() != null
@@ -251,7 +254,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
              .forEach(exeCtx -> {
                  LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
                          exeCtx.jobNameAndExecutionId(), address);
-                 terminateExecution0(exeCtx, null);
+                 terminateExecution0(exeCtx, null, new MemberLeftException(member));
              });
     }
 
@@ -612,7 +615,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
-                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL);
+                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
                     }
                 }
             }
@@ -638,7 +641,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         if (execCtx != null) {
                             logger.fine("Terminating light job " + idToString(executionId)
                                     + " because the coordinator doesn't know it");
-                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL);
+                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
                         }
                     }
                 });
@@ -685,16 +688,17 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
         }
-        terminateExecution0(executionContext, mode);
+        Exception cause = mode == null ? new CancellationException() : new JobTerminateRequestedException(mode);
+        terminateExecution0(executionContext, mode, cause);
     }
 
-    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode) {
+    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
         if (!executionContext.terminateExecution(mode)) {
             // If the execution was terminated before it began, call completeExecution now.
             // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
             logger.fine(executionContext.jobNameAndExecutionId()
                     + " calling completeExecution because execution terminated before it started");
-            completeExecution(executionContext, new CancellationException());
+            completeExecution(executionContext, cause);
         }
     }
 

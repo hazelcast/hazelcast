@@ -16,18 +16,24 @@
 
 package com.hazelcast.console;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -65,7 +71,7 @@ public class ConsoleTest {
     }
 
     @Test
-    public void connectsToHazelcastCluster() throws IOException {
+    public void connectsToHazelcastCluster() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(null);
         Address address = getAddress(hz);
         File cfgFile = tempFolder.newFile("hazelcast-config.yml");
@@ -84,22 +90,50 @@ public class ConsoleTest {
         }
         propertyClientConfig.setOrClearProperty(cfgFile.getAbsolutePath());
         assertTrue(hz.getClientService().getConnectedClients().isEmpty());
-
-        ExecutorService tp = Executors.newFixedThreadPool(1);
+        InputStream oldSysIn = null;
+        PipedInputStream pipeIn = null;
+        PipedOutputStream pipeOut = null;
         try {
-            tp.execute(() -> {
-                try {
-                    ConsoleApp.main(null);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            assertClusterSizeEventually(2, hz);
-            HazelcastInstance hzConsole = Hazelcast.getHazelcastInstanceByName("consoleApp");
-            assertNotNull(hzConsole);
-            hzConsole.shutdown();
+            oldSysIn = System.in;
+            pipeIn = new PipedInputStream(1024);
+            pipeOut = new PipedOutputStream(pipeIn);
+            System.setIn(pipeIn);
+            ConsoleApp consoleApp = ConsoleApp.create();
+            ExecutorService tp = Executors.newFixedThreadPool(1);
+            try {
+                tp.execute(() -> {
+                    try {
+                        consoleApp.start();
+                    } catch (Exception e) {
+                        sneakyThrow(e);
+                    }
+                });
+                assertTrueEventually(() -> assertTrue(consoleApp.isRunning()));
+                assertClusterSizeEventually(2, hz);
+                HazelcastInstance hzConsole = Hazelcast.getHazelcastInstanceByName("consoleApp");
+                assertNotNull(hzConsole);
+                hzConsole.shutdown();
+            } catch (Exception e) {
+                sneakyThrow(e);
+            } finally {
+                int terminationTimeoutSec = 10;
+                consoleApp.stop();
+                // write new line char to sys.in so that BufferedReader#readLine completes
+                String lineSep = System.getProperty("line.separator");
+                pipeOut.write(lineSep.getBytes(StandardCharsets.UTF_8));
+                tp.shutdownNow();
+                boolean terminated = tp.awaitTermination(terminationTimeoutSec, TimeUnit.SECONDS);
+                assertTrue("Executor service: " + tp + " is not terminated in " + terminationTimeoutSec + " secs",
+                        terminated);
+            }
         } finally {
-            tp.shutdown();
+            if (pipeIn != null) {
+                pipeIn.close();
+            }
+            if (pipeOut != null) {
+                pipeOut.close();
+            }
+            System.setIn(oldSysIn);
         }
     }
 }

@@ -46,9 +46,10 @@ class HazelcastJsonQueryTarget implements QueryTarget {
     @Override
     public void setTarget(Object target, Data targetData) {
         if (target == null && targetData != null) {
-            target = serializationService.toObject(targetData);
+            this.target = targetData;
+        } else {
+            this.target = target;
         }
-        this.target = target;
     }
 
     @Override
