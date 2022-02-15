@@ -91,6 +91,12 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testHashCode() {
+        CacheConfig cacheConfig = new CacheConfig();
+        assertTrue(cacheConfig.hashCode() != 0);
+    }
+
+    @Test
     public void testCacheConfigLoaderWriterXml() throws Exception {
         Config config = new XmlConfigBuilder(configUrl2).build();
 
