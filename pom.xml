@@ -1265,6 +1265,11 @@
 
         <profile>
             <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!quick</name>
+                </property>
+            </activation>
             <modules>
                 <module>modulepath-tests</module>
             </modules>
