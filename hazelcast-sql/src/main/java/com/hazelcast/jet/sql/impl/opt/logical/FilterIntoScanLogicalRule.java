@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -66,7 +67,7 @@ public final class FilterIntoScanLogicalRule extends RelRule<Config> implements 
     @Override
     public void onMatch(RelOptRuleCall call) {
         Filter filter = call.rel(0);
-        TableScan scan = call.rel(1);
+        FullScanLogicalRel scan = call.rel(1);
 
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
         RexNode existingCondition = table.getFilter();
@@ -85,6 +86,19 @@ public final class FilterIntoScanLogicalRule extends RelRule<Config> implements 
             );
         }
 
-        call.transformTo(OptUtils.createLogicalScan(scan, table.withFilter(convertedCondition)));
+        HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
+                (HazelcastRelOptTable) scan.getTable(),
+                table.withFilter(convertedCondition),
+                scan.getCluster().getTypeFactory()
+        );
+
+        FullScanLogicalRel rel = new FullScanLogicalRel(
+                scan.getCluster(),
+                OptUtils.toLogicalConvention(scan.getTraitSet()),
+                convertedTable,
+                scan.eventTimePolicyProvider(),
+                scan.watermarkedColumnIndex()
+        );
+        call.transformTo(rel);
     }
 }

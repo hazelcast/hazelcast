@@ -17,14 +17,13 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
@@ -51,7 +50,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
     private ProjectIntoScanLogicalRule() {
         super(
-                operand(LogicalProject.class, operand(LogicalTableScan.class, none())),
+                operand(Project.class, operand(FullScanLogicalRel.class, none())),
                 RelFactories.LOGICAL_BUILDER,
                 ProjectIntoScanLogicalRule.class.getSimpleName()
         );
@@ -60,10 +59,24 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
     @Override
     public void onMatch(RelOptRuleCall call) {
         Project project = call.rel(0);
-        TableScan scan = call.rel(1);
+        FullScanLogicalRel scan = call.rel(1);
 
         HazelcastTable originalTable = OptUtils.extractHazelcastTable(scan);
         List<RexNode> newProjects = inlineExpressions(originalTable.getProjects(), project.getProjects());
-        call.transformTo(OptUtils.createLogicalScan(scan, originalTable.withProject(newProjects, project.getRowType())));
+
+        HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
+                (HazelcastRelOptTable) scan.getTable(),
+                originalTable.withProject(newProjects, project.getRowType()),
+                scan.getCluster().getTypeFactory()
+        );
+
+        FullScanLogicalRel rel = new FullScanLogicalRel(
+                scan.getCluster(),
+                OptUtils.toLogicalConvention(scan.getTraitSet()),
+                convertedTable,
+                scan.eventTimePolicyProvider(),
+                scan.watermarkedColumnIndex()
+        );
+        call.transformTo(rel);
     }
 }

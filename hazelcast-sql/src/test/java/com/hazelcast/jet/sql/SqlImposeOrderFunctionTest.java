@@ -245,20 +245,6 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
         );
     }
 
-    @Test
-    public void test_projectionThatCannotBePushedDown() {
-        String name = createTable();
-
-        assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * FROM " +
-                        "TABLE(IMPOSE_ORDER(" +
-                        "  (SELECT ts + INTERVAL '0.001' SECOND AS ts, name  FROM " + name + ")" +
-                        "  , DESCRIPTOR(ts)" +
-                        "  , INTERVAL '0.001' SECOND" +
-                        "))"
-        )).hasMessageContaining("Ordering function cannot be applied to input table");
-    }
-
     @Ignore("Implement late items dropping: https://github.com/hazelcast/hazelcast/issues/19887")
     @Test
     public void test_namedParameters() {
