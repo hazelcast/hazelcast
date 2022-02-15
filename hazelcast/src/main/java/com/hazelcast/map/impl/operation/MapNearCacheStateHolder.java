@@ -43,9 +43,8 @@ import static java.util.Collections.EMPTY_LIST;
  */
 public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
-    // keep this `protected`, extended in another context
-    protected UUID partitionUuid;
-    protected List<Object> mapNameSequencePairs = EMPTY_LIST;
+    protected volatile UUID partitionUuid;
+    protected volatile List<Object> mapNameSequencePairs = EMPTY_LIST;
 
     private MapReplicationOperation mapReplicationOperation;
 
@@ -68,17 +67,15 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = container.getPartitionId();
         partitionUuid = metaData.getOrCreateUuid(partitionId);
 
+        List<Object> nameSeqPairs = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
-            if (mapNameSequencePairs == EMPTY_LIST) {
-                mapNameSequencePairs = new ArrayList(namespaces.size());
-            }
-
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
             String mapName = mapNamespace.getObjectName();
 
-            mapNameSequencePairs.add(mapName);
-            mapNameSequencePairs.add(metaData.currentSequence(mapName, partitionId));
+            nameSeqPairs.add(mapName);
+            nameSeqPairs.add(metaData.currentSequence(mapName, partitionId));
         }
+        mapNameSequencePairs = nameSeqPairs;
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator(MapService mapService) {
