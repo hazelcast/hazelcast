@@ -111,8 +111,8 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
 
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertThat(parameters.get(PhoneHomeMetrics.HD_MEMORY_ENABLED.getRequestParameterName())).isEqualTo("true");
-        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE.getRequestParameterName())).isNotNull();
-        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE.getRequestParameterName())).isNotNull();
+        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE.getRequestParameterName())).isGreaterThan("0");
+        assertThat(parameters.get(PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE.getRequestParameterName())).isEqualTo("0");
         assertThat(parameters.get(PhoneHomeMetrics.TIERED_STORAGE_ENABLED.getRequestParameterName())).isEqualTo("false");
     }
 

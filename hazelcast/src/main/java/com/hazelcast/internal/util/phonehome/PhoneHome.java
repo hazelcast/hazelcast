@@ -41,6 +41,7 @@ import static java.lang.System.getenv;
 /**
  * Pings phone home server with cluster info daily.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class PhoneHome {
 
     private static final String FALSE = "false";

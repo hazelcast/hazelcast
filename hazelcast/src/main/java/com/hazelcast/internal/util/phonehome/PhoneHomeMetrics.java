@@ -148,7 +148,7 @@ public enum PhoneHomeMetrics {
 
     // STORAGE METRICS
     HD_MEMORY_ENABLED("hdme"),
-    MEMORY_USED_HEAP_SIZE("mhs"),
+    MEMORY_USED_HEAP_SIZE("muhs"),
     MEMORY_USED_NATIVE_SIZE("muns"),
     TIERED_STORAGE_ENABLED("tse"),
 
