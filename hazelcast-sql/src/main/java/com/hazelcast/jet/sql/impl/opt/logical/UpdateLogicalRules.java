@@ -16,28 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalValues;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
-import org.apache.calcite.rel.type.RelRecordType;
-import org.apache.calcite.rel.type.StructKind;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static org.apache.calcite.plan.RelOptRule.none;
@@ -81,37 +69,25 @@ final class UpdateLogicalRules {
                 // rewrites existing project to just primary keys project
                 private RelNode rewriteScan(FullScanLogicalRel scan) {
                     HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
-                    HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
+                    HazelcastTable hzTable = relTable.unwrap(HazelcastTable.class);
 
-                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), hazelcastTable.getProjects());
-                    List<RelDataTypeField> fields = new ArrayList<>();
-                    int idx = 0;
-                    for (RexNode keyProject : keyProjects) {
-                        RexInputRef inputRef = (RexInputRef) keyProject;
-                        RelDataTypeField fieldType = new RelDataTypeFieldImpl(
-                                inputRef.getName(), idx, inputRef.getType()
-                        );
-                        fields.add(idx++, fieldType);
-                    }
-                    RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
+                    List<RexNode> keyProjects = OptUtils.keyProjects(hzTable.getTarget(), hzTable.getProjects());
 
                     HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
                             relTable,
-                            hazelcastTable.withProject(keyProjects, relDataType),
+                            hzTable.withProject(keyProjects, OptUtils.computeRelDataType(keyProjects)),
                             scan.getCluster().getTypeFactory()
                     );
 
-                    FullScanLogicalRel rel = new FullScanLogicalRel(
+                    return new FullScanLogicalRel(
                             scan.getCluster(),
                             OptUtils.toLogicalConvention(scan.getTraitSet()),
                             convertedTable,
                             null,
                             -1
                     );
-                    return rel;
                 }
             };
-
 
     // no-updates case, i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
@@ -120,14 +96,14 @@ final class UpdateLogicalRules {
             new RelOptRule(
                     operandJ(
                             TableModifyLogicalRel.class, null, TableModify::isUpdate,
-                            operand(LogicalValues.class, none())
+                            operand(ValuesLogicalRel.class, none())
                     ),
                     UpdateLogicalRules.class.getSimpleName() + "(NOOP)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
                     TableModifyLogicalRel update = call.rel(0);
-                    LogicalValues values = call.rel(1);
+                    ValuesLogicalRel values = call.rel(1);
 
                     UpdateLogicalRel rel = new UpdateLogicalRel(
                             update.getCluster(),
@@ -142,20 +118,4 @@ final class UpdateLogicalRules {
                     call.transformTo(rel);
                 }
             };
-
-    private static List<RexNode> keyProjects(Table table, List<RexNode> projects) {
-        List<RexNode> keyProjects = new ArrayList<>();
-        Set<String> primaryKeys = new HashSet<>(SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table));
-        for (RexNode project : projects) {
-            // Only RexInputRef may be key project, if even exists.
-            if (project instanceof RexInputRef) {
-                RexInputRef rexInputRef = (RexInputRef) project;
-                String inputRefName = table.getField(rexInputRef.getIndex()).getName();
-                if (primaryKeys.contains(inputRefName)) {
-                    keyProjects.add(rexInputRef);
-                }
-            }
-        }
-        return keyProjects;
-    }
 }

@@ -52,6 +52,10 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelRecordType;
+import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -66,6 +70,7 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -525,5 +530,37 @@ public final class OptUtils {
             res.add(inlineExpression(inlinedExpressions, expr));
         }
         return res;
+    }
+
+    // used in TableModify rules
+    public static List<RexNode> keyProjects(Table table, List<RexNode> projects) {
+        List<RexNode> keyProjects = new ArrayList<>();
+        Set<String> primaryKeys = new HashSet<>(SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table));
+        for (RexNode project : projects) {
+            // Only RexInputRef may be key project, if even exists.
+            if (project instanceof RexInputRef) {
+                RexInputRef rexInputRef = (RexInputRef) project;
+                String inputRefName = table.getField(rexInputRef.getIndex()).getName();
+                if (primaryKeys.contains(inputRefName)) {
+                    keyProjects.add(rexInputRef);
+                }
+            }
+        }
+        return keyProjects;
+    }
+
+    @NotNull
+    public static RelDataType computeRelDataType(List<RexNode> keyProjects) {
+        List<RelDataTypeField> fields = new ArrayList<>();
+        int idx = 0;
+        for (RexNode keyProject : keyProjects) {
+            RexInputRef inputRef = (RexInputRef) keyProject;
+            RelDataTypeField fieldType = new RelDataTypeFieldImpl(
+                    inputRef.getName(), idx, inputRef.getType()
+            );
+            fields.add(idx++, fieldType);
+        }
+        RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
+        return relDataType;
     }
 }

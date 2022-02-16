@@ -17,13 +17,16 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rex.RexNode;
+
+import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 /**
  * Planner rule that matches single key, constant expression,
@@ -41,9 +44,9 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
     private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        TableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
+                        TableModifyLogicalRel.class, LOGICAL, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
                         operandJ(
-                                TableScan.class,
+                                FullScanLogicalRel.class,
                                 null,
                                 scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
                                 none()
@@ -55,16 +58,25 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        TableModify update = call.rel(0);
-        TableScan scan = call.rel(1);
+        TableModifyLogicalRel update = call.rel(0);
+        FullScanLogicalRel scan = call.rel(1);
 
-        RelOptTable table = scan.getTable();
+        HazelcastRelOptTable table = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
         RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
         if (keyCondition != null) {
+            List<RexNode> keyProjects = OptUtils.keyProjects(hzTable.getTarget(), hzTable.getProjects());
+
+            HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
+                    table,
+                    hzTable.withProject(keyProjects, OptUtils.computeRelDataType(keyProjects)),
+                    scan.getCluster().getTypeFactory()
+            );
+
             UpdateByKeyMapLogicalRel rel = new UpdateByKeyMapLogicalRel(
                     update.getCluster(),
                     OptUtils.toLogicalConvention(update.getTraitSet()),
-                    table,
+                    convertedTable,
                     keyCondition,
                     update.getUpdateColumnList(),
                     update.getSourceExpressionList()
