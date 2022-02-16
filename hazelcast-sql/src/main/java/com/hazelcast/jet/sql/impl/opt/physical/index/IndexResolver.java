@@ -831,20 +831,20 @@ public final class IndexResolver {
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
-            for (int idx = 0; idx < table.getProjects().size(); idx++) {
+            boolean found = false;
+            for (int idx = 0; idx < table.getProjects().size() && !found; idx++) {
                 // Only a direct field reference may be indexed
                 RexNode project = table.getProjects().get(idx);
                 if (project instanceof RexInputRef && indexFieldOrdinal == ((RexInputRef) project).getIndex()) {
                     Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
                     RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
                     fields.add(fieldCollation);
-                    // don't search for more instances, for now use only the first occurrence
-                    break;
                 }
             }
+            if (!found) {
+                break;
+            }
         }
-
-        assert index.getFieldOrdinals().size() == fields.size();
 
         return RelCollations.of(fields);
     }
