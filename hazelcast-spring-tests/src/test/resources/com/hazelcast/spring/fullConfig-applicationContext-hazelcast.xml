@@ -1085,7 +1085,6 @@
 
             <hz:dynamic-configuration>
                 <hz:persistence-enabled>false</hz:persistence-enabled>
-                <hz:persistence-file>/mnt/persistence-file</hz:persistence-file>
                 <hz:backup-dir>/mnt/backup-dir</hz:backup-dir>
                 <hz:backup-count>7</hz:backup-count>
             </hz:dynamic-configuration>

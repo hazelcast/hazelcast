@@ -440,8 +440,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     if (persistenceEnabled) {
                         throw new InvalidConfigurationException("Dynamic Configuration Persistence isn't available for Spring.");
                     }
-                } else if ("persistence-file".equals(name)) {
-                    dynamicConfigBuilder.addPropertyValue("persistenceFile", getTextContent(n));
                 } else if ("backup-dir".equals(name)) {
                     dynamicConfigBuilder.addPropertyValue("backupDir", getTextContent(n));
                 } else if ("backup-count".equals(name)) {
