@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
+import static java.util.Arrays.asList;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
@@ -94,10 +95,9 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
         Expression<Boolean> nonEquiCondition = filter(
                 schema(parameterMetadata),
-                // TODO don't use AND, if this part is either side is alwaysTrue
-                rexBuilder.makeCall(HazelcastSqlOperatorTable.AND,
+                RexUtil.composeConjunction(rexBuilder, asList(
                         analyzeCondition().getRemaining(rexBuilder),
-                        RexUtil.composeConjunction(rexBuilder, additionalNonEquiConditions)),
+                        RexUtil.composeConjunction(rexBuilder, additionalNonEquiConditions))),
                 parameterMetadata);
 
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
