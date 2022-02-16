@@ -423,7 +423,7 @@ public class SqlHopTest extends SqlTestSupport {
                 row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Bob", 1),
                 row(timestampTz(7), "Alice", 1),
-                row(timestampTz(10), null, null)
+                row(timestampTz(10), "Alice", 1) // flushing event
         );
 
         assertTipOfStream(
@@ -438,7 +438,8 @@ public class SqlHopTest extends SqlTestSupport {
                         "HAVING LENGTH(n) > 5",
                 asList(
                         new Row(timestampTz(-2L), "Alice-s"),
-                        new Row(timestampTz(0L), "Alice-s")
+                        new Row(timestampTz(0L), "Alice-s"),
+                        new Row(timestampTz(4L), "Alice-s")
                 )
         );
     }
