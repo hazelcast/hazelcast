@@ -151,6 +151,7 @@ public enum PhoneHomeMetrics {
     MEMORY_USED_HEAP_SIZE("muhs"),
     MEMORY_USED_NATIVE_SIZE("muns"),
     TIERED_STORAGE_ENABLED("tse"),
+    DATA_MEMORY_COST("dmc"),
 
     //CP SUBSYSTEM METRICS
     CP_SUBSYSTEM_ENABLED("cp"),

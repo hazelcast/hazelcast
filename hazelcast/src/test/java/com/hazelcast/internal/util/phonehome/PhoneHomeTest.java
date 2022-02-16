@@ -59,6 +59,8 @@ import java.util.function.Function;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static com.hazelcast.test.Accessors.getNode;
+import static java.lang.Long.parseLong;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -502,13 +504,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         iMap1.put("key2", "phonehome");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
-                Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+                parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
 
         IMap<Object, Object> iMap2 = initialiseForMapStore("phonehome");
         iMap2.put("key3", "hazelcast");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
-                Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+                parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
     }
 
     @Test
@@ -522,13 +524,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         iMap1.get("key2");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
-                Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+                parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
 
         IMap<Object, Object> iMap2 = initialiseForMapStore("phonehome");
         iMap2.get("key3");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
-                Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+                parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
     }
 
     @Test
@@ -558,6 +560,43 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()), "1");
+    }
+
+    @Test
+    public void testMapMemoryCost() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertThat(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName())).isEqualTo("0");
+
+        node.hazelcastInstance.getMap("hazelcast").put("hazelcast", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        long oneMapMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
+        assertThat(oneMapMemoryCost).isGreaterThan(0);
+
+        node.hazelcastInstance.getMap("hazelcast2").put("hazelcast", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        long twoMapsMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
+        assertThat(twoMapsMemoryCost).isGreaterThan(oneMapMemoryCost);
+    }
+
+    @Test
+    public void testReplicatedMapMemoryCost() {
+        node.getConfig().getReplicatedMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.BINARY);
+        node.getConfig().getReplicatedMapConfig("hazelcast2").setInMemoryFormat(InMemoryFormat.BINARY);
+
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertThat(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName())).isEqualTo("0");
+
+        node.hazelcastInstance.getReplicatedMap("hazelcast").put("hazelcast", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        long oneMapMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
+        assertThat(oneMapMemoryCost).isGreaterThan(0);
+
+        node.hazelcastInstance.getReplicatedMap("hazelcast2").put("hazelcast", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        long twoMapsMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
+        assertThat(twoMapsMemoryCost).isGreaterThan(oneMapMemoryCost);
     }
 
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,

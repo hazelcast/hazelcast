@@ -19,8 +19,12 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 public class StorageInfoCollector implements MetricsCollector {
 
@@ -39,5 +43,14 @@ public class StorageInfoCollector implements MetricsCollector {
         boolean tieredStorageEnabled = config.getMapConfigs().values().stream()
                 .anyMatch(mapConfig -> mapConfig.getTieredStoreConfig().isEnabled());
         metricsConsumer.accept(PhoneHomeMetrics.TIERED_STORAGE_ENABLED, String.valueOf(tieredStorageEnabled));
+
+        MapService mapService = node.getNodeEngine().getService(MapService.SERVICE_NAME);
+        ReplicatedMapService replicatedMapService = node.getNodeEngine().getService(ReplicatedMapService.SERVICE_NAME);
+        long totalEntryMemoryCost = Stream.concat(
+                        mapService.getStats().values().stream(),
+                        replicatedMapService.getStats().values().stream()
+                ).map(LocalMapStats::getOwnedEntryMemoryCost)
+                .reduce(0L, Long::sum);
+        metricsConsumer.accept(PhoneHomeMetrics.DATA_MEMORY_COST, String.valueOf(totalEntryMemoryCost));
     }
 }
