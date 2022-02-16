@@ -16,15 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
@@ -68,7 +75,7 @@ final class UpdateLogicalRules {
                     HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
                     HazelcastTable hzTable = relTable.unwrap(HazelcastTable.class);
 
-                    List<RexNode> keyProjects = OptUtils.keyProjects(hzTable.getTarget(), hzTable.getProjects());
+                    List<RexNode> keyProjects = keyProjects(scan.getCluster().getRexBuilder(), hzTable.getTarget());
 
                     HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
                             relTable,
@@ -83,6 +90,19 @@ final class UpdateLogicalRules {
                             null,
                             -1
                     );
+                }
+
+                public List<RexNode> keyProjects(RexBuilder rexBuilder, Table table) {
+                    List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
+                    List<RexNode> res = new ArrayList<>(primaryKey.size());
+                    for (int i = 0; i < table.getFieldCount(); i++) {
+                        TableField field = table.getField(i);
+                        if (primaryKey.contains(field.getName())) {
+                            RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                            res.add(rexBuilder.makeInputRef(type, i));
+                        }
+                    }
+                    return res;
                 }
             };
 

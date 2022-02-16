@@ -108,10 +108,11 @@ public class HazelcastTable extends AbstractTable {
             Table target,
             Statistic statistic,
             @Nonnull List<RexNode> projects,
-            RelDataType relDataType,
-            @Nullable RexNode filter) {
+            RelDataType rowType,
+            @Nullable RexNode filter
+    ) {
         this(target, statistic, projects, filter);
-        rowType = relDataType;
+        this.rowType = rowType;
     }
 
     public HazelcastTable withProject(List<RexNode> projects, RelDataType relDataType) {
@@ -149,16 +150,12 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        // default row type was computed, the projection references only table fields
         if (rowType != null) {
             return rowType;
         }
 
         List<RexNode> projects = getProjects();
-
-        // default row type was computed, the projection references only table fields
-        if (rowType != null) {
-            return rowType;
-        }
 
         // projection contains expressions, need to compute
         hiddenFieldNames = new HashSet<>();

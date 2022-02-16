@@ -523,29 +523,16 @@ public final class OptUtils {
         });
     }
 
+    /**
+     * Same as {@link #inlineExpression(List, RexNode)}, but applied to all
+     * expressions in {@code exprs}.
+     */
     public static List<RexNode> inlineExpressions(List<RexNode> inlinedExpressions, List<RexNode> exprs) {
         List<RexNode> res = new ArrayList<>(exprs.size());
         for (RexNode expr : exprs) {
             res.add(inlineExpression(inlinedExpressions, expr));
         }
         return res;
-    }
-
-    // used in TableModify rules
-    public static List<RexNode> keyProjects(Table table, List<RexNode> projects) {
-        List<RexNode> keyProjects = new ArrayList<>();
-        Set<String> primaryKeys = new HashSet<>(SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table));
-        for (RexNode project : projects) {
-            // Only RexInputRef may be key project, if even exists.
-            if (project instanceof RexInputRef) {
-                RexInputRef rexInputRef = (RexInputRef) project;
-                String inputRefName = table.getField(rexInputRef.getIndex()).getName();
-                if (primaryKeys.contains(inputRefName)) {
-                    keyProjects.add(rexInputRef);
-                }
-            }
-        }
-        return keyProjects;
     }
 
     public static RelDataType computeRelDataType(List<RexNode> keyProjects) {
