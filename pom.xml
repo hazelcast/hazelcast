@@ -1289,6 +1289,16 @@
                     --illegal-access=deny
                 </javaModuleArgs>
             </properties>
+        </profile>
+
+        <profile>
+            <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!quick</name>
+                </property>
+                <jdk>[9,)</jdk>
+            </activation>
             <modules>
                 <module>modulepath-tests</module>
             </modules>

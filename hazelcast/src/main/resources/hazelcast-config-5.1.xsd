@@ -4193,20 +4193,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="persistence-file" type="xs:string" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Path for dynamic configuration persistence file. Dynamic changes will be
-                        persisted into this file. If not set, configuration file that was used to
-                        start Hazelcast (root configuration) will be used. If set, this file (the
-                        file specified in the persistence-file path) will be used for persisting
-                        dynamic changes instead of root configuration file. User should also do
-                        the following two: Create an XML or YAML file specified in this path and
-                        import this XML or YAML file to the root configuration. Path can be an
-                        absolute or relative path to the node startup directory.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="backup-dir" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>

@@ -997,7 +997,6 @@
 
     <dynamic-configuration>
         <persistence-enabled>true</persistence-enabled>
-        <persistence-file>/mnt/persistence-file</persistence-file>
         <backup-dir>/mnt/backup-dir</backup-dir>
         <backup-count>7</backup-count>
     </dynamic-configuration>

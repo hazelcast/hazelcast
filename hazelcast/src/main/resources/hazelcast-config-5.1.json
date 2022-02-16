@@ -3781,10 +3781,6 @@
           "type": "boolean",
           "description": "True if dynamic configuration persistence is enabled."
         },
-        "persistence-file": {
-          "type": "string",
-          "description": "Path for dynamic configuration persistence file. Dynamic changes will be persisted into this file. If not set, configuration file that was used to start Hazelcast (root configuration) will be used. If set, this file (the file specified in the persistence-file path) will be used for persisting dynamic changes instead of root configuration file. User should also do the following two: Create an XML or YAML file specified in this path and import this XML or YAML file to the root configuration. Path can be an absolute or relative path to the node startup directory."
-        },
         "backup-dir": {
           "type": "string",
           "description": "Directory for dynamic configuration persistence file backups. Each new backup will be created inside this directory. Can be an absolute or relative path to the node startup directory. If not set, new folder will be created at the node startup directory."

@@ -498,8 +498,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
             if (matches("persistence-enabled", name)) {
                 dynamicConfigurationConfig.setPersistenceEnabled(parseBoolean(getTextContent(n)));
-            } else if (matches("persistence-file", name)) {
-                dynamicConfigurationConfig.setPersistenceFile(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("backup-dir", name)) {
                 dynamicConfigurationConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("backup-count", name)) {
