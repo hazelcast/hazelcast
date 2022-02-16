@@ -262,7 +262,7 @@ public final class Processors {
      */
     @Nonnull
     public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return new ProcessorSuppliers.AccumulatePSupplier<>(aggrOp);
+        return new ProcessorSuppliers.AggregatePSupplier<>(aggrOp.withIdentityFinish());
     }
 
 
@@ -291,7 +291,7 @@ public final class Processors {
     public static <A, R> SupplierEx<Processor> combineP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return new ProcessorSuppliers.CombinePSupplier<>(aggrOp.withCombiningAccumulateFn(identity()));
+        return new ProcessorSuppliers.AggregatePSupplier<>(aggrOp.withCombiningAccumulateFn(identity()));
     }
 
     /**

@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
@@ -30,19 +29,19 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 public final class ProcessorSuppliers {
-    public static class AccumulatePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
+    public static class AggregatePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
         private AggregateOperation<A, R> aggrOp;
 
-        public AccumulatePSupplier() {
+        public AggregatePSupplier() {
         }
 
-        public AccumulatePSupplier(AggregateOperation<A, R> aggrOp) {
+        public AggregatePSupplier(AggregateOperation<A, R> aggrOp) {
             this.aggrOp = aggrOp;
         }
 
         @Override
         public Processor getEx() throws Exception {
-            return new AggregateP<>(aggrOp.withIdentityFinish());
+            return new AggregateP<>(aggrOp);
         }
 
         @Override
@@ -62,43 +61,7 @@ public final class ProcessorSuppliers {
 
         @Override
         public int getClassId() {
-            return JetDataSerializerHook.PROCESSORS_ACCUMULATE_P_SUPPLIER;
-        }
-    }
-
-    public static class CombinePSupplier<A, R> implements SupplierEx<Processor>, IdentifiedDataSerializable {
-        private AggregateOperation1<A, A, R> aarAggregateOperation;
-
-        public CombinePSupplier() {
-        }
-
-        public CombinePSupplier(AggregateOperation1<A, A, R> aarAggregateOperation) {
-            this.aarAggregateOperation = aarAggregateOperation;
-        }
-
-        @Override
-        public Processor getEx() throws Exception {
-            return new AggregateP<>(aarAggregateOperation);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(aarAggregateOperation);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            aarAggregateOperation = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetDataSerializerHook.FACTORY_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetDataSerializerHook.PROCESSORS_COMBINE_P_SUPPLIER;
+            return JetDataSerializerHook.PROCESSORS_AGGREGATE_P_SUPPLIER;
         }
     }
 

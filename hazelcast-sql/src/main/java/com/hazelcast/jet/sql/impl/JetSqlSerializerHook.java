@@ -62,13 +62,11 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_ACCUMULATE_FUNCTION = 15;
     public static final int AGGREGATE_COMBINE_FUNCTION = 16;
     public static final int AGGREGATE_EXPORT_FINISH_FUNCTION = 17;
-    public static final int AGGREGATE_COUNT_TT_SUPPLIER = 18;
-    public static final int AGGREGATE_COUNT_FF_SUPPLIER = 19;
-    public static final int AGGREGATE_COUNT_TF_SUPPLIER = 20;
-    public static final int AGGREGATE_SUM_SUPPLIER = 21;
-    public static final int AGGREGATE_AVG_SUPPLIER = 22;
+    public static final int AGGREGATE_SUM_SUPPLIER = 18;
+    public static final int AGGREGATE_AVG_SUPPLIER = 19;
+    public static final int AGGREGATE_COUNT_SUPPLIER = 20;
 
-    public static final int LEN = AGGREGATE_AVG_SUPPLIER + 1;
+    public static final int LEN = AGGREGATE_COUNT_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -101,14 +99,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
                 arg -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
         constructors[AGGREGATE_EXPORT_FINISH_FUNCTION] =
                 arg -> AggregateAbstractPhysicalRule.AggregateExportFinishFunction.INSTANCE;
-        constructors[AGGREGATE_COUNT_TT_SUPPLIER] =
-                arg -> AggregateAbstractPhysicalRule.AggregateCountTTSupplier.INSTANCE;
-        constructors[AGGREGATE_COUNT_FF_SUPPLIER] =
-                arg -> AggregateAbstractPhysicalRule.AggregateCountFFSupplier.INSTANCE;
-        constructors[AGGREGATE_COUNT_TF_SUPPLIER] =
-                arg -> AggregateAbstractPhysicalRule.AggregateCountTFSupplier.INSTANCE;
         constructors[AGGREGATE_SUM_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateSumSupplier();
         constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
+        constructors[AGGREGATE_COUNT_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCountSupplier();
 
         return new ArrayDataSerializableFactory(constructors);
     }

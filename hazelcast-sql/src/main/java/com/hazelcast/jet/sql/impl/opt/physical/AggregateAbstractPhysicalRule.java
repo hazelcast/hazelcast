@@ -76,15 +76,15 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                 case COUNT:
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
-                        aggregationProviders.add(AggregateCountTTSupplier.INSTANCE);
+                        aggregationProviders.add(new AggregateCountSupplier(true, true));
                         // getMaybeSerialized is safe for COUNT because the aggregation only looks whether it is null or not
                         valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
-                        aggregationProviders.add(AggregateCountTFSupplier.INSTANCE);
+                        aggregationProviders.add(new AggregateCountSupplier(true, false));
                         valueProviders.add(new RowGetMaybeSerializedFn(countIndex));
                     } else {
-                        aggregationProviders.add(AggregateCountFFSupplier.INSTANCE);
+                        aggregationProviders.add(new AggregateCountSupplier(false, false));
                         valueProviders.add(NullFunction.INSTANCE);
                     }
                     break;
@@ -204,24 +204,34 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static final class AggregateCountTFSupplier implements IdentifiedDataSerializable,
+    public static final class AggregateCountSupplier implements IdentifiedDataSerializable,
             SupplierEx<SqlAggregation> {
-        public static final AggregateCountTFSupplier INSTANCE = new AggregateCountTFSupplier();
+        private boolean ignoreNulls;
+        private boolean distinct;
 
-        private AggregateCountTFSupplier() {
+        public AggregateCountSupplier() {
+        }
+
+        public AggregateCountSupplier(boolean ignoreNulls, boolean distinct) {
+            this.ignoreNulls = ignoreNulls;
+            this.distinct = distinct;
         }
 
         @Override
         public SqlAggregation getEx() {
-            return CountSqlAggregations.from(true, false);
+            return CountSqlAggregations.from(ignoreNulls, distinct);
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeBoolean(ignoreNulls);
+            out.writeBoolean(distinct);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            ignoreNulls = in.readBoolean();
+            distinct = in.readBoolean();
         }
 
         @Override
@@ -231,69 +241,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_COUNT_TF_SUPPLIER;
-        }
-    }
-
-    public static final class AggregateCountFFSupplier implements IdentifiedDataSerializable,
-            SupplierEx<SqlAggregation> {
-        public static final AggregateCountFFSupplier INSTANCE = new AggregateCountFFSupplier();
-
-        private AggregateCountFFSupplier() {
-        }
-
-        @Override
-        public SqlAggregation getEx() {
-            return CountSqlAggregations.from(false, false);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_COUNT_FF_SUPPLIER;
-        }
-    }
-
-    public static final class AggregateCountTTSupplier implements IdentifiedDataSerializable,
-            SupplierEx<SqlAggregation> {
-        public static final AggregateCountTTSupplier INSTANCE = new AggregateCountTTSupplier();
-
-        private AggregateCountTTSupplier() {
-        }
-
-        @Override
-        public SqlAggregation getEx() {
-            return CountSqlAggregations.from(true, true);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_COUNT_TT_SUPPLIER;
+            return JetSqlSerializerHook.AGGREGATE_COUNT_SUPPLIER;
         }
     }
 
