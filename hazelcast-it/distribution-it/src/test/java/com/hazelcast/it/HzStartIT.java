@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class HzStartTest extends HazelcastTestSupport {
+public class HzStartIT extends HazelcastTestSupport {
 
     private Process process;
     private HazelcastInstance client;
@@ -54,6 +54,8 @@ public class HzStartTest extends HazelcastTestSupport {
                 .inheritIO();
         builder.environment().put("HZ_CLUSTERNAME", clusterName);
         builder.environment().put("JAVA_OPTS", "-Dhazelcast.phone.home.enabled=false");
+        // Remove classpath set by Maven
+        builder.environment().remove("CLASSPATH");
 
         process = builder.start();
         client = HazelcastClient.newHazelcastClient(new ClientConfig().setClusterName(clusterName));
