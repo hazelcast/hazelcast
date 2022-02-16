@@ -345,7 +345,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return super.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
@@ -867,6 +867,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public DeviceConfig getDeviceConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

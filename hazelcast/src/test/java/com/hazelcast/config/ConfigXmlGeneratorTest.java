@@ -39,6 +39,7 @@ import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
@@ -406,6 +407,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         LocalDeviceConfig localDeviceConfig0 = new LocalDeviceConfig()
                 .setName("null-device")
                 .setBaseDir(new File("null-dir").getAbsoluteFile())
+                .setCapacity(Capacity.of(6522, MemoryUnit.MEGABYTES))
                 .setBlockSize(512)
                 .setReadIOThreadCount(100)
                 .setWriteIOThreadCount(100);
@@ -413,6 +415,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         LocalDeviceConfig localDeviceConfig1 = new LocalDeviceConfig()
                 .setName("local-device")
                 .setBaseDir(new File("local-dir").getAbsoluteFile())
+                .setCapacity(Capacity.of(198719826236L, MemoryUnit.KILOBYTES))
                 .setBlockSize(1024)
                 .setReadIOThreadCount(200)
                 .setWriteIOThreadCount(200);
@@ -841,9 +844,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         // Since we don't have APIs of the form register(String) or register(String, String, String) in the
         // compact serialization config, when we read the config from XML/YAML, we store registered classes
         // in a different map.
-        Map<String, TriTuple<String, String, String>> namedRegistries = CompactSerializationConfigAccessor.getNamedRegistries(actual);
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
 
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : expected.getRegistries().entrySet()) {
+        Map<String, TriTuple<Class, String, CompactSerializer>> registrations
+                = CompactSerializationConfigAccessor.getRegistrations(actual);
+
+        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
             String key = entry.getKey();
             TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
             TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);

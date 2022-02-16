@@ -104,7 +104,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact("test");
         builder.setNullableBoolean("boolean", true);
         builder.setNullableInt8("byte", (byte) 4);
-        builder.setNullableint16("short", (short) 6);
+        builder.setNullableInt16("short", (short) 6);
         builder.setNullableInt32("int", 8);
         builder.setNullableInt64("long", 4444L);
         builder.setNullableFloat32("float", 8321.321F);
@@ -152,7 +152,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact("test");
         builder.setNullableBoolean("boolean", null);
         builder.setNullableInt8("byte", null);
-        builder.setNullableint16("short", null);
+        builder.setNullableInt16("short", null);
         builder.setNullableInt32("int", null);
         builder.setNullableInt64("long", null);
         builder.setNullableFloat32("float", null);
@@ -200,7 +200,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact(PrimitiveObject.class.getName());
         builder.setNullableBoolean("boolean_", true);
         builder.setNullableInt8("byte_", (byte) 2);
-        builder.setNullableint16("short_", (short) 4);
+        builder.setNullableInt16("short_", (short) 4);
         builder.setNullableInt32("int_", 8);
         builder.setNullableInt64("long_", 4444L);
         builder.setNullableFloat32("float_", 8321.321F);

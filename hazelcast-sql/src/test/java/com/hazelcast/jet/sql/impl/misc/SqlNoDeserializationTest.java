@@ -59,7 +59,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoDeserializationTest extends SqlTestSupport {
 
-    private static final int PORTABLE_FACTORY_ID = 1;
+    protected static final int PORTABLE_FACTORY_ID = 1;
     private static final int PORTABLE_KEY_ID = 1;
     private static final int PORTABLE_VALUE_ID = 2;
 
@@ -99,7 +99,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         return config;
     }
 
-    private static PortableFactory portableFactory() {
+    protected static PortableFactory portableFactory() {
         return classId -> {
             if (classId == PORTABLE_KEY_ID) {
                 return new PersonKey();

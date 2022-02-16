@@ -59,6 +59,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataValue2 = mapServiceContext.toData("value2");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
+        recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(LatestUpdateMergePolicy.class.getName());
@@ -78,6 +79,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntry), mergePolicy, CallerProvenance.NOT_WAN);
 
         assertEquals("value2", map.get("key"));
+        recordStore.afterOperation();
     }
 
     @Test
@@ -92,6 +94,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataValue2 = mapServiceContext.toData("value2");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
+        recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
@@ -103,6 +106,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntry), mergePolicy, CallerProvenance.NOT_WAN);
 
         assertEquals("value1", map.get("key"));
+        recordStore.afterOperation();
     }
 
     @Test
@@ -117,6 +121,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataValue2 = mapServiceContext.toData("value2");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
+        recordStore.beforeOperation();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PassThroughMergePolicy.class.getName());
@@ -128,6 +133,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntry), mergePolicy, CallerProvenance.NOT_WAN);
 
         assertEquals("value2", map.get("key"));
+        recordStore.afterOperation();
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {

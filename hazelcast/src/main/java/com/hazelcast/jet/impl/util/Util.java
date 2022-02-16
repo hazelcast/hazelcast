@@ -108,7 +108,8 @@ public final class Util {
             "  - Change member config using Java API: %s;\n" +
                     "  - Change XML/YAML configuration property: Set %s\n" +
                     "  - Add system property: %s\n" +
-                    "  - Add environment variable: %s";
+                    "  - Add environment variable: %s" +
+                    " (recommended when running container/docker image)";
 
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
             "To enable the Jet engine on the members, please do one of the following:\n" +

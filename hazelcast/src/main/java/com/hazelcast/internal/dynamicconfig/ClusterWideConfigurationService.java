@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -84,7 +85,6 @@ public class ClusterWideConfigurationService implements
         ConfigurationService,
         SplitBrainHandlerService {
 
-    public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
 
     // RU_COMPAT
@@ -211,12 +211,12 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public ConfigUpdateResult update() {
-        return update(null);
+    public ConfigUpdateResult update(@Nullable Config newConfig) {
+        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
     @Override
-    public ConfigUpdateResult update(@Nullable Config newConfig) {
+    public UUID updateAsync(String configPatch) {
         throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
     }
 
@@ -331,7 +331,7 @@ public class ClusterWideConfigurationService implements
         persist(newConfig);
     }
 
-    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
+    protected void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig, Object newConfig) {
         if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
             return;
         }

@@ -47,6 +47,8 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     private static ByteArrayOutputStream baos;
     private static PrintStream printStream;
+    private ConsoleApp consoleApp;
+    private HazelcastInstance hz;
 
     @BeforeClass
     public static void beforeClass() {
@@ -60,12 +62,13 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
+        hz = createHazelcastInstance();
+        consoleApp = new ConsoleApp(hz, printStream);
         resetSystemOut();
     }
 
     @Test
     public void executeOnKey() {
-        ConsoleApp consoleApp = new ConsoleApp(createHazelcastInstance(), printStream);
         for (int i = 0; i < 100; i++) {
             consoleApp.handleCommand(String.format("executeOnKey message%d key%d", i, i));
             assertTextInSystemOut("message" + i);
@@ -77,10 +80,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPut() {
-        HazelcastInstance hz = createHazelcastInstance();
         IMap<String, String> map = hz.getMap("default");
-
-        ConsoleApp consoleApp = new ConsoleApp(hz, printStream);
         assertEquals("Unexpected map size", 0, map.size());
 
         consoleApp.handleCommand("m.put putTestKey testValue");
@@ -100,8 +100,6 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapRemove() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz, printStream);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -117,8 +115,6 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapDelete() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz, printStream);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -134,8 +130,6 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapGet() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz, printStream);
         hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
         assertTextInSystemOut("testGetValue");
@@ -146,8 +140,6 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPutMany() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz, printStream);
         IMap<String, ?> map = hz.getMap("default");
         consoleApp.handleCommand("m.putmany 100 8 1000");
         assertEquals("Unexpected map size", 100, map.size());
@@ -159,9 +151,9 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     }
 
     /**
-     * Asserts that given substring in in standard output buffer. Calling this method resets the buffer.
+     * Asserts that given substring in standard output buffer. Calling this method resets the buffer.
      *
-     * @param substring
+     * @param substring a substring that asserted to be in stdout buffer
      */
     private void assertTextInSystemOut(String substring) {
         assertThat(resetSystemOut(), CoreMatchers.containsString(substring));

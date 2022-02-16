@@ -16,16 +16,27 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- *  Operation to fetch Map configuration.
+ * Operation to fetch Map configuration.
  */
 public class GetMapConfigOperation extends AbstractLocalOperation {
 
-    private String mapName;
+    private final String mapName;
     private MapConfig mapConfig;
 
     public GetMapConfigOperation(String mapName) {
@@ -35,11 +46,32 @@ public class GetMapConfigOperation extends AbstractLocalOperation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        mapConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapConfig readOnlyMapConfig = mapContainer.getMapConfig();
+        List<IndexConfig> indexConfigs = getIndexConfigsFromContainer(mapContainer);
+        if (indexConfigs.isEmpty()) {
+            mapConfig = readOnlyMapConfig;
+        } else {
+            MapConfig enrichedConfig = new MapConfig(readOnlyMapConfig);
+            enrichedConfig.setIndexConfigs(indexConfigs);
+            mapConfig = new MapConfigReadOnly(enrichedConfig);
+        }
     }
 
     @Override
     public Object getResponse() {
         return mapConfig;
+    }
+
+    private List<IndexConfig> getIndexConfigsFromContainer(MapContainer mapContainer) {
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes != null) {
+            return Arrays.stream(indexes.getIndexes())
+                    .map(InternalIndex::getConfig)
+                    .collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 }

@@ -36,7 +36,7 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%HAZELCAST_HOME%\lib\hazelcast-${project.version}.jar" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
 
 IF NOT "%JAVA_VERSION%" == "8" (
-	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports jdk.management/com.ibm.lang.management.internal=ALL_UNNAMED
 )
 
 REM HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
@@ -58,10 +58,6 @@ set JAVA_OPTS=%JAVA_OPTS%^
  "-Dhazelcast.logging.type=log4j2"^
  "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
  "-Dhazelcast.config=%HAZELCAST_HOME%\%HAZELCAST_CONFIG%"
-
-if "x%LOGGING_LEVEL%" == "x" (
-    set LOGGING_LEVEL=INFO
-)
 
 set "LOGGING_PATTERN=%%d [%%highlight{${LOG_LEVEL_PATTERN:-%%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%%style{%%t{1.}}{cyan}] [%%style{%%c{1.}}{blue}]: %%m%%n"
 

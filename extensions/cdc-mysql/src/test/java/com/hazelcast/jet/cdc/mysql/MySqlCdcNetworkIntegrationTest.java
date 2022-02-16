@@ -36,9 +36,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
@@ -75,9 +73,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
 
-    @Rule
-    public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
-
     @Parameter(value = 0)
     public RetryStrategy reconnectBehavior;
 
@@ -102,7 +97,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     public void ignoreOnJdk15OrHigher() throws SQLException {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
                         "https://github.com/hazelcast/hazelcast/issues/18800",
-                System.getProperty("java.version").matches("^1[56].*"));
+                System.getProperty("java.version").matches("^1[567].*"));
     }
 
     @After

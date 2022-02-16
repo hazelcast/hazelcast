@@ -351,7 +351,12 @@ class MapServiceContextImpl implements MapServiceContext {
         while (partitionIterator.hasNext()) {
             RecordStore partition = partitionIterator.next();
             if (predicate.test(partition)) {
-                partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                partition.beforeOperation();
+                try {
+                    partition.clearPartition(onShutdown, onRecordStoreDestroy);
+                } finally {
+                    partition.afterOperation();
+                }
                 partitionIterator.remove();
             }
         }

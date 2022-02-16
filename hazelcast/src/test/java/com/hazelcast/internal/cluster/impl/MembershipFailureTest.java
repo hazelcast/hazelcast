@@ -21,9 +21,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -64,6 +69,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_
 import static com.hazelcast.spi.properties.ClusterProperty.PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
@@ -333,15 +339,17 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void slave_receives_member_list_from_non_master() {
+    public void slave_receives_member_list_from_non_master() throws InterruptedException {
         String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)
                 .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        CountDownLatch latchSlave2 = new CountDownLatch(2);
+        CountDownLatch latchSlave3 = new CountDownLatch(2);
 
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
-        HazelcastInstance slave2 = newHazelcastInstance(config);
-        HazelcastInstance slave3 = newHazelcastInstance(config);
+        HazelcastInstance slave2 = newHazelcastInstance(getConfigWithLatchService(latchSlave2));
+        HazelcastInstance slave3 = newHazelcastInstance(getConfigWithLatchService(latchSlave3));
 
         assertClusterSize(4, master, slave3);
         assertClusterSizeEventually(4, slave1, slave2);
@@ -350,6 +358,26 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         dropOperationsFrom(slave1, F_ID, singletonList(HEARTBEAT));
         dropOperationsFrom(slave2, F_ID, singletonList(HEARTBEAT));
         dropOperationsFrom(slave3, F_ID, singletonList(HEARTBEAT));
+
+        // Wait until the max possible retries of send task completes:
+        // Properties of packet send task are as follows:
+        // MAX_RETRY_COUNT = 5 and DELAY_FACTOR = 100; so we need to wait
+        // for 1500 ms (100 + 200 + 300 + 400 + 500) to make sure that
+        // there are no unfiltered packets that are trying to be sent
+        // remaining.
+        sleepMillis(1500);
+        // To make sure that there is not pending/remaining heartbeat operations left in slave2
+        // and slave3, we're sending new urgent operations to these members that will be processed
+        // after those remaining heartbeats and then waiting for them to be processed.
+        OperationService masterOperationService = getOperationService(master);
+        masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
+        masterOperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
+        OperationService slave1OperationService = getOperationService(slave1);
+        slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave2).address);
+        slave1OperationService.send(new UrgentOperationAwaitOn(), getNode(slave3).address);
+
+        latchSlave2.await();
+        latchSlave3.await();
 
         suspectMember(slave2, master);
         suspectMember(slave2, slave1);
@@ -896,5 +924,47 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     Collection<HazelcastInstance> getAllHazelcastInstances() {
         return factory.getAllHazelcastInstances();
+    }
+
+    private static class LatchService {
+        static final String SERVICE_NAME = "latch-service";
+
+        final CountDownLatch latch;
+
+        private LatchService(CountDownLatch latch) {
+            this.latch = latch;
+        }
+    }
+
+    private static class UrgentOperationAwaitOn extends Operation implements UrgentSystemOperation {
+        @Override
+        public void run() throws Exception {
+            LatchService service = getService();
+            service.latch.countDown();
+            getLogger().info("Count down on latch");
+        }
+
+        @Override
+        public String getServiceName() {
+            return LatchService.SERVICE_NAME;
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+    }
+
+    private Config getConfigWithLatchService(CountDownLatch latch) {
+        String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
+        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)
+                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        LatchService latchService = new LatchService(latch);
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                .setName(LatchService.SERVICE_NAME).setImplementation(latchService);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
+        return config;
     }
 }

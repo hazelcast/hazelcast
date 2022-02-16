@@ -134,6 +134,7 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
             this.name = defaultConfig.getClass().getName();
         }
 
+        @SuppressWarnings("checkstyle:NestedIfDepth")
         void populateChildren() throws Exception {
             Class<?> clazz = defaultConfig.getClass();
             for (Method method : clazz.getDeclaredMethods()) {
@@ -160,16 +161,26 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
                             constructor.setAccessible(true);
                             child = new ConfigNode(constructor.newInstance(randomString), childInitialConfig, this);
                         } else if (method.getParameterCount() == 2) {
-                            // Only QueryCacheConfig enters here
-                            String randomString1 = randomString(); // Map name
-                            String randomString2 = randomString(); // Cache name
-                            childInitialConfig = method.invoke(this.defaultConfig, randomString1, randomString2);
-                            if (childInitialConfig == null) {
-                                continue;
+                            if (method.getName().endsWith("getDeviceConfig")) {
+                                childInitialConfig = method.invoke(this.defaultConfig, DeviceConfig.class, randomString());
+                                if (childInitialConfig == null) {
+                                    continue;
+                                }
+                                Constructor<?> constructor = childInitialConfig.getClass().getDeclaredConstructor();
+                                constructor.setAccessible(true);
+                                child = new ConfigNode(constructor.newInstance(), childInitialConfig, this);
+                            } else {
+                                // Only QueryCacheConfig enters here
+                                String randomString1 = randomString(); // Map name
+                                String randomString2 = randomString(); // Cache name
+                                childInitialConfig = method.invoke(this.defaultConfig, randomString1, randomString2);
+                                if (childInitialConfig == null) {
+                                    continue;
+                                }
+                                Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
+                                constructor.setAccessible(true);
+                                child = new ConfigNode(constructor.newInstance(randomString2), childInitialConfig, this);
                             }
-                            Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
-                            constructor.setAccessible(true);
-                            child = new ConfigNode(constructor.newInstance(randomString2), childInitialConfig, this);
                         } else {
                             LOGGER.warning(method.getReturnType().getCanonicalName()
                                     + " (Child of " + name + ") is called from " + method.getName()

@@ -265,13 +265,22 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    public <T> boolean checkStaticConfigDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
-        Object existingConfiguration = staticConfigurations.get(configName);
-        if (existingConfiguration != null && !existingConfiguration.equals(newConfig)) {
+    public static <T> boolean checkStaticConfigDoesNotExist(
+            Map<String, T> staticConfigurations,
+            String configName,
+            T newConfig
+    ) {
+        T existingConfiguration = staticConfigurations.get(configName);
+        return checkStaticConfigDoesNotExist(existingConfiguration, newConfig);
+    }
+
+    // be careful to not use this method with get*Config as it creates the config if not found
+    public static <T> boolean checkStaticConfigDoesNotExist(T oldConfig, T newConfig) {
+        if (oldConfig != null && !oldConfig.equals(newConfig)) {
             throw new InvalidConfigurationException("Cannot add a new dynamic configuration " + newConfig
-                    + " as static configuration already contains " + existingConfiguration);
+                    + " as static configuration already contains " + oldConfig);
         }
-        return existingConfiguration == null;
+        return oldConfig == null;
     }
 
     public Config getStaticConfig() {
@@ -862,7 +871,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        return staticConfig.addWanReplicationConfig(wanReplicationConfig);
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
@@ -993,6 +1002,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public DeviceConfig getDeviceConfig(String name) {
         return staticConfig.getDeviceConfig(name);
+    }
+
+    @Override
+    public <T extends DeviceConfig> T getDeviceConfig(Class<T> clazz, String name) {
+        return staticConfig.getDeviceConfig(clazz, name);
     }
 
     @Override

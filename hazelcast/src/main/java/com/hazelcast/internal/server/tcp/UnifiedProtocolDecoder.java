@@ -47,6 +47,7 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
@@ -80,7 +81,7 @@ public class UnifiedProtocolDecoder
 
     @Override
     public HandlerStatus onRead() throws Exception {
-        src.flip();
+        upcast(src).flip();
 
         try {
             if (src.remaining() < PROTOCOL_LENGTH) {
@@ -109,7 +110,8 @@ public class UnifiedProtocolDecoder
                             + "config.getNetworkConfig().getRestApiConfig().setEnabled(true);\n"
                             + "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true\n"
                             + "- Add system property: -Dhz.network.rest-api.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true");
+                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true"
+                            + " (recommended when running container/docker image)");
                 }
                 initChannelForText(protocol, true);
             } else if (MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
@@ -122,7 +124,8 @@ public class UnifiedProtocolDecoder
                             + "- Change XML/YAML configuration property: "
                             + "hazelcast.network.memcache-protocol.enabled to true\n"
                             + "- Add system property: -Dhz.network.memcache-protocol.enabled=true\n"
-                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true");
+                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true"
+                            + " (recommended when running container/docker image)");
                 }
                 // text doesn't have a protocol; anything that isn't cluster/client protocol will be interpreted as txt.
                 initChannelForText(protocol, false);

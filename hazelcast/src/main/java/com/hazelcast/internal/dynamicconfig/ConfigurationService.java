@@ -37,6 +37,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dynamic configurations.
@@ -47,6 +48,8 @@ import java.util.Map;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface ConfigurationService {
+
+    String SERVICE_NAME = "hz:configurationService";
 
     /**
      * Registers a dynamic configurations to all cluster members.
@@ -90,7 +93,23 @@ public interface ConfigurationService {
      *
      * @return update result which includes added and ignored configurations
      */
-    ConfigUpdateResult update();
+    default ConfigUpdateResult update() {
+        return update(null);
+    }
+
+    /**
+     * Starts a configuration update process asynchronously. Updates the configuration with the given configuration. Updating
+     * means dynamically changing all the differences dynamically changeable.
+     *
+     * @param configPatch string representation of the config patch, to find any new dynamically changeable sub configs
+     * @return the unique identifier of the config update process. The MC Events emitted during the process will have the same
+     * {@link com.hazelcast.internal.management.events.AbstractConfigUpdateEvent#getConfigUpdateProcessId()}.
+     */
+    UUID updateAsync(String configPatch);
+
+    default UUID updateAsync() {
+        return updateAsync(null);
+    }
 
     /**
      * Finds existing Multimap config.

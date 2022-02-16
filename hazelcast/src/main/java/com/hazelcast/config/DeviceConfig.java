@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.memory.Capacity;
+
 /**
  * Device configuration for the Tiered-Store
  *
@@ -27,4 +29,9 @@ public interface DeviceConfig extends NamedConfig {
      * otherwise, returns {@code false} if this configuration is for a remote device.
      */
     boolean isLocal();
+
+    /**
+     * Returns the device capacity.
+     */
+    Capacity getCapacity();
 }

@@ -54,7 +54,6 @@ public class ClientProxyDestroyTest {
         client = hazelcastFactory.newHazelcastClient();
     }
 
-
     @Test
     public void testUsageAfterDestroy() {
         ISet proxy = newClientProxy();
