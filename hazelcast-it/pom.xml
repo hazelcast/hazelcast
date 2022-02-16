@@ -31,7 +31,6 @@
     <description>Hazelcast Integration Tests</description>
 
     <modules>
-        <module>distribution-it</module>
         <!-- See other modules in profiles -->
     </modules>
 
@@ -55,6 +54,12 @@
             </activation>
             <modules>
                 <module>jdk17-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>nightly-build</id>
+            <modules>
+                <module>distribution-it</module>
             </modules>
         </profile>
     </profiles>
