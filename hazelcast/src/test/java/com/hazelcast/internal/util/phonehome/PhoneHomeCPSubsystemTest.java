@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,7 +53,8 @@ public class PhoneHomeCPSubsystemTest extends HazelcastTestSupport {
     @Test
     public void testCPSubsystemEnabled() {
         Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals("true", parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()));
+        assertThat(parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName())).isEqualTo("true");
+        assertThat(parameters.get(PhoneHomeMetrics.CP_MEMBERS_COUNT.getRequestParameterName())).isEqualTo("3");
         // no groups are created w/o CP data structures
         assertThat(parameters.get(PhoneHomeMetrics.CP_GROUPS_COUNT.getRequestParameterName())).isEqualTo("0");
     }

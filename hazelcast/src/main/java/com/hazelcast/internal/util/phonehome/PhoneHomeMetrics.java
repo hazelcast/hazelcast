@@ -154,6 +154,7 @@ public enum PhoneHomeMetrics {
 
     //CP SUBSYSTEM METRICS
     CP_SUBSYSTEM_ENABLED("cp"),
+    CP_MEMBERS_COUNT("cpmc"),
     CP_GROUPS_COUNT("cpgct"),
     CP_SEMAPHORES_COUNT("cpsect"),
     CP_COUNTDOWN_LATCHES_COUNT("cpclct"),

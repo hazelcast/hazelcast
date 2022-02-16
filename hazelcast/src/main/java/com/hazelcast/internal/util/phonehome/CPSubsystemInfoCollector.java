@@ -34,6 +34,8 @@ public class CPSubsystemInfoCollector implements MetricsCollector {
         boolean cpSubsystemEnabled = cpMemberCount != 0;
         metricsConsumer.accept(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED, String.valueOf(cpSubsystemEnabled));
         if (cpSubsystemEnabled) {
+            metricsConsumer.accept(PhoneHomeMetrics.CP_MEMBERS_COUNT, String.valueOf(cpMemberCount));
+
             RaftService raftService = node.getNodeEngine().getService(RaftService.SERVICE_NAME);
             int groupsCount = raftService.getMetadataGroupManager().getGroupIds().size();
             metricsConsumer.accept(PhoneHomeMetrics.CP_GROUPS_COUNT, String.valueOf(groupsCount));
