@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
@@ -827,23 +828,24 @@ public final class IndexResolver {
         }
         List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
+        // Extract those projections that are direct input field references. Only those can be used
+        // for index access
+        List<Integer> fieldProjects = table.getProjects()
+                .stream().filter(expr -> expr instanceof RexInputRef)
+                .map(inputRef -> ((RexInputRef) inputRef).getIndex())
+                .collect(Collectors.toList());
 
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
-            boolean found = false;
-            for (int idx = 0; idx < table.getProjects().size() && !found; idx++) {
-                // Only a direct field reference may be indexed
-                RexNode project = table.getProjects().get(idx);
-                if (project instanceof RexInputRef && indexFieldOrdinal == ((RexInputRef) project).getIndex()) {
-                    Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
-                    RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
-                    fields.add(fieldCollation);
-                }
-            }
-            if (!found) {
+            int remappedIndexFieldOrdinal = fieldProjects.indexOf(indexFieldOrdinal);
+            if (remappedIndexFieldOrdinal == -1) {
+                // The field is not used in the query
                 break;
             }
+            Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
+            RelFieldCollation fieldCollation = new RelFieldCollation(remappedIndexFieldOrdinal, direction);
+            fields.add(fieldCollation);
         }
 
         return RelCollations.of(fields);
