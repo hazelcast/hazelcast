@@ -39,7 +39,6 @@ import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.tools.RelBuilder;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
@@ -121,35 +120,6 @@ final class WatermarkRules {
                     logicalWatermark.watermarkedColumnIndex()
             );
             call.transformTo(rel);
-        }
-    };
-
-    /**
-     * Push down {@link WatermarkLogicalRel} into {@link
-     * FullScanLogicalRel}, if one is its input.
-     */
-    static final RelOptRule WATERMARK_INTO_SCAN_INSTANCE_OVER_PROJECT = new RelOptRule(
-            operand(WatermarkLogicalRel.class, operand(ProjectLogicalRel.class, operand(FullScanLogicalRel.class, none()))),
-            WatermarkRules.class.getSimpleName() + "(Watermark Over Project Into Scan)"
-    ) {
-        @Override
-        public void onMatch(RelOptRuleCall call) {
-            WatermarkLogicalRel logicalWatermark = call.rel(0);
-            ProjectLogicalRel logicalProject = call.rel(1);
-            FullScanLogicalRel logicalScan = call.rel(2);
-
-            RelNode newScanRel = new FullScanLogicalRel(
-                    logicalWatermark.getCluster(),
-                    logicalWatermark.getTraitSet(),
-                    logicalScan.getTable(),
-                    logicalWatermark.eventTimePolicyProvider(),
-                    logicalWatermark.watermarkedColumnIndex()
-            );
-
-            final RelBuilder relBuilder = call.builder();
-            relBuilder.push(newScanRel).project(logicalProject.getProjects(), logicalProject.getRowType().getFieldNames());
-
-            call.transformTo(relBuilder.build());
         }
     };
 

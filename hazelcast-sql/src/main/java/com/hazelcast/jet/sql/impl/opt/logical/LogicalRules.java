@@ -47,7 +47,6 @@ public final class LogicalRules {
                 CoreRules.PROJECT_FILTER_TRANSPOSE,
                 ProjectIntoScanLogicalRule.INSTANCE,
 
-
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
@@ -56,8 +55,6 @@ public final class LogicalRules {
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
-//                WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE_OVER_PROJECT,
-//                ProjectWatermarkTransposeRule.WATERMARK_PROJECT_TRANSPOSE,
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Aggregate rules
@@ -90,7 +87,6 @@ public final class LogicalRules {
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRules.INSTANCE,
-//                UpdateLogicalRules.FILTER_INSTANCE,
                 UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 

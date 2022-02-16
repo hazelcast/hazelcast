@@ -36,7 +36,7 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
  * or
  * <blockquote><code>SELECT this + 1 FROM map WHERE __key = 1</code></blockquote>
  * <p>
- * Such SELECT is translated to optimized, direct key {@code IMap} operation
+ * Such SELECT is translated to optimized, direct-key {@code IMap} operation
  * which does not involve starting any job.
  */
 final class SelectByKeyMapLogicalRules {
