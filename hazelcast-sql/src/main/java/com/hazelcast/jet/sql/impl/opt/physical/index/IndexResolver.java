@@ -810,16 +810,18 @@ public final class IndexResolver {
     }
 
     /**
-     * Builds a collation with collation fields re-mapped according with the table projects
+     * Builds a collation with collation fields re-mapped according to the table projections.
      *
      * @param scan  the logical map scan
      * @param index the index
      * @param ascs  the collation of index fields
      * @return the new collation trait
      */
-    private static RelCollation buildCollationTrait(FullScanLogicalRel scan,
-                                                    MapTableIndex index,
-                                                    List<Boolean> ascs) {
+    private static RelCollation buildCollationTrait(
+            FullScanLogicalRel scan,
+            MapTableIndex index,
+            List<Boolean> ascs
+    ) {
         if (index.getType() != SORTED) {
             return RelCollations.of(Collections.emptyList());
         }
@@ -830,20 +832,20 @@ public final class IndexResolver {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
             // TODO: it is optimizable, optimize later.
-            int idx = 0;
-            for (RexNode project : table.getProjects()) {
-                // Only direct field reference may be indexed
-                if (project instanceof RexInputRef) {
-                    RexInputRef ref = (RexInputRef) project;
-                    if (indexFieldOrdinal == ref.getIndex()) {
-                        Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
-                        RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
-                        fields.add(fieldCollation);
-                    }
+            for (int idx = 0; idx < table.getProjects().size(); i++) {
+                // Only a direct field reference may be indexed
+                RexNode project = table.getProjects().get(i);
+                if (project instanceof RexInputRef && indexFieldOrdinal == ((RexInputRef) project).getIndex()) {
+                    Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
+                    RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
+                    fields.add(fieldCollation);
+                    // don't search for more instances, for now use only the first occurrence
+                    break;
                 }
-                ++idx;
             }
         }
+
+        assert index.getFieldOrdinals().size() == fields.size();
 
         return RelCollations.of(fields);
     }

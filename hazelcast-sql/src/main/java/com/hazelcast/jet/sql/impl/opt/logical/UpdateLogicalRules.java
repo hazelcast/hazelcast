@@ -36,11 +36,8 @@ import static org.apache.calcite.plan.RelOptRule.operandJ;
 // once joins are there we need to create complementary rule
 final class UpdateLogicalRules {
 
-    private UpdateLogicalRules() {
-    }
-
-    @SuppressWarnings({"checkstyle:anoninnerlength", "checkstyle:DeclarationOrder"})
-    static final RelOptRule INSTANCE =
+    @SuppressWarnings("checkstyle:anoninnerlength")
+    static final RelOptRule SCAN_INSTANCE =
             new RelOptRule(
                     operandJ(
                             TableModifyLogicalRel.class, LOGICAL, TableModify::isUpdate,
@@ -89,10 +86,12 @@ final class UpdateLogicalRules {
                 }
             };
 
-    // no-updates case, i.e. '... WHERE __key = 1 AND __key = 2'
+    // Calcite replaces the table scan with empty VALUES when the WHERE clause
+    // is always false
+    // i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule NOOP_INSTANCE =
+    static final RelOptRule VALUES_INSTANCE =
             new RelOptRule(
                     operandJ(
                             TableModifyLogicalRel.class, null, TableModify::isUpdate,
@@ -118,4 +117,7 @@ final class UpdateLogicalRules {
                     call.transformTo(rel);
                 }
             };
+
+    private UpdateLogicalRules() {
+    }
 }
