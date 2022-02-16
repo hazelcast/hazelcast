@@ -70,7 +70,6 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -549,7 +548,6 @@ public final class OptUtils {
         return keyProjects;
     }
 
-    @NotNull
     public static RelDataType computeRelDataType(List<RexNode> keyProjects) {
         List<RelDataTypeField> fields = new ArrayList<>();
         int idx = 0;
