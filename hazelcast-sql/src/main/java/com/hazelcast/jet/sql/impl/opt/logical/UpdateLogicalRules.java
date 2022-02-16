@@ -76,8 +76,8 @@ final class UpdateLogicalRules {
                     HazelcastTable hzTable = relTable.unwrap(HazelcastTable.class);
 
                     List<RexNode> keyProjects = keyProjects(scan.getCluster().getRexBuilder(), hzTable.getTarget());
-                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(relTable, hzTable.withProject(keyProjects, null),
-                            scan.getCluster().getTypeFactory());
+                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(relTable,
+                            hzTable.withProject(keyProjects, null), scan.getCluster().getTypeFactory());
 
                     return new FullScanLogicalRel(
                             scan.getCluster(),
