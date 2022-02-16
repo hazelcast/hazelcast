@@ -99,10 +99,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             throw QueryException.error("SQL/JSON path expression cannot be null");
         }
 
-        // needed for further checks, can be a dynamic expression, therefore can not be inlined as part of function args
-        final Object defaultOnEmpty = operands[2].eval(row, context);
-        final Object defaultOnError = operands[3].eval(row, context);
-
         final Object operand0 = operands[0].eval(row, context);
         String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
@@ -126,11 +122,11 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         try {
             resultColl = JsonPathUtil.read(json, jsonPath);
         } catch (Exception e) {
-            return onErrorResponse(e, defaultOnError);
+            return onErrorResponse(e, row, context);
         }
 
         if (resultColl.isEmpty()) {
-            return onEmptyResponse(defaultOnEmpty);
+            return onEmptyResponse(row, context);
         }
 
         if (resultColl.size() > 1) {
@@ -139,7 +135,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
         Object onlyResult = resultColl.iterator().next();
         if (JsonPathUtil.isArrayOrObject(onlyResult)) {
-            return onErrorResponse(QueryException.error("Result of JSON_VALUE cannot be array or object"), defaultOnError);
+            return onErrorResponse(QueryException.error("Result of JSON_VALUE cannot be array or object"), row, context);
         }
         @SuppressWarnings("unchecked")
         T result = (T) convertResultType(onlyResult);
@@ -147,12 +143,12 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     }
 
     @SuppressWarnings("unchecked")
-    private T onEmptyResponse(Object defaultValue) {
+    private T onEmptyResponse(final Row row, final ExpressionEvalContext context) {
         switch (onEmpty) {
             case ERROR:
                 throw QueryException.error("JSON_VALUE evaluated to no value");
             case DEFAULT:
-                return (T) defaultValue;
+                return (T) operands[2].eval(row, context);
             case NULL:
             default:
                 return null;
@@ -160,7 +156,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     }
 
     @SuppressWarnings("unchecked")
-    private T onErrorResponse(Exception exception, Object defaultValue) {
+    private T onErrorResponse(Exception exception, final Row row, final ExpressionEvalContext context) {
         switch (onError) {
             case ERROR:
                 // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
@@ -169,7 +165,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 LOGGER.fine("JSON_VALUE failed", exception);
                 throw QueryException.error("JSON_VALUE failed: " + exception);
             case DEFAULT:
-                return (T) defaultValue;
+                return (T) operands[3].eval(row, context);
             case NULL:
             default:
                 return null;

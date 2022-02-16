@@ -37,9 +37,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -277,6 +280,56 @@ public class JsonValueFunctionIntegrationTest extends SqlJsonTestSupport {
                 rows(1, LocalTime.of(13, 0, 0)));
         assertRowsAnyOrder("SELECT JSON_VALUE(this, '$[3]' RETURNING TIMESTAMP WITH TIME ZONE) FROM test",
                 rows(1, OffsetDateTime.of(2020, 1, 1, 13, 0, 0, 0, ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void test_defaultOnEmptyExp() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, json(""));
+        test.put(2L, json("[1,2,"));
+        createMapping("test", "bigint", "json");
+
+        assertEquals(2L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+    }
+
+    @Test
+    public void test_defaultOnErrorExp() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, json(""));
+        test.put(2L, json("[1,2,"));
+        createMapping("test", "bigint", "json");
+
+        assertEquals(3L, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT __key + 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertEquals((byte) 5, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT abs(5-10) ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertEquals("undefined", querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 'undefined' ON ERROR) AS c1 FROM test WHERE __key = 2"));
+    }
+
+    @Test
+    public void test_defaultOnEmptyNonDeterministicExp() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, json(""));
+        test.put(2L, json(""));
+        createMapping("test", "bigint", "json");
+
+        List<Map<String, Object>> results =
+            query("SELECT __key, JSON_VALUE(this, '$' DEFAULT rand() ON EMPTY) AS c1 FROM test");
+        assertNotEquals("results of non-deterministic function rand() should differ for each row",
+            results.get(0).values().iterator().next(), results.get(1).values().iterator().next());
+    }
+
+    @Test
+    public void test_defaultOnErrorNonDeterministicExp() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, json("[1"));
+        test.put(2L, json("[2"));
+        createMapping("test", "bigint", "json");
+
+        List<Map<String, Object>> results =
+            query("SELECT __key, JSON_VALUE(this, '$' DEFAULT rand() ON ERROR) AS c1 FROM test");
+        assertNotEquals("results of non-deterministic function rand() should differ for each row",
+            results.get(0).values().iterator().next(), results.get(1).values().iterator().next());
     }
 
     private void initMultiTypeObject() {

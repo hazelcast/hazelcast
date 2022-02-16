@@ -45,6 +45,10 @@ public class RandFunction extends UniExpression<Double> implements IdentifiedDat
 
     @Override
     public Double eval(Row row, ExpressionEvalContext context) {
+        // We intentionally emulate `column-dependence` here. This function is non-deterministic
+        // and, we want to prevent an optimization to early evaluated constant and further re-usage.
+        row.get(0);
+
         Long seed = operand != null ? MathFunctionUtils.asBigint(operand, row, context) : null;
 
         Random random = seed != null ? new Random(seed) : ThreadLocalRandom.current();

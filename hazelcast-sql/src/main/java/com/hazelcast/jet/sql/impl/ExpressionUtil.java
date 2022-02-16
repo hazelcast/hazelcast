@@ -20,6 +20,7 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -210,4 +211,16 @@ public final class ExpressionUtil {
     ) {
         return expression.evalTop(row, context);
     }
+
+    /**
+     * Try to evaluate and reduce the given {@param expression} to constant assuming that it
+     * does not depend on row and evaluation contexts. Returns constant expression with the same type as the
+     * given one if succeeded, otherwise returns {@code null}.
+     */
+    public static ConstantExpression<?> evaluateToConst(
+        @Nonnull Expression<?> expression
+    ) {
+        return ExpressionConstEvaluator.evaluate(expression);
+    }
+
 }

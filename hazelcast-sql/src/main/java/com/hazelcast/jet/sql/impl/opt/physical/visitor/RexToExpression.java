@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
+
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.expression.Range;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
@@ -465,6 +467,14 @@ public final class RexToExpression {
                     final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
                     final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
 
+                    if (onEmpty == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        tryEvaluateToConst(operands, 2);
+                    }
+
+                    if (onError == SqlJsonValueEmptyOrErrorBehavior.DEFAULT) {
+                        tryEvaluateToConst(operands, 3);
+                    }
+
                     return JsonValueFunction.create(
                             operands[0],
                             operands[1],
@@ -696,6 +706,13 @@ public final class RexToExpression {
                 return ExtractField.YEAR;
             default:
                 throw new UnsupportedOperationException("Unsupported field " + field + " for EXTRACT");
+        }
+    }
+
+    private static void tryEvaluateToConst(Expression<?>[] operands, int index) {
+        Expression<?> constExpression = ExpressionUtil.evaluateToConst(operands[index]);
+        if (constExpression != null) {
+            operands[index] = constExpression;
         }
     }
 }
