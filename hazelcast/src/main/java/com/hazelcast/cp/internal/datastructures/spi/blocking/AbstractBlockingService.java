@@ -274,8 +274,8 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     public int getTotalResourcesCount() {
         return registries.values().stream()
-                .map(collection -> collection.resources.size())
-                .reduce(0, Integer::sum);
+                .mapToInt(collection -> collection.resources.size())
+                .sum();
     }
 
     protected final RR getOrInitRegistry(CPGroupId groupId) {

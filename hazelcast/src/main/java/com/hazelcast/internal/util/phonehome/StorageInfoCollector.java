@@ -49,8 +49,8 @@ public class StorageInfoCollector implements MetricsCollector {
         long totalEntryMemoryCost = Stream.concat(
                         mapService.getStats().values().stream(),
                         replicatedMapService.getStats().values().stream()
-                ).map(LocalMapStats::getOwnedEntryMemoryCost)
-                .reduce(0L, Long::sum);
+                ).mapToLong(LocalMapStats::getOwnedEntryMemoryCost)
+                .sum();
         metricsConsumer.accept(PhoneHomeMetrics.DATA_MEMORY_COST, String.valueOf(totalEntryMemoryCost));
     }
 }
