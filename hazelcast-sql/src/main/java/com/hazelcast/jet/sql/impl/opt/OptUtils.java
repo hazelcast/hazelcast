@@ -52,10 +52,6 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
-import org.apache.calcite.rel.type.RelRecordType;
-import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -533,19 +529,5 @@ public final class OptUtils {
             res.add(inlineExpression(inlinedExpressions, expr));
         }
         return res;
-    }
-
-    public static RelDataType computeRelDataType(List<RexNode> keyProjects) {
-        List<RelDataTypeField> fields = new ArrayList<>();
-        int idx = 0;
-        for (RexNode keyProject : keyProjects) {
-            RexInputRef inputRef = (RexInputRef) keyProject;
-            RelDataTypeField fieldType = new RelDataTypeFieldImpl(
-                    inputRef.getName(), idx, inputRef.getType()
-            );
-            fields.add(idx++, fieldType);
-        }
-        RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
-        return relDataType;
     }
 }
