@@ -143,6 +143,9 @@ public enum PhoneHomeMetrics {
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
 
+    // DYNAMIC CONFIG PERSISTENCE
+    DYNAMIC_CONFIG_PERSISTENCE_ENABLED("dcpe"),
+
     // STORAGE METRICS
     HD_MEMORY_ENABLED("hdme"),
     MEMORY_USED_HEAP_SIZE("mhs"),
@@ -177,6 +180,11 @@ public enum PhoneHomeMetrics {
     REST_QUEUE_DELETE_FAILURE("restqueuedeletefail"),
     REST_QUEUE_TOTAL_REQUEST_COUNT("restqueuerequestct"),
     REST_ACCESSED_QUEUE_COUNT("restqueuect"),
+
+    REST_CONFIG_UPDATE_SUCCESS("restconfigupdatesucc"),
+    REST_CONFIG_UPDATE_FAILURE("restconfigupdatefail"),
+    REST_CONFIG_RELOAD_SUCCESS("restconfigreloadsucc"),
+    REST_CONFIG_RELOAD_FAILURE("restconfigreloadfail"),
 
     REST_REQUEST_COUNT("restrequestct"),
     REST_UNIQUE_REQUEST_COUNT("restuniqrequestct");

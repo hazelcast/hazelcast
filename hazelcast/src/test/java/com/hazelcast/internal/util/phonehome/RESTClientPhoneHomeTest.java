@@ -66,9 +66,12 @@ public class RESTClientPhoneHomeTest {
 
     private HTTPCommunicator http;
 
+    private Config config;
+
     @Before
     public void setUp() {
-        instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
+        config = createConfigWithRestEnabled();
+        instance = factory.newHazelcastInstance(config);
         http = new HTTPCommunicator(instance);
         stubFor(post(urlPathEqualTo("/ping")).willReturn(aResponse().withStatus(200)));
     }
@@ -146,6 +149,22 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restqueuedeletefail", "1"))
                 .withRequestBody(containingParam("restqueuegetsucc", "2"))
                 .withRequestBody(containingParam("restqueuect", "1"))
+        );
+    }
+
+    @Test
+    public void configUpdateOperations() throws IOException {
+        http.configReload(config.getClusterName(), "");
+        http.configUpdate(config.getClusterName(), "", "hazelcast:\n");
+
+        PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:8080/ping");
+        phoneHome.phoneHome(false);
+
+        verify(1, postRequestedFor(urlPathEqualTo("/ping"))
+                .withRequestBody(containingParam("restconfigreloadsucc", "0"))
+                .withRequestBody(containingParam("restconfigreloadfail", "1"))
+                .withRequestBody(containingParam("restconfigupdatesucc", "0"))
+                .withRequestBody(containingParam("restconfigupdatefail", "1"))
         );
     }
 

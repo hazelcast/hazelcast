@@ -143,6 +143,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()), "true");
         assertEquals(parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()), "false");
         assertEquals(parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()), "false");
+        assertEquals(parameters.get(PhoneHomeMetrics.DYNAMIC_CONFIG_PERSISTENCE_ENABLED.getRequestParameterName()), "false");
     }
 
     @Test
@@ -466,23 +467,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapGetLatencyWithoutMapStore() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), "-1");
-
-        IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
-        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
-        localMapStats.incrementGetLatencyNanos(2000000000L);
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(2000));
-
-        localMapStats.incrementGetLatencyNanos(2000000000L);
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), String.valueOf(2000));
-    }
-
-    @Test
-    public void testStoa() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE.getRequestParameterName()), "-1");

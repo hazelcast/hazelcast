@@ -101,7 +101,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
     public void testHdStorage() {
         NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig()
                 .setEnabled(true)
-                .setSize(new MemorySize(256L, MEGABYTES));
+                .setSize(new MemorySize(64L, MEGABYTES));
         Config config = new Config()
                 .setNativeMemoryConfig(nativeMemoryConfig);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
