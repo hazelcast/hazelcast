@@ -831,10 +831,9 @@ public final class IndexResolver {
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
 
-            // TODO: it is optimizable, optimize later.
-            for (int idx = 0; idx < table.getProjects().size(); i++) {
+            for (int idx = 0; idx < table.getProjects().size(); idx++) {
                 // Only a direct field reference may be indexed
-                RexNode project = table.getProjects().get(i);
+                RexNode project = table.getProjects().get(idx);
                 if (project instanceof RexInputRef && indexFieldOrdinal == ((RexInputRef) project).getIndex()) {
                     Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
                     RelFieldCollation fieldCollation = new RelFieldCollation(idx, direction);
