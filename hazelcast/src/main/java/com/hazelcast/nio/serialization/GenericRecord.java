@@ -63,7 +63,7 @@ import java.util.Set;
  * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
  * the cluster without the need to have the domain classes on the classpath.
  * <p>
- * Currently this is valid for {@link Portable} objects.
+ * Currently, this is valid for {@link Portable} and compact serializable objects.
  *
  * @since 4.1
  */
