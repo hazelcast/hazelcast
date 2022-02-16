@@ -72,6 +72,7 @@ public enum PhoneHomeMetrics {
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),
+    PARTITION_COUNT("parct"),
 
     //OS INFO METRICS
     OPERATING_SYSTEM_NAME("osn"),
