@@ -167,8 +167,11 @@ public class HazelcastTable extends AbstractTable {
             if (project instanceof RexInputRef) {
                 TableField field = target.getField(((RexInputRef) project).getIndex());
                 convertedField = new RelDataTypeFieldImpl(field.getName(), idx, project.getType());
+                if (field.isHidden()) {
+                    hiddenFieldNames.add(field.getName());
+                }
             } else {
-                convertedField = new RelDataTypeFieldImpl("$" + idx, idx, project.getType());
+                convertedField = new RelDataTypeFieldImpl("EXPR$" + idx, idx, project.getType());
             }
             convertedFields.add(convertedField);
             ++idx;
