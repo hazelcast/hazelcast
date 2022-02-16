@@ -45,7 +45,7 @@ public class DeleteLogicalRel extends TableModify implements LogicalRel {
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeHugeCost();
+        return planner.getCostFactory().makeTinyCost();
     }
 
     @Override

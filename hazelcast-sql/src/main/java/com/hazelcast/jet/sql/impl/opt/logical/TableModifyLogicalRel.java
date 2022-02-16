@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -46,7 +47,7 @@ public class TableModifyLogicalRel extends TableModify implements LogicalRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeTinyCost();
+        return planner.getCostFactory().makeInfiniteCost();
     }
 
     @Override
@@ -56,7 +57,7 @@ public class TableModifyLogicalRel extends TableModify implements LogicalRel {
                 traitSet,
                 getTable(),
                 getCatalogReader(),
-                sole(inputs),
+                OptUtils.toLogicalInput(sole(inputs)),
                 getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),

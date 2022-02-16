@@ -192,9 +192,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         createMapping("test_map", int.class, int.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
-        map.put(2, 2);
-
-        checkUpdateCount("UPDATE test_map SET this = this + 1", 0);
+        map.put(2, 2);checkUpdateCount("UPDATE test_map SET this = this + 1", 0);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 3));
     }
 

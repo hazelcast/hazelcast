@@ -25,10 +25,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalFilter;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.logical.LogicalTableModify;
-import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.logical.LogicalValues;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -43,8 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.jet.sql.impl.opt.OptUtils.inlineExpression;
-import static com.hazelcast.jet.sql.impl.opt.OptUtils.inlineExpressions;
+import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operand;
 import static org.apache.calcite.plan.RelOptRule.operandJ;
@@ -60,26 +55,22 @@ final class UpdateLogicalRules {
     static final RelOptRule INSTANCE =
             new RelOptRule(
                     operandJ(
-                            LogicalTableModify.class, null, TableModify::isUpdate,
-                            operand(
-                                    LogicalProject.class,
-                                    operand(LogicalTableScan.class, none())
-                            )
+                            TableModifyLogicalRel.class, LOGICAL, TableModify::isUpdate,
+                            operand(FullScanLogicalRel.class, none())
                     ),
                     UpdateLogicalRules.class.getSimpleName()
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    LogicalTableModify update = call.rel(0);
-                    LogicalProject project = call.rel(1);
-                    LogicalTableScan scan = call.rel(2);
+                    TableModifyLogicalRel update = call.rel(0);
+                    FullScanLogicalRel scan = call.rel(1);
 
                     UpdateLogicalRel rel = new UpdateLogicalRel(
                             update.getCluster(),
                             OptUtils.toLogicalConvention(update.getTraitSet()),
                             update.getTable(),
                             update.getCatalogReader(),
-                            rewriteScan(scan, project),
+                            rewriteScan(scan),
                             update.getUpdateColumnList(),
                             update.getSourceExpressionList(),
                             update.isFlattened()
@@ -88,12 +79,11 @@ final class UpdateLogicalRules {
                 }
 
                 // rewrites existing project to just primary keys project
-                private RelNode rewriteScan(LogicalTableScan scan, LogicalProject project) {
+                private RelNode rewriteScan(FullScanLogicalRel scan) {
                     HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
                     HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
 
-                    List<RexNode> newProjects = inlineExpressions(hazelcastTable.getProjects(), project.getProjects());
-                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), newProjects);
+                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), hazelcastTable.getProjects());
                     List<RelDataTypeField> fields = new ArrayList<>();
                     int idx = 0;
                     for (RexNode keyProject : keyProjects) {
@@ -123,90 +113,20 @@ final class UpdateLogicalRules {
             };
 
 
-    @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:DeclarationOrder"})
-    static final RelOptRule FILTER_INSTANCE =
-            new RelOptRule(
-                    operandJ(
-                            LogicalTableModify.class, null, TableModify::isUpdate,
-                            operand(
-                                    LogicalProject.class,
-                                    operand(
-                                            LogicalFilter.class,
-                                            operand(LogicalTableScan.class, none()))
-                            )
-                    ),
-                    UpdateLogicalRules.class.getSimpleName() + "_filter"
-            ) {
-                @Override
-                public void onMatch(RelOptRuleCall call) {
-                    LogicalTableModify update = call.rel(0);
-                    LogicalProject project = call.rel(1);
-                    LogicalFilter filter = call.rel(2);
-                    LogicalTableScan scan = call.rel(3);
-
-                    UpdateLogicalRel rel = new UpdateLogicalRel(
-                            update.getCluster(),
-                            OptUtils.toLogicalConvention(update.getTraitSet()),
-                            update.getTable(),
-                            update.getCatalogReader(),
-                            rewriteScan(scan, project, filter),
-                            update.getUpdateColumnList(),
-                            update.getSourceExpressionList(),
-                            update.isFlattened()
-                    );
-                    call.transformTo(rel);
-                }
-
-                // rewrites existing project to just primary keys project
-                private RelNode rewriteScan(LogicalTableScan scan, LogicalProject project, LogicalFilter filter) {
-                    HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
-                    HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);
-
-                    List<RexNode> newProjects = inlineExpressions(hazelcastTable.getProjects(), project.getProjects());
-                    List<RexNode> keyProjects = keyProjects(hazelcastTable.getTarget(), newProjects);
-                    List<RelDataTypeField> fields = new ArrayList<>();
-                    int idx = 0;
-                    for (RexNode keyProject : keyProjects) {
-                        RexInputRef inputRef = (RexInputRef) keyProject;
-                        RelDataTypeField fieldType = new RelDataTypeFieldImpl(
-                                inputRef.getName(), idx, inputRef.getType()
-                        );
-                        fields.add(idx++, fieldType);
-                    }
-                    RelDataType relDataType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
-                    RexNode newCondition = inlineExpression(newProjects, filter.getCondition());
-
-                    HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
-                            relTable,
-                            hazelcastTable.withProject(keyProjects, relDataType).withFilter(newCondition),
-                            scan.getCluster().getTypeFactory()
-                    );
-
-                    FullScanLogicalRel rel = new FullScanLogicalRel(
-                            scan.getCluster(),
-                            OptUtils.toLogicalConvention(scan.getTraitSet()),
-                            convertedTable,
-                            null,
-                            -1
-                    );
-                    return rel;
-                }
-            };
-
     // no-updates case, i.e. '... WHERE __key = 1 AND __key = 2'
     // could/should be optimized to no-op
     @SuppressWarnings("checkstyle:DeclarationOrder")
     static final RelOptRule NOOP_INSTANCE =
             new RelOptRule(
                     operandJ(
-                            LogicalTableModify.class, null, TableModify::isUpdate,
+                            TableModifyLogicalRel.class, null, TableModify::isUpdate,
                             operand(LogicalValues.class, none())
                     ),
                     UpdateLogicalRules.class.getSimpleName() + "(NOOP)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    LogicalTableModify update = call.rel(0);
+                    TableModifyLogicalRel update = call.rel(0);
                     LogicalValues values = call.rel(1);
 
                     UpdateLogicalRel rel = new UpdateLogicalRel(

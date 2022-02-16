@@ -40,9 +40,6 @@ public final class TableModifyLogicalRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         TableModify tableModify = (LogicalTableModify) rel;
-
-        System.err.println("HEREEE");
-
         RelNode input = tableModify.getInput();
 
         return new TableModifyLogicalRel(
@@ -50,7 +47,7 @@ public final class TableModifyLogicalRule extends ConverterRule {
                 OptUtils.toLogicalConvention(tableModify.getTraitSet()),
                 tableModify.getTable(),
                 tableModify.getCatalogReader(),
-                input,
+                OptUtils.toLogicalInput(input),
                 tableModify.getOperation(),
                 tableModify.getUpdateColumnList(),
                 tableModify.getSourceExpressionList(),
