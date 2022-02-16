@@ -376,7 +376,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
                 jcacheConfigFile.getAbsolutePath()
         );
 
-        URI uri = new URI("jar:file:" + jcacheConfigFile.getAbsolutePath() + "!/test-hazelcast-jcache.xml");
+        URI uri = new URI("jar:" + jcacheConfigFile.toURI() + "!/test-hazelcast-jcache.xml");
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, new Properties());
         assertThat(cacheManager).isNotNull();
 
