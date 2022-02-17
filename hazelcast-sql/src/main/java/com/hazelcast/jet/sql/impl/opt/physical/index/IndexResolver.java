@@ -314,7 +314,8 @@ public final class IndexResolver {
             }
 
             // Group candidates by column. E.g. {a>1 AND a<3} is grouped into a single map entry: a->{>1},{<3}
-            res.computeIfAbsent(candidate.getColumnIndex(), (k) -> new ArrayList<>()).add(candidate);
+            res.computeIfAbsent(candidate.getColumnIndex(), (k) -> new ArrayList<>())
+                    .add(candidate);
         }
 
         return res;
@@ -647,7 +648,7 @@ public final class IndexResolver {
         IndexFilter indexFilter;
         if (ranges.size() == 1) {
             indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
-        } else if (allRangesConvertsToEquals(ranges)) {
+        } else if (ranges.stream().allMatch(IndexResolver::isSingletonRange)) {
             indexFilter = new IndexInFilter(
                     toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
         } else {
@@ -659,16 +660,6 @@ public final class IndexResolver {
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean allRangesConvertsToEquals(Set<? extends Range<?>> ranges) {
-        for (Range<?> range : ranges) {
-            if (!convertsToEquals(range)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @SuppressWarnings("unchecked")
     @Nonnull
     private static IndexFilter createIndexFilterForSingleRange(Range<?> range, QueryDataType hazelcastType) {
         Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
@@ -676,7 +667,7 @@ public final class IndexResolver {
                 singletonList(lowerBound),
                 singletonList(false)
         );
-        if (convertsToEquals(range)) {
+        if (isSingletonRange(range)) {
             return new IndexEqualsFilter(lowerBound0);
         }
 
@@ -689,9 +680,11 @@ public final class IndexResolver {
                 upperBound0, range.upperBoundType() == BoundType.CLOSED);
     }
 
-    @SuppressWarnings("unchecked")
-    private static boolean convertsToEquals(Range<?> range) {
-        return range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0;
+    private static <T extends Comparable<T>> boolean isSingletonRange(Range<T> range) {
+        return range.hasLowerBound() && range.hasUpperBound()
+                && range.lowerBoundType() == BoundType.CLOSED
+                && range.upperBoundType() == BoundType.CLOSED
+                && range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0;
     }
 
     private static Expression<?> convertToExpression(RexNode operand, QueryParameterMetadata parameterMetadata) {
@@ -1206,7 +1199,7 @@ public final class IndexResolver {
     /**
      * Create the composite range filter from the given per-column filters.
      * <p>
-     * If there number of per-column filters if less than the number of index components, then infinite ranges are added
+     * If the number of per-column filters if less than the number of index components, then infinite ranges are added
      * to the missing components.
      * <p>
      * Consider that we have two per-column filter as input: {@code {a=1}, {b>2 AND b<3}}.
