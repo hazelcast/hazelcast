@@ -281,7 +281,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                         new CachePartitionLostListenerConfig("partitionLostListener")))
                 .setSplitBrainProtectionName("testSplitBrainProtection");
 
-        expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy");
+        expectedConfig.getMergePolicyConfig().setPolicy("HigherHitsMergePolicy").setBatchSize(99);
         expectedConfig.setDisablePerEntryInvalidationEvents(true);
         expectedConfig.setWanReplicationRef(wanReplicationRef());
 
@@ -915,6 +915,15 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         assertEquals(attrConfig.getName(), decAttrConfig.getName());
         assertEquals(attrConfig.getExtractorClassName(), decAttrConfig.getExtractorClassName());
         ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
+
+        assertMapStoresAreEqual(expectedConfig.getMapStoreConfig(), actualConfig.getMapStoreConfig());
+    }
+
+    public void assertMapStoresAreEqual(MapStoreConfig expected, MapStoreConfig actual) {
+        assertEquals(expected.isWriteCoalescing(), actual.isWriteCoalescing());
+        assertEquals(expected.getWriteBatchSize(), actual.getWriteBatchSize());
+        assertEquals(expected.getWriteDelaySeconds(), actual.getWriteDelaySeconds());
+        assertEquals(expected.getInitialLoadMode(), actual.getInitialLoadMode());
     }
 
     private void testQueue(QueueStoreConfig queueStoreConfig) {
