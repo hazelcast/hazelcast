@@ -150,6 +150,10 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         return atomicValues.remove(key) != null;
     }
 
+    public int getAtomicValuesCount() {
+        return atomicValues.size();
+    }
+
     public final V getAtomicValue(CPGroupId groupId, String name) {
         checkNotNull(groupId);
         checkNotNull(name);
