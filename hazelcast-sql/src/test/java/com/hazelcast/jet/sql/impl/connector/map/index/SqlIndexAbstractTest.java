@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -137,9 +138,21 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1=" + toLiteral(f1, f1.valueFrom())), c_notHashComposite(), eq(f1.valueFrom()));
         check(query(toLiteral(f1, f1.valueFrom()) + "=field1"), c_notHashComposite(), eq(f1.valueFrom()));
 
+        // WHERE f1=literal1 or f1=literal2
+        check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1=" + toLiteral(f1, f1.valueTo())),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+        check(query(toLiteral(f1, f1.valueFrom()) + "=field1 or " + toLiteral(f1, f1.valueTo()) + "=field1"),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+
         // WHERE f1=?
         check(query("field1=?", f1.valueFrom()), c_notHashComposite(), eq(f1.valueFrom()));
         check(query("?=field1", f1.valueFrom()), c_notHashComposite(), eq(f1.valueFrom()));
+
+        // WHERE f1=? or f1=?
+        check(query("field1=? or field1=?", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+        check(query("?=field1 or ?=field1", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
 
         // WHERE f1!=literal
         check(query("field1!=" + toLiteral(f1, f1.valueFrom())), c_booleanComponent() && c_notHashComposite(), neq(f1.valueFrom()));
@@ -189,6 +202,16 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 c_sorted(),
                 and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
+
+        // WHERE f1>literal AND f1<literal
+        // Boolean and string is converted to ValuesLogicalRel so they are skipped
+        if (f1.getFieldConverterType() != QueryDataType.VARCHAR && f1.getFieldConverterType() != QueryDataType.BOOLEAN) {
+            check(
+                    query("field1>" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gt(f1.valueFrom()), lt(f1.valueTo()))
+            );
+        }
 
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
@@ -469,6 +492,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 optimizationResult.getLogical(),
                 plan(planRow(0, FullScanLogicalRel.class))
         );
+        System.out.println(RelOptUtil.toString(optimizationResult.getPhysical()));
         assertPlan(
                 optimizationResult.getPhysical(),
                 plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))

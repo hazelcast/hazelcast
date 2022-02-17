@@ -1029,7 +1029,9 @@ public final class IndexResolver {
                     from = candidateFilter.getFrom();
                     fromInclusive = candidateFilter.isFromInclusive();
                     expressions.add(candidate.getExpression());
-                } else if (to == null && candidateFilter.getTo() != null) {
+                }
+
+                if (to == null && candidateFilter.getTo() != null) {
                     to = candidateFilter.getTo();
                     toInclusive = candidateFilter.isToInclusive();
                     expressions.add(candidate.getExpression());
