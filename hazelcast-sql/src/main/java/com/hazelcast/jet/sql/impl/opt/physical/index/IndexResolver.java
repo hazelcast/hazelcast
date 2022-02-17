@@ -630,6 +630,7 @@ public final class IndexResolver {
             RexNode operand1,
             RexNode operand2
     ) {
+        // SARG is supported only for literals, not for dynamic parameters
         if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL) {
             return null;
         }
@@ -793,7 +794,7 @@ public final class IndexResolver {
             }
 
             // Create the filter for the given index component if possible.
-            // Separate candidates are possible merged into a single complex filter at this stage.
+            // Separate candidates are possibly merged into a single complex filter at this stage.
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
             IndexComponentFilter filter = selectComponentFilter(

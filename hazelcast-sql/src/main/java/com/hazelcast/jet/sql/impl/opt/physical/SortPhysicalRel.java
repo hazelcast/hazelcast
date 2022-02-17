@@ -67,9 +67,8 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
+    // Copy of org.apache.calcite.rel.core.Sort.computeSelfCost, but also takes our requiresSort flag into account
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        // Copy of org.apache.calcite.rel.core.Sort.computeSelfCost but also takes our requiresSort flag into account.
-
         double offsetValue = Util.first(doubleValue(offset), 0d);
 
         double inCount = mq.getRowCount(input);
@@ -88,7 +87,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
         double bytesPerRow = (3 + getRowType().getFieldCount()) * 4;
 
         double cpu;
-        if (collation.getFieldCollations().isEmpty() || !requiresSort) { // Here is a change
+        if (collation.getFieldCollations().isEmpty() || !requiresSort) { // Here is the change
             // Case 2. If sort keys are empty, CPU cost is cheaper because we are just
             // stepping over the first "readCount" rows, rather than sorting all
             // "inCount" them. (Presumably we are applying FETCH and/or OFFSET,

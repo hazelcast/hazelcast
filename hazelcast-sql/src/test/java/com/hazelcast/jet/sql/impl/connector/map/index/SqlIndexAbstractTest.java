@@ -208,13 +208,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     and(gt(f1.valueFrom()), lte(f1.valueTo()))
             );
 
-            // WHERE f1>=literal AND f1<=literal
-            check(
-                    query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
-                    c_sorted(),
-                    and(gte(f1.valueFrom()), lte(f1.valueTo()))
-            );
-
             // WHERE f1>=literal AND f1<literal
             check(
                     query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
@@ -222,6 +215,13 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     and(gte(f1.valueFrom()), lt(f1.valueTo()))
             );
         }
+
+        // WHERE f1>=literal AND f1<=literal
+        check(
+                query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
+                c_sorted(),
+                and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
 
         // WHERE f1>? AND f1<?
         check(
@@ -249,6 +249,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+
+        // WHERE f1<literal OR f2>literal (range from -inf..val1 and val2..+inf)
+        check(
+                query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
+                // no index used now because we don't support mutiple ranges
+                false,
+                or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
 
         // IN
