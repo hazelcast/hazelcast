@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * Information pertaining to a single data change event (insert, delete or
  * update), affecting a single database record.
- * <p
+ * <p>
  * Each event has a <em>key</em>, identifying the affected record, and a
  * <em>value</em>, describing the change to that record.
  * <p>
