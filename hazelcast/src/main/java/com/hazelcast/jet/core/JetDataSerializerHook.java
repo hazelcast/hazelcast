@@ -18,8 +18,12 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.connector.AbstractUpdateMapP.ApplyValuesEntryProcessor;
+import com.hazelcast.jet.impl.connector.HazelcastReaders;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
 import com.hazelcast.jet.impl.connector.UpdateMapP.ApplyFnEntryProcessor;
+import com.hazelcast.jet.impl.processor.ProcessorSuppliers;
 import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -44,6 +48,16 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int APPLY_VALUE_ENTRY_PROCESSOR = 4;
     public static final int TEST_SOURCES_ITEMS_DISTRIBUTED_FILL_BUFFER_FN = 5;
     public static final int JET_SQL_ROW = 6;
+    public static final int LOCAL_MAP_READER_FUNCTION = 7;
+    public static final int PROCESSORS_AGGREGATE_P_SUPPLIER = 8;
+    public static final int LOCAL_CACHE_READER_FUNCTION = 9;
+    public static final int REMOTE_CACHE_READER_FUNCTION = 10;
+    public static final int LOCAL_MAP_QUERY_READER_FUNCTION = 11;
+    public static final int REMOTE_MAP_READER_FUNCTION = 12;
+    public static final int REMOTE_MAP_QUERY_READER_FUNCTION = 13;
+    public static final int READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER = 14;
+    public static final int PROCESSOR_MAP_P_SUPPLIER = 15;
+    public static final int AGGREGATE_COMBINING_ACCUMULATE = 16;
 
     /**
      * Factory ID
@@ -78,6 +92,26 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ItemsDistributedFillBufferFn<>();
                 case JET_SQL_ROW:
                     return new JetSqlRow();
+                case LOCAL_MAP_READER_FUNCTION:
+                    return new HazelcastReaders.LocalMapReaderFunction();
+                case PROCESSORS_AGGREGATE_P_SUPPLIER:
+                    return new ProcessorSuppliers.AggregatePSupplier<>();
+                case LOCAL_CACHE_READER_FUNCTION:
+                    return new HazelcastReaders.LocalCacheReaderFunction();
+                case REMOTE_CACHE_READER_FUNCTION:
+                    return new HazelcastReaders.RemoteCacheReaderFunction();
+                case LOCAL_MAP_QUERY_READER_FUNCTION:
+                    return new HazelcastReaders.LocalMapQueryReaderFunction<>();
+                case REMOTE_MAP_READER_FUNCTION:
+                    return new HazelcastReaders.RemoteMapReaderFunction();
+                case REMOTE_MAP_QUERY_READER_FUNCTION:
+                    return new HazelcastReaders.RemoteMapQueryReaderFunction<>();
+                case READ_MAP_OR_CACHE_P_LOCAL_PROCESSOR_SUPPLIER:
+                    return new ReadMapOrCacheP.LocalProcessorSupplier<>();
+                case PROCESSOR_MAP_P_SUPPLIER:
+                    return new ProcessorSuppliers.ProcessorMapPSupplier<>();
+                case AGGREGATE_COMBINING_ACCUMULATE:
+                    return new AggregateOperation1Impl.AggregateCombiningAccumulate<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
