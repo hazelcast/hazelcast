@@ -505,8 +505,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     public int hashCode() {
         int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;
         result = 31 * result + listenerConfigurations.hashCode();
-        result = 31 * result + keyType.hashCode();
-        result = 31 * result + valueType.hashCode();
+        result = keyType == null ? result : 31 * result + keyType.hashCode();
+        result = valueType == null ? result : 31 * result + valueType.hashCode();
         result = 31 * result + (cacheWriterFactory != null ? cacheWriterFactory.hashCode() : 0);
         result = 31 * result + (expiryPolicyFactory != null ? expiryPolicyFactory.hashCode() : 0);
         result = 31 * result + (isReadThrough ? 1 : 0);
