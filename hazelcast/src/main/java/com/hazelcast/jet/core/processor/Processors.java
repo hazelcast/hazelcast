@@ -265,7 +265,6 @@ public final class Processors {
         return new ProcessorSuppliers.AggregatePSupplier<>(aggrOp.withIdentityFinish());
     }
 
-
     /**
      * Returns a supplier of processors for a vertex that performs the
      * combining and finishing steps of the provided aggregate operation. It
