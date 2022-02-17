@@ -355,6 +355,9 @@ public class PlanExecutor {
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
+                // make sure the queryResultProducer is cleaned up after the job completes. This normally
+                // takes effect when the job fails before the QRP is removed by the RootResultConsumerSink
+                resultRegistry.remove(jobId);
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);

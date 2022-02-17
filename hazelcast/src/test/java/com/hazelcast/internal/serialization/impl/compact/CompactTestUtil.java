@@ -90,7 +90,7 @@ public final class CompactTestUtil {
                 .setTimestampWithTimezone("offsetDateTime", mainDTO.offsetDateTime)
                 .setNullableInt8("nullable_b", mainDTO.b)
                 .setNullableBoolean("nullable_bool", mainDTO.bool)
-                .setNullableint16("nullable_s", mainDTO.s)
+                .setNullableInt16("nullable_s", mainDTO.s)
                 .setNullableInt32("nullable_i", mainDTO.i)
                 .setNullableInt64("nullable_l", mainDTO.l)
                 .setNullableFloat32("nullable_f", mainDTO.f)

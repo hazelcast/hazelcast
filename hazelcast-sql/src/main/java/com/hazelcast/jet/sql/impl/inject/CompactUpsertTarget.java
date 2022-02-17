@@ -68,7 +68,7 @@ class CompactUpsertTarget implements UpsertTarget {
             case NULLABLE_INT8:
                 return value -> builder.setNullableInt8(path, (Byte) value);
             case NULLABLE_INT16:
-                return value -> builder.setNullableint16(path, (Short) value);
+                return value -> builder.setNullableInt16(path, (Short) value);
             case NULLABLE_INT32:
                 return value -> builder.setNullableInt32(path, (Integer) value);
             case NULLABLE_INT64:

@@ -326,7 +326,7 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(gen.open("ldap"), c)
                 .node("url", c.getUrl())
                 .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("parse-dn", c.getParseDn())
                 .nodeIfContents("role-context", c.getRoleContext())
                 .nodeIfContents("role-filter", c.getRoleFilter())
                 .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
@@ -900,10 +900,6 @@ public class ConfigXmlGenerator {
 
         gen.open("dynamic-configuration")
                 .node("persistence-enabled", dynamicConfigurationConfig.isPersistenceEnabled());
-
-        if (dynamicConfigurationConfig.getPersistenceFile() != null) {
-            gen.node("persistence-file", dynamicConfigurationConfig.getPersistenceFile().getAbsolutePath());
-        }
 
         if (dynamicConfigurationConfig.getBackupDir() != null) {
             gen.node("backup-dir", dynamicConfigurationConfig.getBackupDir().getAbsolutePath());

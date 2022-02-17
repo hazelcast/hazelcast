@@ -25,7 +25,7 @@ import java.util.UUID;
 public class ConfigUpdateFailedEvent extends AbstractConfigUpdateEvent {
 
     public enum FailureReason {
-        PARSING_FAILURE, SCHEMA_VALIDATION_FAILURE, GENERIC_FAILURE
+        PARSING_FAILURE, SCHEMA_VALIDATION_FAILURE, GENERIC_FAILURE, INVALID_LICENSE
     }
 
     private final FailureReason failureReason;

@@ -96,6 +96,12 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testHashCode() {
+        CacheConfig cacheConfig = new CacheConfig();
+        assertTrue(cacheConfig.hashCode() != 0);
+    }
+
+    @Test
     public void testCacheConfigLoaderWriterXml() throws Exception {
         Config config = new XmlConfigBuilder(configUrl2).build();
 
@@ -370,7 +376,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
                 jcacheConfigFile.getAbsolutePath()
         );
 
-        URI uri = new URI("jar:file:" + jcacheConfigFile.getAbsolutePath() + "!/test-hazelcast-jcache.xml");
+        URI uri = new URI("jar:" + jcacheConfigFile.toURI() + "!/test-hazelcast-jcache.xml");
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, new Properties());
         assertThat(cacheManager).isNotNull();
 

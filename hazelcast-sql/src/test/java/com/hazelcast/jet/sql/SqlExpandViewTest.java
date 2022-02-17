@@ -304,12 +304,12 @@ public class SqlExpandViewTest extends SqlTestSupport {
         );
 
         instance().getSql().execute("CREATE VIEW v " +
-                "AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), INTERVAL '0.002' SECOND))"
+                "AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))"
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT window_start, SUM(distance) " +
-                        "FROM TABLE(TUMBLE(TABLE(v), DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "FROM TABLE(TUMBLE(TABLE v, DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY window_start",
                 asList(
                         new Row(timestampTz(0L), 1L),
