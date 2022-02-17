@@ -83,7 +83,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
     private String cacheWriter;
 
     private ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig;
-    private List<CacheSimpleEntryListenerConfig> cacheEntryListeners;
+    private List<CacheSimpleEntryListenerConfig> cacheEntryListeners = new ArrayList<>();
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -96,7 +96,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     private String splitBrainProtectionName;
 
-    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>();
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
@@ -449,7 +449,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      */
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         if (cacheEntryListeners == null) {
-            cacheEntryListeners = new ArrayList<CacheSimpleEntryListenerConfig>();
+            cacheEntryListeners = new ArrayList<>();
         }
         return cacheEntryListeners;
     }
