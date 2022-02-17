@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 
-package org.example.record;
+package com.hazelcast.internal.serialization.impl.compact.record;
 
-public record Person(int id, String name) {
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+
+/**
+ * Reads a single component of the record object and returns it.
+ */
+@FunctionalInterface
+public interface ComponentReader {
+
+    /**
+     * @param compactReader to read the component from.
+     * @param schema to validate expected and actual types.
+     * @return a single component of the record object.
+     */
+    Object readComponent(CompactReader compactReader, Schema schema);
 }
