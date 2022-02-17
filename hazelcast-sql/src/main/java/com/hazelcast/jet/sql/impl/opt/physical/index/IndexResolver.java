@@ -647,12 +647,25 @@ public final class IndexResolver {
         IndexFilter indexFilter;
         if (ranges.size() == 1) {
             indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
-        } else {
+        } else if (allRangesConvertsToEquals(ranges)) {
             indexFilter = new IndexInFilter(
                     toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
+        } else {
+            // No support for IndexInFilter with multiple IndexFilterForSingleRanges
+            return null;
         }
 
         return new IndexComponentCandidate(exp, columnIndex, indexFilter);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean allRangesConvertsToEquals(Set<? extends Range<?>> ranges) {
+        for (Range<?> range : ranges) {
+            if (!convertsToEquals(range)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -663,7 +676,7 @@ public final class IndexResolver {
                 singletonList(lowerBound),
                 singletonList(false)
         );
-        if (range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0) {
+        if (convertsToEquals(range)) {
             return new IndexEqualsFilter(lowerBound0);
         }
 
@@ -674,6 +687,11 @@ public final class IndexResolver {
         );
         return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED,
                 upperBound0, range.upperBoundType() == BoundType.CLOSED);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean convertsToEquals(Range<?> range) {
+        return range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0;
     }
 
     private static Expression<?> convertToExpression(RexNode operand, QueryParameterMetadata parameterMetadata) {
