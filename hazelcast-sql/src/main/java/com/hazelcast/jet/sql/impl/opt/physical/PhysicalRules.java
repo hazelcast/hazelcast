@@ -29,10 +29,7 @@ public final class PhysicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // Filter rules
-                FilterPhysicalRule.INSTANCE,
-
-                // Project rules
-                ProjectPhysicalRule.INSTANCE,
+                CalcPhysicalRule.INSTANCE,
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,

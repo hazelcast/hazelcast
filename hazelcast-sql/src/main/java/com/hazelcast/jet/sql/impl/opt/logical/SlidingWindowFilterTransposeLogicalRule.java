@@ -23,37 +23,39 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.rex.RexVisitorImpl;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
 /**
- * A `Filter` reading from a `SlidingWindow` will be moved before the sliding
- * window.
+ * A {@link Calc} with existing filter condition reading from a
+ * {@link SlidingWindow} will be moved before the sliding window.
  */
-public class SlidingWindowFilterTransposeRule extends RelRule<Config> implements TransformationRule {
+public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> implements TransformationRule {
 
     private static final Config CONFIG = Config.EMPTY
-            .withDescription(SlidingWindowFilterTransposeRule.class.getSimpleName())
+            .withDescription(SlidingWindowFilterTransposeLogicalRule.class.getSimpleName())
             .withOperandSupplier(b0 -> b0
-                    .operand(Filter.class)
+                    .operand(CalcLogicalRel.class)
+                    .predicate(calc -> calc.getProgram().getCondition() != null)
                     .trait(LOGICAL)
                     .inputs(b1 -> b1
                             .operand(SlidingWindow.class).anyInputs()));
 
-    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeRule(CONFIG);
+    public static final RelOptRule STREAMING_FILTER_TRANSPOSE = new SlidingWindowFilterTransposeLogicalRule(CONFIG);
 
-    protected SlidingWindowFilterTransposeRule(Config config) {
+    protected SlidingWindowFilterTransposeLogicalRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        final Filter filter = call.rel(0);
+        final CalcLogicalRel calc = call.rel(0);
         final SlidingWindow sw = call.rel(1);
 
         RexVisitorImpl<Void> visitor = new RexVisitorImpl<Void>(true) {
@@ -66,10 +68,11 @@ public class SlidingWindowFilterTransposeRule extends RelRule<Config> implements
                 return super.visitInputRef(ref);
             }
         };
-        filter.getCondition().accept(visitor);
+        RexProgram program = calc.getProgram();
+        program.expandLocalRef(program.getCondition()).accept(visitor);
 
-        final Filter newFilter = filter.copy(filter.getTraitSet(), sw.getInput(), filter.getCondition());
-        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newFilter));
+        final CalcLogicalRel newCalc = (CalcLogicalRel) calc.copy(calc.getTraitSet(), sw.getInput(), program);
+        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newCalc));
         call.transformTo(topSW);
     }
 }

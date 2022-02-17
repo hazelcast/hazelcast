@@ -20,7 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SlidingWindowLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
@@ -48,18 +48,18 @@ import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
 
 public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractPhysicalRule {
 
-    private static final Config CONFIG_PROJECT = Config.EMPTY
+    private static final Config CONFIG_WITH_CALC = Config.EMPTY
             .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-project")
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
                     .trait(LOGICAL)
                     .predicate(OptUtils::isUnbounded)  // Input must be unbounded (streaming)
                     .inputs(b1 -> b1
-                            .operand(ProjectLogicalRel.class)
+                            .operand(CalcLogicalRel.class)
                             .inputs(b2 -> b2
                                     .operand(SlidingWindowLogicalRel.class).anyInputs())));
 
-    private static final Config CONFIG_NO_PROJECT = Config.EMPTY
+    private static final Config CONFIG_NO_CALC = Config.EMPTY
             .withDescription(AggregateSlidingWindowPhysicalRule.class.getSimpleName() + "-no-project")
             .withOperandSupplier(b0 -> b0
                     .operand(AggregateLogicalRel.class)
@@ -68,8 +68,8 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                     .inputs(b1 -> b1
                             .operand(SlidingWindowLogicalRel.class).anyInputs()));
 
-    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_PROJECT, false);
-    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_PROJECT, true);
+    static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_CALC, false);
+    static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_WITH_CALC, true);
 
     private final boolean hasProject;
 
@@ -108,13 +108,13 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
 
         // Our input hierarchy is, for example:
         // -Aggregate(group=[$0], EXPR$1=[AVG($1)])
-        // --Project(rowType=[window_start, field1])
+        // --Calc(rowType=[window_start, field1])
         // ---SlidingWindowRel(rowType=[field1, field2, timestamp, window_start, window_end])
         //
         // We need to preserve the column used to generate window bounds and remove the window
         // bounds from the projection to get input projection such as this:
         // -SlidingWindowAggregatePhysicalRel(group=[$0], EXPR$1=[AVG($1)])
-        // --Project(rowType=[timestamp, field1])
+        // --Calc(rowType=[timestamp, field1])
         //
         // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
         // but it works for us for now - the superclass uses it only to calculate the output type.

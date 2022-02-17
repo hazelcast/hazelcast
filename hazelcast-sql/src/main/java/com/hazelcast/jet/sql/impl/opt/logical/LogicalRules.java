@@ -28,24 +28,11 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Filter rules
-                PruneEmptyRules.FILTER_INSTANCE,
-                FilterLogicalRule.INSTANCE,
-                CoreRules.FILTER_MERGE,
-                CoreRules.FILTER_PROJECT_TRANSPOSE,
-                FilterIntoScanLogicalRule.INSTANCE,
-                CoreRules.FILTER_AGGREGATE_TRANSPOSE,
-                CoreRules.FILTER_INTO_JOIN,
-                CoreRules.FILTER_REDUCE_EXPRESSIONS,
-                SlidingWindowFilterTransposeRule.STREAMING_FILTER_TRANSPOSE,
-
-                // Project rules
-                PruneEmptyRules.PROJECT_INSTANCE,
-                ProjectLogicalRule.INSTANCE,
-                CoreRules.PROJECT_MERGE,
-                CoreRules.PROJECT_REMOVE,
-                CoreRules.PROJECT_FILTER_TRANSPOSE,
-                ProjectIntoScanLogicalRule.INSTANCE,
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+                CalcIntoScanLogicalRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+                SlidingWindowFilterTransposeLogicalRule.STREAMING_FILTER_TRANSPOSE,
 
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
@@ -77,9 +64,7 @@ public final class LogicalRules {
 
                 // Value rules
                 ValuesLogicalRules.CONVERT_INSTANCE,
-                ValuesLogicalRules.FILTER_INSTANCE,
-                ValuesLogicalRules.PROJECT_INSTANCE,
-                ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
+                ValuesLogicalRules.CALC_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules

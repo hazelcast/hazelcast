@@ -19,21 +19,22 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Project;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
-final class ProjectPhysicalRule extends ConverterRule {
+final class CalcPhysicalRule extends ConverterRule {
 
     /** Default configuration. */
     private static final Config DEFAULT_CONFIG = Config.INSTANCE
-            .withConversion(Project.class, LOGICAL, PHYSICAL, ProjectPhysicalRule.class.getSimpleName());
+            .withConversion(Calc.class, LOGICAL, PHYSICAL, CalcPhysicalRule.class.getSimpleName());
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new ProjectPhysicalRule();
+    static final RelOptRule INSTANCE = new CalcPhysicalRule();
 
-    private ProjectPhysicalRule() {
+    private CalcPhysicalRule() {
         super(DEFAULT_CONFIG);
     }
 
