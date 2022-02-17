@@ -221,6 +221,15 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                     c_sorted(),
                     and(gte(f1.valueFrom()), lt(f1.valueTo()))
             );
+
+            // WHERE (f1>=literal AND f1<literal) OR ((f1>literal AND f1<=literal)) - not overlapping ranges
+            check(
+                    query(String.format("(field1>=%s AND field1<%s) OR (field1>%s AND field1<=%s)",
+                            toLiteral(f1, f1.valueFrom()), toLiteral(f1, f1.valueMiddle()),
+                            toLiteral(f1, f1.valueMiddle()), toLiteral(f1, f1.valueTo()))),
+                    c_sorted(),
+                    or(and(gte(f1.valueFrom()), lt(f1.valueMiddle())), and(gt(f1.valueMiddle()), lte(f1.valueTo())))
+            );
         }
 
         // WHERE f1>? AND f1<?
