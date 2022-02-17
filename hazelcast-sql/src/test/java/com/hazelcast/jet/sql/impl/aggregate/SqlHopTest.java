@@ -423,10 +423,10 @@ public class SqlHopTest extends SqlTestSupport {
                 row(timestampTz(1), "Alice", 1),
                 row(timestampTz(2), "Bob", 1),
                 row(timestampTz(7), "Alice", 1),
-                row(timestampTz(10), null, null)
+                row(timestampTz(10), "Alice", 1) // flushing event
         );
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT window_start, name || '-s' AS n FROM " +
                         "TABLE(HOP(" +
                         "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND)))" +

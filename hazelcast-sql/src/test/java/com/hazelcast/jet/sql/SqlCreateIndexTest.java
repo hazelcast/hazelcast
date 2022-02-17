@@ -60,7 +60,7 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
     @Before
     public void setUp() throws Exception {
         map = instance().getMap(MAP_NAME);
-        for (int i = 0; i < 200; ++i) {
+        for (int i = 0; i < 500; ++i) {
             map.put(i, i);
         }
     }
@@ -209,6 +209,8 @@ public class SqlCreateIndexTest extends OptimizerTestSupport {
                 getPartitionedMapIndexes(mapContainer(map), mapTableFields),
                 map.size()
         );
+
+        assertThat(table.getProjects().size()).isEqualTo(2);
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
         if (sorted) {
             if (withIndex) {

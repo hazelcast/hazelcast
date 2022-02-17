@@ -280,11 +280,12 @@ public class SqlInsertWindowBoundsTest extends SqlTestSupport {
     private String sql(String name, String interval) {
         return "SELECT ts, window_start, window_end FROM " +
                 "TABLE(TUMBLE(" +
-                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE(" + name + "), DESCRIPTOR(ts), " +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), " +
                 interval +
                 ")))" +
-                "  , DESCRIPTOR(ts), " +
-                interval +
-                ")) GROUP BY window_start, window_end, ts, name";
+                "  , DESCRIPTOR(ts)" +
+                "  , " + interval +
+                ")) " +
+                "GROUP BY window_start, window_end, ts, name";
     }
 }
