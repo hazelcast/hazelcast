@@ -194,24 +194,42 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query("field1<=?", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
         check(query("?>=field1", f1.valueFrom()), c_sorted(), lte(f1.valueFrom()));
 
-        // WHERE f1>(=)? AND f1<(=)?
-        // Do not use literals here, because this is already tested with simple conditions
-        // Do not exchange operand positions, because this is already tested with simple conditions
-        check(
-                query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
-                c_sorted(),
-                and(gt(f1.valueFrom()), lt(f1.valueTo()))
-        );
-
-        // WHERE f1>literal AND f1<literal
-        // Boolean and string is converted to ValuesLogicalRel so they are skipped
-        if (f1.getFieldConverterType() != QueryDataType.VARCHAR && f1.getFieldConverterType() != QueryDataType.BOOLEAN) {
+        if (!(f1 instanceof ExpressionType.BooleanType)) {
+            // WHERE f1>literal AND f1<literal
             check(
                     query("field1>" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
                     c_sorted(),
                     and(gt(f1.valueFrom()), lt(f1.valueTo()))
             );
+
+            // WHERE f1>literal AND f1<=literal
+            check(
+                    query("field1>" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gt(f1.valueFrom()), lte(f1.valueTo()))
+            );
+
+            // WHERE f1>=literal AND f1<=literal
+            check(
+                    query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<=" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gte(f1.valueFrom()), lte(f1.valueTo()))
+            );
+
+            // WHERE f1>=literal AND f1<literal
+            check(
+                    query("field1>=" + toLiteral(f1, f1.valueFrom()) + " AND field1<" + toLiteral(f1, f1.valueTo())),
+                    c_sorted(),
+                    and(gte(f1.valueFrom()), lt(f1.valueTo()))
+            );
         }
+
+        // WHERE f1>(=)? AND f1<(=)?
+        check(
+                query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                and(gt(f1.valueFrom()), lt(f1.valueTo()))
+        );
 
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
