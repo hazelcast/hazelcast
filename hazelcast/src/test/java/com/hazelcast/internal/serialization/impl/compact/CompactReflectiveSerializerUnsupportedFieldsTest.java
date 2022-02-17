@@ -49,7 +49,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharField() {
+    public void shouldThrowWhileSerializingClassWithCharField() {
         CharClass charClass = new CharClass('x');
         assertThatThrownBy(() -> service.toData(charClass))
                 .hasRootCauseInstanceOf(HazelcastSerializationException.class)
@@ -57,7 +57,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterField() {
+    public void shouldThrowWhileSerializingClassWithCharacterField() {
         CharacterClass characterClass = new CharacterClass('x');
         assertThatThrownBy(() -> service.toData(characterClass))
                 .hasRootCauseInstanceOf(HazelcastSerializationException.class)
@@ -65,7 +65,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharArrayField() {
+    public void shouldThrowWhileSerializingClassWithCharArrayField() {
         CharArrayClass charArrayClass = new CharArrayClass(new char[]{'x'});
         assertThatThrownBy(() -> service.toData(charArrayClass))
                 .hasRootCauseInstanceOf(HazelcastSerializationException.class)
@@ -73,7 +73,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     }
 
     @Test
-    public void shouldThrowWhileSerializingRecordWithCharacterArrayField() {
+    public void shouldThrowWhileSerializingClassWithCharacterArrayField() {
         CharacterArrayClass characterArrayClass = new CharacterArrayClass(new Character[]{'x'});
         assertThatThrownBy(() -> service.toData(characterArrayClass))
                 .hasRootCauseInstanceOf(HazelcastSerializationException.class)
