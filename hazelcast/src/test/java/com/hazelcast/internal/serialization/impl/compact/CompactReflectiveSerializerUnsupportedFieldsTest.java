@@ -83,7 +83,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     class CharClass {
         private final char c;
 
-        public CharClass(char c) {
+        CharClass(char c) {
             this.c = c;
         }
     }
@@ -91,7 +91,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     class CharacterClass {
         private final Character c;
 
-        public CharacterClass(Character c) {
+        CharacterClass(Character c) {
             this.c = c;
         }
     }
@@ -99,7 +99,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     class CharArrayClass {
         private final char[] ca;
 
-        public CharArrayClass(char[] ca) {
+        CharArrayClass(char[] ca) {
             this.ca = ca;
         }
     }
@@ -107,7 +107,7 @@ public class CompactReflectiveSerializerUnsupportedFieldsTest {
     class CharacterArrayClass {
         private final Character[] ca;
 
-        public CharacterArrayClass(Character[] ca) {
+        CharacterArrayClass(Character[] ca) {
             this.ca = ca;
         }
     }
