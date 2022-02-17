@@ -32,6 +32,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -98,6 +99,7 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
     }
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/20748
     public void when_selectWithTwoRanges_then_properPlanAndIndex() {
         String sql = "SELECT * FROM  \n" + mapName +
                 " WHERE (field1 >= 100 AND field1 <= 10000) \n" +

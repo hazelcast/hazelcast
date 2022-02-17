@@ -254,7 +254,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // WHERE f1<literal OR f2>literal (range from -inf..val1 and val2..+inf)
         check(
                 query("field1<" + toLiteral(f1, f1.valueFrom()) + " OR field1>" + toLiteral(f1, f1.valueTo())),
-                // no index used now because we don't support mutiple ranges
+                // https://github.com/hazelcast/hazelcast/issues/20748, c_sorted() should be used here
                 false,
                 or(lt(f1.valueFrom()), gt(f1.valueTo()))
         );
