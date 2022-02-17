@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.plan.RelOptUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -510,7 +509,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
                 optimizationResult.getLogical(),
                 plan(planRow(0, FullScanLogicalRel.class))
         );
-        System.out.println(RelOptUtil.toString(optimizationResult.getPhysical()));
         assertPlan(
                 optimizationResult.getPhysical(),
                 plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
