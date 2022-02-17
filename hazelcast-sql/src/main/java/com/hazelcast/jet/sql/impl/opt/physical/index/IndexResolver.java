@@ -63,6 +63,7 @@ import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,6 +76,7 @@ import java.util.TreeMap;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRelTable;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
@@ -635,8 +637,6 @@ public final class IndexResolver {
 
         QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(literal.getType());
 
-        IndexFilter indexFilter = null;
-
         RangeSet<?> rangeSet = RexToExpression.extractRangeFromSearch(literal);
         if (rangeSet == null) {
             return null;
@@ -644,24 +644,19 @@ public final class IndexResolver {
 
         Set<? extends Range<?>> ranges = rangeSet.asRanges();
 
+        IndexFilter indexFilter;
         if (ranges.size() == 1) {
             indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
         } else {
-            List<IndexFilter> indexFilters = new ArrayList<>(ranges.size());
-            for (Range<?> range : ranges) {
-                indexFilters.add(createIndexFilterForSingleRange(range, hazelcastType));
-            }
-            indexFilter = new IndexInFilter(indexFilters);
+            indexFilter = new IndexInFilter(
+                    toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
         }
 
-        return indexFilter == null ? null : new IndexComponentCandidate(
-                exp,
-                columnIndex,
-                indexFilter
-        );
+        return new IndexComponentCandidate(exp, columnIndex, indexFilter);
     }
 
     @SuppressWarnings("unchecked")
+    @Nonnull
     private static IndexFilter createIndexFilterForSingleRange(Range<?> range, QueryDataType hazelcastType) {
         Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
         IndexFilterValue lowerBound0 = new IndexFilterValue(

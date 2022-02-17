@@ -544,9 +544,9 @@ public final class RexToExpression {
             case TIMESTAMP:
                 return toLocalDateTime((TimestampString) value);
             case INTERVAL_YEAR_MONTH:
-                return new SqlYearMonthInterval(((BigDecimal) value).intValue());
+                return new SqlYearMonthInterval(((BigDecimal) value).intValueExact());
             case INTERVAL_DAY_SECOND:
-                return new SqlDaySecondInterval(((BigDecimal) value).intValue());
+                return new SqlDaySecondInterval(((BigDecimal) value).longValueExact());
             default:
                 return value;
         }
