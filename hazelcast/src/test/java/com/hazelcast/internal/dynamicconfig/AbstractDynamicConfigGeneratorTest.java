@@ -121,7 +121,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setWriteDelaySeconds(10)
                 .setClassName("className")
-                .setWriteCoalescing(true)
+                .setWriteCoalescing(false)
                 .setWriteBatchSize(500)
                 .setProperty("key", "value");
 
