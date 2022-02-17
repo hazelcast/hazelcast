@@ -223,25 +223,28 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             );
         }
 
-        // WHERE f1>(=)? AND f1<(=)?
+        // WHERE f1>? AND f1<?
         check(
                 query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
 
+        // WHERE f1>? AND f1<=?
         check(
                 query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gt(f1.valueFrom()), lte(f1.valueTo()))
         );
 
+        // WHERE f1>=? AND f1<?
         check(
                 query("field1>=? AND field1<?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
                 and(gte(f1.valueFrom()), lt(f1.valueTo()))
         );
 
+        // WHERE f1>=? AND f1<=?
         check(
                 query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
                 c_sorted(),
