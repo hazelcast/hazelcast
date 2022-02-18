@@ -50,7 +50,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private String name;
     private String splitBrainProtectionName;
-    private List<ListenerConfig> listenerConfigs;
+    private List<ListenerConfig> listenerConfigs = new ArrayList<>();
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
