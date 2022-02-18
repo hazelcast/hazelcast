@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
  * method throws a OPERATION_TIMEOUT back to the caller.
  */
-@Generated("f3289612a1569d43ed32c4e7ac348b2d")
+@Generated("88b0a6f53b5d15bd66c20c8a4b1f5050")
 public final class ReplicatedMapClearCodec {
     //hex: 0x0D0900
     public static final int REQUEST_MESSAGE_TYPE = 854272;
