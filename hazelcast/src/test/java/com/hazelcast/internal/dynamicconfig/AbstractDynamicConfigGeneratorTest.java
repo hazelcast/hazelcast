@@ -915,15 +915,6 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         assertEquals(attrConfig.getName(), decAttrConfig.getName());
         assertEquals(attrConfig.getExtractorClassName(), decAttrConfig.getExtractorClassName());
         ConfigCompatibilityChecker.checkMapConfig(expectedConfig, actualConfig);
-
-        assertMapStoresAreEqual(expectedConfig.getMapStoreConfig(), actualConfig.getMapStoreConfig());
-    }
-
-    public void assertMapStoresAreEqual(MapStoreConfig expected, MapStoreConfig actual) {
-        assertEquals(expected.isWriteCoalescing(), actual.isWriteCoalescing());
-        assertEquals(expected.getWriteBatchSize(), actual.getWriteBatchSize());
-        assertEquals(expected.getWriteDelaySeconds(), actual.getWriteDelaySeconds());
-        assertEquals(expected.getInitialLoadMode(), actual.getInitialLoadMode());
     }
 
     private void testQueue(QueueStoreConfig queueStoreConfig) {

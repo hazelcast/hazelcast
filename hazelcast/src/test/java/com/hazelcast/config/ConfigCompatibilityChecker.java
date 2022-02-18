@@ -1016,7 +1016,11 @@ public class ConfigCompatibilityChecker {
                 && nullSafeEqual(
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
-                && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+                && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
+                && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
+                && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
+                && nullSafeEqual(c1.getInitialLoadMode(), c2.getInitialLoadMode());
         }
 
         @Override
