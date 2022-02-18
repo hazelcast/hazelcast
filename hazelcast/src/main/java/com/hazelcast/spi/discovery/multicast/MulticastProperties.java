@@ -25,8 +25,6 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
-import java.io.DataOutputStream;
-
 /**
  * Defines the name and default value for the Multicast Discovery Strategy.
  */
@@ -56,7 +54,7 @@ public final class MulticastProperties {
      * int:    (4b):              port
      * </pre>
      *
-     * <b>UTF-8 format notes (see {@link DataOutputStream#writeUTF(String)}):<b>
+     * <b>UTF-8 format notes (see {@link java.io.DataOutputStream#writeUTF(String)}):<b>
      * <p/>
      * Two bytes (short) provides subsequent length to read. This value is the number of bytes actually, not the length of the
      * string. Modified UTF-8 is used for decoding.
