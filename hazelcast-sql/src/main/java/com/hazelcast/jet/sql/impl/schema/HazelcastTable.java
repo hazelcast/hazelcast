@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
-import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -61,7 +61,7 @@ import static java.util.stream.Collectors.joining;
  * <h2>Constrained scans</h2>
  * For a sequence of logical project/filter/scan operators we would like to ensure that the resulting relational tree is as
  * flat as possible because this minimizes the processing overhead and memory usage. To achieve this we try to push projects and
- * filters into the table using {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}. These rules
+ * filters into the table using {@link CalcIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}. These rules
  * reduce the amount of data returned from the table during scanning. Pushed-down projection ensures that only columns required
  * by parent operators are returned, thus implementing field trimming. Pushed-down filter reduces the number of returned rows.
  * <p>

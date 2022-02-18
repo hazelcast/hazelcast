@@ -31,11 +31,11 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate.Group;
-import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -71,11 +71,11 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
     static final RelOptRule NO_PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_NO_CALC, false);
     static final RelOptRule PROJECT_INSTANCE = new AggregateSlidingWindowPhysicalRule(CONFIG_WITH_CALC, true);
 
-    private final boolean hasProject;
+    private final boolean hasCalc;
 
-    private AggregateSlidingWindowPhysicalRule(Config config, boolean hasProject) {
+    private AggregateSlidingWindowPhysicalRule(Config config, boolean hasCalc) {
         super(config);
-        this.hasProject = hasProject;
+        this.hasCalc = hasCalc;
     }
 
     @Override
@@ -89,21 +89,17 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         List<RexNode> projections;
         RelDataType projectRowType;
         SlidingWindowLogicalRel windowRel;
-        if (hasProject) {
-            Project projectRel = call.rel(1);
-            projections = new ArrayList<>(projectRel.getProjects());
-            projectRowType = projectRel.getRowType();
+        if (hasCalc) {
+            Calc calc = call.rel(1);
+            projections = calc.getProgram().expandList(calc.getProgram().getProjectList());
+            projectRowType = calc.getProgram().getOutputRowType();
             windowRel = call.rel(2);
         } else {
             windowRel = call.rel(1);
             // create an identity projection
-            List<RelDataTypeField> fields = windowRel.getRowType().getFieldList();
-            projections = new ArrayList<>(fields.size());
-            for (int i = 0; i < fields.size(); i++) {
-                RelDataTypeField field = fields.get(i);
-                projections.add(call.builder().getRexBuilder().makeInputRef(field.getType(), i));
-            }
+            RexProgram program = RexProgram.createIdentity(windowRel.getRowType());
             projectRowType = windowRel.getRowType();
+            projections = program.expandList(program.getProjectList());
         }
 
         // Our input hierarchy is, for example:
@@ -127,6 +123,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         // Replace references to either window bound to timestamp in projection
         List<Integer> windowStartIndexes = new ArrayList<>();
         List<Integer> windowEndIndexes = new ArrayList<>();
+        // TODO: rework it with RexProgramBuilder
         for (int i = 0; i < projections.size(); i++) {
             RexNode projection = projections.get(i);
             // we don't support any transformation of the window bound using an expression, it must be a direct input reference.
@@ -156,11 +153,22 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
 
         for (RelNode transformedInput : transformedInputs) {
             // todo [viliam] change the name for window bound replaced with timestamps
-            RelDataType newRowType = projectRowType;
-            RelNode newProject = new ProjectPhysicalRel(transformedInput.getCluster(), transformedInput.getTraitSet(),
-                    transformedInput, projections, newRowType);
+            RexProgram program = RexProgram.create(
+                    convertedInput.getRowType(),
+                    projections,
+                    null,
+                    projectRowType,
+                    call.builder().getRexBuilder()
+            );
 
-            RelNode transformedRel = transform(newProject, logicalAggregate, windowStartIndexes, windowEndIndexes,
+            RelNode newCalc = new CalcPhysicalRel(
+                    transformedInput.getCluster(),
+                    transformedInput.getTraitSet(),
+                    transformedInput,
+                    program
+            );
+
+            RelNode transformedRel = transform(newCalc, logicalAggregate, windowStartIndexes, windowEndIndexes,
                     windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);

@@ -214,6 +214,17 @@ public class CreateDagVisitor {
         return project;
     }
 
+    public Vertex onFilter(FilterPhysicalRel rel) {
+        Expression<Boolean> filter = rel.filter(parameterMetadata);
+
+        Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
+                ServiceFactories.nonSharedService(ctx ->
+                        ExpressionUtil.filterFn(filter, ExpressionEvalContext.from(ctx))),
+                (Predicate<JetSqlRow> filterFn, JetSqlRow row) -> filterFn.test(row)));
+        connectInputPreserveCollation(rel, vertex);
+        return vertex;
+    }
+
     public Vertex onSort(SortPhysicalRel rel) {
         ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 

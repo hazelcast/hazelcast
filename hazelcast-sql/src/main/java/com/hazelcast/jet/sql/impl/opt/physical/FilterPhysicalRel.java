@@ -21,52 +21,39 @@ import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexProgram;
 
-import java.util.List;
+public class FilterPhysicalRel extends Filter implements PhysicalRel {
 
-import static com.hazelcast.jet.impl.util.Util.toList;
-
-public class CalcPhysicalRel extends Calc implements PhysicalRel {
-
-    CalcPhysicalRel(
+    FilterPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
-            RexProgram program
+            RexNode condition
     ) {
-        super(cluster, traits, input, program);
+        super(cluster, traits, input, condition);
     }
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        return filter(schema(parameterMetadata), program.expandLocalRef(program.getCondition()), parameterMetadata);
-    }
-
-    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema inputSchema = ((PhysicalRel) getInput()).schema(parameterMetadata);
-        List<RexNode> projectList = program.expandList(program.getProjectList());
-        return project(inputSchema, projectList, parameterMetadata);
+        return filter(schema(parameterMetadata), condition, parameterMetadata);
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
-        return new PlanNodeSchema(fieldTypes);
+        return ((PhysicalRel) getInput()).schema(parameterMetadata);
     }
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onCalc(this);
+        return visitor.onFilter(this);
     }
 
     @Override
@@ -78,19 +65,14 @@ public class CalcPhysicalRel extends Calc implements PhysicalRel {
     public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double inputRows = mq.getRowCount(getInput());
 
-        double rows = inputRows;
-
-        if (program.getCondition() != null) {
-            RexNode condition = program.expandLocalRef(program.getCondition());
-            rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
-        }
+        double rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
         double cpu = inputRows;
 
         return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 
     @Override
-    public final Calc copy(RelTraitSet traitSet, RelNode input, RexProgram program) {
-        return new CalcPhysicalRel(getCluster(), traitSet, input, program);
+    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
+        return new FilterPhysicalRel(getCluster(), traitSet, input, condition);
     }
 }

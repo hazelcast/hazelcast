@@ -30,10 +30,16 @@ public final class LogicalRules {
         return RuleSets.ofList(
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
-                CalcIntoScanLogicalRule.INSTANCE,
                 CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
+//                CoreRules.FILTER_TO_CALC,
+//                CoreRules.FILTER_CALC_MERGE,
+                CalcIntoScanLogicalRule.INSTANCE,
                 SlidingWindowFilterTransposeLogicalRule.STREAMING_FILTER_TRANSPOSE,
+
+                // Filter rules
+                FilterLogicalRule.INSTANCE,
+                FilterIntoScanLogicalRule.INSTANCE,
 
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,

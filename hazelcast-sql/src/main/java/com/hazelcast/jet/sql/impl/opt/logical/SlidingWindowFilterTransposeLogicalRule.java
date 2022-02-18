@@ -24,17 +24,19 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.rex.RexVisitorImpl;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Collections.singletonList;
 
 /**
- * A {@link Calc} with existing filter condition reading from a
- * {@link SlidingWindow} will be moved before the sliding window.
+ * A {@link Calc} condition reading from a {@link SlidingWindow}
+ * will be moved before the sliding window as {@link Filter}
  */
 public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> implements TransformationRule {
 
@@ -58,21 +60,33 @@ public class SlidingWindowFilterTransposeLogicalRule extends RelRule<Config> imp
         final CalcLogicalRel calc = call.rel(0);
         final SlidingWindow sw = call.rel(1);
 
+        RexProgram program = calc.getProgram();
         RexVisitorImpl<Void> visitor = new RexVisitorImpl<Void>(true) {
             @Override
             public Void visitInputRef(RexInputRef ref) {
                 int index = ref.getIndex();
                 if (index == sw.windowStartIndex() || index == sw.windowEndIndex()) {
+                    // TODO[sasha]: convert into CannotExecuteRel
                     throw QueryException.error("Can't apply filter criteria to window bounds");
                 }
                 return super.visitInputRef(ref);
             }
         };
-        RexProgram program = calc.getProgram();
+
         program.expandLocalRef(program.getCondition()).accept(visitor);
 
-        final CalcLogicalRel newCalc = (CalcLogicalRel) calc.copy(calc.getTraitSet(), sw.getInput(), program);
-        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newCalc));
-        call.transformTo(topSW);
+        final FilterLogicalRel newFilter = new FilterLogicalRel(
+                calc.getCluster(),
+                sw.getTraitSet(),
+                sw.getInput(),
+                program.expandLocalRef(program.getCondition())
+        );
+
+        RexProgramBuilder builder = RexProgramBuilder.forProgram(program, calc.getCluster().getRexBuilder(), true);
+        builder.clearCondition();
+
+        final SlidingWindow topSW = (SlidingWindow) sw.copy(sw.getTraitSet(), singletonList(newFilter));
+        final CalcLogicalRel newCalc = (CalcLogicalRel) calc.copy(calc.getTraitSet(), topSW, builder.getProgram());
+        call.transformTo(newCalc);
     }
 }
