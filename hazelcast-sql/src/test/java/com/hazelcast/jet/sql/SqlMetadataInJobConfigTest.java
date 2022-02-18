@@ -40,7 +40,6 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @Ignore("https://github.com/hazelcast/hazelcast/issues/20372")
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -84,9 +83,10 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
             assertEquals(1, jobSummaries.size());
 
             JobSummary jobSummary = jobSummaries.get(0);
-            assertNotNull(jobSummary.getSqlSummary());
-            assertEquals(sql, jobSummary.getSqlSummary().getQuery());
-            assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+// TODO uncomment this when doing https://github.com/hazelcast/hazelcast/issues/20372
+//            assertNotNull(jobSummary.getSqlSummary());
+//            assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+//            assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
         }
     }
 
