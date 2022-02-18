@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0d1d865b836f39c00c83a82158b83d77")
+@Generated("18d8322d3f88372e889b0f2e9fc6c8b9")
 public final class SqlColumnMetadataCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int NULLABLE_FIELD_OFFSET = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

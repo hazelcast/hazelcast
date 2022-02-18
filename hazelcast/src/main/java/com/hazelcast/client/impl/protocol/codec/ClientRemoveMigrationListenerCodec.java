@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified migration listener.
  */
-@Generated("feef94ba900aa927332e26f7308beef3")
+@Generated("f448e6314c59a7c575e0499488427999")
 public final class ClientRemoveMigrationListenerCodec {
     //hex: 0x001200
     public static final int REQUEST_MESSAGE_TYPE = 4608;

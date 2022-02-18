@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("2d8195fb3994e375f159217580b6237c")
+@Generated("cdacd186075c96de39e267ed6966edfc")
 public final class SchemaCodec {
 
     private SchemaCodec() {

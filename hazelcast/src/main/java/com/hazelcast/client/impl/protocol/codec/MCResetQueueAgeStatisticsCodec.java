@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Resets the max-age, min-age and average-age metrics of the queue
  */
-@Generated("963aaa223ba32d96bec6b27636cfbaf4")
+@Generated("c7a8587ec58e6f31e26dc05c30548b09")
 public final class MCResetQueueAgeStatisticsCodec {
     //hex: 0x202100
     public static final int REQUEST_MESSAGE_TYPE = 2105600;

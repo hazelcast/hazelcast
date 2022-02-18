@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("53f582521f77759b1867a030fe771489")
+@Generated("dc6ad6b1881bdb33cc72561681521446")
 public final class AddressCodec {
     private static final int PORT_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = PORT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
