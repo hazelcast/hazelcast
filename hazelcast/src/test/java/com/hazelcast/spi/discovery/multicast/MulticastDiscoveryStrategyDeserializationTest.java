@@ -111,7 +111,6 @@ public class MulticastDiscoveryStrategyDeserializationTest {
         }
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(dsc);
-        // joinConfig.getAutoDetectionConfig().setEnabled(false);
         return config;
     }
 

@@ -88,4 +88,20 @@ public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         assertClusterSizeEventually(2, client);
     }
+
+    @Test
+    public void clientSerializationMismatchTest() {
+        if (safeSerialization == null) {
+            return;
+        }
+        serverConfig.getNetworkConfig().getJoin().getDiscoveryConfig().getDiscoveryStrategyConfigs().iterator().next()
+                .addProperty("safe-serialization", safeSerialization.toString());
+        clientConfig.getNetworkConfig().setConnectionTimeout(15000).getDiscoveryConfig().getDiscoveryStrategyConfigs()
+                .iterator().next().addProperty("safe-serialization", Boolean.toString(!safeSerialization));
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3000);
+        factory.newHazelcastInstance(serverConfig);
+        factory.newHazelcastInstance(serverConfig);
+
+        assertThrows(IllegalStateException.class, () -> factory.newHazelcastClient(clientConfig));
+    }
 }

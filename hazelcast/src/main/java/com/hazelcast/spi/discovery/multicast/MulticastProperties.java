@@ -25,6 +25,8 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
+import java.io.DataOutputStream;
+
 /**
  * Defines the name and default value for the Multicast Discovery Strategy.
  */
@@ -42,15 +44,22 @@ public final class MulticastProperties {
 
     /**
      * Property which determines if Java Serialization is used ({@code false}) or rather the safer and portable one
-     * ({@code true}).
+     * ({@code true}). The Java native serialization format which is used by default is sensitive to
+     * <a href="https://owasp.org/www-project-top-ten/2017/A8_2017-Insecure_Deserialization">insecure deserialization
+     * attacks</a>.
      * <p/>
      * Safe serialization format of the MulticastMemberInfo:
      *
      * <pre>
-     * boolean: flag if memberInfo provided (false mean memberInfo is null)
-     * UTF-8:   host
-     * int:     port
+     * boolean (1b):              flag if memberInfo provided (false mean memberInfo is null)
+     * UTF-8   (variable length): host
+     * int:    (4b):              port
      * </pre>
+     *
+     * <b>UTF-8 format notes (see {@link DataOutputStream#writeUTF(String)}):<b>
+     * <p/>
+     * Two bytes (short) provides subsequent length to read. This value is the number of bytes actually, not the length of the
+     * string. Modified UTF-8 is used for decoding.
      *
      * @since 5.1
      */
