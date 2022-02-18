@@ -41,6 +41,7 @@ import static java.lang.System.getenv;
 /**
  * Pings phone home server with cluster info daily.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class PhoneHome {
 
     private static final String FALSE = "false";
@@ -82,7 +83,7 @@ public class PhoneHome {
                 new BuildInfoCollector(new HashMap<>(envVars)), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
                 new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
-                new SqlInfoCollector());
+                new SqlInfoCollector(), new StorageInfoCollector(), new DynamicConfigInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 

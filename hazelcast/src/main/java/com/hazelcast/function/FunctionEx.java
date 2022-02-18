@@ -17,6 +17,7 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
@@ -56,8 +57,9 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredF
      * java.util.function.Function#identity()}.
      * @param <T> the type of the input and output objects to the function
      */
+    @SuppressWarnings("unchecked")
     static <T> FunctionEx<T, T> identity() {
-        return t -> t;
+        return Util.Identity.INSTANCE;
     }
 
     /**

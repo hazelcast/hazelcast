@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical.index;
 
+import com.google.common.collect.BoundType;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -52,11 +57,13 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -70,6 +77,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRelTable;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
@@ -307,7 +315,8 @@ public final class IndexResolver {
             }
 
             // Group candidates by column. E.g. {a>1 AND a<3} is grouped into a single map entry: a->{>1},{<3}
-            res.computeIfAbsent(candidate.getColumnIndex(), (k) -> new ArrayList<>()).add(candidate);
+            res.computeIfAbsent(candidate.getColumnIndex(), (k) -> new ArrayList<>())
+                    .add(candidate);
         }
 
         return res;
@@ -386,7 +395,14 @@ public final class IndexResolver {
                         operands.element2(),
                         parameterMetadata
                 );
+            case SEARCH:
+                operands = extractComparisonOperands(exp);
 
+                return prepareSingleColumnSearchCandidateComparison(
+                        exp,
+                        operands.element1(),
+                        operands.element2()
+                );
             case OR:
                 // Handle OR/IN predicates. If OR condition refer to only a single column and all comparisons are equality
                 // comparisons, then IN filter is created. Otherwise null is returned. Examples:
@@ -609,6 +625,70 @@ public final class IndexResolver {
         );
     }
 
+    @SuppressWarnings({"ConstantConditions", "UnstableApiUsage"})
+    private static IndexComponentCandidate prepareSingleColumnSearchCandidateComparison(
+            RexNode exp,
+            RexNode operand1,
+            RexNode operand2
+    ) {
+        // SARG is supported only for literals, not for dynamic parameters
+        if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL) {
+            return null;
+        }
+        int columnIndex = ((RexInputRef) operand1).getIndex();
+        RexLiteral literal = (RexLiteral) operand2;
+
+        QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(literal.getType());
+
+        RangeSet<?> rangeSet = RexToExpression.extractRangeFromSearch(literal);
+        if (rangeSet == null) {
+            return null;
+        }
+
+        Set<? extends Range<?>> ranges = rangeSet.asRanges();
+
+        IndexFilter indexFilter;
+        if (ranges.size() == 1) {
+            indexFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
+        } else if (ranges.stream().allMatch(IndexResolver::isSingletonRange)) {
+            indexFilter = new IndexInFilter(
+                    toList(ranges, range -> createIndexFilterForSingleRange(range, hazelcastType)));
+        } else {
+            // No support for IndexInFilter with multiple IndexFilterForSingleRanges
+            return null;
+        }
+
+        return new IndexComponentCandidate(exp, columnIndex, indexFilter);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    private static IndexFilter createIndexFilterForSingleRange(Range<?> range, QueryDataType hazelcastType) {
+        Expression<?> lowerBound = ConstantExpression.create(range.lowerEndpoint(), hazelcastType);
+        IndexFilterValue lowerBound0 = new IndexFilterValue(
+                singletonList(lowerBound),
+                singletonList(false)
+        );
+        if (isSingletonRange(range)) {
+            return new IndexEqualsFilter(lowerBound0);
+        }
+
+        Expression<?> upperBound = ConstantExpression.create(range.upperEndpoint(), hazelcastType);
+        IndexFilterValue upperBound0 = new IndexFilterValue(
+                singletonList(upperBound),
+                singletonList(false)
+        );
+        return new IndexRangeFilter(lowerBound0, range.lowerBoundType() == BoundType.CLOSED,
+                upperBound0, range.upperBoundType() == BoundType.CLOSED);
+    }
+
+    private static <T extends Comparable<T>> boolean isSingletonRange(Range<T> range) {
+        return range.hasLowerBound() && range.hasUpperBound()
+                && range.lowerBoundType() == BoundType.CLOSED
+                && range.upperBoundType() == BoundType.CLOSED
+                && range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0;
+    }
+
     private static Expression<?> convertToExpression(RexNode operand, QueryParameterMetadata parameterMetadata) {
         try {
             RexToExpressionVisitor visitor =
@@ -715,7 +795,7 @@ public final class IndexResolver {
             }
 
             // Create the filter for the given index component if possible.
-            // Separate candidates are possible merged into a single complex filter at this stage.
+            // Separate candidates are possibly merged into a single complex filter at this stage.
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
             IndexComponentFilter filter = selectComponentFilter(
@@ -970,7 +1050,9 @@ public final class IndexResolver {
                     from = candidateFilter.getFrom();
                     fromInclusive = candidateFilter.isFromInclusive();
                     expressions.add(candidate.getExpression());
-                } else if (to == null && candidateFilter.getTo() != null) {
+                }
+
+                if (to == null && candidateFilter.getTo() != null) {
                     to = candidateFilter.getTo();
                     toInclusive = candidateFilter.isToInclusive();
                     expressions.add(candidate.getExpression());
@@ -1127,7 +1209,7 @@ public final class IndexResolver {
     /**
      * Create the composite range filter from the given per-column filters.
      * <p>
-     * If there number of per-column filters if less than the number of index components, then infinite ranges are added
+     * If the number of per-column filters if less than the number of index components, then infinite ranges are added
      * to the missing components.
      * <p>
      * Consider that we have two per-column filter as input: {@code {a=1}, {b>2 AND b<3}}.

@@ -152,6 +152,9 @@ public final class FactoryIdHelper {
     public static final String ENTERPRISE_PARTITION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.partition";
     public static final int ENTERPRISE_PARTITION_DS_FACTORY_ID = -43;
 
+    public static final String BASIC_FUNCTIONS_DS_FACTORY = "hazelcast.serialization.lambda";
+    public static final int BASIC_FUNCTIONS_DS_FACTORY_ID = -44;
+
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {

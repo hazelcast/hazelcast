@@ -611,7 +611,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
         out.writeObject(getDistributedTo());
-        out.writeObject(getRoutingPolicy());
+        out.writeString(getRoutingPolicy().name());
         out.writeObject(getConfig());
         CustomClassLoadedObject.write(out, getPartitioner());
         CustomClassLoadedObject.write(out, getOrderComparator());
@@ -625,7 +625,7 @@ public class Edge implements IdentifiedDataSerializable {
         destOrdinal = in.readInt();
         priority = in.readInt();
         distributedTo = in.readObject();
-        routingPolicy = in.readObject();
+        routingPolicy = RoutingPolicy.valueOf(in.readString());
         config = in.readObject();
         try {
             partitioner = CustomClassLoadedObject.read(in);
