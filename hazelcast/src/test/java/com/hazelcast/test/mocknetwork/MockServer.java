@@ -103,7 +103,7 @@ class MockServer implements Server {
 
         @Override
         public ServerConnection get(@Nonnull Address address, int streamId) {
-            UUID memberUuid = server.nodeRegistry.uuidOf(address);
+            UUID memberUuid = addressRegistry.uuidOf(address);
             return memberUuid != null ? get(memberUuid) : null;
         }
 
@@ -114,7 +114,7 @@ class MockServer implements Server {
         @Override
         @Nonnull
         public List<ServerConnection> getAllConnections(@Nonnull Address address) {
-            UUID memberUuid = server.nodeRegistry.uuidOf(address);
+            UUID memberUuid = addressRegistry.uuidOf(address);
             if (memberUuid == null) {
                 return Collections.emptyList();
             }
@@ -124,7 +124,7 @@ class MockServer implements Server {
 
         @Override
         public MockServerConnection getOrConnect(@Nonnull Address address, int stream) {
-            UUID uuid = server.nodeRegistry.uuidOf(address);
+            UUID uuid = addressRegistry.uuidOf(address);
             MockServerConnection conn = null;
             if (uuid != null) {
                 conn = server.connectionMap.get(uuid);
@@ -385,7 +385,6 @@ class MockServer implements Server {
                         + endpointAddress + ", uuid=" + endpointUuid + "], connection: " + connection);
                 fireConnectionRemovedEvent(connection, endpointUuid);
             }
-
         }
 
         private final class SendTask implements Runnable {
